@@ -2,13 +2,13 @@ package analyzer
 
 import (
 	"go/types"
-
-	"github.com/lucasavila00/immutago/internal/checker"
-	"golang.org/x/tools/go/analysis"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/lucasavila00/immutago/internal/checker"
+	"golang.org/x/tools/go/analysis"
 )
 
 // standardLibrary identifies compiler-supplied source by its SDK directory.
