@@ -1,7 +1,7 @@
 // Package analyzer exposes the immutago go/analysis analyzer.
 //
 // Marked structs may own only primitive values, arrays of immutable values,
-// other marked structs, and the library's Slice and Map types with immutable
+// other marked structs, and the library's FrozenSlice and FrozenMap types with immutable
 // arguments. Unmarked structs cannot store marked values or these collections.
 // Pointer fields, interfaces, functions, channels, and native mutable collections
 // cannot establish an immutability proof. Reflection and unsafe operations are

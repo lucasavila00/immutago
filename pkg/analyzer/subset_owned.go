@@ -27,17 +27,7 @@ func (c *subsetChecks) ownedInputs() {
 				}
 			}
 		case *ast.ValueSpec:
-			for _, name := range node.Names {
-				if c.ownedExpression(name) {
-					c.exemptType(node.Type)
-				}
-			}
-			for i, value := range node.Values {
-				if i < len(node.Names) && c.ownedExpression(node.Names[i]) {
-					c.ownedInput(value)
-					c.exemptType(node.Type)
-				}
-			}
+			c.ownedDeclaration(node)
 		case *ast.CallExpr:
 			object := c.calledObject(node.Fun)
 			if libraryObject(object) && (object.Name() == "FreezeMap" || object.Name() == "FreezeSlice") {
@@ -45,6 +35,19 @@ func (c *subsetChecks) ownedInputs() {
 					c.ownedInput(value)
 				}
 			}
+		}
+	}
+}
+
+// ownedDeclaration admits the native type syntax and initializer of checked local builders.
+func (c *subsetChecks) ownedDeclaration(node *ast.ValueSpec) {
+	for i, name := range node.Names {
+		if !c.ownedExpression(name) {
+			continue
+		}
+		c.exemptType(node.Type)
+		if i < len(node.Values) {
+			c.ownedInput(node.Values[i])
 		}
 	}
 }
@@ -87,37 +90,44 @@ func (c *subsetChecks) freezeFunctionUse(expression ast.Expr) {
 	if parent, ok := c.parents[expression].(*ast.SelectorExpr); ok && parent.Sel == expression {
 		return
 	}
-
 	object := c.calledObject(expression)
 	if !libraryObject(object) || (object.Name() != "FreezeMap" && object.Name() != "FreezeSlice") {
 		return
 	}
-	var node ast.Node = expression
+	call := c.directFreezeCall(expression)
+	if call == nil {
+		c.report(expression, "freeze functions must be called directly")
+		return
+	}
+	switch c.parents[call].(type) {
+	case *ast.GoStmt, *ast.DeferStmt:
+		c.report(call, "freezing requires a synchronous call")
+	}
+}
+
+// directFreezeCall follows only parentheses and generic instantiation into a direct callee.
+func (c *subsetChecks) directFreezeCall(node ast.Node) *ast.CallExpr {
 	for {
 		switch parent := c.parents[node].(type) {
 		case *ast.ParenExpr:
 			node = parent
 		case *ast.IndexExpr:
 			if parent.X != node {
-				return
+				return nil
 			}
 			node = parent
 		case *ast.IndexListExpr:
 			if parent.X != node {
-				return
+				return nil
 			}
 			node = parent
+		case *ast.CallExpr:
+			if parent.Fun == node {
+				return parent
+			}
+			return nil
 		default:
-			call, ok := parent.(*ast.CallExpr)
-			if !ok || call.Fun != node {
-				c.report(expression, "freeze functions must be called directly")
-				return
-			}
-			switch c.parents[call].(type) {
-			case *ast.GoStmt, *ast.DeferStmt:
-				c.report(call, "freezing requires a synchronous call")
-			}
-			return
+			return nil
 		}
 	}
 }
