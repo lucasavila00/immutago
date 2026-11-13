@@ -3,16 +3,16 @@ package freezebuilders
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Value struct {
-	im.Marker
+	im.Immut
 	X int
 }
 
 type Slices struct {
-	im.Marker
+	im.Immut
 	First, Second im.FrozenSlice[int]
 }
 type Maps struct {
-	im.Marker
+	im.Immut
 	First, Second im.FrozenMap[string, int]
 }
 
@@ -38,14 +38,14 @@ func Map() Maps {
 }
 func MarkedSlice() im.FrozenSlice[Value] {
 	values := []Value{{X: 1}}
-	values[0].X = 2
+	values[0] = Value{X: 2}
 	frozen := im.FreezeSlice(values)
 	return frozen
 }
 func MarkedMap() im.FrozenMap[string, Value] {
 	values := map[string]Value{"a": {X: 1}}
 	copy := values["a"]
-	copy.X = 2
+	copy = Value{X: 2}
 	values["a"] = copy
 	frozen := im.FreezeMap(values)
 	return frozen

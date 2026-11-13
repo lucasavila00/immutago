@@ -26,7 +26,7 @@ for operation and freeze checks.
 
 ## Structural checks
 
-[Type predicates](../../internal/checker/types.go) recognize `im.Marker`,
+[Type predicates](../../internal/checker/types.go) recognize `im.Immut`, `im.ImmutNoRef`,
 `FrozenSlice`, and `FrozenMap` by resolved package path and named type. Aliases
 are resolved. `Contains` follows fields and container element types to find
 protected storage. It uses a visited-type map to stop recursive traversal.
@@ -63,7 +63,8 @@ and a reference result `return p` use separate allowed shapes. See the
 [The subset checker](../../pkg/analyzer/subset.go) uses an AST parent map to
 check expression and statement context. [Call checks](../../pkg/analyzer/subset_calls.go)
 resolve the function or method by compiler identity. Named readers have concrete,
-synchronous signatures. Shared references may be stored and returned. The only protected receiver calls are the
+synchronous signatures. `Immut` references may be stored and returned.
+`ImmutNoRef` references cannot leave local storage or direct non-retaining calls. The only protected receiver calls are the
 listed methods of the exact `im` collection types.
 
 Tests must cover each accepted shape and nearby forms that do not match it.

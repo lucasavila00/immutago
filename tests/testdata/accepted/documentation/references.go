@@ -3,27 +3,24 @@ package main
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Point struct {
-	im.Marker
+	im.Immut
 	X, Y int
 }
 type Shape struct {
-	im.Marker
+	im.Immut
 	Point Point
 	Items im.FrozenSlice[int]
 }
 
-// referenceForms checks whole arrays and protected fields from the rules.
+// referenceForms checks fresh objects, arrays, and shared fields from the rules.
 func referenceForms() {
-	values := [2]Point{}
-	p := &values
+	p := &[2]Point{}
 	x := (*p)[0].X
 	next := *p
-	next[0].X = 1
-	values[0].X = 2
-	shape := Shape{}
-	child := &shape.Point
+	next = [2]Point{{X: 1}}
+	child := &Point{X: 2}
 	copied := *child
-	items := &shape.Items
+	items := new(im.FrozenSlice[int])
 	count := items.Len()
 	println(x, next[0].X, copied.X, count)
 }

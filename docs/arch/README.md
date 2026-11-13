@@ -29,7 +29,8 @@ native builders. It adds no runtime ownership state.
 Constructors can return values or shared pointers. Objects cannot change after
 construction. A pointer starts from a fresh allocation, so rebinding a variable
 cannot change an object through a retained address. References can be copied,
-stored, and returned. Go manages their lifetime; the analyzer needs no loan
+stored, and returned for `Immut`. `ImmutNoRef` references remain local or in
+direct typed calls that do not retain them. Go manages their lifetime; the analyzer needs no loan
 liveness or pointer-origin propagation.
 
 Direct named functions can receive and return shared references. Calls must

@@ -3,13 +3,13 @@ package review_convergence
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Value struct {
-	im.Marker
+	im.Immut
 	X int
 }
 
 func sliceReads() im.FrozenSlice[Value] {
 	frozen := im.FreezeSlice([]Value{{X: 1}})
-	p := &frozen
+	p := frozen
 	_ = (p.Len)()
 	_ = (p.At)(0)
 	for _, value := range (p.All)() {
@@ -23,7 +23,7 @@ func sliceReads() im.FrozenSlice[Value] {
 
 func mapReads() im.FrozenMap[int, Value] {
 	frozen := im.FreezeMap(map[int]Value{1: {X: 1}})
-	p := &frozen
+	p := frozen
 	value, found := (p.Get)(1)
 	_ = value
 	_ = found
@@ -47,16 +47,17 @@ func read(p *Value) int {
 func singleBindings() {
 	value := Value{X: 1}
 	a := value.X + 1
-	var b = read(&value)
+	var b = read(&Value{X: value.X})
 	_ = a
 	_ = b
 	builder := []int{1}
 	n := len(builder)
 	_ = n
 	_ = im.FreezeSlice(builder)
-	for value.X = range []int{2} {
+	for x := range []int{2} {
+		value = Value{X: x}
 	}
-	nil := &value
+	nil := &Value{X: value.X}
 	_ = read(nil)
 }
 

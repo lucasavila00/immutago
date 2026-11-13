@@ -3,7 +3,7 @@ package docrejected
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Point struct {
-	im.Marker
+	im.Immut
 	X int
 }
 

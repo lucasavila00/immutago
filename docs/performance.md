@@ -26,6 +26,9 @@ the same overhead as native `range`.
 There are no persistent update methods. To change a frozen collection, clone it,
 edit the clone, and freeze the clone. Existing frozen copies retain the original
 storage. Element types must pass the checker so shallow cloning is sufficient.
+Pointer elements still refer to the same immutable objects after Clone; only
+the container slots are independent. Replacing a cloned slot does not change
+the original frozen slot.
 
 ## Check the cost
 

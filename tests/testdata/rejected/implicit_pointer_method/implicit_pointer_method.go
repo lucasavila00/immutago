@@ -7,7 +7,7 @@ type Count int
 func (p *Count) Change() { *p = 1 }
 
 type Value struct {
-	im.Marker
+	im.Immut
 	N Count
 }
 

@@ -54,7 +54,9 @@ literal or `new`. It rejects addresses of named variables and their fields.
 This prevents variable rebinding from changing a shared object's storage.
 
 The matcher permits reads, value copies, pointer copies, pointer reassignment,
-and concrete typed storage and returns. Write destinations must be complete
+and concrete typed storage and returns for `Immut`. References to
+`ImmutNoRef` cannot be stored, returned, or captured; direct typed calls must
+not retain them. Value copies remain storable and returnable. Write destinations must be complete
 variables or supported native builder elements. A marked field, protected array
 element, or dereferenced pointer is never a valid write destination. This rule
 holds before sharing and after the last read; no loan analysis is needed.

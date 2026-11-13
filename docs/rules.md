@@ -11,6 +11,31 @@ The allowed Go forms in this guide define the complete supported language.
 The checker must match each complete form and prove its type rules. Unlisted
 operations are rejected. Rejection examples are not exhaustive.
 
+## Choose a marker
+
+Both markers make an object immutable from construction. Neither permits
+mutable initialization, field writes, or writes through a pointer.
+
+| Marker | Complete reference policy |
+| --- | --- |
+| `im.Immut` | References can be local, copied, rebound, stored, passed to direct typed functions, and returned. |
+| `im.ImmutNoRef` | References can be used locally and passed to direct typed functions that do not retain them. References cannot be stored, returned, or captured. |
+
+Embed the selected marker by value. `ImmutNoRef` restricts references, not value
+copies: a value copy can be stored or returned. Go manages object lifetime for
+both markers. Neither marker supplies resource destruction or a general memory
+leak guarantee.
+
+```go
+type Point struct { im.Immut; X int }
+type Local struct { im.ImmutNoRef; X int }
+func readLocal(value *Local) int { return value.X }
+func copyLocal(value Local) Local { return value }
+```
+
+The reference table below describes `Immut`. The complete additional rules for
+`ImmutNoRef` appear in [local-only references](#local-only-references).
+
 ## Find a rule
 
 - [Value types](#allowed-value-types): which fields and collection arguments pass.
@@ -37,12 +62,12 @@ component is checked recursively; all fields, keys, and elements must pass.
 | Boolean, integer, floating-point, complex, or string scalar | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
 | A defined scalar type | `type Count int` |
 | An unnamed array of allowed elements | `[2]int` or `[2]Point` |
-| A struct that directly embeds `im.Marker` by value | `type Point struct { im.Marker; X, Y int }` |
+| A struct that directly embeds `im.Immut` or `im.ImmutNoRef` by value | `type Point struct { im.Immut; X, Y int }` |
 | A pointer to a recursively protected immutable type | `*Point`, `*im.FrozenSlice[Point]`, `*[2]Point` |
 | A frozen collection of allowed types | `im.FrozenSlice[Point]` or `im.FrozenMap[string, Point]` |
 | A type alias for an allowed type | `type Position = Point` |
 | A defined struct whose underlying struct has the marker and allowed fields | `type Position Point` |
-| A type parameter whose constraint proves the same rules | `type Box[T ~int | ~string] struct { im.Marker; Value T }` |
+| A type parameter whose constraint proves the same rules | `type Box[T ~int | ~string] struct { im.Immut; Value T }` |
 
 The Go examples below use this type and import:
 
@@ -50,13 +75,13 @@ The Go examples below use this type and import:
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Point struct {
-    im.Marker
+    im.Immut
     X, Y int
 }
 ```
 
 Aliases are resolved before checking the marker and collection identities.
-An alias for `im.Marker` can be embedded. A named marker field or `*im.Marker`
+An alias for either marker can be embedded. A named marker field or `*im.Immut`
 does not mark a struct. Every nested struct must have its own marker.
 
 The following rejected examples are not exhaustive:
@@ -67,7 +92,7 @@ type Counts [2]int
 
 // Allowed: wrap the array in a marked struct.
 type Counts struct {
-    im.Marker
+    im.Immut
     Values [2]int
 }
 ```
@@ -80,7 +105,7 @@ collection types are allowed when every reachable field passes:
 
 ```go
 type Tree struct {
-    im.Marker
+    im.Immut
     Value int
     Children im.FrozenSlice[Tree]
 }
@@ -96,7 +121,7 @@ Embedding a named constraint preserves its rules:
 type Scalar interface { ~int | ~string }
 type Key interface { Scalar; comparable }
 type Box[T Key] struct {
-    im.Marker
+    im.Immut
     Value T
 }
 type Values[T Scalar] = im.FrozenSlice[T]
@@ -174,7 +199,7 @@ resolved target types pass the recursive proof:
 
 ```go
 type Node struct {
-    im.Marker
+    im.Immut
     Value int
     Next *Node
 }
@@ -237,6 +262,51 @@ Parentheses and Go type aliases preserve these forms. Concrete pointer
 parameters and results are allowed. User-defined methods on protected values,
 including promoted methods, are unsupported. Only the listed `im` methods
 `Get`, `At`, `Len`, `All`, and `Clone` are supported.
+
+## Local-only references
+
+For `ImmutNoRef`, this is the complete allowed reference list. Unlisted forms
+are rejected. A referenced type must pass the same recursive immutable proof.
+
+| Allowed form | Go example |
+| --- | --- |
+| Declare a zero local reference | `var p *Local` |
+| Construct a fresh local object | `p := &Local{X: 1}` or `p := new(Local)` |
+| Read or discard a local reference | `x := p.X` or `_ = p` |
+| Copy the referenced value | `value := *p` |
+| Compare references or nil | `same := p == q` or `if p != nil { ... }` |
+| Pass to a direct typed non-retaining function | `x := readLocal(p)` |
+| Declare a concrete reader parameter | `func readLocal(p *Local) int { return p.X }` |
+
+Value copies remain ordinary immutable values:
+
+```go
+func localValue() Local { return Local{X: 1} }
+type Snapshot struct { im.Immut; Value Local }
+```
+
+The following rejected examples are not exhaustive:
+
+```go
+// Rejected: a local-only reference leaves the function.
+func escape() *Local { return &Local{X: 1} }
+
+// Allowed: return a value copy.
+func copyOut() Local { return Local{X: 1} }
+```
+
+```go
+// Rejected: storing a local-only reference.
+type Saved struct { im.Immut; Value *Local }
+
+// Allowed: store the immutable value.
+type SavedValue struct { im.Immut; Value Local }
+```
+
+References to `ImmutNoRef` also cannot enter a package variable, native builder,
+frozen collection, closure, interface, deferred call, or goroutine. The checker
+checks reader bodies and dependencies; a concrete parameter does not grant
+permission to retain the pointer.
 
 ## What you cannot do with a reference
 

@@ -3,12 +3,12 @@ package rejected
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
-	im.Marker
+	im.Immut
 	Value int
 	Array [2]int
 }
 
 type Bad struct {
-	im.Marker
+	im.Immut
 	Value [0]*int
 }

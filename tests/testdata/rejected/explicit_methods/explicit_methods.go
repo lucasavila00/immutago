@@ -8,7 +8,7 @@ func (c *Counter) Increment() { *c++ }
 func (c Counter) Read() int   { return int(c) }
 
 type Good struct {
-	im.Marker
+	im.Immut
 	Counter
 }
 

@@ -4,7 +4,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 // User owns a name and read-only scores.
 type User struct {
-	im.Marker
+	im.Immut
 	Name   string
 	Scores im.FrozenMap[string, int]
 }
@@ -18,11 +18,11 @@ func scoreCount(user *User) int {
 func main() {
 	scores := map[string]int{"go": 10}
 	frozen := im.FreezeMap(scores)
-	user := User{Name: "alice", Scores: frozen}
+	user := &User{Name: "alice", Scores: frozen}
 
-	p := &user
-	count := scoreCount(p) // Last use of p.
-	user.Name = "bob"      // The borrow has ended.
+	p := user
+	count := scoreCount(p)
+	user = &User{Name: "bob", Scores: frozen}
 
 	next := user.Scores.Clone()
 	next["go"] = 20

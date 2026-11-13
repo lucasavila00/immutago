@@ -27,7 +27,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 // User owns a name and read-only scores.
 type User struct {
-    im.Marker
+    im.Immut
     Name   string
     Scores im.FrozenMap[string, int]
 }
@@ -70,7 +70,9 @@ The analyzer reports no errors. The program prints:
 bob 1 10 true 20 true
 ```
 
-`im.Marker` must be embedded by value. Each field must have an allowed immutable
+`im.Immut` permits shared references and must be embedded by value. Use
+`im.ImmutNoRef` when references must stay local or in direct typed calls that
+do not retain them. Both markers make fields immutable from construction. Each field must have an allowed immutable
 type. `&User{...}` constructs a shared immutable object. Writes through it are rejected.
 Marked fields are immutable from construction. The example replaces the whole
 `user` pointer variable with a new reference. Go manages reference lifetimes.

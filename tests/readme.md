@@ -4,25 +4,21 @@
 fixtures into temporary consumer modules with a local module replacement and
 workspace mode disabled. No fixtures depend on downloaded modules.
 
-`testdata/accepted` covers owned construction, value copies, final-use borrow
-lifetimes, branches, loops, readable pointer parameters, direct cross-package
-calls, scalar collection copies, and recursive immutable types. Core rejected
-fixtures require diagnostics at writes through shared references or writes to
-an owner with a live loan. Boundary fixtures reject reference returns, generic
-borrowing, captures, interior scalar addresses, and native protected containers.
-Structural field, marker, ownership, reflection, unsafe, and native-declaration
-checks remain covered. Freeze fixtures build exclusive native slices and maps,
-consume them with FreezeSlice or FreezeMap, and use Clone to make independent
-mutable copies. Negative fixtures cover use after transfer, aliases, escapes,
-branch joins, and loops. The runtime fixture checks the frozen values before
-and after edits to their clones.
+`testdata/accepted` covers immutable construction, scalar preparation, complete
+variable rebinding, value copies, shared pointer copies and returns, stored
+references, recursive pointer fields, and direct cross-package calls. Rejected
+fixtures retain earlier mutable-owner programs: field writes fail even when
+there is no live reference. Reference boundaries reject named-variable
+addresses, interior scalar addresses, pointer indirection, generic protected
+calls, captures, and unsupported interface transport.
 
-The explicit subset fixtures check fixed local references, named readers, and
-reference reads through type aliases and parentheses. They reject reference
-copies and assignments, user-defined methods (including promoted methods),
-multiple assignments with protected storage, and nested Freeze calls. Select
-fixtures reject protected communication clauses and permit checked case bodies.
-They include a receive that writes its second result into a consumed builder.
+Freeze fixtures build exclusive native slices and maps, consume them with
+FreezeSlice or FreezeMap, and use Clone for independent mutable storage.
+Negative cases cover aliases, escapes, uses after transfer, branches, and loops.
+Statement tests cover one destination, checked select bodies, fresh Get results,
+and direct Freeze assignments. They reject nested Freeze and protected select
+communication operands. Runtime tests check that edits to clones leave frozen
+storage unchanged.
 
 Each source file has an adjacent `.txt` snapshot, as in TGo. Snapshots preserve
 exact diagnostic messages, source lines, and columns. Accepted sources have

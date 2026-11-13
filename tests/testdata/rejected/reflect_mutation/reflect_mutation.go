@@ -6,7 +6,7 @@ import (
 )
 
 type Value struct {
-	im.Marker
+	im.Immut
 	N int
 }
 

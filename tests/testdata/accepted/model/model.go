@@ -2,7 +2,7 @@ package model
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type MarkerAlias = im.Marker
+type MarkerAlias = im.Immut
 type Number int
 type Title = string
 
@@ -19,7 +19,7 @@ type Leaf struct {
 }
 
 type Tree struct {
-	im.Marker
+	im.Immut
 	Leaf     Leaf
 	Children im.FrozenSlice[Tree]
 	Index    im.FrozenMap[string, Tree]
@@ -27,7 +27,7 @@ type Tree struct {
 
 type Scalar interface{ ~int | ~string }
 type Box[T Scalar] struct {
-	im.Marker
+	im.Immut
 	Value T
 }
 type CountBox = Box[int]

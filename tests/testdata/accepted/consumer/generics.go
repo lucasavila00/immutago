@@ -9,12 +9,12 @@ type PositiveScalar interface {
 	comparable
 }
 type Generic[T EmbeddedScalar] struct {
-	im.Marker
+	im.Immut
 	Value T
 }
 type GenericAlias[T Scalar] = im.FrozenSlice[T]
 type NamedInts struct {
-	im.Marker
+	im.Immut
 	Values [2]int
 }
 
