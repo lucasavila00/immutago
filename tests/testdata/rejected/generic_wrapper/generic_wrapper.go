@@ -9,4 +9,4 @@ type Good struct {
 }
 type Wrapper[T any] struct{ Value T }
 
-var Bad Wrapper[Good] // want "unmarked struct contains immutable field"
+var Bad Wrapper[Good]

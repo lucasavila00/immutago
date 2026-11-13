@@ -1,0 +1,9 @@
+mutable_slice_element.go:11:12: immutable type argument: []int is not provably immutable
+  type: []int
+  fix: replace the native slice with im.Slice[T], where T is immutable
+mutable_slice_element.go:11:5: immutable collection: type argument 1: []int is not provably immutable
+  type: im.Slice[[]int]
+  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments
+mutable_slice_element.go:11:9: immutable collection: type argument 1: []int is not provably immutable
+  type: im.Slice[[]int]
+  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments

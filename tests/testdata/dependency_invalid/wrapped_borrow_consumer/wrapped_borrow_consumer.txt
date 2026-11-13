@@ -1,0 +1,7 @@
+wrapped_borrow_consumer.go:3:8: unsupported dependency example.com/consumer/borrow_wrapper: immutability proof failed
+  import chain: example.com/consumer/wrapped_borrow_consumer -> example.com/consumer/borrow_wrapper -> example.com/consumer/invalid_borrow
+  original failure: example.com/consumer/invalid_borrow/invalid_borrow.go:12:49: unsupported immutable borrow: scalar interior addresses are unsupported
+    source: &value.X
+    type: *int
+    fix: read or update the field through its owned value; do not take a field pointer or call its pointer-receiver method
+  fix: correct the original dependency error above, then rerun immutago on this package

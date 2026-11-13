@@ -2,13 +2,22 @@ package rejected
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type Numbers [2]int
+type Count struct {
+	im.Marker
+	Values [2]int
+}
 
-func (p *Numbers) Change() { p[0] = 1 }
+func (p *Count) Change() { p.Values[0] = 1 }
 
 type Value struct {
 	im.Marker
-	N Numbers
+	N Count
 }
 
-func mutate() { var value Value; _ = value.N.Change } // want "cannot mutate a field"
+func mutate() {
+	var value Value
+	pointer := &value
+	method := value.N.Change
+	method()
+	_ = pointer.N
+}

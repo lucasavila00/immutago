@@ -6,6 +6,7 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -19,6 +20,7 @@ const testLibrary = `package im
  type Map[K comparable, V any] struct { values map[K]V }
  func NewSlice[T any](values ...T) Slice[T] { return Slice[T]{} }
  func NewMap[K comparable, V any](values map[K]V) Map[K,V] { return Map[K,V]{} }
+ func (values Slice[T]) Values() []T { return nil }
 `
 
 // testImporter gives compiler tests the library's type identities without loading external packages.
@@ -58,6 +60,8 @@ func checkSource(t *testing.T, declarations string) string {
 		Uses:       make(map[*ast.Ident]types.Object),
 		Instances:  make(map[*ast.Ident]types.Instance),
 		Selections: make(map[*ast.SelectorExpr]*types.Selection),
+		Scopes:     make(map[ast.Node]*types.Scope),
+		Implicits:  make(map[ast.Node]types.Object),
 	}
 	config := types.Config{Importer: testImporter{library}}
 	pkg, err := config.Check("sample", positions, []*ast.File{file}, info)
@@ -66,7 +70,8 @@ func checkSource(t *testing.T, declarations string) string {
 	}
 	var reports []string
 	pass := &analysis.Pass{
-		Analyzer: Analyzer, Fset: positions, Files: []*ast.File{file}, Pkg: pkg, TypesInfo: info,
+		TypesSizes: types.SizesFor("gc", runtime.GOARCH),
+		Analyzer:   Analyzer, Fset: positions, Files: []*ast.File{file}, Pkg: pkg, TypesInfo: info,
 		Report: func(d analysis.Diagnostic) { reports = append(reports, d.Message) },
 	}
 	if _, err := run(pass); err != nil {
@@ -98,6 +103,7 @@ func TestValidTypes(t *testing.T) {
    func copyArray(v Value) { a := v.A; a[0] = 1 }`,
 		`type Value struct { im.Marker; S string }
    func text(v Value) string { return v.S[:] }`,
+		`type V struct { im.Marker }; func f[T V](x *T) {}`,
 		`var _ = im.NewSlice(1, 2)
    var _ = im.NewMap(map[string]int{"a": 1})`,
 	}
@@ -113,6 +119,7 @@ func TestValidTypes(t *testing.T) {
 // TestRejectedTypes covers failed recursive obligations, marker misuse, and immutable ownership boundaries.
 func TestRejectedTypes(t *testing.T) {
 	cases := []struct{ name, source, want string }{
+		{"named array", `type Count [2]int; type V struct { im.Marker; X Count }`, "named array"},
 		{"pointer", `type V struct { im.Marker; X *int }`, "not provably immutable"},
 		{"slice", `type V struct { im.Marker; X []int }`, "not provably immutable"},
 		{"interface", `type V struct { im.Marker; X any }`, "not provably immutable"},
@@ -138,7 +145,6 @@ func TestRejectedTypes(t *testing.T) {
 		{"unmarked array", `type V struct { im.Marker }; type W struct { V [2]V }`, "unmarked struct"},
 		{"unmarked collection", `type W struct { V im.Slice[int] }`, "unmarked struct"},
 		{"constrained owner", `type V struct { im.Marker }; type W[T V] struct { X T }`, "unmarked struct"},
-		{"constrained pointer", `type V struct { im.Marker }; func f[T V](x *T) {}`, "unsupported pointer"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

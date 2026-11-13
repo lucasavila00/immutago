@@ -121,6 +121,12 @@ func (p *proof) value(result *obligation, t types.Type) {
 		p.depend(result, parameter.Constraint(), true, "")
 		return
 	}
+	if _, named := t.(*types.Named); named {
+		if _, array := t.Underlying().(*types.Array); array {
+			result.reason = "named array must be wrapped in a struct that embeds im.Marker"
+			return
+		}
+	}
 	switch underlying := t.Underlying().(type) {
 	case *types.Basic:
 		if underlying.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex|types.IsString) != 0 {
@@ -161,7 +167,12 @@ func (p *proof) constraint(result *obligation, t types.Type) {
 		}
 	case *types.Union:
 		for i := 0; i < bound.Len(); i++ {
-			p.depend(result, bound.Term(i).Type(), false, "")
+			term := bound.Term(i)
+			if _, array := term.Type().Underlying().(*types.Array); array && term.Tilde() && !p.storage {
+				result.reason = "array type set permits named arrays without im.Marker"
+				return
+			}
+			p.depend(result, term.Type(), false, "")
 		}
 	default:
 		p.depend(result, t, false, "")

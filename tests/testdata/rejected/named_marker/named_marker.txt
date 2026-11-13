@@ -1,0 +1,3 @@
+named_marker.go:12:2: im.Marker must be embedded by value
+  field: rejected.Bad.Marker
+  fix: declare an anonymous im.Marker field; remove its field name or pointer

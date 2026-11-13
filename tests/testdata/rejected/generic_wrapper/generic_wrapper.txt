@@ -1,0 +1,3 @@
+generic_wrapper.go:10:29: unsupported unmarked field Value: unresolved generic storage
+  owner: rejected.Wrapper[T any]; field type: T
+  fix: constrain the field to types that cannot contain immutable storage, or make the owner and field immutable

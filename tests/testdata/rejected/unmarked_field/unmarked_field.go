@@ -8,7 +8,7 @@ type Good struct {
 	Array [2]int
 }
 
-type Bad struct { // want "immutable field Value: struct does not embed"
+type Bad struct {
 	im.Marker
 	Value struct{ Count int }
 }

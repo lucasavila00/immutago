@@ -1,0 +1,3 @@
+nll_loop_reissuance.go:16:3: cannot write borrowed immutable owner value (rejected.Good) through value.X: shared reference previous is still live; move this write after its final use, or copy the value before updating
+nll_loop_reissuance.go:14:6: 	shared reference previous declared here
+nll_loop_reissuance.go:18:6: 	this reachable use keeps shared reference previous live

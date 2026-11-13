@@ -1,0 +1,4 @@
+implicit_pointer_method.go:17:2: unsupported immutable borrow: scalar interior pointer methods are unsupported
+  source: value.N.Change()
+  type: ()
+  fix: read or update the field through its owned value; do not take a field pointer or call its pointer-receiver method

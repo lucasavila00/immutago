@@ -11,4 +11,9 @@ type Value struct {
 	N Count
 }
 
-func mutate() { var value Value; value.N.Change() } // want "cannot mutate a field"
+func mutate() {
+	var value Value
+	pointer := &value
+	value.N.Change()
+	_ = pointer.N
+}

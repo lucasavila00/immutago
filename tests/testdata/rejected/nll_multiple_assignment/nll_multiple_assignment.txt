@@ -1,0 +1,4 @@
+nll_multiple_assignment.go:23:11: cannot write borrowed immutable owner value (rejected.Good) through value.X: shared reference pointer is still live; move this write after its final use, or copy the value before updating
+nll_multiple_assignment.go:22:6: 	shared reference pointer declared here
+nll_multiple_assignment.go:23:21: 	this right-hand side borrows the owner before the assignment writes it
+nll_multiple_assignment.go:24:11: 	this reachable use keeps shared reference pointer live

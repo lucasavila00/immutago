@@ -1,0 +1,3 @@
+zero_array.go:13:2: immutable field Value: *int is not provably immutable
+  owner: rejected.Bad; field type: [0]*int
+  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments

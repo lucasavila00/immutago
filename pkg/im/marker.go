@@ -2,8 +2,9 @@
 //
 // Embed Marker in a struct to require immutable fields. Run the immutago
 // analyzer on all consumer packages; Go's type checker alone does not enforce
-// the field or collection element rules. Construct marked values with literals.
-// Variables can be replaced, but fields of marked values must not be changed.
+// the field or collection element rules. Owned local values permit construction
+// and updates. Shared references permit reads; writes to borrowed storage fail
+// while a conflicting loan is live. A value copy has independent storage.
 //
 // Slice and Map copy their inputs and outputs. Updates return new collections.
 // Their zero values are empty collections. Element and key types must themselves

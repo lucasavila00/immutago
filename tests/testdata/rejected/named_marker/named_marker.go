@@ -8,7 +8,7 @@ type Good struct {
 	Array [2]int
 }
 
-type Bad struct { // want "im.Marker must be embedded by value"
+type Bad struct {
 	Marker im.Marker
 	Value  int
 }

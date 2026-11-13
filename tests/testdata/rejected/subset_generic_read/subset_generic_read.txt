@@ -1,0 +1,8 @@
+subset_generic_read.go:10:18: unsupported immutable borrow: generic calls with immutable types are unsupported
+  source: readGeneric
+  type: func(p *rejected.Good)
+  fix: use a non-generic function with concrete immutable parameter types; only the fixed im APIs support these calls
+subset_generic_read.go:10:30: unsupported immutable borrow: generic borrowing calls are unsupported
+  source: &v
+  type: *rejected.Good
+  fix: use a non-generic function with concrete immutable parameter types; only the fixed im APIs support these calls

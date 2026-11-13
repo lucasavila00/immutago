@@ -8,7 +8,7 @@ type Good struct {
 	Array [2]int
 }
 
-type Bad struct { // want "immutable field Children: .*not provably immutable"
+type Bad struct {
 	im.Marker
 	Children im.Slice[Bad]
 	Mutable  []int

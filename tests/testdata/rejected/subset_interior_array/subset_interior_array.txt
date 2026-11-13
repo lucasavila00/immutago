@@ -1,0 +1,4 @@
+subset_interior_array.go:9:21: unsupported immutable borrow: scalar interior addresses are unsupported
+  source: &v.Array[0]
+  type: *int
+  fix: read or update the field through its owned value; do not take a field pointer or call its pointer-receiver method

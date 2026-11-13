@@ -1,0 +1,8 @@
+subset_returned_reference.go:9:33: unsupported immutable borrow: returning shared references is unsupported
+  source: p
+  type: *rejected.Good
+  fix: return an owned value T instead of *T; copy the pointed-to value before returning
+subset_returned_reference.go:9:6: unsupported immutable borrow: returning shared references is unsupported
+  source: bad
+  type: func(p *rejected.Good) *rejected.Good
+  fix: return an owned value T instead of *T; copy the pointed-to value before returning

@@ -1,0 +1,3 @@
+nll_branch_merge.go:28:2: cannot write borrowed immutable owner first (rejected.Good) through first.X: shared reference pointer is still live; move this write after its final use, or copy the value before updating
+nll_branch_merge.go:22:6: 	shared reference pointer declared here
+nll_branch_merge.go:29:11: 	this reachable use keeps shared reference pointer live

@@ -1,0 +1,7 @@
+subset_whole_owner_index.go:10:20: unsupported immutable borrow: only whole local values and marked fields can be borrowed
+  source: &v.Values[0]
+  type: *rejected.Child
+  fix: copy the value into a named local, then borrow that local or one of its marked fields
+subset_whole_owner_index.go:10:33: cannot write borrowed immutable owner v (rejected.Row) through v.Values[1].X: shared reference p is still live; move this write after its final use, or copy the value before updating
+subset_whole_owner_index.go:10:17: 	shared reference p declared here
+subset_whole_owner_index.go:10:51: 	this reachable use keeps shared reference p live

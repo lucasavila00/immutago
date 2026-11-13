@@ -8,4 +8,4 @@ type Good struct {
 	Array [2]int
 }
 
-func Build[T any](value T) im.Slice[T] { return im.NewSlice(value) } // want "immutable collection: .*type parameter constraint"
+func Build[T any](value T) im.Slice[T] { return im.NewSlice(value) }

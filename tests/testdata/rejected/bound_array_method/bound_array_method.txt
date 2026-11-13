@@ -1,0 +1,6 @@
+bound_array_method.go:10:28: cannot write through shared reference p.Values[0]: shared references are read-only; update the owned value before borrowing, or copy the value and update the copy
+bound_array_method.go:10:7: 	shared reference p (*rejected.Count) declared here
+bound_array_method.go:20:12: unsupported immutable borrow: bound immutable methods are unsupported
+  source: value.N.Change
+  type: func()
+  fix: call the method directly (value.Method(...)); do not save or pass its method value

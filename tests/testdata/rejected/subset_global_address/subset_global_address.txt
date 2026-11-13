@@ -1,0 +1,4 @@
+subset_global_address.go:10:15: unsupported immutable borrow: only whole local values can be borrowed
+  source: &Global
+  type: *rejected.Good
+  fix: copy the value into a named local, then borrow that local or one of its marked fields

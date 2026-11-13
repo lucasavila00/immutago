@@ -8,4 +8,4 @@ type Good struct {
 	Array [2]int
 }
 
-var Bad im.Map[*int, int] // want "immutable collection: .*not provably immutable"
+var Bad im.Map[*int, int]

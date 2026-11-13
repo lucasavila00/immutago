@@ -1,0 +1,4 @@
+subset_collection_values.go:9:14: unsupported immutable borrow: native slices of immutable storage are unsupported
+  source: im.NewSlice(Good{}).Values()
+  type: []rejected.Good
+  fix: use im.Slice[T] and All() for iteration; pass an inline []T literal only to im.NewSlice

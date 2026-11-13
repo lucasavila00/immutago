@@ -1,0 +1,12 @@
+subset_pointer_array.go:9:10: unsupported immutable borrow: arrays of shared references are unsupported
+  source: values
+  type: [1]*rejected.Good
+  fix: store owned values, and create a direct *T borrow only in the local function that reads it
+subset_pointer_array.go:9:17: unsupported immutable borrow: arrays of shared references are unsupported
+  source: [1]*Good
+  type: [1]*rejected.Good
+  fix: store owned values, and create a direct *T borrow only in the local function that reads it
+subset_pointer_array.go:9:29: unsupported immutable borrow: arrays of shared references are unsupported
+  source: values
+  type: [1]*rejected.Good
+  fix: store owned values, and create a direct *T borrow only in the local function that reads it

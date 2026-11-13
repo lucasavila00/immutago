@@ -1,0 +1,3 @@
+channel_field.go:13:2: immutable field Value: chan int is not provably immutable
+  owner: rejected.Bad; field type: chan int
+  fix: keep channels and callbacks outside immutable values; store their immutable results

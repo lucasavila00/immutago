@@ -7,7 +7,7 @@ type Good struct {
 	Value int
 }
 
-type Box[T any] struct{ Value T } // want "unsupported unmarked field Value: unresolved generic storage"
+type Box[T any] struct{ Value T }
 func wrap[T any](value T) any     { return Box[T]{Value: value} }
 
 var Hidden = wrap(Good{Value: 1})

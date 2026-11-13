@@ -1,0 +1,2 @@
+array_pointer_method.go:10:28: cannot write through shared reference p.Values[0]: shared references are read-only; update the owned value before borrowing, or copy the value and update the copy
+array_pointer_method.go:10:7: 	shared reference p (*rejected.Count) declared here

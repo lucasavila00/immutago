@@ -138,3 +138,27 @@ func TestSharedProofGraph(t *testing.T) {
 		t.Fatal(reason)
 	}
 }
+
+// TestNamedArraysRequireMarker keeps custom aggregates inside the marked-struct contract.
+func TestNamedArraysRequireMarker(t *testing.T) {
+	array := types.NewArray(types.Typ[types.Int], 2)
+	named := types.NewNamed(types.NewTypeName(token.NoPos, nil, "Count", nil), array, nil)
+	if reason := Reason(named); !strings.Contains(reason, "named array") {
+		t.Fatalf("named array proof: %q", reason)
+	}
+	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Pair", nil), array)
+	if reason := Reason(alias); reason != "" {
+		t.Fatalf("array alias: %s", reason)
+	}
+	marker, _ := testTypes()
+	wrapped := markedType("Count", marker, types.NewField(token.NoPos, nil, "Values", array, false))
+	if reason := Reason(wrapped); reason != "" {
+		t.Fatalf("marked wrapper: %s", reason)
+	}
+	union := types.NewUnion([]*types.Term{types.NewTerm(true, array)})
+	constraint := types.NewInterfaceType(nil, []types.Type{union}).Complete()
+	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "T", nil), constraint)
+	if reason := Reason(parameter); reason == "" {
+		t.Fatalf("tilde array proof: %q", reason)
+	}
+}

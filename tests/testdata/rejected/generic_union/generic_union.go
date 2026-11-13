@@ -8,7 +8,7 @@ type Good struct {
 	Array [2]int
 }
 
-type Bad[T ~int | ~[]int] struct { // want "immutable field Value: type parameter constraint"
+type Bad[T ~int | ~[]int] struct {
 	im.Marker
 	Value T
 }

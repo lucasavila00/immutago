@@ -1,0 +1,6 @@
+subset_new_owner.go:9:16: unsupported immutable borrow: pointer-owned construction is unsupported
+  source: new(Good)
+  type: *rejected.Good
+  fix: construct a local value (v := T{...}), then use &v for a read-only borrow
+subset_new_owner.go:9:26: cannot write through shared reference p.X: shared references are read-only; update the owned value before borrowing, or copy the value and update the copy
+subset_new_owner.go:9:13: 	shared reference p (*rejected.Good) declared here

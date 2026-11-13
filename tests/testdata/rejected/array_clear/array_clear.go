@@ -4,8 +4,12 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
 	im.Marker
-	Value int
 	Array [2]int
 }
 
-func mutate() { var value Good; clear(value.Array[:]) } // want "cannot mutate a field"
+func mutate() {
+	var value Good
+	pointer := &value
+	clear(value.Array[:])
+	_ = pointer.Array[0]
+}

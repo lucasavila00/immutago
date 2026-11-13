@@ -8,9 +8,9 @@ import "github.com/lucasavila00/immutago/pkg/analyzer"
 
 Package analyzer exposes the immutago go/analysis analyzer.
 
-Marked structs may own only primitive values, arrays of immutable values, other marked structs, and the library's Slice and Map types with immutable arguments. Unmarked structs cannot store marked values or these collections. Pointer fields, interfaces, functions, channels, and native mutable collections cannot establish an immutability proof. Reflection and unsafe operations are unsupported. Generic pointers and unmarked generic fields must prove their constraints exclude immutable storage. There are no suppression directives.
+Marked structs may own only primitive values, arrays of immutable values, other marked structs, and the library's Slice and Map types with immutable arguments. Unmarked structs cannot store marked values or these collections. Pointer fields, interfaces, functions, channels, and native mutable collections cannot establish an immutability proof. Reflection and unsafe operations are unsupported. Unmarked generic fields must prove their constraints exclude immutable storage. There are no suppression directives.
 
-The analyzer also rejects field writes and pointers to immutable values. Whole local variables may be replaced. Use literals to construct marked values and collection methods to derive new collections. Analyze every consumer package.
+Owned local values permit construction and field updates. Shared references permit reads; their loans end after the final required use on each control\-flow path. Writes to a borrowed whole owner are rejected. Value copies have independent storage. Package\-level immutable values are read\-only after declaration initialization. Protected references stay local or pass to direct, non\-escaping read\-only calls. Dependency proof failures propagate to importing consumers.
 
 ## Variables
 
@@ -18,9 +18,10 @@ Analyzer checks immutable type obligations and reports unsupported aliasing and 
 
 ```go
 var Analyzer = &analysis.Analyzer{
-    Name: "immutago",
-    Doc:  "prove immutability of marked structs and immutable collection elements",
-    Run:  run,
+    Name:      "immutago",
+    Doc:       "prove immutability of marked structs and immutable collection elements",
+    Run:       run,
+    FactTypes: []analysis.Fact{new(invalidPackage)},
 }
 ```
 

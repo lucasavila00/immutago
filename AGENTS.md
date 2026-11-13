@@ -100,9 +100,11 @@ checks for data or boundaries that the user declared trusted.
 
 ## 9. Use Hosted CI for Full Validation
 
-Check changed documentation and its local links. Run focused local tests for
-the changed analyzer code. Push the branch and use GitHub Actions for the
-full test suite. Do not run the full CI suite locally.
+Use GitHub Actions for routine tests and repository-wide validation. The local
+machine is a small, slow MacBook. Use local tests, targeted analyzer runs, and
+profiling to debug specific failures or performance problems as needed. Avoid
+repeating broad validation locally; push the branch and monitor CI.
+Check changed documentation and its local links.
 
 ## 10. Do Not Post Comments Without a Request
 
@@ -119,7 +121,12 @@ Check every field and collection type argument. Use resolved Go type identity,
 not source spelling. Do not accept unknown cases or add escape hatches.
 Support cases that can be proved. Report unsupported cases explicitly.
 Unmarked structs cannot own marked values or immutable collections.
-Construct values with literals. Reject field writes and mutable aliases.
+Permit construction and updates in owned local storage. Reject writes through
+shared references and writes that conflict with a live loan. Use source places
+and non-lexical loan lifetimes; do not substitute blanket pointer rejection or
+permanent freezing. Use whole-owner loans and direct, typed, non-escaping
+read-only calls. Reject alias escape boundaries instead of inferring arbitrary
+function effects, pointer-return provenance, or dynamic callback behavior.
 Collections must not expose their storage. Updates preserve earlier versions.
 Test accepted, rejected, and unsupported programs through the real CLI.
 Keep runtime checks out of the immutability proof. Record collection costs and

@@ -1,5 +1,5 @@
 package rejected
 
-import `unsafe` // want "unsupported unsafe import"
+import `unsafe`
 
 var _ unsafe.Pointer
