@@ -1,30 +1,26 @@
 # Collection costs
 
-The analyzer adds no runtime proof checks. This does not make collection
-construction and updates free: persistent storage needs allocations.
+The checker adds no runtime proof checks. Frozen collections wrap native Go
+storage. Freeze adds no allocation and does not copy the input.
 
 | Operation | Storage work |
 | --- | --- |
-| `Slice.Len`, `Map.Len` | Constant time, no allocation |
-| `Slice.At` | At most one path through a 32-way tree, no allocation |
-| `Slice.All`, `Map.All` | Visit storage directly in O(n); direct range loops allocate nothing |
-| `Slice.Set` | Copy one path and one block of up to 32 elements |
-| `Slice.Append` | Copy the tail and affected paths; share other blocks |
-| `Map.Get` | At most 13 hash-trie levels and a collision bucket; no allocation |
-| `Map.Set`, `Map.Delete` | Copy affected paths and collision buckets |
-| `NewSlice`, `NewMap`, `Values` | Copy the mutable input or output boundary |
+| `FreezeSlice`, `FreezeMap` | Copy the handle only; no allocation |
+| `FrozenSlice.Len`, `FrozenMap.Len` | Constant time; no allocation |
+| `FrozenSlice.At` | Native slice indexing; no allocation |
+| `FrozenMap.Get` | Native map lookup; no allocation |
+| Direct range over `All()` | O(n) traversal; no collection copy |
+| `Clone` | O(n) time and independent mutable storage |
 
-Map key hashing cost depends on key size. Full-hash collision buckets use linear
-key comparisons. Persistent versions retain shared storage until no version
-refers to it. Element types must pass the analyzer for shallow boundary copies
-to be sufficient.
+Native construction still costs memory. A preallocated slice needs its backing
+array; a Go map can use several internal allocations depending on size and Go
+version. We promise no second collection allocation at Freeze, not exactly one
+allocation for all construction.
 
-Run `make bench` for sizes 32, 1,024, and 32,768. Benchmarks report allocations
-for reads and updates. Tests also assert allocation-free reads and compare
-retained versions with ordinary Go containers after random update sequences.
+There are no persistent update methods. To change a frozen collection, clone it,
+edit the clone, and freeze the clone. Existing frozen copies retain the original
+storage. Element types must pass the checker so shallow cloning is sufficient.
 
-Initial local measurements used Go 1.27.4 on darwin/arm64, Apple A18 Pro.
-`Slice.At` and `Map.Get` reported 0 B/op and 0 allocs/op at all three sizes.
-Direct `All()` iteration also reported 0 B/op and 0 allocs/op.
-These are local observations, not latency guarantees. The persistent data
-structures do not promise the same access cost as native mutable collections.
+`make bench` reports Freeze, read, iteration, and clone costs. Allocation tests
+check Freeze and reads separately from native construction. Clone tests check
+that changes to the clone do not change the frozen source.

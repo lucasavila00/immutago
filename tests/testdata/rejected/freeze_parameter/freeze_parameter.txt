@@ -1,0 +1,2 @@
+freeze_parameter.go:5:10: cannot freeze values: ownership requires a fresh local make, literal, nil, or Clone result; create a local builder first
+freeze_parameter.go:5:45: unsupported owned container values: capturing or using a builder outside its declaring function; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder

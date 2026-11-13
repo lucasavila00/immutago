@@ -21,8 +21,8 @@ type Leaf struct {
 type Tree struct {
 	im.Marker
 	Leaf     Leaf
-	Children im.Slice[Tree]
-	Index    im.Map[string, Tree]
+	Children im.FrozenSlice[Tree]
+	Index    im.FrozenMap[string, Tree]
 }
 
 type Scalar interface{ ~int | ~string }
@@ -37,7 +37,7 @@ type Derived Leaf
 func Value() Tree {
 	return Tree{
 		Leaf:     Leaf{Name: "leaf", Count: 3},
-		Children: im.NewSlice(Tree{Leaf: Leaf{Name: "child"}}),
-		Index:    im.NewMap(map[string]Tree{}),
+		Children: im.FreezeSlice([]Tree{{Leaf: Leaf{Name: "child"}}}),
+		Index:    im.FreezeMap(map[string]Tree{}),
 	}
 }

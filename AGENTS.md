@@ -127,7 +127,9 @@ and non-lexical loan lifetimes; do not substitute blanket pointer rejection or
 permanent freezing. Use whole-owner loans and direct, typed, non-escaping
 read-only calls. Reject alias escape boundaries instead of inferring arbitrary
 function effects, pointer-return provenance, or dynamic callback behavior.
-Collections must not expose their storage. Updates preserve earlier versions.
+Frozen collections must not expose writable storage. Freeze consumes a proved
+exclusive native builder without a copy. Reject builder aliases and use after
+freeze. Clone returns independent mutable storage; there are no frozen updates.
 Test accepted, rejected, and unsupported programs through the real CLI.
 Keep runtime checks out of the immutability proof. Record collection costs and
 check performance with benchmarks.

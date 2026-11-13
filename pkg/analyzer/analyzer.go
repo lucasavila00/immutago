@@ -1,7 +1,7 @@
 // Package analyzer exposes the immutago go/analysis analyzer.
 //
 // Marked structs may own only primitive values, arrays of immutable values,
-// other marked structs, and the library's Slice and Map types with immutable
+// other marked structs, and the library's FrozenSlice and FrozenMap types with immutable
 // arguments. Unmarked structs cannot store marked values or these collections.
 // Pointer fields, interfaces, functions, channels, and native mutable collections
 // cannot establish an immutability proof. Reflection and unsafe operations are
@@ -14,6 +14,8 @@
 // independent storage. Package-level immutable values are read-only after
 // declaration initialization.
 // Protected references stay local or pass to direct, non-escaping read-only calls.
+// Freeze calls consume exclusive native map and slice builders without copying.
+// Builder aliases and later uses are rejected; Clone creates independent native storage.
 // Dependency proof failures propagate to importing consumers.
 package analyzer
 
@@ -26,6 +28,7 @@ import (
 
 	"github.com/lucasavila00/immutago/internal/borrow"
 	"github.com/lucasavila00/immutago/internal/checker"
+	"github.com/lucasavila00/immutago/internal/freeze"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -71,7 +74,7 @@ func run(pass *analysis.Pass) (any, error) {
 			}
 		}
 	}
-	checkSubset(pass)
+	checkSubset(pass, freeze.Check(pass))
 	if err := borrow.Check(pass); err != nil {
 		return nil, err
 	}

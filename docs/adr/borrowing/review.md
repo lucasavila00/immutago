@@ -18,8 +18,8 @@ branches and loops. A right-hand-side borrow must exist before an assignment
 writes its owner.
 
 Check that forbidden transport fails where introduced, including implicit Go
-conversions and method receivers. Fixed collection operations must preserve
-value-copy semantics without exposing backing storage.
+conversions and method receivers. Frozen collection operations must not expose writable storage. Freeze must
+consume an exclusive handle; Clone must create independent native storage.
 
 Dependency errors must reach the selected consumer in both analyzer drivers.
 Diagnostics must identify the failed rule, relevant source context, and a

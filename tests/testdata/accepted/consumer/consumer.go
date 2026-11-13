@@ -8,8 +8,8 @@ import (
 type Record struct {
 	im.Marker
 	Model   model.Tree
-	Names   im.Slice[string]
-	Lookups im.Map[[2]int, im.Slice[model.Leaf]]
+	Names   im.FrozenSlice[string]
+	Lookups im.FrozenMap[[2]int, im.FrozenSlice[model.Leaf]]
 	Count   model.CountBox
 }
 
@@ -19,19 +19,26 @@ func Use() {
 	_ = value.Leaf.Name
 	local := value.Leaf.Flags
 	local[0] = true
-	names := im.NewSlice("a", "b").Append("c").Set(0, "d")
+	nativeNames := []string{"a", "b"}
+	nativeNames = append(nativeNames, "c")
+	nativeNames[0] = "d"
+	names := im.FreezeSlice(nativeNames)
 	_ = names.At(0)
 	_ = names.Len()
-	copy := names.Values()
+	copy := names.Clone()
 	copy[0] = "independent"
-	mapping := im.NewMap(map[string]int{"a": 1}).Set("b", 2).Delete("a")
+	nativeMap := map[string]int{"a": 1}
+	nativeMap["b"] = 2
+	delete(nativeMap, "a")
+	mapping := im.FreezeMap(nativeMap)
 	_, _ = mapping.Get("b")
 	_ = mapping.Len()
-	mapping.Values()["b"] = 3
+	mappingCopy := mapping.Clone()
+	mappingCopy["b"] = 3
 	_ = Record{Model: value, Names: names}
 	_ = model.Box[string]{Value: "generic"}
 	_ = model.Derived{}
-	_ = im.NewSlice([2]string{"a", "b"})
+	_ = im.FreezeSlice([][2]string{{"a", "b"}})
 	_ = struct {
 		im.Marker
 		Value int

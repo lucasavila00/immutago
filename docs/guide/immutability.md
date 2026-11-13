@@ -166,7 +166,7 @@ rules you must uphold by hand and no escape hatch for rejected operations.
 ## Allowed value types
 
 Every field must recursively be a scalar, an array of allowed values, another
-marked struct, or an `im.Slice` / `im.Map` with allowed elements. In Rust terms,
+marked struct, or an `im.FrozenSlice` / `im.FrozenMap` with allowed elements. In Rust terms,
 these are plain values without interior mutability: no `Cell`, `RefCell`, or
 `UnsafeCell` equivalent.
 
@@ -185,15 +185,79 @@ Use this wrapper instead of `type Count [2]int`. Native pointers, slices, maps,
 channels, interfaces, and functions cannot be fields of a marked struct.
 Unmarked structs cannot contain marked values or `im` collections.
 
-The `im` collections share immutable backing storage. Updates return new
-snapshots. Native slices, maps, and channels containing marked values are
-rejected. `Values()` is therefore unavailable for marked elements.
+## Frozen collections
 
-Pass values directly to `im.NewSlice`. `im.NewMap` and `im.NewSlice` also accept
-an inline native container literal as their immediate input: the library copies
-it before publishing storage. Direct `range` over `All()` yields value copies;
-do not store or pass the iterator function. Scalar collection APIs remain
-available. See [collection costs](../performance.md).
+Build a native Go container, then transfer its storage to a frozen view:
+
+```go
+scores := make(map[string]int, 2)
+scores["alice"] = 10
+scores["bob"] = 20
+frozen := im.FreezeMap(scores)
+score, found := frozen.Get("alice")
+// scores["alice"] = 30 // rejected: scores has been consumed
+```
+
+`im.FreezeSlice([]int{1, 2})` works the same way. The resulting types are
+`im.FrozenMap[K, V]` and `im.FrozenSlice[T]`. They have no update methods.
+Freeze does not copy or allocate. Go still allocates the original native storage;
+we do not guarantee one heap allocation for a native map of arbitrary size.
+
+In Rust terms, freezing **moves** the builder into a read-only owner. Go does not
+perform that move itself: the checker rejects every later use of the original
+handle. Copies of the frozen wrapper share read-only storage and remain valid.
+Keys and elements must recursively satisfy the immutable type rules above.
+
+For an update, clone into independent mutable storage, edit it, and freeze again:
+
+```go
+next := frozen.Clone()
+next["alice"] = 30
+updated := im.FreezeMap(next)
+// frozen still contains alice: 10; updated contains alice: 30.
+```
+
+`Clone` costs O(n) time and storage. It is a shallow copy; recursively immutable
+elements make that sufficient. Scalar clones that you do not freeze can be used
+as ordinary mutable Go containers. If you later freeze a clone, its earlier
+uses must satisfy the exclusive-builder rules too. This API has no persistent
+path-copy updates.
+
+### What you can do with a builder
+
+This list is **exhaustive** for a native container that you freeze, and for native
+containers of marked values. Unlisted operations are rejected.
+
+- Create a local with `make`, a native literal, a zero/nil value, or `Clone`.
+- Read and write indexed elements; read `len` and slice `cap`.
+- Build a slice with `values = append(values, element)`.
+- Use map `delete`, clear with `clear`, or copy elements with built-in `copy`.
+- Iterate over its values with `range` while it remains mutable.
+- Consume it in a direct synchronous `im.FreezeSlice` or `im.FreezeMap` call.
+
+An inline fresh allocation or literal can be frozen directly. A builder cannot
+be frozen while a range over it is active. Branches and loops cannot make a
+consumed handle usable again.
+
+### What you cannot do with a builder
+
+This list is **not exhaustive**; the list above defines what is supported.
+
+- Copy its handle into another variable, field, global, or interface.
+- Create a subslice, or take an element address.
+- Pass it to an arbitrary helper, capture it in a closure, or return it.
+- Freeze a parameter or a handle obtained from unknown code.
+- Read, write, inspect, or freeze the original handle again after freezing.
+
+These restrictions prevent writable aliases from surviving the ownership
+transfer. The checker verifies them; they are not obligations left to the caller.
+
+### Reading frozen storage
+
+Use `Len`, slice `At`, and map `Get`. These operations allocate no storage.
+Direct `range` over `All()` yields value copies without cloning the container.
+Do not store or pass iterators that carry marked values. Use `Clone` when you
+need an independent mutable native container. See [collection costs](../performance.md).
 
 ## What we do not implement
 

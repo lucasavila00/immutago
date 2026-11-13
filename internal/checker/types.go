@@ -19,7 +19,7 @@ func IsLibraryType(t types.Type, name string) bool {
 
 // IsCollection reports whether t is one of the library's sealed collection types.
 func IsCollection(t types.Type) bool {
-	return IsLibraryType(t, "Slice") || IsLibraryType(t, "Map")
+	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap")
 }
 
 // Marked reports whether a struct directly embeds Marker by value.

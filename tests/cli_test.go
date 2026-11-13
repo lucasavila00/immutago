@@ -35,6 +35,11 @@ func TestCLI(t *testing.T) {
 		output := runCommand(t, dir, true, binary, "./...")
 		checkFixtureSnapshots(t, root, "accepted", output)
 	})
+	t.Run("freeze_runtime", func(t *testing.T) {
+		dir := consumerModule(t, root, "accepted")
+		output := runCommand(t, dir, true, "go", "run", "./freezeruntime")
+		checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/freezeruntime/stdout.txt"), output)
+	})
 	t.Run("invalid_dependencies", func(t *testing.T) {
 		checkInvalidDependencies(t, root, binary)
 	})
@@ -234,6 +239,7 @@ func checkInvalidDependencies(t *testing.T, root, binary string) {
 	cases := []string{
 		"shape_consumer", "unsafe_consumer", "borrow_consumer",
 		"wrapped_shape_consumer", "wrapped_borrow_consumer",
+		"freeze_consumer", "wrapped_freeze_consumer",
 	}
 	for _, name := range cases {
 		t.Run(name, func(t *testing.T) {

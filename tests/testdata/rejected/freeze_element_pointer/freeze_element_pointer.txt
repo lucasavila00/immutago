@@ -1,0 +1,1 @@
+freeze_element_pointer.go:5:40: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder

@@ -10,73 +10,107 @@ Package im provides a marker and immutable value collections.
 
 Embed Marker in a struct to require immutable fields. Run the immutago analyzer on all consumer packages; Go's type checker alone does not enforce the field or collection element rules. Owned local values permit construction and updates. Shared references permit reads; writes to borrowed storage fail while a conflicting loan is live. A value copy has independent storage.
 
-Slice and Map copy their inputs and outputs. Updates return new collections. Their zero values are empty collections. Element and key types must themselves be immutable; the analyzer checks this requirement, including nested types.
+FreezeSlice and FreezeMap share their input storage without copying. The analyzer requires exclusive ownership and rejects later source\-handle uses. Clone returns an independent copy. Their zero values are empty collections. Element and key types must themselves be immutable; the analyzer checks this requirement, including nested types.
 
-## type Map
+## type FrozenMap
 
-Map is an immutable mapping. Its zero value is empty. K and V must be immutable, as checked by the analyzer. A persistent hash trie shares unchanged branches between versions. Reads do not allocate.
+FrozenMap is a read\-only view of frozen map storage. Its zero value is empty. K and V must be immutable. The analyzer requires exclusive native ownership before freezing and rejects later source\-handle uses. A FrozenMap copy shares storage.
 
 ```go
-type Map[K comparable, V any] struct {
+type FrozenMap[K comparable, V any] struct {
     // contains filtered or unexported fields
 }
 ```
 
-### func NewMap
+### func FreezeMap
 
 ```go
-func NewMap[K comparable, V any](values map[K]V) Map[K, V]
+func FreezeMap[K comparable, V any](values map[K]V) FrozenMap[K, V]
 ```
 
-NewMap copies values into an immutable mapping.
+FreezeMap freezes values without copying its entries or allocating. The analyzer verifies exclusive ownership and consumes the source handle: aliases are rejected, and the source handle cannot be used after this call. FreezeMap performs no runtime validation.
 
-### func \(Map\[K, V\]\) All
+### func \(FrozenMap\[K, V\]\) All
 
 ```go
-func (m Map[K, V]) All() iter.Seq2[K, V]
+func (m FrozenMap[K, V]) All() iter.Seq2[K, V]
 ```
 
-All returns an iterator over key\-value pairs in unspecified order. It visits shared storage directly in O\(n\) time without making a collection copy. The iterator can be reused and retains the value on which All was called.
+All returns an iterator over key\-value pairs in unspecified order. It reads frozen storage directly without making a copy. Each invocation starts a new map traversal and stops as soon as yield returns false.
 
-### func \(Map\[K, V\]\) Delete
+### func \(FrozenMap\[K, V\]\) Clone
 
 ```go
-func (m Map[K, V]) Delete(key K) Map[K, V]
+func (m FrozenMap[K, V]) Clone() map[K]V
 ```
 
-Delete returns a map without key, sharing all unchanged branches. It copies at most 13 trie levels plus any full\-hash collision bucket.
+Clone returns an independent native map in O\(n\) time and space. It copies keys and values by value and preserves nil. Mutating the copy does not change the frozen map; immutable types make deeper copying unnecessary.
 
-### func \(Map\[K, V\]\) Get
+### func \(FrozenMap\[K, V\]\) Get
 
 ```go
-func (m Map[K, V]) Get(key K) (V, bool)
+func (m FrozenMap[K, V]) Get(key K) (V, bool)
 ```
 
-Get returns the value for key and whether the key exists without allocations. Lookup visits at most 13 trie levels plus any full\-hash collision bucket.
+Get returns the value for key and whether it exists, using native map lookup. It allocates no storage and preserves Go's key equality rules.
 
-### func \(Map\[K, V\]\) Len
+### func \(FrozenMap\[K, V\]\) Len
 
 ```go
-func (m Map[K, V]) Len() int
+func (m FrozenMap[K, V]) Len() int
 ```
 
 Len returns the number of entries in O\(1\) time without allocations.
 
-### func \(Map\[K, V\]\) Set
+## type FrozenSlice
+
+FrozenSlice is a read\-only view of frozen slice storage. Its zero value is empty. T must be immutable. The analyzer requires exclusive native ownership before freezing and rejects later source\-handle uses. A FrozenSlice copy shares storage.
 
 ```go
-func (m Map[K, V]) Set(key K, value V) Map[K, V]
+type FrozenSlice[T any] struct {
+    // contains filtered or unexported fields
+}
 ```
 
-Set returns a map with key set to value, sharing all unchanged branches. It copies at most 13 trie levels plus any full\-hash collision bucket.
-
-### func \(Map\[K, V\]\) Values
+### func FreezeSlice
 
 ```go
-func (m Map[K, V]) Values() map[K]V
+func FreezeSlice[T any](values []T) FrozenSlice[T]
 ```
 
-Values returns an independent map copy in O\(n\) time.
+FreezeSlice freezes values without copying its backing array or allocating. The analyzer verifies exclusive ownership and consumes the source handle: aliases are rejected, and the source handle cannot be used after this call. FreezeSlice performs no runtime validation.
+
+### func \(FrozenSlice\[T\]\) All
+
+```go
+func (s FrozenSlice[T]) All() iter.Seq2[int, T]
+```
+
+All returns an iterator over index\-value pairs in increasing index order. It reads frozen storage directly without making a copy. Each invocation starts at index zero and stops as soon as yield returns false.
+
+### func \(FrozenSlice\[T\]\) At
+
+```go
+func (s FrozenSlice[T]) At(index int) T
+```
+
+At returns the element at index in O\(1\) time without allocations. It panics if index is out of range, as native slice indexing does.
+
+### func \(FrozenSlice\[T\]\) Clone
+
+```go
+func (s FrozenSlice[T]) Clone() []T
+```
+
+Clone returns an independent native slice in O\(n\) time and space. It copies elements by value and preserves nil. Mutating the copy does not change the frozen slice; immutable element types make deeper copying unnecessary.
+
+### func \(FrozenSlice\[T\]\) Len
+
+```go
+func (s FrozenSlice[T]) Len() int
+```
+
+Len returns the number of elements in O\(1\) time without allocations.
 
 ## type Marker
 
@@ -85,71 +119,5 @@ Marker opts a struct into immutability checks when embedded by value. A named fi
 ```go
 type Marker struct{}
 ```
-
-## type Slice
-
-Slice is an immutable sequence. Its zero value is empty. T must be immutable, as checked by the analyzer. Values share a tree of 32\-element blocks; updates copy one path, never the full sequence.
-
-```go
-type Slice[T any] struct {
-    // contains filtered or unexported fields
-}
-```
-
-### func NewSlice
-
-```go
-func NewSlice[T any](values ...T) Slice[T]
-```
-
-NewSlice copies values into an immutable sequence in O\(n\) time.
-
-### func \(Slice\[T\]\) All
-
-```go
-func (s Slice[T]) All() iter.Seq2[int, T]
-```
-
-All returns an iterator over index\-value pairs in increasing index order. It visits shared storage directly in O\(n\) time without making a collection copy. The iterator can be reused and retains the value on which All was called.
-
-### func \(Slice\[T\]\) Append
-
-```go
-func (s Slice[T]) Append(values ...T) Slice[T]
-```
-
-Append returns a new sequence with values added at the end. It copies the tail once per added block and shares unchanged tree branches.
-
-### func \(Slice\[T\]\) At
-
-```go
-func (s Slice[T]) At(index int) T
-```
-
-At returns the element at index in O\(log32\(n\)\) time without allocations. It panics if index is out of range.
-
-### func \(Slice\[T\]\) Len
-
-```go
-func (s Slice[T]) Len() int
-```
-
-Len returns the number of elements in O\(1\) time without allocations.
-
-### func \(Slice\[T\]\) Set
-
-```go
-func (s Slice[T]) Set(index int, value T) Slice[T]
-```
-
-Set returns a value with one element replaced in O\(log32\(n\)\) time and space. It panics if index is out of range.
-
-### func \(Slice\[T\]\) Values
-
-```go
-func (s Slice[T]) Values() []T
-```
-
-Values returns an independent slice copy in O\(n\) time.
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

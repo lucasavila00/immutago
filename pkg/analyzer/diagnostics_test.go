@@ -13,13 +13,13 @@ func TestStructuralDiagnosticContext(t *testing.T) {
 	}{
 		{`type Value struct{im.Marker; Items []string}`, []string{
 			"immutable field Items", "owner: sample.Value; field type: []string",
-			"fix: replace the native slice with im.Slice[T]",
+			"fix: replace the native slice with im.FrozenSlice[T]",
 		}},
 		{`type Child struct{im.Marker}; type Parent struct{Child Child}`, []string{
 			"unmarked struct", "owner: sample.Parent; field type: sample.Child",
 			"fix: embed im.Marker",
 		}},
-		{`var _ = im.NewSlice(new(int))`, []string{
+		{`var _ = im.FreezeSlice([]*int{new(int)})`, []string{
 			"immutable type argument", "type: *int", "fix: replace the pointer field or argument with an owned immutable value",
 		}},
 	}

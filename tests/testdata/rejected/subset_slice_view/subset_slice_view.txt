@@ -1,4 +1,4 @@
 subset_slice_view.go:9:20: unsupported immutable borrow: slice views of immutable storage are unsupported
   source: v.Array[:]
   type: []int
-  fix: copy the array into local storage before slicing it, or use im.Slice for immutable sequence values
+  fix: copy the array into local storage before slicing it, or use im.FrozenSlice for immutable sequence values

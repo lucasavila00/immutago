@@ -10,6 +10,6 @@ type Good struct {
 
 type Bad struct {
 	im.Marker
-	Children im.Slice[Bad]
+	Children im.FrozenSlice[Bad]
 	Mutable  []int
 }

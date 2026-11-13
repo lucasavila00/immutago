@@ -1,0 +1,2 @@
+freeze_delayed_append.go:5:43: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+freeze_delayed_append.go:5:59: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder

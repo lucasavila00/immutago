@@ -1,3 +1,3 @@
 slice_field.go:13:2: immutable field Value: []string is not provably immutable
   owner: rejected.Bad; field type: []string
-  fix: replace the native slice with im.Slice[T], where T is immutable
+  fix: replace the native slice with im.FrozenSlice[T], where T is immutable
