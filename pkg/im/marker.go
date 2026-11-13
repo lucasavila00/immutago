@@ -7,7 +7,8 @@
 // while a conflicting loan is live. A value copy has independent storage.
 //
 // FreezeSlice and FreezeMap share their input storage without copying. The analyzer
-// rejects later writes through native aliases. Clone returns an independent copy.
+// requires exclusive ownership and rejects later source-handle uses. Clone returns
+// an independent copy.
 // Their zero values are empty collections. Element and key types must themselves
 // be immutable; the analyzer checks this requirement, including nested types.
 package im

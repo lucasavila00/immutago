@@ -3,15 +3,16 @@ package im
 import "slices"
 
 // FrozenSlice is a read-only view of frozen slice storage. Its zero value is empty.
-// T must be immutable. The analyzer checks elements and rejects writes through
-// the original slice or its aliases after freezing. A FrozenSlice copy shares storage.
+// T must be immutable. The analyzer requires exclusive native ownership before
+// freezing and rejects later source-handle uses. A FrozenSlice copy shares storage.
 type FrozenSlice[T any] struct {
 	values []T
 }
 
 // FreezeSlice freezes values without copying its backing array or allocating.
-// The caller must not mutate values or any alias after this ownership transition.
-// The analyzer enforces that rule; FreezeSlice adds no runtime checks.
+// The analyzer verifies exclusive ownership and consumes the source handle:
+// aliases are rejected, and the source handle cannot be used after this call.
+// FreezeSlice performs no runtime validation.
 func FreezeSlice[T any](values []T) FrozenSlice[T] { return FrozenSlice[T]{values: values} }
 
 // Len returns the number of elements in O(1) time without allocations.
