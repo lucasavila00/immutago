@@ -167,3 +167,13 @@ special cases. Check implicit receiver operations, result bindings, and the
 statement context as part of the shape. A new source form requires a docs entry,
 a matcher, proof rules, acceptance tests, and tests that reject nearby forms.
 Keep ordinary Go code outside protected-storage analysis unaffected.
+
+## 16. Review the Contract Against the Matcher
+
+Follow [the reviewer requirements](docs/reviewer-focus.md) for every checker or
+supported-language change. Reviewers must verify both required discussions:
+complete allowed-form documentation with concrete examples, and implementation
+by complete shape matches with a rejecting fallback. Trace each allowed form
+through docs, code, ownership checks, CLI fixtures, and diagnostic snapshots.
+A forbidden form passing the checker is a defect even when its example is not
+listed in the docs. Passing known rejection tests does not replace this review.
