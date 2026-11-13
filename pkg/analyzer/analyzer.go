@@ -5,7 +5,8 @@
 // arguments. Unmarked structs cannot store marked values or these collections.
 // Pointer fields, interfaces, functions, channels, and native mutable collections
 // cannot establish an immutability proof. Reflection and unsafe operations are
-// unsupported. There are no suppression directives.
+// unsupported. Generic pointers and unmarked generic fields must prove their
+// constraints exclude immutable storage. There are no suppression directives.
 //
 // The analyzer also rejects field writes and pointers to immutable values.
 // Whole local variables may be replaced. Use literals to construct marked values
@@ -69,10 +70,12 @@ func (c *checks) report(pos token.Pos, message string) {
 // visit checks struct contracts, collection instantiations, and mutation sites.
 func (c *checks) visit(node ast.Node) bool {
 	switch n := node.(type) {
-	case *ast.ImportSpec:
-		if path, err := strconv.Unquote(n.Path.Value); err == nil && (path == "unsafe" || path == "reflect") {
-			c.report(n.Pos(), "unsupported "+path+" import; immutability cannot be proved")
+	case *ast.FuncDecl:
+		if n.Body == nil {
+			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved")
 		}
+	case *ast.ImportSpec:
+		c.checkImport(n)
 	case *ast.UnaryExpr:
 		if n.Op == token.AND {
 			c.checkWrite(n.X)
@@ -106,6 +109,13 @@ func (c *checks) visit(node ast.Node) bool {
 		}
 	}
 	return true
+}
+
+// checkImport resolves both quoted forms before rejecting packages outside the supported proof boundary.
+func (c *checks) checkImport(spec *ast.ImportSpec) {
+	if path, err := strconv.Unquote(spec.Path.Value); err == nil && (path == "unsafe" || path == "reflect") {
+		c.report(spec.Pos(), "unsupported "+path+" import; immutability cannot be proved")
+	}
 }
 
 // checkMethod rejects implicit address-taking when a field selects a pointer-receiver method.
@@ -148,14 +158,23 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 			c.report(pos, "immutable collection: "+reason)
 		}
 	}
-	if ptr, ok := t.Underlying().(*types.Pointer); ok && checker.Contains(ptr.Elem()) {
-		c.report(pos, "unsupported pointer to immutable storage; use immutable values")
+	if ptr, ok := t.Underlying().(*types.Pointer); ok {
+		c.checkPointer(pos, ptr.Elem())
 	}
 	// Defined types can inherit a struct without a struct literal in this package.
 	if _, ok := types.Unalias(t).(*types.Named); ok && !checker.IsCollection(t) {
 		if _, ok := t.Underlying().(*types.Struct); ok {
 			c.checkStruct(pos, t)
 		}
+	}
+}
+
+// checkPointer rejects known immutable storage and generic storage whose aliases cannot be proved safe.
+func (c *checks) checkPointer(pos token.Pos, element types.Type) {
+	if checker.Contains(element) {
+		c.report(pos, "unsupported pointer to immutable storage; use immutable values")
+	} else if checker.PossibleStorage(element) {
+		c.report(pos, "unsupported pointer to unresolved generic storage; constrain its type")
 	}
 }
 
@@ -205,6 +224,9 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			}
 		} else if checker.Contains(ft) {
 			c.report(pos, "unmarked struct contains immutable field "+field.Name()+"; embed immutable.Marker")
+			return
+		} else if checker.PossibleStorage(ft) {
+			c.report(pos, "unsupported unmarked field "+field.Name()+": unresolved generic storage")
 			return
 		}
 	}

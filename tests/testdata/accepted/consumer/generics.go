@@ -24,3 +24,13 @@ func GenericUse() {
 	_ = zero.Append("value")
 	_ = im.NewSlice(NamedInts{1, 2})
 }
+
+func boxScalar[T ~int | ~string](value T) *T { return &value }
+
+func ScalarPointerCopy() {
+	value := Generic[int]{Value: 1}
+	pointer := boxScalar(value.Value)
+	*pointer = 2
+	_ = value.Value
+	_ = boxScalar("text")
+}

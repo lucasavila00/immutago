@@ -27,9 +27,11 @@ type proofUse struct {
 }
 
 // proof stores one query's graph so shared type branches are visited only once.
+// Storage queries prove absence of immutable storage; other queries prove immutability.
 type proof struct {
 	nodes    map[proofKey]*obligation
 	failures []*obligation
+	storage  bool
 }
 
 // Reason returns an empty string when t is proved immutable, or the first failed obligation.
@@ -37,6 +39,21 @@ type proof struct {
 // through all owners, including cycles, in linear time in the type graph.
 func Reason(t types.Type) string {
 	p := &proof{nodes: make(map[proofKey]*obligation)}
+	return p.evaluate(t)
+}
+
+// PossibleStorage reports whether a type can contain immutable storage, including unresolved generic fields.
+// Ordinary interface values contain copies and do not imply stored immutable fields.
+func PossibleStorage(t types.Type) bool {
+	if t == nil {
+		return false
+	}
+	p := &proof{nodes: make(map[proofKey]*obligation), storage: true}
+	return p.evaluate(t) != ""
+}
+
+// evaluate propagates each failed component to its owners after the graph is complete.
+func (p *proof) evaluate(t types.Type) string {
 	root := p.node(t, false)
 	for index := 0; index < len(p.failures); index++ {
 		child := p.failures[index]
@@ -70,6 +87,8 @@ func (p *proof) node(t types.Type, constraint bool) *obligation {
 	p.nodes[key] = result
 	if constraint {
 		p.constraint(result, t)
+	} else if p.storage {
+		p.storageValue(result, t)
 	} else {
 		p.value(result, t)
 	}
@@ -129,7 +148,7 @@ func (p *proof) structure(result *obligation, t types.Type, structure *types.Str
 }
 
 // constraint models intersected bounds as alternatives: any safe bound proves the intersection safe.
-// Every member of a union must be immutable. Empty or method-only bounds prove nothing.
+// Every union member must satisfy the query. Empty or method-only bounds prove nothing.
 func (p *proof) constraint(result *obligation, t types.Type) {
 	switch bound := t.Underlying().(type) {
 	case *types.Interface:
@@ -146,5 +165,34 @@ func (p *proof) constraint(result *obligation, t types.Type) {
 		}
 	default:
 		p.depend(result, t, false, "")
+	}
+}
+
+// storageValue proves that a storage type excludes marked values for every permitted instantiation.
+func (p *proof) storageValue(result *obligation, t types.Type) {
+	if Marked(t) || IsCollection(t) {
+		result.reason = "contains immutable storage"
+		return
+	}
+	if parameter, ok := t.(*types.TypeParam); ok {
+		p.depend(result, parameter.Constraint(), true, "")
+		return
+	}
+	switch underlying := t.Underlying().(type) {
+	case *types.Pointer:
+		p.depend(result, underlying.Elem(), false, "")
+	case *types.Array:
+		p.depend(result, underlying.Elem(), false, "")
+	case *types.Slice:
+		p.depend(result, underlying.Elem(), false, "")
+	case *types.Chan:
+		p.depend(result, underlying.Elem(), false, "")
+	case *types.Map:
+		p.depend(result, underlying.Key(), false, "")
+		p.depend(result, underlying.Elem(), false, "")
+	case *types.Struct:
+		for field := range underlying.Fields() {
+			p.depend(result, field.Type(), false, field.Name()+": ")
+		}
 	}
 }

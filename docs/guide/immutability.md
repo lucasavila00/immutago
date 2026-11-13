@@ -31,7 +31,10 @@ partially immutable object graphs outside the initial supported model.
 Pointers, native slices and maps, interfaces, channels, and functions do not
 prove immutable field ownership. Pointers to immutable storage, addresses of
 its fields, and mutable slice views of its arrays are unsupported. Generic
-constraints must prove every possible element immutable. Unknown cases fail;
+constraints must prove every possible element immutable. Generic pointers and
+unmarked generic fields must exclude immutable storage; an unconstrained type
+parameter cannot establish that proof. Function declarations without a Go body
+are unsupported because their implementation cannot be checked. Unknown cases fail;
 there are no suppression comments, registration hooks, or trusted user types.
 The library's own collection representation is the fixed implementation boundary.
 Unsafe and reflection imports in analyzed consumer packages are rejected.
