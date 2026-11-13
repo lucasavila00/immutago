@@ -58,6 +58,15 @@ func (c *subsetChecks) call(call *ast.CallExpr) {
 	}
 	_, static := obj.(*types.Func)
 	static = c.methodCall(call, static)
+	if !static {
+		for i := 0; i < signature.Results().Len(); i++ {
+			result := signature.Results().At(i).Type()
+			if checker.Contains(result) || protectedCallable(result) {
+				c.report(call, "dynamic calls with immutable storage are unsupported")
+				break
+			}
+		}
+	}
 	c.callArguments(call, obj, signature, static)
 
 	if libraryObject(obj) && obj.Name() == "All" && protectedCallable(c.pass.TypesInfo.TypeOf(call)) {

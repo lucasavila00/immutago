@@ -50,3 +50,36 @@ func TestStatementShapeAccepts(t *testing.T) {
 		})
 	}
 }
+
+// TestProtectedResultCalls rejects unknown producers of protected values and callbacks.
+func TestProtectedResultCalls(t *testing.T) {
+	cases := []struct{ name, source string }{
+		{"value result", `func f(factory func()V)V{return factory()}`},
+		{"frozen result", `func f(factory func()im.FrozenSlice[int])im.FrozenSlice[int]{return factory()}`},
+		{"tuple result", `func f(factory func()(V,int))(V,int){return factory()}`},
+		{"callback result", `func f(factory func()func()V){_=factory()}`},
+		{"tuple callback result", `func f(factory func()(func()V,int)){factory()}`},
+		{"interface result", `type Factory interface{Make()V};func f(factory Factory)V{return factory.Make()}`},
+		{"field result", `type Factory struct{Make func()V};func f(factory Factory)V{return factory.Make()}`},
+		{"literal result", `func f(){v:=func()V{return V{}}();_=v}`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := checkSource(t, `type V struct{im.Marker;X int};`+tc.source)
+			if !strings.Contains(got, "dynamic calls with immutable storage are unsupported") {
+				t.Fatalf("unknown protected producer accepted: %s", got)
+			}
+		})
+	}
+	for _, source := range []string{
+		`func f(callback func()int)int{return callback()}`,
+		`func makeValue()V{return V{}};func f()V{return makeValue()}`,
+		`type Factory interface{Make()int};func f(factory Factory)int{return factory.Make()}`,
+	} {
+		t.Run(source, func(t *testing.T) {
+			if got := checkSource(t, `type V struct{im.Marker;X int};`+source); got != "" {
+				t.Fatalf("supported producer rejected: %s", got)
+			}
+		})
+	}
+}
