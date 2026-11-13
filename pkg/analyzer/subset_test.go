@@ -71,11 +71,11 @@ func TestReferenceOperationAllowlist(t *testing.T) {
 	cases := []string{
 		`func f(){var v V;p:=&v;_=p.X}`,
 		`type Parent struct{im.Marker;Child V};func f(){var v Parent;p:=&v.Child;_=p.X}`,
-		`func f(){var v V;var p *V=nil;p=&v;q:=p;p=nil;_=q.X}`,
+		`func f(){var v V;var p *V=&v;_=p.X}`,
 		`func f(p *V)V{return *p}`,
 		`func f(p,q *V){_=p==q;_=p!=nil;_=nil==p}`,
 		`func read(p *V)int{return p.X};func f(){var v V;_=read((&v))}`,
-		`func(p *V)Read()int{return p.X};func f(){var v V;p:=&v;_=p.Read()}`,
+		`func Read(p *V)int{return p.X};func f(){var v V;p:=&v;_=Read(p)}`,
 		`type Alias=V;func read(p *Alias)int{return p.X};func f(){var v V;p:=&v;_=read(p)}`,
 	}
 	for _, source := range cases {

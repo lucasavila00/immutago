@@ -57,7 +57,7 @@ func (c *subsetChecks) call(call *ast.CallExpr) {
 		c.tupleTransport(call.Args[0], destinations)
 	}
 	_, static := obj.(*types.Func)
-	static = c.methodCall(call, obj, static)
+	static = c.methodCall(call, static)
 	c.callArguments(call, obj, signature, static)
 
 	if libraryObject(obj) && obj.Name() == "All" && protectedCallable(c.pass.TypesInfo.TypeOf(call)) {
@@ -130,7 +130,11 @@ func callableContains(t types.Type, seen map[types.Type]bool) bool {
 // methodValue rejects bound method references that retain protected receivers.
 func (c *subsetChecks) methodValue(sel *ast.SelectorExpr) {
 	selection := c.pass.TypesInfo.Selections[sel]
-	if selection == nil || selection.Kind() != types.MethodVal || !c.protectedRoot(sel.X) {
+	if selection == nil || selection.Kind() == types.FieldVal || !c.protectedRoot(sel.X) {
+		return
+	}
+	if !c.exactCollectionMethod(sel) {
+		c.report(sel, "user-defined methods on protected receivers are unsupported")
 		return
 	}
 	if call, ok := c.parents[sel].(*ast.CallExpr); ok && call.Fun == sel {
@@ -208,12 +212,6 @@ func genericSignature(signature *types.Signature) bool {
 	return signature.TypeParams().Len() > 0 || signature.RecvTypeParams().Len() > 0
 }
 
-// genericMethod uses the origin because an instantiated selection can erase receiver parameters.
-func genericMethod(obj types.Object) bool {
-	function, ok := obj.(*types.Func)
-	return ok && genericSignature(function.Origin().Type().(*types.Signature))
-}
-
 // callArguments checks typed parameters and the effects of transporting each argument.
 func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signature *types.Signature, static bool) {
 	direct, _ := obj.(*types.Func)
@@ -243,7 +241,7 @@ func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signa
 }
 
 // methodCall checks receiver transport and resolves whether dispatch is static.
-func (c *subsetChecks) methodCall(call *ast.CallExpr, obj types.Object, static bool) bool {
+func (c *subsetChecks) methodCall(call *ast.CallExpr, static bool) bool {
 	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 	if !ok {
 		return static
@@ -252,7 +250,6 @@ func (c *subsetChecks) methodCall(call *ast.CallExpr, obj types.Object, static b
 	if selection == nil {
 		return static
 	}
-	c.pointerReceiver(call, selector, selection, obj)
 	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
 		static = false
 	}
@@ -260,24 +257,4 @@ func (c *subsetChecks) methodCall(call *ast.CallExpr, obj types.Object, static b
 		c.synchronous(call)
 	}
 	return static
-}
-
-// pointerReceiver checks implicit pointer borrows made by direct method calls.
-func (c *subsetChecks) pointerReceiver(call *ast.CallExpr, selector *ast.SelectorExpr,
-	selection *types.Selection, obj types.Object) {
-	method, _ := selection.Obj().Type().(*types.Signature)
-	if method == nil || method.Recv() == nil {
-		return
-	}
-	_, pointer := method.Recv().Type().Underlying().(*types.Pointer)
-	if !pointer || !c.protectedRoot(selector.X) {
-		return
-	}
-	c.synchronous(call)
-	if genericMethod(selection.Obj()) && !libraryObject(obj) {
-		c.report(call, "generic borrowing calls are unsupported")
-	}
-	if !checker.Contains(c.pass.TypesInfo.TypeOf(selector.X)) {
-		c.report(call, "scalar interior pointer methods are unsupported")
-	}
 }
