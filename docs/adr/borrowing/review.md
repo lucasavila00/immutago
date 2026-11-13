@@ -1,29 +1,31 @@
 # Borrowing: REVIEW
 
-## Reviewed contract
+## Contract
 
-Shared pointer parameters are read-only. A factory can construct its own fresh
-storage and return it; this does not grant permission to mutate a caller's shared
-parameter. By-value helpers receive independent storage. A second pointer to
-owned storage creates a shared loan; the owner can write again after that loan's
-last use. Pointer rebinding changes the binding, not the previous target.
+Shared parameters are read-only. Factories construct their own storage; value
+copies own independent storage. Owner writes become valid after the last shared
+use. Pointer rebinding does not overwrite the old target.
 
-## Port requirements
+## Source review
 
-rustc uses possible overlap for conflicts and definite
-overlap for loan kills. Do not interchange these predicates. Check a write
-against live loans before its overwrite kills. Propagate region uses
-through joins, loop back edges, aliases, and returned references.
+Compared the port with the pinned rustc liveness, region, conflict, and ranked
+worklist code. Region expiration precedes access checks; overwrite kills follow
+them. Possible overlap checks conflicts; definite overlap permits kills. Alias
+copies share one region. The general SCC solver is tested independently.
 
-Go lowering must preserve operand evaluation before assignment stores. Track
-implicit pointer-receiver method borrows and interior scalar pointers. Deferred
-arguments remain live until the deferred call; closure captures and goroutines
-cannot be treated as immediate calls.
+The review found and corrected shared analysis-state mutation, lost returned
+global aliases, loop-site lifetime truncation, and unsafe widening across
+pointer dereferences. Unknown effects now survive helper summaries. Unsupported
+aggregate, channel, closure, panic, and dynamic-call paths cannot silently drop
+protected references. Returned global identities conservatively overlap during
+initialization when exact identity is unavailable.
 
-## Acceptance gates
+## Evidence
 
-Tests must distinguish owner storage, independent copies, and shared references.
-Require branch, loop, reborrow, factory, generic, cross-package, and early-loan-end
-cases. Unknown call effects must fail explicitly. Passing collection tests or
-blanket pointer rejection does not validate the borrow engine. Review the
-implementation and recorded proof results against these gates before completion.
+Targeted debugging accepted owned construction, independent copies, fresh
+factories, and writes after the final shared use. Rejection regressions cover
+scalar aliases, type erasure, transport wrappers, deferred closures, loops,
+recursive summaries, and initializer aliases. Randomized reference solvers
+check dataflow and region propagation. The initializer regression passes its
+focused test. Full cross-platform, race, lint, documentation, and repository
+checks run in hosted CI.

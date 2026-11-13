@@ -115,3 +115,17 @@ func TestAlternativeDereferenceCannotEraseLoan(t *testing.T) {
 		t.Fatalf("diagnostics = %q; want indirect alternative rejection", reports)
 	}
 }
+
+// TestInitializerCannotInvalidateReturnedGlobalBorrow keeps helper-returned references tied to the global storage.
+func TestInitializerCannotInvalidateReturnedGlobalBorrow(t *testing.T) {
+	source := borrowTestTypes + `
+ var Global Value
+ func globalPointer() *Value { return &Global }
+ func init() { pointer:=globalPointer(); Global.X=2; _=read(pointer) }
+ `
+	reports := checkSource(t, source)
+	rejected := regexp.MustCompile(`borrow|shared reference|unsupported`)
+	if !rejected.MatchString(reports) {
+		t.Fatalf("diagnostics = %q; want global loan conflict", reports)
+	}
+}

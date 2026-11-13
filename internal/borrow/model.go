@@ -38,6 +38,7 @@ func (*Summary) AFact() {}
 
 // root records allocation identity and the permission of direct accesses.
 type root struct {
+	synthetic bool
 	unknown   bool
 	typ       types.Type
 	protected bool

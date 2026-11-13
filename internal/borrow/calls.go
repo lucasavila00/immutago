@@ -24,7 +24,7 @@ func (e *engine) call(point int, s state, call *ssa.CallCommon, deferred, asynch
 		for _, args := range arguments {
 			e.copied(point, call.Pos(), args)
 		}
-		return nil
+		return e.libraryResults(point, call, callee)
 	}
 	summary, known := e.program.summary(callee)
 	if !known {
@@ -166,7 +166,7 @@ func (e *engine) freshResult(point int, call *ssa.CallCommon, alias Result, inde
 		id = len(e.roots)
 		e.callRoots[key] = id
 		e.roots = append(e.roots, root{typ: typ, protected: alias.Protected || checker.Contains(typ),
-			input: -1, global: alias.Global, unknown: alias.Unknown, fresh: alias.Fresh, binding: -1})
+			input: -1, global: alias.Global, synthetic: alias.Global, unknown: alias.Unknown, fresh: alias.Fresh, binding: -1})
 	}
 	r := reference{place: Place{Root: id, Path: alias.Path}, loan: -1, result: index}
 	if alias.Shared || alias.Global || alias.Unknown || seen[alias.FreshGroup] {
@@ -423,4 +423,31 @@ func containsResult(results []Result, wanted Result) bool {
 		}
 	}
 	return false
+}
+
+// libraryResults models independent native copies and the fixed read-only iterator implementation.
+func (e *engine) libraryResults(point int, call *ssa.CallCommon, callee *ssa.Function) []reference {
+	var result []reference
+	for index := 0; index < call.Signature().Results().Len(); index++ {
+		typ := call.Signature().Results().At(index).Type()
+		switch typ.Underlying().(type) {
+		case *types.Slice, *types.Map, *types.Signature:
+		default:
+			continue
+		}
+		key := fmt.Sprintf("library:%d:%d", point, index)
+		id, ok := e.callRoots[key]
+		if !ok {
+			id = len(e.roots)
+			e.callRoots[key] = id
+			e.roots = append(e.roots, root{typ: typ, protected: checker.Contains(typ), input: -1, fresh: true, binding: -1})
+		}
+		r := reference{place: Place{Root: id}, loan: -1, result: index}
+		if _, iterator := typ.Underlying().(*types.Signature); iterator {
+			r.closure = callee
+			r.binding = -1
+		}
+		result = append(result, r)
+	}
+	return result
 }

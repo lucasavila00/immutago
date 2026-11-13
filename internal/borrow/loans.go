@@ -91,7 +91,10 @@ func (e *engine) checkAccess(a access, active flow.Set) {
 		return
 	}
 	for index := range active {
-		if Overlap(a.ref.place, e.loans[index].place, false) {
+		loanPlace := e.loans[index].place
+		loanOrigin := e.roots[loanPlace.Root]
+		opaqueGlobal := origin.global && loanOrigin.global && (origin.synthetic || loanOrigin.synthetic)
+		if opaqueGlobal || Overlap(a.ref.place, loanPlace, false) {
 			e.report(a.pos, "cannot write borrowed storage while a shared reference is live")
 			return
 		}

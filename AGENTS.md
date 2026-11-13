@@ -100,9 +100,10 @@ checks for data or boundaries that the user declared trusted.
 
 ## 9. Use Hosted CI for Full Validation
 
-Check changed documentation and its local links. Run focused local tests for
-the changed analyzer code. Push the branch and use GitHub Actions for the
-full test suite. Do not run the full CI suite locally.
+Use GitHub Actions for tests and repository-wide validation. The local machine
+is a small, slow MacBook; run local tests only to debug a specific failure.
+Do not run broad test suites, lint suites, or repository self-analysis locally.
+Check changed documentation and its local links, push the branch, and monitor CI.
 
 ## 10. Do Not Post Comments Without a Request
 
