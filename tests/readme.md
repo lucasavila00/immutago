@@ -16,7 +16,7 @@ checks remain covered.
 Each source file has an adjacent `.txt` snapshot, as in TGo. Snapshots preserve
 exact diagnostic messages, source lines, and columns. Accepted sources have
 empty snapshots. CLI and `go vet` must produce the same per-source diagnostics.
-The harness removes machine paths and driver headings, then sorts complete diagnostic records. Indented context stays with its
+The harness removes machine paths and driver headings, then sorts complete diagnostic records. Indented context and related source locations stay with their primary
 diagnostic. Compiler load errors have their own source and text fixture.
 
 After an intentional diagnostic change, run:
@@ -34,7 +34,9 @@ valid Go so the test reaches the analyzer. Keep the raw-string import fixture
 unformatted: gofmt changes it to an interpreted string. The bodyless function
 fixture has an empty assembly file so Go can load its declaration before the
 analyzer rejects it. The harness also checks `go vet`
-integration, JSON output, and Go compiler error reporting.
+integration, JSON output, and Go compiler error reporting. Dependency fixtures
+run as a batch and as selected consumers, so hidden dependency failures must
+propagate through import chains.
 
 Run focused tests locally. Hosted CI runs these tests with the race detector on
 Linux, macOS, and Windows.

@@ -1,3 +1,12 @@
 subset_native_channel.go:9:10: unsupported immutable borrow: channels of immutable storage are unsupported
+  source: ch
+  type: chan rejected.Good
+  fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset
 subset_native_channel.go:9:13: unsupported immutable borrow: channels of immutable storage are unsupported
+  source: chan Good
+  type: chan rejected.Good
+  fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset
 subset_native_channel.go:9:26: unsupported immutable borrow: channels of immutable storage are unsupported
+  source: ch
+  type: chan rejected.Good
+  fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset

@@ -10,8 +10,9 @@
 //
 // Owned local values permit construction and field updates. Shared references
 // permit reads; their loans end after the final required use on each control-flow
-// path. Writes to overlapping borrowed storage are rejected. Value copies have
-// independent storage. Package-level immutable values are read-only after init.
+// path. Writes to a borrowed whole owner are rejected. Value copies have
+// independent storage. Package-level immutable values are read-only after
+// declaration initialization.
 // Protected references stay local or pass to direct, non-escaping read-only calls.
 // Dependency proof failures propagate to importing consumers.
 package analyzer
@@ -183,35 +184,39 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	marked := checker.Marked(t)
 	for field := range s.Fields() {
 		ft := field.Type()
+		fieldPos := pos
+		if field.Pkg() == c.pass.Pkg && field.Pos().IsValid() {
+			fieldPos = field.Pos()
+		}
 		if checker.IsLibraryType(ft, "Marker") && !field.Embedded() {
-			c.report(pos, "im.Marker must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
+			c.report(fieldPos, "im.Marker must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
 				"\n  fix: declare an anonymous im.Marker field; remove its field name or pointer")
-			return
+			continue
 		}
 		if ptr, ok := ft.Underlying().(*types.Pointer); ok && checker.IsLibraryType(ptr.Elem(), "Marker") {
-			c.report(pos, "im.Marker must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
+			c.report(fieldPos, "im.Marker must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
 				"\n  fix: declare an anonymous im.Marker field; remove its field name or pointer")
-			return
+			continue
 		}
 		if marked {
 			if reason := checker.Reason(ft); reason != "" {
-				c.report(pos, "immutable field "+field.Name()+": "+reason+
+				c.report(fieldPos, "immutable field "+field.Name()+": "+reason+
 					"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 					"\n  fix: "+structuralFix(ft, reason))
-				return
+				continue
 			}
 		} else if checker.Contains(ft) {
-			c.report(pos, "unmarked struct contains immutable field "+field.Name()+"; embed im.Marker"+
+			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed im.Marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+
 				"\n  fix: embed im.Marker in this struct and make all its fields immutable, or remove the immutable field")
-			return
+			continue
 		} else if checker.PossibleStorage(ft) {
-			c.report(pos, "unsupported unmarked field "+field.Name()+": unresolved generic storage"+
+			c.report(fieldPos, "unsupported unmarked field "+field.Name()+": unresolved generic storage"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  fix: constrain the field to types that cannot contain immutable storage, "+
 				"or make the owner and field immutable")
-			return
+			continue
 		}
 	}
 }

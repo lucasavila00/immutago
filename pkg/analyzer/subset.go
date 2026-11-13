@@ -249,6 +249,10 @@ func (c *subsetChecks) address(e *ast.UnaryExpr) {
 		return
 	}
 
+	if protectedReference(c.pass.TypesInfo.TypeOf(id)) {
+		c.report(e, "borrowing through a shared reference is unsupported")
+		return
+	}
 	obj := c.pass.TypesInfo.ObjectOf(id)
 	if obj == nil || obj.Parent() == c.pass.Pkg.Scope() {
 		c.report(e, "only whole local values can be borrowed")

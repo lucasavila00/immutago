@@ -1,2 +1,3 @@
-interface_field.go:11:10: immutable field Value: interface{} is not provably immutable
-interface_field.go:11:6: immutable field Value: interface{} is not provably immutable
+interface_field.go:13:2: immutable field Value: interface{} is not provably immutable
+  owner: rejected.Bad; field type: any
+  fix: replace the interface with a concrete immutable type

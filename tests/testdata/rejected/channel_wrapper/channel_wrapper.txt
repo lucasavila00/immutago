@@ -1,4 +1,12 @@
-channel_wrapper.go:11:10: unmarked struct contains immutable field Value; embed im.Marker
+channel_wrapper.go:11:18: unmarked struct contains immutable field Value; embed im.Marker
+  owner: rejected.Bad; field type: chan rejected.Good
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Marker in this struct and make all its fields immutable, or remove the immutable field
 channel_wrapper.go:11:18: unsupported immutable borrow: channels of immutable storage are unsupported
+  source: Value
+  type: chan rejected.Good
+  fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset
 channel_wrapper.go:11:24: unsupported immutable borrow: channels of immutable storage are unsupported
-channel_wrapper.go:11:6: unmarked struct contains immutable field Value; embed im.Marker
+  source: chan Good
+  type: chan rejected.Good
+  fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset

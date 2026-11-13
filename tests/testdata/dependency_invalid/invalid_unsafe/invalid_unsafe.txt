@@ -1,0 +1,3 @@
+invalid_unsafe.go:5:2: unsupported unsafe import; immutability cannot be proved
+  rule: reflection and unsafe operations can bypass typed ownership checks
+  fix: replace these operations with ordinary typed Go code

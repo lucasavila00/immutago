@@ -32,7 +32,7 @@ func (l *local) sharedWrite(expression ast.Expr, pointer *types.Var) {
 
 // globalWrite points to the global declaration and its construction boundary.
 func (l *local) globalWrite(expression ast.Expr, owner *types.Var) {
-	message := fmt.Sprintf("cannot write package-level immutable storage %s (%s): initialize it before publication, "+
+	message := fmt.Sprintf("cannot write package-level immutable storage %s (%s): initialize it in its declaration, "+
 		"or copy it into a local value before updating", owner.Name(), typeName(owner.Type()))
 	l.report(expression.Pos(), message, analysis.RelatedInformation{
 		Pos: owner.Pos(), Message: "immutable global declared here"})

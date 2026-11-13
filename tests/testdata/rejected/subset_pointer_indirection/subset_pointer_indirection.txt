@@ -1,3 +1,12 @@
 subset_pointer_indirection.go:9:10: unsupported immutable borrow: pointer indirection is unsupported
+  source: p
+  type: **rejected.Good
+  fix: store owned values, and create a direct *T borrow only in the local function that reads it
 subset_pointer_indirection.go:9:12: unsupported immutable borrow: pointer indirection is unsupported
+  source: **Good
+  type: **rejected.Good
+  fix: store owned values, and create a direct *T borrow only in the local function that reads it
 subset_pointer_indirection.go:9:22: unsupported immutable borrow: pointer indirection is unsupported
+  source: p
+  type: **rejected.Good
+  fix: store owned values, and create a direct *T borrow only in the local function that reads it

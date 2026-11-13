@@ -1,1 +1,4 @@
 subset_global_reference.go:9:5: unsupported immutable borrow: global shared references are unsupported
+  source: Pointer
+  type: *rejected.Good
+  fix: store an owned value globally; create and consume shared borrows inside one function

@@ -1,1 +1,3 @@
-nll_live_whole.go:23:2: cannot write borrowed immutable owner
+nll_live_whole.go:23:2: cannot write borrowed immutable owner value (rejected.Good) through value: shared reference pointer is still live; move this write after its final use, or copy the value before updating
+nll_live_whole.go:22:2: 	shared reference pointer declared here
+nll_live_whole.go:24:11: 	this reachable use keeps shared reference pointer live

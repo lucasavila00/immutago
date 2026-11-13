@@ -31,13 +31,12 @@ type bindings map[*types.Var]map[*types.Var]bool
 
 // local owns one function's finite source-level control-flow analysis.
 type local struct {
-	pass        *analysis.Pass
-	operations  []operation
-	graph       flow.Graph
-	pointers    map[*types.Var]bool
-	parameters  bindings
-	initializer bool
-	reported    map[token.Pos]bool
+	pass       *analysis.Pass
+	operations []operation
+	graph      flow.Graph
+	pointers   map[*types.Var]bool
+	parameters bindings
+	reported   map[token.Pos]bool
 }
 
 // Check checks function bodies locally without loading or inferring dependency bodies.
@@ -51,11 +50,11 @@ func Check(pass *analysis.Pass) error {
 			switch fn := node.(type) {
 			case *ast.FuncDecl:
 				if fn.Body != nil && protectedBody(pass, fn.Body, relevance) {
-					checkFunction(pass, fn.Body, fn.Name.Name == "init")
+					checkFunction(pass, fn.Body)
 				}
 			case *ast.FuncLit:
 				if protectedBody(pass, fn.Body, relevance) {
-					checkFunction(pass, fn.Body, false)
+					checkFunction(pass, fn.Body)
 				}
 			}
 			return true
@@ -65,9 +64,9 @@ func Check(pass *analysis.Pass) error {
 }
 
 // checkFunction lowers one body and checks shared permissions and live whole-owner loans.
-func checkFunction(pass *analysis.Pass, body *ast.BlockStmt, initializer bool) {
+func checkFunction(pass *analysis.Pass, body *ast.BlockStmt) {
 	l := &local{pass: pass, pointers: make(map[*types.Var]bool), parameters: make(bindings),
-		initializer: initializer, reported: make(map[token.Pos]bool)}
+		reported: make(map[token.Pos]bool)}
 	l.build(cfg.New(body, func(*ast.CallExpr) bool { return true }))
 	if len(l.pointers) == 0 && !l.hasWrites() {
 		return

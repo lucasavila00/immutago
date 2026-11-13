@@ -47,3 +47,21 @@ func TestDependencyFailureDeduplication(t *testing.T) {
 		t.Fatalf("failure causes or deterministic routes changed: %+v", got)
 	}
 }
+
+// TestFieldDiagnosticsUseOneDeclarationSite reports each failed field once across repeated type visits.
+func TestFieldDiagnosticsUseOneDeclarationSite(t *testing.T) {
+	got := checkSource(t, `type Value struct{im.Marker; Items []string; Pointer *int}; var _ Value`)
+	for _, field := range []string{"Items", "Pointer"} {
+		if count := strings.Count(got, "immutable field "+field+":"); count != 1 {
+			t.Fatalf("field %s reported %d times: %s", field, count, got)
+		}
+	}
+}
+
+// TestPointerConstructorDiagnosticDoesNotClassifyItsTypeAsAnArgument keeps the actionable allocation error.
+func TestPointerConstructorDiagnosticDoesNotClassifyItsTypeAsAnArgument(t *testing.T) {
+	got := checkSource(t, `type Value struct{im.Marker};func f(){_=new(Value)}`)
+	if !strings.Contains(got, "pointer-owned construction") || strings.Contains(got, "dynamic calls") {
+		t.Fatalf("incorrect constructor diagnostic: %s", got)
+	}
+}

@@ -101,7 +101,8 @@ return `T`, never `*T`.
 
 ## What you can do with a reference
 
-For a marked Go type `Point`, these operations are supported:
+This list is **exhaustive**: for a marked Go type `Point`, only these reference
+operations are supported. Anything not listed is rejected.
 
 | You can… | Go example |
 | --- | --- |
@@ -109,6 +110,7 @@ For a marked Go type `Point`, these operations are supported:
 | Borrow a local value | `p := &point` |
 | Borrow a marked child of a local value | `p := &shape.Point` |
 | Copy a reference | `q := p` |
+| Discard a reference | `_ = p` |
 | Point a local reference at another local value | `p = &other` |
 | Clear a local reference | `p = nil` |
 | Read a field | `x := p.X` |
@@ -136,10 +138,30 @@ x := read(p) // last use of p
 point.X = 1 // OK here; rejected before read(p)
 ```
 
-**This is the complete list of supported reference operations.** Other uses
-produce an error. For example, you cannot return `p`, put it in a struct or
-collection, pass it through an interface, or capture it in a closure. Construct
-values first and return value copies instead.
+Parentheses and Go type aliases do not change these operations. Declaring a
+reader parameter such as `p *Point` is also supported, as shown above.
+
+## What you cannot do with a reference
+
+These examples are **not exhaustive**. The allowlist above is the complete list
+of what works; an operation is not allowed just because it is absent below.
+
+| You cannot… | Rejected Go example | Use this instead |
+| --- | --- | --- |
+| Write through a reference | `p.X = 1` | Change the owner before borrowing, or change a value copy. |
+| Return a reference | `return p` | Return `*p` as a value copy. |
+| Store a reference in a field or container | `Holder{P: p}` or `[]*Point{p}` | Store value copies in a marked struct or `im` collection. |
+| Store a reference in a global | `saved = p` | Keep the reference local. |
+| Put a reference in an interface | `var x any = p` | Pass it to a reader with a `*Point` parameter. |
+| Capture a reference in a closure | `func() { read(p) }` | Call `read(p)` directly. |
+| Defer or start a borrowed call in a goroutine | `defer read(p)` or `go read(p)` | Read synchronously, then use the returned value. |
+| Take a scalar field's address | `&point.X` | Read `point.X` or copy it to a separate local. |
+| Take a reference to a reference | `&p` | Copy the reference with `q := p`. |
+| Build an owning pointer | `new(Point)` or `&Point{}` | Build `point := Point{}`, then borrow `&point`. |
+| Pass a reference to a generic helper | `readGeneric(p)` | Use a reader with a concrete `*Point` parameter. |
+
+The checker enforces this list of supported operations; there are no extra
+rules you must uphold by hand and no escape hatch for rejected operations.
 
 ## Allowed value types
 

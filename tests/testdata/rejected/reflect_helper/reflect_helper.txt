@@ -1,4 +1,12 @@
 reflect_helper.go:3:8: unsupported reflect import; immutability cannot be proved
+  rule: reflection and unsafe operations can bypass typed ownership checks
+  fix: replace these operations with ordinary typed Go code
 reflect_helper.go:5:14: unsupported reflection value; immutability cannot be proved
+  type: reflect.Value
+  fix: replace reflection values with concrete typed values and direct operations
 reflect_helper.go:5:22: unsupported reflection value; immutability cannot be proved
+  type: reflect.Value
+  fix: replace reflection values with concrete typed values and direct operations
 reflect_helper.go:5:37: unsupported reflection value; immutability cannot be proved
+  type: reflect.Value
+  fix: replace reflection values with concrete typed values and direct operations

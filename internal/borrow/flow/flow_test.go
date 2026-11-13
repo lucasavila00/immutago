@@ -18,7 +18,7 @@ func TestBackwardLive(t *testing.T) {
 // TestBackwardLiveAgainstIteration compares the port with an independent fixed-point solver.
 func TestBackwardLiveAgainstIteration(t *testing.T) {
 	random := rand.New(rand.NewPCG(12, 34))
-	for trial := range 100 {
+	for range 100 {
 		count := 1 + random.IntN(18)
 		successors := make([][]int, count)
 		for point := range count {

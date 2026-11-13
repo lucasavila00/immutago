@@ -1,6 +1,12 @@
-recursive_bad.go:11:10: immutable field Children: type argument 1: Mutable: []int is not provably immutable
-recursive_bad.go:11:6: immutable field Children: type argument 1: Mutable: []int is not provably immutable
 recursive_bad.go:13:11: immutable collection: type argument 1: Mutable: []int is not provably immutable
+  type: im.Slice[rejected.Bad]
+  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments
 recursive_bad.go:13:14: immutable type argument: Mutable: []int is not provably immutable
-recursive_bad.go:13:20: immutable field Children: type argument 1: Mutable: []int is not provably immutable
-recursive_bad.go:13:2: immutable collection: type argument 1: Mutable: []int is not provably immutable
+  type: rejected.Bad
+  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments
+recursive_bad.go:13:2: immutable field Children: type argument 1: Mutable: []int is not provably immutable
+  owner: rejected.Bad; field type: im.Slice[rejected.Bad]
+  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments
+recursive_bad.go:14:2: immutable field Mutable: []int is not provably immutable
+  owner: rejected.Bad; field type: []int
+  fix: replace the native slice with im.Slice[T], where T is immutable

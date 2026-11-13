@@ -1,1 +1,3 @@
-nll_alias_copy.go:25:2: cannot write borrowed immutable owner
+nll_alias_copy.go:25:2: cannot write borrowed immutable owner value (rejected.Good) through value.X: shared reference alias is still live; move this write after its final use, or copy the value before updating
+nll_alias_copy.go:23:2: 	shared reference alias declared here
+nll_alias_copy.go:26:11: 	this reachable use keeps shared reference alias live

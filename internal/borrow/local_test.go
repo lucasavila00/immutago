@@ -34,7 +34,7 @@ func TestLocalLoans(t *testing.T) {
 		{"branch", `var a,b Value;p:=&a;if flag {p=&b};a.X=2;read(p)`, true},
 		{"readonly", `var v Value;p:=&v;p.X=2`, true},
 		{"fresh readonly", `p:=&Value{};p.X=2`, true},
-		{"reborrow", `var v Value;p:=&v;q:=&*p;v.X=2;read(q)`, true},
+		{"dead simultaneous borrow", `var v Value;p:=&v;read(p);v,p=Value{},&v`, false},
 		{"simultaneous borrow", `var v Value;var p *Value;v,p=Value{},&v;read(p)`, true},
 		{"simultaneous copied borrow", `var v Value;p:=&v;var q *Value;v,q=Value{},p;read(q)`, true},
 		{"swap", `var a,b Value;p,q:=&a,&b;p,q=q,p;a.X=2;read(q);read(p)`, true},
@@ -52,7 +52,7 @@ func TestLocalLoans(t *testing.T) {
 }
 
 // localDiagnostics compiles a fixture and runs only the local borrow proof.
-func localDiagnostics(t *testing.T, body string) string {
+func localDiagnostics(t *testing.T, body string, declarations ...string) string {
 	t.Helper()
 	positions := token.NewFileSet()
 	libraryFile, err := parser.ParseFile(positions, "im.go", "package im;type Marker struct{}", 0)
@@ -64,7 +64,7 @@ func localDiagnostics(t *testing.T, body string) string {
 		t.Fatal(err)
 	}
 	source := `package sample;import "` + checker.LibraryPath + `";type Value struct{im.Marker;X,Y int};
- func read(p *Value)int{return p.X};func test(flag bool){` + body + `}`
+ func read(p *Value)int{return p.X};func test(flag bool){` + body + `}` + "\n" + strings.Join(declarations, "\n")
 	file, err := parser.ParseFile(positions, "sample.go", source, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -83,4 +83,15 @@ func localDiagnostics(t *testing.T, body string) string {
 		t.Fatal(err)
 	}
 	return strings.Join(reports, "\n")
+}
+
+// TestLocalGlobalConstructionBoundary permits declaration initialization but forbids updates in init bodies.
+func TestLocalGlobalConstructionBoundary(t *testing.T) {
+	if got := localDiagnostics(t, "", `var Global = Value{X:1}`); got != "" {
+		t.Fatal(got)
+	}
+	got := localDiagnostics(t, "", `var Global Value; func init(){Global.X=1}`)
+	if !strings.Contains(got, "cannot write package-level immutable storage") {
+		t.Fatalf("initializer diagnostics = %q", got)
+	}
 }

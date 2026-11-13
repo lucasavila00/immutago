@@ -201,10 +201,12 @@ func diagnosticRecords(output string) []string {
 		}
 		trimmed := strings.TrimLeft(line, " \t")
 		indent := line[:len(line)-len(trimmed)]
-		if prefix := location.FindString(trimmed); prefix != "" {
-			line = indent + filepath.Base(prefix) + strings.TrimPrefix(trimmed, prefix)
+		prefix := location.FindString(trimmed)
+		related := prefix != "" && strings.HasPrefix(strings.TrimPrefix(trimmed, prefix), "\t")
+		if indent == "" && prefix != "" {
+			line = filepath.Base(prefix) + strings.TrimPrefix(trimmed, prefix)
 		}
-		if indent != "" && len(records) > 0 {
+		if (indent != "" || related) && len(records) > 0 {
 			records[len(records)-1] += "\n" + line
 		} else {
 			records = append(records, line)
@@ -226,6 +228,8 @@ func writeFile(t *testing.T, path, content string) {
 func checkInvalidDependencies(t *testing.T, root, binary string) {
 	t.Helper()
 	dir := consumerModule(t, root, "dependency_invalid")
+	output := runCommand(t, dir, false, binary, "./...")
+	checkFixtureSnapshots(t, root, "dependency_invalid", output)
 	cases := []string{
 		"shape_consumer", "unsafe_consumer", "borrow_consumer",
 		"wrapped_shape_consumer", "wrapped_borrow_consumer",

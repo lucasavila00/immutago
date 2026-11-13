@@ -1,1 +1,4 @@
 subset_collection_map_values.go:9:14: unsupported immutable borrow: native maps of immutable storage are unsupported
+  source: im.NewMap(map[string]Good{}).Values()
+  type: map[string]rejected.Good
+  fix: use im.Map[K, V]; pass an inline map literal only to im.NewMap

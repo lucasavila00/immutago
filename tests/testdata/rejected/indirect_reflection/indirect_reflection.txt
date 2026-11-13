@@ -1,2 +1,6 @@
 indirect_reflection.go:5:13: unsupported reflection value; immutability cannot be proved
+  type: reflect.Value
+  fix: replace reflection values with concrete typed values and direct operations
 indirect_reflection.go:5:5: unsupported reflection value; immutability cannot be proved
+  type: reflect.Value
+  fix: replace reflection values with concrete typed values and direct operations

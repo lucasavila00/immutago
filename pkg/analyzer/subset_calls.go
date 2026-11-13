@@ -67,6 +67,7 @@ func (c *subsetChecks) call(call *ast.CallExpr) {
 	if builtin, ok := obj.(*types.Builtin); ok && builtin.Name() == "new" &&
 		protectedReference(c.pass.TypesInfo.TypeOf(call)) {
 		c.report(call, "pointer-owned construction is unsupported")
+		return
 	}
 	signature, _ := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
 	if signature == nil {

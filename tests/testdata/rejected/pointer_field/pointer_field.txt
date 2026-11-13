@@ -1,2 +1,3 @@
-pointer_field.go:11:10: immutable field Value: *int is not provably immutable
-pointer_field.go:11:6: immutable field Value: *int is not provably immutable
+pointer_field.go:13:2: immutable field Value: *int is not provably immutable
+  owner: rejected.Bad; field type: *int
+  fix: replace the pointer field or argument with an owned immutable value

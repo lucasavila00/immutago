@@ -38,8 +38,12 @@ func diagnosticType(t types.Type) string {
 // subsetFix gives a specific supported rewrite for each excluded borrow transport.
 func subsetFix(rule string) string {
 	switch rule {
+	case "borrowing through a shared reference is unsupported":
+		return "read the child through the existing reference, or copy the child into an owned local before borrowing it"
+
 	case "reference operation is outside the supported allowlist":
-		return "keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader"
+		return "keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, " +
+			"or pass it to a direct typed reader"
 
 	case "native slices of immutable storage are unsupported":
 		return "use im.Slice[T] and All() for iteration; pass an inline []T literal only to im.NewSlice"

@@ -1,3 +1,9 @@
 inferred_map.go:11:11: immutable collection: type argument 2: []int is not provably immutable
+  type: im.Map[string, []int]
+  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments
 inferred_map.go:11:14: immutable type argument: []int is not provably immutable
+  type: []int
+  fix: replace the native slice with im.Slice[T], where T is immutable
 inferred_map.go:11:5: immutable collection: type argument 2: []int is not provably immutable
+  type: im.Map[string, []int]
+  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments

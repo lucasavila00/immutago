@@ -1,1 +1,4 @@
 subset_bound_method.go:10:20: unsupported immutable borrow: bound immutable methods are unsupported
+  source: v.Read
+  type: func() int
+  fix: call the method directly (value.Method(...)); do not save or pass its method value

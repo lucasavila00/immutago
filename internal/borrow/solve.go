@@ -101,10 +101,7 @@ func (l *local) origins(expression ast.Expr, incoming bindings) map[*types.Var]b
 		return incoming[pointer]
 	}
 	if address, ok := expression.(*ast.UnaryExpr); ok && address.Op == token.AND {
-		if variable, shared := l.owner(address.X); variable != nil {
-			if shared {
-				return incoming[variable]
-			}
+		if variable, shared := l.owner(address.X); variable != nil && !shared {
 			return map[*types.Var]bool{variable: true}
 		}
 		return nil
@@ -146,13 +143,13 @@ func (l *local) checkWrite(point int, expression ast.Expr, incoming bindings, li
 	if owner == nil || !checker.Contains(owner.Type()) {
 		return
 	}
-	if owner.Pkg() != nil && owner.Parent() == owner.Pkg().Scope() && !l.initializer {
+	if owner.Pkg() != nil && owner.Parent() == owner.Pkg().Scope() {
 		l.globalWrite(expression, owner)
 		return
 	}
 	wanted := owner
 	for _, definition := range l.operations[point].definitions {
-		if l.origins(definition.source, incoming)[wanted] {
+		if l.liveAfter(point, definition.target, live) && l.origins(definition.source, incoming)[wanted] {
 			l.borrowedWrite(point, expression, owner, definition.target, definition.source.Pos())
 			return
 		}
@@ -166,4 +163,14 @@ func (l *local) checkWrite(point int, expression ast.Expr, incoming bindings, li
 	if conflict != nil {
 		l.borrowedWrite(point, expression, owner, conflict, token.NoPos)
 	}
+}
+
+// liveAfter reports whether the new binding can be read before its next assignment.
+func (l *local) liveAfter(point int, pointer *types.Var, live map[*types.Var]flow.Set) bool {
+	for _, next := range l.graph.Succ[point] {
+		if live[pointer][next] {
+			return true
+		}
+	}
+	return false
 }

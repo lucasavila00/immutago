@@ -1,2 +1,4 @@
-constrained_wrapper.go:9:18: unmarked struct contains immutable field Value; embed im.Marker
-constrained_wrapper.go:9:6: unmarked struct contains immutable field Value; embed im.Marker
+constrained_wrapper.go:9:26: unmarked struct contains immutable field Value; embed im.Marker
+  owner: rejected.Bad[T rejected.Good]; field type: T
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Marker in this struct and make all its fields immutable, or remove the immutable field

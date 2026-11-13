@@ -1,2 +1,3 @@
-generic_any.go:11:17: immutable field Value: type parameter constraint does not prove immutability
-generic_any.go:11:6: immutable field Value: type parameter constraint does not prove immutability
+generic_any.go:13:2: immutable field Value: type parameter constraint does not prove immutability
+  owner: rejected.Bad[T any]; field type: T
+  fix: restrict the type parameter to immutable concrete types; any and mutable alternatives cannot prove this field

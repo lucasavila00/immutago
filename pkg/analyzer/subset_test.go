@@ -12,6 +12,8 @@ func TestSubsetBoundaries(t *testing.T) {
 		{"pointer conversion", `func f(p *V){_=(*V)(p)}`},
 		{"tuple box", `func pair()(V,int){return V{},0};func f(){var x any;var n int;x,n=pair();_,_=x,n}`},
 		{"tuple call box", `func pair()(V,int){return V{},0};func sink(any,int){};func f(){sink(pair())}`},
+		{"shared child reborrow", `type Parent struct{im.Marker;Child V};
+ func f(){var owner Parent;p:=&owner;q:=&p.Child;_=q.X}`},
 		{"scalar address", `func f(){var v V; _=&v.X}`},
 		{"pointer owner", `func f(){_=new(V)}`},
 		{"literal owner", `func f(){_=&V{}}`},
@@ -59,6 +61,44 @@ func TestSubsetValues(t *testing.T) {
 		t.Run(source, func(t *testing.T) {
 			if got := checkSource(t, `type V struct{im.Marker;X int};`+source); got != "" {
 				t.Fatalf("unexpected diagnostics: %s", got)
+			}
+		})
+	}
+}
+
+// TestReferenceOperationAllowlist covers each documented reference producer and use.
+func TestReferenceOperationAllowlist(t *testing.T) {
+	cases := []string{
+		`func f(){var v V;p:=&v;_=p.X}`,
+		`type Parent struct{im.Marker;Child V};func f(){var v Parent;p:=&v.Child;_=p.X}`,
+		`func f(){var v V;var p *V=nil;p=&v;q:=p;p=nil;_=q.X}`,
+		`func f(p *V)V{return *p}`,
+		`func f(p,q *V){_=p==q;_=p!=nil;_=nil==p}`,
+		`func read(p *V)int{return p.X};func f(){var v V;_=read((&v))}`,
+		`func(p *V)Read()int{return p.X};func f(){var v V;p:=&v;_=p.Read()}`,
+		`type Alias=V;func read(p *Alias)int{return p.X};func f(){var v V;p:=&v;_=read(p)}`,
+	}
+	for _, source := range cases {
+		t.Run(source, func(t *testing.T) {
+			if got := checkSource(t, `type V struct{im.Marker;X int};`+source); got != "" {
+				t.Fatalf("allowlisted operation failed: %s", got)
+			}
+		})
+	}
+}
+
+// TestReferenceOperationDefaultDenial covers valid Go operations absent from the supported table.
+func TestReferenceOperationDefaultDenial(t *testing.T) {
+	cases := []string{
+		`func f(){var values [2]V;p:=&values;_=len(p)}`,
+		`func f(){var values [2]V;p:=&values;_=p[0]}`,
+		`func f(){var values [2]V;p:=&values;for range p{}}`,
+	}
+	for _, source := range cases {
+		t.Run(source, func(t *testing.T) {
+			got := checkSource(t, `type V struct{im.Marker;X int};`+source)
+			if !strings.Contains(got, "reference operation is outside the supported allowlist") {
+				t.Fatalf("unlisted reference operation was accepted: %s", got)
 			}
 		})
 	}
