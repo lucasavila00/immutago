@@ -20,7 +20,7 @@ CLI build, and the repository with its own analyzer. Workflows run on pushes
 and pull requests.
 
 `cmd/immutago` calls `pkg/analyzer`, which uses `internal/checker`.
-`pkg/immutable` provides the marker and value collections. Internal packages
+`pkg/im` provides the marker and value collections. Internal packages
 must not import the analyzer or command. The library's public APIs need not be
 used by the CLI; dead-code checks include tests.
 

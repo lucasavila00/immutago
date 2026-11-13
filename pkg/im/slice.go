@@ -1,4 +1,4 @@
-package immutable
+package im
 
 import "slices"
 
@@ -92,7 +92,7 @@ func (s Slice[T]) Set(index int, value T) Slice[T] {
 // It copies the tail once per added block and shares unchanged tree branches.
 func (s Slice[T]) Append(values ...T) Slice[T] {
 	if len(values) > int(^uint(0)>>1)-s.length {
-		panic("immutable.Slice: length overflow")
+		panic("im.Slice: length overflow")
 	}
 	for len(values) > 0 {
 		if len(s.tail) == sliceWidth {
@@ -112,7 +112,7 @@ func (s Slice[T]) Append(values ...T) Slice[T] {
 // checkIndex reports invalid indices before any tree access.
 func (s Slice[T]) checkIndex(index int) {
 	if index < 0 || index >= s.length {
-		panic("immutable.Slice: index out of range")
+		panic("im.Slice: index out of range")
 	}
 }
 

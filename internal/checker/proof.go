@@ -139,7 +139,7 @@ func (p *proof) value(result *obligation, t types.Type) {
 // structure requires the marker and creates an obligation for every field.
 func (p *proof) structure(result *obligation, t types.Type, structure *types.Struct) {
 	if !Marked(t) {
-		result.reason = "struct does not embed immutable.Marker"
+		result.reason = "struct does not embed im.Marker"
 		return
 	}
 	for field := range structure.Fields() {

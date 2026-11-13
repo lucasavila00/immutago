@@ -1,6 +1,6 @@
 package model
 
-import im "github.com/lucasavila00/immutago/pkg/immutable"
+import "github.com/lucasavila00/immutago/pkg/im"
 
 type MarkerAlias = im.Marker
 type Number int

@@ -1,21 +1,21 @@
 # Immutability contract
 
-Embed `immutable.Marker` directly by value. Every field must be a primitive
+Embed `im.Marker` directly by value. Every field must be a primitive
 boolean, number, or string; an array of immutable elements; another marked
-struct; or `immutable.Slice[T]` / `immutable.Map[K, V]` with immutable arguments.
+struct; or `im.Slice[T]` / `im.Map[K, V]` with immutable arguments.
 Type aliases retain their type identity. The analyzer uses `go/types`, the Go
 compiler's type checker, rather than source names or marker methods.
 
 ```go
-import "github.com/lucasavila00/immutago/pkg/immutable"
+import "github.com/lucasavila00/immutago/pkg/im"
 
 type User struct {
-    immutable.Marker
+    im.Marker
     Name string
-    Tags immutable.Slice[string]
+    Tags im.Slice[string]
 }
 
-var user = User{Name: "Ada", Tags: immutable.NewSlice("go")}
+var user = User{Name: "Ada", Tags: im.NewSlice("go")}
 ```
 
 Use literals to construct marked structs. Replacing a variable is allowed;

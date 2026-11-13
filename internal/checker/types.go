@@ -9,7 +9,7 @@ import (
 )
 
 // LibraryPath is the package whose sealed collection implementations are trusted.
-const LibraryPath = "github.com/lucasavila00/immutago/pkg/immutable"
+const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
 func IsLibraryType(t types.Type, name string) bool {

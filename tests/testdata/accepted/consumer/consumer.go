@@ -2,7 +2,7 @@ package consumer
 
 import (
 	"example.com/consumer/model"
-	im "github.com/lucasavila00/immutago/pkg/immutable"
+	"github.com/lucasavila00/immutago/pkg/im"
 )
 
 type Record struct {
