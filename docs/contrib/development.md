@@ -11,6 +11,7 @@ make test-e2e
 make lint
 make docs
 make docs-check
+make bench
 ```
 
 Run focused tests locally. Push commits to run the full race-enabled suite on
@@ -32,3 +33,5 @@ Edit package Go comments, then run `make docs`. Commit the generated `readme.md`
 files with their source comments. The gomarkdoc templates and source checks
 come from TGo; its compiler patches and language fixtures are not copied.
 Use the [ADR template](../adr/template/what.md) for substantial design decisions.
+
+See [collection costs](../performance.md) for benchmark scope and allocation behavior.
