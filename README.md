@@ -1,9 +1,10 @@
 # Immutago
 
-A Go immutability analyzer and frozen maps and slices. Embed `im.Marker` in a
-struct. Construct immutable objects, then share references to them. Variables
-can be reassigned; the objects they reference cannot change. Freeze exclusive
-native storage without copying. Clone it when you need a mutable builder.
+A Go immutability analyzer and frozen maps and slices. Embed `im.Immut` for
+immutable objects with shared references, or `im.ImmutNoRef` when references
+must not escape. Both are immutable from construction. Variables can be
+reassigned; their objects cannot change. Freeze exclusive native storage without
+copying. Clone it when you need a mutable builder.
 
 The analyzer must run; `go build` alone does not enforce these rules.
 

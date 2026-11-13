@@ -124,12 +124,15 @@ Check every field and collection type argument. Use resolved Go type identity,
 not source spelling. Do not accept unknown cases or add escape hatches.
 Support cases that can be proved. Report unsupported cases explicitly.
 Unmarked structs cannot own marked values or immutable collections.
-Permit construction and updates in owned local storage. Reject writes through
-shared references and writes that conflict with a live loan. Use source places
-and non-lexical loan lifetimes; do not substitute blanket pointer rejection or
-permanent freezing. Use whole-owner loans and direct, typed, non-escaping
-read-only calls. Reject alias escape boundaries instead of inferring arbitrary
-function effects, pointer-return provenance, or dynamic callback behavior.
+Both `im.Immut` and `im.ImmutNoRef` require immutable objects from construction.
+Reject field, element, and dereference writes to protected objects. Permit
+reassignment of whole variable bindings. Protected references originate from
+fresh construction, never addresses of reassignable local storage.
+`Immut` references can be shared, stored, and returned. `ImmutNoRef` references
+stay local or pass through direct typed non-escaping calls; reject storing,
+returning, or capturing them. Do not add mutable initialization, loan lifetimes,
+or runtime ownership state. Keep unsupported transport explicit instead of
+inferring arbitrary callback effects.
 Frozen collections must not expose writable storage. Freeze consumes a proved
 exclusive native builder without a copy. Reject builder aliases and use after
 freeze. Clone returns independent mutable storage; there are no frozen updates.
