@@ -3,118 +3,107 @@ package analyzer
 import (
 	"go/token"
 	"go/types"
-	"golang.org/x/tools/go/analysis"
 	"strings"
 	"testing"
+
+	"golang.org/x/tools/go/analysis"
 )
 
-const borrowTestTypes = `type Child struct { im.Immut; X, Y int }
+const immutableValueTypes = `type Child struct { im.Immut; X, Y int }
  type Value struct { im.Immut; X, Y int; Child Child; Array [2]int }
  func read(pointer *Value) int { return pointer.X }
  func readInt(pointer *int) int { return *pointer }
  `
 
-// TestOwnedConstruction accepts changes to owned values and copies without a live shared loan.
-func TestOwnedConstruction(t *testing.T) {
+// TestImmutableConstruction accepts scalar preparation and complete value replacement.
+func TestImmutableConstruction(t *testing.T) {
 	cases := []struct{ name, source string }{
-		{"conditional", `func f(condition bool) Value { var v Value; if condition {v.X=1} else {v.X=2}; return v }`},
-		{"repeated assignment", `func f(v Value) Value { v.X=1; v.X=2; v.X++; v.Y+=3; return v }`},
-		{"array", `func f(v Value) Value { v.Array[0]=1; return v }`},
-		{"range", `func f(v Value) Value { for v.X=range 2 {}; for v.Array[0]=range 2 {}; return v }`},
-		{"value copy function", `func WithX(v Value,x int) Value { v.X=x; return v }`},
-		{"read pointer", `func f(v *Value) int { return v.X }`},
-		{"copy", `func f(v Value) Value { p:=&v; copy:=v; copy.X=2; _=read(p); return copy }`},
+		{"conditional", `func f(condition bool)Value{x:=2;if condition{x=1};return Value{X:x}}`},
+		{"value replacement", `func f(v Value)Value{v=Value{X:1};v=Value{X:2};return v}`},
+		{"array", `func f()Value{return Value{Array:[2]int{1,2}}}`},
+		{"range", `func f(v Value)Value{for i:=range 2{v=Value{X:i}};return v}`},
+		{"value function", `func WithX(v Value,x int)Value{return Value{X:x,Y:v.Y,Child:v.Child,Array:v.Array}}`},
+		{"read pointer", `func f(v *Value)int{return v.X}`},
+		{"copy", `func f(v Value)Value{p:=new(v);copy:=v;copy=Value{X:2};_=read(p);return copy}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if reports := checkSource(t, borrowTestTypes+tc.source); reports != "" {
-				t.Fatalf("unexpected diagnostics:\n%s", reports)
+			if reports := checkSource(t, immutableValueTypes+tc.source); reports != "" {
+				t.Fatalf("unexpected diagnostics: %s", reports)
 			}
 		})
 	}
 }
 
-// TestBorrowLifetimes distinguishes final-use liveness from lexical scope and permanent freezing.
-func TestBorrowLifetimes(t *testing.T) {
+// TestImmutableBindingReplacement checks replacement across ordinary branches and loops.
+func TestImmutableBindingReplacement(t *testing.T) {
 	cases := []struct{ name, source string }{
-		{"last use", `func f(v Value) { p:=&v; _=read(p); v.X=2; v=Value{} }`},
-		{"copy last use", `func f(v Value) { p:=&v; q:=&v; _=read(p); _=read(q); v.X=2 }`},
-		{"rebind", `func f(a,b Value) { p:=&a; _=read(p); q:=&b; a.X=2; _=read(q); b.X=2 }`},
-		{"branch", `func f(v Value,b bool) { if b {p:=&v; _=read(p)} else {v.X=1}; v.X=2 }`},
-		{"branch join", `func f(a,b Value,c bool) { if c {p:=&a;_=read(p)} else {p:=&b;_=read(p)}; a.X=1; b.X=2 }`},
-		{"loop", `func f(v Value,n int) { for i:=0;i<n;i++ {v.X=i; p:=&v; _=read(p)}; v.X=2 }`},
-
-		{"early return", `func f(v Value,b bool) { p:=&v; if b {_=read(p);return}; v.X=2 }`},
-		{"rhs", `func f(v Value) { v.X=read(&v)+1 }`},
+		{"live reference", `func f(v Value){p:=new(v);v=Value{X:2};_=read(p)}`},
+		{"copied reference", `func f(v Value){p:=new(v);q:=p;p=new(Value{X:2});_=read(q);_=read(p)}`},
+		{"branch", `func f(v Value,b bool){p:=new(v);if b{p=&Value{X:1}};_=read(p)}`},
+		{"branch join", `func f(a,b Value,c bool){var p *Value;if c{p=new(a)}else{p=new(b)};_=read(p)}`},
+		{"loop", `func f(n int){p:=&Value{};for i:=0;i<n;i++{old:=p;p=&Value{X:i};_=read(old)};_=read(p)}`},
+		{"early return", `func f(v Value,b bool){p:=new(v);if b{_=read(p);return};v=Value{X:2};_=v}`},
+		{"rhs", `func f(v Value){v=Value{X:read(new(v))+1};_=v}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if reports := checkSource(t, borrowTestTypes+tc.source); reports != "" {
-				t.Fatalf("unexpected diagnostics:\n%s", reports)
+			if reports := checkSource(t, immutableValueTypes+tc.source); reports != "" {
+				t.Fatalf("unexpected diagnostics: %s", reports)
 			}
 		})
 	}
 }
 
-// TestLiveBorrowConflicts rejects writes that overlap a shared loan or use a read-only reference.
-func TestLiveBorrowConflicts(t *testing.T) {
+// TestImmutableWrites rejects field and target writes without a lifetime exception.
+func TestImmutableWrites(t *testing.T) {
 	cases := []struct{ name, source string }{
-		{"collection native copy", `func f() { values:=im.FreezeSlice([]Value{{}}).Clone()
-         p:=&values[0]; values[0].X=2; _=read(p) }`},
-		{"slice view", `func f(v Value) { view:=v.Array[:]; v.Array[0]=2; _=view[0] }`},
-		{"slice view write", `func f(v Value) { view:=v.Array[:]; view[0]=2 }`},
-		{"owner live alias", `func f() { p:=&Value{}; q:=p; p.X=2; _=read(q) }`},
-		{"shared owner alias", `func f() { p:=&Value{}; q:=p; q.X=2 }`},
-		{"scalar mutator", `func set(p *int) {*p=2}; func f(v Value) { set(&v.X) }`},
-		{"whole owner field", `func f(v Value) { p:=&v.Child; v.X=2; _=p.X }`},
-		{"fresh pointer write", `func f() {p:=&Value{};p.X=1}`},
-		{"new pointer write", `func f() {p:=new(Value);p.X=1}`},
-		{"field", `func f(v Value) { p:=&v; v.X=2; _=read(p) }`},
-		{"whole", `func f(v Value) { p:=&v; v=Value{}; _=read(p) }`},
-		{"copied alias", `func f(v Value) { p:=&v; q:=p; p=nil; v.X=2; _=read(q); _=p }`},
-		{"nested parent", `func f(v Value) { p:=&v.Child.X; v.Child=Child{}; _=readInt(p) }`},
-		{"array", `func f(v Value) { p:=&v.Array[0]; v.Array[0]=2; _=readInt(p) }`},
-		{"dynamic array", `func f(v Value,i,j int) { p:=&v.Array[i]; v.Array[j]=2; _=readInt(p) }`},
-		{"branch", `func f(a,b Value,c bool) { var p *Value; if c {p=&a} else {p=&b}; a.X=2; _=read(p) }`},
-		{"loop", `func f(v Value,n int) { p:=&v; for i:=0;i<n;i++ {v.X=i; _=read(p)} }`},
-		{"loop loan reissuance", `func f(v Value,n int) { var old *Value
-         for i:=0;i<n;i++ {v.X=i; p:=&v; if old!=nil {_=read(old)}; old=p} }`},
-		{"identity", `func identity[T any](p *T)*T{return p}; func f(v Value) { p:=identity(&v); v.X=2; _=read(p) }`},
-		{"method value", `func(value *Value)Read()int{return value.X};func f(v Value) { later:=v.Read; v.X=2; _=later() }`},
-		{"closure", `func f(v Value) { p:=&v; later:=func()int{return p.X}; v.X=2; _=later() }`},
-		{"interface", `func f(v Value) { var boxed any=&v; v.X=2; _=read(boxed.(*Value)) }`},
-		{"defer", `func f(v Value) { defer read(&v); v.X=2 }`},
-		{"assignment order", `func f(v Value) { var p *Value; p,v.X=&v,2; _=read(p) }`},
-		{"slice parameter write", `func f(v []Value) { v[0].X=2 }`},
-		{"pointer write", `func f(v *Value) { v.X=2 }`},
-		{"pointer replacement", `func f(v *Value) { *v=Value{} }`},
-		{"scalar interface write", `func f(v Value) { var boxed any=&v.X; *boxed.(*int)=2 }`},
-		{"field pointer write", `func f(v Value) { p:=&v.X; *p=2 }`},
+		{"before sharing", `func f(){v:=Value{};v.X=1}`},
+		{"after read", `func f(){p:=&Value{};_=read(p);p.X=2}`},
+		{"value copy", `func f(v Value){copy:=v;copy.X=2}`},
+		{"fresh pointer", `func f(){p:=&Value{};p.X=1}`},
+		{"new pointer", `func f(){p:=new(Value);p.X=1}`},
+		{"copy constructor", `func f(v Value){p:=new(v);p.X=1}`},
+		{"pointer alias", `func f(){p:=&Value{};q:=p;p.X=2;_=read(q)}`},
+		{"cleared alias", `func f(){p:=&Value{};q:=p;p=nil;q.X=2;_=p}`},
+		{"field", `func f(v Value){v.X=2}`},
+		{"nested field", `func f(v Value){v.Child.X=2}`},
+		{"nested value", `func f(v Value){v.Child=Child{}}`},
+		{"array element", `func f(v Value){v.Array[0]=2}`},
+		{"dynamic array element", `func f(v Value,i int){v.Array[i]=2}`},
+		{"compound", `func f(v Value){v.X+=2}`},
+		{"increment", `func f(v Value){v.X++}`},
+		{"range", `func f(v Value){for v.X=range 2{}}`},
+		{"branch", `func f(v Value,b bool){if b{v.X=1}else{v.X=2}}`},
+		{"loop", `func f(v Value,n int){for i:=0;i<n;i++{v.X=i}}`},
+		{"builder value", `func f(){values:=[]Value{{}};values[0].X=2}`},
+		{"builder reference", `func f(){values:=[]*Value{&Value{}};values[0].X=2}`},
+		{"pointer target", `func f(v *Value){*v=Value{}}`},
+		{"package value", `var Global Value;func f(){Global.X=2}`},
+		{"package reference", `var Global=&Value{};func f(){Global.X=2}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			reports := checkSource(t, borrowTestTypes+tc.source)
-			if !strings.Contains(reports, "borrow") && !strings.Contains(reports, "shared reference") &&
-				!strings.Contains(reports, "unsupported") {
-				t.Fatalf("diagnostics = %q; want borrowed-storage or shared-reference conflict", reports)
+			reports := checkSource(t, immutableValueTypes+tc.source)
+			if !strings.Contains(reports, "writes to immutable objects") {
+				t.Fatalf("immutable write accepted: %s", reports)
 			}
 		})
 	}
 }
 
-// TestBorrowCarriersCannotErasePermissions checks scalar aliases retained in ordinary aggregate storage.
-func TestBorrowCarriersCannotErasePermissions(t *testing.T) {
+// TestScalarAddressesCannotLeaveImmutableStorage checks scalar aliases in ordinary aggregate storage.
+func TestScalarAddressesCannotLeaveImmutableStorage(t *testing.T) {
 	cases := []string{
-		`func f(v Value) { h:=struct{ P *int }{P:&v.X}; *h.P=2 }`,
-		`func f(v Value) { h:=[]*int{&v.X}; *h[0]=2 }`,
-		`func f(v Value) { h:=map[string]*int{"x":&v.X}; *h["x"]=2 }`,
+		`func f(v Value){h:=struct{P *int}{P:&v.X};*h.P=2}`,
+		`func f(v Value){h:=[]*int{&v.X};*h[0]=2}`,
+		`func f(v Value){h:=map[string]*int{"x":&v.X};*h["x"]=2}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			reports := checkSource(t, borrowTestTypes+source)
-			if !strings.Contains(reports, "borrow") && !strings.Contains(reports, "shared reference") &&
-				!strings.Contains(reports, "unsupported") {
-				t.Fatalf("diagnostics = %q; want capability conflict or unsupported retention", reports)
+			reports := checkSource(t, immutableValueTypes+source)
+			if !strings.Contains(reports, "scalar interior addresses are unsupported") {
+				t.Fatalf("scalar address accepted: %s", reports)
 			}
 		})
 	}
@@ -180,26 +169,25 @@ func TestRecursivePointerType(t *testing.T) {
 	}
 }
 
-// TestIndirectBorrowCannotErasePermission checks a shared alias loaded through a pointer-variable address.
-func TestIndirectBorrowCannotErasePermission(t *testing.T) {
-	source := borrowTestTypes + `
+// TestIndirectReferenceCannotErasePermission rejects access through a pointer-variable address.
+func TestIndirectReferenceCannotErasePermission(t *testing.T) {
+	source := immutableValueTypes + `
  func dereference(pointer **Value) *Value { return *pointer }
- func f(v Value) { p:=&v; q:=dereference(&p); v.X=2; _=read(q) }
+ func f(v Value) { p:=new(v); q:=dereference(&p); v.X=2; _=read(q) }
  `
 	reports := checkSource(t, source)
-	if !strings.Contains(reports, "borrow") && !strings.Contains(reports, "shared reference") &&
-		!strings.Contains(reports, "unsupported") {
-		t.Fatalf("diagnostics = %q; want an indirect loan conflict or unsupported dereference", reports)
+	if !strings.Contains(reports, "pointer indirection is unsupported") {
+		t.Fatalf("diagnostics = %q; want unsupported pointer indirection", reports)
 	}
 }
 
-// TestUnknownFactoryCannotCreateOwnership rejects protected pointer results with no inferred effects.
-func TestUnknownFactoryCannotCreateOwnership(t *testing.T) {
-	source := borrowTestTypes + `
- func f(factory func() *Value) { pointer:=factory(); pointer.X=2 }
+// TestUnknownFactoryCannotReturnProtectedStorage rejects dynamic protected results.
+func TestUnknownFactoryCannotReturnProtectedStorage(t *testing.T) {
+	source := immutableValueTypes + `
+ func f(factory func() *Value) { pointer:=factory(); _=pointer.X }
  `
 	reports := checkSource(t, source)
-	if !strings.Contains(reports, "unsupported") && !strings.Contains(reports, "shared reference") {
-		t.Fatalf("diagnostics = %q; want unknown result ownership rejection", reports)
+	if !strings.Contains(reports, "dynamic calls with immutable storage are unsupported") {
+		t.Fatalf("diagnostics = %q; want dynamic result rejection", reports)
 	}
 }

@@ -72,6 +72,9 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"range interface", `func f(){values:=im.FreezeSlice([]Shared{{}});var boxed any;for _,boxed=range values.All(){};_=boxed}`, "boxing immutable storage"},
 		{"method parameter", `type Reader int;func(Reader)Read(p *Shared)int{return p.X};func f(){p:=&Shared{};_=Reader(0).Read(p)}`, "user-defined methods with immutable storage"},
 		{"method result", `type Reader int;func(Reader)Make()*Shared{return &Shared{}};func f(){_=Reader(0).Make()}`, "user-defined methods with immutable storage"},
+		{"reference comparison box", `func f(p *Shared,boxed any)bool{return p==boxed}`, "boxing immutable storage"},
+		{"value comparison box", `func f(v Shared,boxed any)bool{return boxed!=v}`, "boxing immutable storage"},
+		{"tuple callback", `func pair()(Shared,int){return Shared{},1};func f(callback func(Shared,int)){callback(pair())}`, "dynamic calls with immutable storage"},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {

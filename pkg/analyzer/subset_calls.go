@@ -54,7 +54,7 @@ func (c *subsetChecks) call(call *ast.CallExpr) {
 	}
 	_, static := obj.(*types.Func)
 	static = c.methodCall(call, static)
-	if !static && protectedCallResults(signature.Results()) {
+	if !static && protectedCallable(signature) {
 		c.report(call, "dynamic calls with immutable storage are unsupported")
 	}
 	c.callArguments(call, obj, signature, static)
@@ -70,17 +70,6 @@ func (c *subsetChecks) iteratorResult(call *ast.CallExpr, obj types.Object) {
 			c.report(call, "immutable iterators must be consumed by direct range")
 		}
 	}
-}
-
-// protectedCallResults checks each result for protected values or callbacks.
-func protectedCallResults(results *types.Tuple) bool {
-	for i := 0; i < results.Len(); i++ {
-		result := results.At(i).Type()
-		if checker.Contains(result) || protectedCallable(result) {
-			return true
-		}
-	}
-	return false
 }
 
 // unparenthesizedParent finds the context of an expression through parentheses.
@@ -259,14 +248,14 @@ func (c *subsetChecks) methodCall(call *ast.CallExpr, static bool) bool {
 		return static
 	}
 	selection := c.pass.TypesInfo.Selections[selector]
-	if selection == nil {
+	if selection == nil || selection.Kind() == types.FieldVal {
 		return static
+	}
+	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
+		return false
 	}
 	if !libraryObject(selection.Obj()) && protectedCallable(selection.Obj().Type()) {
 		c.report(selector, "user-defined methods with immutable storage are unsupported")
-	}
-	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
-		static = false
 	}
 	return static
 }

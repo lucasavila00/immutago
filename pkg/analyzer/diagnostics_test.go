@@ -58,10 +58,10 @@ func TestFieldDiagnosticsUseOneDeclarationSite(t *testing.T) {
 	}
 }
 
-// TestPointerConstructorDiagnosticDoesNotClassifyItsTypeAsAnArgument keeps the actionable allocation error.
-func TestPointerConstructorDiagnosticDoesNotClassifyItsTypeAsAnArgument(t *testing.T) {
+// TestPointerConstructorAcceptsCompilerBuiltinSignature checks the fresh allocation boundary.
+func TestPointerConstructorAcceptsCompilerBuiltinSignature(t *testing.T) {
 	got := checkSource(t, `type Value struct{im.Immut};func f(){_=new(Value)}`)
-	if !strings.Contains(got, "pointer-owned construction") || strings.Contains(got, "dynamic calls") {
+	if got != "" {
 		t.Fatalf("incorrect constructor diagnostic: %s", got)
 	}
 }

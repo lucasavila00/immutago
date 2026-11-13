@@ -51,7 +51,7 @@ func TestLiteralTransportAccepts(t *testing.T) {
 		`type Owner struct{im.Immut;Child V};func f(v V){_=Owner{Child:v}}`,
 		`func f(v V){_=[1]V{v};_=im.FreezeSlice([]V{v});_=im.FreezeMap(map[V]V{v:v})}`,
 		`type Holder struct{Make func()int};func scalar()int{return 1};func f(){_=Holder{Make:scalar}}`,
-		`func f[T ~[]any](v V)T{return T{v.X}}`,
+		`func f[T ~[]any](v int)T{return T{v}}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {

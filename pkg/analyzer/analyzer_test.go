@@ -87,7 +87,7 @@ func checkSource(t *testing.T, declarations string) string {
 	return strings.Join(reports, "\n")
 }
 
-// TestValidTypes covers recursive proofs, aliases, generic type sets, and ordinary mutable locals.
+// TestValidTypes covers recursive proofs, aliases, and ordinary mutable scalar locals.
 func TestValidTypes(t *testing.T) {
 	cases := []string{
 		`type Value struct { im.Immut; Flag bool; Text string; Number complex128; Array [4]int }`,
@@ -97,12 +97,6 @@ func TestValidTypes(t *testing.T) {
 		`type Alias = im.Immut
    type Value struct { Alias; Text string }
    type Copy Value`,
-		`type Scalar interface { ~int | ~string }
-   type Value[T Scalar] struct { im.Immut; Item T }
-   var _ Value[int]`,
-		`type Scalar interface { ~int | ~string }
-   type Smaller interface { Scalar; ~int }
-   type Value[T Smaller] struct { im.Immut; Item T }`,
 		`type Value struct { im.Immut; Items im.FrozenSlice[im.FrozenMap[string,int]] }`,
 		`type Value struct { im.Immut; X int }
    func replace() { v := Value{X: 1}; v = Value{X: 2}; _ = v }`,
@@ -127,7 +121,7 @@ func TestValidTypes(t *testing.T) {
 func TestRejectedTypes(t *testing.T) {
 	cases := []struct{ name, source, want string }{
 		{"named array", `type Count [2]int; type V struct { im.Immut; X Count }`, "named array"},
-		{"pointer", `type V struct { im.Immut; X *int }`, "not provably immutable"},
+		{"pointer", `type V struct { im.Immut; X *int }`, "concrete marked struct target"},
 		{"slice", `type V struct { im.Immut; X []int }`, "not provably immutable"},
 		{"interface", `type V struct { im.Immut; X any }`, "not provably immutable"},
 		{"function", `type V struct { im.Immut; X func() }`, "not provably immutable"},
@@ -137,15 +131,15 @@ func TestRejectedTypes(t *testing.T) {
 		{"named marker", `type V struct { M im.Immut }`, "must be embedded by value"},
 		{"pointer marker", `type V struct { *im.Immut }`, "must be embedded by value"},
 		{"recursive failure", `type V struct { im.Immut; Next im.FrozenSlice[V]; Bad []int }`, "Bad"},
-		{"generic", `type V[T any] struct { im.Immut; X T }`, "constraint does not prove"},
-		{"mixed terms", `type V[T interface{ ~int | ~[]int }] struct { im.Immut; X T }`, "constraint"},
+		{"generic", `type V[T any] struct { im.Immut; X T }`, "type parameters are unsupported"},
+		{"mixed terms", `type V[T interface{ ~int | ~[]int }] struct { im.Immut; X T }`, "type parameters are unsupported"},
 		{"repeated failed bound", `type Bad struct{ X int }
-         type V[T interface{ Bad; Bad }] struct { im.Immut; X T }`, "constraint"},
+         type V[T interface{ Bad; Bad }] struct { im.Immut; X T }`, "type parameters are unsupported"},
 		{"failed recursive alternatives", `type Bad struct { im.Immut; Next im.FrozenSlice[Bad]; X []int }
-         type V[T interface{ Bad; Bad }] struct { im.Immut; X T }`, "constraint"},
-		{"bad argument", `var _ im.FrozenSlice[*int]`, "not provably immutable"},
-		{"bad inference", `var _ = im.FreezeSlice([]*int{new(int)})`, "not provably immutable"},
-		{"bad key", `var _ im.FrozenMap[*int,int]`, "not provably immutable"},
+         type V[T interface{ Bad; Bad }] struct { im.Immut; X T }`, "type parameters are unsupported"},
+		{"bad argument", `var _ im.FrozenSlice[*int]`, "concrete marked struct target"},
+		{"bad inference", `var _ = im.FreezeSlice([]*int{new(int)})`, "concrete marked struct target"},
+		{"bad key", `var _ im.FrozenMap[*int,int]`, "concrete marked struct target"},
 		{"unmarked owner", `type V struct { im.Immut }; type W struct { V V }`, "unmarked struct"},
 		{"unmarked slice", `type V struct { im.Immut }; type W struct { V []V }`, "unmarked struct"},
 		{"unmarked map", `type V struct { im.Immut }; type W struct { V map[int]V }`, "unmarked struct"},

@@ -75,6 +75,9 @@ func (c *subsetChecks) visit(n ast.Node) bool {
 	switch x := n.(type) {
 	case *ast.CompositeLit:
 		c.compositeLiteral(x)
+	case *ast.BinaryExpr:
+		c.transport(x.X, c.pass.TypesInfo.TypeOf(x.Y))
+		c.transport(x.Y, c.pass.TypesInfo.TypeOf(x.X))
 	case *ast.TypeAssertExpr:
 		if checker.Contains(c.pass.TypesInfo.TypeOf(x)) {
 			c.report(x, "immutable interface assertions are unsupported")
