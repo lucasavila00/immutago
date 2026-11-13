@@ -64,17 +64,41 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"mixed markers", `type Mixed struct{im.Immut;im.ImmutNoRef}`, "cannot embed both"},
 		{"generic marked", `type Box[T any]struct{im.Immut;X int}`, "user generic declarations"},
 		{"generic local", `func f[T any](){v:=Shared{};_=v}`, "user generic declarations"},
-		{"generic collection", `func f[T ~int](v T)im.FrozenSlice[T]{s:=im.FreezeSlice([]T{v});return s}`, "user generic declarations"},
+		{
+			"generic collection",
+			`func f[T ~int](v T)im.FrozenSlice[T]{s:=im.FreezeSlice([]T{v});return s}`,
+			"user generic declarations",
+		},
 		{"generic instance", `type Box[T any]struct{V T};var value Box[Shared]`, "user generic instantiations"},
-		{"generic receiver body", `type Box[T any]struct{V T};func(b Box[T])Read()int{v:=Shared{};return v.X}`, "user generic declarations"},
+		{
+			"generic receiver body",
+			`type Box[T any]struct{V T};func(b Box[T])Read()int{v:=Shared{};return v.X}`,
+			"user generic declarations",
+		},
 		{"NoRef nil builder", `func f(){values:=[]*Local{nil};_=len(values)}`, "ImmutNoRef"},
 		{"NoRef empty builder", `func f(){var values []*Local;_=len(values)}`, "ImmutNoRef"},
-		{"range interface", `func f(){values:=im.FreezeSlice([]Shared{{}});var boxed any;for _,boxed=range values.All(){};_=boxed}`, "boxing immutable storage"},
-		{"method parameter", `type Reader int;func(Reader)Read(p *Shared)int{return p.X};func f(){p:=&Shared{};_=Reader(0).Read(p)}`, "user-defined methods with immutable storage"},
-		{"method result", `type Reader int;func(Reader)Make()*Shared{return &Shared{}};func f(){_=Reader(0).Make()}`, "user-defined methods with immutable storage"},
+		{
+			"range interface",
+			`func f(){values:=im.FreezeSlice([]Shared{{}});var boxed any;for _,boxed=range values.All(){};_=boxed}`,
+			"boxing immutable storage",
+		},
+		{
+			"method parameter",
+			`type Reader int;func(Reader)Read(p *Shared)int{return p.X};func f(){p:=&Shared{};_=Reader(0).Read(p)}`,
+			"user-defined methods with immutable storage",
+		},
+		{
+			"method result",
+			`type Reader int;func(Reader)Make()*Shared{return &Shared{}};func f(){_=Reader(0).Make()}`,
+			"user-defined methods with immutable storage",
+		},
 		{"reference comparison box", `func f(p *Shared,boxed any)bool{return p==boxed}`, "boxing immutable storage"},
 		{"value comparison box", `func f(v Shared,boxed any)bool{return boxed!=v}`, "boxing immutable storage"},
-		{"tuple callback", `func pair()(Shared,int){return Shared{},1};func f(callback func(Shared,int)){callback(pair())}`, "dynamic calls with immutable storage"},
+		{
+			"tuple callback",
+			`func pair()(Shared,int){return Shared{},1};func f(callback func(Shared,int)){callback(pair())}`,
+			"dynamic calls with immutable storage",
+		},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
