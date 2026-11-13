@@ -19,15 +19,17 @@ import (
 	"go/types"
 	"strconv"
 
+	"github.com/lucasavila00/immutago/internal/borrow"
 	"github.com/lucasavila00/immutago/internal/checker"
 	"golang.org/x/tools/go/analysis"
 )
 
 // Analyzer checks immutable type obligations and reports unsupported aliasing and mutations.
 var Analyzer = &analysis.Analyzer{
-	Name: "immutago",
-	Doc:  "prove immutability of marked structs and immutable collection elements",
-	Run:  run,
+	Name:      "immutago",
+	Doc:       "prove immutability of marked structs and immutable collection elements",
+	Run:       run,
+	FactTypes: []analysis.Fact{new(borrow.Summary)},
 }
 
 // run checks compiler-resolved types and source operations in one package.
@@ -49,6 +51,9 @@ func run(pass *analysis.Pass) (any, error) {
 				c.report(ident.Pos(), "immutable type argument: "+reason)
 			}
 		}
+	}
+	if err := borrow.Check(pass); err != nil {
+		return nil, err
 	}
 	return nil, nil
 }
@@ -76,31 +81,13 @@ func (c *checks) visit(node ast.Node) bool {
 		}
 	case *ast.ImportSpec:
 		c.checkImport(n)
-	case *ast.UnaryExpr:
-		if n.Op == token.AND {
-			c.checkWrite(n.X)
-		}
-	case *ast.SliceExpr:
-		c.checkSlice(n)
-	case *ast.SelectorExpr:
-		c.checkMethod(n)
+
 	case *ast.TypeSpec:
 		if obj := c.pass.TypesInfo.Defs[n.Name]; obj != nil {
 			c.checkType(n.Pos(), obj.Type())
 		}
 	case *ast.StructType:
 		c.checkStruct(n.Pos(), c.pass.TypesInfo.TypeOf(n))
-	case *ast.AssignStmt:
-		for _, lhs := range n.Lhs {
-			c.checkWrite(lhs)
-		}
-	case *ast.IncDecStmt:
-		c.checkWrite(n.X)
-	case *ast.RangeStmt:
-		if n.Tok == token.ASSIGN {
-			c.checkWrite(n.Key)
-			c.checkWrite(n.Value)
-		}
 	}
 	if expr, ok := node.(ast.Expr); ok {
 		t := c.pass.TypesInfo.TypeOf(expr)
@@ -118,33 +105,6 @@ func (c *checks) checkImport(spec *ast.ImportSpec) {
 	}
 }
 
-// checkMethod rejects implicit address-taking when a field selects a pointer-receiver method.
-func (c *checks) checkMethod(expr *ast.SelectorExpr) {
-	selection := c.pass.TypesInfo.Selections[expr]
-	if selection == nil {
-		return
-	}
-	method, ok := selection.Obj().(*types.Func)
-	if !ok {
-		return
-	}
-	signature := method.Type().(*types.Signature)
-	if _, pointer := signature.Recv().Type().(*types.Pointer); pointer {
-		c.checkWrite(expr.X)
-	}
-}
-
-// checkSlice rejects a mutable slice view into an array owned by an immutable value.
-func (c *checks) checkSlice(expr *ast.SliceExpr) {
-	t := c.pass.TypesInfo.TypeOf(expr.X)
-	if t == nil {
-		return
-	}
-	if _, ok := t.Underlying().(*types.Array); ok {
-		c.checkWrite(expr.X)
-	}
-}
-
 // checkType checks collection arguments and disallows pointers that could expose mutable aliases.
 func (c *checks) checkType(pos token.Pos, t types.Type) {
 	if reflectionValue(t) {
@@ -158,23 +118,11 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 			c.report(pos, "immutable collection: "+reason)
 		}
 	}
-	if ptr, ok := t.Underlying().(*types.Pointer); ok {
-		c.checkPointer(pos, ptr.Elem())
-	}
 	// Defined types can inherit a struct without a struct literal in this package.
 	if _, ok := types.Unalias(t).(*types.Named); ok && !checker.IsCollection(t) {
 		if _, ok := t.Underlying().(*types.Struct); ok {
 			c.checkStruct(pos, t)
 		}
-	}
-}
-
-// checkPointer rejects known immutable storage and generic storage whose aliases cannot be proved safe.
-func (c *checks) checkPointer(pos token.Pos, element types.Type) {
-	if checker.Contains(element) {
-		c.report(pos, "unsupported pointer to immutable storage; use immutable values")
-	} else if checker.PossibleStorage(element) {
-		c.report(pos, "unsupported pointer to unresolved generic storage; constrain its type")
 	}
 }
 
@@ -228,26 +176,6 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		} else if checker.PossibleStorage(ft) {
 			c.report(pos, "unsupported unmarked field "+field.Name()+": unresolved generic storage")
 			return
-		}
-	}
-}
-
-// checkWrite rejects writes through a field or array element of immutable storage.
-func (c *checks) checkWrite(expr ast.Expr) {
-	if expr == nil {
-		return
-	}
-	switch e := ast.Unparen(expr).(type) {
-	case *ast.SelectorExpr:
-		if c.pass.TypesInfo.Selections[e] != nil && checker.Contains(c.pass.TypesInfo.TypeOf(e.X)) {
-			c.report(e.Pos(), "cannot mutate a field of an immutable value")
-		}
-		c.checkWrite(e.X)
-	case *ast.IndexExpr:
-		c.checkWrite(e.X)
-	case *ast.StarExpr:
-		if checker.Contains(c.pass.TypesInfo.TypeOf(e)) {
-			c.report(e.Pos(), "cannot mutate immutable storage through a pointer")
 		}
 	}
 }

@@ -118,6 +118,7 @@ func TestValidTypes(t *testing.T) {
 // TestRejectedTypes covers failed recursive obligations, marker misuse, and immutable ownership boundaries.
 func TestRejectedTypes(t *testing.T) {
 	cases := []struct{ name, source, want string }{
+		{"named array", `type Count [2]int; type V struct { im.Marker; X Count }`, "named array"},
 		{"pointer", `type V struct { im.Marker; X *int }`, "not provably immutable"},
 		{"slice", `type V struct { im.Marker; X []int }`, "not provably immutable"},
 		{"interface", `type V struct { im.Marker; X any }`, "not provably immutable"},

@@ -10,9 +10,9 @@ A place is a storage root followed by field, index, or dereference projections.
 Alias provenance survives assignments, joins, calls, returns, and captures.
 Value copies create independent roots; reference copies retain their targets.
 
-Seed reference liveness at uses. Propagate region constraints backwards through
-control flow and between aliases. Compute active loans with a fixed-point
-worklist. At each write, expire out-of-region loans, then check overlapping live loans
+Alias copies share a loan region. Seed it with every alias use and trace
+liveness backward through control flow. Solve regions and active loans with
+the ported graph engines. At each write, expire out-of-region loans, then check overlapping live loans
 before applying overwrite kills.
 Unknown indices may overlap; only definite overlap can kill a loan.
 

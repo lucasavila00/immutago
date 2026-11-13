@@ -2,9 +2,12 @@ package rejected
 
 import im "github.com/lucasavila00/immutago/pkg/im"
 
-type Count [2]int
+type Count struct {
+	im.Marker
+	Values [2]int
+}
 
-func (p *Count) Change() { p[0] = 1 }
+func (p *Count) Change() { p.Values[0] = 1 }
 
 type Value struct {
 	im.Marker

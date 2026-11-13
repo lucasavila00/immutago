@@ -3,7 +3,7 @@
 ## Decision
 
 Use Rust-style ownership and shared loans for marked Go values. Borrow lifetimes
-end at their last required use, not at the end of the lexical scope.
+end at their last required use.
 
 Owned local storage permits conditional construction, field updates, and
 reassignment. A value copy has independent storage. A pointer copy aliases its
@@ -21,11 +21,11 @@ Writing `config.Limit` before the last required use of `p` fails. Replacing
 `config` also fails while its storage is borrowed. Rebinding `p` to a different
 allocation does not replace its previous target.
 
-Fresh owned allocations support construction before sharing. Returning a
-reference, capturing it, or passing it to another function must preserve its
-loan. Unknown effects fail explicitly.
+Fresh owned allocations support construction before sharing. Returned, captured, and passed references retain their loans. Unknown effects fail.
 
-Marked fields and collection elements still require structural immutability.
+Fields and elements recursively allow primitives, arrays, marked structs, and
+`im` collections. Custom aggregates must be marked structs; defined array
+wrappers are rejected.
 Unmarked structs cannot contain immutable fields. Published collection storage
 is never writable. Package-level marked storage is read-only after initialization.
 No suppression directives or unchecked user implementations are permitted.

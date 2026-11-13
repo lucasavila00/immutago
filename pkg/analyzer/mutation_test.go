@@ -55,6 +55,8 @@ func TestBorrowLifetimes(t *testing.T) {
 		{"branch", `func f(v Value,b bool) { if b {p:=&v; _=read(p)} else {v.X=1}; v.X=2 }`},
 		{"branch join", `func f(a,b Value,c bool) { var p *Value; if c {p=&a} else {p=&b}; _=read(p); a.X=1; b.X=2 }`},
 		{"loop", `func f(v Value,n int) { for i:=0;i<n;i++ {v.X=i; p:=&v; _=read(p)}; v.X=2 }`},
+		{"loop alias last use", `func f(v Value,n int) { var old *Value
+         for i:=0;i<n;i++ {if old!=nil {_=read(old)}; v.X=i; p:=&v; old=p} }`},
 		{"early return", `func f(v Value,b bool) { p:=&v; if b {_=read(p);return}; v.X=2 }`},
 		{"rhs", `func f(v Value) { v.X=read(&v)+1 }`},
 		{"identity", `func f(v Value) { p:=identity(&v); _=read(p); v.X=2 }`},
@@ -88,6 +90,8 @@ func TestLiveBorrowConflicts(t *testing.T) {
 		{"dynamic array", `func f(v Value,i,j int) { p:=&v.Array[i]; v.Array[j]=2; _=readInt(p) }`},
 		{"branch", `func f(a,b Value,c bool) { var p *Value; if c {p=&a} else {p=&b}; a.X=2; _=read(p) }`},
 		{"loop", `func f(v Value,n int) { p:=&v; for i:=0;i<n;i++ {v.X=i; _=read(p)} }`},
+		{"loop loan reissuance", `func f(v Value,n int) { var old *Value
+         for i:=0;i<n;i++ {v.X=i; p:=&v; if old!=nil {_=read(old)}; old=p} }`},
 		{"identity", `func f(v Value) { p:=identity(&v); v.X=2; _=read(p) }`},
 		{"method value", `func f(v Value) { later:=v.Read; v.X=2; _=later() }`},
 		{"closure", `func f(v Value) { p:=&v; later:=func()int{return p.X}; v.X=2; _=later() }`},
@@ -105,6 +109,24 @@ func TestLiveBorrowConflicts(t *testing.T) {
 			reports := checkSource(t, borrowTestTypes+tc.source)
 			if !strings.Contains(reports, "borrow") && !strings.Contains(reports, "shared reference") {
 				t.Fatalf("diagnostics = %q; want borrowed-storage or shared-reference conflict", reports)
+			}
+		})
+	}
+}
+
+// TestBorrowCarriersCannotErasePermissions checks scalar aliases retained in ordinary aggregate storage.
+func TestBorrowCarriersCannotErasePermissions(t *testing.T) {
+	cases := []string{
+		`func f(v Value) { h:=struct{ P *int }{P:&v.X}; *h.P=2 }`,
+		`func f(v Value) { h:=[]*int{&v.X}; *h[0]=2 }`,
+		`func f(v Value) { h:=map[string]*int{"x":&v.X}; *h["x"]=2 }`,
+	}
+	for _, source := range cases {
+		t.Run(source, func(t *testing.T) {
+			reports := checkSource(t, borrowTestTypes+source)
+			if !strings.Contains(reports, "borrow") && !strings.Contains(reports, "shared reference") &&
+				!strings.Contains(reports, "unsupported") {
+				t.Fatalf("diagnostics = %q; want capability conflict or unsupported retention", reports)
 			}
 		})
 	}
@@ -167,5 +189,29 @@ func TestRecursivePointerType(t *testing.T) {
 	reports := checkSource(t, "type P *P; var _ = im.Marker{}")
 	if reports != "" {
 		t.Fatalf("ordinary pointer type rejected: %s", reports)
+	}
+}
+
+// TestIndirectBorrowCannotErasePermission checks a shared alias loaded through a pointer-variable address.
+func TestIndirectBorrowCannotErasePermission(t *testing.T) {
+	source := borrowTestTypes + `
+ func dereference(pointer **Value) *Value { return *pointer }
+ func f(v Value) { p:=&v; q:=dereference(&p); v.X=2; _=read(q) }
+ `
+	reports := checkSource(t, source)
+	if !strings.Contains(reports, "borrow") && !strings.Contains(reports, "shared reference") &&
+		!strings.Contains(reports, "unsupported") {
+		t.Fatalf("diagnostics = %q; want an indirect loan conflict or unsupported dereference", reports)
+	}
+}
+
+// TestUnknownFactoryCannotCreateOwnership rejects protected pointer results with no inferred effects.
+func TestUnknownFactoryCannotCreateOwnership(t *testing.T) {
+	source := borrowTestTypes + `
+ func f(factory func() *Value) { pointer:=factory(); pointer.X=2 }
+ `
+	reports := checkSource(t, source)
+	if !strings.Contains(reports, "unsupported") && !strings.Contains(reports, "shared reference") {
+		t.Fatalf("diagnostics = %q; want unknown result ownership rejection", reports)
 	}
 }

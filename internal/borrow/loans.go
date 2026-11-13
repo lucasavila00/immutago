@@ -1,0 +1,116 @@
+// Algorithms adapted from rustc at 80196be0e787008b6fb14d2990aba92083cd68e1.
+// Sources: rustc_borrowck/src/dataflow.rs and type_check/liveness/trace.rs.
+// See third_party/rustc for attribution and license terms.
+
+package borrow
+
+import (
+	"strings"
+
+	"github.com/lucasavila00/immutago/internal/borrow/flow"
+)
+
+// checkLoans ports issuance, nonlexical region expiration, and forward loan checks.
+// Region kills precede an access. Storage overwrite kills follow its conflict check.
+func (e *engine) checkLoans() {
+	count := len(e.instructions)
+	gen, early, primary := make([]flow.Set, count), make([]flow.Set, count), make([]flow.Set, count)
+	for i := range count {
+		gen[i] = flow.NewSet()
+		early[i] = flow.NewSet()
+		primary[i] = flow.NewSet()
+	}
+	seeds := make([]flow.Set, len(e.loans))
+	for index, l := range e.loans {
+		uses := l.uses.Clone()
+		if l.deferred || l.external {
+			for point, succs := range e.graph.Succ {
+				if len(succs) == 0 {
+					uses.Add(point)
+				}
+			}
+		}
+		definitions := flow.NewSet(l.point)
+		if e.carrierSurvives(index, l.point) {
+			definitions = flow.NewSet()
+		}
+		seeds[index] = flow.BackwardLive(e.graph, uses, definitions)
+		seeds[index].Add(l.point)
+	}
+	// Copies retain their issuing region; no artificial lifetime boundary is added at a pointer copy.
+	regions := flow.SolveRegions(seeds, nil)
+	for index, l := range e.loans {
+		gen[l.point].Add(index)
+		for point := range flow.OutOfScope(e.graph, l.point, regions[index]) {
+			early[point].Add(index)
+		}
+	}
+	for _, a := range e.accesses {
+		if a.write {
+			for index, l := range e.loans {
+				if Overlap(a.ref.place, l.place, true) {
+					primary[a.point].Add(index)
+				}
+			}
+		}
+	}
+	kill := make([]flow.Set, count)
+	for i := range count {
+		kill[i] = early[i].Clone()
+		kill[i].Union(primary[i])
+	}
+	incoming, _ := flow.Forward(e.graph, gen, kill)
+	for _, a := range e.accesses {
+		if !a.write || !e.roots[a.ref.place.Root].protected {
+			continue
+		}
+		root := e.roots[a.ref.place.Root]
+		if root.global && globallyProtected(root.typ) && !(e.fn.Name() == "init" || strings.HasPrefix(e.fn.Name(), "init#")) {
+			e.report(a.pos, "cannot write package-level immutable storage")
+			continue
+		}
+		if a.ref.shared {
+			e.report(a.pos, "cannot write through a shared reference")
+			continue
+		}
+		active := incoming[a.point].Without(early[a.point])
+		for index := range active {
+			if Overlap(a.ref.place, e.loans[index].place, false) {
+				e.report(a.pos, "cannot write borrowed storage while a shared reference is live")
+				break
+			}
+		}
+	}
+}
+
+// carrierSurvives prevents a repeated issuance site from killing references from earlier loop iterations.
+// A loan ends at a definition only when no other reference carrier remains live across that point.
+func (e *engine) carrierSurvives(index, point int) bool {
+	for _, stored := range e.inputs[point].cells {
+		carries := false
+		for _, r := range stored.refs {
+			if r.loan == index {
+				carries = true
+				break
+			}
+		}
+		if !carries {
+			continue
+		}
+		uses, definitions := flow.NewSet(), flow.NewSet()
+		for _, a := range e.accesses {
+			if !Overlap(a.ref.place, stored.place, true) {
+				continue
+			}
+			if a.write {
+				definitions.Add(a.point)
+			} else {
+				uses.Add(a.point)
+			}
+		}
+		if flow.BackwardLive(e.graph, uses, definitions)[point] {
+			return true
+		}
+	}
+	return false
+}

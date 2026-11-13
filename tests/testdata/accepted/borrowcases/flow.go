@@ -92,3 +92,17 @@ func ScalarInterfaceLastUse() Good {
 	value.X = 2
 	return value
 }
+
+func LoopAliasLastUse(count int) Good {
+	var value Good
+	var previous *Good
+	for index := 0; index < count; index++ {
+		if previous != nil {
+			_ = read(previous)
+		}
+		value.X = index
+		pointer := &value
+		previous = pointer
+	}
+	return value
+}
