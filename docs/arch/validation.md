@@ -1,49 +1,50 @@
-# Validation and review regressions
+# Validation
 
-[Architecture index](README.md)
+[Architecture](README.md) · [Reviewer requirements](../reviewer-focus.md)
 
-## Trusted boundary
+## Trusted code
 
-The [analyzer](../../pkg/analyzer/analyzer.go) skips the package at the fixed
-`im` library path and packages identified as standard library source.
-[Toolchain detection](../../internal/borrow/toolchain.go) uses the active
-`go env GOROOT` source directory. The implementation trusts the Go compiler,
-runtime, standard library, and `im` storage methods. It does not prove those
-implementations. Reflection and unsafe imports in checked application code
-are rejected.
+The [analyzer](../../pkg/analyzer/analyzer.go) skips the fixed `im` package path
+and the standard library. [Toolchain detection](../../internal/borrow/toolchain.go)
+identifies standard library source from the active `go env GOROOT` directory.
+The implementation trusts the Go compiler, runtime, standard library, and
+`im` storage methods. It does not prove those implementations.
 
-An ordinary Go build does not run these checks. Run the analyzer, or configure
-`go vet` with its absolute `-vettool` path, for consumer packages. The standard
-driver also analyzes dependencies and carries failure facts. Freeze has no
-runtime alias check, consumed flag, or element validation. Code outside this
-analysis can retain a writable alias to a frozen container.
+Checked application code cannot use reflection or unsafe imports to bypass
+ownership. An unsupported operation produces an error. There are no user trust
+annotations or suppression directives.
 
-The intended contract rejects operations that it cannot prove safe. That
-policy is not evidence that every source form has been checked correctly.
-The review below found accepted programs in the previous implementation. The
-explicit subset now rejects these forms; the examples remain as regressions.
+The analyzer must run for the consumer's packages and build configuration.
+An ordinary Go build does not run it. The analysis driver checks dependencies
+and carries relevant failures to selected consumers. Freeze itself has no
+alias check, consumed flag, or element validation at runtime. Code used without
+the analyzer does not receive these guarantees.
 
-## Tests and hosted CI
+This is a static checker with regression evidence, not a formal verification
+of its implementation. A written allowlist alone does not prove that every
+source form reaches the correct check.
 
-[Structural tests](../../internal/checker/types_test.go) exercise type graphs.
-[Flow tests](../../internal/borrow/flow/flow_test.go) compare backward liveness
-with an independent fixed-point solver. Analyzer tests cover source-level
-accepted and rejected operations. Runtime collection tests check copies,
-reads, iteration, and allocation behavior.
+## Evidence by layer
 
-[CLI tests](../../tests/cli_test.go) build the shipped command and copy fixtures
-into independent consumer modules. They check accepted and rejected packages,
-compiler errors, JSON output, and `go vet` integration. Dependency tests also
-select only consumers, so hidden dependency failures must reach them through
-facts. Each fixture has a diagnostic snapshot. Review snapshot changes; do
-not update them just to make a test pass. JSON mode follows the standard
-driver behavior: diagnostics can be present with a successful exit status.
+| Layer | Evidence |
+| --- | --- |
+| Recursive type proofs | [Type tests](../../internal/checker/types_test.go) cover field graphs and constraints. |
+| Shared-loan flow | [Flow tests](../../internal/borrow/flow/flow_test.go) compare backward liveness with an independent fixed-point solver. |
+| Allowed source forms | [Analyzer tests](../../pkg/analyzer/explicit_subset_test.go) and [shape tests](../../pkg/analyzer/shape_convergence_test.go) check complete forms and nearby rejections. |
+| Builder ownership | [Freeze tests](../../internal/freeze/freeze_test.go) check fresh storage, aliases, branches, loops, and consumption. |
+| Library storage | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), and [iterator tests](../../pkg/im/iterator_test.go) check storage reuse, clone independence, reads, and allocations. |
+| Shipped analyzer | [CLI tests](../../tests/cli_test.go) build the command and load fixtures as independent consumer modules. |
+
+CLI tests cover compiler errors, analyzer output, JSON, and `go vet`.
+Dependency tests select only consumers, so failures hidden by a driver must
+still reach them. Sibling `.txt` snapshots record source positions, context,
+and corrections. Use the [snapshot workflow](../development.md#diagnostic-snapshots)
+to inspect changes before accepting them.
 
 [Hosted CI](../../.github/workflows/ci.yml) runs source checks, formatting,
-generated documentation checks, a build, and self-analysis. It runs race-enabled
-unit and end-to-end tests on Linux, macOS, and Windows. The
-[development guide](../contrib/development.md) lists local commands. Use focused
-local checks for a change and hosted CI for the full suite. Test success is not a claim that every possible source form has been proved.
+generated-doc checks, a build, and repository self-analysis. Race-enabled tests
+run on Linux, macOS, and Windows. Use local runs for focused debugging and
+hosted CI for full validation.
 
 ## Required regression coverage
 
@@ -66,130 +67,30 @@ receivers, iterator bindings, and tuple results around each affected form.
 
 Runtime tests must check that Freeze reuses original storage and that Clone
 creates independent storage. Allocation tests separate native construction
-from Freeze, reads, and direct iteration. Keep the same generated loan programs
-when comparing checker memory. See [collection costs](../performance.md) and
+from Freeze, reads, and direct iteration. See [collection costs](../performance.md) and
 [reviewer requirements](../reviewer-focus.md).
 
-## Confirmed failures in the previous implementation
+## Regression cases to retain
 
-The independent review used the source at `0d7e423`, whose tree matches
-`009830a`. Both examples below passed the real CLI with exit status zero.
-These were implementation defects, not supported exceptions. The explicit
-subset rejects user methods and protected select communication forms.
+These cases explain why complete source forms matter. The linked fixtures and
+snapshots record their current behavior.
 
-### Promoted pointer method
+| Case | Required check | Fixture |
+| --- | --- | --- |
+| A promoted scalar method writes through a protected owner | Reject user-defined methods on protected receivers, including implicit receivers. | [Protected methods](../../tests/testdata/rejected/explicit_methods/explicit_methods.go) |
+| A select operand freezes a builder before a selected receive writes into it | Reject protected select communication operands and targets. | [Statement forms](../../tests/testdata/rejected/explicit_statements/explicit_statements.go) |
+| A protected read is nested inside a multiple assignment or range target | Match the complete enclosing statement, not only its top-level operands. | [Rejected forms](../../tests/testdata/rejected/review_convergence/convergence_rejected.go) |
+| A callback returns a protected value without taking one | Check result types as well as arguments. | [Rejected calls](../../tests/testdata/rejected/review_convergence/convergence_rejected.go) |
+| Parentheses or a shared receiver hide a valid collection operation | Resolve exact method identity and allow the documented syntax. | [Accepted forms](../../tests/testdata/accepted/review_convergence/convergence_allowed.go) |
 
-```go
-type Counter int
-func (c *Counter) Inc() { *c++ }
-type Value struct { im.Marker; Counter }
+Do not repair a regression by adding only its spelling to a forbidden list.
+Match the allowed form and reject its alternatives. Keep an accepted nearby
+example so the repair does not remove a documented operation.
 
-func example() {
-    v := Value{}
-    p := &v
-    p.Inc()
-    println(p.Counter) // prints 1
-}
-```
+## Scope
 
-[Receiver checks](../../pkg/analyzer/subset_calls.go) previously tested the
-outer expression `p` without rejecting its promoted scalar receiver `*Counter`. The callee's
-scalar write was outside the marked-type checks. `v.Inc()` also passed while
-`p` was live.
-The explicit subset rejects all user-defined receiver methods on protected
-values. Only the listed methods on exact `im` collection types remain.
-
-### Select receive assignment after freeze
-
-Go evaluates all select channel operands before it selects a case. A receive
-assignment to a selected case's left side occurs later. The previously accepted
-program below changes storage after freezing it:
-
-```go
-package main
-
-import "github.com/lucasavila00/immutago/pkg/im"
-
-var done = make(chan bool)
-var observed = make(chan bool)
-
-func observe(f im.FrozenSlice[bool]) {
-    <-done
-    println("frozen after:", f.At(0))
-    observed <- true
-}
-
-func watch(f im.FrozenSlice[bool]) <-chan int {
-    println("frozen before:", f.At(0))
-    go observe(f)
-    return nil
-}
-
-func main() {
-    s := []bool{false}
-    ready := make(chan int, 1)
-    ready <- 1
-    select {
-    case _, s[0] = <-ready:
-    case <-watch(im.FreezeSlice(s)):
-    }
-    done <- true
-    <-observed
-}
-```
-
-The output is `frozen before: false`, then `frozen after: true`. Channel
-synchronization orders the later read after the write. This example does not
-need a data race. The freeze analysis relies on the generic Go CFG's node
-placement. Its event lowering does not reconstruct this delayed assignment to
-the second receive target. The explicit subset rejects builder and protected-value
-receive targets, and also rejects protected channel expressions in select clauses.
-
-## Cost and scope limits
-
-The old reaching-binding solver retained nested pointer-to-owner maps at every
-operation point, including dead local bindings. The explicit subset removes that
-solver. Each accepted reference now has one fixed owner; backward liveness remains.
-
-A focused same-machine comparison used separate blocks in one function:
-
-```go
-{ var v Value; p := &v; _ = p.X; v.X = 1 }
-```
-
-| Blocks | Before: peak RSS (MiB) | Fixed owners: peak RSS (MiB) |
-| --- | ---: | ---: |
-| 50 | 107.5 | 104.0 |
-| 100 | 157.0 | 100.2 |
-| 200 | 348.2 | 97.8 |
-
-The baseline was `269eaaf`; the changed solver was `8753467`. Both binaries
-checked the same generated consumer packages with
-`/usr/bin/time -l <binary> ./scale<N>`, where N was 50, 100, or 200. All six checks passed.
-These single observations include package loading and are not isolated solver
-benchmarks. At 200 blocks, elapsed time was 0.44 seconds before and 0.19 seconds
-after. The memory growth from retained possible-owner maps is removed; these
-measurements do not establish a bound for all source programs.
-
-The implementation deliberately omits mutable borrows, escaping references,
-arbitrary callback effects, and pointer-return provenance. Whole-owner loans
-also reject disjoint field writes. Generic marked structs retain constraint
-proof machinery even though generic calls with protected types are rejected.
-Removing generic marked structs could reduce that machinery, but would change
-the supported API. Recursive collection types likewise explain the structural
-proof graph; deleting the graph first would remove needed failure propagation.
-
-## Changes selected from the review
-
-The explicit subset rejects user-defined methods on protected receivers,
-protected select communication operations, reference copies and reassignment,
-protected multiple assignments, and nested Freeze calls. It keeps fixed local
-references, backward NLL, named readers, and the listed collection methods.
-
-This removes the forward possible-owner analysis. It does not remove the
-structural proof graph, native builder alias checks, or dependency failure facts;
-those still enforce required guarantees. The new source-shape matchers must
-follow [the reviewer requirements](../reviewer-focus.md).
-
-Removing all stored local references would be a further product change. It was
-not selected: `p := &value; read(p)` remains supported.
+The checker retains whole-owner loans, recursive type graphs, exclusive builder
+checks, and dependency facts. It does not infer mutable borrows, escaping
+reference effects, or pointer-return origins. See the [rules](../rules.md) for
+the complete supported forms and [ownership analysis](ownership.md) for the
+implementation.

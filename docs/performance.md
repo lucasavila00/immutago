@@ -1,9 +1,18 @@
-# Collection costs
+# Performance
 
-[Project reference](README.md)
+[Documentation](README.md) · [Collection API](../pkg/im/readme.md)
 
-The checker adds no runtime proof checks. Frozen collections wrap native Go
-storage. Freeze adds no allocation and does not copy the input.
+## Zero abstraction overhead
+
+The target is the C++ zero-overhead principle: equivalent handwritten native Go
+should not be faster merely because it avoids `im`. The wrapper should disappear
+after inlining. Freeze and reads should add no allocation, element copy, dynamic
+dispatch, runtime ownership check, or extra escape to the heap.
+
+Compare the same work. After `frozen := im.FreezeSlice(values)`, the performance
+baseline for `frozen.At(i)` is native `values[i]`. A map read has
+`value, found := entries[key]` as its baseline. Direct `All()` loops should have
+the same overhead as native `range`.
 
 | Operation | Storage work |
 | --- | --- |
@@ -14,22 +23,24 @@ storage. Freeze adds no allocation and does not copy the input.
 | Direct range over `All()` | O(n) traversal; no collection copy |
 | `Clone` | O(n) time and independent mutable storage |
 
-Native construction still costs memory. A preallocated slice needs its backing
-array; a Go map can use several internal allocations depending on size and Go
-version. We promise no second collection allocation at Freeze, not exactly one
-allocation for all construction.
-
 There are no persistent update methods. To change a frozen collection, clone it,
 edit the clone, and freeze the clone. Existing frozen copies retain the original
 storage. Element types must pass the checker so shallow cloning is sufficient.
 
-`make bench` reports Freeze, read, iteration, and clone costs. Allocation tests
-check Freeze and reads separately from native construction. Clone tests check
-that changes to the clone do not change the frozen source.
+## Check the cost
 
-## Checker memory
+[`make bench`](../pkg/im/benchmark_test.go) reports Freeze, read, iteration, and
+Clone costs. [Allocation tests](../pkg/im/iterator_test.go) check Freeze, reads,
+and direct iteration with prebuilt native storage. Clone tests check that the
+copy is independent. These checks cover the current operation costs; they do
+not compare every call site with a native baseline.
 
-Fixed references have one owner and need no forward possible-owner maps.
-A focused 200-reference CLI comparison reduced peak RSS from 348.2 MiB to
-97.8 MiB. This includes package loading and is one measurement, not a general
-memory bound. See [the measured review comparison](arch/validation.md).
+For a performance change, compare equivalent native and `im` consumer functions
+with the same input and observable result. Check inlining, bounds-check removal,
+and escape decisions with compiler diagnostics, then inspect generated code
+when the results differ. Check both a local-use case and a value returned from
+a helper. An allocation test alone cannot show zero abstraction overhead.
+
+Clone explicitly requests an independent copy. Its O(n) work is the cost of
+that operation, not an ownership-checking cost. Compare it with the same native
+storage copy, not with an in-place update.

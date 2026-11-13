@@ -1,9 +1,9 @@
 # Reviewer requirements
 
-[Project reference](README.md)
+[Documentation](README.md) · [Validation](arch/validation.md)
 
 Use this checklist for every change to the supported Go subset. The
-[guide](guide/immutability.md) defines the allowed source forms. The
+[guide](rules.md) defines the allowed source forms. The
 [architecture notes](arch/README.md) explain how they are checked.
 
 ## 1. Document what is allowed
@@ -39,11 +39,12 @@ For a local reference, match all of these parts:
 
 - One new local binding.
 - One address expression as its initializer.
-- An owned local value or its marked child as the address target.
+- An owned local value or its protected field as the address target.
 - A resolved protected pointer type.
 - An allowed statement context.
 
-Only after that match may the loan analysis record the owner. A declaration from
+Use the [reference-origin rules](rules.md#what-you-can-do-with-a-reference) to
+check the target type. Only after that match may the loan analysis record the owner. A declaration from
 an iterator, a pointer copy, a nil initializer, or a reassignment must reach the
 rejecting path. Do not accept every declaration and add exceptions after bugs
 appear. Use compiler identities, not only names such as `Get` or `FreezeSlice`.
@@ -70,3 +71,25 @@ ordinary Go operations that do not involve protected storage.
 A new supported form requires docs, a matcher, ownership rules, and tests in the
 same change. Do not call a gap fixed by changing only the docs, only a rejection
 example, or only one spelling of an unsupported operation.
+
+## Review documentation changes
+
+Check both reading paths from the documentation index. A user must be able to
+install the tool, run a complete example, find an allowed form, and understand
+a diagnostic. A maintainer must be able to find the check, its invariant, its
+tests, and the validation command.
+
+Check claims against resolved type checks, source-form matches, ownership code,
+and fixtures. Keep rule definitions on the rules page; architecture pages
+explain the mechanism and link to the rule. Remove stale future-tense plans and
+avoid repeating historical reports as current behavior. Keep temporary
+investigation reports in the change history, not in the reference pages.
+
+Run complete new examples through the CLI. Check relative links and anchors
+after moving pages, and check template paths if documentation tooling moves.
+Generated references must still match their Go comments.
+
+For collection performance changes, compare equivalent native Go and `im` code.
+Check inlining and heap escapes as well as allocations and elapsed time. The
+[zero-overhead target](performance.md#zero-abstraction-overhead) is stronger than
+having no runtime ownership checks.
