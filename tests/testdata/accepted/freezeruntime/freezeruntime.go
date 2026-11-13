@@ -17,4 +17,8 @@ func main() {
 	fmt.Println(item.X)
 	fmt.Println(freezebuilders.Branch(true).At(0), freezebuilders.Loop(3))
 	fmt.Println(freezebuilders.Nil().Clone() == nil)
+	fmt.Println(freezebuilders.AppendMarked().At(0).X, freezebuilders.CopyMarked().At(0).X)
+	marked := freezebuilders.ClearMarkedMap()
+	entry, ok := marked.Get(freezebuilders.Value{X: 3})
+	fmt.Println(entry.X, ok, marked.Len())
 }

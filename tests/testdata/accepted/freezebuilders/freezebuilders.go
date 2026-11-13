@@ -60,3 +60,28 @@ func Loop(count int) int {
 func Nil() im.FrozenSlice[int] { var values []int; return im.FreezeSlice(values) }
 
 var Global = im.FreezeSlice([]int{3})
+
+func AppendMarked() im.FrozenSlice[Value] {
+	var values []Value
+	values = append(values, Value{X: 1})
+	_ = len(values)
+	_ = cap(values)
+	return im.FreezeSlice(values)
+}
+
+func CopyMarked() im.FrozenSlice[Value] {
+	values := make([]Value, 1)
+	source := []Value{{X: 4}}
+	copy(values, source)
+	return im.FreezeSlice(values)
+}
+
+func ClearMarkedMap() im.FrozenMap[Value, Value] {
+	values := make(map[Value]Value)
+	values[Value{X: 1}] = Value{X: 2}
+	delete(values, Value{X: 1})
+	values[Value{X: 2}] = Value{X: 3}
+	clear(values)
+	values[Value{X: 3}] = Value{X: 4}
+	return im.FreezeMap(values)
+}
