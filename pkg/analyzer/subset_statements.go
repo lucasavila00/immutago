@@ -195,10 +195,6 @@ func (c *subsetChecks) synchronousStorage(expression ast.Expr) {
 
 // rangeBoundary rejects implicit reference creation and unknown protected callback iteration.
 func (c *subsetChecks) rangeBoundary(statement *ast.RangeStmt) {
-	if statement.Tok == token.ASSIGN && statement.Key != nil && statement.Value != nil &&
-		(c.protectedStorage(statement.Key) || c.protectedStorage(statement.Value)) {
-		c.report(statement, "multiple assignments involving protected storage are unsupported")
-	}
 	for _, target := range []ast.Expr{statement.Key, statement.Value} {
 		if target != nil && protectedReference(c.pass.TypesInfo.TypeOf(target)) {
 			c.report(target, "references require one fixed declaration from an owned local")
