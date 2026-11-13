@@ -35,9 +35,11 @@ type Alias = Leaf
 type Derived Leaf
 
 func Value() Tree {
+	children := im.FreezeSlice([]Tree{{Leaf: Leaf{Name: "child"}}})
+	index := im.FreezeMap(map[string]Tree{})
 	return Tree{
 		Leaf:     Leaf{Name: "leaf", Count: 3},
-		Children: im.FreezeSlice([]Tree{{Leaf: Leaf{Name: "child"}}}),
-		Index:    im.FreezeMap(map[string]Tree{}),
+		Children: children,
+		Index:    index,
 	}
 }

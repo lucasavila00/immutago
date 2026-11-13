@@ -1,3 +1,15 @@
-nll_alias_copy.go:25:2: cannot write borrowed immutable owner value (rejected.Good) through value.X: shared reference alias is still live; move this write after its final use, or copy the value before updating
-nll_alias_copy.go:23:2: 	shared reference alias declared here
-nll_alias_copy.go:26:11: 	this reachable use keeps shared reference alias live
+nll_alias_copy.go:22:11: unsupported immutable borrow: reference operation is outside the supported allowlist
+  source: pointer
+  type: *rejected.Good
+  fix: keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader
+nll_alias_copy.go:22:2: unsupported immutable borrow: references require one fixed declaration from an owned local
+  source: alias
+  type: *rejected.Good
+  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
+nll_alias_copy.go:23:2: unsupported immutable borrow: references require one fixed declaration from an owned local
+  source: pointer
+  type: *rejected.Good
+  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
+nll_alias_copy.go:24:2: cannot write borrowed immutable owner value (rejected.Good) through value.X: shared reference pointer is still live; move this write after its final use, or copy the value before updating
+nll_alias_copy.go:21:2: 	shared reference pointer declared here
+nll_alias_copy.go:26:6: 	this reachable use keeps shared reference pointer live

@@ -6,9 +6,13 @@ import (
 )
 
 func main() {
-	first, second := freezebuilders.Slice()
+	slices := freezebuilders.Slice()
+	first := slices.First
+	second := slices.Second
 	fmt.Println(first.At(0), second.At(0), first.Len(), second.Len())
-	a, b := freezebuilders.Map()
+	maps := freezebuilders.Map()
+	a := maps.First
+	b := maps.Second
 	old, _ := a.Get("a")
 	next, _ := b.Get("a")
 	fmt.Println(old, next, a.Len(), b.Len())

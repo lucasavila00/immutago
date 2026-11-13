@@ -1,4 +1,4 @@
-subset_global_reference.go:9:5: unsupported immutable borrow: global shared references are unsupported
+subset_global_reference.go:9:5: unsupported immutable borrow: references require one fixed declaration from an owned local
   source: Pointer
   type: *rejected.Good
-  fix: store an owned value globally; create and consume shared borrows inside one function
+  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference

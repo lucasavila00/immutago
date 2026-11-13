@@ -13,12 +13,12 @@ type Good struct {
 	Array [2]int
 }
 
-func read(pointer *Good) int        { return pointer.X }
-func readInt(pointer *int) int      { return *pointer }
-func (value *Good) Read() int       { return value.X }
+func read(pointer *Good) int   { return pointer.X }
+func readInt(pointer *int) int { return *pointer }
 
 func bad(condition bool) {
-	var first, second Good
+	var first Good
+	var second Good
 	var pointer *Good
 	if condition {
 		pointer = &first

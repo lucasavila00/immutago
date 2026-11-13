@@ -1,0 +1,40 @@
+explicit_methods.go:15:71: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: pointer.Increment
+  type: func()
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+explicit_methods.go:16:56: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: value.Read
+  type: func() int
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+explicit_methods.go:17:20: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: OwnRead
+  type: func() int
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+explicit_methods.go:18:75: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: pointer.OwnRead
+  type: func() int
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+explicit_methods.go:19:56: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: (*Good).OwnRead
+  type: func(*explicit_methods.Good) int
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+explicit_methods.go:28:6: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: value.Len
+  type: func() int
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+explicit_methods.go:29:6: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: value.At
+  type: func(index int) int
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+explicit_methods.go:30:9: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: value.Get
+  type: func(index int) (int, bool)
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+explicit_methods.go:31:6: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: value.All
+  type: func() int
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+explicit_methods.go:32:6: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: value.Clone
+  type: func() int
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed

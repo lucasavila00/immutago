@@ -8,4 +8,4 @@ type Good struct {
 	Array [2]int
 }
 
-func Build[T any](value T) im.FrozenSlice[T] { return im.FreezeSlice([]T{value}) }
+func Build[T any](value T) im.FrozenSlice[T] { frozen := im.FreezeSlice([]T{value}); return frozen }

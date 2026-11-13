@@ -1,2 +1,10 @@
+array_pointer_method.go:10:17: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: Change
+  type: func()
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
 array_pointer_method.go:10:28: cannot write through shared reference p.Values[0]: shared references are read-only; update the owned value before borrowing, or copy the value and update the copy
 array_pointer_method.go:10:7: 	shared reference p (*rejected.Count) declared here
+array_pointer_method.go:20:2: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+  source: value.N.Change
+  type: func()
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed

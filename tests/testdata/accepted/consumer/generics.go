@@ -18,7 +18,10 @@ type NamedInts struct {
 	Values [2]int
 }
 
-func Build[T PositiveScalar](value T) im.FrozenSlice[T] { return im.FreezeSlice([]T{value}) }
+func Build[T PositiveScalar](value T) im.FrozenSlice[T] {
+	frozen := im.FreezeSlice([]T{value})
+	return frozen
+}
 func GenericUse() {
 	_ = Build(1)
 	_ = Build("text")

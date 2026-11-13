@@ -1,1 +1,5 @@
+freeze_go_clear.go:5:43: unsupported immutable borrow: protected storage requires synchronous calls
+  source: values
+  type: []int
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 freeze_go_clear.go:5:43: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder

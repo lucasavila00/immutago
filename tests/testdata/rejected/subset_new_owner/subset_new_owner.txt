@@ -1,3 +1,7 @@
+subset_new_owner.go:9:13: unsupported immutable borrow: references require one fixed declaration from an owned local
+  source: p
+  type: *rejected.Good
+  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
 subset_new_owner.go:9:16: unsupported immutable borrow: pointer-owned construction is unsupported
   source: new(Good)
   type: *rejected.Good
