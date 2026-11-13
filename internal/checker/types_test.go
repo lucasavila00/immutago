@@ -10,7 +10,7 @@ import (
 // testTypes creates compiler type objects with the sealed library's exact package identity.
 func testTypes() (*types.Named, *types.Named) {
 	pkg := types.NewPackage(LibraryPath, "im")
-	marker := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Marker", nil), types.NewStruct(nil, nil), nil)
+	marker := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Immut", nil), types.NewStruct(nil, nil), nil)
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, pkg, "T", nil),
 		types.NewInterfaceType(nil, nil).Complete())
 	slice := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "FrozenSlice", nil),
@@ -21,7 +21,7 @@ func testTypes() (*types.Named, *types.Named) {
 
 // markedType creates a named marked struct whose fields can later be set for a recursive test.
 func markedType(name string, marker types.Type, fields ...*types.Var) *types.Named {
-	fields = append([]*types.Var{types.NewField(token.NoPos, nil, "Marker", marker, true)}, fields...)
+	fields = append([]*types.Var{types.NewField(token.NoPos, nil, "Immut", marker, true)}, fields...)
 	return types.NewNamed(types.NewTypeName(token.NoPos, nil, name, nil), types.NewStruct(fields, nil), nil)
 }
 
@@ -40,7 +40,7 @@ func TestProofGraph(t *testing.T) {
 	marker, slice := testTypes()
 	good := markedType("Good", marker)
 	good.SetUnderlying(types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Marker", marker, true),
+		types.NewField(token.NoPos, nil, "Immut", marker, true),
 		types.NewField(token.NoPos, nil, "Next", sliceType(t, slice, good), false),
 	}, nil))
 	if reason := Reason(good); reason != "" {
@@ -48,7 +48,7 @@ func TestProofGraph(t *testing.T) {
 	}
 	bad := markedType("Bad", marker)
 	bad.SetUnderlying(types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Marker", marker, true),
+		types.NewField(token.NoPos, nil, "Immut", marker, true),
 		types.NewField(token.NoPos, nil, "Next", sliceType(t, slice, bad), false),
 		types.NewField(token.NoPos, nil, "Mutable", types.NewPointer(types.Typ[types.Int]), false),
 	}, nil))
@@ -106,7 +106,7 @@ func TestOwnershipGraph(t *testing.T) {
 	if Contains(node) {
 		t.Fatal("ordinary recursive type contains immutable storage")
 	}
-	other := types.NewNamed(types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Marker", nil),
+	other := types.NewNamed(types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Immut", nil),
 		types.NewStruct(nil, nil), nil)
 	if Marked(markedType("Pretender", other)) {
 		t.Fatal("accepted marker from another package")

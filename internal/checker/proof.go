@@ -107,7 +107,7 @@ func (p *proof) depend(owner *obligation, t types.Type, constraint bool, label s
 
 // value builds the obligations for one stored value using its Go compiler type.
 func (p *proof) value(result *obligation, t types.Type) {
-	if IsLibraryType(t, "Marker") {
+	if IsLibraryType(t, "Immut") || IsLibraryType(t, "ImmutNoRef") {
 		return
 	}
 	if IsCollection(t) {
@@ -123,11 +123,22 @@ func (p *proof) value(result *obligation, t types.Type) {
 	}
 	if _, named := t.(*types.Named); named {
 		if _, array := t.Underlying().(*types.Array); array {
-			result.reason = "named array must be wrapped in a struct that embeds im.Marker"
+			result.reason = "named array must be wrapped in a struct with an immutable marker"
 			return
 		}
 	}
 	switch underlying := t.Underlying().(type) {
+	case *types.Pointer:
+		if NoRef(underlying.Elem()) {
+			result.reason = "ImmutNoRef references cannot be stored"
+			return
+		}
+		if _, nested := underlying.Elem().Underlying().(*types.Pointer); nested || !Contains(underlying.Elem()) {
+			result.reason = "stored pointers require a protected immutable value target"
+			return
+		}
+		p.depend(result, underlying.Elem(), false, "")
+		return
 	case *types.Basic:
 		if underlying.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex|types.IsString) != 0 {
 			return
@@ -145,7 +156,11 @@ func (p *proof) value(result *obligation, t types.Type) {
 // structure requires the marker and creates an obligation for every field.
 func (p *proof) structure(result *obligation, t types.Type, structure *types.Struct) {
 	if !Marked(t) {
-		result.reason = "struct does not embed im.Marker"
+		result.reason = "struct does not embed im.Immut or im.ImmutNoRef"
+		return
+	}
+	if Shared(t) && NoRef(t) {
+		result.reason = "struct cannot embed both im.Immut and im.ImmutNoRef"
 		return
 	}
 	for field := range structure.Fields() {
@@ -169,7 +184,7 @@ func (p *proof) constraint(result *obligation, t types.Type) {
 		for i := 0; i < bound.Len(); i++ {
 			term := bound.Term(i)
 			if _, array := term.Type().Underlying().(*types.Array); array && term.Tilde() && !p.storage {
-				result.reason = "array type set permits named arrays without im.Marker"
+				result.reason = "array type set permits named arrays without an immutable marker"
 				return
 			}
 			p.depend(result, term.Type(), false, "")

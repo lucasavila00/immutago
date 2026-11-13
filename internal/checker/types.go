@@ -22,8 +22,19 @@ func IsCollection(t types.Type) bool {
 	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap")
 }
 
-// Marked reports whether a struct directly embeds Marker by value.
+// Marked reports whether a struct directly embeds either immutable marker by value.
 func Marked(t types.Type) bool {
+	return Shared(t) || NoRef(t)
+}
+
+// Shared reports whether a struct directly embeds im.Immut by value.
+func Shared(t types.Type) bool { return embedsMarker(t, "Immut") }
+
+// NoRef reports whether a struct directly embeds im.ImmutNoRef by value.
+func NoRef(t types.Type) bool { return embedsMarker(t, "ImmutNoRef") }
+
+// embedsMarker resolves one marker through the compiler's embedded-field identities.
+func embedsMarker(t types.Type, name string) bool {
 	if t == nil {
 		return false
 	}
@@ -32,7 +43,7 @@ func Marked(t types.Type) bool {
 		return false
 	}
 	for field := range s.Fields() {
-		if field.Embedded() && IsLibraryType(field.Type(), "Marker") {
+		if field.Embedded() && IsLibraryType(field.Type(), name) {
 			return true
 		}
 	}
