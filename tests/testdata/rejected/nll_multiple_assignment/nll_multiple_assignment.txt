@@ -6,6 +6,7 @@ nll_multiple_assignment.go:22:21: unsupported immutable borrow: reference operat
   source: &value
   type: *rejected.Good
   fix: keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader
-nll_multiple_assignment.go:22:2: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
-  source: pointer, value.X = &value, 2
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
+nll_multiple_assignment.go:22:2: unsupported immutable borrow: references require one fixed declaration from an owned local
+  source: pointer
+  type: *rejected.Good
+  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference

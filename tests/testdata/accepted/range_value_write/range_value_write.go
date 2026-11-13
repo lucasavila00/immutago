@@ -10,6 +10,7 @@ type Good struct {
 
 func mutate() {
 	var value Good
-	for _, value.Value = range []int{1} {
+	for _, next := range []int{1} {
+		value.Value = next
 	}
 }

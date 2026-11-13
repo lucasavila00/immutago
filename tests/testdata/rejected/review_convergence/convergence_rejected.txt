@@ -54,3 +54,9 @@ convergence_rejected.go:68:62: unsupported immutable borrow: dynamic calls with 
   source: factory()
   type: func() review_convergence.Value
   fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:72:2: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
+  source: for _, value.X = range []int{1} { }
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
+convergence_rejected.go:80:2: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
+  source: for a[value.X], n = range []int{2} { }
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

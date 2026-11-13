@@ -74,6 +74,9 @@ explicit_statements.go:64:10: use of consumed owned container values: Freeze tra
 explicit_statements.go:64:7: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
   source: _, values["first"] = <-ready
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
+explicit_statements.go:66:2: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
+  source: _, _ = frozen.Get("first")
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 explicit_statements.go:70:9: unsupported immutable borrow: Freeze requires a standalone single binding
   source: im.FreezeMap(values)
   type: im.FrozenMap[string, int]

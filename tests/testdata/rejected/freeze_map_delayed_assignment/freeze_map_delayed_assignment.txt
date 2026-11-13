@@ -6,3 +6,6 @@ freeze_map_delayed_assignment.go:8:2: unsupported immutable borrow: multiple ass
   source: values["x"], frozen = 2, im.FreezeMap(values)
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 freeze_map_delayed_assignment.go:8:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+freeze_map_delayed_assignment.go:9:2: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
+  source: _, _ = frozen.Get("x")
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

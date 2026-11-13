@@ -66,3 +66,19 @@ type Factory interface{ Make() Value }
 func interfaceResult(factory Factory) Value { return factory.Make() }
 
 func nestedCallbackResult(factory func() func() Value) { _ = factory() }
+
+func blankRangeTarget() {
+	var value Value
+	for _, value.X = range []int{1} {
+	}
+}
+
+func nestedRangeTarget() {
+	var value Value
+	var a [1]int
+	var n int
+	for a[value.X], n = range []int{2} {
+	}
+	_ = a
+	_ = n
+}
