@@ -1,0 +1,12 @@
+implicit_transport.go:14:2: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: callback(protectedPair())
+  type: ()
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+implicit_transport.go:4:9: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: pointer
+  type: *review_convergence.Value
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+implicit_transport.go:8:18: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: value
+  type: review_convergence.Value
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

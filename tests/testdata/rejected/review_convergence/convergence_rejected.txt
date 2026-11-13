@@ -50,10 +50,10 @@ convergence_rejected.go:58:58: unsupported immutable operation: dynamic calls wi
   source: factory()
   type: review_convergence.Value
   fix: call a named, non-generic function directly with a concrete immutable parameter
-convergence_rejected.go:62:54: unsupported immutable operation: user-defined methods with immutable storage are unsupported
-  source: factory.Make
-  type: func() review_convergence.Value
-  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+convergence_rejected.go:62:54: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: factory.Make()
+  type: review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
 convergence_rejected.go:64:62: unsupported immutable operation: dynamic calls with immutable storage are unsupported
   source: factory()
   type: func() review_convergence.Value
