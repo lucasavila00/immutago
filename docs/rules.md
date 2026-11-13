@@ -16,6 +16,12 @@ operations are rejected. Rejection examples are not exhaustive.
 Both markers make an object immutable from construction. Neither permits
 mutable initialization, field writes, or writes through a pointer.
 
+As a Rust analogy, `Immut` is closer to shared ownership through `Rc<T>` or
+`Arc<T>` than to `&'static T`. Go's garbage collector can collect an unreachable
+object; the marker adds no reference-counting runtime. `ImmutNoRef` is closer
+to a scoped `&'a T` that cannot leave local use or direct non-retaining calls.
+The checker does not infer a smallest lifetime or use NLL.
+
 | Marker | Complete reference policy |
 | --- | --- |
 | `im.Immut` | References can be local, copied, rebound, stored, passed to direct typed functions, and returned. |
