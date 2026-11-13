@@ -1,31 +1,30 @@
 # Borrowing: REVIEW
 
-## Contract
+## Reviewed rules
 
-Shared parameters are read-only. Factories construct their own storage; value
-copies own independent storage. Owner writes become valid after the last shared
-use. Pointer rebinding does not overwrite the old target.
+The supported Rust subset is `T`, `&T`, and NLL. Owned values can change. Shared
+references cannot write. An owner can change again after its last shared borrow
+ends. Go copies values instead of moving them.
 
-## Source review
+The implementation was compared with the pinned rustc algorithms. A write is
+checked against live loans before overwrite kills apply. Possible overlap is
+used to reject conflicts; definite overlap is required to kill a loan.
 
-Compared the port with the pinned rustc liveness, region, conflict, and ranked
-worklist code. Region expiration precedes access checks; overwrite kills follow
-them. Possible overlap checks conflicts; definite overlap permits kills. Alias
-copies share one region. The general SCC solver is tested independently.
+## Review findings
 
-The review found and corrected shared analysis-state mutation, lost returned
-global aliases, loop-site lifetime truncation, and unsafe widening across
-pointer dereferences. Unknown effects now survive helper summaries. Unsupported
-aggregate, channel, closure, panic, and dynamic-call paths cannot silently drop
-protected references. Returned global identities conservatively overlap during
-initialization when exact identity is unavailable.
+The review found and corrected lost aliases through helpers, returned globals,
+loop iterations, pointer indirection, and copied analysis state. Scalar pointers
+into marked structs retain the same protection as pointers to the whole struct.
+
+Recursive pointer paths use a finite conservative representation. An unknown
+path cannot justify a write or end a borrow. Unknown effects must follow pointer
+slots to the storage they reference.
 
 ## Evidence
 
-Targeted debugging accepted owned construction, independent copies, fresh
-factories, and writes after the final shared use. Rejection regressions cover
-scalar aliases, type erasure, transport wrappers, deferred closures, loops,
-recursive summaries, and initializer aliases. Randomized reference solvers
-check dataflow and region propagation. The initializer regression passes its
-focused test. Full cross-platform, race, lint, documentation, and repository
-checks run in hosted CI.
+Targeted debugging covered owned construction, copies, constructors, last-use
+writes, and the rejection cases above. Independent reference solvers check the
+ported graph operations. End-to-end tests exercise the CLI and `go vet`.
+
+Hosted CI supplies the final cross-platform, race, lint, documentation, build,
+and repository checks. Passing a narrow test does not replace those checks.

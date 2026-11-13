@@ -2,30 +2,30 @@
 
 ## Decision
 
-Use Rust-style ownership and shared loans for marked Go values. Borrow lifetimes
-end at their last required use.
+Support Rust's **owned values (`T`)**, **shared borrows (`&T`)**, and
+**non-lexical lifetimes (NLL)**. Do not support **mutable borrows (`&mut T`)**.
 
-Owned local storage permits conditional construction, field updates, and
-reassignment. A value copy has independent storage. A pointer copy aliases its
-target. Shared pointers permit reads, but no writes through the pointer.
+An owned Go local behaves like a Rust `let mut` binding. It can be built through
+branches, updated, and reassigned. Taking a pointer to existing storage creates
+a shared borrow:
 
-```go
-var config Config // Config embeds im.Marker
-if enabled { config.Limit = 10 } else { config.Limit = 2 }
-p := &config
-read(p)
-config.Limit = 20 // accepted if read neither retains nor returns p
+```rust
+let mut value = Point { x: 0 };
+let borrowed = &value;
+let x = borrowed.x; // last use
+value.x = 1;        // allowed
 ```
 
-Writing `config.Limit` before the last required use of `p` fails. Replacing
-`config` also fails while its storage is borrowed. Rebinding `p` to a different
-allocation does not replace its previous target.
+Writing through `borrowed`, or changing `value` before that last use, fails.
 
-Fresh owned allocations support construction before sharing. Returned, captured, and passed references retain their loans. Unknown effects fail.
+Every field is recursively a plain immutable value. Custom Go aggregates must
+embed `im.Marker`; use a marked struct around an array, not a named array type.
+There is no interior mutability equivalent to Rust's `Cell` or `UnsafeCell`.
 
-Fields and elements recursively allow primitives, arrays, marked structs, and
-`im` collections. Custom aggregates must be marked structs; defined array
-wrappers are rejected.
-Unmarked structs cannot contain immutable fields. Published collection storage
-is never writable. Package-level marked storage is read-only after initialization.
-No suppression directives or unchecked user implementations are permitted.
+## Go differences
+
+Go values copy; they do not use Rust's move rules. Fresh pointer allocations
+start owned, like a `Box<T>`. Copying that Go pointer creates a shared borrow.
+Incoming pointers are shared. Go keeps its garbage collector.
+
+Unknown relevant effects fail explicitly. There are no escape hatches.

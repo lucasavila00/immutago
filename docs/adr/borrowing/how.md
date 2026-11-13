@@ -1,30 +1,30 @@
 # Borrowing: HOW
 
-## Analysis
+## Use rustc's borrow-checking algorithms
 
-Adapt rustc's place-conflict, loan, region, and dataflow algorithms to Go's
-compiler-resolved types and control-flow representation. Pin the source to
-[`80196be`](https://github.com/rust-lang/rust/tree/80196be0e787008b6fb14d2990aba92083cd68e1/compiler/rustc_borrowck).
+Port the relevant algorithms from the
+[pinned rustc source](https://github.com/rust-lang/rust/tree/80196be0e787008b6fb14d2990aba92083cd68e1/compiler/rustc_borrowck).
+Keep their source attribution and license.
 
-A place is a storage root followed by field, index, or dereference projections.
-Alias provenance survives assignments, joins, calls, returns, and captures.
-Value copies create independent roots; reference copies retain their targets.
+A **place** identifies storage, such as `value.x`. A **loan** records a shared
+borrow of that place. A **region** contains the program points where the borrow
+must remain valid.
 
-Alias copies share a loan region. Seed it with every alias use and trace
-liveness backward through control flow. Solve regions and active loans with
-the ported graph engines. At each write, expire out-of-region loans, then check overlapping live loans
-before applying overwrite kills.
-Unknown indices may overlap; only definite overlap can kill a loan.
+```rust
+let borrowed = &value.x; // issue a loan
+let x = *borrowed;       // last use in its region
+value.x = 1;            // loan has ended
+```
 
-Infer function effects and returned aliases, including recursive calls. Carry
-summaries across package boundaries. Verify read-only calls and factory
-results from their bodies; unavailable effects are unsupported, not trusted.
+Follow uses backward through branches and loops to compute NLL. Reference copies
+share the same loan. Before a write, expire loans whose regions have ended, then
+reject overlap with a live loan. Only a definite overwrite can kill a loan.
 
-## Why NLL
+## Adapt to Go
 
-Non-lexical lifetimes recover write permission after a borrow's last use.
-Permanent freezing would reject useful code and is not this decision.
+Resolve Go pointer aliases to their original storage. Preserve that identity
+through assignments, calls, and returns. Export checked function effects across
+packages. Distinguish a returned owner from a returned borrow.
 
-The port retains source attribution and license notices. Go-specific lowering,
-collection guarantees, and unsupported operations are documented separately from
-borrow-engine behavior.
+Bound recursive reference paths conservatively. If the checker loses information
+needed for a proof, report an unsupported operation. Do not grant write access.

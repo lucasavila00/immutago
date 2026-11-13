@@ -1,28 +1,39 @@
 # Borrowing: PROOF
 
-## Required behavior
+## Test the Rust rules
 
-Add unit tests for place overlap, loan issuance and kills, region propagation,
-and fixed-point convergence. Compare ported operations with cases from the pinned
-rustc source. Include both field-disjointness and unknown-index overlap.
+Accept owned construction, reassignment, independent copies, fresh constructors,
+and reads through shared references. Accept a write after the last shared use:
 
-End-to-end tests must accept conditional construction, reassignment without a
-live borrow, read-only pointer parameters and methods, independent value copies,
-fresh allocation construction, and writes after the final reference use.
+```rust
+let borrowed = &value;
+read(borrowed);
+value.x = 1; // allowed after the call
+```
 
-Reject owner writes while a borrower remains live, writes through shared
-references, aliases hidden by generic helpers, unproved call effects, and writes
-to published collection storage. Check branches, loop back edges, pointer
-rebinding, interior aliases, closures, deferred calls, goroutines, and
-cross-package returned aliases. Each rejection must identify the source operation.
+Reject the same write while the borrow is still live:
+
+```rust
+let borrowed = &value;
+value.x = 1; // rejected
+read(borrowed);
+```
+
+Reject writes through shared references. There is no `&mut T` operation that
+could authorize them.
+
+## Cover Go's alias paths
+
+Test branches, loops, disjoint fields, array indices, pointer rebinding, generic
+helpers, cross-package calls, returned references, closures, deferred calls, and
+goroutines. Test scalar pointers into marked structs, not only `*Marked` types.
+Unsupported paths must fail instead of losing a borrow.
+
+Compare the ported graph algorithms with independent reference solvers. Check
+that recursive paths terminate. Keep collection snapshot and allocation tests.
 
 ## Validation
 
-Run focused tests locally and the full race-enabled suite in hosted CI on
-Linux, macOS, and Windows. Run lint, generated-documentation checks, CLI build,
-and repository self-analysis. Preserve persistent collection snapshot and
-allocation tests.
-
-The existing blanket pointer rejection and its passing tests do not establish
-this decision. Completion requires replacing those expectations and recording
-successful checks for the implemented loan analysis.
+Use local runs to debug specific failures. Run the full race-enabled suite on
+Linux, macOS, and Windows in CI, together with lint, generated documentation,
+CLI build, and repository self-analysis.
