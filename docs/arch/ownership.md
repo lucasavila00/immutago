@@ -50,28 +50,28 @@ are recorded after their operands have been evaluated.
 body at a time. [Lowering](../../internal/borrow/lower.go) starts with
 `golang.org/x/tools/go/cfg`, then creates operation points for reads, writes,
 and pointer binding definitions. The intended ordering evaluates operands
-before simultaneous assignment effects.
+before a single assignment effect. Protected multiple assignments and select
+communication operations are rejected by the source-shape checks.
 
 A place such as `shape.Child` or `items[i]` reduces to its whole owner variable.
 The analysis does not distinguish disjoint fields or array elements. This
 keeps overlap checks small but rejects some programs that Rust could accept.
 
-[The solver](../../internal/borrow/solve.go) uses two results:
+[The solver](../../internal/borrow/solve.go) records one fixed owner for each
+local reference. The source matcher permits only an address-initialized local
+binding or a named reader parameter. Copies and reassignment are rejected.
+There are no per-operation possible-owner maps or forward owner propagation.
 
-- Forward reaching bindings map each pointer variable to its possible owner
-  variables. Joins union owner sets; reassignment replaces one pointer binding.
-  The implementation retains nested maps at each operation point and scans to
-  a fixed point.
-- Backward liveness starts at pointer uses and follows predecessor edges until
-  definitions. Each pointer has a set of live operation points. A reference can
-  stop protecting an owner after its last required use, before lexical scope
-  ends.
+Backward liveness starts at pointer uses and follows predecessor edges until
+definitions. Each local reference has a set of live operation points. A reference
+can stop protecting its owner after its last required use, before lexical scope
+ends. Reader parameters need no local owner entry: their resolved pointer types
+already prohibit writes through them.
 
 Writes through shared references fail. A write to an owned value fails when a
 live pointer can refer to that owner. Package-level protected storage cannot
-change after declaration initialization. These are intended checks; the
-[known gaps](validation.md) show cases the current lowering and call checks
-miss.
+change after declaration initialization. The [validation notes](validation.md) record the failures that led to the
+smaller source subset and the tests that reject those forms now.
 
 The shared [graph code](../../internal/borrow/flow/graph.go) stores predecessor
 and successor adjacency lists. Its [sets](../../internal/borrow/flow/set.go)

@@ -14,8 +14,6 @@ The allowed Go forms in this guide define the supported language. The checker
 must match those forms and check their ownership rules. A form that does not
 match must be rejected. The examples of rejected code are not exhaustive.
 
-This branch is implementing the explicit subset below. The first documentation
-commit records the target rules; implementation and regression checks follow.
 
 ## Owned values
 
@@ -188,11 +186,13 @@ Use the reference and builder operations listed in this guide within these forms
 | Freeze and discard the result | `_ = im.FreezeSlice(values)` |
 | Call a named reader | `read(p)` or `n := read(&value)` |
 | Return a value | `return value` or `return frozen` |
+| Use ordinary value switches | `switch value.X { case 1: value.X = 2 }` |
 | Use `if` and ordinary loops | `if ready { value.X = 1 }` or `for i := range values { values[i] = i }` |
 | Use checked operations inside a `select` case body | `case <-ready: values[0] = true` |
 
 Each write still requires an owned value with no live shared reference.
-A consumed builder cannot be used again. A Freeze call must be the only
+A consumed builder cannot be used again. Blocks, `break`, `continue`, and other
+control flow without protected operands follow ordinary Go rules. A Freeze call must be the only
 right-hand-side expression of its assignment or declaration. The two-result
 `Get` form creates new locals; it cannot assign into existing protected storage.
 

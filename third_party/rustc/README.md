@@ -11,9 +11,10 @@ MIT license in [LICENSE-MIT](LICENSE-MIT).
 
 The Go adapter uses typed syntax and statement control flow. It separates reads,
 assignment writes, and reference-binding definitions to preserve evaluation
-order. A forward fixed point computes each local reference's possible whole
-owners. Backward liveness determines whether those references still matter at
-a write.
+order within the supported source forms. Each local reference declaration
+records one fixed whole owner. Reference copying and rebinding are rejected.
+Backward liveness determines whether a reference still matters at a write; no
+forward possible-owner fixed point remains.
 
 Whole-owner loans and non-escaping readers remove the need for field-overlap
 rules, outlives-region propagation, returned-alias summaries, and recursive

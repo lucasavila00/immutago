@@ -1,4 +1,4 @@
-# Validation and known gaps
+# Validation and review regressions
 
 [Architecture index](README.md)
 
@@ -20,7 +20,8 @@ analysis can retain a writable alias to a frozen container.
 
 The intended contract rejects operations that it cannot prove safe. That
 policy is not evidence that every source form has been checked correctly.
-The review below found accepted programs that break the intended contract.
+The review below found accepted programs in the previous implementation. The
+explicit subset now rejects these forms; the examples remain as regressions.
 
 ## Tests and hosted CI
 
@@ -42,14 +43,14 @@ driver behavior: diagnostics can be present with a successful exit status.
 generated documentation checks, a build, and self-analysis. It runs race-enabled
 unit and end-to-end tests on Linux, macOS, and Windows. The
 [development guide](../contrib/development.md) lists local commands. Use focused
-local checks for a change and hosted CI for the full suite. Current test success
-does not resolve the failures below.
+local checks for a change and hosted CI for the full suite. Test success is not a claim that every possible source form has been proved.
 
-## Confirmed review failures
+## Confirmed failures in the previous implementation
 
 The independent review used the source at `0d7e423`, whose tree matches
 `009830a`. Both examples below passed the real CLI with exit status zero.
-These are implementation defects, not supported exceptions to the contract.
+These were implementation defects, not supported exceptions. The explicit
+subset rejects user methods and protected select communication forms.
 
 ### Promoted pointer method
 
@@ -72,7 +73,8 @@ receiver `*Counter`. The callee's scalar write is outside the marked-type
 checks. `v.Inc()` also passes while `p` is live. Rejecting promoted pointer
 methods on protected owners would be a small restriction that closes this
 case; resolving and checking the actual receiver would preserve more methods.
-Neither change is implemented by these notes.
+The explicit subset rejects all user-defined receiver methods on protected
+values. Only the listed methods on exact `im` collection types remain.
 
 ### Select receive assignment after freeze
 
@@ -119,30 +121,34 @@ need a data race. The freeze analysis relies on the generic Go CFG's node
 placement. Its event lowering does not reconstruct this delayed assignment to
 the second receive target. The ownership checks need explicit select effects,
 or must reject builder and protected-value receive targets until those effects
-are modeled.
+are modeled. The explicit subset takes the second approach and also rejects
+protected channel expressions in select clauses.
 
 ## Cost and scope limits
 
-The reaching-binding solver retains nested pointer-to-owner maps at every
-operation point. It copies those maps during full fixed-point scans. A local
-review measured the complete CLI process on macOS with 50, 100, and 200
-separate blocks in one function, each containing:
+The old reaching-binding solver retained nested pointer-to-owner maps at every
+operation point, including dead local bindings. The explicit subset removes that
+solver. Each accepted reference now has one fixed owner; backward liveness remains.
+
+A focused same-machine comparison used separate blocks in one function:
 
 ```go
 { var v Value; p := &v; _ = p.X; v.X = 1 }
 ```
 
-| Blocks | Peak resident bytes | Wall time |
+| Blocks | Before: peak RSS (MiB) | Fixed owners: peak RSS (MiB) |
 | --- | ---: | ---: |
-| 50 | 116375552 | 0.21 s |
-| 100 | 160595968 | 0.25 s |
-| 200 | 348225536 | 0.44 s |
+| 50 | 107.5 | 104.0 |
+| 100 | 157.0 | 100.2 |
+| 200 | 348.2 | 97.8 |
 
-The command was `/usr/bin/time -l env GOWORK=off <binary> ./...` in each
-consumer module. These are single observations, including package loading,
-not isolated solver benchmarks or a formal complexity bound. They identify a
-scaling concern even when loans do not overlap. Compact owner identities,
-removal of dead bindings, or a worklist solver need measurement before adoption.
+The baseline was `269eaaf`; the changed solver was `8753467`. Both binaries
+checked the same generated consumer packages with
+`/usr/bin/time -l <binary> ./scale<N>`, where N was 50, 100, or 200. All six checks passed.
+These single observations include package loading and are not isolated solver
+benchmarks. At 200 blocks, elapsed time was 0.44 seconds before and 0.19 seconds
+after. The memory growth from retained possible-owner maps is removed; these
+measurements do not establish a bound for all source programs.
 
 The implementation deliberately omits mutable borrows, escaping references,
 arbitrary callback effects, and pointer-return provenance. Whole-owner loans
@@ -152,22 +158,17 @@ Removing generic marked structs could reduce that machinery, but would change
 the supported API. Recursive collection types likewise explain the structural
 proof graph; deleting the graph first would remove needed failure propagation.
 
-## Simplification options
+## Changes selected from the review
 
-These are review recommendations, not implemented rule changes:
+The explicit subset rejects user-defined methods on protected receivers,
+protected select communication operations, reference copies and reassignment,
+protected multiple assignments, and nested Freeze calls. It keeps fixed local
+references, backward NLL, named readers, and the listed collection methods.
 
-1. Reject promoted pointer methods on protected owners, and reject ownership
-   operations in select communication clauses. This closes the demonstrated
-   gaps by reducing source forms instead of adding more implicit-effect rules.
-2. Keep local shared borrows, but remove pointer copying and rebinding. A
-   reference then has one fixed owner. The forward possible-owner analysis can
-   be removed; backward liveness still permits writes after the last read.
-3. For a larger reduction, allow only direct reader calls such as `read(&value)`
-   and read-only reader parameters. Remove stored local references. This removes
-   local NLL and alias-origin analysis, but also removes useful supported code.
+This removes the forward possible-owner analysis. It does not remove the
+structural proof graph, native builder alias checks, or dependency failure facts;
+those still enforce required guarantees. The new source-shape matchers must
+follow [the reviewer requirements](../reviewer-focus.md).
 
-Keep recursive field checks, builder alias checks, and dependency failure facts.
-They enforce required guarantees. The graph and map data structures are ordinary
-finite dataflow structures; the demonstrated soundness defects come from missing
-Go effects, not from using maps. Retaining irrelevant maps causes the measured
-memory concern and should be addressed separately.
+Removing all stored local references would be a further product change. It was
+not selected: `p := &value; read(p)` remains supported.

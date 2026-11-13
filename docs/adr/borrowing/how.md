@@ -1,33 +1,32 @@
 # Borrowing: HOW
 
-## Local NLL
+## Fixed owners and NLL
 
-Use Go's typed syntax and statement control-flow graph. An owner is a local
-value. A reference binding records which whole owners it can borrow.
+Match each local reference declaration to one owned local or its marked child:
 
-```rust
-let borrowed = &value;
-let copy = borrowed;
-read(copy); // both bindings refer to the same owner
-value.n = 1;
+```go
+p := &value
+read(p)
+value.X = 1 // allowed after the last use
 ```
 
-Compute possible owners forward through assignments, branches, and loops. Trace
-reference uses backward to their binding definitions with the ported rustc
-liveness algorithm. A write fails if any live reference can borrow its owner.
-Writes through references always fail.
+The declaration records one compiler variable pair: reference and whole owner.
+There is no forward possible-owner solver. Copies, reassignment, delayed
+initialization, and unknown reference producers are rejected by the source
+matcher. Named reader parameters remain read-only and cannot escape.
 
-Separate right-hand-side evaluation from assignment writes. Copies and pointer
-rebinding must preserve Go's evaluation order, including simultaneous assignment.
+Trace uses backward to definitions with the rustc-derived liveness algorithm.
+A write fails if a reference to its whole owner is live. Writes through shared
+references always fail. Branches and loops remain supported.
 
-## No hidden aliases
+## Source forms
 
-Reject escape boundaries in source. Every accepted reader has the same shared,
-non-escaping contract. There is no inference of arbitrary callee effects,
-returned-pointer ownership, recursive pointer paths, or dynamic callbacks.
+The [guide](../../guide/immutability.md) lists the complete allowed forms.
+Match those forms before treating the program as proved; reject the fallback.
+User methods, protected multiple assignments, nested Freeze, and protected
+select communication operations have no accepted shape.
 
-Check dependency bodies and propagate proof failures through package facts,
-including when `go vet` suppresses dependency diagnostics. Preserve the original
-failure context for the importing caller.
+Check dependency bodies and propagate failures through package facts, including
+when vet suppresses dependency diagnostics. Retain original failure locations.
 
-Retain the rustc source attribution and license for the algorithms still used.
+Keep source attribution and tests for the retained liveness and graph traversal.

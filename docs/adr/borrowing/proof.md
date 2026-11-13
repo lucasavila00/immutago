@@ -3,7 +3,7 @@
 ## Accepted programs
 
 Test conditional construction, reassignment, value-returning constructors,
-independent value copies, direct readers, local reference copies and rebinding,
+independent value copies, direct readers, fixed local reference declarations,
 branches, and loops.
 
 ```rust
@@ -25,7 +25,10 @@ read(borrowed);
 Test every escape boundary separately: reference returns/storage, scalar
 addresses, indirection, conversions, interfaces, closures, callbacks, generics,
 deferred/asynchronous calls, and native containers. Test right-hand-side borrow
-creation during simultaneous assignment.
+creation during simultaneous assignment and reject the whole unsupported form.
+Test promoted methods, unknown iterator references, nested Freeze, and select
+receive targets. Compare the same 50/100/200-loan programs before and after
+removing the possible-owner solver.
 
 ## Evidence
 

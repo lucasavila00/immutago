@@ -69,8 +69,8 @@ listed methods of the exact `im` collection types.
 
 Tests must cover each accepted shape and nearby forms that do not match it.
 Adding a feature changes the docs, matcher, proof checks, and tests together.
-The explicit-subset branch is replacing broader checks with these rules; a
-written allowlist alone does not establish implementation correctness.
+A written allowlist alone does not establish implementation correctness;
+reviewers must check the rejecting fallback and the source forms reaching it.
 
 ## Dependency facts
 

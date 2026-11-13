@@ -13,9 +13,9 @@ remove field-overlap decisions. Value constructors remove owning-pointer rules.
 ## Required checks
 
 Verify that every accepted reference has a visible local owner or a read-only
-parameter origin. Copies and rebinding must preserve all possible owners through
-branches and loops. A right-hand-side borrow must exist before an assignment
-writes its owner.
+parameter origin. Trace every accepted reference definition through the shape
+matcher. Copies, rebinding, and implicit iterator references must reject. Verify
+that branches and loops preserve fixed-owner NLL without copied origin maps.
 
 Check that forbidden transport fails where introduced, including implicit Go
 conversions and method receivers. Frozen collection operations must not expose writable storage. Freeze must
