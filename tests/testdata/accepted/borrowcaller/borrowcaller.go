@@ -14,3 +14,8 @@ func CrossPackagePointer() *borrowapi.Good {
 	value := borrowapi.Shared(1)
 	return borrowapi.Forward(value)
 }
+
+func CrossPackageLocal() int {
+	value := &borrowapi.Local{X: 1}
+	return borrowapi.ReadLocal(value)
+}

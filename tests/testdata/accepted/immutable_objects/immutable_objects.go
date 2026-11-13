@@ -57,3 +57,16 @@ func pointerMap() im.FrozenMap[*Node, *Node] {
 	_ = found
 	return frozen
 }
+
+func allocatedCopies() *Node {
+	value := Node{Value: 1}
+	pointer := new(value)
+	value = Node{Value: 2}
+	_ = new(Node{Value: 3})
+	return pointer
+}
+
+func capturedRead() func() int {
+	shared := &Node{Value: 1}
+	return func() int { return shared.Value }
+}

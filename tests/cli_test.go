@@ -251,6 +251,7 @@ func checkInvalidDependencies(t *testing.T, root, binary string) {
 		"shape_consumer", "unsafe_consumer", "borrow_consumer",
 		"wrapped_shape_consumer", "wrapped_borrow_consumer",
 		"freeze_consumer", "wrapped_freeze_consumer",
+		"noref_consumer", "wrapped_noref_consumer",
 	}
 	for _, name := range cases {
 		t.Run(name, func(t *testing.T) {

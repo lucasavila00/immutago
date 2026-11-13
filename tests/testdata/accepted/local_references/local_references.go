@@ -26,3 +26,10 @@ func values() im.FrozenSlice[Local] {
 	frozen := im.FreezeSlice(builder)
 	return frozen
 }
+
+func allocatedLocal() int {
+	value := Local{Value: 1}
+	pointer := new(value)
+	value = Local{Value: 2}
+	return read(pointer)
+}

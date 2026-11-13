@@ -18,7 +18,7 @@ mutable initialization, field writes, or writes through a pointer.
 
 | Marker | Complete reference policy |
 | --- | --- |
-| `im.Immut` | References can be local, copied, rebound, stored, passed to direct typed functions, and returned. |
+| `im.Immut` | References can be local, copied, rebound, stored, passed to direct typed functions, returned, and captured by a closure. |
 | `im.ImmutNoRef` | References can be used locally and passed to direct typed functions that do not retain them. References cannot be stored, returned, or captured. |
 
 Embed the selected marker by value. `ImmutNoRef` restricts references, not value
@@ -190,7 +190,8 @@ point = &Point{X: 2}
 x := other.X // Still 1.
 ```
 
-A reference must start with fresh construction: `&Point{...}` or `new(Point)`.
+A reference must start with fresh construction: `&Point{...}`, `new(Point)`,
+or `new(value)`. The expression form of `new` copies the value into new storage.
 Taking `&point` or `&shape.Child` is rejected. Rebinding an addressed variable
 would change an object that other references observe.
 
@@ -226,7 +227,8 @@ func read(point *Point) int { return point.X }
 ```
 
 A callback with only scalar parameters and results can receive scalar copies.
-A closure cannot capture protected storage. Copy a scalar first:
+A closure can capture an `Immut` reference. It cannot capture an `ImmutNoRef`
+reference. Copy a scalar first when the reference must stay local:
 
 ```go
 x := point.X
@@ -244,7 +246,9 @@ storage. Unlisted operations are rejected.
 | --- | --- |
 | Declare a zero reference | `var p *Point` |
 | Construct an immutable object | `p := &Point{X: 1}` or `p := new(Point)` |
+| Construct from a value copy | `p := new(point)` or `p := new(Point{X: 1})` |
 | Construct a protected array | `p := &[2]Point{}` |
+| Capture an `Immut` reference | `callback := func() int { return p.X }` |
 | Copy or rebind a reference variable | `q := p` or `p = q` or `p = nil` |
 | Store in a marked field | `node := Node{Next: p}` |
 | Store in an exclusive builder | `values := []*Point{p}` |
@@ -272,6 +276,7 @@ are rejected. A referenced type must pass the same recursive immutable proof.
 | --- | --- |
 | Declare a zero local reference | `var p *Local` |
 | Construct a fresh local object | `p := &Local{X: 1}` or `p := new(Local)` |
+| Construct from a value copy | `p := new(local)` or `p := new(Local{X: 1})` |
 | Read or discard a local reference | `x := p.X` or `_ = p` |
 | Copy the referenced value | `value := *p` |
 | Compare references or nil | `same := p == q` or `if p != nil { ... }` |
@@ -317,7 +322,7 @@ These examples are **not exhaustive**. The allowed list above is complete.
 | `p.X = 1` or `*p = Point{}` | `p = &Point{X: 1}` |
 | `value.Read()` | `Read(&Point{X: value.X})` |
 | `var x any = p` | Use a concrete `*Point` variable. |
-| `func() { read(p) }` | Call `read(p)` directly. |
+| `func() { readLocal(localPointer) }` | Call `readLocal(localPointer)` directly. |
 | `defer read(p)` or `go read(p)` | Call `read(p)` synchronously. |
 | `p[0].X` | `(*p)[0].X` |
 | `&point` or `&shape.Child` | Construct `&Point{X: point.X}`. |
@@ -357,7 +362,7 @@ control flow without protected operands follow ordinary Go rules. A Freeze call 
 right-hand-side expression of its assignment or declaration. The two-result
 `Get` form creates new locals; it cannot assign into existing protected storage.
 The one-destination limit applies to assignments and declarations, not to
-returns. Multiple results may contain protected values or shared references. A named function can pass those results directly to another named
+returns. Multiple results may contain protected values or `Immut` shared references. A named function can pass those results directly to another named
 function with matching concrete parameters:
 
 ```go
