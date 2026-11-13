@@ -10,17 +10,17 @@ import (
 // TestMarkerReferenceProofs checks the two marker modes and stored reference boundaries.
 func TestMarkerReferenceProofs(t *testing.T) {
 	sharedMarker, slice := testTypes()
-	noRefMarker := types.NewNamed(types.NewTypeName(token.NoPos, sharedMarker.Obj().Pkg(), "LocalRef", nil),
+	localMarker := types.NewNamed(types.NewTypeName(token.NoPos, sharedMarker.Obj().Pkg(), "LocalRef", nil),
 		types.NewStruct(nil, nil), nil)
 	shared := markedType("Shared", sharedMarker)
-	local := markedType("Local", noRefMarker)
-	if !Shared(shared) || NoRef(shared) || !NoRef(local) || Shared(local) {
+	local := markedType("Local", localMarker)
+	if !Shared(shared) || LocalRef(shared) || !LocalRef(local) || Shared(local) {
 		t.Fatal("marker modes were not preserved")
 	}
 	for _, value := range []types.Type{
 		shared, local, types.NewPointer(shared), types.NewArray(local, 2), sliceType(t, slice, local),
 		markedType("Parent", sharedMarker, types.NewField(token.NoPos, nil, "Child", local, false)),
-		markedType("Reader", noRefMarker, types.NewField(token.NoPos, nil, "Child", types.NewPointer(shared), false)),
+		markedType("Reader", localMarker, types.NewField(token.NoPos, nil, "Child", types.NewPointer(shared), false)),
 	} {
 		if reason := Reason(value); reason != "" {
 			t.Errorf("immutable value %s rejected: %s", value, reason)
@@ -31,12 +31,12 @@ func TestMarkerReferenceProofs(t *testing.T) {
 		sliceType(t, slice, types.NewPointer(local)),
 		markedType("Bad", sharedMarker, types.NewField(token.NoPos, nil, "Child", types.NewPointer(local), false)),
 	} {
-		if reason := Reason(value); !strings.Contains(reason, "LocalRef references cannot be stored") {
+		if reason := Reason(value); !strings.Contains(reason, "LocalRef pointers cannot be stored") {
 			t.Errorf("stored local reference %s: %s", value, reason)
 		}
 	}
 	mixed := markedType("Mixed", sharedMarker,
-		types.NewField(token.NoPos, nil, "LocalRef", noRefMarker, true))
+		types.NewField(token.NoPos, nil, "LocalRef", localMarker, true))
 	if reason := Reason(mixed); !strings.Contains(reason, "cannot embed both") {
 		t.Fatalf("mixed markers accepted: %s", reason)
 	}

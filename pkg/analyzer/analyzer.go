@@ -8,9 +8,9 @@
 // reflection, and unsafe operations are unsupported.
 //
 // Whole variable bindings can be replaced. Field, element, and pointer-target
-// writes to protected objects are rejected. Protected references start with
-// fresh construction and target concrete marked structs. Shared references can
-// be copied, stored, and returned. LocalRef references stay local or pass to
+// writes to protected objects are rejected. Protected pointers start with
+// fresh construction and target concrete marked structs. Shared pointers can
+// be copied, stored, and returned. LocalRef pointers stay local or pass to
 // direct typed calls that do not retain them. Neither mode permits protected
 // closure captures or protected operations in go or defer.
 //
@@ -98,7 +98,7 @@ func (c *checks) visit(node ast.Node) bool {
 	case *ast.FuncDecl:
 		if n.Body == nil {
 			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
-				"provide a Go implementation so writes and reference transport can be checked")
+				"provide a Go implementation so writes and pointer transport can be checked")
 		}
 	case *ast.ImportSpec:
 		c.checkImport(n)
@@ -182,7 +182,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		return
 	}
 	marked := checker.Marked(t)
-	if checker.Shared(t) && checker.NoRef(t) {
+	if checker.Shared(t) && checker.LocalRef(t) {
 		c.report(pos, "struct cannot embed both im.Shared and im.LocalRef")
 	}
 	for field := range s.Fields() {

@@ -224,8 +224,8 @@ func (c *subsetChecks) declaration(x *ast.ValueSpec) {
 		if obj == nil {
 			continue
 		}
-		if noRefReference(obj.Type()) && obj.Parent() == c.pass.Pkg.Scope() {
-			c.report(id, "global LocalRef references are unsupported")
+		if localReference(obj.Type()) && obj.Parent() == c.pass.Pkg.Scope() {
+			c.report(id, "global LocalRef pointers are unsupported")
 		}
 		if i < len(x.Values) {
 			c.transport(x.Values[i], obj.Type())
@@ -248,8 +248,8 @@ func (c *subsetChecks) returnedValues(x *ast.ReturnStmt) {
 		if destination := c.returnType(x, i); destination != nil {
 			c.transport(e, destination)
 		}
-		if noRefReference(c.pass.TypesInfo.TypeOf(e)) {
-			c.report(e, "returning LocalRef references is unsupported")
+		if localReference(c.pass.TypesInfo.TypeOf(e)) {
+			c.report(e, "returning LocalRef pointers is unsupported")
 		}
 	}
 }
@@ -276,8 +276,8 @@ func subsetContainer(t types.Type) string {
 // subsetResults rejects local-only references in function results.
 func subsetResults(results *types.Tuple) string {
 	for i := 0; i < results.Len(); i++ {
-		if noRefReference(results.At(i).Type()) {
-			return "returning LocalRef references is unsupported"
+		if localReference(results.At(i).Type()) {
+			return "returning LocalRef pointers is unsupported"
 		}
 	}
 	return ""
@@ -302,8 +302,8 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 		}
 	}
 	t := c.pass.TypesInfo.TypeOf(expression)
-	if storedNoRef(t, make(map[types.Type]bool)) {
-		c.report(expression, "containers of LocalRef references are unsupported")
+	if storedLocalReference(t, make(map[types.Type]bool)) {
+		c.report(expression, "containers of LocalRef pointers are unsupported")
 	}
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return
@@ -313,8 +313,8 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 	}
 }
 
-// storedNoRef checks native container elements even when the handle has an ownership proof.
-func storedNoRef(t types.Type, seen map[types.Type]bool) bool {
+// storedLocalReference checks native container elements even when the handle has an ownership proof.
+func storedLocalReference(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] {
 		return false
 	}
@@ -331,7 +331,7 @@ func storedNoRef(t types.Type, seen map[types.Type]bool) bool {
 		elements = []types.Type{storage.Elem()}
 	}
 	for _, element := range elements {
-		if noRefReference(element) || storedNoRef(element, seen) {
+		if localReference(element) || storedLocalReference(element, seen) {
 			return true
 		}
 	}

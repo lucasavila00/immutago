@@ -84,8 +84,8 @@ func (p *proof) value(result *obligation, t types.Type) {
 	}
 	switch underlying := t.Underlying().(type) {
 	case *types.Pointer:
-		if NoRef(underlying.Elem()) {
-			result.reason = "LocalRef references cannot be stored"
+		if LocalRef(underlying.Elem()) {
+			result.reason = "LocalRef pointers cannot be stored"
 			return
 		}
 		if !Marked(underlying.Elem()) {
@@ -114,7 +114,7 @@ func (p *proof) structure(result *obligation, t types.Type, structure *types.Str
 		result.reason = "struct does not embed im.Shared or im.LocalRef"
 		return
 	}
-	if Shared(t) && NoRef(t) {
+	if Shared(t) && LocalRef(t) {
 		result.reason = "struct cannot embed both im.Shared and im.LocalRef"
 		return
 	}

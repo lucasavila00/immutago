@@ -37,13 +37,13 @@ func diagnosticType(t types.Type) string {
 
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
-	"LocalRef references cannot enter aggregate storage": "store an LocalRef value copy or an Shared reference",
+	"LocalRef pointers cannot enter aggregate storage": "store a LocalRef value copy or a Shared pointer",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
 		"im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses",
-	"returning LocalRef references is unsupported": "return an LocalRef value copy, or use im.Shared " +
-		"for objects whose references must be shared",
-	"global LocalRef references are unsupported":        "keep the LocalRef reference local, or store a value copy",
-	"containers of LocalRef references are unsupported": "store LocalRef value copies or shared im.Shared references",
+	"returning LocalRef pointers is unsupported": "return a LocalRef value copy, or use im.Shared " +
+		"for objects whose pointers must be shared",
+	"global LocalRef pointers are unsupported":        "keep the LocalRef pointer local, or store a value copy",
+	"containers of LocalRef pointers are unsupported": "store LocalRef value copies or im.Shared pointers",
 	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",
 	"user generic instantiations with immutable types are unsupported": "use a non-generic declaration " +
@@ -76,7 +76,7 @@ var subsetFixes = map[string]string{
 	"freezing requires a synchronous call": "freeze the local builder directly before " +
 		"starting deferred or concurrent work",
 	"reference operation is outside the supported allowlist": "use a documented reference form: fresh construction, " +
-		"a concrete variable, a read, or a direct typed call; only Shared references can be stored or returned",
+		"a concrete variable, a read, or a direct typed call; only Shared pointers can be stored or returned",
 	"native slices of immutable storage are unsupported": "use im.FrozenSlice[T] and All() for " +
 		"iteration, or build a fresh local slice and consume it with im.FreezeSlice",
 	"native maps of immutable storage are unsupported": "use im.FrozenMap[K, V]; pass an " +

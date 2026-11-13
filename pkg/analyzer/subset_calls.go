@@ -168,17 +168,17 @@ func (c *subsetChecks) closure(literal *ast.FuncLit) {
 
 // globalStore prevents a local-only reference from entering package or aggregate storage.
 func (c *subsetChecks) globalStore(destination, value ast.Expr) {
-	if !noRefReference(c.pass.TypesInfo.TypeOf(value)) {
+	if !localReference(c.pass.TypesInfo.TypeOf(value)) {
 		return
 	}
 	id, ok := ast.Unparen(destination).(*ast.Ident)
 	if !ok {
-		c.report(destination, "LocalRef references cannot enter aggregate storage")
+		c.report(destination, "LocalRef pointers cannot enter aggregate storage")
 		return
 	}
 	obj := c.pass.TypesInfo.ObjectOf(id)
 	if obj != nil && obj.Parent() == c.pass.Pkg.Scope() {
-		c.report(destination, "global LocalRef references are unsupported")
+		c.report(destination, "global LocalRef pointers are unsupported")
 	}
 }
 

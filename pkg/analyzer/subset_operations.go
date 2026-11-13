@@ -8,13 +8,13 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// noRefReference identifies a reference whose concrete marked target forbids escape.
-func noRefReference(t types.Type) bool {
+// localReference identifies a pointer to a concrete im.LocalRef struct.
+func localReference(t types.Type) bool {
 	if t == nil {
 		return false
 	}
 	pointer, ok := t.Underlying().(*types.Pointer)
-	return ok && checker.NoRef(pointer.Elem())
+	return ok && checker.LocalRef(pointer.Elem())
 }
 
 // referenceUse checks the concrete target, source, and context of each immutable reference.
@@ -69,9 +69,9 @@ func (c *subsetChecks) nilExpression(expression ast.Expr) bool {
 	return ok && c.pass.TypesInfo.ObjectOf(name) == types.Universe.Lookup("nil")
 }
 
-// referenceContext separates shared storage from local-only LocalRef references.
+// referenceContext separates stored Shared pointers from local LocalRef pointers.
 func (c *subsetChecks) referenceContext(expression ast.Expr) bool {
-	local := noRefReference(c.pass.TypesInfo.TypeOf(expression))
+	local := localReference(c.pass.TypesInfo.TypeOf(expression))
 	switch parent := c.parents[expression].(type) {
 	case *ast.ParenExpr:
 		return true
@@ -116,7 +116,7 @@ func (c *subsetChecks) localReferenceBinding(destination ast.Expr) bool {
 
 // directReferenceArgument accepts concrete named calls and the fixed shared-reference storage operations.
 func (c *subsetChecks) directReferenceArgument(call *ast.CallExpr, expression ast.Expr) bool {
-	local := noRefReference(c.pass.TypesInfo.TypeOf(expression))
+	local := localReference(c.pass.TypesInfo.TypeOf(expression))
 	object := c.calledObject(call.Fun)
 	if !local && c.ownedBuiltin(call) {
 		return true
