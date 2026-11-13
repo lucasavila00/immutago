@@ -1,5 +1,7 @@
 # Collection costs
 
+[Project reference](README.md)
+
 The checker adds no runtime proof checks. Frozen collections wrap native Go
 storage. Freeze adds no allocation and does not copy the input.
 

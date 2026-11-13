@@ -1,5 +1,7 @@
 # The Rust subset
 
+[Project reference](../README.md)
+
 For marked values, their fields, and `im` collections, Immutago checks this
 subset of Rust's ownership rules:
 
@@ -419,6 +421,6 @@ declaration initialization.
 Run `immutago ./...` or `go vet -vettool=<absolute path to immutago> ./...`.
 An ordinary Go build does not run the checker.
 
-The [ADR](../adr/borrowing/what.md) records the decision. The
+The [architecture](../arch/README.md) explains the implementation. The
 [source notes](../../third_party/rustc/README.md) identify the rustc algorithms
 used by the implementation.

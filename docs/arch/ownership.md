@@ -38,7 +38,10 @@ each participating function, then expand blocks into use, consume, and reset
 events. Each builder has an integer identity. Sets of consumed identities flow
 forward. A join takes the union of predecessor states; consumption on any
 incoming path therefore prevents a later use. A fresh declaration resets its
-identity, including when that declaration runs again inside a loop.
+identity, including when that declaration runs again inside a loop. Freeze is
+rejected while a range over the same builder is active: the range still retains
+its native handle. Direct synchronous Freeze calls make consumption explicit;
+function-value aliases cannot hide that operation.
 
 The solver scans reachable points in reverse postorder until output sets stop
 changing. Input and output sets are maps. Built-in writes and freeze effects

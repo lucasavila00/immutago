@@ -5,6 +5,9 @@ The public analyzer is in `pkg/analyzer/`, immutable values are in
 `pkg/im/`, type proofs are in `internal/checker/`, and the CLI is in
 `cmd/immutago/`. End-to-end tests are in `tests/`.
 Read [the contract](docs/guide/immutability.md) before analyzer changes.
+Use the [project reference](docs/README.md) to find the current documentation.
+Keep supported forms in the guide, implementation choices in the architecture
+pages, and validation evidence with the relevant tests and cost documentation.
 
 ## 1. Think Before Coding
 

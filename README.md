@@ -10,7 +10,4 @@ go run ./cmd/immutago ./...
 make test-e2e
 ```
 
-See the [contract](docs/guide/immutability.md),
-[architecture](docs/arch/README.md),
-[development guide](docs/contrib/development.md), and
-[working rules](AGENTS.md).
+See the [project reference](docs/README.md) and [working rules](AGENTS.md).

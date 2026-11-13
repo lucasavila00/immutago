@@ -16,8 +16,24 @@ These notes describe the explicit subset and its fixed-owner loan analysis.
 - [Validation and review regressions](validation.md): trusted code, tests, review findings,
   and limits.
 
-Read the [intended contract](../guide/immutability.md) for accepted source forms.
-The [borrowing ADR](../adr/borrowing/what.md) and
-[frozen collections ADR](../adr/frozen-collections/what.md) explain the design
-choices. The architecture notes distinguish those choices from demonstrated
-implementation behavior.
+Read the [guide](../guide/immutability.md) for accepted source forms and the
+[project reference](../README.md) for API, cost, and development documentation.
+
+## Design choices
+
+- Value constructors return `T`. This avoids an owning-pointer model such as
+  Rust's `Box<T>`.
+- Each local reference has one fixed owner. This removes the forward alias
+  solver while retaining backward NLL for branches and loops.
+- A loan protects the whole owner. This avoids field-overlap analysis, but
+  rejects some disjoint field writes that Rust permits.
+- Direct named readers cannot retain references. This avoids dynamic-call
+  effects and pointer-return summaries across packages.
+- Freeze transfers a proved exclusive native handle. The small `im` wrappers
+  are trusted primitives; the checker does not prove arbitrary storage
+  libraries with native pointer fields.
+- Clone creates independent native storage for edits. There are no persistent
+  update trees or mutable borrows.
+
+The [ownership page](ownership.md) explains these mechanisms. The
+[validation page](validation.md) states what is trusted and what the tests show.

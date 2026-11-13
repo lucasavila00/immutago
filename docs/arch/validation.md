@@ -45,6 +45,31 @@ unit and end-to-end tests on Linux, macOS, and Windows. The
 [development guide](../contrib/development.md) lists local commands. Use focused
 local checks for a change and hosted CI for the full suite. Test success is not a claim that every possible source form has been proved.
 
+## Required regression coverage
+
+Keep accepted and rejected cases for each supported form:
+
+| Area | Accepted cases | Rejected nearby cases |
+| --- | --- | --- |
+| Owned values | Conditional construction, reassignment, independent copies, value-returning constructors | Owning pointers and writes to protected globals |
+| Shared loans | Fixed local references, named readers, branches, loops, writes after last use | Shared writes, writes during a live loan, reference copies, escapes, and unknown producers |
+| Statement forms | One destination, fresh map-reader results, ordinary loops, separate Freeze | Nested protected operands in multiple destinations, nested Freeze, protected select communication |
+| Builders | Fresh construction, element edits, nil and empty storage, fresh loop declarations | Aliases before Freeze, subslices, element addresses, unknown or external sources, active-range Freeze |
+| Consumption | Frozen reads, Clone, independent edits, refreezing the clone | Reads or writes after Freeze, double Freeze, indirect or asynchronous Freeze |
+| Types and calls | Recursive immutable elements, exact collection methods, direct named calls | Invalid elements, user methods on protected receivers, dynamic protected results, callback transport |
+| Dependencies | Checked readers in imported packages | Dependency failures hidden by consumer-only CLI or vet runs |
+
+For reference transport, test returns, fields, globals, containers, scalar
+addresses, pointer indirection, conversions, interfaces, captures, generics,
+`defer`, and goroutines separately. Test parentheses, aliases, implicit
+receivers, iterator bindings, and tuple results around each affected form.
+
+Runtime tests must check that Freeze reuses original storage and that Clone
+creates independent storage. Allocation tests separate native construction
+from Freeze, reads, and direct iteration. Keep the same generated loan programs
+when comparing checker memory. See [collection costs](../performance.md) and
+[reviewer requirements](../reviewer-focus.md).
+
 ## Confirmed failures in the previous implementation
 
 The independent review used the source at `0d7e423`, whose tree matches
@@ -67,20 +92,18 @@ func example() {
 }
 ```
 
-[Receiver checks](../../pkg/analyzer/subset_calls.go) test the outer expression
-`p`, which contains marked storage, instead of rejecting the promoted scalar
-receiver `*Counter`. The callee's scalar write is outside the marked-type
-checks. `v.Inc()` also passes while `p` is live. Rejecting promoted pointer
-methods on protected owners would be a small restriction that closes this
-case; resolving and checking the actual receiver would preserve more methods.
+[Receiver checks](../../pkg/analyzer/subset_calls.go) previously tested the
+outer expression `p` without rejecting its promoted scalar receiver `*Counter`. The callee's
+scalar write was outside the marked-type checks. `v.Inc()` also passed while
+`p` was live.
 The explicit subset rejects all user-defined receiver methods on protected
 values. Only the listed methods on exact `im` collection types remain.
 
 ### Select receive assignment after freeze
 
 Go evaluates all select channel operands before it selects a case. A receive
-assignment to a selected case's left side occurs later. This accepted program
-changes storage after freezing it:
+assignment to a selected case's left side occurs later. The previously accepted
+program below changes storage after freezing it:
 
 ```go
 package main
@@ -119,10 +142,8 @@ The output is `frozen before: false`, then `frozen after: true`. Channel
 synchronization orders the later read after the write. This example does not
 need a data race. The freeze analysis relies on the generic Go CFG's node
 placement. Its event lowering does not reconstruct this delayed assignment to
-the second receive target. The ownership checks need explicit select effects,
-or must reject builder and protected-value receive targets until those effects
-are modeled. The explicit subset takes the second approach and also rejects
-protected channel expressions in select clauses.
+the second receive target. The explicit subset rejects builder and protected-value
+receive targets, and also rejects protected channel expressions in select clauses.
 
 ## Cost and scope limits
 
