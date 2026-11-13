@@ -1,13 +1,11 @@
 # Immutago
 
-A Go immutability analyzer and immutable collections. Embed
-`im.Marker` in a struct; the analyzer checks field types and borrowing. Build owned values with ordinary
-Go assignments; shared references are read-only. Freeze exclusive native maps
-and slices without copying; clone them for changes. No escape hatches.
+A Go immutability analyzer and frozen maps and slices. Embed `im.Marker` in a
+struct. Build and change owned values with ordinary Go assignments; shared
+references are read-only. Freeze exclusive native storage without copying.
+Clone it when you need independent mutable storage.
 
-```sh
-go run ./cmd/immutago ./...
-make test-e2e
-```
+The analyzer must run; `go build` alone does not enforce these rules.
 
-See the [project reference](docs/README.md) and [working rules](AGENTS.md).
+[Get started](docs/getting-started.md) · [Language rules](docs/rules.md) ·
+[Documentation](docs/README.md) · [Development](docs/development.md)

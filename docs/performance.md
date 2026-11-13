@@ -30,6 +30,26 @@ that changes to the clone do not change the frozen source.
 ## Checker memory
 
 Fixed references have one owner and need no forward possible-owner maps.
-A focused 200-reference CLI comparison reduced peak RSS from 348.2 MiB to
-97.8 MiB. This includes package loading and is one measurement, not a general
-memory bound. See [the measured review comparison](arch/validation.md).
+The earlier solver retained pointer-to-owner maps at every operation point,
+including dead bindings. The current solver stores one owner per local
+reference and retains backward liveness.
+
+A focused same-machine comparison used separate blocks in one function:
+
+```go
+{ var v Value; p := &v; _ = p.X; v.X = 1 }
+```
+
+| Blocks | Before: peak RSS (MiB) | Fixed owners: peak RSS (MiB) |
+| --- | ---: | ---: |
+| 50 | 107.5 | 104.0 |
+| 100 | 157.0 | 100.2 |
+| 200 | 348.2 | 97.8 |
+
+The baseline was `269eaaf`; the changed solver was `8753467`. Both binaries
+checked the same generated consumer packages with
+`/usr/bin/time -l <binary> ./scale<N>`, where N was 50, 100, or 200. All six checks passed.
+These single observations include package loading and are not isolated solver
+benchmarks. At 200 blocks, elapsed time was 0.44 seconds before and 0.19 seconds
+after. The memory growth from retained possible-owner maps is removed; these
+measurements do not establish a bound for all source programs.

@@ -46,7 +46,7 @@ whether an unmarked generic field can contain protected storage.
 
 ## Operation checks
 
-The [guide](../guide/immutability.md) is the source-language allowlist. Its allowed
+The [guide](../rules.md) is the source-language allowlist. Its allowed
 forms are complete. Rejection examples show common mistakes; they do not define
 the boundary.
 

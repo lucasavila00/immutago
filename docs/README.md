@@ -1,39 +1,43 @@
-# Project reference
+# Documentation
 
-Start with the [guide](guide/immutability.md) to use Immutago. It defines the
-complete allowed Go forms. The architecture pages explain how the checker
-checks those forms. Keep rules and design explanations on these pages as the
-implementation changes.
+Immutago checks a small ownership system for Go. Marked structs contain only
+immutable field types. Local owners can change; shared references can only read.
+Freeze transfers a native map or slice to a read-only collection without copying.
 
-## Use Immutago
+## For users
 
-| Page | Contents |
+1. [Get started](getting-started.md): run a complete example and add the checker
+   to your project.
+2. [Language rules](rules.md): find the complete allowed operations and rejected
+   examples. This is the source of truth for supported Go forms.
+3. [Costs](performance.md): understand storage sharing, allocations, and Clone.
+4. [Collection API](../pkg/im/readme.md): look up signatures, zero values,
+   iteration order, and bounds behavior.
+
+## For maintainers and reviewers
+
+| Task | Read |
 | --- | --- |
-| [Ownership guide](guide/immutability.md) | Value types, shared references, allowed operations, Freeze, Clone, and CLI commands |
-| [Collection costs](performance.md) | Allocations, storage sharing, clone costs, and checker memory measurements |
-| [Collection API](../pkg/im/readme.md) | Generated package and method reference |
-| [Analyzer API](../pkg/analyzer/readme.md) | Integration with Go analysis tools |
-| [Command reference](../cmd/immutago/readme.md) | CLI entry point |
+| Find the code that owns a check | [Architecture](arch/README.md) |
+| Follow types, calls, and dependency failures | [Analysis pipeline](arch/pipeline.md) |
+| Understand loans and consumed builders | [Ownership analysis](arch/ownership.md) |
+| Check assumptions and test evidence | [Validation](arch/validation.md) |
+| Build, debug, or update snapshots | [Development](development.md) |
+| Review a change to the supported language | [Reviewer requirements](reviewer-focus.md) |
+| Work on the repository as an agent | [Working rules](../AGENTS.md) |
 
-## Understand the checker
+For integration, use the generated [analyzer API](../pkg/analyzer/readme.md)
+and [command reference](../cmd/immutago/readme.md). The
+[Rust compiler source notes](../third_party/rustc/README.md) identify the adapted
+algorithms and their licenses.
 
-| Page | Contents |
-| --- | --- |
-| [Architecture](arch/README.md) | Components and design choices |
-| [Analysis pipeline](arch/pipeline.md) | Type proofs, allowed source forms, and dependency failures |
-| [Ownership and storage](arch/ownership.md) | Builder consumption, fixed owners, and non-lexical loan lifetimes |
-| [Validation](arch/validation.md) | Trusted code, required tests, regression examples, and proof limits |
-| [Rust compiler sources](../third_party/rustc/README.md) | Algorithm sources and license information |
+## Where documentation belongs
 
-## Change the project
+The getting-started page teaches one complete path. The rules page defines
+supported behavior. Architecture pages explain implementation choices and
+invariants. Development and review pages explain how to change the project.
+Keep each fact in its primary page and link to it from other pages.
 
-| Page | Contents |
-| --- | --- |
-| [Development](contrib/development.md) | Repository layout, commands, snapshots, and generated docs |
-| [Reviewer requirements](reviewer-focus.md) | Check the guide, complete source matches, ownership checks, and tests together |
-| [Working rules](../AGENTS.md) | Instructions for agents and contributors |
-
-Update the guide when supported forms change. Update the relevant architecture
-page when the implementation or its design changes. Record test evidence in
-validation and performance pages where it applies. Use Git history for past
-decisions; these pages describe the current project.
+Generated package references come from Go comments. Update the comments and run
+`make docs`; do not edit generated Markdown. Git history preserves earlier
+designs. These pages describe the current implementation.

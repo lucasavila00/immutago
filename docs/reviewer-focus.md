@@ -1,9 +1,9 @@
 # Reviewer requirements
 
-[Project reference](README.md)
+[Documentation](README.md) · [Validation](arch/validation.md)
 
 Use this checklist for every change to the supported Go subset. The
-[guide](guide/immutability.md) defines the allowed source forms. The
+[guide](rules.md) defines the allowed source forms. The
 [architecture notes](arch/README.md) explain how they are checked.
 
 ## 1. Document what is allowed
@@ -70,3 +70,20 @@ ordinary Go operations that do not involve protected storage.
 A new supported form requires docs, a matcher, ownership rules, and tests in the
 same change. Do not call a gap fixed by changing only the docs, only a rejection
 example, or only one spelling of an unsupported operation.
+
+## Review documentation changes
+
+Check both reading paths from the documentation index. A user must be able to
+install the tool, run a complete example, find an allowed form, and understand
+a diagnostic. A maintainer must be able to find the check, its invariant, its
+tests, and the validation command.
+
+Check claims against resolved type checks, source-form matches, ownership code,
+and fixtures. Keep rule definitions on the rules page; architecture pages
+explain the mechanism and link to the rule. Remove stale future-tense plans and
+avoid repeating historical reports as current behavior. Preserve measured
+results with their revision, method, and limits.
+
+Run complete new examples through the CLI. Check relative links and anchors
+after moving pages, and check template paths if documentation tooling moves.
+Generated references must still match their Go comments.

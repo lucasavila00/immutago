@@ -1,6 +1,6 @@
-# The Rust subset
+# Language rules
 
-[Project reference](../README.md)
+[Documentation](README.md) · [Get started](getting-started.md) · [Collection API](../pkg/im/readme.md)
 
 For marked values, their fields, and `im` collections, Immutago checks this
 subset of Rust's ownership rules:
@@ -15,6 +15,22 @@ The Rust below explains the rules. It is not an API you need to implement.
 The allowed Go forms in this guide define the supported language. The checker
 must match those forms and check their ownership rules. A form that does not
 match must be rejected. The examples of rejected code are not exhaustive.
+
+
+## Find a rule
+
+- [Value types](#allowed-value-types): which fields and collection arguments pass.
+- [Owned values](#owned-values) and [shared borrows](#shared-borrows-and-nll): the Rust model.
+- [Calls](#constructors-and-calls): constructors and readers.
+- [References](#what-you-can-do-with-a-reference): complete allowed operations.
+- [Statements](#what-statements-you-can-use): complete allowed statement forms.
+- [Collections](#frozen-collections): Freeze, builders, reads, and Clone.
+- [Scope](#what-we-do-not-implement): checks and unsupported Rust features.
+
+Here, **protected storage** means marked values, their fields, and frozen
+collections. A **builder** is a native map or slice checked for exclusive
+ownership. The builder section states which native containers are checked.
+Examples with `...` in a block omit ordinary code; the ellipsis is not Go syntax.
 
 
 ## Owned values
@@ -376,7 +392,7 @@ The receiver can be an expression of the frozen collection type, such as
 Parentheses are allowed: `(frozen.Len)()` and `range (frozen.All())` have the same
 meaning. `Len`, `At`, and `Get` allocate no storage. `All` yields value copies
 without cloning the container. `Clone` creates independent storage.
-See [collection costs](../performance.md).
+See [collection costs](performance.md).
 
 These rejected examples are not exhaustive:
 
@@ -421,6 +437,6 @@ declaration initialization.
 Run `immutago ./...` or `go vet -vettool=<absolute path to immutago> ./...`.
 An ordinary Go build does not run the checker.
 
-The [architecture](../arch/README.md) explains the implementation. The
-[source notes](../../third_party/rustc/README.md) identify the rustc algorithms
+The [architecture](arch/README.md) explains the implementation. The
+[source notes](../third_party/rustc/README.md) identify the rustc algorithms
 used by the implementation.
