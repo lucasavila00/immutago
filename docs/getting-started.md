@@ -61,7 +61,3 @@ are checked too. An ordinary Go build does not run the analyzer.
 For vet integration, use `go vet -vettool=/absolute/path/to/immutago ./...`.
 The normal CLI fails on diagnostics. Its standard `-json` mode can exit
 successfully with findings; do not use that exit status alone as a check.
-
-An unsupported form is an error. Follow its correction and the allowed-form
-list. There are no suppressions or caller trust annotations. Freeze has no
-runtime ownership checks; see the [trusted boundary](arch/validation.md#trust-boundary).

@@ -31,4 +31,4 @@ For a cost change, compare equivalent native and `im` functions with the same
 observable result. Check inlining, bounds checks, and heap escapes; inspect
 machine code if results differ. Test local use and values returned by helpers.
 Allocation counts alone do not prove zero overhead. Compare Clone with a native
-container copy, not an in-place edit. Use hosted CI for routine full validation.
+container copy, not an in-place edit.

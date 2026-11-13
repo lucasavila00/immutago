@@ -24,47 +24,52 @@ type Link struct { im.Immut; P *Point }
 | Marker | Reference policy |
 | --- | --- |
 | `im.Immut` | References can be copied, stored, passed to direct typed functions, and returned. |
-| `im.ImmutNoRef` | References stay local or pass to direct typed non-retaining functions. No storage, returns, or captures. Value copies can be stored and returned. |
+| `im.ImmutNoRef` | References stay local or pass to direct typed non-retaining functions. Value copies can be stored and returned. |
 
 In Rust terms, `Immut` resembles `Rc<T>`/`Arc<T>` with Go's GC managing lifetime;
 `ImmutNoRef` resembles a scoped `&'a T`.
 
-Every stored field, key, and element must recursively match this table:
+The allowed stored types are complete below. Every field, key, and element
+must recursively match a row.
 
-| Allowed type | Example |
+| Allowed form | Example |
 | --- | --- |
 | Boolean, integer, float, complex, or string | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
 | Defined scalar | `type Count int` |
 | Unnamed array of allowed elements | `[2]int`, `[2]Point` |
-| Struct with exactly one embedded marker and allowed fields | `Point`, `Local` |
-| Pointer to a concrete `Immut` struct with allowed fields | `*Point` |
+| Struct with one embedded marker and allowed fields | `Point`, `Local` above |
+| Embedded marker alias | `type Mark = im.Immut; type Value struct { Mark; X int }` |
+| Nested marked value | `type Pair struct { im.Immut; Child Point }` |
+| Pointer to a concrete Immut struct | `*Point` |
+| Recursive marked struct | `type Node struct { im.Immut; Next *Node }` |
 | Frozen collection of allowed types | `im.FrozenSlice[Point]`, `im.FrozenMap[string, *Point]` |
 | Alias or defined marked struct | `type Position = Point`, `type Position Point` |
 
-Marker aliases work. Named marker fields, pointer-embedded markers, and structs
-with both markers fail. Every nested struct needs its own marker. Unmarked
-structs cannot contain protected storage, including through native containers.
+Rejected type examples (**not exhaustive**):
 
-Stored `*Local`, scalar pointers, native slices/maps, channels, interfaces, and
-functions fail. Named arrays need a marked wrapper:
+| Rejected form | Replacement |
+| --- | --- |
+| `type Bad struct { Mark im.Immut }` | `type Good struct { im.Immut }` |
+| `type Bad struct { *im.Immut }` | Embed `im.Immut` by value. |
+| `type Bad struct { im.Immut; im.ImmutNoRef }` | Embed one marker. |
+| `type Bad struct { Child Point }` | `type Good struct { im.Immut; Child Point }` |
+| `type Bad struct { Children []Point }` | `type Good struct { im.Immut; Children im.FrozenSlice[Point] }` |
+| `type Bad struct { im.Immut; P *Local }` | Store `Local` by value, or use `*Point` for sharing. |
+| `type Counts [2]int` as a stored type | `type Counts struct { im.Immut; Values [2]int }` |
 
-```go
-// Rejected as a stored type: type Counts [2]int
-// Allowed:
-type Counts struct { im.Immut; Values [2]int }
-type Node struct { im.Immut; Next *Node } // Recursive immutable types work.
-```
+Allowed generic forms:
 
-Only the fixed `im` APIs handle protected storage generically. User generic
-types, aliases, functions, and instantiations involving protected storage fail:
+| Allowed form | Example |
+| --- | --- |
+| Fixed im types and functions | `im.FrozenSlice[Point]`, `im.FreezeSlice([]Point{})` |
+| User generics without protected storage | `type Plain[T any] struct { Value T }`, used as `Plain[int]` |
 
-```go
-// Rejected: type Box[T any] struct { im.Immut; Value T }
-// Allowed:
-type Box struct { im.Immut; Value Point }
-```
+Rejected generic examples (**not exhaustive**):
 
-Ordinary generics such as `Plain[int]` remain supported; `Plain[Point]` does not.
+| Rejected form | Replacement |
+| --- | --- |
+| `type Box[T any] struct { im.Immut; Value T }` | `type Box struct { im.Immut; Value Point }` |
+| `Plain[Point]` or `identity(point)` with generic `identity` | Use a concrete marked struct or copy `point` directly. |
 
 ## Construction and references
 
@@ -107,10 +112,10 @@ local; a called function must not retain its reference.
 | Read a stored reference | `p := link.P`, `p := values[i]` |
 | Return or receive a reference from a named function | `return p`, `p := makePoint()` |
 
-Parentheses and aliases preserve these forms. Pointer targets must be concrete
-marked structs, never arrays, frozen wrappers, scalars, or other pointers.
-References originate only in fresh construction, not `&point` or `&owner.Child`:
-reassigning addressed storage would change what an existing reference observes.
+Parentheses and aliases preserve these forms. Targets are concrete marked
+structs. References originate in the listed fresh constructions.
+
+Rejected reference examples (**not exhaustive**):
 
 | Rejected example | Replacement |
 | --- | --- |
@@ -121,7 +126,8 @@ reassigning addressed storage would change what an existing reference observes.
 | `&[2]Point{}` | Put the array in a marked struct. |
 | `[]*Point{{X: 1}}` | Use explicit allocation: `[]*Point{&Point{X: 1}}`. |
 | `(*Point)(nil)` | `var p *Point = nil` |
-| Returning or storing `p` where `p` is `*Local` | Return or store the value copy `*p`. |
+| `return p` with `p *Local` | `return *p` with a `Local` result. |
+| `saved = p` with `p *Local` | Store the value copy `*p`. |
 
 ## Statements and calls
 
@@ -136,7 +142,9 @@ Use the operations above inside these statement forms:
 | Call a direct named function | `read(p)`, `n := read(p)` |
 | Return values or `Immut` references, including multiple results | `return point`, `return p, true` |
 | Forward named results directly | `return makePair()`, `takePair(makePair())` |
-| Use `if`, ordinary loops, or value switches | `if ready { p = makePoint() }`, `for i := range values { ... }`, `switch p.X { ... }` |
+| Conditional or value switch | `if ready { p = makePoint() }`, `switch p.X { ... }` |
+| Condition, three-clause, or unconditional loop | `for p.X > 0 { ... }`, `for i := 0; i < p.X; i++ { ... }`, `for { ... }` |
+| Range with fresh loop variables | `for i, value := range values { ... }`, `for i := range count { ... }` |
 | Assign one existing loop target | `for i = range count { ... }` |
 | Use checked operations in a select case body | `case <-ready: values[0] = value` |
 
@@ -144,6 +152,9 @@ The one-destination rule applies to assignments and declarations, not returns.
 `Get` is the only two-destination exception; both destinations must be new local
 names or blanks. Blocks, `break`, and `continue` follow ordinary Go rules.
 Whole package variables can also be reassigned; their objects remain immutable.
+Calls are direct, synchronous, and concretely typed; dependencies are checked.
+
+Rejected statement and call examples (**not exhaustive**):
 
 | Rejected example | Replacement |
 | --- | --- |
@@ -153,17 +164,11 @@ Whole package variables can also be reassigned; their objects remain immutable.
 | `use(im.FreezeSlice(values))` | Bind Freeze to a local, then call `use`. |
 | `case _, values[0] = <-ready:` | Receive first; write in the case body. |
 | `case <-watch(im.FreezeSlice(values)):` | Freeze and compute the channel before the select; receive from the channel variable. |
-
-Protected calls are direct, synchronous, and concrete. Methods on protected
-receivers (including promoted methods), interface transport, protected callbacks, closure captures,
-`go`, and `defer` are unsupported. Dependencies are checked too.
-
-```go
-// Rejected: callback := func() int { return point.X }
-// Allowed: pass a scalar copy to ordinary callback code.
-x := point.X
-callback := func() int { return x }
-```
+| `value.Read()` or `reader.Read(p)` with protected receiver/parameters/results | Use a named function: `Read(p)`. |
+| `var value any = p` | Use a concrete `*Point` variable. |
+| `callback(p)` through a function variable with protected arguments | Use a direct named function. |
+| `callback := func() int { return point.X }` | `x := point.X; callback := func() int { return x }` |
+| `go read(p)` or `defer read(p)` | Call `read(p)` synchronously. |
 
 ## Frozen collections
 

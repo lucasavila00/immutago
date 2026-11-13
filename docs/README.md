@@ -1,9 +1,5 @@
 # Documentation
 
-Immutago checks immutable Go objects and exclusive native builders.
-`im.Immut` permits shared references. `im.ImmutNoRef` keeps references local
-or in direct calls that do not retain them. Both prohibit object mutation.
-
 ## Users
 
 - [Get started](getting-started.md): a complete example and check commands.
@@ -19,7 +15,3 @@ or in direct calls that do not retain them. Both prohibit object mutation.
 - [Working rules](../AGENTS.md): repository instructions.
 - [Analyzer API](../pkg/analyzer/readme.md): embedding the public analyzer.
 - [Source attribution](../third_party/rustc/README.md): adapted graph code and licenses.
-
-The rules page defines behavior. Architecture explains its implementation.
-Tests and performance notes record validation. Generated package references
-come from Go comments; update those comments and run `make docs`.
