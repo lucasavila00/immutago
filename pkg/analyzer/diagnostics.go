@@ -37,14 +37,19 @@ func diagnosticType(t types.Type) string {
 
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
+	"freeze functions must be called directly": "call im.FreezeMap(builder) or im.FreezeSlice(builder) " +
+		"directly so ownership consumption is checked",
+	"freezing requires a synchronous call": "freeze the local builder directly before " +
+		"starting deferred or concurrent work",
+
 	"borrowing through a shared reference is unsupported": "read the child through the " +
 		"existing reference, or copy the child into an owned local before borrowing it",
 	"reference operation is outside the supported allowlist": "keep the borrow in a local *T " +
 		"binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader",
-	"native slices of immutable storage are unsupported": "use im.Slice[T] and All() for " +
-		"iteration; pass an inline []T literal only to im.NewSlice",
-	"native maps of immutable storage are unsupported": "use im.Map[K, V]; pass an " +
-		"inline map literal only to im.NewMap",
+	"native slices of immutable storage are unsupported": "use im.FrozenSlice[T] and All() for " +
+		"iteration, or build a fresh local slice and consume it with im.FreezeSlice",
+	"native maps of immutable storage are unsupported": "use im.FrozenMap[K, V]; pass an " +
+		"owned local map or fresh literal to im.FreezeMap",
 	"channels of immutable storage are unsupported": "keep immutable values in " +
 		"owned locals or im collections; channels of these values are outside this subset",
 	"pointer-owned construction is unsupported": "construct a local value (v := " +
@@ -60,7 +65,7 @@ var subsetFixes = map[string]string{
 	"scalar interior pointer methods are unsupported": "read or update the field " +
 		"through its owned value; do not take a field pointer or call its pointer-receiver method",
 	"slice views of immutable storage are unsupported": "copy the array into local " +
-		"storage before slicing it, or use im.Slice for immutable sequence values",
+		"storage before slicing it, or use im.FrozenSlice for immutable sequence values",
 	"only whole local values can be borrowed": "copy the value into a named " +
 		"local, then borrow that local or one of its marked fields",
 	"only whole local values and marked fields can be borrowed": "copy the value into a named " +
@@ -117,13 +122,14 @@ func structuralFix(t types.Type, reason string) string {
 	case *types.Pointer:
 		return "replace the pointer field or argument with an owned immutable value"
 	case *types.Slice:
-		return "replace the native slice with im.Slice[T], where T is immutable"
+		return "replace the native slice with im.FrozenSlice[T], where T is immutable"
 	case *types.Map:
-		return "replace the native map with im.Map[K, V], where K and V are immutable"
+		return "replace the native map with im.FrozenMap[K, V], where K and V are immutable"
 	case *types.Interface:
 		return "replace the interface with a concrete immutable type"
 	case *types.Chan, *types.Signature:
 		return "keep channels and callbacks outside immutable values; store their immutable results"
 	}
-	return "use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments"
+	return "use primitive values, unnamed arrays, marked structs, or " +
+		"im.FrozenSlice/im.FrozenMap with immutable type arguments"
 }

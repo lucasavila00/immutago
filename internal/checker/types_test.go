@@ -13,7 +13,7 @@ func testTypes() (*types.Named, *types.Named) {
 	marker := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Marker", nil), types.NewStruct(nil, nil), nil)
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, pkg, "T", nil),
 		types.NewInterfaceType(nil, nil).Complete())
-	slice := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Slice", nil),
+	slice := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "FrozenSlice", nil),
 		types.NewStruct([]*types.Var{types.NewField(token.NoPos, pkg, "values", types.NewSlice(parameter), false)}, nil), nil)
 	slice.SetTypeParams([]*types.TypeParam{parameter})
 	return marker, slice

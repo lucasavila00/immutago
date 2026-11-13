@@ -14,7 +14,7 @@ func TestGenericAliasBoundaries(t *testing.T) {
    func box[T any](v T) any { return Box[T]{V:v} }; var _ = box(Value{})`, "unresolved generic storage"},
 		{"anonymous", `func box[T any](v T) any { return struct{ V T }{v} }`, "unresolved generic storage"},
 		{"nested wrapper", `type Box[T any] struct { V []T }`, "unresolved generic storage"},
-		{"native", `func native(v im.Slice[int])`, "unsupported function without a Go body"},
+		{"native", `func native(v im.FrozenSlice[int])`, "unsupported function without a Go body"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

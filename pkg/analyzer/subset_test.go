@@ -20,7 +20,7 @@ func TestSubsetBoundaries(t *testing.T) {
 		{"native slice", `func f(){_=[]V{{}}}`},
 		{"native map", `func f(){_=map[int]V{0:{}}}`},
 		{"native channel", `func f(){_=make(chan V)}`},
-		{"values output", `func f(){_=im.NewSlice(V{}).Values()}`},
+		{"values output", `func f(){_=im.FreezeSlice([]V{{}}).Clone()}`},
 		{"pointer return", `func f(v *V)*V{return v}`},
 		{"indirection", `func f(v **V){}`},
 		{"global reference", `var p *V`},
@@ -52,9 +52,9 @@ func TestSubsetValues(t *testing.T) {
 	cases := []string{
 		`func f(){var v V;v.X=1;copy:=v;copy.X=2;_=copy}`,
 		`func read(v *V)int{return v.X};func f(){var v V;_=read(&v);v.X=2}`,
-		`func f(){_=im.NewSlice(V{},V{})}`,
-		`func f(){_=im.NewSlice([]V{{}}...)}`,
-		`func f(){_=im.NewMap(map[int]V{0:{}})}`,
+		`func f(){_=im.FreezeSlice([]V{{},{}})}`,
+		`func f(){_=im.FreezeSlice([]V{{}})}`,
+		`func f(){_=im.FreezeMap(map[int]V{0:{}})}`,
 		`func f(){var values [2]V;values[0].X=2;_=values}`,
 	}
 	for _, source := range cases {

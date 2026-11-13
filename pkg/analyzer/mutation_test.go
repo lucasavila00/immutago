@@ -61,7 +61,7 @@ func TestBorrowLifetimes(t *testing.T) {
 // TestLiveBorrowConflicts rejects writes that overlap a shared loan or use a read-only reference.
 func TestLiveBorrowConflicts(t *testing.T) {
 	cases := []struct{ name, source string }{
-		{"collection native copy", `func f() { values:=im.NewSlice(Value{}).Values()
+		{"collection native copy", `func f() { values:=im.FreezeSlice([]Value{{}}).Clone()
          p:=&values[0]; values[0].X=2; _=read(p) }`},
 		{"slice view", `func f(v Value) { view:=v.Array[:]; v.Array[0]=2; _=view[0] }`},
 		{"slice view write", `func f(v Value) { view:=v.Array[:]; view[0]=2 }`},

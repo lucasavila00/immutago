@@ -22,39 +22,15 @@ func (c *subsetChecks) calledObject(e ast.Expr) types.Object {
 	return nil
 }
 
-// constructorInputs permits only copied inline literals at the sealed constructor boundary.
-func (c *subsetChecks) constructorInputs() {
-	for node := range c.parents {
-		call, ok := node.(*ast.CallExpr)
-		if !ok {
-			continue
-		}
-		obj := c.calledObject(call.Fun)
-		if !libraryObject(obj) || (obj.Name() != "NewMap" && obj.Name() != "NewSlice") {
-			continue
-		}
-		for _, arg := range call.Args {
-			literal, ok := ast.Unparen(arg).(*ast.CompositeLit)
-			if !ok {
-				continue
-			}
-			switch c.pass.TypesInfo.TypeOf(literal).Underlying().(type) {
-			case *types.Map, *types.Slice:
-				c.exempt[literal] = true
-				ast.Inspect(literal.Type, func(n ast.Node) bool {
-					if n != nil {
-						c.exempt[n] = true
-					}
-					return true
-				})
-			}
-		}
-	}
-}
-
 // call restricts shared arguments to direct synchronous calls with exact typed parameters.
 func (c *subsetChecks) call(call *ast.CallExpr) {
 	obj := c.calledObject(call.Fun)
+	if builtin, ok := obj.(*types.Builtin); ok && builtin.Name() == "make" {
+		return
+	}
+	if c.ownedBuiltin(call) {
+		return
+	}
 	if c.pass.TypesInfo.Types[call.Fun].IsType() {
 		if protectedReference(c.pass.TypesInfo.TypeOf(call)) {
 			c.report(call, "shared pointer conversions are unsupported")

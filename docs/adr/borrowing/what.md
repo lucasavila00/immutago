@@ -23,9 +23,9 @@ Reject reference returns, scalar interior pointers, pointer indirection and
 conversion, closure captures, interface/callback transport, reference storage,
 and generic borrowing helpers. Reject deferred or asynchronous borrowed calls.
 
-Reject native containers of marked values, except inline constructor inputs
-copied by the fixed `im` library. Retain immutable collections and direct value
-iteration. Marked fields remain recursively immutable.
+Permit native containers of marked values only as checked exclusive local
+builders. Freeze consumes their handles into read-only collections without
+copying; Clone returns independent mutable storage. Retain direct value iteration. Marked fields remain recursively immutable.
 
 The checker enforces these boundaries. Unsupported code fails; it is never
 silently skipped. There are no suppression directives or trust annotations.

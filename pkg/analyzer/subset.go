@@ -15,12 +15,13 @@ type subsetChecks struct {
 	parents  map[ast.Node]ast.Node
 	exempt   map[ast.Node]bool
 	reported map[token.Pos]bool
+	owners   map[*types.Var]bool
 }
 
 // checkSubset checks the supported borrow boundary with compiler-resolved types.
-func checkSubset(pass *analysis.Pass) {
+func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 	c := &subsetChecks{pass: pass, parents: make(map[ast.Node]ast.Node),
-		exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool)}
+		owners: owners, exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool)}
 	for _, file := range pass.Files {
 		var stack []ast.Node
 		ast.Inspect(file, func(n ast.Node) bool {
@@ -35,7 +36,7 @@ func checkSubset(pass *analysis.Pass) {
 			return true
 		})
 	}
-	c.constructorInputs()
+	c.ownedInputs()
 	for _, file := range pass.Files {
 		ast.Inspect(file, c.visit)
 	}
@@ -65,6 +66,7 @@ func (c *subsetChecks) report(n ast.Node, message string) {
 func (c *subsetChecks) visit(n ast.Node) bool {
 	if expression, ok := n.(ast.Expr); ok {
 		c.expressionType(expression)
+		c.freezeFunctionUse(expression)
 	}
 
 	switch x := n.(type) {
@@ -302,10 +304,10 @@ func subsetTuple(tuple *types.Tuple, seen map[types.Type]bool) string {
 	return ""
 }
 
-// expressionType checks a resolved expression unless it is a sealed constructor input.
+// expressionType checks resolved types while admitting native builders checked by ownership analysis.
 func (c *subsetChecks) expressionType(expression ast.Expr) {
 	t := c.pass.TypesInfo.TypeOf(expression)
-	if t == nil || c.exempt[expression] {
+	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return
 	}
 	if reason := subsetType(t, make(map[types.Type]bool)); reason != "" {

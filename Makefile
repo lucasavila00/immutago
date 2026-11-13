@@ -1,6 +1,6 @@
 GOMARKDOC = go run github.com/princjef/gomarkdoc/cmd/gomarkdoc@v1.1.0
 GOLANGCI = go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
-DOC_PACKAGES = ./cmd/immutago ./pkg/analyzer ./pkg/im ./internal/checker ./internal/borrow ./internal/borrow/flow
+DOC_PACKAGES = ./cmd/immutago ./pkg/analyzer ./pkg/im ./internal/checker ./internal/borrow ./internal/borrow/flow ./internal/freeze
 
 .PHONY: build test test-unit test-e2e docs docs-check lint bench
 
