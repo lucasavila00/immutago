@@ -6,3 +6,7 @@ subset_generic_read.go:10:30: unsupported immutable borrow: generic borrowing ca
   source: &v
   type: *rejected.Good
   fix: use a non-generic function with concrete immutable parameter types; only the fixed im APIs support these calls
+subset_generic_read.go:9:26: unsupported immutable borrow: references require one fixed declaration from an owned local
+  source: p
+  type: *T
+  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference

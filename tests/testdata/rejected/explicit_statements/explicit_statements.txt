@@ -29,10 +29,16 @@ explicit_statements.go:28:10: unsupported immutable borrow: protected storage is
   type: []bool
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
 explicit_statements.go:28:10: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+explicit_statements.go:28:7: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
+  source: _, values[0] = <-ready
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 explicit_statements.go:35:10: unsupported immutable borrow: protected storage is unsupported in select communication clauses
   source: values
   type: []bool
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
+explicit_statements.go:35:7: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
+  source: _, values[0] = <-ready
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 explicit_statements.go:39:79: unsupported immutable borrow: Freeze requires a standalone single binding
   source: im.FreezeSlice(values)
   type: im.FrozenSlice[int]
@@ -65,6 +71,9 @@ explicit_statements.go:64:10: unsupported immutable borrow: protected storage is
   type: map[string]bool
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
 explicit_statements.go:64:10: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+explicit_statements.go:64:7: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
+  source: _, values["first"] = <-ready
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 explicit_statements.go:70:9: unsupported immutable borrow: Freeze requires a standalone single binding
   source: im.FreezeMap(values)
   type: im.FrozenMap[string, int]
@@ -81,3 +90,7 @@ explicit_statements.go:78:7: unsupported immutable borrow: protected storage is 
   source: Good
   type: explicit_statements.Good
   fix: keep concrete protected types in named function parameters instead of recovering values or references from interfaces
+explicit_statements.go:82:67: unsupported immutable borrow: protected operation is outside the supported statement forms
+  source: value.X
+  type: int
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form

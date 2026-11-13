@@ -78,3 +78,5 @@ func protectedTypeSwitch(input any) {
 	case Good:
 	}
 }
+
+func plainScalarSend(ready chan<- int) { var value Good; ready <- value.X }

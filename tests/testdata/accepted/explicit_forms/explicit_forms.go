@@ -64,3 +64,22 @@ func declaredGet() Good {
 	value.X = 2
 	return value
 }
+
+func valueSwitch() Good {
+	value := Good{X: 1}
+	switch value.X {
+	case 1:
+		value.X = 2
+	default:
+		value.X = 3
+	}
+	return value
+}
+func arrayRange() Good {
+	values := [2]Good{{X: 1}, {X: 2}}
+	var result Good
+	for _, value := range values {
+		result.X += value.X
+	}
+	return result
+}

@@ -10,6 +10,10 @@ explicit_methods.go:17:20: unsupported immutable borrow: user-defined methods on
   source: OwnRead
   type: func() int
   fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+explicit_methods.go:17:7: unsupported immutable borrow: references require one fixed declaration from an owned local
+  source: value
+  type: *explicit_methods.Good
+  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
 explicit_methods.go:18:75: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
   source: pointer.OwnRead
   type: func() int
