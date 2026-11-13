@@ -16,15 +16,15 @@ Embed exactly one marker by value:
 ```go
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type Point struct { im.Immut; X int }
-type Local struct { im.ImmutNoRef; X int }
-type Link struct { im.Immut; P *Point }
+type SharedPoint struct { im.Immut; X int }
+type LocalRefPoint struct { im.ImmutNoRef; X int }
+type SharedLink struct { im.Immut; P *SharedPoint }
 ```
 
-| Marker | Reference policy |
+| Marker | Pointer policy |
 | --- | --- |
-| `im.Immut` | References can be copied, stored, passed to direct typed functions, and returned. |
-| `im.ImmutNoRef` | References stay local or pass to direct typed non-retaining functions. Value copies can be stored and returned. |
+| `im.Immut` | **Shareable pointers:** copy, store, pass to direct typed functions, or return them. |
+| `im.ImmutNoRef` | **Local pointers:** keep them in local variables or pass them to direct typed non-retaining functions. Value copies can be stored and returned. |
 
 In Rust terms, `Immut` resembles `Rc<T>`/`Arc<T>` with Go's GC managing lifetime;
 `ImmutNoRef` resembles a scoped `&'a T`.
@@ -36,14 +36,14 @@ must recursively match a row.
 | --- | --- |
 | Boolean, integer, float, complex, or string | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
 | Defined scalar | `type Count int` |
-| Unnamed array of allowed elements | `[2]int`, `[2]Point` |
-| Struct with one embedded marker and allowed fields | `Point`, `Local` above |
+| Unnamed array of allowed elements | `[2]int`, `[2]SharedPoint` |
+| Struct with one embedded marker and allowed fields | `SharedPoint`, `LocalRefPoint` above |
 | Embedded marker alias | `type Mark = im.Immut; type Value struct { Mark; X int }` |
-| Nested marked value | `type Pair struct { im.Immut; Child Point }` |
-| Pointer to a concrete Immut struct | `*Point` |
-| Recursive marked struct | `type Node struct { im.Immut; Next *Node }` |
-| Frozen collection of allowed types | `im.FrozenSlice[Point]`, `im.FrozenMap[string, *Point]` |
-| Alias or defined marked struct | `type Position = Point`, `type Position Point` |
+| Nested marked value | `type Pair struct { im.Immut; Child SharedPoint }` |
+| Pointer to a concrete Immut struct | `*SharedPoint` |
+| Recursive marked struct | `type SharedNode struct { im.Immut; Next *SharedNode }` |
+| Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
+| Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
 
 Rejected type examples (**not exhaustive**):
 
@@ -52,26 +52,26 @@ Rejected type examples (**not exhaustive**):
 | `type Bad struct { Mark im.Immut }` | `type Good struct { im.Immut }` |
 | `type Bad struct { *im.Immut }` | Embed `im.Immut` by value. |
 | `type Bad struct { im.Immut; im.ImmutNoRef }` | Embed one marker. |
-| `type Bad struct { Child Point }` | `type Good struct { im.Immut; Child Point }` |
-| `type Bad struct { Children []Point }` | `type Good struct { im.Immut; Children im.FrozenSlice[Point] }` |
-| `type Bad struct { im.Immut; P *Local }` | Store `Local` by value, or use `*Point` for sharing. |
+| `type Bad struct { Child SharedPoint }` | `type Good struct { im.Immut; Child SharedPoint }` |
+| `type Bad struct { Children []SharedPoint }` | `type Good struct { im.Immut; Children im.FrozenSlice[SharedPoint] }` |
+| `type Bad struct { im.Immut; P *LocalRefPoint }` | Store `LocalRefPoint` by value, or use `*SharedPoint` for sharing. |
 | `type Counts [2]int` as a stored type | `type Counts struct { im.Immut; Values [2]int }` |
 
 Allowed generic forms:
 
 | Allowed form | Example |
 | --- | --- |
-| Fixed im types and functions | `im.FrozenSlice[Point]`, `im.FreezeSlice([]Point{})` |
+| Fixed im types and functions | `im.FrozenSlice[SharedPoint]`, `im.FreezeSlice([]SharedPoint{})` |
 | User generics without protected storage | `type Plain[T any] struct { Value T }`, used as `Plain[int]` |
 
 Rejected generic examples (**not exhaustive**):
 
 | Rejected form | Replacement |
 | --- | --- |
-| `type Box[T any] struct { im.Immut; Value T }` | `type Box struct { im.Immut; Value Point }` |
-| `Plain[Point]` or `identity(point)` with generic `identity` | Use a concrete marked struct or copy `point` directly. |
+| `type Box[T any] struct { im.Immut; Value T }` | `type Box struct { im.Immut; Value SharedPoint }` |
+| `Plain[SharedPoint]` or `identity(point)` with generic `identity` | Use a concrete marked struct or copy `point` directly. |
 
-## Construction and references
+## Construction and pointers
 
 Prepare ordinary locals, then construct the object. Copies are also immutable.
 Struct/array copies copy their fields; frozen wrappers and shared pointers keep
@@ -80,54 +80,56 @@ referring to the same read-only storage.
 ```go
 x := 1
 if condition { x = 2 }
-point := Point{X: x}
-point = Point{X: 3} // Whole-variable replacement is allowed.
-p := &Point{X: 1}
+point := SharedPoint{X: x}
+point = SharedPoint{X: 3} // Whole-variable replacement is allowed.
+p := &SharedPoint{X: 1}
 q := p
-p = &Point{X: 2} // q still observes X == 1.
+p = &SharedPoint{X: 2} // q still observes X == 1.
 ```
 
-### What you can do with a reference
+### Pointers: both markers
 
-These common forms apply to both markers. For `Local`, every binding must stay
-local; a called function must not retain its reference.
+These forms apply to both `*SharedPoint` (`im.Immut`) and
+`*LocalRefPoint` (`im.ImmutNoRef`).
 
 | Allowed form | Example |
 | --- | --- |
-| Declare a zero or nil pointer | `var p *Point`, `var p *Local = nil` |
-| Construct fresh storage | `p := &Point{X: 1}`, `p := new(Point)` |
-| Copy a value into fresh storage | `p := new(point)`, `p := new(Point{X: 1})` |
+| Declare a zero or nil pointer | `var p *SharedPoint`, `var p *LocalRefPoint = nil` |
+| Construct fresh storage | `p := &SharedPoint{X: 1}`, `p := new(SharedPoint)` |
+| Copy a value into fresh storage | `p := new(point)`, `p := new(SharedPoint{X: 1})` |
 | Copy, rebind, or discard a pointer | `q := p`, `p = q`, `p = nil`, `_ = p` |
 | Read a field or copy the whole value | `x := p.X`, `value := *p` |
 | Compare pointers or nil | `same := p == q`, `if p != nil { ... }` |
-| Pass to a direct function with an exact concrete parameter type | `read(p)`; `func read(p *Point) int { return p.X }` |
+| Pass to a direct function with an exact concrete parameter type | `read(p)`; `func read(p *SharedPoint) int { return p.X }` |
 
-`Immut` additionally permits these forms:
+### Shareable pointers: `im.Immut` only
+
+`*SharedPoint` also permits these forms:
 
 | Allowed form | Example |
 | --- | --- |
-| Store in a marked field | `link := Link{P: p}` |
-| Store in an exclusive native builder | `values := []*Point{p}` |
+| Store in a marked field | `link := SharedLink{P: p}` |
+| Store in an exclusive native builder | `values := []*SharedPoint{p}` |
 | Store in a package variable | `saved = p` |
-| Read a stored reference | `p := link.P`, `p := values[i]` |
-| Return or receive a reference from a named function | `return p`, `p := makePoint()` |
+| Read a stored pointer | `p := link.P`, `p := values[i]` |
+| Return or receive a pointer from a named function | `return p`, `p := makeSharedPoint()` |
 
 Parentheses and aliases preserve these forms. Targets are concrete marked
-structs. References originate in the listed fresh constructions.
+structs. Pointers originate in the listed fresh constructions.
 
-Rejected reference examples (**not exhaustive**):
+Rejected pointer examples (**not exhaustive**):
 
 | Rejected example | Replacement |
 | --- | --- |
-| `point.X = 2`, `p.X = 2`, `*p = Point{}` | `point = Point{X: 2}` or `p = &Point{X: 2}` |
+| `point.X = 2`, `p.X = 2`, `*p = SharedPoint{}` | `point = SharedPoint{X: 2}` or `p = &SharedPoint{X: 2}` |
 | `p := &point` | `p := new(point)` |
 | `&point.X` | Read or copy the scalar. |
 | `new(im.FrozenSlice[int])` | Pass the frozen wrapper by value. |
-| `&[2]Point{}` | Put the array in a marked struct. |
-| `[]*Point{{X: 1}}` | Use explicit allocation: `[]*Point{&Point{X: 1}}`. |
-| `(*Point)(nil)` | `var p *Point = nil` |
-| `return p` with `p *Local` | `return *p` with a `Local` result. |
-| `saved = p` with `p *Local` | Store the value copy `*p`. |
+| `&[2]SharedPoint{}` | Put the array in a marked struct. |
+| `[]*SharedPoint{{X: 1}}` | Use explicit allocation: `[]*SharedPoint{&SharedPoint{X: 1}}`. |
+| `(*SharedPoint)(nil)` | `var p *SharedPoint = nil` |
+| `return p` with `p *LocalRefPoint` | `return *p` with a `LocalRefPoint` result. |
+| `saved = p` with `p *LocalRefPoint` | Store the value copy `*p`. |
 
 ## Statements and calls
 
@@ -135,14 +137,14 @@ Use the operations above inside these statement forms:
 
 | Allowed form | Example |
 | --- | --- |
-| Declare or assign one destination | `value := Point{X: 1}`, `value = Point{X: 2}` |
+| Declare or assign one destination | `value := SharedPoint{X: 1}`, `value = SharedPoint{X: 2}` |
 | Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
 | Bind a map reader's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |
-| Return values or `Immut` references, including multiple results | `return point`, `return p, true` |
+| Return values or `Immut` pointers, including multiple results | `return point`, `return p, true` |
 | Forward named results directly | `return makePair()`, `takePair(makePair())` |
-| Conditional or value switch | `if ready { p = makePoint() }`, `switch p.X { ... }` |
+| Conditional or value switch | `if ready { p = makeSharedPoint() }`, `switch p.X { ... }` |
 | Condition, three-clause, or unconditional loop | `for p.X > 0 { ... }`, `for i := 0; i < p.X; i++ { ... }`, `for { ... }` |
 | Range with fresh loop variables | `for i, value := range values { ... }`, `for i := range count { ... }` |
 | Assign one existing loop target | `for i = range count { ... }` |
@@ -159,13 +161,13 @@ Rejected statement and call examples (**not exhaustive**):
 | Rejected example | Replacement |
 | --- | --- |
 | `point, found := makePair()` | Return a marked result struct and bind it to one variable. |
-| `value, p = Point{}, &Point{}` | Use two statements. |
+| `value, p = SharedPoint{}, &SharedPoint{}` | Use two statements. |
 | `for a[point.X], n = range values { ... }` | Bind fresh loop locals, then assign each destination separately. |
 | `use(im.FreezeSlice(values))` | Bind Freeze to a local, then call `use`. |
 | `case _, values[0] = <-ready:` | Receive first; write in the case body. |
 | `case <-watch(im.FreezeSlice(values)):` | Freeze and compute the channel before the select; receive from the channel variable. |
 | `value.Read()` or `reader.Read(p)` with protected receiver/parameters/results | Use a named function: `Read(p)`. |
-| `var value any = p` | Use a concrete `*Point` variable. |
+| `var value any = p` | Use a concrete `*SharedPoint` variable. |
 | `callback(p)` through a function variable with protected arguments | Use a direct named function. |
 | `callback := func() int { return point.X }` | `x := point.X; callback := func() int { return x }` |
 | `go read(p)` or `defer read(p)` | Call `read(p)` synchronously. |
@@ -174,7 +176,7 @@ Rejected statement and call examples (**not exhaustive**):
 
 Freeze consumes an exclusive native builder without copying. The old handle
 cannot be used again. Frozen copies share storage; Clone creates an independent
-native container for edits, sharing only immutable element references.
+native container for edits, sharing only immutable element pointers.
 
 ```go
 scores := map[string]int{"alice": 10}
