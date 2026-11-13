@@ -30,7 +30,8 @@ func (c *subsetChecks) statementShape(expression ast.Expr) {
 		}
 	}
 
-	if c.pass.TypesInfo.Types[expression].IsType() || !c.protectedStorage(expression) {
+	if c.pass.TypesInfo.Types[expression].IsType() ||
+		(!c.protectedStorage(expression) && !protectedResult(c.pass.TypesInfo.TypeOf(expression))) {
 		return
 	}
 	if name, ok := expression.(*ast.Ident); ok && c.pass.TypesInfo.Defs[name] != nil {
@@ -38,7 +39,13 @@ func (c *subsetChecks) statementShape(expression ast.Expr) {
 	}
 	for parent := c.parents[expression]; parent != nil; parent = c.parents[parent] {
 		switch node := parent.(type) {
-		case *ast.AssignStmt, *ast.DeclStmt, *ast.IncDecStmt, *ast.ReturnStmt,
+		case *ast.AssignStmt:
+			if len(node.Lhs) == 1 && len(node.Rhs) == 1 || c.freshGetAssignment(node) {
+				return
+			}
+			c.report(node, "multiple assignments involving protected storage are unsupported")
+			return
+		case *ast.DeclStmt, *ast.IncDecStmt, *ast.ReturnStmt,
 			*ast.IfStmt, *ast.ForStmt, *ast.RangeStmt, *ast.SwitchStmt:
 			return
 		case *ast.ExprStmt:
@@ -46,6 +53,10 @@ func (c *subsetChecks) statementShape(expression ast.Expr) {
 				return
 			}
 		case *ast.ValueSpec:
+			if len(node.Names) == 1 && len(node.Values) <= 1 || c.getDeclaration(node) {
+				return
+			}
+			c.report(node, "multiple assignments involving protected storage are unsupported")
 			return
 		case *ast.CaseClause:
 			if _, ordinary := c.parents[c.parents[node]].(*ast.SwitchStmt); ordinary {
@@ -86,16 +97,6 @@ func (c *subsetChecks) referenceDefinition(name *ast.Ident) bool {
 		}
 		declaration, ok := c.parents[signature].(*ast.FuncDecl)
 		return ok && declaration.Recv == nil
-	}
-	return false
-}
-
-// protectedDeclarationValues checks all source expressions of a multiple declaration.
-func (c *subsetChecks) protectedDeclarationValues(values []ast.Expr) bool {
-	for _, value := range values {
-		if c.protectedStorage(value) || protectedResult(c.pass.TypesInfo.TypeOf(value)) {
-			return true
-		}
 	}
 	return false
 }

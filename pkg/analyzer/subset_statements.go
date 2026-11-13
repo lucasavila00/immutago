@@ -35,11 +35,8 @@ func ownerAddress(expression ast.Expr) bool {
 	return ok && address.Op == token.AND
 }
 
-// fixedAssignment permits only one-time local reference initialization, and single protected writes.
+// fixedAssignment permits only one-time local reference initialization.
 func (c *subsetChecks) fixedAssignment(statement *ast.AssignStmt) {
-	if len(statement.Lhs) > 1 && c.protectedAssignment(statement) && !c.freshGetAssignment(statement) {
-		c.report(statement, "multiple assignments involving protected storage are unsupported")
-	}
 	for _, destination := range statement.Lhs {
 		name, ok := ast.Unparen(destination).(*ast.Ident)
 		if !ok || name.Name == "_" || !protectedReference(c.pass.TypesInfo.TypeOf(name)) {
@@ -55,7 +52,7 @@ func (c *subsetChecks) fixedAssignment(statement *ast.AssignStmt) {
 
 // fixedDeclaration rejects uninitialized references, copies, nil initializers, and multiple protected declarations.
 func (c *subsetChecks) fixedDeclaration(statement *ast.ValueSpec) {
-	protected := c.protectedDeclarationValues(statement.Values)
+	protected := false
 	for _, name := range statement.Names {
 		object := c.pass.TypesInfo.Defs[name]
 		if object == nil {
@@ -73,16 +70,6 @@ func (c *subsetChecks) fixedDeclaration(statement *ast.ValueSpec) {
 	if protected && len(statement.Names) > 1 && !c.getDeclaration(statement) {
 		c.report(statement, "multiple assignments involving protected storage are unsupported")
 	}
-}
-
-// protectedAssignment includes scalar fields of owners and tuple-valued protected results.
-func (c *subsetChecks) protectedAssignment(statement *ast.AssignStmt) bool {
-	for _, expression := range append(append([]ast.Expr(nil), statement.Lhs...), statement.Rhs...) {
-		if c.protectedStorage(expression) || protectedResult(c.pass.TypesInfo.TypeOf(expression)) {
-			return true
-		}
-	}
-	return false
 }
 
 // protectedResult inspects multi-result expressions without ignoring a protected tuple component.
@@ -105,7 +92,7 @@ func protectedResult(t types.Type) bool {
 // exactCollectionMethod recognizes only the fixed library receiver rather than promoted wrapper methods.
 func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 	selection := c.pass.TypesInfo.Selections[selector]
-	if selection == nil || !libraryObject(selection.Obj()) {
+	if selection == nil || selection.Kind() != types.MethodVal || !libraryObject(selection.Obj()) {
 		return false
 	}
 	receiver := selection.Recv()
@@ -208,6 +195,10 @@ func (c *subsetChecks) synchronousStorage(expression ast.Expr) {
 
 // rangeBoundary rejects implicit reference creation and unknown protected callback iteration.
 func (c *subsetChecks) rangeBoundary(statement *ast.RangeStmt) {
+	if statement.Tok == token.ASSIGN && statement.Key != nil && statement.Value != nil &&
+		(c.protectedStorage(statement.Key) || c.protectedStorage(statement.Value)) {
+		c.report(statement, "multiple assignments involving protected storage are unsupported")
+	}
 	for _, target := range []ast.Expr{statement.Key, statement.Value} {
 		if target != nil && protectedReference(c.pass.TypesInfo.TypeOf(target)) {
 			c.report(target, "references require one fixed declaration from an owned local")
