@@ -39,7 +39,7 @@ must recursively match a row.
 | Unnamed array of allowed elements | `[2]int`, `[2]SharedPoint` |
 | Struct with one embedded marker and allowed fields | `SharedPoint`, `LocalRefPoint` above |
 | Embedded marker alias | `type Mark = im.Shared; type Value struct { Mark; X int }` |
-| Nested marked value | `type Pair struct { im.Shared; Child SharedPoint }` |
+| Nested marked value, with either marker on the parent or child | `type LocalParent struct { im.LocalRef; Child LocalRefPoint }`, `type SharedParent struct { im.Shared; Child LocalRefPoint }` |
 | Pointer to a concrete Shared struct | `*SharedPoint` |
 | Recursive marked struct | `type SharedNode struct { im.Shared; Next *SharedNode }` |
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
@@ -55,6 +55,7 @@ Rejected type examples (**not exhaustive**):
 | `type Bad struct { Child SharedPoint }` | `type Good struct { im.Shared; Child SharedPoint }` |
 | `type Bad struct { Children []SharedPoint }` | `type Good struct { im.Shared; Children im.FrozenSlice[SharedPoint] }` |
 | `type Bad struct { im.Shared; P *LocalRefPoint }` | Store `LocalRefPoint` by value, or use `*SharedPoint` for sharing. |
+| `type Bad struct { im.LocalRef; P *LocalRefPoint }` | `type Good struct { im.LocalRef; P LocalRefPoint }` |
 | `type Counts [2]int` as a stored type | `type Counts struct { im.Shared; Values [2]int }` |
 
 Allowed generic forms:
