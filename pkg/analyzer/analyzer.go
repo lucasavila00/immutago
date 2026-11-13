@@ -5,7 +5,7 @@
 // arguments. Unmarked structs cannot store marked values or these collections.
 // Pointer fields, interfaces, functions, channels, and native mutable collections
 // cannot establish an immutability proof. Reflection and unsafe operations are
-// unsupported. Generic pointers and unmarked generic fields must prove their
+// unsupported. Unmarked generic fields must prove their
 // constraints exclude immutable storage. There are no suppression directives.
 //
 // Owned local values permit construction and field updates. Shared references

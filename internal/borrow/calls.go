@@ -28,7 +28,7 @@ func (e *engine) call(point int, s state, call *ssa.CallCommon, deferred, asynch
 	}
 	summary, known := e.program.summary(callee)
 	if !known {
-		e.unknownCall(point, call.Pos(), append(arguments, e.refs(s, call.Value)))
+		e.unknownCall(point, s, call.Pos(), append(arguments, e.refs(s, call.Value)))
 		return e.unknownResults(point, call)
 	}
 	e.argumentEffects(point, s, call, summary, arguments, deferred, asynchronous)
@@ -71,7 +71,7 @@ func (e *engine) closureArguments(point int, s state, call *ssa.CallCommon, call
 		r.closure = nil
 		r.binding = 0
 		arguments[index] = append(arguments[index], r)
-		e.reachableUses(point, call.Pos(), s, r, false)
+		e.reachableEffects(point, call.Pos(), s, r, Effect{}, false, false)
 	}
 	return arguments
 }
@@ -96,7 +96,7 @@ func (e *engine) argumentEffects(point int, s state, call *ssa.CallCommon, summa
 func (e *engine) argumentEffect(point int, s state, pos token.Pos, r reference,
 	effect Effect, deferred, asynchronous bool) {
 	e.use(point, pos, r, effect.Write)
-	e.reachableUses(point, pos, s, r, effect.Write)
+	e.reachableEffects(point, pos, s, r, effect, deferred, asynchronous)
 	if effect.Unknown {
 		e.unsupportedRetention(r, pos, "unsupported call effects for borrowed immutable storage")
 	}
@@ -114,10 +114,11 @@ func isLibrary(fn *ssa.Function) bool {
 }
 
 // unknownCall rejects unavailable effects only when protected references cross the call boundary.
-func (e *engine) unknownCall(point int, pos token.Pos, arguments [][]reference) {
+func (e *engine) unknownCall(point int, s state, pos token.Pos, arguments [][]reference) {
 	for _, args := range arguments {
 		for _, r := range args {
 			e.use(point, pos, r, false)
+			e.reachableEffects(point, pos, s, r, Effect{Unknown: true}, false, false)
 			if e.record && e.roots[r.place.Root].input >= 0 {
 				e.summary.Inputs[e.roots[r.place.Root].input].Unknown = true
 			}
@@ -318,8 +319,9 @@ func (e *engine) resolvePath(s state, base reference, path []Projection) []refer
 	return refs
 }
 
-// reachableUses keeps indirect loads of captured pointer variables live through helper calls.
-func (e *engine) reachableUses(point int, pos token.Pos, s state, start reference, write bool) {
+// reachableEffects propagates reads, unknown effects, and retained loans through pointer-valued slots.
+func (e *engine) reachableEffects(point int, pos token.Pos, s state, start reference,
+	effect Effect, deferred, asynchronous bool) {
 	pending := []reference{start}
 	seen := make(map[string]bool)
 	for len(pending) > 0 {
@@ -333,7 +335,16 @@ func (e *engine) reachableUses(point int, pos token.Pos, s state, start referenc
 		for _, stored := range s.cells {
 			if Overlap(r.place, stored.place, false) {
 				for _, target := range stored.refs {
-					e.use(point, pos, target, write)
+					e.use(point, pos, target, effect.Write)
+					if effect.Unknown {
+						e.unsupportedRetention(target, pos, "unsupported call effects for borrowed immutable storage")
+					}
+					if effect.Capture || asynchronous {
+						e.escape(point, target, false)
+					}
+					if deferred {
+						e.escape(point, target, true)
+					}
 					pending = append(pending, target)
 				}
 			}

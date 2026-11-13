@@ -10,7 +10,8 @@ import (
 )
 
 // Projection selects a field or an array element within one allocation.
-// Kind is 'f' for a field, 'i' for a constant index, and '?' for an unknown index.
+// Kind is 'f' for a field, 'i' for a constant index, '?' for an unknown index,
+// 'd' for a symbolic dereference, and '*' for an opaque recursive tail.
 type Projection struct {
 	Kind  byte
 	Index int64
@@ -25,6 +26,9 @@ type Place struct {
 
 // project appends a component without changing another alias's path.
 func (p Place) project(kind byte, index int64) Place {
+	if len(p.Path) > 0 && p.Path[len(p.Path)-1].Kind == '*' {
+		return p
+	}
 	path := append([]Projection(nil), p.Path...)
 	return Place{Root: p.Root, Path: append(path, Projection{kind, index})}
 }
@@ -45,6 +49,13 @@ func (p Place) key() string {
 func Overlap(a, b Place, definite bool) bool {
 	if a.Root != b.Root {
 		return false
+	}
+	for _, path := range [][]Projection{a.Path, b.Path} {
+		for _, projection := range path {
+			if projection.Kind == '*' {
+				return !definite
+			}
+		}
 	}
 	for i := 0; i < len(a.Path) && i < len(b.Path); i++ {
 		x, y := a.Path[i], b.Path[i]

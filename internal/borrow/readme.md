@@ -53,7 +53,7 @@ type Place struct {
 
 ## type Projection
 
-Projection selects a field or an array element within one allocation. Kind is 'f' for a field, 'i' for a constant index, and '?' for an unknown index.
+Projection selects a field or an array element within one allocation. Kind is 'f' for a field, 'i' for a constant index, '?' for an unknown index, 'd' for a symbolic dereference, and '\*' for an opaque recursive tail.
 
 ```go
 type Projection struct {

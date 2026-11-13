@@ -8,7 +8,7 @@ import "github.com/lucasavila00/immutago/pkg/analyzer"
 
 Package analyzer exposes the immutago go/analysis analyzer.
 
-Marked structs may own only primitive values, arrays of immutable values, other marked structs, and the library's Slice and Map types with immutable arguments. Unmarked structs cannot store marked values or these collections. Pointer fields, interfaces, functions, channels, and native mutable collections cannot establish an immutability proof. Reflection and unsafe operations are unsupported. Generic pointers and unmarked generic fields must prove their constraints exclude immutable storage. There are no suppression directives.
+Marked structs may own only primitive values, arrays of immutable values, other marked structs, and the library's Slice and Map types with immutable arguments. Unmarked structs cannot store marked values or these collections. Pointer fields, interfaces, functions, channels, and native mutable collections cannot establish an immutability proof. Reflection and unsafe operations are unsupported. Unmarked generic fields must prove their constraints exclude immutable storage. There are no suppression directives.
 
 Owned local values permit construction and field updates. Shared references permit reads; their loans end after the final required use on each control\-flow path. Writes to overlapping borrowed storage are rejected. Value copies have independent storage. Package\-level immutable values are read\-only after init. Function summaries preserve aliases and effects across package boundaries. Analyze every consumer package, including dependencies that use these values.
 

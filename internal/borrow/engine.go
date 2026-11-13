@@ -79,7 +79,9 @@ func (e *engine) run() Summary {
 	for _, point := range order {
 		e.step(point, e.inputs[point].clone())
 	}
-	e.checkLoans()
+	if e.diagnose {
+		e.checkLoans()
+	}
 	e.normalizeFresh()
 
 	return e.summary

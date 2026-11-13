@@ -51,6 +51,7 @@ func (e *engine) step(point int, s state) {
 			e.other(point, s, instruction)
 		}
 	}
+	e.normalizeProduced(point, s, instruction)
 }
 
 // project retains alias provenance while selecting a disjoint field or possibly overlapping index.
@@ -131,7 +132,11 @@ func (e *engine) store(point int, s state, op *ssa.Store) {
 		values := e.storedReferences(point, op.Pos(), address, source)
 		key := address.place.key()
 		if len(addresses) == 1 && definitePlace(address.place) {
-			s.cells[key] = cell{place: address.place, refs: values}
+			if len(values) == 0 {
+				delete(s.cells, key)
+			} else {
+				s.cells[key] = cell{place: address.place, refs: values}
+			}
 		} else {
 			old := s.cells[key]
 			joined, _ := mergeReferences(old.refs, values)
@@ -169,7 +174,7 @@ func (e *engine) storedReferences(point int, pos token.Pos, address reference, s
 // definitePlace reports whether an address names one statically known storage cell.
 func definitePlace(place Place) bool {
 	for _, projection := range place.Path {
-		if projection.Kind == '?' {
+		if projection.Kind == '?' || projection.Kind == '*' {
 			return false
 		}
 	}

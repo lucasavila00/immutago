@@ -129,3 +129,19 @@ func TestInitializerCannotInvalidateReturnedGlobalBorrow(t *testing.T) {
 		t.Fatalf("diagnostics = %q; want global loan conflict", reports)
 	}
 }
+
+// TestAlternativeScalarDereferenceCannotEraseLoan checks widened effects through an ordinary scalar-pointer slot.
+func TestAlternativeScalarDereferenceCannotEraseLoan(t *testing.T) {
+	source := borrowTestTypes + `
+ func chooseScalar(payload any,direct bool) *int {
+  if direct {return payload.(*int)}
+  return *payload.(**int)
+ }
+ func f(v Value) { pointer:=&v.X; alias:=chooseScalar(&pointer,false); v.X=2; _=*alias }
+ `
+	reports := checkSource(t, source)
+	rejected := regexp.MustCompile(`borrow|shared reference|unsupported`)
+	if !rejected.MatchString(reports) {
+		t.Fatalf("diagnostics = %q; want reachable scalar loan rejection", reports)
+	}
+}
