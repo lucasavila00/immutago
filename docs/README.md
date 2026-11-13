@@ -1,7 +1,8 @@
 # Documentation
 
-Immutago checks a small ownership system for Go. Marked structs contain only
-immutable field types. Local owners can change; shared references can only read.
+Immutago checks immutable objects and exclusive native builders for Go.
+Marked structs contain only immutable field types. References share objects
+that cannot change after construction.
 Freeze transfers a native map or slice to a read-only collection without copying.
 
 ## For users
@@ -20,7 +21,7 @@ Freeze transfers a native map or slice to a read-only collection without copying
 | --- | --- |
 | Find the code that owns a check | [Architecture](arch/README.md) |
 | Follow types, calls, and dependency failures | [Analysis pipeline](arch/pipeline.md) |
-| Understand loans and consumed builders | [Ownership analysis](arch/ownership.md) |
+| Understand immutable objects and consumed builders | [Ownership analysis](arch/ownership.md) |
 | Check assumptions and test evidence | [Validation](arch/validation.md) |
 | Build, debug, or update snapshots | [Development](development.md) |
 | Review a change to the supported language | [Reviewer requirements](reviewer-focus.md) |

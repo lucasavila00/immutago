@@ -16,14 +16,13 @@ package in this order:
 4. Check native builders and their freeze operations. Return the set of builders
    to the operation checker.
 5. Check operations against the supported subset.
-6. Check local shared loans and writes.
-7. Export failures for importers.
+6. Export failures for importers.
 
 Each stage can report errors. The builder set permits the subset checker to
 recognize native storage that has a separate ownership check; it is not an
 exemption from that check. The stages share compiler identities but retain
 separate traversal and analysis state. There is no common intermediate form
-for all three operation, freeze, and borrow checks.
+for operation and freeze checks.
 
 ## Structural checks
 
@@ -55,16 +54,16 @@ allowed shape using syntax and resolved types. It must then check the ownership
 rule for that shape. An unmatched shape is an error. A broad match such as
 "this is a method call" is not enough to accept the operation.
 
-For example, a fixed reference declaration matches `p := &owner` only when `p`
-is new, `owner` is an owned local or its protected field, and the declaration has
-one destination. `q := p`, `p = &other`, and iterator-produced references do not
-match that shape. They must fail instead of reaching the loan analysis as
-unclassified pointer origins. See the [reference origins](../rules.md#what-you-can-do-with-a-reference).
+For example, `p := &Point{X: 1}` requires a fresh composite literal with a
+proved protected type and an allowed statement context. `p := &value` fails
+because it would expose rebindable variable storage. A reference copy `q := p`
+and a reference result `return p` use separate allowed shapes. See the
+[reference rules](../rules.md#what-you-can-do-with-a-reference).
 
 [The subset checker](../../pkg/analyzer/subset.go) uses an AST parent map to
 check expression and statement context. [Call checks](../../pkg/analyzer/subset_calls.go)
 resolve the function or method by compiler identity. Named readers have concrete,
-synchronous, non-escaping signatures. The only protected receiver calls are the
+synchronous signatures. Shared references may be stored and returned. The only protected receiver calls are the
 listed methods of the exact `im` collection types.
 
 Tests must cover each accepted shape and nearby forms that do not match it.

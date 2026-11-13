@@ -16,14 +16,14 @@ those rejection examples are not exhaustive.
 For example:
 
 ```go
-// Allowed: one new reference from an owned local.
-p := &value
+// Allowed: construct a fresh immutable object.
+p := &Point{X: 1}
 
-// Rejected: copying a reference.
-q := p
-
-// Allowed replacement: borrow the owner directly.
+// Rejected: address a variable that can be rebound.
 q := &value
+
+// Allowed replacement: share the existing object.
+q := p
 ```
 
 Do not substitute phrases such as "keep aliases visible" for an exact form.
@@ -35,23 +35,22 @@ A claim that a list is complete requires evidence from the matcher and tests.
 The implementation must match the complete allowed form, like function clauses
 that match specific argument shapes and finish with a rejecting fallback.
 
-For a local reference, match all of these parts:
+For fresh pointer construction, match all of these parts:
 
-- One new local binding.
-- One address expression as its initializer.
-- An owned local value or its protected field as the address target.
-- A resolved protected pointer type.
-- An allowed statement context.
+- One fresh composite literal or supported `new` expression.
+- A resolved pointer to a recursively proved protected type.
+- An allowed expression and statement context.
 
-Use the [reference-origin rules](rules.md#what-you-can-do-with-a-reference) to
-check the target type. Only after that match may the loan analysis record the owner. A declaration from
-an iterator, a pointer copy, a nil initializer, or a reassignment must reach the
-rejecting path. Do not accept every declaration and add exceptions after bugs
-appear. Use compiler identities, not only names such as `Get` or `FreezeSlice`.
+Use the [reference rules](rules.md#what-you-can-do-with-a-reference) to check
+construction, copying, storage, returns, nil, and reassignment separately.
+Addresses of named values and their fields must reach the rejecting path.
+Do not accept every address expression and add exceptions after bugs appear.
+Use compiler identities, not only names such as `Get` or `FreezeSlice`.
 
-Check each allowed method's actual receiver and each statement's Go evaluation
-order. Source syntax can hide an implicit address or a delayed write. A correct
-liveness algorithm does not repair an incorrect input operation graph.
+Check every write destination. Complete variable rebinding must not admit a
+field, protected array element, or pointer-target write. Check implicit method
+receivers, statement context, and Go evaluation order. Builder consumption
+must remain separate from immutable object sharing.
 
 ## Required review evidence
 

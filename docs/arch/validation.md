@@ -5,7 +5,7 @@
 ## Trusted code
 
 The [analyzer](../../pkg/analyzer/analyzer.go) skips the fixed `im` package path
-and the standard library. [Toolchain detection](../../internal/borrow/toolchain.go)
+and the standard library. Toolchain detection
 identifies standard library source from the active `go env GOROOT` directory.
 The implementation trusts the Go compiler, runtime, standard library, and
 `im` storage methods. It does not prove those implementations.
@@ -29,7 +29,6 @@ source form reaches the correct check.
 | Layer | Evidence |
 | --- | --- |
 | Recursive type proofs | [Type tests](../../internal/checker/types_test.go) cover field graphs and constraints. |
-| Shared-loan flow | [Flow tests](../../internal/borrow/flow/flow_test.go) compare backward liveness with an independent fixed-point solver. |
 | Allowed source forms | [Analyzer tests](../../pkg/analyzer/explicit_subset_test.go) and [shape tests](../../pkg/analyzer/shape_convergence_test.go) check complete forms and nearby rejections. |
 | Builder ownership | [Freeze tests](../../internal/freeze/freeze_test.go) check fresh storage, aliases, branches, loops, and consumption. |
 | Library storage | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), and [iterator tests](../../pkg/im/iterator_test.go) check storage reuse, clone independence, reads, and allocations. |
@@ -52,8 +51,8 @@ Keep accepted and rejected cases for each supported form:
 
 | Area | Accepted cases | Rejected nearby cases |
 | --- | --- | --- |
-| Owned values | Conditional construction, reassignment, independent copies, value-returning constructors | Owning pointers and writes to protected globals |
-| Shared loans | Fixed local references, named readers, branches, loops, writes after last use | Shared writes, writes during a live loan, reference copies, escapes, and unknown producers |
+| Immutable objects | Scalar preparation, whole-variable rebinding, copies, value and pointer constructors | Field writes, protected array writes, dereference writes, named-variable addresses |
+| Shared references | Copy, reassignment, stored pointers, returns, recursive pointer fields | Scalar interior addresses, pointer indirection, interfaces, captures |
 | Statement forms | One destination, fresh map-reader results, ordinary loops, separate Freeze | Nested protected operands in multiple destinations, nested Freeze, protected select communication |
 | Builders | Fresh construction, element edits, nil and empty storage, fresh loop declarations | Aliases before Freeze, subslices, element addresses, unknown or external sources, active-range Freeze |
 | Consumption | Frozen reads, Clone, independent edits, refreezing the clone | Reads or writes after Freeze, double Freeze, indirect or asynchronous Freeze |
@@ -89,8 +88,8 @@ example so the repair does not remove a documented operation.
 
 ## Scope
 
-The checker retains whole-owner loans, recursive type graphs, exclusive builder
-checks, and dependency facts. It does not infer mutable borrows, escaping
-reference effects, or pointer-return origins. See the [rules](../rules.md) for
-the complete supported forms and [ownership analysis](ownership.md) for the
+The checker uses recursive type graphs, complete source-form checks, exclusive
+builder checks, and dependency facts. It has no loan lifetimes or mutable
+references. Go manages shared object lifetime. See the [rules](../rules.md) for
+the complete supported forms and [storage analysis](ownership.md) for the
 implementation.

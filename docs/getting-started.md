@@ -16,7 +16,7 @@ go get github.com/lucasavila00/immutago@latest
 go install github.com/lucasavila00/immutago/cmd/immutago@latest
 ```
 
-## Build, borrow, and freeze
+## Build, share, and freeze
 
 Save this complete example as `main.go`:
 
@@ -32,7 +32,7 @@ type User struct {
     Scores im.FrozenMap[string, int]
 }
 
-// scoreCount reads a shared user without retaining its reference.
+// scoreCount reads a shared user.
 func scoreCount(user *User) int {
     return user.Scores.Len()
 }
@@ -41,11 +41,11 @@ func scoreCount(user *User) int {
 func main() {
     scores := map[string]int{"go": 10}
     frozen := im.FreezeMap(scores)
-    user := User{Name: "alice", Scores: frozen}
+    user := &User{Name: "alice", Scores: frozen}
 
-    p := &user
-    count := scoreCount(p) // Last use of p.
-    user.Name = "bob"     // The borrow has ended.
+    p := user
+    count := scoreCount(p)
+    user = &User{Name: "bob", Scores: frozen}
 
     next := user.Scores.Clone()
     next["go"] = 20
@@ -71,8 +71,9 @@ bob 1 10 true 20 true
 ```
 
 `im.Marker` must be embedded by value. Each field must have an allowed immutable
-type. `&user` acts like a Rust shared borrow, `&T`: reads are allowed, writes
-through it are rejected. The borrow ends after its last use.
+type. `&User{...}` constructs a shared immutable object. Writes through it are rejected.
+Marked fields are immutable from construction. The example replaces the whole
+`user` pointer variable with a new reference. Go manages reference lifetimes.
 
 Freeze shares the native map's storage. After `im.FreezeMap(scores)`, any use of
 `scores` is rejected. Clone creates independent mutable storage, so changing
@@ -115,8 +116,9 @@ pass/fail check.
 ## When a check fails
 
 Read the source location, failed rule, and suggested correction. For example,
-`next := p` copies a reference and is rejected. Use `next := *p` for an independent
-value copy, or borrow the owner directly with `next := &user`.
+`p.Name = "bob"` is rejected. Construct a new value with
+`p = &User{Name: "bob", Scores: frozen}`. `next := p` shares that object;
+`next := *p` copies the value. Neither form permits field writes.
 
 An unsupported form is an error, even if a particular use seems safe. Rewrite
 it to a listed form. There are no suppression directives or user trust
