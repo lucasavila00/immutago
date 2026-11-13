@@ -8,7 +8,7 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/lucasavila00/immutago/internal/borrow/flow"
+	"github.com/lucasavila00/immutago/internal/freeze/flow"
 	"golang.org/x/tools/go/cfg"
 )
 

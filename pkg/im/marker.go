@@ -2,9 +2,9 @@
 //
 // Embed Marker in a struct to require immutable fields. Run the immutago
 // analyzer on all consumer packages; Go's type checker alone does not enforce
-// the field or collection element rules. Owned local values permit construction
-// and updates. Shared references permit reads; writes to borrowed storage fail
-// while a conflicting loan is live. A value copy has independent storage.
+// the field or collection element rules. Marked objects are immutable from
+// construction. Shared references can be copied, stored, and returned. Go manages
+// their lifetime. A value copy preserves references to the same immutable objects.
 //
 // FreezeSlice and FreezeMap share their input storage without copying. The analyzer
 // requires exclusive ownership and rejects later source-handle uses. Clone returns

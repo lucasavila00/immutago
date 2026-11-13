@@ -8,7 +8,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 Package im provides a marker and immutable value collections.
 
-Embed Marker in a struct to require immutable fields. Run the immutago analyzer on all consumer packages; Go's type checker alone does not enforce the field or collection element rules. Owned local values permit construction and updates. Shared references permit reads; writes to borrowed storage fail while a conflicting loan is live. A value copy has independent storage.
+Embed Marker in a struct to require immutable fields. Run the immutago analyzer on all consumer packages; Go's type checker alone does not enforce the field or collection element rules. Marked objects are immutable from construction. Shared references can be copied, stored, and returned. Go manages their lifetime. A value copy preserves references to the same immutable objects.
 
 FreezeSlice and FreezeMap share their input storage without copying. The analyzer requires exclusive ownership and rejects later source\-handle uses. Clone returns an independent copy. Their zero values are empty collections. Element and key types must themselves be immutable; the analyzer checks this requirement, including nested types.
 
@@ -44,7 +44,7 @@ All returns an iterator over key\-value pairs in unspecified order. It reads fro
 func (m FrozenMap[K, V]) Clone() map[K]V
 ```
 
-Clone returns an independent native map in O\(n\) time and space. It copies keys and values by value and preserves nil. Mutating the copy does not change the frozen map; immutable types make deeper copying unnecessary.
+Clone returns an independent native map in O\(n\) time and space. It copies keys and values by value and preserves nil. Mutating the copy does not change the frozen map. References still point to the same immutable objects; immutable types make deeper copying unnecessary.
 
 ### func \(FrozenMap\[K, V\]\) Get
 
@@ -102,7 +102,7 @@ At returns the element at index in O\(1\) time without allocations. It panics if
 func (s FrozenSlice[T]) Clone() []T
 ```
 
-Clone returns an independent native slice in O\(n\) time and space. It copies elements by value and preserves nil. Mutating the copy does not change the frozen slice; immutable element types make deeper copying unnecessary.
+Clone returns an independent native slice in O\(n\) time and space. It copies elements by value and preserves nil. Mutating the copy does not change the frozen slice. References still point to the same immutable objects; immutable element types make deeper copying unnecessary.
 
 ### func \(FrozenSlice\[T\]\) Len
 

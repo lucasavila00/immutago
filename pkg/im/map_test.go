@@ -72,3 +72,34 @@ func TestMapNativeKeySemantics(t *testing.T) {
 		t.Fatal("composite key lookup differs")
 	}
 }
+
+// TestMapReferenceClone checks pointer key identity and independent entry slots.
+func TestMapReferenceClone(t *testing.T) {
+	type point struct {
+		Marker
+		X int
+	}
+	original := &point{X: 1}
+	replacement := &point{X: 1}
+	frozen := FreezeMap(map[*point]*point{original: original})
+	if _, found := frozen.Get(replacement); found {
+		t.Fatal("distinct pointer keys compare equal")
+	}
+	clone := frozen.Clone()
+	if clone[original] != original {
+		t.Fatal("clone changed object identity")
+	}
+	clone[original] = replacement
+	updated := FreezeMap(clone)
+	if value, found := frozen.Get(original); !found || value != original {
+		t.Fatal("clone changed frozen entry")
+	}
+	if value, found := updated.Get(original); !found || value != replacement {
+		t.Fatal("clone entry replacement failed")
+	}
+	for key, value := range frozen.All() {
+		if key != original || value != original {
+			t.Fatal("iterator changed object identity")
+		}
+	}
+}

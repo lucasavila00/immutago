@@ -59,3 +59,28 @@ func TestSliceZeroValues(t *testing.T) {
 	}()
 	zero.At(0)
 }
+
+// TestSliceReferenceClone checks shared objects and independent element slots.
+func TestSliceReferenceClone(t *testing.T) {
+	type point struct {
+		Marker
+		X int
+	}
+	original := &point{X: 1}
+	replacement := &point{X: 2}
+	frozen := FreezeSlice([]*point{original})
+	clone := frozen.Clone()
+	if clone[0] != original || frozen.At(0) != original {
+		t.Fatal("clone changed object identity")
+	}
+	clone[0] = replacement
+	updated := FreezeSlice(clone)
+	if frozen.At(0) != original || updated.At(0) != replacement {
+		t.Fatal("clone shares element slots")
+	}
+	for _, value := range frozen.All() {
+		if value != original {
+			t.Fatal("iterator changed object identity")
+		}
+	}
+}
