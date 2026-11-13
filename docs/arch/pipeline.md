@@ -1,85 +1,51 @@
 # Analysis pipeline
 
-[Architecture index](README.md)
+[Architecture](README.md)
 
-The [command](../../cmd/immutago/main.go) passes the public analyzer to Go's
-`singlechecker` driver. The driver loads and type-checks packages. The same
-analyzer can run through `go vet -vettool=...`. Analysis uses the compiler's
-`go/types` objects and `TypesInfo`, not names found in source text.
+The [command](../../cmd/immutago/main.go) uses Go's `singlechecker` driver.
+The same analyzer runs under `go vet -vettool`. Both provide compiler-resolved
+`go/types` identities and `TypesInfo` for each package.
 
-The [analyzer entry point](../../pkg/analyzer/analyzer.go) processes each
-package in this order:
+## Package pass
 
-1. Skip the trusted `im` implementation and standard library.
-2. Read dependency failure facts. Prepare to record local diagnostics as facts.
-3. Walk source types, declarations, imports, and collection type arguments.
-4. Check native builders and their freeze operations. Return the set of builders
-   to the operation checker.
-5. Check operations against the supported subset.
-6. Export failures for importers.
+The [entry point](../../pkg/analyzer/analyzer.go) performs these stages:
 
-Each stage can report errors. The builder set permits the subset checker to
-recognize native storage that has a separate ownership check; it is not an
-exemption from that check. The stages share compiler identities but retain
-separate traversal and analysis state. There is no common intermediate form
-for operation and freeze checks.
+1. Skip the fixed `im` package and compiler-supplied standard library.
+2. Collect dependency failure facts and start recording local diagnostics.
+3. Check declarations, imports, field types, and fixed `im` type arguments.
+4. Run the native builder proof and obtain its set of tracked variables.
+5. Match protected operations and their enclosing statements.
+6. Export accumulated failures for importers.
 
-## Structural checks
+The builder set identifies separately checked storage. It does not exempt its
+operations. Type, source-form, and builder checks keep separate state.
 
-[Type predicates](../../internal/checker/types.go) recognize `im.Immut`, `im.ImmutNoRef`,
-`FrozenSlice`, and `FrozenMap` by resolved package path and named type. Aliases
-are resolved. `Contains` follows fields and container element types to find
-protected storage. It uses a visited-type map to stop recursive traversal.
+## Type proof
 
-[The structural proof](../../internal/checker/proof.go) creates a graph for
-each query. A node identifies a resolved Go type. Reverse edges point from a component to its
-owners. A failed component enters a queue; failure then propagates to owners.
-Recursive components start provisionally valid. A reachable invalid field
-causes the containing recursive structure to fail too.
+[Type predicates](../../internal/checker/types.go) resolve aliases and identify
+both markers and frozen collections by package path and named type.
+`Contains` follows storage components with a visited-type set.
 
-All fields and collection arguments must pass. Stored pointer targets must be
-concrete `Immut` structs. `ImmutNoRef` pointers are local-only. User generic
-types and functions cannot handle protected storage; the fixed `im` generic
-APIs remain supported. Ordinary scalar generic code stays outside that rule.
+[Reason](../../internal/checker/proof.go) builds one obligation per concrete
+type. It records the node before visiting components, so recursive types
+terminate. Reverse edges connect fields and collection arguments to their
+owners. Invalid components enter a queue; their failures propagate to every
+owner. A recursive cycle passes only if all reachable components pass.
 
-## Operation checks
+Both marker modes use this proof. Stored pointers require an `Immut` struct
+target; `ImmutNoRef` pointers fail the storage proof. Type parameters fail too.
+[Generic checks](../../pkg/analyzer/subset_generics.go) keep user protected
+generic code outside the source subset while retaining the fixed `im` APIs.
 
-The [guide](../rules.md) is the source-language allowlist. Its allowed
-forms are complete. Rejection examples show common mistakes; they do not define
-the boundary.
+## Source forms and dependency failures
 
-For each operation involving protected storage, the checker must match a complete
-allowed shape using syntax and resolved types. It must then check the ownership
-rule for that shape. An unmatched shape is an error. A broad match such as
-"this is a method call" is not enough to accept the operation.
+The [subset checker](../../pkg/analyzer/subset.go) uses AST parents to check
+complete expression and statement contexts. [Call checks](../../pkg/analyzer/subset_calls.go)
+resolve function identity, receivers, arguments, and results. Each protected
+operation needs an allowed shape; the default path reports an error.
 
-For example, `p := &Point{X: 1}` requires a fresh composite literal with a
-proved protected type and an allowed statement context. `p := &value` fails
-because it would expose rebindable variable storage. A reference copy `q := p`
-and a reference result `return p` use separate allowed shapes. See the
-[reference rules](../rules.md#what-you-can-do-with-a-reference).
-
-[The subset checker](../../pkg/analyzer/subset.go) uses an AST parent map to
-check expression and statement context. [Call checks](../../pkg/analyzer/subset_calls.go)
-resolve the function or method by compiler identity. Named readers have concrete synchronous signatures. NoRef calls cannot
-retain their references. `Immut` references may be stored and returned.
-`ImmutNoRef` references cannot leave local storage or direct non-retaining calls. The only protected receiver calls are the
-listed methods of the exact `im` collection types.
-
-Tests must cover each accepted shape and nearby forms that do not match it.
-Adding a feature changes the docs, matcher, proof checks, and tests together.
-A written allowlist alone does not establish implementation correctness;
-reviewers must check the rejecting fallback and the source forms reaching it.
-
-## Dependency facts
-
-[Dependency checks](../../pkg/analyzer/dependencies.go) carry an
-`invalidPackage` fact with relevance, original failure locations, messages,
-and import chains. This is needed because drivers can hide diagnostics from
-packages that the user did not select directly.
-
-An importer collects facts, reports relevant dependency failures at imports,
-and exports failures again. Duplicate failures retain one deterministic route
-through a diamond-shaped import graph. These are failure records, not positive
-function effect summaries. The standard driver supplies analysis of dependency
-packages and fact transport.
+[Dependency facts](../../pkg/analyzer/dependencies.go) retain failure locations,
+messages, relevance, and import chains. Consumers report relevant failures at
+imports and export them again. Duplicate failures use one deterministic route
+through a diamond import graph. These facts carry errors, not inferred function
+effects; they preserve failures that a consumer-only driver run could hide.

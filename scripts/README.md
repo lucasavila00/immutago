@@ -1,13 +1,13 @@
-# Source checks
+# Repository checks
 
-Adapted from TGo. `check-source-size.go` checks tracked Go files (700 lines).
-`check-function-comments` checks comments on named handwritten functions,
-excluding testdata and generated files. Both have tests.
+`make lint` runs these checks and golangci-lint:
 
-`check-dead-code.sh` uses the pinned x/tools deadcode command with test entry
-points. Public library APIs are exercised by tests rather than required to be
-reachable from the CLI. `make lint` runs these checks and golangci-lint.
+| Tool | Check |
+| --- | --- |
+| [check-source-size.go](check-source-size.go) | Tracked Go files have at most 700 lines. |
+| [check-function-comments](check-function-comments/main.go) | Named handwritten functions have comments; generated files and testdata are excluded. |
+| [check-dead-code.sh](check-dead-code.sh) | The pinned x/tools deadcode tool finds no unreachable code, with tests as entry points. |
 
-`gomarkdoc/` contains the package documentation templates selected by
-[.gomarkdoc.yml](../.gomarkdoc.yml). `make docs` writes each package's generated
-`readme.md`; `make docs-check` checks that it matches the Go comments.
+[gomarkdoc templates](gomarkdoc/package.gotxt) generate package references from
+Go comments. [.gomarkdoc.yml](../.gomarkdoc.yml) selects the templates;
+`make docs` writes the references and `make docs-check` checks them.
