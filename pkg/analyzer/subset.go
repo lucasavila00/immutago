@@ -63,13 +63,10 @@ func (c *subsetChecks) report(n ast.Node, message string) {
 
 // visit checks source operations and their inferred types.
 func (c *subsetChecks) visit(n ast.Node) bool {
-	if e, ok := n.(ast.Expr); ok {
-		if t := c.pass.TypesInfo.TypeOf(e); t != nil && !c.exempt[n] {
-			if reason := subsetType(t, make(map[types.Type]bool)); reason != "" {
-				c.report(n, reason)
-			}
-		}
+	if expression, ok := n.(ast.Expr); ok {
+		c.expressionType(expression)
 	}
+
 	switch x := n.(type) {
 	case *ast.TypeAssertExpr:
 		if checker.Contains(c.pass.TypesInfo.TypeOf(x)) {
@@ -90,59 +87,11 @@ func (c *subsetChecks) visit(n ast.Node) bool {
 	case *ast.SelectorExpr:
 		c.methodValue(x)
 	case *ast.AssignStmt:
-		if len(x.Rhs) == 1 {
-			var destinations []types.Type
-			for _, lhs := range x.Lhs {
-				destinations = append(destinations, c.pass.TypesInfo.TypeOf(lhs))
-			}
-			c.tupleTransport(x.Rhs[0], destinations)
-		}
-		for i, rhs := range x.Rhs {
-			if i < len(x.Lhs) {
-				c.transport(rhs, c.pass.TypesInfo.TypeOf(x.Lhs[i]))
-				c.globalStore(x.Lhs[i], rhs)
-			}
-		}
+		c.assignment(x)
 	case *ast.ValueSpec:
-		if len(x.Values) == 1 {
-			var destinations []types.Type
-			for _, id := range x.Names {
-				if obj := c.pass.TypesInfo.Defs[id]; obj != nil {
-					destinations = append(destinations, obj.Type())
-				}
-			}
-			c.tupleTransport(x.Values[0], destinations)
-		}
-		for i, id := range x.Names {
-			obj := c.pass.TypesInfo.Defs[id]
-			if obj == nil {
-				continue
-			}
-			if protectedReference(obj.Type()) && obj.Parent() == c.pass.Pkg.Scope() {
-				c.report(id, "global shared references are unsupported")
-			}
-			if i < len(x.Values) {
-				c.transport(x.Values[i], obj.Type())
-			}
-		}
+		c.declaration(x)
 	case *ast.ReturnStmt:
-		if len(x.Results) == 1 {
-			if tuple, ok := c.pass.TypesInfo.TypeOf(x.Results[0]).(*types.Tuple); ok {
-				var destinations []types.Type
-				for i := 0; i < tuple.Len(); i++ {
-					destinations = append(destinations, c.returnType(x, i))
-				}
-				c.tupleTransport(x.Results[0], destinations)
-			}
-		}
-		for i, e := range x.Results {
-			if destination := c.returnType(x, i); destination != nil {
-				c.transport(e, destination)
-			}
-			if protectedReference(c.pass.TypesInfo.TypeOf(e)) {
-				c.report(e, "returning shared references is unsupported")
-			}
-		}
+		c.returnedValues(x)
 	case *ast.SendStmt:
 		if channel, ok := c.pass.TypesInfo.TypeOf(x.Chan).Underlying().(*types.Chan); ok {
 			c.transport(x.Value, channel.Elem())
@@ -171,32 +120,13 @@ func subsetType(t types.Type, seen map[types.Type]bool) string {
 			return "arrays of shared references are unsupported"
 		}
 		return subsetType(u.Elem(), seen)
-	case *types.Slice:
-		if checker.Contains(u.Elem()) {
-			return "native slices of immutable storage are unsupported"
-		}
-	case *types.Map:
-		if checker.Contains(u.Key()) || checker.Contains(u.Elem()) {
-			return "native maps of immutable storage are unsupported"
-		}
-	case *types.Chan:
-		if checker.Contains(u.Elem()) {
-			return "channels of immutable storage are unsupported"
-		}
 	case *types.Signature:
-		for i := 0; i < u.Results().Len(); i++ {
-			if protectedReference(u.Results().At(i).Type()) {
-				return "returning shared references is unsupported"
-			}
-		}
+		return subsetResults(u.Results())
 	case *types.Tuple:
-		for i := 0; i < u.Len(); i++ {
-			if reason := subsetType(u.At(i).Type(), seen); reason != "" {
-				return reason
-			}
-		}
+		return subsetTuple(u, seen)
+	default:
+		return subsetContainer(u)
 	}
-	return ""
 }
 
 // protectedReference identifies a pointer whose target contains immutable storage.
@@ -268,4 +198,117 @@ func libraryObject(obj types.Object) bool {
 func stringType(t types.Type) bool {
 	basic, ok := t.Underlying().(*types.Basic)
 	return ok && basic.Info()&types.IsString != 0
+}
+
+// assignment checks immutable transport in AssignStmt.
+func (c *subsetChecks) assignment(x *ast.AssignStmt) {
+	if len(x.Rhs) == 1 {
+		var destinations []types.Type
+		for _, lhs := range x.Lhs {
+			destinations = append(destinations, c.pass.TypesInfo.TypeOf(lhs))
+		}
+		c.tupleTransport(x.Rhs[0], destinations)
+	}
+	for i, rhs := range x.Rhs {
+		if i < len(x.Lhs) {
+			c.transport(rhs, c.pass.TypesInfo.TypeOf(x.Lhs[i]))
+			c.globalStore(x.Lhs[i], rhs)
+		}
+	}
+}
+
+// declaration checks immutable transport in ValueSpec.
+func (c *subsetChecks) declaration(x *ast.ValueSpec) {
+	if len(x.Values) == 1 {
+		var destinations []types.Type
+		for _, id := range x.Names {
+			if obj := c.pass.TypesInfo.Defs[id]; obj != nil {
+				destinations = append(destinations, obj.Type())
+			}
+		}
+		c.tupleTransport(x.Values[0], destinations)
+	}
+	for i, id := range x.Names {
+		obj := c.pass.TypesInfo.Defs[id]
+		if obj == nil {
+			continue
+		}
+		if protectedReference(obj.Type()) && obj.Parent() == c.pass.Pkg.Scope() {
+			c.report(id, "global shared references are unsupported")
+		}
+		if i < len(x.Values) {
+			c.transport(x.Values[i], obj.Type())
+		}
+	}
+}
+
+// returnedValues checks immutable transport in ReturnStmt.
+func (c *subsetChecks) returnedValues(x *ast.ReturnStmt) {
+	if len(x.Results) == 1 {
+		if tuple, ok := c.pass.TypesInfo.TypeOf(x.Results[0]).(*types.Tuple); ok {
+			var destinations []types.Type
+			for i := 0; i < tuple.Len(); i++ {
+				destinations = append(destinations, c.returnType(x, i))
+			}
+			c.tupleTransport(x.Results[0], destinations)
+		}
+	}
+	for i, e := range x.Results {
+		if destination := c.returnType(x, i); destination != nil {
+			c.transport(e, destination)
+		}
+		if protectedReference(c.pass.TypesInfo.TypeOf(e)) {
+			c.report(e, "returning shared references is unsupported")
+		}
+	}
+}
+
+// subsetContainer checks the three native container forms excluded from immutable storage.
+func subsetContainer(t types.Type) string {
+	switch u := t.(type) {
+	case *types.Slice:
+		if checker.Contains(u.Elem()) {
+			return "native slices of immutable storage are unsupported"
+		}
+	case *types.Map:
+		if checker.Contains(u.Key()) || checker.Contains(u.Elem()) {
+			return "native maps of immutable storage are unsupported"
+		}
+	case *types.Chan:
+		if checker.Contains(u.Elem()) {
+			return "channels of immutable storage are unsupported"
+		}
+	}
+	return ""
+}
+
+// subsetResults rejects escaping shared references in function results.
+func subsetResults(results *types.Tuple) string {
+	for i := 0; i < results.Len(); i++ {
+		if protectedReference(results.At(i).Type()) {
+			return "returning shared references is unsupported"
+		}
+	}
+	return ""
+}
+
+// subsetTuple checks each inferred result type without losing tuple context.
+func subsetTuple(tuple *types.Tuple, seen map[types.Type]bool) string {
+	for i := 0; i < tuple.Len(); i++ {
+		if reason := subsetType(tuple.At(i).Type(), seen); reason != "" {
+			return reason
+		}
+	}
+	return ""
+}
+
+// expressionType checks a resolved expression unless it is a sealed constructor input.
+func (c *subsetChecks) expressionType(expression ast.Expr) {
+	t := c.pass.TypesInfo.TypeOf(expression)
+	if t == nil || c.exempt[expression] {
+		return
+	}
+	if reason := subsetType(t, make(map[types.Type]bool)); reason != "" {
+		c.report(expression, reason)
+	}
 }

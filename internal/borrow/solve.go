@@ -1,6 +1,7 @@
 // Copyright (c) The Rust Project Contributors
 // Local liveness uses rustc's backward use-to-definition traversal through flow.BackwardLive.
 // Source revision and license: third_party/rustc.
+
 package borrow
 
 import (

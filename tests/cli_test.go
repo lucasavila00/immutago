@@ -174,9 +174,10 @@ func checkSnapshot(t *testing.T, path, actual string) {
 	if err != nil {
 		t.Fatalf("read snapshot: %v; use -update-snapshots to create it", err)
 	}
-	if actual != string(expected) {
+	saved := strings.ReplaceAll(string(expected), "\r\n", "\n")
+	if actual != saved {
 		t.Errorf("snapshot %s differs; inspect output before using -update-snapshots\nSAVED:\n%s\nACTUAL:\n%s",
-			path, expected, actual)
+			path, saved, actual)
 	}
 }
 
@@ -246,4 +247,11 @@ func checkInvalidDependencies(t *testing.T, root, binary string) {
 			}
 		})
 	}
+}
+
+// TestSnapshotLineEndings accepts CRLF snapshots from a Windows checkout without changing diagnostics.
+func TestSnapshotLineEndings(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "diagnostic.txt")
+	writeFile(t, path, "source.go:3:4: diagnostic\r\n  fix: use a copy\r\n")
+	checkSnapshot(t, path, "source.go:3:4: diagnostic\n  fix: use a copy\n")
 }

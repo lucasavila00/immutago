@@ -80,52 +80,10 @@ func (c *subsetChecks) call(call *ast.CallExpr) {
 		}
 		c.tupleTransport(call.Args[0], destinations)
 	}
-	direct, static := obj.(*types.Func)
-	if sel, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok {
-		if selection := c.pass.TypesInfo.Selections[sel]; selection != nil {
-			method, _ := selection.Obj().Type().(*types.Signature)
-			if method != nil && method.Recv() != nil {
-				if _, pointer := method.Recv().Type().Underlying().(*types.Pointer); pointer && c.protectedRoot(sel.X) {
-					c.synchronous(call)
-					if genericMethod(selection.Obj()) && !libraryObject(obj) {
-						c.report(call, "generic borrowing calls are unsupported")
-					}
-					if !checker.Contains(c.pass.TypesInfo.TypeOf(sel.X)) {
-						c.report(call, "scalar interior pointer methods are unsupported")
-					}
-				}
-			}
+	_, static := obj.(*types.Func)
+	static = c.methodCall(call, obj, static)
+	c.callArguments(call, obj, signature, static)
 
-			if _, iface := selection.Recv().Underlying().(*types.Interface); iface {
-				static = false
-			}
-			if protectedReference(c.pass.TypesInfo.TypeOf(sel.X)) {
-				c.synchronous(call)
-			}
-		}
-	}
-	for i, arg := range call.Args {
-		t := c.pass.TypesInfo.TypeOf(arg)
-		if !checker.Contains(t) && !protectedCallable(t) {
-			continue
-		}
-		if !static && !libraryObject(obj) {
-			c.report(arg, "dynamic calls with immutable storage are unsupported")
-		}
-		if protectedReference(t) {
-			c.synchronous(call)
-			if libraryObject(obj) || (direct != nil && genericSignature(direct.Origin().Type().(*types.Signature))) {
-				c.report(arg, "generic borrowing calls are unsupported")
-			}
-		}
-		parameter := i
-		if signature.Variadic() && parameter >= signature.Params().Len()-1 {
-			parameter = signature.Params().Len() - 1
-		}
-		if parameter >= 0 && parameter < signature.Params().Len() {
-			c.transport(arg, signature.Params().At(parameter).Type())
-		}
-	}
 	if libraryObject(obj) && obj.Name() == "All" && protectedCallable(c.pass.TypesInfo.TypeOf(call)) {
 		r, ok := c.parents[call].(*ast.RangeStmt)
 		if !ok || r.X != call {
@@ -278,4 +236,72 @@ func genericSignature(signature *types.Signature) bool {
 func genericMethod(obj types.Object) bool {
 	function, ok := obj.(*types.Func)
 	return ok && genericSignature(function.Origin().Type().(*types.Signature))
+}
+
+// callArguments checks typed parameters and the effects of transporting each argument.
+func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signature *types.Signature, static bool) {
+	direct, _ := obj.(*types.Func)
+
+	for i, arg := range call.Args {
+		t := c.pass.TypesInfo.TypeOf(arg)
+		if !checker.Contains(t) && !protectedCallable(t) {
+			continue
+		}
+		if !static && !libraryObject(obj) {
+			c.report(arg, "dynamic calls with immutable storage are unsupported")
+		}
+		if protectedReference(t) {
+			c.synchronous(call)
+			if libraryObject(obj) || (direct != nil && genericSignature(direct.Origin().Type().(*types.Signature))) {
+				c.report(arg, "generic borrowing calls are unsupported")
+			}
+		}
+		parameter := i
+		if signature.Variadic() && parameter >= signature.Params().Len()-1 {
+			parameter = signature.Params().Len() - 1
+		}
+		if parameter >= 0 && parameter < signature.Params().Len() {
+			c.transport(arg, signature.Params().At(parameter).Type())
+		}
+	}
+}
+
+// methodCall checks receiver transport and resolves whether dispatch is static.
+func (c *subsetChecks) methodCall(call *ast.CallExpr, obj types.Object, static bool) bool {
+	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+	if !ok {
+		return static
+	}
+	selection := c.pass.TypesInfo.Selections[selector]
+	if selection == nil {
+		return static
+	}
+	c.pointerReceiver(call, selector, selection, obj)
+	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
+		static = false
+	}
+	if protectedReference(c.pass.TypesInfo.TypeOf(selector.X)) {
+		c.synchronous(call)
+	}
+	return static
+}
+
+// pointerReceiver checks implicit pointer borrows made by direct method calls.
+func (c *subsetChecks) pointerReceiver(call *ast.CallExpr, selector *ast.SelectorExpr,
+	selection *types.Selection, obj types.Object) {
+	method, _ := selection.Obj().Type().(*types.Signature)
+	if method == nil || method.Recv() == nil {
+		return
+	}
+	_, pointer := method.Recv().Type().Underlying().(*types.Pointer)
+	if !pointer || !c.protectedRoot(selector.X) {
+		return
+	}
+	c.synchronous(call)
+	if genericMethod(selection.Obj()) && !libraryObject(obj) {
+		c.report(call, "generic borrowing calls are unsupported")
+	}
+	if !checker.Contains(c.pass.TypesInfo.TypeOf(selector.X)) {
+		c.report(call, "scalar interior pointer methods are unsupported")
+	}
 }

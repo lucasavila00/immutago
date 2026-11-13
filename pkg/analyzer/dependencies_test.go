@@ -66,15 +66,9 @@ func TestInvalidDependencyProofPropagates(t *testing.T) {
 			t.Errorf("%s diagnostics = %q, want %q", tc.path, got, tc.diagnostic)
 		}
 		if tc.path == "example/consumer" {
-			for _, want := range []string{
-				"example/consumer -> example/wrapper -> example/bad", "example/bad/proof.go:1:",
-				"unsupported unsafe import", "fix:",
-			} {
-				if !strings.Contains(got, want) {
-					t.Errorf("missing dependency context %q in %s", want, got)
-				}
-			}
+			checkDependencyContext(t, got)
 		}
+
 		packages[tc.path] = pkg
 	}
 }
@@ -99,5 +93,18 @@ func TestInvalidProofKeepsRelevanceWhenVetPrunesImports(t *testing.T) {
 	invalid, relevant, _ := invalidDependencies(pass)
 	if !invalid || !relevant || len(reports) != 1 {
 		t.Fatal("vet's pruned import graph lost a dependency proof failure")
+	}
+}
+
+// checkDependencyContext checks the portable source and import route of the original failure.
+func checkDependencyContext(t *testing.T, got string) {
+	t.Helper()
+	for _, want := range []string{
+		"example/consumer -> example/wrapper -> example/bad", "example/bad/proof.go:1:",
+		"unsupported unsafe import", "fix:",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing dependency context %q in %s", want, got)
+		}
 	}
 }

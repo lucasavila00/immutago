@@ -8,8 +8,6 @@ import "github.com/lucasavila00/immutago/internal/borrow"
 
 Package borrow checks local shared loans with whole\-owner nonlexical lifetimes. Its backward liveness solver is ported from rustc; see flow and third\_party/rustc.
 
-Copyright \(c\) The Rust Project Contributors Local liveness uses rustc's backward use\-to\-definition traversal through flow.BackwardLive. Source revision and license: third\_party/rustc.
-
 ## func Check
 
 ```go
