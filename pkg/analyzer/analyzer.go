@@ -8,9 +8,12 @@
 // unsupported. Generic pointers and unmarked generic fields must prove their
 // constraints exclude immutable storage. There are no suppression directives.
 //
-// The analyzer also rejects field writes and pointers to immutable values.
-// Whole local variables may be replaced. Use literals to construct marked values
-// and collection methods to derive new collections. Analyze every consumer package.
+// Owned local values permit construction and field updates. Shared references
+// permit reads; their loans end after the final required use on each control-flow
+// path. Writes to overlapping borrowed storage are rejected. Value copies have
+// independent storage. Package-level immutable values are read-only after init.
+// Function summaries preserve aliases and effects across package boundaries.
+// Analyze every consumer package, including dependencies that use these values.
 package analyzer
 
 import (

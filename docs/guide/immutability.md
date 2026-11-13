@@ -1,58 +1,92 @@
-# Immutability contract
+# Immutability and borrowing
 
-Embed `im.Marker` directly by value. Every field must be a primitive
-boolean, number, or string; an array of immutable elements; another marked
-struct; or `im.Slice[T]` / `im.Map[K, V]` with immutable arguments.
-Type aliases retain their type identity. The analyzer uses `go/types`, the Go
-compiler's type checker, rather than source names or marker methods.
+Embed `im.Marker` directly by value. Every field must recursively be a primitive
+boolean, number, or string; an array of allowed elements; another marked struct;
+or `im.Slice[T]` / `im.Map[K, V]` with allowed arguments. Type aliases retain their
+identity. Custom aggregates must be marked structs. For example, replace
+`type Count [2]int` with an inline array in a marked struct:
 
 ```go
 import "github.com/lucasavila00/immutago/pkg/im"
+
+type Count struct {
+    im.Marker
+    Values [2]int
+}
 
 type User struct {
     im.Marker
     Name string
     Tags im.Slice[string]
 }
-
-var user = User{Name: "Ada", Tags: im.NewSlice("go")}
 ```
 
-Use literals to construct marked structs. Replacing a variable is allowed;
-writing its fields is not. Collection updates return new values. Collection
-inputs and outputs are copied at their mutable boundaries. Reads do not need
-runtime immutability checks. Use `All()` to range over a collection without
-copying it to a native slice or map.
+Owned local storage permits ordinary Go construction, including conditionals,
+loops, field updates, and whole-value reassignment. Go zero values are valid
+defaults. A value copy owns separate storage; its immutable collection fields
+can safely share their library representation. Value-receiver copy-and-update
+methods are supported.
 
-Unmarked structs cannot contain marked values or immutable collections,
-including through embedding or mutable containers. This restriction keeps
-partially immutable object graphs outside the initial supported model.
+```go
+var user User
+if admin {
+    user.Name = "Admin"
+} else {
+    user.Name = "Guest"
+}
+user.Tags = im.NewSlice("go")
+p := &user
+name := p.Name        // last use of this reference
+user.Name = "Reader" // accepted: the loan has ended
+_ = name
+```
 
-Pointers, native slices and maps, interfaces, channels, and functions do not
-prove immutable field ownership. Pointers to immutable storage, addresses of
-its fields, and mutable slice views of its arrays are unsupported. Generic
-constraints must prove every possible element immutable. Generic pointers and
-unmarked generic fields must exclude immutable storage; an unconstrained type
-parameter cannot establish that proof. Function declarations without a Go body
-are unsupported because their implementation cannot be checked. Unknown cases fail;
-there are no suppression comments, registration hooks, or trusted user types.
-The library's own collection representation is the fixed implementation boundary.
-Unsafe and reflection imports in analyzed consumer packages are rejected.
-Resolved unsafe pointer values and reflection values are also unsupported,
-including when obtained from another package.
+Taking a reference to existing storage creates a shared loan. Reading through
+that reference is allowed. Writing through it is not. Writing or replacing its
+owner fails while a conflicting loan is live. Pointer copies retain the loan;
+reassigning one pointer does not remove loans held by other aliases. Loans end
+at their last required control-flow use, including future loop iterations.
+Borrowed fields retain their source ownership even when the pointer type is
+only `*int`. Nonoverlapping fields and constant array indices are distinguished.
 
-Analyze all consumer packages, including tests, with `immutago ./...` or
-`go vet -vettool=<absolute path to immutago> ./...`. The tool does not rewrite
-Go or enforce rules at runtime. Running ordinary `go build` alone does not
-check immutability. Dependencies must also be analyzed if they use these types;
-unexamined dependency code is not certified by a clean consumer-package run.
+Fresh allocations such as `p := &User{}` and `new(User)` retain an owner
+capability for construction. Copying that owner into another pointer creates a
+shared alias. A checked factory can return a fresh owner; a function returning
+an input pointer preserves that input's shared provenance. Incoming pointers
+and native backing storage are read-only when they refer to marked values.
 
-# Analysis sources
+Calls use inferred effects and returned-alias summaries, also across packages.
+A read-only call does not extend a loan after its last required use. Deferred
+reads remain live until execution; captured references cannot be treated as dead
+at the capture statement. Unproved relevant call effects fail explicitly.
+Package-level marked storage is read-only after declaration initialization.
 
-The implementation uses Go's resolved types and structural type predicates.
-Shared obligations form a graph. A definite failure propagates to every owner;
-recursive collections succeed only when their obligations hold. The checker
-also inspects source operations for writes and alias creation.
+`Slice` and `Map` updates return persistent snapshots. Inputs and `Values()`
+outputs cross mutable boundaries by copying. `All()` iterates without making a
+native container copy. Proof checks run only in the analyzer; collection costs
+are described in [performance](../performance.md).
 
-Expand the supported model only with proof tests. Broad coverage is a goal,
-not a measured percentage.
+# Boundaries
+
+Unmarked structs cannot contain marked values or `im` collections. Marked fields
+and collection arguments cannot contain native pointers, slices, maps,
+interfaces, channels, or functions. Readable pointer variables and parameters
+do not relax that structural ownership contract. Generic bounds must prove the
+field and element rules, including every allowed type argument.
+
+Unsafe operations, reflection, and functions without Go bodies are unsupported.
+Retaining interior aliases in unmarked aggregates, mutable containers, channels,
+or escaping closures requires effects the checker can preserve; unsupported
+transport fails explicitly. There are no suppression directives, registration
+hooks, or user-declared trusted implementations. Only the fixed `im` collection
+implementation supplies sealed immutable storage.
+
+Analyze all consumer packages and tests with `immutago ./...`, or use
+`go vet -vettool=<absolute path to immutago> ./...`. An ordinary Go build does not
+run this proof. Unexamined dependency bodies are not certified. SDK source is
+not analyzed as user code; unavailable SDK effects remain unknown for calls
+that involve protected references.
+
+The [borrowing ADR](../adr/borrowing/what.md) records the rules and verification
+requirements. [Rust source attribution](../../third_party/rustc/README.md)
+identifies the ported algorithms and their Go adaptations.

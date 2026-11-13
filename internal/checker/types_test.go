@@ -155,7 +155,8 @@ func TestNamedArraysRequireMarker(t *testing.T) {
 	if reason := Reason(wrapped); reason != "" {
 		t.Fatalf("marked wrapper: %s", reason)
 	}
-	constraint := types.NewInterfaceType(nil, []types.Type{types.NewUnion([]*types.Term{types.NewTerm(true, array)})}).Complete()
+	union := types.NewUnion([]*types.Term{types.NewTerm(true, array)})
+	constraint := types.NewInterfaceType(nil, []types.Type{union}).Complete()
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "T", nil), constraint)
 	if reason := Reason(parameter); reason == "" {
 		t.Fatalf("tilde array proof: %q", reason)

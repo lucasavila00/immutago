@@ -93,7 +93,8 @@ func (e *engine) argumentEffects(point int, s state, call *ssa.CallCommon, summa
 }
 
 // argumentEffect checks one shared input and propagates unknown or retained effects to callers.
-func (e *engine) argumentEffect(point int, s state, pos token.Pos, r reference, effect Effect, deferred, asynchronous bool) {
+func (e *engine) argumentEffect(point int, s state, pos token.Pos, r reference,
+	effect Effect, deferred, asynchronous bool) {
 	e.use(point, pos, r, effect.Write)
 	e.reachableUses(point, pos, s, r, effect.Write)
 	if effect.Unknown {
@@ -128,7 +129,8 @@ func (e *engine) unknownCall(point int, pos token.Pos, arguments [][]reference) 
 }
 
 // callResults instantiates symbolic returned aliases and keeps repeated fresh results on one root.
-func (e *engine) callResults(point int, s state, call *ssa.CallCommon, summary Summary, args [][]reference) []reference {
+func (e *engine) callResults(point int, s state, call *ssa.CallCommon,
+	summary Summary, args [][]reference) []reference {
 	var result []reference
 	freshSeen := make(map[string]bool)
 	for index, aliases := range summary.Results {
@@ -364,7 +366,14 @@ func (e *engine) unknownResults(point int, call *ssa.CallCommon) []reference {
 }
 
 // potentialInterior identifies result shapes that could alias marked value storage.
-func potentialInterior(t types.Type) bool {
+func potentialInterior(t types.Type) bool { return potentialInteriorSeen(t, make(map[types.Type]bool)) }
+
+// potentialInteriorSeen terminates recursive pointer shapes while looking for protected scalar leaves.
+func potentialInteriorSeen(t types.Type, seen map[types.Type]bool) bool {
+	if seen[t] {
+		return false
+	}
+	seen[t] = true
 	if checker.Contains(t) {
 		return true
 	}
@@ -372,15 +381,15 @@ func potentialInterior(t types.Type) bool {
 	case *types.Basic:
 		return true
 	case *types.Array:
-		return potentialInterior(u.Elem())
+		return potentialInteriorSeen(u.Elem(), seen)
 	case *types.Slice:
-		return potentialInterior(u.Elem())
+		return potentialInteriorSeen(u.Elem(), seen)
 	case *types.Map:
-		return potentialInterior(u.Key()) || potentialInterior(u.Elem())
+		return potentialInteriorSeen(u.Key(), seen) || potentialInteriorSeen(u.Elem(), seen)
 	case *types.Chan:
-		return potentialInterior(u.Elem())
+		return potentialInteriorSeen(u.Elem(), seen)
 	case *types.Pointer:
-		return potentialInterior(u.Elem())
+		return potentialInteriorSeen(u.Elem(), seen)
 	}
 	return false
 }

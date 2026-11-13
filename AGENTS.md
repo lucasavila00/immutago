@@ -119,7 +119,10 @@ Check every field and collection type argument. Use resolved Go type identity,
 not source spelling. Do not accept unknown cases or add escape hatches.
 Support cases that can be proved. Report unsupported cases explicitly.
 Unmarked structs cannot own marked values or immutable collections.
-Construct values with literals. Reject field writes and mutable aliases.
+Permit construction and updates in owned local storage. Reject writes through
+shared references and writes that conflict with a live loan. Use source places
+and non-lexical loan lifetimes; do not substitute blanket pointer rejection or
+permanent freezing. Preserve alias provenance through checked function effects.
 Collections must not expose their storage. Updates preserve earlier versions.
 Test accepted, rejected, and unsupported programs through the real CLI.
 Keep runtime checks out of the immutability proof. Record collection costs and

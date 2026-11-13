@@ -56,3 +56,24 @@ func TestFreshReturnGroupsPreserveAliasShape(t *testing.T) {
 		t.Fatal("lost a global returned alias")
 	}
 }
+
+// TestDereferenceWideningRequiresUnknownEffects prevents pointer slots from replacing target aliases.
+func TestDereferenceWideningRequiresUnknownEffects(t *testing.T) {
+	for _, reverse := range []bool{false, true} {
+		left := Result{Input: 0, Shared: true}
+		right := left
+		right.Path = []Projection{{Kind: 'd'}}
+		if reverse {
+			left, right = right, left
+		}
+		a := Summary{Inputs: []Effect{{}}, Results: [][]Result{{left}}}
+		b := Summary{Inputs: []Effect{{}}, Results: [][]Result{{right}}}
+		merged, changed := mergeSummary(a, b)
+		if !changed || !merged.Inputs[0].Unknown {
+			t.Fatal("discarded dereference without unknown input effects")
+		}
+		if _, changed := mergeSummary(merged, b); changed {
+			t.Fatal("dereference widening did not converge")
+		}
+	}
+}

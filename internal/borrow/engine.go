@@ -141,9 +141,11 @@ func storageType(t types.Type) types.Type {
 
 // referenceType identifies values that can retain an alias, including erased pointers and closures.
 func referenceType(t types.Type) bool {
-	switch t.Underlying().(type) {
+	switch u := t.Underlying().(type) {
 	case *types.Pointer, *types.Slice, *types.Map, *types.Chan, *types.Interface, *types.Signature:
 		return true
+	case *types.Array:
+		return referenceType(u.Elem())
 	}
 	return false
 }

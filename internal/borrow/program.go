@@ -32,6 +32,26 @@ func Check(pass *analysis.Pass) error {
 	if IsStandardLibrary(pass) {
 		return nil
 	}
+	p := buildProgram(pass)
+	slices.SortFunc(p.functions, func(left, right *ssa.Function) int {
+		if left.Pos() < right.Pos() {
+			return -1
+		}
+		if left.Pos() > right.Pos() {
+			return 1
+		}
+		return 0
+	})
+	p.infer()
+	for _, fn := range p.functions {
+		newEngine(p, fn, true).run()
+	}
+	p.export()
+	return nil
+}
+
+// buildProgram builds SSA and registers package functions, methods, and closures.
+func buildProgram(pass *analysis.Pass) *program {
 	ssaProgram := ssa.NewProgram(pass.Fset, ssa.NaiveForm|ssa.GlobalDebug)
 	for _, imported := range pass.Pkg.Imports() {
 		ssaProgram.CreatePackage(imported, nil, nil, true)
@@ -54,21 +74,7 @@ func Check(pass *analysis.Pass) error {
 			}
 		}
 	}
-	slices.SortFunc(p.functions, func(left, right *ssa.Function) int {
-		if left.Pos() < right.Pos() {
-			return -1
-		}
-		if left.Pos() > right.Pos() {
-			return 1
-		}
-		return 0
-	})
-	p.infer()
-	for _, fn := range p.functions {
-		newEngine(p, fn, true).run()
-	}
-	p.export()
-	return nil
+	return p
 }
 
 // register visits local and generated bodies, including otherwise unused methods and closures.
@@ -195,12 +201,40 @@ func mergeSummary(left, right Summary) (Summary, bool) {
 	}
 	for index, aliases := range right.Results {
 		for _, alias := range aliases {
+			if losesDereference(result.Results[index], alias) && alias.Input >= 0 && alias.Input < len(result.Inputs) {
+				changed = changed || !result.Inputs[alias.Input].Unknown
+				result.Inputs[alias.Input].Unknown = true
+			}
 			var added bool
 			result.Results[index], added = mergeResult(result.Results[index], alias)
 			changed = changed || added
 		}
 	}
 	return result, changed
+}
+
+// losesDereference detects widening that would confuse a pointer slot with its target.
+// Such summaries require unknown input effects rather than claiming the slot contains the pointee.
+func losesDereference(results []Result, next Result) bool {
+	for _, current := range results {
+		left, right := current, next
+		left.Path, right.Path = nil, nil
+		if !sameResult(left, right) {
+			continue
+		}
+		length := 0
+		for length < len(current.Path) && length < len(next.Path) && current.Path[length] == next.Path[length] {
+			length++
+		}
+		for _, path := range [][]Projection{current.Path[length:], next.Path[length:]} {
+			for _, projection := range path {
+				if projection.Kind == 'd' {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // mergeResult widens aliases with the same source to their common storage prefix.

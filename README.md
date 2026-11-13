@@ -1,8 +1,8 @@
 # Immutago
 
 A Go immutability analyzer and immutable collections. Embed
-`im.Marker` in a struct; the analyzer checks its fields and rejects
-mutations and unsupported aliases. No escape hatches.
+`im.Marker` in a struct; the analyzer checks field types and borrowing. Build owned values with ordinary
+Go assignments; shared references are read-only. No escape hatches.
 
 ```sh
 go run ./cmd/immutago ./...

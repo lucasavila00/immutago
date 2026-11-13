@@ -13,21 +13,27 @@ import (
 // checkLoans ports issuance, nonlexical region expiration, and forward loan checks.
 // Region kills precede an access. Storage overwrite kills follow its conflict check.
 func (e *engine) checkLoans() {
-	count := len(e.instructions)
-	gen, early, primary := make([]flow.Set, count), make([]flow.Set, count), make([]flow.Set, count)
-	for i := range count {
-		gen[i] = flow.NewSet()
-		early[i] = flow.NewSet()
-		primary[i] = flow.NewSet()
+	gen, early, primary := e.loanSets(e.loanRegions())
+	kill := make([]flow.Set, len(e.instructions))
+	for i := range kill {
+		kill[i] = early[i].Clone()
+		kill[i].Union(primary[i])
 	}
+	incoming, _ := flow.Forward(e.graph, gen, kill)
+	for _, a := range e.accesses {
+		e.checkAccess(a, incoming[a.point].Without(early[a.point]))
+	}
+}
+
+// loanRegions seeds actual reference uses and follows CFG predecessors to valid definition boundaries.
+func (e *engine) loanRegions() []flow.Set {
 	seeds := make([]flow.Set, len(e.loans))
 	for index, l := range e.loans {
 		uses := l.uses.Clone()
 		if l.deferred || l.external {
-			for point, succs := range e.graph.Succ {
-				if len(succs) == 0 {
-					uses.Add(point)
-				}
+			// Deferred reads can run on implicit panic edges; escaped readers can outlive this CFG.
+			for _, point := range e.graph.ReversePostorder() {
+				uses.Add(point)
 			}
 		}
 		definitions := flow.NewSet(l.point)
@@ -37,8 +43,19 @@ func (e *engine) checkLoans() {
 		seeds[index] = flow.BackwardLive(e.graph, uses, definitions)
 		seeds[index].Add(l.point)
 	}
-	// Copies retain their issuing region; no artificial lifetime boundary is added at a pointer copy.
-	regions := flow.SolveRegions(seeds, nil)
+	// Aliases carry their issuing loan ID, so their region constraints are already unified.
+	return flow.SolveRegions(seeds, nil)
+}
+
+// loanSets separates early region expiration from primary overwrite kills.
+func (e *engine) loanSets(regions []flow.Set) (gen, early, primary []flow.Set) {
+	count := len(e.instructions)
+	gen, early, primary = make([]flow.Set, count), make([]flow.Set, count), make([]flow.Set, count)
+	for i := range count {
+		gen[i] = flow.NewSet()
+		early[i] = flow.NewSet()
+		primary[i] = flow.NewSet()
+	}
 	for index, l := range e.loans {
 		gen[l.point].Add(index)
 		for point := range flow.OutOfScope(e.graph, l.point, regions[index]) {
@@ -46,39 +63,37 @@ func (e *engine) checkLoans() {
 		}
 	}
 	for _, a := range e.accesses {
-		if a.write {
-			for index, l := range e.loans {
-				if Overlap(a.ref.place, l.place, true) {
-					primary[a.point].Add(index)
-				}
+		if !a.write {
+			continue
+		}
+		for index, l := range e.loans {
+			if Overlap(a.ref.place, l.place, true) {
+				primary[a.point].Add(index)
 			}
 		}
 	}
-	kill := make([]flow.Set, count)
-	for i := range count {
-		kill[i] = early[i].Clone()
-		kill[i].Union(primary[i])
+	return gen, early, primary
+}
+
+// checkAccess rejects writes through shared references or across overlapping live loans.
+func (e *engine) checkAccess(a access, active flow.Set) {
+	if !a.write || !e.roots[a.ref.place.Root].protected {
+		return
 	}
-	incoming, _ := flow.Forward(e.graph, gen, kill)
-	for _, a := range e.accesses {
-		if !a.write || !e.roots[a.ref.place.Root].protected {
-			continue
-		}
-		root := e.roots[a.ref.place.Root]
-		if root.global && globallyProtected(root.typ) && !(e.fn.Name() == "init" || strings.HasPrefix(e.fn.Name(), "init#")) {
-			e.report(a.pos, "cannot write package-level immutable storage")
-			continue
-		}
-		if a.ref.shared {
-			e.report(a.pos, "cannot write through a shared reference")
-			continue
-		}
-		active := incoming[a.point].Without(early[a.point])
-		for index := range active {
-			if Overlap(a.ref.place, e.loans[index].place, false) {
-				e.report(a.pos, "cannot write borrowed storage while a shared reference is live")
-				break
-			}
+	origin := e.roots[a.ref.place.Root]
+	initializer := e.fn.Name() == "init" || strings.HasPrefix(e.fn.Name(), "init#")
+	if origin.global && globallyProtected(origin.typ) && !initializer {
+		e.report(a.pos, "cannot write package-level immutable storage")
+		return
+	}
+	if a.ref.shared {
+		e.report(a.pos, "cannot write through a shared reference")
+		return
+	}
+	for index := range active {
+		if Overlap(a.ref.place, e.loans[index].place, false) {
+			e.report(a.pos, "cannot write borrowed storage while a shared reference is live")
+			return
 		}
 	}
 }
