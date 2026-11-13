@@ -50,3 +50,8 @@ type Both struct {
 	im.LocalRef
 	Value int
 }
+
+type LocalStored struct {
+	im.LocalRef
+	Pointer *Local
+}

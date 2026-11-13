@@ -47,3 +47,12 @@ func nilReference() bool {
 	var pointer *Local = nil
 	return pointer == nil
 }
+
+type LocalSnapshot struct {
+	im.LocalRef
+	Value Local
+}
+
+func localSnapshot() LocalSnapshot {
+	return LocalSnapshot{Value: Local{Value: 1}}
+}

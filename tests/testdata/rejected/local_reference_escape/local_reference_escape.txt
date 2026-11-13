@@ -75,3 +75,6 @@ local_reference_escape.go:45:18: unsupported immutable operation: protected stor
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 local_reference_escape.go:48:11: struct cannot embed both im.Shared and im.LocalRef
 local_reference_escape.go:48:6: struct cannot embed both im.Shared and im.LocalRef
+local_reference_escape.go:56:2: immutable field Pointer: LocalRef pointers cannot be stored
+  owner: local_reference_escape.LocalStored; field type: *local_reference_escape.Local
+  fix: replace the pointer field or argument with an owned immutable value
