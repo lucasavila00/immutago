@@ -58,23 +58,33 @@ func (c *subsetChecks) call(call *ast.CallExpr) {
 	}
 	_, static := obj.(*types.Func)
 	static = c.methodCall(call, static)
-	if !static {
-		for i := 0; i < signature.Results().Len(); i++ {
-			result := signature.Results().At(i).Type()
-			if checker.Contains(result) || protectedCallable(result) {
-				c.report(call, "dynamic calls with immutable storage are unsupported")
-				break
-			}
-		}
+	if !static && protectedCallResults(signature.Results()) {
+		c.report(call, "dynamic calls with immutable storage are unsupported")
 	}
 	c.callArguments(call, obj, signature, static)
 
+	c.iteratorResult(call, obj)
+}
+
+// iteratorResult permits protected iterators only as the source of direct range.
+func (c *subsetChecks) iteratorResult(call *ast.CallExpr, obj types.Object) {
 	if libraryObject(obj) && obj.Name() == "All" && protectedCallable(c.pass.TypesInfo.TypeOf(call)) {
 		r, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
 		if !ok || ast.Unparen(r.X) != call {
 			c.report(call, "immutable iterators must be consumed by direct range")
 		}
 	}
+}
+
+// protectedCallResults checks each result for protected values or callbacks.
+func protectedCallResults(results *types.Tuple) bool {
+	for i := 0; i < results.Len(); i++ {
+		result := results.At(i).Type()
+		if checker.Contains(result) || protectedCallable(result) {
+			return true
+		}
+	}
+	return false
 }
 
 // unparenthesizedParent finds the context of an expression through parentheses.
@@ -154,7 +164,7 @@ func (c *subsetChecks) methodValue(sel *ast.SelectorExpr) {
 	if selection == nil || selection.Kind() == types.FieldVal || !c.protectedRoot(sel.X) {
 		return
 	}
-	if selection.Kind() == types.MethodExpr {
+	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) {
 		c.report(sel, "immutable method expressions are unsupported")
 		return
 	}
@@ -239,8 +249,6 @@ func genericSignature(signature *types.Signature) bool {
 
 // callArguments checks typed parameters and the effects of transporting each argument.
 func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signature *types.Signature, static bool) {
-	direct, _ := obj.(*types.Func)
-
 	for i, arg := range call.Args {
 		if i < signature.Params().Len() && protectedReference(signature.Params().At(i).Type()) && c.nilExpression(arg) {
 			c.report(arg, "reference operation is outside the supported allowlist")
@@ -253,12 +261,7 @@ func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signa
 		if !static && !libraryObject(obj) {
 			c.report(arg, "dynamic calls with immutable storage are unsupported")
 		}
-		if protectedReference(t) {
-			c.synchronous(call)
-			if libraryObject(obj) || (direct != nil && genericSignature(direct.Origin().Type().(*types.Signature))) {
-				c.report(arg, "generic borrowing calls are unsupported")
-			}
-		}
+		c.borrowArgument(call, arg, obj)
 		parameter := i
 		if signature.Variadic() && parameter >= signature.Params().Len()-1 {
 			parameter = signature.Params().Len() - 1
@@ -266,6 +269,18 @@ func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signa
 		if parameter >= 0 && parameter < signature.Params().Len() {
 			c.transport(arg, signature.Params().At(parameter).Type())
 		}
+	}
+}
+
+// borrowArgument requires synchronous, concrete calls for protected references.
+func (c *subsetChecks) borrowArgument(call *ast.CallExpr, argument ast.Expr, object types.Object) {
+	if !protectedReference(c.pass.TypesInfo.TypeOf(argument)) {
+		return
+	}
+	c.synchronous(call)
+	direct, _ := object.(*types.Func)
+	if libraryObject(object) || (direct != nil && genericSignature(direct.Origin().Type().(*types.Signature))) {
+		c.report(argument, "generic borrowing calls are unsupported")
 	}
 }
 

@@ -18,6 +18,10 @@ func TestStatementShapeRejects(t *testing.T) {
 		{"nested builder declaration", `func f(){s:=[]int{1};var a,b=(s[0]+1)*2,2;_,_=a,b;_=im.FreezeSlice(s)}`},
 		{"tuple result", `func pair()(V,int){return V{},0};func f(){v,n:=pair();_=v;_=n}`},
 		{"range targets", `func f(){var v V;for v.X,v.Y=range []int{2}{};_=v}`},
+		{"nested range index", `func f(){var v V;var a [1]int;var n int;for a[v.X],n=range []int{2}{};_=a;_=n}`},
+		{"nested range call", `func f(){var v V;var a [1]int;var n int;for a[read(&v)],n=range []int{2}{};_=a;_=n}`},
+		{"nested range builder", `func f(){s:=[]int{0};var a [1]int;var n int;
+   for a[s[0]],n=range []int{2}{};_=a;_=n;_=im.FreezeSlice(s)}`},
 		{"range mixed targets", `func f(){var v V;var n int;for n,v.X=range []int{2}{};_=n}`},
 	}
 	for _, tc := range cases {
