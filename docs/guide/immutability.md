@@ -300,12 +300,25 @@ path-copy updates.
 This list is **exhaustive** for a native container that you freeze, and for native
 containers of marked values. Unlisted operations are rejected.
 
-- Create a local with `make`, a native literal, a zero/nil value, or `Clone`.
-- Read and write indexed elements; read `len` and slice `cap`.
-- Build a slice with `values = append(values, element)`.
-- Use map `delete`, clear with `clear`, or copy elements with built-in `copy`.
-- Iterate over its values with `range` while it remains mutable.
-- Consume it in a direct synchronous Freeze call as a separate assignment or declaration.
+| Allowed form | Go example |
+| --- | --- |
+| Allocate a local slice or map | `values := make([]int, 2)` or `scores := make(map[string]int)` |
+| Initialize a local from a native literal | `values := []int{1, 2}` or `scores := map[string]int{"alice": 10}` |
+| Declare a zero or nil container | `var values []int` or `var scores map[string]int = nil` |
+| Clone a frozen collection into a local | `values := frozen.Clone()` |
+| Read an element | `value := values[i]` or `score := scores[key]` |
+| Write an element | `values[i] = 2` or `scores[key] = 10` |
+| Read the length or slice capacity | `n := len(values)` or `n := cap(values)` |
+| Append values to the same slice variable | `values = append(values, 1, 2)` |
+| Delete a map entry | `delete(scores, key)` |
+| Clear a container | `clear(values)` or `clear(scores)` |
+| Copy slice elements | `copy(destination, source)` |
+| Read elements in a loop | `for i, value := range values { ... }` |
+| Freeze into one variable | `frozen := im.FreezeSlice(values)` or `frozen := im.FreezeMap(scores)` |
+
+A local declaration can use `var` instead of `:=`. Each source and destination
+builder in `copy` must satisfy these rules. `append` takes individual elements;
+it does not accept another slice with `...`.
 
 An inline fresh allocation or literal can be frozen directly. A builder cannot
 be frozen while a range over it is active. Branches and loops cannot make a
@@ -315,21 +328,59 @@ consumed handle usable again.
 
 This list is **not exhaustive**; the list above defines what is supported.
 
-- Copy its handle into another variable, field, global, or interface.
-- Create a subslice, or take an element address.
-- Pass it to an arbitrary helper, capture it in a closure, or return it.
-- Freeze a parameter or a handle obtained from unknown code.
-- Read, write, inspect, or freeze the original handle again after freezing.
+| Rejected example | Allowed replacement |
+| --- | --- |
+| `alias := values` | `frozen := im.FreezeSlice(values)` shares read-only storage. |
+| `part := values[1:]` | Read elements with `values[i]`. |
+| `p := &values[0]` | Copy the element with `value := values[0]`. |
+| `update(values)` | Update elements in the current function before Freeze. |
+| `return values` | Freeze into a local, then return the frozen value. |
+| `im.FreezeSlice(parameter)` | Create and fill a local builder, then freeze it. |
+| `values[0] = 2` after Freeze | Use `next := frozen.Clone()`, then change `next[0]`. |
 
 These restrictions prevent writable aliases from surviving the ownership
 transfer. The checker verifies them; they are not obligations left to the caller.
 
 ### Reading frozen storage
 
-Use `Len`, slice `At`, and map `Get`. These operations allocate no storage.
-Direct `range` over `All()` yields value copies without cloning the container.
-Do not store or pass iterators that carry marked values. Use `Clone` when you
-need an independent mutable native container. See [collection costs](../performance.md).
+These are the supported collection methods and direct call forms:
+
+| Allowed form | Go example |
+| --- | --- |
+| Read the length | `n := frozen.Len()` |
+| Read a slice element | `value := frozen.At(i)` |
+| Read a map entry into new locals | `value, found := frozen.Get(key)` |
+| Iterate over slice or map entries | `for key, value := range frozen.All() { ... }` |
+| Clone into mutable native storage | `next := frozen.Clone()` |
+
+The receiver can be a local frozen value or a shared reference to one.
+Parentheses are allowed: `(frozen.Len)()` and `range (frozen.All())` have the same
+meaning. `Len`, `At`, and `Get` allocate no storage. `All` yields value copies
+without cloning the container. `Clone` creates independent storage.
+See [collection costs](../performance.md).
+
+These rejected examples are not exhaustive:
+
+```go
+// Rejected: save a method or call it through the type.
+read := frozen.At
+value := im.FrozenSlice[int].At(frozen, 0)
+
+// Allowed: call the method on the collection.
+value := frozen.At(0)
+```
+
+An iterator that carries marked values must be consumed by direct `range`:
+
+```go
+// Rejected when frozen contains marked values.
+entries := frozen.All()
+
+// Allowed: copy each element in a direct range.
+for key, value := range frozen.All() { ... }
+```
+
+Iterators with only scalar keys and values follow ordinary Go iterator rules.
 
 ## What we do not implement
 

@@ -105,6 +105,8 @@ var subsetFixes = map[string]string{
 		"function directly with a concrete immutable parameter",
 	"immutable callbacks are unsupported": "call a named, non-generic " +
 		"function directly with a concrete immutable parameter",
+	"immutable method expressions are unsupported": "call the method on the collection directly " +
+		"(value.Method(...)); do not call it through the collection type",
 	"bound immutable methods are unsupported": "call the method directly " +
 		"(value.Method(...)); do not save or pass its method value",
 	"closures cannot capture immutable storage": "move the code to a named " +
