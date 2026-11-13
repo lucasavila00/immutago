@@ -2,7 +2,7 @@
 
 Treat analyzer changes as production code. Use Go compiler type information.
 The public analyzer is in `pkg/analyzer/`, immutable values are in
-`pkg/immutable/`, type proofs are in `internal/checker/`, and the CLI is in
+`pkg/im/`, type proofs are in `internal/checker/`, and the CLI is in
 `cmd/immutago/`. End-to-end tests are in `tests/`.
 Read [the contract](docs/guide/immutability.md) before analyzer changes.
 
@@ -129,3 +129,10 @@ check performance with benchmarks.
 
 Never merge a pull request or enable automatic merging. Create the pull request,
 complete its checks and review, and mark it ready for review. The user merges it.
+
+## 13. Keep Public APIs Pleasant to Use
+
+Prefer concise package names and calls that read naturally in user code.
+Use `im` for the immutable value package, so imports need no routine alias.
+Keep examples idiomatic and convenient. Preserve the immutability guarantees
+when improving the API; do not make callers repeat implementation details.

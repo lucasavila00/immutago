@@ -1,7 +1,7 @@
 # Immutago
 
 A Go immutability analyzer and immutable collections. Embed
-`immutable.Marker` in a struct; the analyzer checks its fields and rejects
+`im.Marker` in a struct; the analyzer checks its fields and rejects
 mutations and unsupported aliases. No escape hatches.
 
 ```sh

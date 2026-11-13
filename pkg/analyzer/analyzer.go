@@ -210,11 +210,11 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	for field := range s.Fields() {
 		ft := field.Type()
 		if checker.IsLibraryType(ft, "Marker") && !field.Embedded() {
-			c.report(pos, "immutable.Marker must be embedded by value")
+			c.report(pos, "im.Marker must be embedded by value")
 			return
 		}
 		if ptr, ok := ft.Underlying().(*types.Pointer); ok && checker.IsLibraryType(ptr.Elem(), "Marker") {
-			c.report(pos, "immutable.Marker must be embedded by value")
+			c.report(pos, "im.Marker must be embedded by value")
 			return
 		}
 		if marked {
@@ -223,7 +223,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 				return
 			}
 		} else if checker.Contains(ft) {
-			c.report(pos, "unmarked struct contains immutable field "+field.Name()+"; embed immutable.Marker")
+			c.report(pos, "unmarked struct contains immutable field "+field.Name()+"; embed im.Marker")
 			return
 		} else if checker.PossibleStorage(ft) {
 			c.report(pos, "unsupported unmarked field "+field.Name()+": unresolved generic storage")

@@ -9,7 +9,7 @@ import (
 
 // testTypes creates compiler type objects with the sealed library's exact package identity.
 func testTypes() (*types.Named, *types.Named) {
-	pkg := types.NewPackage(LibraryPath, "immutable")
+	pkg := types.NewPackage(LibraryPath, "im")
 	marker := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Marker", nil), types.NewStruct(nil, nil), nil)
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, pkg, "T", nil),
 		types.NewInterfaceType(nil, nil).Complete())
@@ -106,7 +106,7 @@ func TestOwnershipGraph(t *testing.T) {
 	if Contains(node) {
 		t.Fatal("ordinary recursive type contains immutable storage")
 	}
-	other := types.NewNamed(types.NewTypeName(token.NoPos, types.NewPackage("other", "immutable"), "Marker", nil),
+	other := types.NewNamed(types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Marker", nil),
 		types.NewStruct(nil, nil), nil)
 	if Marked(markedType("Pretender", other)) {
 		t.Fatal("accepted marker from another package")

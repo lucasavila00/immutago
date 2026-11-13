@@ -1,6 +1,6 @@
 package consumer
 
-import im "github.com/lucasavila00/immutago/pkg/immutable"
+import "github.com/lucasavila00/immutago/pkg/im"
 
 type Scalar interface{ ~int | ~string }
 type EmbeddedScalar interface{ Scalar }

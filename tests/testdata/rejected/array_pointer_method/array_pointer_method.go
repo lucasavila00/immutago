@@ -1,6 +1,6 @@
 package rejected
 
-import im "github.com/lucasavila00/immutago/pkg/immutable"
+import "github.com/lucasavila00/immutago/pkg/im"
 
 type Numbers [2]int
 

@@ -13,7 +13,7 @@ Package checker proves structural immutability from Go compiler type information
 LibraryPath is the package whose sealed collection implementations are trusted.
 
 ```go
-const LibraryPath = "github.com/lucasavila00/immutago/pkg/immutable"
+const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 ```
 
 ## func Contains
