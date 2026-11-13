@@ -191,6 +191,7 @@ Use the reference and builder operations listed in this guide within these forms
 | Return a value | `return value` or `return frozen` |
 | Use ordinary value switches | `switch value.X { case 1: value.X = 2 }` |
 | Use `if` and ordinary loops | `if ready { value.X = 1 }` or `for i := range values { values[i] = i }` |
+| Assign one loop target | `for value.X = range count { ... }` |
 | Use checked operations inside a `select` case body | `case <-ready: values[0] = true` |
 
 Each write still requires an owned value with no live shared reference.
@@ -210,6 +211,17 @@ value.X, p = 1, &value
 // Allowed: one destination per statement.
 value.X = 1
 p := &value
+```
+
+```go
+// Rejected: two range targets, including a protected read in an index.
+for a[value.X], n = range numbers { ... }
+
+// Allowed: bind new loop variables, then assign each destination.
+for i, number := range numbers {
+    a[value.X] = i
+    n = number
+}
 ```
 
 ```go

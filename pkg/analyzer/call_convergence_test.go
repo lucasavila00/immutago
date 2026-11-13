@@ -29,12 +29,24 @@ func TestDirectCollectionCalls(t *testing.T) {
 func TestDirectCollectionCallBoundaries(t *testing.T) {
 	cases := []struct{ source, diagnostic string }{
 		{`func f(){s:=im.FreezeSlice([]int{1});fn:=(s.Len);_=fn()}`, "bound immutable methods are unsupported"},
-		{`func f(){s:=im.FreezeSlice([]int{1});_=im.FrozenSlice[int].Len(s)}`, "immutable method expressions are unsupported"},
-		{`func f(){m:=im.FreezeMap(map[int]V{});v,ok:=im.FrozenMap[int,V].Get(m,1);_=v;_=ok}`, "immutable method expressions are unsupported"},
-		{`func f(){m:=im.FreezeMap(map[int]V{});v,ok:=(im.FrozenMap[int,V].Get)(m,1);_=v;_=ok}`, "immutable method expressions are unsupported"},
+		{
+			`func f(){s:=im.FreezeSlice([]int{1});_=im.FrozenSlice[int].Len(s)}`,
+			"immutable method expressions are unsupported",
+		},
+		{
+			`func f(){m:=im.FreezeMap(map[int]V{});v,ok:=im.FrozenMap[int,V].Get(m,1);_=v;_=ok}`,
+			"immutable method expressions are unsupported",
+		},
+		{
+			`func f(){m:=im.FreezeMap(map[int]V{});v,ok:=(im.FrozenMap[int,V].Get)(m,1);_=v;_=ok}`,
+			"immutable method expressions are unsupported",
+		},
 		{`func read(p *V){};func f(){read(nil)}`, "reference operation is outside the supported allowlist"},
 		{`func read(p *V){};func f(){read(((nil)))}`, "reference operation is outside the supported allowlist"},
-		{`func read(p *V){};func f(){v:=V{};nil:=&v;copy:=nil;read(copy)}`, "references require one fixed declaration from an owned local"},
+		{
+			`func read(p *V){};func f(){v:=V{};nil:=&v;copy:=nil;read(copy)}`,
+			"references require one fixed declaration from an owned local",
+		},
 	}
 	for _, test := range cases {
 		t.Run(test.source, func(t *testing.T) {

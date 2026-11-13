@@ -42,7 +42,8 @@ func TestFreezeOwnership(t *testing.T) {
 		{"borrowed slice clone", `f:=im.FreezeSlice([]int{1});p:=&f;s:=p.Clone();s[0]=2;_=im.FreezeSlice(s)`, false},
 		{"dereferenced slice clone", `f:=im.FreezeSlice([]int{1});p:=&f;s:=(*p).Clone();s[0]=2;_=im.FreezeSlice(s)`, false},
 		{"borrowed map clone", `f:=im.FreezeMap(map[string]int{"x":1});p:=&f;m:=p.Clone();m["x"]=2;_=im.FreezeMap(m)`, false},
-		{"dereferenced map clone", `f:=im.FreezeMap(map[string]int{"x":1});p:=&f;m:=(*p).Clone();m["x"]=2;_=im.FreezeMap(m)`, false},
+		{"dereferenced map clone", `f:=im.FreezeMap(map[string]int{"x":1});p:=&f;m:=(*p).Clone();` +
+			`m["x"]=2;_=im.FreezeMap(m)`, false},
 		{"named clone", `v:=Fake{};p:=&v;s:=p.Clone();_=im.FreezeSlice(s)`, true},
 		{"nil", `var s []int;_=im.FreezeSlice(s);_=im.FreezeMap[string,int](nil)`, false},
 		{"marked builder", `s:=[]V{{X:1}};s[0].X=2;_=s[0]`, false},
