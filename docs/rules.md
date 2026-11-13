@@ -1,612 +1,242 @@
 # Language rules
 
-[Documentation](README.md) · [Get started](getting-started.md) · [Collection API](../pkg/im/readme.md)
+[Docs](README.md) · [Example](getting-started.md) · [API](../pkg/im/readme.md)
 
-Marked objects are immutable from construction. You can copy and share them.
-Go's garbage collector manages their lifetime. A variable can be rebound to a
-new value, but a field, element of protected storage, or pointer target cannot
-be changed. Prepare scalar locals first, then construct the final object.
+Objects are immutable from construction. Variables can be reassigned; their
+objects cannot change. The allowed forms below are complete. Other protected
+operations are rejected. Rejected examples are not exhaustive.
 
-The allowed Go forms in this guide define the complete supported language.
-The checker must match each complete form and prove its type rules. Unlisted
-operations are rejected. Rejection examples are not exhaustive.
+**Protected storage** means marked values, their fields, frozen collections,
+and arrays containing them. Ordinary Go code outside these rules is unchanged.
 
-## Choose a marker
+## Markers and types
 
-Both markers make an object immutable from construction. Neither permits
-mutable initialization, field writes, or writes through a pointer.
-
-As a Rust analogy, `Immut` is closer to shared ownership through `Rc<T>` or
-`Arc<T>` than to `&'static T`. Go's garbage collector can collect an unreachable
-object; the marker adds no reference-counting runtime. `ImmutNoRef` is closer
-to a scoped `&'a T` that cannot leave local use or direct non-retaining calls.
-The checker does not infer a smallest lifetime or use NLL.
-
-| Marker | Complete reference policy |
-| --- | --- |
-| `im.Immut` | References can be local, copied, rebound, stored, passed to direct typed functions, and returned. |
-| `im.ImmutNoRef` | References can be local, copied, rebound, and passed to direct typed functions that do not retain them. References cannot be stored, returned, or captured. |
-
-Embed exactly one selected marker by value. A struct with both markers is rejected. `ImmutNoRef` restricts references, not value
-copies: a value copy can be stored or returned. Go manages object lifetime for
-both markers. Neither marker supplies resource destruction or a general memory
-leak guarantee.
-
-```go
-type Point struct { im.Immut; X int }
-type Local struct { im.ImmutNoRef; X int }
-func readLocal(value *Local) int { return value.X }
-func copyLocal(value Local) Local { return value }
-```
-
-The reference table below describes `Immut`. The complete additional rules for
-`ImmutNoRef` appear in [local-only references](#local-only-references).
-
-## Find a rule
-
-- [Value types](#allowed-value-types): which fields and collection arguments pass.
-- [Objects](#immutable-objects) and [references](#shared-references): construction and sharing.
-- [Calls](#constructors-and-calls): constructors and readers.
-- [References](#what-you-can-do-with-a-reference): complete allowed operations.
-- [Statements](#what-statements-you-can-use): complete allowed statement forms.
-- [Collections](#frozen-collections): Freeze, builders, reads, and Clone.
-- [Scope](#what-we-do-not-implement): checks and unsupported Rust features.
-
-Here, **protected storage** means marked values, their fields, frozen
-collections, and arrays containing protected values. A **builder** is a native map or slice checked for exclusive
-ownership. The builder section states which native containers are checked.
-Examples with `...` in a block omit ordinary code; the ellipsis is not Go syntax.
-
-
-## Allowed value types
-
-A stored field or collection argument must match one of these forms. Each
-component is checked recursively; all fields, keys, and elements must pass.
-
-| Allowed type | Go example |
-| --- | --- |
-| Boolean, integer, floating-point, complex, or string scalar | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
-| A defined scalar type | `type Count int` |
-| An unnamed array of allowed elements | `[2]int` or `[2]Point` |
-| A struct that directly embeds `im.Immut` or `im.ImmutNoRef` by value | `type Point struct { im.Immut; X, Y int }` |
-| A pointer to a concrete `Immut` struct with recursively allowed fields | `*Point` |
-| A frozen collection of allowed types | `im.FrozenSlice[Point]` or `im.FrozenMap[string, Point]` |
-| A type alias for an allowed type | `type Position = Point` |
-| A defined struct whose underlying struct has the marker and allowed fields | `type Position Point` |
-
-The Go examples below use this type and import:
+Embed exactly one marker by value:
 
 ```go
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type Point struct {
-    im.Immut
-    X, Y int
-}
+type Point struct { im.Immut; X int }
+type Local struct { im.ImmutNoRef; X int }
+type Link struct { im.Immut; P *Point }
 ```
 
-Aliases are resolved before checking the marker and collection identities.
-An alias for either marker can be embedded. A named marker field or `*im.Immut`
-does not mark a struct. Every nested struct must have its own marker.
+| Marker | Reference policy |
+| --- | --- |
+| `im.Immut` | References can be copied, stored, passed to direct typed functions, and returned. |
+| `im.ImmutNoRef` | References stay local or pass to direct typed non-retaining functions. No storage, returns, or captures. Value copies can be stored and returned. |
 
-The following rejected examples are not exhaustive:
+In Rust terms, `Immut` resembles `Rc<T>`/`Arc<T>` with Go's GC managing lifetime;
+`ImmutNoRef` resembles a scoped `&'a T`. Neither uses NLL or mutable borrows.
+
+Every stored field, key, and element must recursively match this table:
+
+| Allowed type | Example |
+| --- | --- |
+| Boolean, integer, float, complex, or string | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
+| Defined scalar | `type Count int` |
+| Unnamed array of allowed elements | `[2]int`, `[2]Point` |
+| Struct with exactly one embedded marker and allowed fields | `Point`, `Local` |
+| Pointer to a concrete `Immut` struct with allowed fields | `*Point` |
+| Frozen collection of allowed types | `im.FrozenSlice[Point]`, `im.FrozenMap[string, *Point]` |
+| Alias or defined marked struct | `type Position = Point`, `type Position Point` |
+
+Marker aliases work. Named marker fields, pointer-embedded markers, and structs
+with both markers fail. Every nested struct needs its own marker. Unmarked
+structs cannot contain protected storage, including through native containers.
+
+Stored `*Local`, scalar pointers, native slices/maps, channels, interfaces, and
+functions fail. Named arrays need a marked wrapper:
 
 ```go
-// Rejected as a stored field type: a named array has no marker.
-type Counts [2]int
-
-// Allowed: wrap the array in a marked struct.
-type Counts struct {
-    im.Immut
-    Values [2]int
-}
+// Rejected as a stored type: type Counts [2]int
+// Allowed:
+type Counts struct { im.Immut; Values [2]int }
+type Node struct { im.Immut; Next *Node } // Recursive immutable types work.
 ```
 
-Pointers to scalars and native slices, maps, channels, interfaces, and functions
-cannot be fields of a marked struct. A stored pointer must target a concrete `Immut` struct whose fields pass the
-recursive proof. Inline `ImmutNoRef` values can be fields and collection
-elements. Pointers to arrays, frozen wrappers, scalar values, other pointers,
-or `ImmutNoRef` structs cannot be stored. Unmarked structs cannot contain marked values or
-frozen collections, including through arrays or native containers. Recursive
-collection types are allowed when every reachable field passes:
+Only the fixed `im` APIs handle protected storage generically. User generic
+types, aliases, functions, and instantiations involving protected storage fail:
 
 ```go
-type Tree struct {
-    im.Immut
-    Value int
-    Children im.FrozenSlice[Tree]
-}
+// Rejected: type Box[T any] struct { im.Immut; Value T }
+// Allowed:
+type Box struct { im.Immut; Value Point }
 ```
 
-### Generic code
+Ordinary generics such as `Plain[int]` remain supported; `Plain[Point]` does not.
 
-User-defined generic types and functions cannot contain or handle protected
-storage. This includes marked generic structs, generic aliases for frozen
-collections, and generic functions that construct or return protected values.
-The fixed `im` generic types and functions remain supported:
+## Construction and references
+
+Prepare ordinary locals, then construct the object. Copies are also immutable.
+Struct/array copies copy their fields; frozen wrappers and shared pointers keep
+referring to the same read-only storage.
 
 ```go
-values := im.FreezeSlice([]Point{{X: 1}})
+x := 1
+if condition { x = 2 }
+point := Point{X: x}
+point = Point{X: 3} // Whole-variable replacement is allowed.
+p := &Point{X: 1}
+q := p
+p = &Point{X: 2} // q still observes X == 1.
 ```
 
-Ordinary generic Go code remains supported when it does not handle protected
-storage. `type Plain[T any] struct { Value T }` is allowed with scalar type
-arguments, such as `Plain[int]`. A user generic type, alias, or function cannot
-be instantiated with a protected type argument, such as `Plain[Point]`.
+### What you can do with a reference
 
-For example:
+These common forms apply to both markers. For `Local`, every binding must stay
+local; a called function must not retain its reference.
 
-```go
-func identity[T ~int | ~string](value T) T { return value }
-number := identity(1)
-```
+| Allowed form | Example |
+| --- | --- |
+| Declare a zero or nil pointer | `var p *Point`, `var p *Local = nil` |
+| Construct fresh storage | `p := &Point{X: 1}`, `p := new(Point)` |
+| Copy a value into fresh storage | `p := new(point)`, `p := new(Point{X: 1})` |
+| Copy, rebind, or discard a pointer | `q := p`, `p = q`, `p = nil`, `_ = p` |
+| Read a field or copy the whole value | `x := p.X`, `value := *p` |
+| Compare pointers or nil | `same := p == q`, `if p != nil { ... }` |
+| Pass to a direct function with an exact concrete parameter type | `read(p)`; `func read(p *Point) int { return p.X }` |
 
-These rejected examples are not exhaustive:
+`Immut` additionally permits these forms:
 
-```go
-// Rejected: a user generic type contains protected storage.
-type Box[T ~int] struct { im.Immut; Value T }
+| Allowed form | Example |
+| --- | --- |
+| Store in a marked field | `link := Link{P: p}` |
+| Store in an exclusive native builder | `values := []*Point{p}` |
+| Store in a package variable | `saved = p` |
+| Read a stored reference | `p := link.P`, `p := values[i]` |
+| Return or receive a reference from a named function | `return p`, `p := makePoint()` |
 
-// Allowed: use a concrete marked type.
-type CountBox struct { im.Immut; Value int }
+Parentheses and aliases preserve these forms. Pointer targets must be concrete
+marked structs, never arrays, frozen wrappers, scalars, or other pointers.
+References originate only in fresh construction, not `&point` or `&owner.Child`:
+reassigning addressed storage would change what an existing reference observes.
 
-// Rejected: a user generic call handles a protected value.
-copy := identityPoint(point) // identityPoint[T any](value T) T
+| Rejected example | Replacement |
+| --- | --- |
+| `point.X = 2`, `p.X = 2`, `*p = Point{}` | `point = Point{X: 2}` or `p = &Point{X: 2}` |
+| `p := &point` | `p := new(point)` |
+| `&point.X` | Read or copy the scalar. |
+| `new(im.FrozenSlice[int])` | Pass the frozen wrapper by value. |
+| `&[2]Point{}` | Put the array in a marked struct. |
+| `[]*Point{{X: 1}}` | Use explicit allocation: `[]*Point{&Point{X: 1}}`. |
+| `(*Point)(nil)` | `var p *Point = nil` |
+| Returning or storing `p` where `p` is `*Local` | Return or store the value copy `*p`. |
 
-// Allowed: copy directly or use a concrete function.
-copy := point
-```
+## Statements and calls
 
-## Immutable objects
+Use the operations above inside these statement forms:
 
-Construct the complete value after conditional scalar work:
+| Allowed form | Example |
+| --- | --- |
+| Declare or assign one destination | `value := Point{X: 1}`, `value = Point{X: 2}` |
+| Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
+| Bind a map reader's two results to new locals | `value, found := frozen.Get(key)` |
+| Freeze in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
+| Call a direct named function | `read(p)`, `n := read(p)` |
+| Return values or `Immut` references, including multiple results | `return point`, `return p, true` |
+| Forward named results directly | `return makePair()`, `takePair(makePair())` |
+| Use `if`, ordinary loops, or value switches | `if ready { p = makePoint() }`, `for i := range values { ... }`, `switch p.X { ... }` |
+| Assign one existing loop target | `for i = range count { ... }` |
+| Use checked operations in a select case body | `case <-ready: values[0] = value` |
 
-```go
-x := 20
-if condition {
-    x = 10
-}
-point := Point{X: x, Y: 40}
-point = Point{X: 30, Y: 40} // Rebind the whole variable.
-```
+The one-destination rule applies to assignments and declarations, not returns.
+`Get` is the only two-destination exception; both destinations must be new local
+names or blanks. Blocks, `break`, and `continue` follow ordinary Go rules.
+Whole package variables can also be reassigned; their objects remain immutable.
 
-A field write is rejected even before sharing and even after the last read:
+| Rejected example | Replacement |
+| --- | --- |
+| `point, found := makePair()` | Return a marked result struct and bind it to one variable. |
+| `value, p = Point{}, &Point{}` | Use two statements. |
+| `for a[point.X], n = range values { ... }` | Bind fresh loop locals, then assign each destination separately. |
+| `use(im.FreezeSlice(values))` | Bind Freeze to a local, then call `use`. |
+| `case _, values[0] = <-ready:` | Receive first; write in the case body. |
+| `case <-watch(im.FreezeSlice(values)):` | Freeze and compute the channel before the select; receive from the channel variable. |
 
-```go
-// Rejected: marked fields are immutable from construction.
-point.X = 99
-
-// Allowed: construct a new value and rebind the variable.
-point = Point{X: 99, Y: point.Y}
-```
-
-Go copies structs and arrays on assignment. A copy is also immutable. Frozen
-collection fields share read-only storage. Copying does not clone collections.
-
-## Shared references
-
-A protected reference permits reads and sharing. It does not permit writes.
-Unlike a Rust borrow, it has no checked lexical or non-lexical lifetime. Go's
-garbage collector keeps a reachable object alive.
-
-```go
-point := &Point{X: 1}
-other := point
-point = &Point{X: 2}
-x := other.X // Still 1.
-```
-
-A reference must start with fresh construction: `&Point{...}`, `new(Point)`,
-or `new(value)`. The expression form of `new` copies the value into new storage.
-Taking `&point` or `&shape.Child` is rejected. Rebinding an addressed variable
-would change an object that other references observe.
-
-References can be stored in marked fields and frozen collections when their
-resolved target types pass the recursive proof:
-
-```go
-type Node struct {
-    im.Immut
-    Value int
-    Next *Node
-}
-func prepend(next *Node) *Node {
-    return &Node{Value: 1, Next: next}
-}
-```
-
-## Constructors and calls
-
-Named functions can construct, receive, and return protected values and shared
-references. Calls with protected operands or results must be direct, synchronous, and
-concretely typed. Calls with `ImmutNoRef` references must not retain them. The checker checks
-the callee too, including callees in other packages.
+Protected calls are direct, synchronous, and concrete. Methods on protected
+receivers (including promoted methods), interface transport, protected callbacks, closure captures,
+`go`, and `defer` are unsupported. Dependencies are checked too.
 
 ```go
-func makePoint(flag bool) *Point {
-    x := 0
-    if flag {
-        x = 1
-    }
-    return &Point{X: x}
-}
-func read(point *Point) int { return point.X }
-```
-
-A callback with only scalar parameters and results can receive scalar copies.
-A closure cannot capture a protected value or reference of either mode.
-Copy a scalar first:
-
-```go
+// Rejected: callback := func() int { return point.X }
+// Allowed: pass a scalar copy to ordinary callback code.
 x := point.X
 callback := func() int { return x }
 ```
 
-## What you can do with a reference
-
-This list is **exhaustive** for references to protected storage. A target can
-be a concrete `Immut` struct.
-A direct pointer to `ImmutNoRef` uses the local-only rules below.
-Scalar fields and scalar-only arrays cannot be addressed through protected
-storage. Unlisted operations are rejected.
-
-| Allowed form | Go example |
-| --- | --- |
-| Declare a zero reference | `var p *Point` |
-| Construct an immutable object | `p := &Point{X: 1}` or `p := new(Point)` |
-| Construct from a value copy | `p := new(point)` or `p := new(Point{X: 1})` |
-| Copy or rebind a reference variable | `q := p` or `p = q` or `p = nil` |
-| Store in a marked field | `node := Node{Next: p}` |
-| Store in an exclusive builder | `values := []*Point{p}` |
-| Store in a package variable | `saved = p` |
-| Return a reference | `return p` or `return &Point{X: 1}` |
-| Discard a reference | `_ = p` |
-| Read a field | `x := p.X` |
-| Read a frozen field by value | `n := p.Items.Len()` |
-| Copy the complete value | `next := *p` |
-| Compare references or nil | `same := p == q` or `if p != nil { ... }` |
-| Pass to a direct named function | `x := read(p)` or `x := read(&Point{X: 1})` |
-
-Parentheses and Go type aliases preserve these forms. Concrete pointer
-parameters and results are allowed. User-defined methods on protected values,
-including promoted methods, are unsupported. Only the listed `im` methods
-`Get`, `At`, `Len`, `All`, and `Clone` are supported.
-
-## Local-only references
-
-For `ImmutNoRef`, this is the complete allowed reference list. Unlisted forms
-are rejected. A referenced type must pass the same recursive immutable proof.
-
-| Allowed form | Go example |
-| --- | --- |
-| Declare a zero local reference | `var p *Local` |
-| Construct a fresh local object | `p := &Local{X: 1}` or `p := new(Local)` |
-| Construct from a value copy | `p := new(local)` or `p := new(Local{X: 1})` |
-| Copy or rebind a local reference | `q := p` or `p = q` or `p = nil` |
-| Read or discard a local reference | `x := p.X` or `_ = p` |
-| Copy the referenced value | `value := *p` |
-| Compare references or nil | `same := p == q` or `if p != nil { ... }` |
-| Pass to a direct typed non-retaining function | `x := readLocal(p)` |
-| Declare a concrete reader parameter | `func readLocal(p *Local) int { return p.X }` |
-
-Value copies remain ordinary immutable values:
-
-```go
-func localValue() Local { return Local{X: 1} }
-type Snapshot struct { im.Immut; Value Local }
-```
-
-The following rejected examples are not exhaustive:
-
-```go
-// Rejected: a local-only reference leaves the function.
-func escape() *Local { return &Local{X: 1} }
-
-// Allowed: return a value copy.
-func copyOut() Local { return Local{X: 1} }
-```
-
-```go
-// Rejected: storing a local-only reference.
-type Saved struct { im.Immut; Value *Local }
-
-// Allowed: store the immutable value.
-type SavedValue struct { im.Immut; Value Local }
-```
-
-References to `ImmutNoRef` also cannot enter a package variable, native builder,
-frozen collection, closure, interface, deferred call, or goroutine. The checker
-checks reader bodies and dependencies; a concrete parameter does not grant
-permission to retain the pointer.
-
-## What you cannot do with a reference
-
-These examples are **not exhaustive**. The allowed list above is complete.
-
-| Rejected Go example | Allowed replacement |
-| --- | --- |
-| `p.X = 1` or `*p = Point{}` | `p = &Point{X: 1}` |
-| `value.Read()` | `Read(&Point{X: value.X})` |
-| `var x any = p` | Use a concrete `*Point` variable. |
-| `func() { read(p) }` | Call `read(p)` directly, or capture a scalar copy. |
-| `defer read(p)` or `go read(p)` | Call `read(p)` synchronously. |
-| `p := &[2]Point{}` | Wrap the array in a marked struct and construct its pointer. |
-| `p := new(im.FrozenSlice[int])` | Pass a frozen collection by value. |
-| `&point` or `&shape.Child` | Construct `&Point{X: point.X}`. |
-| `&point.X` | Read `point.X`, or copy it to a scalar local. |
-| `&p` | Pass `p` directly. |
-| `readGeneric(p)` | Use a concrete `*Point` parameter. |
-
-The checker enforces these rules. There are no caller obligations or escape
-hatches that permit rejected operations.
-
-## What statements you can use
-
-This list is **complete** for statements that use protected storage or a builder.
-Use the reference and builder operations listed in this guide within these forms.
-
-| Allowed form | Go example |
-| --- | --- |
-| Declare one value or builder | `value := Point{X: 1}` or `values := []int{1, 2}` |
-| Declare one shared reference | `p := &Point{X: value.X}` |
-| Assign one destination | `value = Point{X: 1}` or `values[0] = 2` |
-| Update one destination | `values[0]++` or `values[0] += 2` |
-| Bind both results of the listed map reader to new locals | `value, found := frozen.Get(key)` |
-| Freeze into one variable | `frozen := im.FreezeSlice(values)` |
-| Freeze and discard the result | `_ = im.FreezeSlice(values)` |
-| Call a named reader | `read(p)` or `n := read(&Point{X: 1})` |
-| Return one or more values | `return value` or `return value, found` |
-| Forward a named function's results directly | `return makePair()` or `takePair(makePair())` |
-| Use ordinary value switches | `switch value.X { case 1: value = Point{X: 2} }` |
-| Use `if` and ordinary loops | `if ready { value = Point{X: 1} }` or `for i := range values { values[i] = i }` |
-| Assign one loop target | `for i = range count { ... }` |
-| Use checked operations inside a `select` case body | `case <-ready: values[0] = true` |
-
-Writes can rebind complete variables or change native builder storage.
-Writes to marked fields, protected array elements, or pointer targets fail.
-A consumed builder cannot be used again. Blocks, `break`, `continue`, and other
-control flow without protected operands follow ordinary Go rules. A Freeze call must be the only
-right-hand-side expression of its assignment or declaration. The two-result
-`Get` form creates new locals; it cannot assign into existing protected storage.
-The one-destination limit applies to assignments and declarations, not to
-returns. Multiple results may contain protected values or `Immut` shared references. A named function can pass those results directly to another named
-function with matching concrete parameters:
-
-```go
-func makePair() (Point, bool) { return Point{X: 1}, true }
-func forwardPair() (Point, bool) { return makePair() }
-func takePair(point Point, found bool) { ... }
-
-// Allowed inside a function: no local multiple assignment.
-takePair(makePair())
-
-// Rejected: two local destinations with a protected result.
-point, found := makePair()
-```
-
-Use a marked result struct when callers need to bind several related results
-together. Its declaration has one destination.
-
-## Statement examples that are not allowed
-
-These examples are **not a complete list**. Only the forms above are allowed.
-
-```go
-// Rejected: two destinations involving protected storage.
-value, p = Point{X: 1}, &Point{}
-
-// Allowed: one destination per statement.
-value = Point{X: 1}
-p := &Point{X: value.X}
-```
-
-```go
-// Rejected: two range targets, including a protected read in an index.
-for a[value.X], n = range numbers { ... }
-
-// Allowed: bind new loop variables, then assign each destination.
-for i, number := range numbers {
-    a[value.X] = i
-    n = number
-}
-```
-
-```go
-// Rejected: Freeze inside another expression.
-use(im.FreezeSlice(values))
-return im.FreezeSlice(values)
-
-// Allowed: bind the frozen value first.
-frozen := im.FreezeSlice(values)
-use(frozen)
-return frozen
-```
-
-```go
-// Rejected: a builder in a select receive target or channel expression.
-select {
-case _, values[0] = <-ready:
-case <-watch(im.FreezeSlice(values)):
-}
-
-// Allowed: receive first, then write inside the case body.
-select {
-case <-ready:
-    values[0] = true
-}
-frozen := im.FreezeSlice(values)
-```
-
 ## Frozen collections
 
-Build a native Go container, then transfer its storage to a frozen view:
+Freeze consumes an exclusive native builder without copying. The old handle
+cannot be used again. Frozen copies share storage; Clone creates an independent
+native container for edits, sharing only immutable element references.
 
 ```go
-scores := make(map[string]int, 2)
-scores["alice"] = 10
-scores["bob"] = 20
+scores := map[string]int{"alice": 10}
 frozen := im.FreezeMap(scores)
-score, found := frozen.Get("alice")
-// scores["alice"] = 30 // rejected: scores has been consumed
-```
-
-`im.FreezeSlice([]int{1, 2})` works the same way. The resulting types are
-`im.FrozenMap[K, V]` and `im.FrozenSlice[T]`. They have no update methods.
-Freeze does not copy or allocate. See the [zero-overhead target](performance.md#zero-abstraction-overhead)
-for the performance contract.
-
-In Rust terms, freezing **moves** the builder into a read-only owner. Go does not
-perform that move itself: the checker rejects every later use of the original
-handle. Copies of the frozen wrapper share read-only storage and remain valid.
-Keys and elements must recursively satisfy the immutable type rules above.
-
-For an update, clone into independent mutable storage, edit it, and freeze again:
-
-```go
 next := frozen.Clone()
-next["alice"] = 30
-updated := im.FreezeMap(next)
-// frozen still contains alice: 10; updated contains alice: 30.
+next["alice"] = 20
+updated := im.FreezeMap(next) // frozen still contains 10.
 ```
 
-`Clone` costs O(n) time and storage. It is a shallow copy; recursively immutable
-elements make that sufficient. Scalar clones that you do not freeze can be used
-as ordinary mutable Go containers. If you later freeze a clone, its earlier
-uses must satisfy the exclusive-builder rules too. This API has no persistent
-path-copy updates.
+### Builders
 
-### What you can do with a builder
+These rules apply to any native map/slice you freeze, and to native containers
+whose keys or elements contain protected storage.
 
-This list is **exhaustive** for a native container that you freeze, and for native
-containers whose keys or elements contain marked values or frozen collections.
-Unlisted operations are rejected.
-
-| Allowed form | Go example |
+| Allowed form | Example |
 | --- | --- |
-| Allocate a local slice or map | `values := make([]int, 2)` or `scores := make(map[string]int)` |
-| Initialize a local from a native literal | `values := []int{1, 2}` or `scores := map[string]int{"alice": 10}` |
-| Declare a zero or nil container | `var values []int` or `var scores map[string]int = nil` |
-| Clone a frozen collection into a local | `values := frozen.Clone()` |
-| Read an element | `value := values[i]` or `score := scores[key]` |
-| Write an element | `values[i] = 2` or `scores[key] = 10` |
-| Read the length or slice capacity | `n := len(values)` or `n := cap(values)` |
-| Append values to the same slice variable | `values = append(values, 1, 2)` |
-| Delete a map entry | `delete(scores, key)` |
-| Clear a container | `clear(values)` or `clear(scores)` |
-| Copy slice elements | `copy(destination, source)` |
-| Read elements in a loop | `for i, value := range values { ... }` |
-| Freeze into one variable | `frozen := im.FreezeSlice(values)` or `frozen := im.FreezeMap(scores)` |
+| Declare from make, literal, zero, nil, or Clone | `values := make([]int, 2)`, `values := []int{1}`, `var values []int`, `values := frozen.Clone()` |
+| Read or replace a slot | `x := values[i]`, `values[i] = x`, `scores[key] = x` |
+| Read length or slice capacity | `len(values)`, `cap(values)` |
+| Append individual elements to the same variable | `values = append(values, 1, 2)` |
+| Delete, clear, or copy | `delete(scores, key)`, `clear(values)`, `copy(destination, source)` |
+| Range over elements | `for i, value := range values { ... }` |
+| Consume with Freeze | `frozen := im.FreezeSlice(values)`, `frozen := im.FreezeMap(scores)` |
 
-A local declaration can use `var` instead of `:=`. Each source and destination
-builder in `copy` must satisfy these rules. `append` takes individual elements;
-it does not accept another slice with `...`.
+`var` declarations also work. `copy` operands must satisfy the builder rules.
+Direct fresh Freeze inputs can be `make`, a literal, nil, or a Clone result:
+`im.FreezeSlice(make([]int, 2))`, `im.FreezeSlice([]int{1})`,
+`im.FreezeSlice[int](nil)`, `im.FreezeSlice(frozen.Clone())`.
+Each needs its own assignment/declaration; matching map forms work too.
 
-These direct fresh inputs are also allowed. The outer Freeze must still have
-its own assignment or declaration:
-
-| Fresh input | Go example |
+| Rejected example | Replacement |
 | --- | --- |
-| Native allocation | `frozen := im.FreezeSlice(make([]int, 2))` |
-| Native literal | `frozen := im.FreezeMap(map[string]int{"alice": 10})` |
-| Nil | `frozen := im.FreezeSlice[int](nil)` |
-| Direct Clone result | `next := im.FreezeMap(frozen.Clone())` |
+| `alias := values`, `values[1:]`, `&values[0]` | Read/copy elements; use Clone for independent mutable storage. |
+| `update(values)`, `return values` | Edit locally, then freeze and pass/return the frozen value. |
+| `im.FreezeSlice(parameter)` | Construct a local builder first. |
+| `values = append(values, other...)` | Append individual elements. |
+| Freeze inside an active range over the same builder | Finish the range, then freeze. |
+| Any use of `values` after Freeze | Use the frozen value, or Clone it. |
 
-Each form applies to both matching collection types. A builder cannot
-be frozen while a range over it is active. Branches and loops cannot make a
-consumed handle usable again.
+A branch or loop cannot make a consumed handle usable again. Ordinary scalar
+clones that are never frozen follow ordinary Go container rules.
 
-### What you cannot do with a builder
+### Reads and Clone
 
-This list is **not exhaustive**; the list above defines what is supported.
-
-| Rejected example | Allowed replacement |
+| Allowed method | Example |
 | --- | --- |
-| `alias := values` | `frozen := im.FreezeSlice(values)` shares read-only storage. |
-| `part := values[1:]` | Read elements with `values[i]`. |
-| `p := &Point{X: value.X}s[0]` | Copy the element with `value := values[0]`. |
-| `update(values)` | Update elements in the current function before Freeze. |
-| `return values` | Freeze into a local, then return the frozen value. |
-| `im.FreezeSlice(parameter)` | Create and fill a local builder, then freeze it. |
-| `values[0] = 2` after Freeze | Use `next := frozen.Clone()`, then change `next[0]`. |
+| Length | `n := frozen.Len()` |
+| Slice element | `value := frozen.At(i)` |
+| Map entry | `value, found := frozen.Get(key)` |
+| Iteration | `for key, value := range frozen.All() { ... }` |
+| Independent mutable copy | `next := frozen.Clone()` |
 
-These restrictions prevent writable aliases from surviving the ownership
-transfer. The checker verifies them; they are not obligations left to the caller.
+Receivers can be frozen locals, fields, or named-call results. Pass wrappers
+by value. Parentheses preserve direct calls and ranges.
 
-### Reading frozen storage
+Saving methods (`read := frozen.At`) or calling through the type
+(`im.FrozenSlice[int].At(frozen, 0)`) fails; use `frozen.At(0)`.
+Iterators carrying protected values require direct `range frozen.All()`.
+Other iterators, such as those over `int` or `[2]int`, follow ordinary Go rules.
+See [performance](performance.md) for operation costs.
 
-These are the supported collection methods and direct call forms:
+## Check the program
 
-| Allowed form | Go example |
-| --- | --- |
-| Read the length | `n := frozen.Len()` |
-| Read a slice element | `value := frozen.At(i)` |
-| Read a map entry into new locals | `value, found := frozen.Get(key)` |
-| Iterate over slice or map entries | `for key, value := range frozen.All() { ... }` |
-| Clone into mutable native storage | `next := frozen.Clone()` |
+Run `immutago ./...` or `go vet -vettool=/absolute/path/to/immutago ./...`.
+`go build` alone does not enforce these rules. There are no suppression or trust
+annotations. Unsupported forms fail rather than being skipped.
 
-The receiver can be an expression of the frozen collection type, such as
-`frozen`, `value.Items`, or `makeFrozen()`. Pass frozen wrappers by value;
-pointers to them are unsupported.
-Parentheses are allowed: `(frozen.Len)()` and `range (frozen.All())` have the same
-meaning. `Len`, `At`, and `Get` allocate no storage. `All` yields value copies
-without cloning the container. `Clone` creates independent storage.
-See [collection costs](performance.md).
-
-These rejected examples are not exhaustive:
-
-```go
-// Rejected: save a method or call it through the type.
-read := frozen.At
-value := im.FrozenSlice[int].At(frozen, 0)
-
-// Allowed: call the method on the collection.
-value := frozen.At(0)
-```
-
-An iterator that carries marked values must be consumed by direct `range`:
-
-```go
-// Rejected when frozen contains marked values.
-entries := frozen.All()
-
-// Allowed: copy each element in a direct range.
-for key, value := range frozen.All() { ... }
-```
-
-Iterators whose key and value types contain no marked values or frozen
-collections follow ordinary Go iterator rules. For example, you can save
-`entries := frozen.All()` when the elements are `int` or `[2]int`.
-
-## What we do not implement
-
-There are no mutable borrows, lifetime annotations, partial moves, or Rust
-resource ownership and destruction rules. Go still supplies its own value-copy
-semantics and garbage collector.
-
-The checker enforces these rules, including across package boundaries. You do
-not have to uphold extra rules by hand. If the checker cannot prove an operation
-safe, it reports an error; it does not skip the operation and accept the program.
-Imports of `unsafe` and `reflect` are rejected in checked code, as are
-unsupported aliasing and function declarations without Go bodies. These rules
-also apply when the affected function uses only scalar types. For example:
-
-```go
-// Rejected: no Go body is available to check.
-func readCount() int
-
-// Allowed: provide a Go implementation.
-func readCount() int { return 1 }
-```
-
-An assembly or foreign implementation cannot be trusted through an annotation.
-There are no escape hatches or suppression directives.
-
-Package variables can be rebound as complete values. Their protected fields
-and pointer targets cannot be written.
-
-Run `immutago ./...` or `go vet -vettool=<absolute path to immutago> ./...`.
-An ordinary Go build does not run the checker.
-
-The [architecture](arch/README.md) explains the implementation. The
-[source notes](../third_party/rustc/README.md) identify the rustc algorithms
-used by the implementation.
+Checked code cannot import `unsafe` or `reflect`, or declare functions without
+Go bodies—even for scalar-only functions. Replace `func readCount() int` with
+a checked Go implementation such as `func readCount() int { return 1 }`.
