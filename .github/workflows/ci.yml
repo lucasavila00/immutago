@@ -1,0 +1,41 @@
+name: Immutago
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.14.0
+          install-only: true
+      - name: Check source and formatting
+        run: make lint GOLANGCI=golangci-lint
+      - name: Check generated documentation
+        run: make docs-check
+      - name: Build command
+        run: make build
+      - name: Check the repository
+        run: ./bin/immutago ./...
+  tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Unit tests and end-to-end tests
+        run: go test -race -count=1 ./...
