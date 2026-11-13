@@ -218,7 +218,10 @@ updated := im.FreezeMap(next)
 ```
 
 `Clone` costs O(n) time and storage. It is a shallow copy; recursively immutable
-elements make that sufficient. This API has no persistent path-copy updates.
+elements make that sufficient. Scalar clones that you do not freeze can be used
+as ordinary mutable Go containers. If you later freeze a clone, its earlier
+uses must satisfy the exclusive-builder rules too. This API has no persistent
+path-copy updates.
 
 ### What you can do with a builder
 
