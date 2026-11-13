@@ -1,11 +1,10 @@
 // Package checker proves structural immutability from Go compiler type information.
-// It follows Go's recursive type predicates: inspect the underlying type,
-// check each component, and stop revisiting types on the current proof path.
-// A recursive collection is accepted only when every nonrecursive edge is safe.
+// It follows Go's structural type predicates and checks each component.
+// Shared type obligations form a graph; definite failures propagate to owners.
+// A recursive collection is accepted only when every reachable obligation holds.
 package checker
 
 import (
-	"fmt"
 	"go/types"
 )
 
@@ -40,79 +39,6 @@ func Marked(t types.Type) bool {
 	return false
 }
 
-// Reason returns an empty string when t is proved immutable, or the first failed obligation.
-func Reason(t types.Type) string { return prove(t, make(map[types.Type]bool)) }
-
-// prove checks all component obligations, with a path-local cycle guard.
-func prove(t types.Type, active map[types.Type]bool) string {
-	t = types.Unalias(t)
-	if active[t] {
-		return ""
-	}
-	active[t] = true
-	defer delete(active, t)
-	if IsLibraryType(t, "Marker") {
-		return ""
-	}
-	if IsCollection(t) {
-		args := t.(*types.Named).TypeArgs()
-		for i := 0; i < args.Len(); i++ {
-			if reason := prove(args.At(i), active); reason != "" {
-				return fmt.Sprintf("type argument %d: %s", i+1, reason)
-			}
-		}
-		return ""
-	}
-	if p, ok := t.(*types.TypeParam); ok {
-		return proveConstraint(p.Constraint(), active)
-	}
-	switch u := t.Underlying().(type) {
-	case *types.Basic:
-		if u.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex|types.IsString) != 0 {
-			return ""
-		}
-	case *types.Array:
-		return prove(u.Elem(), active)
-	case *types.Struct:
-		if !Marked(t) {
-			return "struct does not embed immutable.Marker"
-		}
-		for field := range u.Fields() {
-			if reason := prove(field.Type(), active); reason != "" {
-				return field.Name() + ": " + reason
-			}
-		}
-		return ""
-	}
-	return fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
-}
-
-// proveConstraint accepts a type parameter when an embedded type set proves all possible members safe.
-func proveConstraint(t types.Type, active map[types.Type]bool) string {
-	iface, ok := t.Underlying().(*types.Interface)
-	if !ok {
-		return prove(t, active)
-	}
-	for i := 0; i < iface.NumEmbeddeds(); i++ {
-		embedded := iface.EmbeddedType(i)
-		if union, ok := embedded.(*types.Union); ok {
-			safe := true
-			for j := 0; j < union.Len(); j++ {
-				if prove(union.Term(j).Type(), active) != "" {
-					safe = false
-					break
-				}
-			}
-			if safe {
-				return ""
-			}
-		} else if proveConstraint(embedded, active) == "" {
-			return ""
-		}
-	}
-	return "type parameter constraint does not prove immutability"
-}
-
 // Contains reports whether a type stores a marked value or sealed collection.
 // It traverses containers so an unmarked wrapper cannot hide a marked field.
 func Contains(t types.Type) bool { return contains(t, make(map[types.Type]bool)) }
@@ -123,6 +49,9 @@ func contains(t types.Type, seen map[types.Type]bool) bool {
 		return false
 	}
 	seen[t] = true
+	if parameter, ok := types.Unalias(t).(*types.TypeParam); ok {
+		return constraintContains(parameter.Constraint(), seen)
+	}
 	if IsCollection(t) || Marked(t) {
 		return true
 	}
@@ -143,6 +72,27 @@ func contains(t types.Type, seen map[types.Type]bool) bool {
 				return true
 			}
 		}
+	}
+	return false
+}
+
+// constraintContains finds immutable storage explicitly named by a generic type set.
+func constraintContains(t types.Type, seen map[types.Type]bool) bool {
+	switch u := t.Underlying().(type) {
+	case *types.Interface:
+		for i := 0; i < u.NumEmbeddeds(); i++ {
+			if constraintContains(u.EmbeddedType(i), seen) {
+				return true
+			}
+		}
+	case *types.Union:
+		for i := 0; i < u.Len(); i++ {
+			if contains(u.Term(i).Type(), seen) {
+				return true
+			}
+		}
+	default:
+		return contains(t, seen)
 	}
 	return false
 }

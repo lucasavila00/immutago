@@ -4,7 +4,8 @@
 // other marked structs, and the library's Slice and Map types with immutable
 // arguments. Unmarked structs cannot store marked values or these collections.
 // Pointer fields, interfaces, functions, channels, and native mutable collections
-// cannot establish an immutability proof. There are no suppression directives.
+// cannot establish an immutability proof. Reflection and unsafe operations are
+// unsupported. There are no suppression directives.
 //
 // The analyzer also rejects field writes and pointers to immutable values.
 // Whole local variables may be replaced. Use literals to construct marked values
@@ -15,6 +16,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"strconv"
 
 	"github.com/lucasavila00/immutago/internal/checker"
 	"golang.org/x/tools/go/analysis"
@@ -68,19 +70,17 @@ func (c *checks) report(pos token.Pos, message string) {
 func (c *checks) visit(node ast.Node) bool {
 	switch n := node.(type) {
 	case *ast.ImportSpec:
-		if n.Path.Value == `"unsafe"` {
-			c.report(n.Pos(), "unsupported unsafe import; immutability cannot be proved")
+		if path, err := strconv.Unquote(n.Path.Value); err == nil && (path == "unsafe" || path == "reflect") {
+			c.report(n.Pos(), "unsupported "+path+" import; immutability cannot be proved")
 		}
 	case *ast.UnaryExpr:
 		if n.Op == token.AND {
 			c.checkWrite(n.X)
 		}
 	case *ast.SliceExpr:
-		if t := c.pass.TypesInfo.TypeOf(n.X); t != nil {
-			if _, ok := t.Underlying().(*types.Array); ok {
-				c.checkWrite(n.X)
-			}
-		}
+		c.checkSlice(n)
+	case *ast.SelectorExpr:
+		c.checkMethod(n)
 	case *ast.TypeSpec:
 		if obj := c.pass.TypesInfo.Defs[n.Name]; obj != nil {
 			c.checkType(n.Pos(), obj.Type())
@@ -108,8 +108,41 @@ func (c *checks) visit(node ast.Node) bool {
 	return true
 }
 
+// checkMethod rejects implicit address-taking when a field selects a pointer-receiver method.
+func (c *checks) checkMethod(expr *ast.SelectorExpr) {
+	selection := c.pass.TypesInfo.Selections[expr]
+	if selection == nil {
+		return
+	}
+	method, ok := selection.Obj().(*types.Func)
+	if !ok {
+		return
+	}
+	signature := method.Type().(*types.Signature)
+	if _, pointer := signature.Recv().Type().(*types.Pointer); pointer {
+		c.checkWrite(expr.X)
+	}
+}
+
+// checkSlice rejects a mutable slice view into an array owned by an immutable value.
+func (c *checks) checkSlice(expr *ast.SliceExpr) {
+	t := c.pass.TypesInfo.TypeOf(expr.X)
+	if t == nil {
+		return
+	}
+	if _, ok := t.Underlying().(*types.Array); ok {
+		c.checkWrite(expr.X)
+	}
+}
+
 // checkType checks collection arguments and disallows pointers that could expose mutable aliases.
 func (c *checks) checkType(pos token.Pos, t types.Type) {
+	if reflectionValue(t) {
+		c.report(pos, "unsupported reflection value; immutability cannot be proved")
+	}
+	if basic, ok := t.Underlying().(*types.Basic); ok && basic.Kind() == types.UnsafePointer {
+		c.report(pos, "unsupported unsafe pointer; immutability cannot be proved")
+	}
 	if checker.IsCollection(t) {
 		if reason := checker.Reason(t); reason != "" {
 			c.report(pos, "immutable collection: "+reason)
@@ -124,6 +157,25 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 			c.checkStruct(pos, t)
 		}
 	}
+}
+
+// reflectionValue identifies reflection storage even through pointer aliases and recursive pointer types.
+func reflectionValue(t types.Type) bool {
+	seen := make(map[types.Type]bool)
+	for !seen[t] {
+		seen[t] = true
+		if named, ok := types.Unalias(t).(*types.Named); ok {
+			if pkg := named.Obj().Pkg(); pkg != nil && pkg.Path() == "reflect" {
+				return true
+			}
+		}
+		pointer, ok := t.Underlying().(*types.Pointer)
+		if !ok {
+			return false
+		}
+		t = pointer.Elem()
+	}
+	return false
 }
 
 // checkStruct enforces marker placement and recursively proves each owned field.

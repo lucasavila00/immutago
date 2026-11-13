@@ -21,7 +21,8 @@ var user = User{Name: "Ada", Tags: immutable.NewSlice("go")}
 Use literals to construct marked structs. Replacing a variable is allowed;
 writing its fields is not. Collection updates return new values. Collection
 inputs and outputs are copied at their mutable boundaries. Reads do not need
-runtime immutability checks.
+runtime immutability checks. Use `All()` to range over a collection without
+copying it to a native slice or map.
 
 Unmarked structs cannot contain marked values or immutable collections,
 including through embedding or mutable containers. This restriction keeps
@@ -33,7 +34,9 @@ its fields, and mutable slice views of its arrays are unsupported. Generic
 constraints must prove every possible element immutable. Unknown cases fail;
 there are no suppression comments, registration hooks, or trusted user types.
 The library's own collection representation is the fixed implementation boundary.
-Unsafe imports in analyzed consumer packages are rejected.
+Unsafe and reflection imports in analyzed consumer packages are rejected.
+Resolved unsafe pointer values and reflection values are also unsupported,
+including when obtained from another package.
 
 Analyze all consumer packages, including tests, with `immutago ./...` or
 `go vet -vettool=<absolute path to immutago> ./...`. The tool does not rewrite
@@ -43,8 +46,10 @@ unexamined dependency code is not certified by a clean consumer-package run.
 
 # Analysis sources
 
-The implementation uses the Go compiler's resolved types and recursive type
-predicate approach. It does not implement a Rust borrow checker. The earlier
-rustc port direction remains a reference for future ownership analysis, not a
-claim that Rust's lifetime rules apply to Go. Expand the supported model only
-with proof tests. Broad coverage is a goal, not a measured percentage.
+The implementation uses Go's resolved types and structural type predicates.
+Shared obligations form a graph. A definite failure propagates to every owner;
+recursive collections succeed only when their obligations hold. The checker
+also inspects source operations for writes and alias creation.
+
+Expand the supported model only with proof tests. Broad coverage is a goal,
+not a measured percentage.
