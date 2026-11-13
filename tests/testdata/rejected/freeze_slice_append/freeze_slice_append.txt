@@ -1,0 +1,2 @@
+freeze_slice_append.go:5:62: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+freeze_slice_append.go:5:78: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder

@@ -6,12 +6,12 @@ import (
 )
 
 func Iterate() int {
-	values := im.NewSlice(model.Leaf{Count: 2}, model.Leaf{Count: 3})
+	values := im.FreezeSlice([]model.Leaf{{Count: 2}, {Count: 3}})
 	total := 0
 	for index, value := range values.All() {
 		total += index + int(value.Count)
 	}
-	mapping := im.NewMap(map[string]model.Leaf{"first": {Count: 4}})
+	mapping := im.FreezeMap(map[string]model.Leaf{"first": {Count: 4}})
 	for key, value := range mapping.All() {
 		total += len(key) + int(value.Count)
 	}

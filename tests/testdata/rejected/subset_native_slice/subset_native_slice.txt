@@ -1,4 +1,0 @@
-subset_native_slice.go:9:15: unsupported immutable borrow: native slices of immutable storage are unsupported
-  source: []Good{{}}
-  type: []rejected.Good
-  fix: use im.Slice[T] and All() for iteration; pass an inline []T literal only to im.NewSlice

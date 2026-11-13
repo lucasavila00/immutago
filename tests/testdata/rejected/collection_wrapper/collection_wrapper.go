@@ -8,4 +8,4 @@ type Good struct {
 	Array [2]int
 }
 
-type Bad struct{ Value im.Slice[int] }
+type Bad struct{ Value im.FrozenSlice[int] }

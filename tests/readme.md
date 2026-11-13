@@ -11,7 +11,11 @@ fixtures require diagnostics at writes through shared references or writes to
 an owner with a live loan. Boundary fixtures reject reference returns, generic
 borrowing, captures, interior scalar addresses, and native protected containers.
 Structural field, marker, ownership, reflection, unsafe, and native-declaration
-checks remain covered.
+checks remain covered. Freeze fixtures build exclusive native slices and maps,
+consume them with FreezeSlice or FreezeMap, and use Clone to make independent
+mutable copies. Negative fixtures cover use after transfer, aliases, escapes,
+branch joins, and loops. The runtime fixture checks the frozen values before
+and after edits to their clones.
 
 Each source file has an adjacent `.txt` snapshot, as in TGo. Snapshots preserve
 exact diagnostic messages, source lines, and columns. Accepted sources have

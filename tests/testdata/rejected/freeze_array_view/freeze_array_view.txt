@@ -1,0 +1,1 @@
+freeze_array_view.go:5:37: cannot freeze values: ownership requires a fresh local make, literal, nil, or Clone result; create a local builder first

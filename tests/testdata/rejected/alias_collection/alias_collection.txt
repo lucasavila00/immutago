@@ -1,9 +1,9 @@
 alias_collection.go:11:12: immutable collection: type argument 1: []int is not provably immutable
-  type: im.Slice[[]int]
-  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments
+  type: im.FrozenSlice[[]int]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 alias_collection.go:11:15: immutable type argument: []int is not provably immutable
   type: []int
-  fix: replace the native slice with im.Slice[T], where T is immutable
+  fix: replace the native slice with im.FrozenSlice[T], where T is immutable
 alias_collection.go:11:6: immutable collection: type argument 1: []int is not provably immutable
   type: rejected.Bad
-  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments

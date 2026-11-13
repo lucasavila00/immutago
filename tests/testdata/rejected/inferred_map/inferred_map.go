@@ -8,4 +8,4 @@ type Good struct {
 	Array [2]int
 }
 
-var Bad = im.NewMap(map[string][]int{"a": {1}})
+var Bad = im.FreezeMap(map[string][]int{"a": {1}})

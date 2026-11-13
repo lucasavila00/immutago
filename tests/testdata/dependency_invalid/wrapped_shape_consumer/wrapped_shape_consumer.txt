@@ -2,5 +2,5 @@ wrapped_shape_consumer.go:3:8: unsupported dependency example.com/consumer/shape
   import chain: example.com/consumer/wrapped_shape_consumer -> example.com/consumer/shape_wrapper -> example.com/consumer/invalid_shape
   original failure: example.com/consumer/invalid_shape/invalid_shape.go:7:2: immutable field Values: []int is not provably immutable
     owner: invalid_shape.Bad; field type: []int
-    fix: replace the native slice with im.Slice[T], where T is immutable
+    fix: replace the native slice with im.FrozenSlice[T], where T is immutable
   fix: correct the original dependency error above, then rerun immutago on this package

@@ -12,20 +12,20 @@ type Generic[T EmbeddedScalar] struct {
 	im.Marker
 	Value T
 }
-type GenericAlias[T Scalar] = im.Slice[T]
+type GenericAlias[T Scalar] = im.FrozenSlice[T]
 type NamedInts struct {
 	im.Marker
 	Values [2]int
 }
 
-func Build[T PositiveScalar](value T) im.Slice[T] { return im.NewSlice(value) }
+func Build[T PositiveScalar](value T) im.FrozenSlice[T] { return im.FreezeSlice([]T{value}) }
 func GenericUse() {
 	_ = Build(1)
 	_ = Build("text")
 	_ = Generic[int]{Value: 1}
 	var zero GenericAlias[string]
-	_ = zero.Append("value")
-	_ = im.NewSlice(NamedInts{Values: [2]int{1, 2}})
+	_ = zero.Len()
+	_ = im.FreezeSlice([]NamedInts{{Values: [2]int{1, 2}}})
 }
 
 func boxScalar[T ~int | ~string](value T) *T { return &value }

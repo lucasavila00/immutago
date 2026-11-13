@@ -1,0 +1,20 @@
+package main
+
+import (
+	"example.com/consumer/freezebuilders"
+	"fmt"
+)
+
+func main() {
+	first, second := freezebuilders.Slice()
+	fmt.Println(first.At(0), second.At(0), first.Len(), second.Len())
+	a, b := freezebuilders.Map()
+	old, _ := a.Get("a")
+	next, _ := b.Get("a")
+	fmt.Println(old, next, a.Len(), b.Len())
+	fmt.Println(freezebuilders.MarkedSlice().At(0).X)
+	item, _ := freezebuilders.MarkedMap().Get("a")
+	fmt.Println(item.X)
+	fmt.Println(freezebuilders.Branch(true).At(0), freezebuilders.Loop(3))
+	fmt.Println(freezebuilders.Nil().Clone() == nil)
+}

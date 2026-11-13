@@ -1,0 +1,1 @@
+freeze_closure.go:7:20: unsupported owned container values: capturing or using a builder outside its declaring function; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder

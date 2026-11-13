@@ -5,8 +5,8 @@ slice_wrapper.go:11:18: unmarked struct contains immutable field Value; embed im
 slice_wrapper.go:11:18: unsupported immutable borrow: native slices of immutable storage are unsupported
   source: Value
   type: []rejected.Good
-  fix: use im.Slice[T] and All() for iteration; pass an inline []T literal only to im.NewSlice
+  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
 slice_wrapper.go:11:24: unsupported immutable borrow: native slices of immutable storage are unsupported
   source: []Good
   type: []rejected.Good
-  fix: use im.Slice[T] and All() for iteration; pass an inline []T literal only to im.NewSlice
+  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice

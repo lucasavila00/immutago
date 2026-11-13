@@ -5,8 +5,8 @@ map_wrapper.go:11:18: unmarked struct contains immutable field Value; embed im.M
 map_wrapper.go:11:18: unsupported immutable borrow: native maps of immutable storage are unsupported
   source: Value
   type: map[string]rejected.Good
-  fix: use im.Map[K, V]; pass an inline map literal only to im.NewMap
+  fix: use im.FrozenMap[K, V]; pass an owned local map or fresh literal to im.FreezeMap
 map_wrapper.go:11:24: unsupported immutable borrow: native maps of immutable storage are unsupported
   source: map[string]Good
   type: map[string]rejected.Good
-  fix: use im.Map[K, V]; pass an inline map literal only to im.NewMap
+  fix: use im.FrozenMap[K, V]; pass an owned local map or fresh literal to im.FreezeMap

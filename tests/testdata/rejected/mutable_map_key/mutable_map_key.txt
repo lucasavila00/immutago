@@ -2,8 +2,8 @@ mutable_map_key.go:11:12: immutable type argument: *int is not provably immutabl
   type: *int
   fix: replace the pointer field or argument with an owned immutable value
 mutable_map_key.go:11:5: immutable collection: type argument 1: *int is not provably immutable
-  type: im.Map[*int, int]
-  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments
+  type: im.FrozenMap[*int, int]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 mutable_map_key.go:11:9: immutable collection: type argument 1: *int is not provably immutable
-  type: im.Map[*int, int]
-  fix: use primitive values, unnamed arrays, marked structs, or im.Slice/im.Map with immutable type arguments
+  type: im.FrozenMap[*int, int]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments

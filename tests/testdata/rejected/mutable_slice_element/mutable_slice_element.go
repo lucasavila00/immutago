@@ -8,4 +8,4 @@ type Good struct {
 	Array [2]int
 }
 
-var Bad im.Slice[[]int]
+var Bad im.FrozenSlice[[]int]
