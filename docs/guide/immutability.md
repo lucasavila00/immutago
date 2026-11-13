@@ -120,10 +120,13 @@ There are no mutable borrows, lifetime annotations, partial moves, or Rust
 resource ownership and destruction rules. Go still supplies its own value-copy
 semantics and garbage collector.
 
-Calls must preserve ownership and borrow information, including across package
-boundaries. Unsupported alias transport, unsafe operations, reflection, and
-unproved relevant effects fail explicitly. There are no user trust annotations
-or suppression directives. Package-level marked values are read-only after
+The checker enforces these rules, including across package boundaries. You do
+not have to uphold extra rules by hand. If the checker cannot prove an operation
+safe, it reports an error; it does not skip the operation and accept the program.
+Unsafe operations, reflection, and unsupported aliasing therefore fail the
+check. There are no escape hatches or suppression directives.
+
+The checker also rejects changes to package-level marked values after their
 declaration initialization.
 
 Run `immutago ./...` or `go vet -vettool=<absolute path to immutago> ./...`.
