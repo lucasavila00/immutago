@@ -1,6 +1,6 @@
 package rejected
 
-import "github.com/lucasavila00/immutago/pkg/im"
+import im "github.com/lucasavila00/immutago/pkg/im"
 
 type Count int
 
@@ -11,4 +11,9 @@ type Value struct {
 	N Count
 }
 
-func mutate() { var value Value; value.N.Change() } // want "cannot mutate a field"
+func mutate() {
+	var value Value
+	pointer := &value
+	value.N.Change() // want "borrow|shared reference"
+	_ = pointer.N
+}

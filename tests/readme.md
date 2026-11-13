@@ -4,12 +4,16 @@
 fixtures into temporary consumer modules with a local module replacement and
 workspace mode disabled. No fixtures depend on downloaded modules.
 
-`testdata/accepted` covers cross-package values, aliases, generic constraints,
-recursive collections, independent collection copies, and whole-value updates.
-`testdata/rejected` covers invalid fields, mutable aliases, mutation, marker
-placement, unsupported types, implicit pointer methods, reflection, unsafe values,
-unmarked wrappers, generic type erasure, and native declarations. Every `// want "regex"`
-comment requires a diagnostic on that exact source line.
+`testdata/accepted` covers construction, final-use borrow lifetimes, disjoint
+fields, branches, loops, readable pointers, generic and cross-package alias
+summaries, closures, collection copies, and recursive types. The rejected
+fixtures pair these with overlapping writes while a loan remains live and writes
+through read-only references. Structural field, marker, ownership, reflection,
+unsafe, and native-declaration checks remain covered.
+
+Every `// want "regex"` comment requires a diagnostic on the operation's exact
+source line. Accepted fixtures must produce no diagnostics; a blanket ban on
+pointers or local field writes cannot satisfy these tests.
 
 Add accepted programs under `accepted`. Add a package under `rejected` for
 negative cases; keep each source filename unique. Negative fixtures must be

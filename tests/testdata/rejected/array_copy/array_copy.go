@@ -1,11 +1,15 @@
 package rejected
 
-import "github.com/lucasavila00/immutago/pkg/im"
+import im "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
 	im.Marker
-	Value int
 	Array [2]int
 }
 
-func mutate() { var value Good; copy(value.Array[:], []int{1}) } // want "cannot mutate a field"
+func mutate() {
+	var value Good
+	pointer := &value
+	copy(value.Array[:], []int{1}) // want "borrow|shared reference"
+	_ = pointer.Array[0]
+}

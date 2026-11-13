@@ -1,14 +1,20 @@
 package rejected
 
-import "github.com/lucasavila00/immutago/pkg/im"
+import im "github.com/lucasavila00/immutago/pkg/im"
 
-type Numbers [2]int
+type Count [2]int
 
-func (p *Numbers) Change() { p[0] = 1 }
+func (p *Count) Change() { p[0] = 1 }
 
 type Value struct {
 	im.Marker
-	N Numbers
+	N Count
 }
 
-func mutate() { var value Value; _ = value.N.Change } // want "cannot mutate a field"
+func mutate() {
+	var value Value
+	pointer := &value
+	method := value.N.Change
+	method() // want "borrow|shared reference"
+	_ = pointer.N
+}
