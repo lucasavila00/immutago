@@ -26,6 +26,8 @@ const testLibrary = `package im
  func (values FrozenMap[K,V]) Get(key K)(V,bool) { var zero V;return zero,false }
  func (values FrozenSlice[T]) At(index int)T { var zero T;return zero }
  func (values FrozenSlice[T]) Len()int {return 0}
+ func (values FrozenSlice[T]) All()func(func(int,T)bool) {return nil}
+ func (values FrozenMap[K,V]) All()func(func(K,V)bool) {return nil}
 `
 
 // testImporter gives compiler tests the library's type identities without loading external packages.

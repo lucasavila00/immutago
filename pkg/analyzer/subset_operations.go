@@ -19,6 +19,11 @@ func noRefReference(t types.Type) bool {
 
 // referenceUse checks the concrete target, source, and context of each immutable reference.
 func (c *subsetChecks) referenceUse(expression ast.Expr) {
+	if name, ok := expression.(*ast.Ident); ok {
+		if field, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var); ok && field.IsField() {
+			return
+		}
+	}
 	if c.pass.TypesInfo.Types[expression].IsType() || !protectedReference(c.pass.TypesInfo.TypeOf(expression)) {
 		return
 	}
@@ -83,15 +88,7 @@ func (c *subsetChecks) referenceContext(expression ast.Expr) bool {
 		if !local {
 			return true
 		}
-		name, ok := parent.Lhs[0].(*ast.Ident)
-		if !ok {
-			return false
-		}
-		if name.Name == "_" {
-			return true
-		}
-		variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var)
-		return ok && variable.Parent() != c.pass.Pkg.Scope()
+		return c.localReferenceBinding(parent.Lhs[0])
 	case *ast.ValueSpec:
 		return !local || len(parent.Names) == 1 && c.pass.TypesInfo.Defs[parent.Names[0]].Parent() != c.pass.Pkg.Scope()
 	case *ast.ReturnStmt, *ast.CompositeLit, *ast.KeyValueExpr:
@@ -102,6 +99,19 @@ func (c *subsetChecks) referenceContext(expression ast.Expr) bool {
 		return c.directReferenceArgument(parent, expression)
 	}
 	return false
+}
+
+// localReferenceBinding permits local pointer replacement and explicit discard.
+func (c *subsetChecks) localReferenceBinding(destination ast.Expr) bool {
+	name, ok := ast.Unparen(destination).(*ast.Ident)
+	if !ok {
+		return false
+	}
+	if name.Name == "_" {
+		return true
+	}
+	variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var)
+	return ok && variable.Parent() != c.pass.Pkg.Scope()
 }
 
 // directReferenceArgument accepts concrete named calls and the fixed shared-reference storage operations.
@@ -134,6 +144,9 @@ func (c *subsetChecks) directReferenceArgument(call *ast.CallExpr, expression as
 		}
 	}
 	signature := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
+	if signature.Recv() != nil {
+		return false
+	}
 	for index, argument := range call.Args {
 		if argument == expression && index < signature.Params().Len() {
 			parameter := signature.Params().At(index).Type()

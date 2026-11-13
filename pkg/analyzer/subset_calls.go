@@ -22,7 +22,7 @@ func (c *subsetChecks) calledObject(e ast.Expr) types.Object {
 	return nil
 }
 
-// call restricts shared arguments to direct synchronous calls with exact typed parameters.
+// call checks direct calls, conversions, and the types of transported arguments.
 func (c *subsetChecks) call(call *ast.CallExpr) {
 	obj := c.calledObject(call.Fun)
 	if builtin, ok := obj.(*types.Builtin); ok && (builtin.Name() == "make" || builtin.Name() == "new") {
@@ -95,14 +95,6 @@ func (c *subsetChecks) unparenthesizedParent(expression ast.Expr) ast.Node {
 	}
 }
 
-// synchronous rejects borrows retained by deferred or concurrent execution.
-func (c *subsetChecks) synchronous(call *ast.CallExpr) {
-	switch c.parents[call].(type) {
-	case *ast.DeferStmt, *ast.GoStmt:
-		c.report(call, "shared references require synchronous calls")
-	}
-}
-
 // transport rejects interface boxing and callback or container transport of immutable storage.
 func (c *subsetChecks) transport(value ast.Expr, destination types.Type) {
 	c.transportType(value, c.pass.TypesInfo.TypeOf(value), destination)
@@ -122,10 +114,6 @@ func (c *subsetChecks) transportType(value ast.Expr, source, destination types.T
 	case *types.Signature:
 		if protectedCallable(source) {
 			c.report(value, "immutable callbacks are unsupported")
-		}
-	case *types.Slice, *types.Map, *types.Chan:
-		if protectedReference(source) {
-			c.report(value, "shared references cannot enter containers")
 		}
 	}
 }
@@ -165,7 +153,7 @@ func (c *subsetChecks) methodValue(sel *ast.SelectorExpr) {
 		return
 	}
 	if !c.exactCollectionMethod(sel) {
-		c.report(sel, "user-defined methods on protected receivers are unsupported")
+		c.report(sel, "user-defined methods with immutable storage are unsupported")
 		return
 	}
 	if call, ok := c.unparenthesizedParent(sel).(*ast.CallExpr); ok && ast.Unparen(call.Fun) == sel {
@@ -189,14 +177,14 @@ func (c *subsetChecks) closure(literal *ast.FuncLit) {
 	})
 }
 
-// globalStore prevents a shared local reference from entering package storage.
+// globalStore prevents a local-only reference from entering package or aggregate storage.
 func (c *subsetChecks) globalStore(destination, value ast.Expr) {
 	if !noRefReference(c.pass.TypesInfo.TypeOf(value)) {
 		return
 	}
 	id, ok := ast.Unparen(destination).(*ast.Ident)
 	if !ok {
-		c.report(destination, "shared references cannot enter aggregate storage")
+		c.report(destination, "ImmutNoRef references cannot enter aggregate storage")
 		return
 	}
 	obj := c.pass.TypesInfo.ObjectOf(id)
@@ -254,7 +242,6 @@ func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signa
 		if !static && !libraryObject(obj) {
 			c.report(arg, "dynamic calls with immutable storage are unsupported")
 		}
-		c.borrowArgument(call, arg, obj)
 		parameter := i
 		if signature.Variadic() && parameter >= signature.Params().Len()-1 {
 			parameter = signature.Params().Len() - 1
@@ -262,18 +249,6 @@ func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signa
 		if parameter >= 0 && parameter < signature.Params().Len() {
 			c.transport(arg, signature.Params().At(parameter).Type())
 		}
-	}
-}
-
-// borrowArgument requires synchronous, concrete calls for protected references.
-func (c *subsetChecks) borrowArgument(call *ast.CallExpr, argument ast.Expr, object types.Object) {
-	if !noRefReference(c.pass.TypesInfo.TypeOf(argument)) {
-		return
-	}
-	c.synchronous(call)
-	direct, _ := object.(*types.Func)
-	if libraryObject(object) || (direct != nil && genericSignature(direct.Origin().Type().(*types.Signature))) {
-		c.report(argument, "generic borrowing calls are unsupported")
 	}
 }
 
@@ -287,11 +262,11 @@ func (c *subsetChecks) methodCall(call *ast.CallExpr, static bool) bool {
 	if selection == nil {
 		return static
 	}
+	if !libraryObject(selection.Obj()) && protectedCallable(selection.Obj().Type()) {
+		c.report(selector, "user-defined methods with immutable storage are unsupported")
+	}
 	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
 		static = false
-	}
-	if protectedReference(c.pass.TypesInfo.TypeOf(selector.X)) {
-		c.synchronous(call)
 	}
 	return static
 }

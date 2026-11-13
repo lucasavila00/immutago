@@ -12,15 +12,15 @@ import (
 func (c *subsetChecks) statementBoundary(node ast.Node) {
 	switch statement := node.(type) {
 	case *ast.FuncDecl:
-		if statement.Type.TypeParams != nil {
+		signature := c.pass.TypesInfo.Defs[statement.Name].Type().(*types.Signature)
+		if genericSignature(signature) {
 			c.genericStorage(statement, statement.Name)
 		}
-		if statement.Recv != nil && len(statement.Recv.List) > 0 &&
-			checker.Contains(c.pass.TypesInfo.TypeOf(statement.Recv.List[0].Type)) {
-			c.report(statement.Name, "user-defined methods on protected receivers are unsupported")
+		if signature.Recv() != nil && (checker.Contains(signature.Recv().Type()) || protectedCallable(signature)) {
+			c.report(statement.Name, "user-defined methods with immutable storage are unsupported")
 		}
 	case *ast.ValueSpec:
-		c.fixedDeclaration(statement)
+		c.declarationShape(statement)
 	case *ast.TypeSpec:
 		if statement.TypeParams != nil {
 			c.genericStorage(statement, statement.Name)
@@ -34,8 +34,8 @@ func (c *subsetChecks) statementBoundary(node ast.Node) {
 	}
 }
 
-// fixedDeclaration rejects uninitialized references, copies, nil initializers, and multiple protected declarations.
-func (c *subsetChecks) fixedDeclaration(statement *ast.ValueSpec) {
+// declarationShape requires one protected binding, except for a direct frozen map lookup.
+func (c *subsetChecks) declarationShape(statement *ast.ValueSpec) {
 	protected := false
 	for _, name := range statement.Names {
 		object := c.pass.TypesInfo.Defs[name]
@@ -43,7 +43,6 @@ func (c *subsetChecks) fixedDeclaration(statement *ast.ValueSpec) {
 			continue
 		}
 		protected = protected || checker.Contains(object.Type())
-
 	}
 	if protected && len(statement.Names) > 1 && !c.getDeclaration(statement) {
 		c.report(statement, "multiple assignments involving protected storage are unsupported")
@@ -173,6 +172,7 @@ func (c *subsetChecks) synchronousStorage(expression ast.Expr) {
 
 // rangeBoundary rejects implicit reference creation and unknown protected callback iteration.
 func (c *subsetChecks) rangeBoundary(statement *ast.RangeStmt) {
+	c.rangeTransport(statement)
 	for _, target := range []ast.Expr{statement.Key, statement.Value} {
 		if target != nil && statement.Tok == token.ASSIGN {
 			c.write(target)
@@ -189,4 +189,36 @@ func (c *subsetChecks) rangeBoundary(statement *ast.RangeStmt) {
 		}
 	}
 	c.report(statement.X, "protected iteration requires a direct frozen All call")
+}
+
+// rangeTransport checks implicit assignments from native storage and direct frozen iterators.
+func (c *subsetChecks) rangeTransport(statement *ast.RangeStmt) {
+	t := c.pass.TypesInfo.TypeOf(statement.X)
+	if !checker.Contains(t) && !protectedCallable(t) {
+		return
+	}
+	var key, value types.Type
+	switch source := t.Underlying().(type) {
+	case *types.Array:
+		key, value = types.Typ[types.Int], source.Elem()
+	case *types.Slice:
+		key, value = types.Typ[types.Int], source.Elem()
+	case *types.Map:
+		key, value = source.Key(), source.Elem()
+	case *types.Signature:
+		// The Go compiler has checked the range function's yield signature.
+		yield := source.Params().At(0).Type().Underlying().(*types.Signature)
+		if yield.Params().Len() > 0 {
+			key = yield.Params().At(0).Type()
+		}
+		if yield.Params().Len() > 1 {
+			value = yield.Params().At(1).Type()
+		}
+	}
+	if statement.Key != nil {
+		c.transportType(statement.Key, key, c.pass.TypesInfo.TypeOf(statement.Key))
+	}
+	if statement.Value != nil {
+		c.transportType(statement.Value, value, c.pass.TypesInfo.TypeOf(statement.Value))
+	}
 }

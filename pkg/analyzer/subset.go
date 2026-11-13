@@ -9,7 +9,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// subsetChecks rejects transports outside the local, synchronous borrow contract.
+// subsetChecks matches immutable operations and rejects unsupported transport.
 type subsetChecks struct {
 	pass     *analysis.Pass
 	parents  map[ast.Node]ast.Node
@@ -18,7 +18,7 @@ type subsetChecks struct {
 	owners   map[*types.Var]bool
 }
 
-// checkSubset checks the supported borrow boundary with compiler-resolved types.
+// checkSubset checks the supported immutable forms with compiler-resolved types.
 func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 	c := &subsetChecks{pass: pass, parents: make(map[ast.Node]ast.Node),
 		owners: owners, exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool)}
@@ -125,9 +125,6 @@ func subsetType(t types.Type, seen map[types.Type]bool) string {
 		}
 		return subsetType(u.Elem(), seen)
 	case *types.Array:
-		if noRefReference(u.Elem()) {
-			return "arrays of ImmutNoRef references are unsupported"
-		}
 		return subsetType(u.Elem(), seen)
 	case *types.Signature:
 		return subsetResults(u.Results())
@@ -165,7 +162,7 @@ func (c *subsetChecks) protectedRoot(e ast.Expr) bool {
 	return false
 }
 
-// address permits only a whole local owner as the source of a shared borrow.
+// address permits protected references only to fresh composite literals.
 func (c *subsetChecks) address(e *ast.UnaryExpr) {
 	if !c.protectedRoot(e.X) {
 		return
@@ -275,7 +272,7 @@ func subsetContainer(t types.Type) string {
 	return ""
 }
 
-// subsetResults rejects escaping shared references in function results.
+// subsetResults rejects local-only references in function results.
 func subsetResults(results *types.Tuple) string {
 	for i := 0; i < results.Len(); i++ {
 		if noRefReference(results.At(i).Type()) {
@@ -297,11 +294,45 @@ func subsetTuple(tuple *types.Tuple, seen map[types.Type]bool) string {
 
 // expressionType checks resolved types while admitting native builders checked by ownership analysis.
 func (c *subsetChecks) expressionType(expression ast.Expr) {
+	// A builtin signature describes this call, not a user function's return boundary.
+	if name, ok := expression.(*ast.Ident); ok {
+		if _, builtin := c.pass.TypesInfo.ObjectOf(name).(*types.Builtin); builtin {
+			return
+		}
+	}
 	t := c.pass.TypesInfo.TypeOf(expression)
+	if storedNoRef(t, make(map[types.Type]bool)) {
+		c.report(expression, "containers of ImmutNoRef references are unsupported")
+	}
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return
 	}
 	if reason := subsetType(t, make(map[types.Type]bool)); reason != "" {
 		c.report(expression, reason)
 	}
+}
+
+// storedNoRef checks native container elements even when the handle has an ownership proof.
+func storedNoRef(t types.Type, seen map[types.Type]bool) bool {
+	if t == nil || seen[t] {
+		return false
+	}
+	seen[t] = true
+	var elements []types.Type
+	switch storage := t.Underlying().(type) {
+	case *types.Array:
+		elements = []types.Type{storage.Elem()}
+	case *types.Slice:
+		elements = []types.Type{storage.Elem()}
+	case *types.Map:
+		elements = []types.Type{storage.Key(), storage.Elem()}
+	case *types.Chan:
+		elements = []types.Type{storage.Elem()}
+	}
+	for _, element := range elements {
+		if noRefReference(element) || storedNoRef(element, seen) {
+			return true
+		}
+	}
+	return false
 }

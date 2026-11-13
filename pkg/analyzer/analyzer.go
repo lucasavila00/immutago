@@ -1,19 +1,20 @@
 // Package analyzer exposes the immutago go/analysis analyzer.
 //
-// Marked structs may own only primitive values, arrays of immutable values,
-// other marked structs, and the library's FrozenSlice and FrozenMap types with immutable
-// arguments. Unmarked structs cannot store marked values or these collections.
-// Pointer fields, interfaces, functions, channels, and native mutable collections
-// cannot establish an immutability proof. Reflection and unsafe operations are
-// unsupported. Unmarked generic fields must prove their
-// constraints exclude immutable storage. There are no suppression directives.
+// Structs that embed im.Immut or im.ImmutNoRef are immutable from construction.
+// Their fields must be scalars, unnamed arrays, other marked structs, pointers
+// to concrete Immut structs, or frozen collections of allowed types. Each
+// component is checked recursively. Unmarked structs cannot store protected
+// values. Interfaces, callbacks, user generics with protected storage,
+// reflection, and unsafe operations are unsupported.
 //
-// Owned local values permit construction and field updates. Shared references
-// permit reads; their loans end after the final required use on each control-flow
-// path. Writes to a borrowed whole owner are rejected. Value copies have
-// independent storage. Package-level immutable values are read-only after
-// declaration initialization.
-// Protected references stay local or pass to direct, non-escaping read-only calls.
+// Whole variable bindings can be replaced. Field, element, and pointer-target
+// writes to protected objects are rejected. Protected references start with
+// fresh construction and target concrete marked structs. Immut references can
+// be copied, stored, and returned. ImmutNoRef references stay local or pass to
+// direct typed calls that do not retain them. Neither mode permits protected
+// closure captures or protected operations in go or defer.
+//
+// Struct and array copies copy their values; frozen fields share read-only storage.
 // Freeze calls consume exclusive native map and slice builders without copying.
 // Builder aliases and later uses are rejected; Clone creates independent native storage.
 // Dependency proof failures propagate to importing consumers.
@@ -97,7 +98,7 @@ func (c *checks) visit(node ast.Node) bool {
 	case *ast.FuncDecl:
 		if n.Body == nil {
 			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
-				"provide a Go implementation so writes and shared borrows can be checked")
+				"provide a Go implementation so writes and reference transport can be checked")
 		}
 	case *ast.ImportSpec:
 		c.checkImport(n)
@@ -135,7 +136,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 	}
 	if basic, ok := t.Underlying().(*types.Basic); ok && basic.Kind() == types.UnsafePointer {
 		c.report(pos, "unsupported unsafe pointer; immutability cannot be proved\n  type: "+diagnosticType(t)+
-			"\n  fix: use typed value copies or direct shared borrows; do not reinterpret "+
+			"\n  fix: use typed value copies or immutable references; do not reinterpret "+
 			"storage")
 	}
 	if checker.IsCollection(t) {
@@ -190,12 +191,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		if field.Pkg() == c.pass.Pkg && field.Pos().IsValid() {
 			fieldPos = field.Pos()
 		}
-		if markerType(ft) && !field.Embedded() {
-			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
-				"\n  fix: embed im.Immut or im.ImmutNoRef; remove the marker field name or pointer")
-			continue
-		}
-		if ptr, ok := ft.Underlying().(*types.Pointer); ok && markerType(ptr.Elem()) {
+		if invalidMarkerField(field) {
 			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
 				"\n  fix: embed im.Immut or im.ImmutNoRef; remove the marker field name or pointer")
 			continue
@@ -213,9 +209,17 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+
 				"\n  fix: embed im.Immut or im.ImmutNoRef and make all fields immutable, or remove the immutable field")
 			continue
-
 		}
 	}
+}
+
+// invalidMarkerField rejects named marker fields and pointers to either marker.
+func invalidMarkerField(field *types.Var) bool {
+	if markerType(field.Type()) {
+		return !field.Embedded()
+	}
+	pointer, ok := field.Type().Underlying().(*types.Pointer)
+	return ok && markerType(pointer.Elem())
 }
 
 // markerType identifies either exact library marker before its placement is checked.
