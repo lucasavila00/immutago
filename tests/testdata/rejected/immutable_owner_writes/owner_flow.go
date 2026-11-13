@@ -3,7 +3,7 @@ package borrowcases
 func BranchLocal(condition bool) Good {
 	var value Good
 	if condition {
-		pointer := &value
+		pointer := new(value)
 		_ = read(pointer)
 	} else {
 		value.X = 1
@@ -12,9 +12,9 @@ func BranchLocal(condition bool) Good {
 	return value
 }
 
-func BranchLastUse(condition bool) Good {
+func BranchAfterRead(condition bool) Good {
 	var value Good
-	pointer := &value
+	pointer := new(value)
 	if condition {
 		_ = read(pointer)
 	} else {
@@ -28,7 +28,7 @@ func LoopLocal(count int) Good {
 	var value Good
 	for index := 0; index < count; index++ {
 		value.X = index
-		pointer := &value
+		pointer := new(value)
 		_ = read(pointer)
 	}
 	value.X = count
@@ -37,7 +37,7 @@ func LoopLocal(count int) Good {
 
 func EarlyReturn(condition bool) Good {
 	var value Good
-	pointer := &value
+	pointer := new(value)
 	if condition {
 		_ = read(pointer)
 		return value
@@ -48,7 +48,7 @@ func EarlyReturn(condition bool) Good {
 
 func ShadowCopy() Good {
 	value := Good{X: 1}
-	pointer := &value
+	pointer := new(value)
 	{
 		value := value
 		value.X = 2
@@ -58,9 +58,9 @@ func ShadowCopy() Good {
 	return value
 }
 
-func LoopLastUse(count int) Good {
+func LoopAfterRead(count int) Good {
 	var value Good
-	pointer := &value
+	pointer := new(value)
 	for index := 0; index < count; index++ {
 		_ = read(pointer)
 	}

@@ -1,14 +1,12 @@
-array_pointer_method.go:10:17: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+array_pointer_method.go:10:17: unsupported immutable operation: user-defined methods with immutable storage are unsupported
   source: Change
   type: func()
   fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
-array_pointer_method.go:10:28: cannot write through shared reference p.Values[0]: shared references are read-only; update the owned value before borrowing, or copy the value and update the copy
-array_pointer_method.go:10:7: 	shared reference p (*rejected.Count) declared here
-array_pointer_method.go:10:7: unsupported immutable borrow: references require one fixed declaration from an owned local
-  source: p
-  type: *rejected.Count
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
-array_pointer_method.go:20:2: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+array_pointer_method.go:10:28: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.Values[0]
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+array_pointer_method.go:20:2: unsupported immutable operation: user-defined methods with immutable storage are unsupported
   source: value.N.Change
   type: func()
   fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed

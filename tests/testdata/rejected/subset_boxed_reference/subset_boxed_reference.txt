@@ -1,4 +1,4 @@
-subset_boxed_reference.go:9:32: unsupported immutable borrow: boxing immutable storage in interfaces is unsupported
-  source: &v
+subset_boxed_reference.go:18:36: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: new(v)
   type: *rejected.Good
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

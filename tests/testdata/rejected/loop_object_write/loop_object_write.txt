@@ -1,0 +1,4 @@
+loop_object_write.go:23:3: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

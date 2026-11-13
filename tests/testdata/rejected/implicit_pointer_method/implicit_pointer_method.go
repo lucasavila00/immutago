@@ -13,7 +13,7 @@ type Value struct {
 
 func mutate() {
 	var value Value
-	pointer := &value
+	pointer := new(value)
 	value.N.Change()
 	_ = pointer.N
 }

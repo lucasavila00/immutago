@@ -19,9 +19,9 @@ func binaryBindings() {
 
 func callBindings() {
 	var value Value
-	a, b := read(&value), 2
+	a, b := read(new(value)), 2
 	_, _ = a, b
-	var c, d = read(&value), 2
+	var c, d = read(new(value)), 2
 	_, _ = c, d
 }
 
@@ -45,10 +45,6 @@ func methodExpressions() {
 	value, found := (im.FrozenMap[int, Value].Get)(frozen, 1)
 	_ = value
 	_ = found
-}
-
-func nilArgument() {
-	_ = read((nil))
 }
 
 func savedIterator() {

@@ -1,4 +1,4 @@
-subset_closure.go:9:43: unsupported immutable borrow: closures cannot capture immutable storage
+subset_closure.go:18:57: unsupported immutable operation: closures cannot capture immutable storage
   source: p
   type: *rejected.Good
-  fix: move the code to a named function and pass the immutable value or a synchronous read-only borrow explicitly
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

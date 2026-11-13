@@ -7,23 +7,19 @@ type Point struct {
 	X int
 }
 
-func implicitArrayIndex() int {
-	values := [2]Point{}
-	p := &values
-	return p[0].X
+type PointArray struct {
+	im.Immut
+	Values [2]Point
 }
 
+func arrayReference() { p := &[2]Point{}; _ = p }
 func sharedArrayWrite() {
-	values := [2]Point{}
-	p := &values
-	(*p)[0].X = 1
+	p := &PointArray{}
+	p.Values[0].X = 1
 }
-
-func liveArrayWrite() int {
+func localArrayWrite() {
 	values := [2]Point{}
-	p := &values
 	values[0].X = 1
-	return (*p)[0].X
 }
 
 type LocalPoint struct {

@@ -1,0 +1,7 @@
+multiple_protected_binding.go:22:19: unsupported immutable operation: reference operation is outside the supported allowlist
+  source: new(value)
+  type: *rejected.Good
+  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Immut references can be stored or returned
+multiple_protected_binding.go:22:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: pointer, value = new(value), Good{X: 2}
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

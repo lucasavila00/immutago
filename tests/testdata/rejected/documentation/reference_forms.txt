@@ -1,20 +1,31 @@
-reference_forms.go:13:9: unsupported immutable borrow: reference operation is outside the supported allowlist
+reference_forms.go:15:25: unsupported immutable operation: immutable references require a concrete marked struct target
   source: p
   type: *[2]docrejected.Point
-  fix: keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader
-reference_forms.go:19:2: cannot write through shared reference (*p)[0].X: shared references are read-only; update the owned value before borrowing, or copy the value and update the copy
-reference_forms.go:18:2: 	shared reference p (*[2]docrejected.Point) declared here
-reference_forms.go:25:2: cannot write borrowed immutable owner values ([2]docrejected.Point) through values[0].X: shared reference p is still live; move this write after its final use, or copy the value before updating
-reference_forms.go:24:2: 	shared reference p declared here
-reference_forms.go:26:11: 	this reachable use keeps shared reference p live
-reference_forms.go:31:34: unsupported immutable borrow: closures cannot capture immutable storage
+  fix: allocate a concrete struct that embeds im.Immut or im.ImmutNoRef; copy arrays and frozen collection values without taking their addresses
+reference_forms.go:15:30: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: &[2]Point{}
+  type: *[2]docrejected.Point
+  fix: allocate a concrete struct that embeds im.Immut or im.ImmutNoRef; copy arrays and frozen collection values without taking their addresses
+reference_forms.go:15:47: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: p
+  type: *[2]docrejected.Point
+  fix: allocate a concrete struct that embeds im.Immut or im.ImmutNoRef; copy arrays and frozen collection values without taking their addresses
+reference_forms.go:18:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.Values[0].X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+reference_forms.go:22:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: values[0].X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+reference_forms.go:32:34: unsupported immutable operation: closures cannot capture immutable storage
   source: point
-  type: docrejected.Point
-  fix: move the code to a named function and pass the immutable value or a synchronous read-only borrow explicitly
-reference_forms.go:39:9: unsupported immutable borrow: generic calls with immutable types are unsupported
+  type: *docrejected.LocalPoint
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+reference_forms.go:40:9: unsupported immutable operation: user generic instantiations with immutable types are unsupported
   source: identity
   type: func(value docrejected.Point) docrejected.Point
-  fix: use a non-generic function with concrete immutable parameter types; only the fixed im APIs support these calls
-reference_forms.go:45:2: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+reference_forms.go:46:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: point, found := makePair()
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

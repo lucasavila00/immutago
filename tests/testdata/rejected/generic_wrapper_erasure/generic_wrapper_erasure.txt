@@ -1,7 +1,4 @@
-generic_wrapper_erasure.go:10:25: unsupported unmarked field Value: unresolved generic storage
-  owner: rejected.Box[T any]; field type: T
-  fix: constrain the field to types that cannot contain immutable storage, or make the owner and field immutable
-generic_wrapper_erasure.go:13:14: unsupported immutable borrow: generic calls with immutable types are unsupported
+generic_wrapper_erasure.go:13:14: unsupported immutable operation: user generic instantiations with immutable types are unsupported
   source: wrap
   type: func(value rejected.Good) any
-  fix: use a non-generic function with concrete immutable parameter types; only the fixed im APIs support these calls
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported

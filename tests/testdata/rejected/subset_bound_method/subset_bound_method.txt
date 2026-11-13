@@ -1,12 +1,8 @@
-subset_bound_method.go:10:20: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+subset_bound_method.go:10:20: unsupported immutable operation: user-defined methods with immutable storage are unsupported
   source: v.Read
   type: func() int
   fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
-subset_bound_method.go:9:16: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
+subset_bound_method.go:9:16: unsupported immutable operation: user-defined methods with immutable storage are unsupported
   source: Read
   type: func() int
   fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
-subset_bound_method.go:9:7: unsupported immutable borrow: references require one fixed declaration from an owned local
-  source: v
-  type: *rejected.Good
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference

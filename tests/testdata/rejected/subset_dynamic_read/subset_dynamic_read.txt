@@ -1,4 +1,4 @@
-subset_dynamic_read.go:9:34: unsupported immutable borrow: dynamic calls with immutable storage are unsupported
-  source: &v
+subset_dynamic_read.go:18:37: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: new(v)
   type: *rejected.Good
   fix: call a named, non-generic function directly with a concrete immutable parameter

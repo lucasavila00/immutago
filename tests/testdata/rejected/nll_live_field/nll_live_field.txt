@@ -1,3 +1,0 @@
-nll_live_field.go:22:2: cannot write borrowed immutable owner value (rejected.Good) through value.X: shared reference pointer is still live; move this write after its final use, or copy the value before updating
-nll_live_field.go:21:2: 	shared reference pointer declared here
-nll_live_field.go:23:11: 	this reachable use keeps shared reference pointer live

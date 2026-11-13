@@ -1,3 +1,8 @@
-generic_wrapper.go:10:29: unsupported unmarked field Value: unresolved generic storage
-  owner: rejected.Wrapper[T any]; field type: T
-  fix: constrain the field to types that cannot contain immutable storage, or make the owner and field immutable
+generic_wrapper.go:10:29: unmarked struct contains immutable field Value; embed an immutable marker
+  owner: rejected.Wrapper[rejected.Good]; field type: rejected.Good
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Immut or im.ImmutNoRef and make all fields immutable, or remove the immutable field
+generic_wrapper.go:12:9: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: Wrapper
+  type: rejected.Wrapper[T any]
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported

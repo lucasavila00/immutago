@@ -31,7 +31,7 @@ func build() Holder {
 }
 
 func slots() im.FrozenSlice[*Node] {
-	builder := []*Node{{Value: 1}}
+	builder := []*Node{&Node{Value: 1}}
 	alias := builder[0]
 	builder[0] = &Node{Value: 2}
 	_ = alias.Value
@@ -43,7 +43,7 @@ func slots() im.FrozenSlice[*Node] {
 }
 func pointerMap() im.FrozenMap[*Node, *Node] {
 	key := &Node{Value: 1}
-	builder := map[*Node]*Node{key: {Value: 2}}
+	builder := map[*Node]*Node{key: &Node{Value: 2}}
 	frozen := im.FreezeMap(builder)
 	value, found := frozen.Get(key)
 	_ = value
@@ -64,4 +64,9 @@ var current Node
 func replaceGlobal() Node {
 	current = Node{Value: 2}
 	return current
+}
+
+func nilReference() *Node {
+	var pointer *Node = nil
+	return pointer
 }

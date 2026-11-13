@@ -1,11 +1,11 @@
-freeze_map_delayed_assignment.go:8:27: unsupported immutable borrow: Freeze requires a standalone single binding
+freeze_map_delayed_assignment.go:8:27: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeMap(values)
   type: im.FrozenMap[string, int]
   fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
-freeze_map_delayed_assignment.go:8:2: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
+freeze_map_delayed_assignment.go:8:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: values["x"], frozen = 2, im.FreezeMap(values)
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 freeze_map_delayed_assignment.go:8:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-freeze_map_delayed_assignment.go:9:2: unsupported immutable borrow: multiple assignments involving protected storage are unsupported
+freeze_map_delayed_assignment.go:9:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: _, _ = frozen.Get("x")
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

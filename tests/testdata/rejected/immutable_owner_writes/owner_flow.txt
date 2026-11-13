@@ -1,0 +1,32 @@
+owner_flow.go:11:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_flow.go:23:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_flow.go:30:3: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_flow.go:34:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_flow.go:45:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_flow.go:54:3: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_flow.go:67:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_flow.go:9:3: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

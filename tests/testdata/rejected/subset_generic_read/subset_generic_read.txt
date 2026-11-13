@@ -1,12 +1,16 @@
-subset_generic_read.go:10:18: unsupported immutable borrow: generic calls with immutable types are unsupported
-  source: readGeneric
-  type: func(p *rejected.Good)
-  fix: use a non-generic function with concrete immutable parameter types; only the fixed im APIs support these calls
-subset_generic_read.go:10:30: unsupported immutable borrow: generic borrowing calls are unsupported
-  source: &v
-  type: *rejected.Good
-  fix: use a non-generic function with concrete immutable parameter types; only the fixed im APIs support these calls
-subset_generic_read.go:9:26: unsupported immutable borrow: references require one fixed declaration from an owned local
+subset_generic_read.go:18:26: unsupported immutable operation: immutable references require a concrete marked struct target
   source: p
   type: *T
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
+  fix: allocate a concrete struct that embeds im.Immut or im.ImmutNoRef; copy arrays and frozen collection values without taking their addresses
+subset_generic_read.go:18:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: readGeneric
+  type: func[T rejected.Good](p *T)
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+subset_generic_read.go:19:34: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: readGeneric
+  type: func(p *rejected.Good)
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+subset_generic_read.go:19:46: unsupported immutable operation: reference operation is outside the supported allowlist
+  source: new(v)
+  type: *rejected.Good
+  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Immut references can be stored or returned

@@ -1,0 +1,77 @@
+local_reference_escape.go:11:2: immutable field Pointer: ImmutNoRef references cannot be stored
+  owner: local_reference_escape.Stored; field type: *local_reference_escape.Local
+  fix: replace the pointer field or argument with an owned immutable value
+local_reference_escape.go:14:5: unsupported immutable operation: global ImmutNoRef references are unsupported
+  source: global
+  type: *local_reference_escape.Local
+  fix: keep the ImmutNoRef reference local, or store a value copy
+local_reference_escape.go:16:38: unsupported immutable operation: returning ImmutNoRef references is unsupported
+  source: &Local{Value: 1}
+  type: *local_reference_escape.Local
+  fix: return an ImmutNoRef value copy, or use im.Immut for objects whose references must be shared
+local_reference_escape.go:16:6: unsupported immutable operation: returning ImmutNoRef references is unsupported
+  source: returned
+  type: func() *local_reference_escape.Local
+  fix: return an ImmutNoRef value copy, or use im.Immut for objects whose references must be shared
+local_reference_escape.go:17:31: unsupported immutable operation: global ImmutNoRef references are unsupported
+  source: global
+  type: *local_reference_escape.Local
+  fix: keep the ImmutNoRef reference local, or store a value copy
+local_reference_escape.go:17:40: unsupported immutable operation: reference operation is outside the supported allowlist
+  source: value
+  type: *local_reference_escape.Local
+  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Immut references can be stored or returned
+local_reference_escape.go:20:28: unsupported immutable operation: reference operation is outside the supported allowlist
+  source: value
+  type: *local_reference_escape.Local
+  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Immut references can be stored or returned
+local_reference_escape.go:25:13: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: []*Local{value}
+  type: []*local_reference_escape.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+local_reference_escape.go:25:22: unsupported immutable operation: reference operation is outside the supported allowlist
+  source: value
+  type: *local_reference_escape.Local
+  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Immut references can be stored or returned
+local_reference_escape.go:25:2: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: builder
+  type: []*local_reference_escape.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+local_reference_escape.go:26:12: immutable collection: type argument 1: ImmutNoRef references cannot be stored
+  type: im.FrozenSlice[*local_reference_escape.Local]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+local_reference_escape.go:26:15: immutable type argument: ImmutNoRef references cannot be stored
+  type: *local_reference_escape.Local
+  fix: replace the pointer field or argument with an owned immutable value
+local_reference_escape.go:26:27: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: builder
+  type: []*local_reference_escape.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+local_reference_escape.go:26:2: immutable collection: type argument 1: ImmutNoRef references cannot be stored
+  type: im.FrozenSlice[*local_reference_escape.Local]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+local_reference_escape.go:27:6: immutable collection: type argument 1: ImmutNoRef references cannot be stored
+  type: im.FrozenSlice[*local_reference_escape.Local]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+local_reference_escape.go:31:34: unsupported immutable operation: closures cannot capture immutable storage
+  source: value
+  type: *local_reference_escape.Local
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+local_reference_escape.go:36:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.Value
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+local_reference_escape.go:38:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: pointer.Value
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+local_reference_escape.go:44:15: unsupported immutable operation: protected storage requires synchronous calls
+  source: value
+  type: *local_reference_escape.Local
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+local_reference_escape.go:45:18: unsupported immutable operation: protected storage requires synchronous calls
+  source: value
+  type: *local_reference_escape.Local
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+local_reference_escape.go:48:11: struct cannot embed both im.Immut and im.ImmutNoRef
+local_reference_escape.go:48:6: struct cannot embed both im.Immut and im.ImmutNoRef

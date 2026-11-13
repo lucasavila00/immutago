@@ -42,3 +42,8 @@ func scheduledReads() {
 	go readNode(shared)
 	defer readNode(shared)
 }
+
+func implicitPointerLiterals() {
+	builder := []*Node{{Value: 1}}
+	_ = im.FreezeSlice(builder)
+}

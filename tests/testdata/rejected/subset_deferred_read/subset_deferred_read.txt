@@ -1,12 +1,8 @@
-subset_deferred_read.go:9:24: unsupported immutable borrow: shared references require synchronous calls
-  source: read(&v)
-  type: int
-  fix: make the read-only call directly; do not use go or defer with this borrow
-subset_deferred_read.go:9:29: unsupported immutable borrow: protected storage requires synchronous calls
-  source: &v
+subset_deferred_read.go:18:31: unsupported immutable operation: protected storage requires synchronous calls
+  source: new(v)
   type: *rejected.Good
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-subset_deferred_read.go:9:30: unsupported immutable borrow: protected storage requires synchronous calls
+subset_deferred_read.go:18:35: unsupported immutable operation: protected storage requires synchronous calls
   source: v
   type: rejected.Good
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer

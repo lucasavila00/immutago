@@ -1,0 +1,4 @@
+branch_object_write.go:28:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: first.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

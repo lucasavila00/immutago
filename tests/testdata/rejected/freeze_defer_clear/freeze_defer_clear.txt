@@ -1,4 +1,4 @@
-freeze_defer_clear.go:5:46: unsupported immutable borrow: protected storage requires synchronous calls
+freeze_defer_clear.go:5:46: unsupported immutable operation: protected storage requires synchronous calls
   source: values
   type: []int
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer

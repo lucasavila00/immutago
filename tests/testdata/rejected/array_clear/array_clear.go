@@ -9,7 +9,7 @@ type Good struct {
 
 func mutate() {
 	var value Good
-	pointer := &value
+	pointer := new(value)
 	clear(value.Array[:])
 	_ = pointer.Array[0]
 }

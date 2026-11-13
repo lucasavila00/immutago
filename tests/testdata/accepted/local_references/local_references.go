@@ -42,3 +42,8 @@ func localCopies() int {
 	zero = copied
 	return read(zero)
 }
+
+func nilReference() bool {
+	var pointer *Local = nil
+	return pointer == nil
+}

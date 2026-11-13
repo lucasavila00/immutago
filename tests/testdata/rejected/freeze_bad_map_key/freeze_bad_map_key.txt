@@ -1,6 +1,6 @@
-freeze_bad_map_key.go:5:18: immutable collection: type argument 1: *int is not provably immutable
+freeze_bad_map_key.go:5:18: immutable collection: type argument 1: stored pointers require a concrete marked struct target
   type: im.FrozenMap[*int, int]
   fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-freeze_bad_map_key.go:5:21: immutable type argument: *int is not provably immutable
+freeze_bad_map_key.go:5:21: immutable type argument: stored pointers require a concrete marked struct target
   type: *int
   fix: replace the pointer field or argument with an owned immutable value

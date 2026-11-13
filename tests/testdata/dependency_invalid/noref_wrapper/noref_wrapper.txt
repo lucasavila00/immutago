@@ -1,0 +1,17 @@
+noref_wrapper.go:3:8: unsupported dependency example.com/consumer/invalid_noref: immutability proof failed
+  import chain: example.com/consumer/noref_wrapper -> example.com/consumer/invalid_noref
+  original failure: example.com/consumer/invalid_noref/invalid_noref.go:10:5: unsupported immutable operation: global ImmutNoRef references are unsupported
+    source: retained
+    type: *invalid_noref.Local
+    fix: keep the ImmutNoRef reference local, or store a value copy
+  import chain: example.com/consumer/noref_wrapper -> example.com/consumer/invalid_noref
+  original failure: example.com/consumer/invalid_noref/invalid_noref.go:12:29: unsupported immutable operation: global ImmutNoRef references are unsupported
+    source: retained
+    type: *invalid_noref.Local
+    fix: keep the ImmutNoRef reference local, or store a value copy
+  import chain: example.com/consumer/noref_wrapper -> example.com/consumer/invalid_noref
+  original failure: example.com/consumer/invalid_noref/invalid_noref.go:12:40: unsupported immutable operation: reference operation is outside the supported allowlist
+    source: value
+    type: *invalid_noref.Local
+    fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Immut references can be stored or returned
+  fix: correct the original dependency error above, then rerun immutago on this package

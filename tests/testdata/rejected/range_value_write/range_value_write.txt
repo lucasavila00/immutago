@@ -1,0 +1,4 @@
+range_value_write.go:14:3: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.Value
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

@@ -1,4 +1,4 @@
-package rejected
+package accepted
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
@@ -15,4 +15,4 @@ type Good struct {
 
 func read(p *Good) int { return p.X }
 
-func bad(p *Good) *Good { return p }
+func forward(p *Good) *Good { return p }

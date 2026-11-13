@@ -18,7 +18,7 @@ func aliases() {
 func stored() {
 	node := &Node{Next: &Node{Value: 1}}
 	node.Next.Value++
-	builder := []*Node{{Value: 2}}
+	builder := []*Node{&Node{Value: 2}}
 	builder[0].Value = 3
 	frozen := im.FreezeSlice(builder)
 	shared := frozen.At(0)

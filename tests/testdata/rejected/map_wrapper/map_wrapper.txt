@@ -1,12 +1,12 @@
-map_wrapper.go:11:18: unmarked struct contains immutable field Value; embed im.Marker
+map_wrapper.go:11:18: unmarked struct contains immutable field Value; embed an immutable marker
   owner: rejected.Bad; field type: map[string]rejected.Good
   rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Marker in this struct and make all its fields immutable, or remove the immutable field
-map_wrapper.go:11:18: unsupported immutable borrow: native maps of immutable storage are unsupported
+  fix: embed im.Immut or im.ImmutNoRef and make all fields immutable, or remove the immutable field
+map_wrapper.go:11:18: unsupported immutable operation: native maps of immutable storage are unsupported
   source: Value
   type: map[string]rejected.Good
   fix: use im.FrozenMap[K, V]; pass an owned local map or fresh literal to im.FreezeMap
-map_wrapper.go:11:24: unsupported immutable borrow: native maps of immutable storage are unsupported
+map_wrapper.go:11:24: unsupported immutable operation: native maps of immutable storage are unsupported
   source: map[string]Good
   type: map[string]rejected.Good
   fix: use im.FrozenMap[K, V]; pass an owned local map or fresh literal to im.FreezeMap

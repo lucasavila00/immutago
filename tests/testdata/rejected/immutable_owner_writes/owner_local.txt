@@ -1,0 +1,36 @@
+owner_local.go:22:3: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:24:3: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:27:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.Y
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:35:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:46:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: first.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:48:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: second.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:54:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:62:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: copied.X
+  type: int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

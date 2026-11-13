@@ -28,9 +28,9 @@ func Conditional(condition bool) Good {
 	return value
 }
 
-func LastUse() Good {
+func AfterRead() Good {
 	var value Good
-	pointer := &value
+	pointer := new(value)
 	_ = read(pointer)
 	value.X = 2
 	value = Good{X: 3}
@@ -40,9 +40,9 @@ func LastUse() Good {
 func SeparateReferences() Good {
 	var first Good
 	var second Good
-	pointer := &first
+	pointer := new(first)
 	_ = read(pointer)
-	other := &second
+	other := new(second)
 	first.X = 2
 	_ = read(other)
 	second.X = 3
@@ -51,14 +51,14 @@ func SeparateReferences() Good {
 
 func RHSRead() Good {
 	var value Good
-	value.X = read(&value) + 1
+	value.X = read(new(value)) + 1
 	return value
 }
 
 func ValueCopies() Good {
 	value := Good{X: 1}
 	copied := value
-	pointer := &value
+	pointer := new(value)
 	copied.X = 2
 	_ = read(pointer)
 	return copied

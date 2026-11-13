@@ -1,6 +1,6 @@
 indirect_unsafe.go:5:15: unsupported unsafe pointer; immutability cannot be proved
   type: unsafe.Pointer
-  fix: use typed value copies or direct shared borrows; do not reinterpret storage
+  fix: use typed value copies or immutable references; do not reinterpret storage
 indirect_unsafe.go:5:5: unsupported unsafe pointer; immutability cannot be proved
   type: unsafe.Pointer
-  fix: use typed value copies or direct shared borrows; do not reinterpret storage
+  fix: use typed value copies or immutable references; do not reinterpret storage

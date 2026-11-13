@@ -1,0 +1,59 @@
+restricted_boundaries.go:15:15: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: []*Local
+  type: []*restricted_boundaries.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+restricted_boundaries.go:15:6: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: nilSlice
+  type: []*restricted_boundaries.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+restricted_boundaries.go:16:16: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: []*Local{}
+  type: []*restricted_boundaries.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+restricted_boundaries.go:16:2: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: emptySlice
+  type: []*restricted_boundaries.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+restricted_boundaries.go:17:14: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: make(map[int]*Local)
+  type: map[int]*restricted_boundaries.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+restricted_boundaries.go:17:19: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: map[int]*Local
+  type: map[int]*restricted_boundaries.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+restricted_boundaries.go:17:2: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: emptyMap
+  type: map[int]*restricted_boundaries.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+restricted_boundaries.go:18:6: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: nilSlice
+  type: []*restricted_boundaries.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+restricted_boundaries.go:18:6: unsupported owned container nilSlice: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+restricted_boundaries.go:19:6: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: emptySlice
+  type: []*restricted_boundaries.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+restricted_boundaries.go:19:6: unsupported owned container emptySlice: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+restricted_boundaries.go:20:6: unsupported immutable operation: containers of ImmutNoRef references are unsupported
+  source: emptyMap
+  type: map[int]*restricted_boundaries.Local
+  fix: store ImmutNoRef value copies or shared im.Immut references
+restricted_boundaries.go:20:6: unsupported owned container emptyMap: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+restricted_boundaries.go:25:9: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: value
+  type: any
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+restricted_boundaries.go:32:15: unsupported immutable operation: user-defined methods with immutable storage are unsupported
+  source: Read
+  type: func(value *restricted_boundaries.Node) int
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+restricted_boundaries.go:33:15: unsupported immutable operation: user-defined methods with immutable storage are unsupported
+  source: Make
+  type: func() *restricted_boundaries.Node
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+restricted_boundaries.go:37:17: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: ProtectedBody
+  type: func() int
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported

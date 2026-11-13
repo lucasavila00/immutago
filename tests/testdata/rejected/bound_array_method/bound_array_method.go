@@ -16,7 +16,7 @@ type Value struct {
 
 func mutate() {
 	var value Value
-	pointer := &value
+	pointer := new(value)
 	method := value.N.Change
 	method()
 	_ = pointer.N

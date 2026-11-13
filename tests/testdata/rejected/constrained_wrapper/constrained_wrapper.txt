@@ -1,4 +1,8 @@
-constrained_wrapper.go:9:26: unmarked struct contains immutable field Value; embed im.Marker
+constrained_wrapper.go:9:26: unmarked struct contains immutable field Value; embed an immutable marker
   owner: rejected.Bad[T rejected.Good]; field type: T
   rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Marker in this struct and make all its fields immutable, or remove the immutable field
+  fix: embed im.Immut or im.ImmutNoRef and make all fields immutable, or remove the immutable field
+constrained_wrapper.go:9:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: Bad
+  type: rejected.Bad[T rejected.Good]
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
