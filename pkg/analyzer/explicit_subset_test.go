@@ -10,7 +10,7 @@ func TestExplicitSubsetRejects(t *testing.T) {
 	cases := []struct{ name, source string }{
 		{"method", `func(v V)Read()int{return v.X}`},
 		{"promoted method", `type Count int;func(c Count)Read()int{return int(c)}
-   type W struct{im.Immut;Count};func f(){var w W;_=w.Read()}`},
+   type W struct{im.Shared;Count};func f(){var w W;_=w.Read()}`},
 		{"range protected value", `func empty(yield func(V)bool){};func f(){for v:=range empty{_=v.X}}`},
 		{"native multiple", `func f(){s:=[]int{1};var x int;s[0],x=2,3;_=x;_=im.FreezeSlice(s)}`},
 		{"protected send", `func f(ch chan int){var v V;ch<-v.X}`},
@@ -29,7 +29,7 @@ func TestExplicitSubsetRejects(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Immut;X int};`+tc.source)
+			got := checkSource(t, `type V struct{im.Shared;X int};`+tc.source)
 			if !strings.Contains(got, "unsupported immutable operation") {
 				t.Fatalf("unsupported form accepted: %s", got)
 			}
@@ -54,7 +54,7 @@ func TestExplicitSubsetAccepts(t *testing.T) {
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type V struct{im.Immut;X int};`+source); got != "" {
+			if got := checkSource(t, `type V struct{im.Shared;X int};`+source); got != "" {
 				t.Fatalf("documented form rejected: %s", got)
 			}
 		})

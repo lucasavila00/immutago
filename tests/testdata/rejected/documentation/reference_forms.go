@@ -3,12 +3,12 @@ package docrejected
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Point struct {
-	im.Immut
+	im.Shared
 	X int
 }
 
 type PointArray struct {
-	im.Immut
+	im.Shared
 	Values [2]Point
 }
 
@@ -23,7 +23,7 @@ func localArrayWrite() {
 }
 
 type LocalPoint struct {
-	im.ImmutNoRef
+	im.LocalRef
 	X int
 }
 

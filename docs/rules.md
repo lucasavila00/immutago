@@ -16,18 +16,18 @@ Embed exactly one marker by value:
 ```go
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type SharedPoint struct { im.Immut; X int }
-type LocalRefPoint struct { im.ImmutNoRef; X int }
-type SharedLink struct { im.Immut; P *SharedPoint }
+type SharedPoint struct { im.Shared; X int }
+type LocalRefPoint struct { im.LocalRef; X int }
+type SharedLink struct { im.Shared; P *SharedPoint }
 ```
 
 | Marker | Pointer policy |
 | --- | --- |
-| `im.Immut` | **Shareable pointers:** copy, store, pass to direct typed functions, or return them. |
-| `im.ImmutNoRef` | **Local pointers:** keep them in local variables or pass them to direct typed non-retaining functions. Value copies can be stored and returned. |
+| `im.Shared` | **Shareable pointers:** copy, store, pass to direct typed functions, or return them. |
+| `im.LocalRef` | **Local pointers:** keep them in local variables or pass them to direct typed non-retaining functions. Value copies can be stored and returned. |
 
-In Rust terms, `Immut` resembles `Rc<T>`/`Arc<T>` with Go's GC managing lifetime;
-`ImmutNoRef` resembles a scoped `&'a T`.
+In Rust terms, `Shared` resembles `Rc<T>`/`Arc<T>` with Go's GC managing lifetime;
+`LocalRef` resembles a scoped `&'a T`.
 
 The allowed stored types are complete below. Every field, key, and element
 must recursively match a row.
@@ -38,10 +38,10 @@ must recursively match a row.
 | Defined scalar | `type Count int` |
 | Unnamed array of allowed elements | `[2]int`, `[2]SharedPoint` |
 | Struct with one embedded marker and allowed fields | `SharedPoint`, `LocalRefPoint` above |
-| Embedded marker alias | `type Mark = im.Immut; type Value struct { Mark; X int }` |
-| Nested marked value | `type Pair struct { im.Immut; Child SharedPoint }` |
-| Pointer to a concrete Immut struct | `*SharedPoint` |
-| Recursive marked struct | `type SharedNode struct { im.Immut; Next *SharedNode }` |
+| Embedded marker alias | `type Mark = im.Shared; type Value struct { Mark; X int }` |
+| Nested marked value | `type Pair struct { im.Shared; Child SharedPoint }` |
+| Pointer to a concrete Shared struct | `*SharedPoint` |
+| Recursive marked struct | `type SharedNode struct { im.Shared; Next *SharedNode }` |
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
 
@@ -49,13 +49,13 @@ Rejected type examples (**not exhaustive**):
 
 | Rejected form | Replacement |
 | --- | --- |
-| `type Bad struct { Mark im.Immut }` | `type Good struct { im.Immut }` |
-| `type Bad struct { *im.Immut }` | Embed `im.Immut` by value. |
-| `type Bad struct { im.Immut; im.ImmutNoRef }` | Embed one marker. |
-| `type Bad struct { Child SharedPoint }` | `type Good struct { im.Immut; Child SharedPoint }` |
-| `type Bad struct { Children []SharedPoint }` | `type Good struct { im.Immut; Children im.FrozenSlice[SharedPoint] }` |
-| `type Bad struct { im.Immut; P *LocalRefPoint }` | Store `LocalRefPoint` by value, or use `*SharedPoint` for sharing. |
-| `type Counts [2]int` as a stored type | `type Counts struct { im.Immut; Values [2]int }` |
+| `type Bad struct { Mark im.Shared }` | `type Good struct { im.Shared }` |
+| `type Bad struct { *im.Shared }` | Embed `im.Shared` by value. |
+| `type Bad struct { im.Shared; im.LocalRef }` | Embed one marker. |
+| `type Bad struct { Child SharedPoint }` | `type Good struct { im.Shared; Child SharedPoint }` |
+| `type Bad struct { Children []SharedPoint }` | `type Good struct { im.Shared; Children im.FrozenSlice[SharedPoint] }` |
+| `type Bad struct { im.Shared; P *LocalRefPoint }` | Store `LocalRefPoint` by value, or use `*SharedPoint` for sharing. |
+| `type Counts [2]int` as a stored type | `type Counts struct { im.Shared; Values [2]int }` |
 
 Allowed generic forms:
 
@@ -68,7 +68,7 @@ Rejected generic examples (**not exhaustive**):
 
 | Rejected form | Replacement |
 | --- | --- |
-| `type Box[T any] struct { im.Immut; Value T }` | `type Box struct { im.Immut; Value SharedPoint }` |
+| `type Box[T any] struct { im.Shared; Value T }` | `type Box struct { im.Shared; Value SharedPoint }` |
 | `Plain[SharedPoint]` or `identity(point)` with generic `identity` | Use a concrete marked struct or copy `point` directly. |
 
 ## Construction and pointers
@@ -89,8 +89,8 @@ p = &SharedPoint{X: 2} // q still observes X == 1.
 
 ### Pointers: both markers
 
-These forms apply to both `*SharedPoint` (`im.Immut`) and
-`*LocalRefPoint` (`im.ImmutNoRef`).
+These forms apply to both `*SharedPoint` (`im.Shared`) and
+`*LocalRefPoint` (`im.LocalRef`).
 
 | Allowed form | Example |
 | --- | --- |
@@ -102,7 +102,7 @@ These forms apply to both `*SharedPoint` (`im.Immut`) and
 | Compare pointers or nil | `same := p == q`, `if p != nil { ... }` |
 | Pass to a direct function with an exact concrete parameter type | `read(p)`; `func read(p *SharedPoint) int { return p.X }` |
 
-### Shareable pointers: `im.Immut` only
+### Shareable pointers: `im.Shared` only
 
 `*SharedPoint` also permits these forms:
 
@@ -142,7 +142,7 @@ Use the operations above inside these statement forms:
 | Bind a map reader's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |
-| Return values or `Immut` pointers, including multiple results | `return point`, `return p, true` |
+| Return values or `Shared` pointers, including multiple results | `return point`, `return p, true` |
 | Forward named results directly | `return makePair()`, `takePair(makePair())` |
 | Conditional or value switch | `if ready { p = makeSharedPoint() }`, `switch p.X { ... }` |
 | Condition, three-clause, or unconditional loop | `for p.X > 0 { ... }`, `for i := 0; i < p.X; i++ { ... }`, `for { ... }` |

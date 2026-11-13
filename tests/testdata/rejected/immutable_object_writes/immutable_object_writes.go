@@ -3,7 +3,7 @@ package immutable_object_writes
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Node struct {
-	im.Immut
+	im.Shared
 	Value int
 	Next  *Node
 }

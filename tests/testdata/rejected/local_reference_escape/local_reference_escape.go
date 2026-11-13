@@ -3,11 +3,11 @@ package local_reference_escape
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Local struct {
-	im.ImmutNoRef
+	im.LocalRef
 	Value int
 }
 type Stored struct {
-	im.Immut
+	im.Shared
 	Pointer *Local
 }
 
@@ -46,7 +46,7 @@ func delayed() {
 }
 
 type Both struct {
-	im.Immut
-	im.ImmutNoRef
+	im.Shared
+	im.LocalRef
 	Value int
 }

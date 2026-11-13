@@ -1,16 +1,16 @@
 // Package analyzer exposes the immutago go/analysis analyzer.
 //
-// Structs that embed im.Immut or im.ImmutNoRef are immutable from construction.
+// Structs that embed im.Shared or im.LocalRef are immutable from construction.
 // Their fields must be scalars, unnamed arrays, other marked structs, pointers
-// to concrete Immut structs, or frozen collections of allowed types. Each
+// to concrete Shared structs, or frozen collections of allowed types. Each
 // component is checked recursively. Unmarked structs cannot store protected
 // values. Interfaces, callbacks, user generics with protected storage,
 // reflection, and unsafe operations are unsupported.
 //
 // Whole variable bindings can be replaced. Field, element, and pointer-target
 // writes to protected objects are rejected. Protected references start with
-// fresh construction and target concrete marked structs. Immut references can
-// be copied, stored, and returned. ImmutNoRef references stay local or pass to
+// fresh construction and target concrete marked structs. Shared references can
+// be copied, stored, and returned. LocalRef references stay local or pass to
 // direct typed calls that do not retain them. Neither mode permits protected
 // closure captures or protected operations in go or defer.
 //
@@ -183,7 +183,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	}
 	marked := checker.Marked(t)
 	if checker.Shared(t) && checker.NoRef(t) {
-		c.report(pos, "struct cannot embed both im.Immut and im.ImmutNoRef")
+		c.report(pos, "struct cannot embed both im.Shared and im.LocalRef")
 	}
 	for field := range s.Fields() {
 		ft := field.Type()
@@ -193,7 +193,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		}
 		if invalidMarkerField(field) {
 			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
-				"\n  fix: embed im.Immut or im.ImmutNoRef; remove the marker field name or pointer")
+				"\n  fix: embed im.Shared or im.LocalRef; remove the marker field name or pointer")
 			continue
 		}
 		if marked {
@@ -207,7 +207,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+
-				"\n  fix: embed im.Immut or im.ImmutNoRef and make all fields immutable, or remove the immutable field")
+				"\n  fix: embed im.Shared or im.LocalRef and make all fields immutable, or remove the immutable field")
 			continue
 		}
 	}
@@ -224,5 +224,5 @@ func invalidMarkerField(field *types.Var) bool {
 
 // markerType identifies either exact library marker before its placement is checked.
 func markerType(t types.Type) bool {
-	return checker.IsLibraryType(t, "Immut") || checker.IsLibraryType(t, "ImmutNoRef")
+	return checker.IsLibraryType(t, "Shared") || checker.IsLibraryType(t, "LocalRef")
 }

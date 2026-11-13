@@ -63,7 +63,7 @@ func TestSliceZeroValues(t *testing.T) {
 // TestSliceReferenceClone checks shared objects and independent element slots.
 func TestSliceReferenceClone(t *testing.T) {
 	type point struct {
-		Immut
+		Shared
 		X int
 	}
 	original := &point{X: 1}

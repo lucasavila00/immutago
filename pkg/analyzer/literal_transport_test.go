@@ -33,7 +33,7 @@ func TestLiteralTransportRejects(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Immut;X int};`+test.source)
+			got := checkSource(t, `type V struct{im.Shared;X int};`+test.source)
 			if !strings.Contains(got, "boxing immutable storage") && !strings.Contains(got, "immutable callbacks") &&
 				!strings.Contains(got, "protected composite literals require a concrete storage type") {
 				t.Fatalf("literal transport accepted: %s", got)
@@ -48,14 +48,14 @@ func TestLiteralTransportAccepts(t *testing.T) {
 		`func f(v V){_=[]any{v.X};_=[3]any{2:v.X};_=map[any]any{v.X:v.X}}`,
 		`type Holder struct{Value any};func f(v V){_=Holder{Value:v.X};_=Holder{v.X}}`,
 		`func f(v V){_=[][]any{{v.X}};_=map[int]struct{Value any}{1:{Value:v.X}}}`,
-		`type Owner struct{im.Immut;Child V};func f(v V){_=Owner{Child:v}}`,
+		`type Owner struct{im.Shared;Child V};func f(v V){_=Owner{Child:v}}`,
 		`func f(v V){_=[1]V{v};_=im.FreezeSlice([]V{v});_=im.FreezeMap(map[V]V{v:v})}`,
 		`type Holder struct{Make func()int};func scalar()int{return 1};func f(){_=Holder{Make:scalar}}`,
 		`func f[T ~[]any](v int)T{return T{v}}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type V struct{im.Immut;X int};`+source); got != "" {
+			if got := checkSource(t, `type V struct{im.Shared;X int};`+source); got != "" {
 				t.Fatalf("supported literal rejected: %s", got)
 			}
 		})

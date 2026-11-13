@@ -62,7 +62,7 @@ func (p *proof) depend(owner *obligation, t types.Type, label string) {
 
 // value matches the complete concrete immutable storage forms.
 func (p *proof) value(result *obligation, t types.Type) {
-	if IsLibraryType(t, "Immut") || IsLibraryType(t, "ImmutNoRef") {
+	if IsLibraryType(t, "Shared") || IsLibraryType(t, "LocalRef") {
 		return
 	}
 	if IsCollection(t) {
@@ -85,7 +85,7 @@ func (p *proof) value(result *obligation, t types.Type) {
 	switch underlying := t.Underlying().(type) {
 	case *types.Pointer:
 		if NoRef(underlying.Elem()) {
-			result.reason = "ImmutNoRef references cannot be stored"
+			result.reason = "LocalRef references cannot be stored"
 			return
 		}
 		if !Marked(underlying.Elem()) {
@@ -111,11 +111,11 @@ func (p *proof) value(result *obligation, t types.Type) {
 // structure requires one marker and checks every stored field.
 func (p *proof) structure(result *obligation, t types.Type, structure *types.Struct) {
 	if !Marked(t) {
-		result.reason = "struct does not embed im.Immut or im.ImmutNoRef"
+		result.reason = "struct does not embed im.Shared or im.LocalRef"
 		return
 	}
 	if Shared(t) && NoRef(t) {
-		result.reason = "struct cannot embed both im.Immut and im.ImmutNoRef"
+		result.reason = "struct cannot embed both im.Shared and im.LocalRef"
 		return
 	}
 	for field := range structure.Fields() {

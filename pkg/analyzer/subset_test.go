@@ -12,7 +12,7 @@ func TestSubsetBoundaries(t *testing.T) {
 		{"pointer conversion", `func f(p *V){_=(*V)(p)}`},
 		{"tuple box", `func pair()(V,int){return V{},0};func f(){var x any;var n int;x,n=pair();_,_=x,n}`},
 		{"tuple call box", `func pair()(V,int){return V{},0};func sink(any,int){};func f(){sink(pair())}`},
-		{"shared child reborrow", `type Parent struct{im.Immut;Child V};
+		{"shared child reborrow", `type Parent struct{im.Shared;Child V};
  func f(){var owner Parent;p:=new(owner);q:=&p.Child;_=q.X}`},
 		{"scalar address", `func f(){var v V; _=&v.X}`},
 		{"native slice", `func f(){_=[]V{{}}}`},
@@ -23,7 +23,7 @@ func TestSubsetBoundaries(t *testing.T) {
 		{"closure", `func f(){var v V; _=func(){_=v.X}}`},
 		{"box", `func f(){var v V; var x any=v; _=x}`},
 		{"box return", `func f()any{return V{}}`},
-		{"generic receiver", `type Box[T ~int]struct{im.Immut;X T};
+		{"generic receiver", `type Box[T ~int]struct{im.Shared;X T};
  func(b *Box[T])Read()T{return b.X};func f(){var b Box[int];_=b.Read()}`},
 		{"generic", `func read[T any](v *T){};func f(){var v V; read(new(v))}`},
 		{"dynamic", `func f(read func(*V)){var v V;read(new(v))}`},
@@ -32,7 +32,7 @@ func TestSubsetBoundaries(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Immut;X int};`+tc.source)
+			got := checkSource(t, `type V struct{im.Shared;X int};`+tc.source)
 			if !strings.Contains(got, "\n  source: ") || !strings.Contains(got, "\n  fix: ") {
 				t.Fatalf("missing actionable diagnostic context: %s", got)
 			}
@@ -55,7 +55,7 @@ func TestSubsetValues(t *testing.T) {
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type V struct{im.Immut;X int};`+source); got != "" {
+			if got := checkSource(t, `type V struct{im.Shared;X int};`+source); got != "" {
 				t.Fatalf("unexpected diagnostics: %s", got)
 			}
 		})
@@ -66,7 +66,7 @@ func TestSubsetValues(t *testing.T) {
 func TestReferenceOperationAllowlist(t *testing.T) {
 	cases := []string{
 		`func f(){var v V;p:=new(v);_=p.X}`,
-		`type Parent struct{im.Immut;Child V};func f(){var v Parent;p:=new(v.Child);_=p.X}`,
+		`type Parent struct{im.Shared;Child V};func f(){var v Parent;p:=new(v.Child);_=p.X}`,
 		`func f(){var v V;var p *V=new(v);_=p.X}`,
 		`func f(p *V)V{return *p}`,
 		`func f(p,q *V){_=p==q;_=p!=nil;_=nil==p}`,
@@ -76,7 +76,7 @@ func TestReferenceOperationAllowlist(t *testing.T) {
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type V struct{im.Immut;X int};`+source); got != "" {
+			if got := checkSource(t, `type V struct{im.Shared;X int};`+source); got != "" {
 				t.Fatalf("allowlisted operation failed: %s", got)
 			}
 		})
@@ -92,7 +92,7 @@ func TestReferenceOperationDefaultDenial(t *testing.T) {
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Immut;X int};`+source)
+			got := checkSource(t, `type V struct{im.Shared;X int};`+source)
 			if !strings.Contains(got, "immutable references require a concrete marked struct target") {
 				t.Fatalf("unlisted reference operation was accepted: %s", got)
 			}

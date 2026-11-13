@@ -15,8 +15,8 @@ import (
 )
 
 const testLibrary = `package im
- type Immut struct{}
- type ImmutNoRef struct{}
+ type Shared struct{}
+ type LocalRef struct{}
  type FrozenSlice[T any] struct { values []T }
  type FrozenMap[K comparable, V any] struct { values map[K]V }
  func FreezeSlice[T any](values []T) FrozenSlice[T] { return FrozenSlice[T]{} }
@@ -90,21 +90,21 @@ func checkSource(t *testing.T, declarations string) string {
 // TestValidTypes covers recursive proofs, aliases, and ordinary mutable scalar locals.
 func TestValidTypes(t *testing.T) {
 	cases := []string{
-		`type Value struct { im.Immut; Flag bool; Text string; Number complex128; Array [4]int }`,
-		`type Node struct { im.Immut; Children im.FrozenSlice[Node] }`,
-		`type A struct { im.Immut; B im.FrozenSlice[B] }
-   type B struct { im.Immut; A im.FrozenMap[string,A] }`,
-		`type Alias = im.Immut
+		`type Value struct { im.Shared; Flag bool; Text string; Number complex128; Array [4]int }`,
+		`type Node struct { im.Shared; Children im.FrozenSlice[Node] }`,
+		`type A struct { im.Shared; B im.FrozenSlice[B] }
+   type B struct { im.Shared; A im.FrozenMap[string,A] }`,
+		`type Alias = im.Shared
    type Value struct { Alias; Text string }
    type Copy Value`,
-		`type Value struct { im.Immut; Items im.FrozenSlice[im.FrozenMap[string,int]] }`,
-		`type Value struct { im.Immut; X int }
+		`type Value struct { im.Shared; Items im.FrozenSlice[im.FrozenMap[string,int]] }`,
+		`type Value struct { im.Shared; X int }
    func replace() { v := Value{X: 1}; v = Value{X: 2}; _ = v }`,
-		`type Value struct { im.Immut; A [2]int }
+		`type Value struct { im.Shared; A [2]int }
    func copyArray(v Value) { a := v.A; a[0] = 1 }`,
-		`type Value struct { im.Immut; S string }
+		`type Value struct { im.Shared; S string }
    func text(v Value) string { return v.S[:] }`,
-		`type V struct { im.Immut }; func f(x *V) {}`,
+		`type V struct { im.Shared }; func f(x *V) {}`,
 		`var _ = im.FreezeSlice([]int{1, 2})
    var _ = im.FreezeMap(map[string]int{"a": 1})`,
 	}
@@ -120,32 +120,32 @@ func TestValidTypes(t *testing.T) {
 // TestRejectedTypes covers failed recursive obligations, marker misuse, and immutable ownership boundaries.
 func TestRejectedTypes(t *testing.T) {
 	cases := []struct{ name, source, want string }{
-		{"named array", `type Count [2]int; type V struct { im.Immut; X Count }`, "named array"},
-		{"pointer", `type V struct { im.Immut; X *int }`, "concrete marked struct target"},
-		{"slice", `type V struct { im.Immut; X []int }`, "not provably immutable"},
-		{"interface", `type V struct { im.Immut; X any }`, "not provably immutable"},
-		{"function", `type V struct { im.Immut; X func() }`, "not provably immutable"},
-		{"channel", `type V struct { im.Immut; X chan int }`, "not provably immutable"},
-		{"map", `type V struct { im.Immut; X map[int]int }`, "not provably immutable"},
-		{"unmarked", `type V struct { im.Immut; X struct{ N int } }`, "does not embed"},
-		{"named marker", `type V struct { M im.Immut }`, "must be embedded by value"},
-		{"pointer marker", `type V struct { *im.Immut }`, "must be embedded by value"},
-		{"recursive failure", `type V struct { im.Immut; Next im.FrozenSlice[V]; Bad []int }`, "Bad"},
-		{"generic", `type V[T any] struct { im.Immut; X T }`, "type parameters are unsupported"},
-		{"mixed terms", `type V[T interface{ ~int | ~[]int }] struct { im.Immut; X T }`, "type parameters are unsupported"},
+		{"named array", `type Count [2]int; type V struct { im.Shared; X Count }`, "named array"},
+		{"pointer", `type V struct { im.Shared; X *int }`, "concrete marked struct target"},
+		{"slice", `type V struct { im.Shared; X []int }`, "not provably immutable"},
+		{"interface", `type V struct { im.Shared; X any }`, "not provably immutable"},
+		{"function", `type V struct { im.Shared; X func() }`, "not provably immutable"},
+		{"channel", `type V struct { im.Shared; X chan int }`, "not provably immutable"},
+		{"map", `type V struct { im.Shared; X map[int]int }`, "not provably immutable"},
+		{"unmarked", `type V struct { im.Shared; X struct{ N int } }`, "does not embed"},
+		{"named marker", `type V struct { M im.Shared }`, "must be embedded by value"},
+		{"pointer marker", `type V struct { *im.Shared }`, "must be embedded by value"},
+		{"recursive failure", `type V struct { im.Shared; Next im.FrozenSlice[V]; Bad []int }`, "Bad"},
+		{"generic", `type V[T any] struct { im.Shared; X T }`, "type parameters are unsupported"},
+		{"mixed terms", `type V[T interface{ ~int | ~[]int }] struct { im.Shared; X T }`, "type parameters are unsupported"},
 		{"repeated failed bound", `type Bad struct{ X int }
-         type V[T interface{ Bad; Bad }] struct { im.Immut; X T }`, "type parameters are unsupported"},
-		{"failed recursive alternatives", `type Bad struct { im.Immut; Next im.FrozenSlice[Bad]; X []int }
-         type V[T interface{ Bad; Bad }] struct { im.Immut; X T }`, "type parameters are unsupported"},
+         type V[T interface{ Bad; Bad }] struct { im.Shared; X T }`, "type parameters are unsupported"},
+		{"failed recursive alternatives", `type Bad struct { im.Shared; Next im.FrozenSlice[Bad]; X []int }
+         type V[T interface{ Bad; Bad }] struct { im.Shared; X T }`, "type parameters are unsupported"},
 		{"bad argument", `var _ im.FrozenSlice[*int]`, "concrete marked struct target"},
 		{"bad inference", `var _ = im.FreezeSlice([]*int{new(int)})`, "concrete marked struct target"},
 		{"bad key", `var _ im.FrozenMap[*int,int]`, "concrete marked struct target"},
-		{"unmarked owner", `type V struct { im.Immut }; type W struct { V V }`, "unmarked struct"},
-		{"unmarked slice", `type V struct { im.Immut }; type W struct { V []V }`, "unmarked struct"},
-		{"unmarked map", `type V struct { im.Immut }; type W struct { V map[int]V }`, "unmarked struct"},
-		{"unmarked array", `type V struct { im.Immut }; type W struct { V [2]V }`, "unmarked struct"},
+		{"unmarked owner", `type V struct { im.Shared }; type W struct { V V }`, "unmarked struct"},
+		{"unmarked slice", `type V struct { im.Shared }; type W struct { V []V }`, "unmarked struct"},
+		{"unmarked map", `type V struct { im.Shared }; type W struct { V map[int]V }`, "unmarked struct"},
+		{"unmarked array", `type V struct { im.Shared }; type W struct { V [2]V }`, "unmarked struct"},
 		{"unmarked collection", `type W struct { V im.FrozenSlice[int] }`, "unmarked struct"},
-		{"constrained owner", `type V struct { im.Immut }; type W[T V] struct { X T }`, "unmarked struct"},
+		{"constrained owner", `type V struct { im.Shared }; type W[T V] struct { X T }`, "unmarked struct"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

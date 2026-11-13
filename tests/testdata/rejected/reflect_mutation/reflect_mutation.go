@@ -6,7 +6,7 @@ import (
 )
 
 type Value struct {
-	im.Immut
+	im.Shared
 	N int
 }
 

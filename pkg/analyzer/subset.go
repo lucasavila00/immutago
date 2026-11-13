@@ -225,7 +225,7 @@ func (c *subsetChecks) declaration(x *ast.ValueSpec) {
 			continue
 		}
 		if noRefReference(obj.Type()) && obj.Parent() == c.pass.Pkg.Scope() {
-			c.report(id, "global ImmutNoRef references are unsupported")
+			c.report(id, "global LocalRef references are unsupported")
 		}
 		if i < len(x.Values) {
 			c.transport(x.Values[i], obj.Type())
@@ -249,7 +249,7 @@ func (c *subsetChecks) returnedValues(x *ast.ReturnStmt) {
 			c.transport(e, destination)
 		}
 		if noRefReference(c.pass.TypesInfo.TypeOf(e)) {
-			c.report(e, "returning ImmutNoRef references is unsupported")
+			c.report(e, "returning LocalRef references is unsupported")
 		}
 	}
 }
@@ -277,7 +277,7 @@ func subsetContainer(t types.Type) string {
 func subsetResults(results *types.Tuple) string {
 	for i := 0; i < results.Len(); i++ {
 		if noRefReference(results.At(i).Type()) {
-			return "returning ImmutNoRef references is unsupported"
+			return "returning LocalRef references is unsupported"
 		}
 	}
 	return ""
@@ -303,7 +303,7 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 	}
 	t := c.pass.TypesInfo.TypeOf(expression)
 	if storedNoRef(t, make(map[types.Type]bool)) {
-		c.report(expression, "containers of ImmutNoRef references are unsupported")
+		c.report(expression, "containers of LocalRef references are unsupported")
 	}
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return

@@ -32,8 +32,8 @@ terminate. Reverse edges connect fields and collection arguments to their
 owners. Invalid components enter a queue; their failures propagate to every
 owner. A recursive cycle passes only if all reachable components pass.
 
-Both marker modes use this proof. Stored pointers require an `Immut` struct
-target; `ImmutNoRef` pointers fail the storage proof. Type parameters fail too.
+Both marker modes use this proof. Stored pointers require an `Shared` struct
+target; `LocalRef` pointers fail the storage proof. Type parameters fail too.
 [Generic checks](../../pkg/analyzer/subset_generics.go) keep user protected
 generic code outside the source subset while retaining the fixed `im` APIs.
 

@@ -37,13 +37,13 @@ func diagnosticType(t types.Type) string {
 
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
-	"ImmutNoRef references cannot enter aggregate storage": "store an ImmutNoRef value copy or an Immut reference",
+	"LocalRef references cannot enter aggregate storage": "store an LocalRef value copy or an Shared reference",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
-		"im.Immut or im.ImmutNoRef; copy arrays and frozen collection values without taking their addresses",
-	"returning ImmutNoRef references is unsupported": "return an ImmutNoRef value copy, or use im.Immut " +
+		"im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses",
+	"returning LocalRef references is unsupported": "return an LocalRef value copy, or use im.Shared " +
 		"for objects whose references must be shared",
-	"global ImmutNoRef references are unsupported":        "keep the ImmutNoRef reference local, or store a value copy",
-	"containers of ImmutNoRef references are unsupported": "store ImmutNoRef value copies or shared im.Immut references",
+	"global LocalRef references are unsupported":        "keep the LocalRef reference local, or store a value copy",
+	"containers of LocalRef references are unsupported": "store LocalRef value copies or shared im.Shared references",
 	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",
 	"user generic instantiations with immutable types are unsupported": "use a non-generic declaration " +
@@ -76,7 +76,7 @@ var subsetFixes = map[string]string{
 	"freezing requires a synchronous call": "freeze the local builder directly before " +
 		"starting deferred or concurrent work",
 	"reference operation is outside the supported allowlist": "use a documented reference form: fresh construction, " +
-		"a concrete variable, a read, or a direct typed call; only Immut references can be stored or returned",
+		"a concrete variable, a read, or a direct typed call; only Shared references can be stored or returned",
 	"native slices of immutable storage are unsupported": "use im.FrozenSlice[T] and All() for " +
 		"iteration, or build a fresh local slice and consume it with im.FreezeSlice",
 	"native maps of immutable storage are unsupported": "use im.FrozenMap[K, V]; pass an " +
@@ -120,11 +120,11 @@ func subsetFix(rule string) string {
 func structuralFix(t types.Type, reason string) string {
 	switch {
 	case strings.Contains(reason, "named array"):
-		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Immut or im.ImmutNoRef"
+		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Shared or im.LocalRef"
 	case strings.Contains(reason, "type parameters"):
 		return "use a concrete type; user generic declarations cannot contain immutable storage"
 	case strings.Contains(reason, "does not embed"):
-		return "embed im.Immut or im.ImmutNoRef in the struct and make each field immutable"
+		return "embed im.Shared or im.LocalRef in the struct and make each field immutable"
 	}
 	switch t.Underlying().(type) {
 	case *types.Pointer:

@@ -4,6 +4,6 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type Count [2]int
 type Value struct {
-	im.Immut
+	im.Shared
 	N Count
 }

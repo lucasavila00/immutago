@@ -69,7 +69,7 @@ func (c *subsetChecks) nilExpression(expression ast.Expr) bool {
 	return ok && c.pass.TypesInfo.ObjectOf(name) == types.Universe.Lookup("nil")
 }
 
-// referenceContext separates shared storage from local-only ImmutNoRef references.
+// referenceContext separates shared storage from local-only LocalRef references.
 func (c *subsetChecks) referenceContext(expression ast.Expr) bool {
 	local := noRefReference(c.pass.TypesInfo.TypeOf(expression))
 	switch parent := c.parents[expression].(type) {

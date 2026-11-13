@@ -3,16 +3,16 @@ package freezebuilders
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Value struct {
-	im.Immut
+	im.Shared
 	X int
 }
 
 type Slices struct {
-	im.Immut
+	im.Shared
 	First, Second im.FrozenSlice[int]
 }
 type Maps struct {
-	im.Immut
+	im.Shared
 	First, Second im.FrozenMap[string, int]
 }
 

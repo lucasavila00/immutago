@@ -124,14 +124,14 @@ Check every field and collection type argument. Use resolved Go type identity,
 not source spelling. Do not accept unknown cases or add escape hatches.
 Support cases that can be proved. Report unsupported cases explicitly.
 Unmarked structs cannot own marked values or immutable collections.
-Both `im.Immut` and `im.ImmutNoRef` require immutable objects from construction.
+Both `im.Shared` and `im.LocalRef` require immutable objects from construction.
 Reject field, element, and dereference writes to protected objects. Permit
 reassignment of whole variable bindings. Protected references originate from
 fresh construction, never addresses of reassignable local storage. Protected
 pointers target concrete marked structs only. Reject user generics involving
 protected storage, protected closure captures and callback transport, and
 protected operations in go or defer. Keep the fixed generic im collection APIs.
-`Immut` references can be shared, stored, and returned. `ImmutNoRef` references
+`Shared` references can be shared, stored, and returned. `LocalRef` references
 stay local or pass through direct typed non-escaping calls; reject storing,
 returning, or capturing them. Do not add mutable initialization, loan lifetimes,
 or runtime ownership state. Keep unsupported transport explicit instead of

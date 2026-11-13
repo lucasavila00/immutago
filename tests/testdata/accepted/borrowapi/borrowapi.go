@@ -3,7 +3,7 @@ package borrowapi
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
-	im.Immut
+	im.Shared
 	X int
 }
 
@@ -14,7 +14,7 @@ func Shared(number int) *Good   { return &Good{X: number} }
 func Forward(value *Good) *Good { return value }
 
 type Local struct {
-	im.ImmutNoRef
+	im.LocalRef
 	X int
 }
 

@@ -13,7 +13,7 @@ import (
 )
 
 const librarySource = `package im
- type Immut struct{}
+ type Shared struct{}
  type FrozenSlice[T any] struct{}
  type FrozenMap[K comparable,V any] struct{}
  func FreezeSlice[T any](v []T)FrozenSlice[T]{return FrozenSlice[T]{}}
@@ -102,7 +102,7 @@ func diagnostics(t *testing.T, body string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	source := `package sample;import "` + checker.LibraryPath + `";type V struct{im.Immut;X int};
+	source := `package sample;import "` + checker.LibraryPath + `";type V struct{im.Shared;X int};
 	 type Fake struct{};func(Fake)Clone()[]int{return nil};
  func take([]int){};func both(im.FrozenSlice[int],int){};
  func index(im.FrozenSlice[int])int{return 0};func key(im.FrozenMap[string,int])string{return "x"};

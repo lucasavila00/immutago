@@ -3,7 +3,7 @@ package main
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type User struct {
-	im.Immut
+	im.Shared
 	Name   string
 	Scores im.FrozenMap[string, int]
 }

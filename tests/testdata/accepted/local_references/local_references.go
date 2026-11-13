@@ -3,11 +3,11 @@ package local_references
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Local struct {
-	im.ImmutNoRef
+	im.LocalRef
 	Value int
 }
 type Snapshot struct {
-	im.Immut
+	im.Shared
 	Value Local
 }
 

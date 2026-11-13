@@ -173,12 +173,12 @@ func (c *subsetChecks) globalStore(destination, value ast.Expr) {
 	}
 	id, ok := ast.Unparen(destination).(*ast.Ident)
 	if !ok {
-		c.report(destination, "ImmutNoRef references cannot enter aggregate storage")
+		c.report(destination, "LocalRef references cannot enter aggregate storage")
 		return
 	}
 	obj := c.pass.TypesInfo.ObjectOf(id)
 	if obj != nil && obj.Parent() == c.pass.Pkg.Scope() {
-		c.report(destination, "global ImmutNoRef references are unsupported")
+		c.report(destination, "global LocalRef references are unsupported")
 	}
 }
 

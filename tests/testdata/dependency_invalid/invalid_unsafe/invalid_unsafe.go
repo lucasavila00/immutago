@@ -6,7 +6,7 @@ import (
 )
 
 type Good struct {
-	im.Immut
+	im.Shared
 	X int
 }
 

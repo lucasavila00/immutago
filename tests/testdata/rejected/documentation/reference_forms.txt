@@ -1,15 +1,15 @@
 reference_forms.go:15:25: unsupported immutable operation: immutable references require a concrete marked struct target
   source: p
   type: *[2]docrejected.Point
-  fix: allocate a concrete struct that embeds im.Immut or im.ImmutNoRef; copy arrays and frozen collection values without taking their addresses
+  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
 reference_forms.go:15:30: unsupported immutable operation: immutable references require a concrete marked struct target
   source: &[2]Point{}
   type: *[2]docrejected.Point
-  fix: allocate a concrete struct that embeds im.Immut or im.ImmutNoRef; copy arrays and frozen collection values without taking their addresses
+  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
 reference_forms.go:15:47: unsupported immutable operation: immutable references require a concrete marked struct target
   source: p
   type: *[2]docrejected.Point
-  fix: allocate a concrete struct that embeds im.Immut or im.ImmutNoRef; copy arrays and frozen collection values without taking their addresses
+  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
 reference_forms.go:18:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Values[0].X
   type: int

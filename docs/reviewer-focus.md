@@ -25,7 +25,7 @@ For example, fresh protected construction requires `&T{...}` or a supported
 `&variable` and `&value.Field` must fail. Whole-variable replacement must not
 admit field, element, or pointer-target writes.
 
-Check `Immut` sharing and `ImmutNoRef` reference escape separately. Builder
+Check `Shared` sharing and `LocalRef` reference escape separately. Builder
 exclusivity and consumption remain required for both modes.
 
 ## Required evidence

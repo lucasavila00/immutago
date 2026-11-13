@@ -3,7 +3,7 @@ package consumer
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type NamedInts struct {
-	im.Immut
+	im.Shared
 	Values [2]int
 }
 type Plain[T any] struct{ Value T }

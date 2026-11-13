@@ -27,11 +27,11 @@ func Marked(t types.Type) bool {
 	return Shared(t) || NoRef(t)
 }
 
-// Shared reports whether a struct directly embeds im.Immut by value.
-func Shared(t types.Type) bool { return embedsMarker(t, "Immut") }
+// Shared reports whether a struct directly embeds im.Shared by value.
+func Shared(t types.Type) bool { return embedsMarker(t, "Shared") }
 
-// NoRef reports whether a struct directly embeds im.ImmutNoRef by value.
-func NoRef(t types.Type) bool { return embedsMarker(t, "ImmutNoRef") }
+// NoRef reports whether a struct directly embeds im.LocalRef by value.
+func NoRef(t types.Type) bool { return embedsMarker(t, "LocalRef") }
 
 // embedsMarker resolves one marker through the compiler's embedded-field identities.
 func embedsMarker(t types.Type, name string) bool {

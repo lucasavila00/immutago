@@ -17,7 +17,7 @@ package main
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type User struct {
-    im.Immut
+    im.Shared
     Name   string
     Scores im.FrozenMap[string, int]
 }
@@ -42,7 +42,7 @@ The program prints `alice 10`. The checker makes `User` fields read-only.
 `FreezeMap` transfers the map's storage without a copy; use `user.Scores` to
 read it after Freeze.
 
-Use `im.ImmutNoRef` when pointers must not be stored or returned. Both markers
+Use `im.LocalRef` when pointers must not be stored or returned. Both markers
 prohibit field writes from construction. See the [complete rules](rules.md)
 for pointer targets, calls, statements, and builder operations.
 

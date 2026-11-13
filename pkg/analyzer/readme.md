@@ -8,9 +8,11 @@ import "github.com/lucasavila00/immutago/pkg/analyzer"
 
 Package analyzer exposes the immutago go/analysis analyzer.
 
-Marked structs may own only primitive values, arrays of immutable values, other marked structs, and the library's FrozenSlice and FrozenMap types with immutable arguments. Unmarked structs cannot store marked values or these collections. Pointer fields, interfaces, functions, channels, and native mutable collections cannot establish an immutability proof. Reflection and unsafe operations are unsupported. Unmarked generic fields must prove their constraints exclude immutable storage. There are no suppression directives.
+Structs that embed im.Shared or im.LocalRef are immutable from construction. Their fields must be scalars, unnamed arrays, other marked structs, pointers to concrete Shared structs, or frozen collections of allowed types. Each component is checked recursively. Unmarked structs cannot store protected values. Interfaces, callbacks, user generics with protected storage, reflection, and unsafe operations are unsupported.
 
-Owned local values permit construction and field updates. Shared references permit reads; their loans end after the final required use on each control\-flow path. Writes to a borrowed whole owner are rejected. Value copies have independent storage. Package\-level immutable values are read\-only after declaration initialization. Protected references stay local or pass to direct, non\-escaping read\-only calls. Freeze calls consume exclusive native map and slice builders without copying. Builder aliases and later uses are rejected; Clone creates independent native storage. Dependency proof failures propagate to importing consumers.
+Whole variable bindings can be replaced. Field, element, and pointer\-target writes to protected objects are rejected. Protected references start with fresh construction and target concrete marked structs. Shared references can be copied, stored, and returned. LocalRef references stay local or pass to direct typed calls that do not retain them. Neither mode permits protected closure captures or protected operations in go or defer.
+
+Struct and array copies copy their values; frozen fields share read\-only storage. Freeze calls consume exclusive native map and slice builders without copying. Builder aliases and later uses are rejected; Clone creates independent native storage. Dependency proof failures propagate to importing consumers.
 
 ## Variables
 

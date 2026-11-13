@@ -3,7 +3,7 @@ package invalid_borrow
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
-	im.Immut
+	im.Shared
 	X int
 }
 

@@ -3,17 +3,17 @@ package main
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Point struct {
-	im.Immut
+	im.Shared
 	X, Y int
 }
 type Shape struct {
-	im.Immut
+	im.Shared
 	Point Point
 	Items im.FrozenSlice[int]
 }
 
 type PointArray struct {
-	im.Immut
+	im.Shared
 	Values [2]Point
 }
 

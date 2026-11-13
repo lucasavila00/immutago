@@ -3,12 +3,12 @@ package immutable_objects
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Node struct {
-	im.Immut
+	im.Shared
 	Value int
 	Next  *Node
 }
 type Holder struct {
-	im.Immut
+	im.Shared
 	Node  *Node
 	Items im.FrozenSlice[*Node]
 }

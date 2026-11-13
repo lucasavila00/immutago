@@ -26,7 +26,7 @@ func TestStatementShapeRejects(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Immut;X,Y int};func read(p *V)int{return p.X};`+tc.source)
+			got := checkSource(t, `type V struct{im.Shared;X,Y int};func read(p *V)int{return p.X};`+tc.source)
 			if !strings.Contains(got, "multiple assignments involving protected storage are unsupported") {
 				t.Fatalf("multiple protected bindings accepted: %s", got)
 			}
@@ -48,7 +48,7 @@ func TestStatementShapeAccepts(t *testing.T) {
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type V struct{im.Immut;X,Y int};`+source); got != "" {
+			if got := checkSource(t, `type V struct{im.Shared;X,Y int};`+source); got != "" {
 				t.Fatalf("supported statement rejected: %s", got)
 			}
 		})
@@ -69,7 +69,7 @@ func TestProtectedResultCalls(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Immut;X int};`+tc.source)
+			got := checkSource(t, `type V struct{im.Shared;X int};`+tc.source)
 			if !strings.Contains(got, "dynamic calls with immutable storage are unsupported") {
 				t.Fatalf("unknown protected producer accepted: %s", got)
 			}
@@ -81,7 +81,7 @@ func TestProtectedResultCalls(t *testing.T) {
 		`type Factory interface{Make()int};func f(factory Factory)int{return factory.Make()}`,
 	} {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type V struct{im.Immut;X int};`+source); got != "" {
+			if got := checkSource(t, `type V struct{im.Shared;X int};`+source); got != "" {
 				t.Fatalf("supported producer rejected: %s", got)
 			}
 		})

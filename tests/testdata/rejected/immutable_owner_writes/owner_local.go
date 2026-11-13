@@ -3,11 +3,11 @@ package borrowcases
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Child struct {
-	im.Immut
+	im.Shared
 	X, Y int
 }
 type Good struct {
-	im.Immut
+	im.Shared
 	X, Y  int
 	Child Child
 	Array [2]int
