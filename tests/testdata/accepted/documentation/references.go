@@ -12,15 +12,20 @@ type Shape struct {
 	Items im.FrozenSlice[int]
 }
 
-// referenceForms checks fresh objects, arrays, and shared fields from the rules.
+type PointArray struct {
+	im.Immut
+	Values [2]Point
+}
+
+// referenceForms checks fresh marked objects and value collection reads.
 func referenceForms() {
-	p := &[2]Point{}
-	x := (*p)[0].X
+	p := &PointArray{Values: [2]Point{{X: 1}}}
+	x := p.Values[0].X
 	next := *p
-	next = [2]Point{{X: 1}}
+	next = PointArray{Values: [2]Point{{X: 2}}}
 	child := &Point{X: 2}
 	copied := *child
-	items := new(im.FrozenSlice[int])
+	var items im.FrozenSlice[int]
 	count := items.Len()
-	println(x, next[0].X, copied.X, count)
+	println(x, next.Values[0].X, copied.X, count)
 }

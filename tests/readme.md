@@ -6,7 +6,11 @@ workspace mode disabled. No fixtures depend on downloaded modules.
 
 `testdata/accepted` covers immutable construction, scalar preparation, complete
 variable rebinding, value copies, shared pointer copies and returns, stored
-references, recursive pointer fields, and direct cross-package calls. Rejected
+references, recursive concrete pointer fields, and direct cross-package calls.
+`ImmutNoRef` fixtures accept local reference copies and value copies, and reject
+reference escapes through storage or returns. Both modes reject protected
+captures, asynchronous calls, generic protected code, and non-struct pointer
+targets. Rejected
 fixtures retain earlier mutable-owner programs: field writes fail even when
 there is no live reference. Reference boundaries reject named-variable
 addresses, interior scalar addresses, pointer indirection, generic protected

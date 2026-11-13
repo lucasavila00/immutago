@@ -38,10 +38,10 @@ owners. A failed component enters a queue; failure then propagates to owners.
 Recursive components start provisionally valid. A reachable invalid field
 causes the containing recursive structure to fail too.
 
-All fields and collection arguments must pass. A generic union requires all
-members to pass. An intersection can pass when one bound establishes the
-required property. A separate query uses the same graph machinery to check
-whether an unmarked generic field can contain protected storage.
+All fields and collection arguments must pass. Stored pointer targets must be
+concrete `Immut` structs. `ImmutNoRef` pointers are local-only. User generic
+types and functions cannot handle protected storage; the fixed `im` generic
+APIs remain supported. Ordinary scalar generic code stays outside that rule.
 
 ## Operation checks
 
@@ -62,8 +62,8 @@ and a reference result `return p` use separate allowed shapes. See the
 
 [The subset checker](../../pkg/analyzer/subset.go) uses an AST parent map to
 check expression and statement context. [Call checks](../../pkg/analyzer/subset_calls.go)
-resolve the function or method by compiler identity. Named readers have concrete signatures. NoRef calls are synchronous and
-cannot retain their references. `Immut` references may be stored and returned.
+resolve the function or method by compiler identity. Named readers have concrete synchronous signatures. NoRef calls cannot
+retain their references. `Immut` references may be stored and returned.
 `ImmutNoRef` references cannot leave local storage or direct non-retaining calls. The only protected receiver calls are the
 listed methods of the exact `im` collection types.
 

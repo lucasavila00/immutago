@@ -25,12 +25,10 @@ type Tree struct {
 	Index    im.FrozenMap[string, Tree]
 }
 
-type Scalar interface{ ~int | ~string }
-type Box[T Scalar] struct {
+type CountBox struct {
 	im.Immut
-	Value T
+	Value int
 }
-type CountBox = Box[int]
 type Alias = Leaf
 type Derived Leaf
 

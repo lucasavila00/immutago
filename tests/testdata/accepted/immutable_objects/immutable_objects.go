@@ -7,11 +7,6 @@ type Node struct {
 	Value int
 	Next  *Node
 }
-type Box[T ~int | ~string] struct {
-	im.Immut
-	Value T
-	Next  *Box[T]
-}
 type Holder struct {
 	im.Immut
 	Node  *Node
@@ -32,8 +27,6 @@ func build() Holder {
 	_ = share(empty)
 	builder := []*Node{first, copied, second}
 	frozen := im.FreezeSlice(builder)
-	boxed := &Box[int]{Value: 3}
-	_ = boxed.Next
 	return Holder{Node: copied, Items: frozen}
 }
 
@@ -66,14 +59,9 @@ func allocatedCopies() *Node {
 	return pointer
 }
 
-func capturedRead() func() int {
-	shared := &Node{Value: 1}
-	return func() int { return shared.Value }
-}
+var current Node
 
-func readNode(node *Node) int { return node.Value }
-func scheduledReads() {
-	shared := &Node{Value: 1}
-	go readNode(shared)
-	defer readNode(shared)
+func replaceGlobal() Node {
+	current = Node{Value: 2}
+	return current
 }

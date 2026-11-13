@@ -29,3 +29,7 @@ func copied() {
 	copy := first
 	copy.Value = 2
 }
+
+var current Node
+
+func globalField() { current.Value = 2 }

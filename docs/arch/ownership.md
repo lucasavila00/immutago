@@ -62,8 +62,9 @@ element, or dereferenced pointer is never a valid write destination. This rule
 holds before sharing and after the last read; no loan analysis is needed.
 
 The recursive type proof follows protected pointer targets. Every reachable
-field must pass, including fields reached through recursive generic types.
-Scalar pointer fields and pointers to pointers do not pass. Collections do not
+field must pass, including fields reached through recursive concrete types.
+Only concrete `Immut` structs can be stored pointer targets. Scalar pointers,
+pointers to arrays or frozen wrappers, and pointers to pointers do not pass. Collections do not
 expose addresses into their backing storage.
 
 The shared [graph code](../../internal/freeze/flow/graph.go) stores predecessor

@@ -28,7 +28,7 @@ source form reaches the correct check.
 
 | Layer | Evidence |
 | --- | --- |
-| Recursive type proofs | [Type tests](../../internal/checker/types_test.go) cover field graphs and constraints. |
+| Recursive type proofs | [Type tests](../../internal/checker/types_test.go) cover recursive field graphs and marker modes. |
 | Allowed source forms | [Analyzer tests](../../pkg/analyzer/explicit_subset_test.go) and [shape tests](../../pkg/analyzer/shape_convergence_test.go) check complete forms and nearby rejections. |
 | Builder ownership | [Freeze tests](../../internal/freeze/freeze_test.go) check fresh storage, aliases, branches, loops, and consumption. |
 | Library storage | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), and [iterator tests](../../pkg/im/iterator_test.go) check storage reuse, clone independence, reads, and allocations. |
@@ -52,7 +52,7 @@ Keep accepted and rejected cases for each supported form:
 | Area | Accepted cases | Rejected nearby cases |
 | --- | --- | --- |
 | Immutable objects | Scalar preparation, whole-variable rebinding, copies, value and pointer constructors | Field writes, protected array writes, dereference writes, named-variable addresses |
-| Shared references | Copy, reassignment, stored pointers, returns, recursive pointer fields | Scalar interior addresses, pointer indirection, interfaces, captures |
+| Shared references | Copy, reassignment, stored pointers, returns, recursive pointer fields | Scalar interior addresses, pointer indirection, interfaces, captures, generic protected code, asynchronous calls |
 | Statement forms | One destination, fresh map-reader results, ordinary loops, separate Freeze | Nested protected operands in multiple destinations, nested Freeze, protected select communication |
 | Builders | Fresh construction, element edits, nil and empty storage, fresh loop declarations | Aliases before Freeze, subslices, element addresses, unknown or external sources, active-range Freeze |
 | Consumption | Frozen reads, Clone, independent edits, refreezing the clone | Reads or writes after Freeze, double Freeze, indirect or asynchronous Freeze |

@@ -42,7 +42,3 @@ func localCopies() int {
 	zero = copied
 	return read(zero)
 }
-func valueCapture() func() int {
-	value := Local{Value: 1}
-	return func() int { return value.Value }
-}

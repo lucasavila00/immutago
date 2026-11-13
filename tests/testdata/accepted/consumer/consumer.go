@@ -36,7 +36,7 @@ func Use() {
 	mappingCopy := mapping.Clone()
 	mappingCopy["b"] = 3
 	_ = Record{Model: value, Names: names}
-	_ = model.Box[string]{Value: "generic"}
+	_ = model.CountBox{Value: 1}
 	_ = model.Derived{}
 	_ = im.FreezeSlice([][2]string{{"a", "b"}})
 	_ = struct {

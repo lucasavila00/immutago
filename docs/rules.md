@@ -18,7 +18,7 @@ mutable initialization, field writes, or writes through a pointer.
 
 | Marker | Complete reference policy |
 | --- | --- |
-| `im.Immut` | References can be local, copied, rebound, stored, passed to direct typed functions, returned, and captured by a closure. |
+| `im.Immut` | References can be local, copied, rebound, stored, passed to direct typed functions, and returned. |
 | `im.ImmutNoRef` | References can be local, copied, rebound, and passed to direct typed functions that do not retain them. References cannot be stored, returned, or captured. |
 
 Embed exactly one selected marker by value. A struct with both markers is rejected. `ImmutNoRef` restricts references, not value
@@ -63,11 +63,10 @@ component is checked recursively; all fields, keys, and elements must pass.
 | A defined scalar type | `type Count int` |
 | An unnamed array of allowed elements | `[2]int` or `[2]Point` |
 | A struct that directly embeds `im.Immut` or `im.ImmutNoRef` by value | `type Point struct { im.Immut; X, Y int }` |
-| A pointer to a recursively protected immutable type | `*Point`, `*im.FrozenSlice[Point]`, `*[2]Point` |
+| A pointer to a concrete `Immut` struct with recursively allowed fields | `*Point` |
 | A frozen collection of allowed types | `im.FrozenSlice[Point]` or `im.FrozenMap[string, Point]` |
 | A type alias for an allowed type | `type Position = Point` |
 | A defined struct whose underlying struct has the marker and allowed fields | `type Position Point` |
-| A type parameter whose constraint proves the same rules | `type Box[T ~int | ~string] struct { im.Immut; Value T }` |
 
 The Go examples below use this type and import:
 
@@ -98,11 +97,10 @@ type Counts struct {
 ```
 
 Pointers to scalars and native slices, maps, channels, interfaces, and functions
-cannot be fields of a marked struct. A stored pointer target must itself contain protected storage, pass the
-recursive immutable type proof, and not be a direct `ImmutNoRef` target.
-Inline `ImmutNoRef` values can be fields and collection elements. Arrays and
-frozen wrappers with those values can have shared pointers because their
-elements cannot be addressed. Unmarked structs cannot contain marked values or
+cannot be fields of a marked struct. A stored pointer must target a concrete `Immut` struct whose fields pass the
+recursive proof. Inline `ImmutNoRef` values can be fields and collection
+elements. Pointers to arrays, frozen wrappers, scalar values, other pointers,
+or `ImmutNoRef` structs cannot be stored. Unmarked structs cannot contain marked values or
 frozen collections, including through arrays or native containers. Recursive
 collection types are allowed when every reachable field passes:
 
@@ -114,44 +112,43 @@ type Tree struct {
 }
 ```
 
-### Generic fields
+### Generic code
 
-A constraint is checked before instantiation. Every member of a union must
-pass. For intersected bounds, one bound that proves immutability is sufficient.
-Embedding a named constraint preserves its rules:
+User-defined generic types and functions cannot contain or handle protected
+storage. This includes marked generic structs, generic aliases for frozen
+collections, and generic functions that construct or return protected values.
+The fixed `im` generic types and functions remain supported:
 
 ```go
-type Scalar interface { ~int | ~string }
-type Key interface { Scalar; comparable }
-type Box[T Key] struct {
-    im.Immut
-    Value T
-}
-type Values[T Scalar] = im.FrozenSlice[T]
+values := im.FreezeSlice([]Point{{X: 1}})
 ```
 
-`any`, `comparable` alone, and method-only constraints do not prove immutable
-fields. A `~[2]int` constraint is also rejected: it admits named arrays without
-a marker. Use scalar bounds or a concrete marked wrapper. These rejected
-examples are not exhaustive.
+Ordinary generic Go code with scalar types remains supported. An unmarked
+generic field must prove that it excludes protected storage:
+`type Plain[T ~int] struct { Value T }` is allowed;
+`type Plain[T any] struct { Value T }` is rejected.
 
-An unmarked generic struct must prove that its fields cannot contain protected
-storage. `type Plain[T ~int] struct { Value T }` passes;
-`type Plain[T any] struct { Value T }` fails.
-
-Generic type declarations do not permit generic borrowing helpers. The
-[reference rules](#what-you-can-do-with-a-reference) still require concrete
-reader parameters. Generic functions used with scalar types can construct
-frozen collections through the fixed `im` APIs. User generic calls cannot use
-protected type arguments, even when they pass values rather than references:
+For example:
 
 ```go
-// Rejected: Point is a protected type argument.
-copy := identity(point) // identity[T any](value T) T
+func identity[T ~int | ~string](value T) T { return value }
+number := identity(1)
+```
 
-// Allowed: copy directly, or use a function with concrete types.
+These rejected examples are not exhaustive:
+
+```go
+// Rejected: a user generic type contains protected storage.
+type Box[T ~int] struct { im.Immut; Value T }
+
+// Allowed: use a concrete marked type.
+type CountBox struct { im.Immut; Value int }
+
+// Rejected: a user generic call handles a protected value.
+copy := identityPoint(point) // identityPoint[T any](value T) T
+
+// Allowed: copy directly or use a concrete function.
 copy := point
-// func copyPoint(value Point) Point { return value }
 ```
 
 ## Immutable objects
@@ -215,8 +212,8 @@ func prepend(next *Node) *Node {
 ## Constructors and calls
 
 Named functions can construct, receive, and return protected values and shared
-references. Calls must be direct and typed. Calls with `ImmutNoRef` references must be
-synchronous and must not retain those references. The checker checks
+references. Calls with protected operands or results must be direct, synchronous, and
+concretely typed. Calls with `ImmutNoRef` references must not retain them. The checker checks
 the callee too, including callees in other packages.
 
 ```go
@@ -231,8 +228,8 @@ func read(point *Point) int { return point.X }
 ```
 
 A callback with only scalar parameters and results can receive scalar copies.
-A closure can capture an `Immut` reference or an immutable value copy of either
-mode. It cannot capture an `ImmutNoRef` reference. Copy a scalar first when the reference must stay local:
+A closure cannot capture a protected value or reference of either mode.
+Copy a scalar first:
 
 ```go
 x := point.X
@@ -242,7 +239,7 @@ callback := func() int { return x }
 ## What you can do with a reference
 
 This list is **exhaustive** for references to protected storage. A target can
-be an `Immut` struct, frozen collection, or array containing protected values.
+be a concrete `Immut` struct.
 A direct pointer to `ImmutNoRef` uses the local-only rules below.
 Scalar fields and scalar-only arrays cannot be addressed through protected
 storage. Unlisted operations are rejected.
@@ -252,9 +249,6 @@ storage. Unlisted operations are rejected.
 | Declare a zero reference | `var p *Point` |
 | Construct an immutable object | `p := &Point{X: 1}` or `p := new(Point)` |
 | Construct from a value copy | `p := new(point)` or `p := new(Point{X: 1})` |
-| Construct a protected array | `p := &[2]Point{}` |
-| Start or defer a direct call with shared references | `go read(p)` or `defer read(p)` |
-| Capture an `Immut` reference | `callback := func() int { return p.X }` |
 | Copy or rebind a reference variable | `q := p` or `p = q` or `p = nil` |
 | Store in a marked field | `node := Node{Next: p}` |
 | Store in an exclusive builder | `values := []*Point{p}` |
@@ -262,8 +256,7 @@ storage. Unlisted operations are rejected.
 | Return a reference | `return p` or `return &Point{X: 1}` |
 | Discard a reference | `_ = p` |
 | Read a field | `x := p.X` |
-| Read an explicitly dereferenced array | `x := (*p)[0].X` |
-| Call a listed frozen method | `n := p.Len()` |
+| Read a frozen field by value | `n := p.Items.Len()` |
 | Copy the complete value | `next := *p` |
 | Compare references or nil | `same := p == q` or `if p != nil { ... }` |
 | Pass to a direct named function | `x := read(p)` or `x := read(&Point{X: 1})` |
@@ -329,9 +322,10 @@ These examples are **not exhaustive**. The allowed list above is complete.
 | `p.X = 1` or `*p = Point{}` | `p = &Point{X: 1}` |
 | `value.Read()` | `Read(&Point{X: value.X})` |
 | `var x any = p` | Use a concrete `*Point` variable. |
-| `func() { readLocal(localPointer) }` | Call `readLocal(localPointer)` directly. |
-| `defer readLocal(p)` or `go readLocal(p)` | Call `readLocal(p)` synchronously. |
-| `p[0].X` | `(*p)[0].X` |
+| `func() { read(p) }` | Call `read(p)` directly, or capture a scalar copy. |
+| `defer read(p)` or `go read(p)` | Call `read(p)` synchronously. |
+| `p := &[2]Point{}` | Wrap the array in a marked struct and construct its pointer. |
+| `p := new(im.FrozenSlice[int])` | Pass a frozen collection by value. |
 | `&point` or `&shape.Child` | Construct `&Point{X: point.X}`. |
 | `&point.X` | Read `point.X`, or copy it to a scalar local. |
 | `&p` | Pass `p` directly. |
@@ -354,7 +348,6 @@ Use the reference and builder operations listed in this guide within these forms
 | Bind both results of the listed map reader to new locals | `value, found := frozen.Get(key)` |
 | Freeze into one variable | `frozen := im.FreezeSlice(values)` |
 | Freeze and discard the result | `_ = im.FreezeSlice(values)` |
-| Start or defer a direct call with `Immut` references | `go read(p)` or `defer read(p)` |
 | Call a named reader | `read(p)` or `n := read(&Point{X: 1})` |
 | Return one or more values | `return value` or `return value, found` |
 | Forward a named function's results directly | `return makePair()` or `takePair(makePair())` |
@@ -546,7 +539,8 @@ These are the supported collection methods and direct call forms:
 | Clone into mutable native storage | `next := frozen.Clone()` |
 
 The receiver can be an expression of the frozen collection type, such as
-`frozen`, `value.Items`, or `makeFrozen()`, or a supported shared reference.
+`frozen`, `value.Items`, or `makeFrozen()`. Pass frozen wrappers by value;
+pointers to them are unsupported.
 Parentheses are allowed: `(frozen.Len)()` and `range (frozen.All())` have the same
 meaning. `Len`, `At`, and `Get` allocate no storage. `All` yields value copies
 without cloning the container. `Clone` creates independent storage.
