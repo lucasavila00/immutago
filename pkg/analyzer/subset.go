@@ -83,9 +83,7 @@ func (c *subsetChecks) visit(n ast.Node) bool {
 			c.report(x, "immutable interface assertions are unsupported")
 		}
 	case *ast.UnaryExpr:
-		if x.Op == token.AND {
-			c.address(x)
-		}
+		c.address(x)
 	case *ast.SliceExpr:
 		if !stringType(c.pass.TypesInfo.TypeOf(x.X)) && c.protectedRoot(x.X) {
 			c.report(x, "slice views of immutable storage are unsupported")
@@ -167,7 +165,7 @@ func (c *subsetChecks) protectedRoot(e ast.Expr) bool {
 
 // address permits protected references only to fresh composite literals.
 func (c *subsetChecks) address(e *ast.UnaryExpr) {
-	if !c.protectedRoot(e.X) {
+	if e.Op != token.AND || !c.protectedRoot(e.X) {
 		return
 	}
 	if !checker.Contains(c.pass.TypesInfo.TypeOf(e.X)) {

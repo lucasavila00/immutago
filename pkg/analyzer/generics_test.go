@@ -12,7 +12,8 @@ func TestGenericAliasBoundaries(t *testing.T) {
 	cases := []struct{ name, source, want string }{
 		{"wrapper", `type Box[T any] struct { V T }
    func box[T any](v T) any { return Box[T]{V:v} }; var _ = box(Value{})`, "user generic instantiations"},
-		{"anonymous", `func box[T any](v T) any { return struct{ V T }{v} };var _=box(Value{})`, "user generic instantiations"},
+		{"anonymous", `func box[T any](v T) any { return struct{ V T }{v} }
+   var _=box(Value{})`, "user generic instantiations"},
 		{"nested wrapper", `type Box[T any] struct { V []T };var _ Box[Value]`, "user generic instantiations"},
 		{"native", `func native(v im.FrozenSlice[int])`, "unsupported function without a Go body"},
 	}
