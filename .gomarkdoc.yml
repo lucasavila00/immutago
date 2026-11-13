@@ -1,0 +1,8 @@
+output: "{{.Dir}}/readme.md"
+header: ""
+templateFile:
+  package: docs/contrib/gomarkdoc/package.gotxt
+  func: docs/contrib/gomarkdoc/func.gotxt
+  type: docs/contrib/gomarkdoc/type.gotxt
+  value: docs/contrib/gomarkdoc/value.gotxt
+  example: docs/contrib/gomarkdoc/example.gotxt
