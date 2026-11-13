@@ -6,7 +6,6 @@ package borrow
 
 import (
 	"go/ast"
-	"go/token"
 	"go/types"
 
 	"github.com/lucasavila00/immutago/internal/borrow/flow"
@@ -23,7 +22,7 @@ func (l *local) liveness() map[*types.Var]flow.Set {
 				uses.Add(point)
 			}
 			for _, definition := range op.definitions {
-				if definition.target == pointer {
+				if definition == pointer {
 					definitions.Add(point)
 				}
 			}
@@ -31,84 +30,6 @@ func (l *local) liveness() map[*types.Var]flow.Set {
 		live[pointer] = flow.BackwardLive(l.graph, uses, definitions)
 	}
 	return live
-}
-
-// reaching computes finite may-origins, strongly replacing each reassigned pointer binding.
-func (l *local) reaching() []bindings {
-	incoming := make([]bindings, len(l.operations))
-	outgoing := make([]bindings, len(l.operations))
-	order := l.graph.ReversePostorder()
-	for changed := true; changed; {
-		changed = false
-		for _, point := range order {
-			in := make(bindings)
-			if point == 0 {
-				mergeBindings(in, l.parameters)
-			}
-			for _, previous := range l.graph.Pred[point] {
-				mergeBindings(in, outgoing[previous])
-			}
-			out := make(bindings)
-			mergeBindings(out, in)
-			for _, definition := range l.operations[point].definitions {
-				out[definition.target] = l.origins(definition.source, in)
-			}
-			if !sameBindings(outgoing[point], out) {
-				changed = true
-			}
-			incoming[point], outgoing[point] = in, out
-		}
-	}
-	return incoming
-}
-
-// mergeBindings joins each possible whole owner without sharing mutable sets between points.
-func mergeBindings(target, source bindings) {
-	for pointer, owners := range source {
-		if target[pointer] == nil {
-			target[pointer] = make(map[*types.Var]bool)
-		}
-		for owner := range owners {
-			target[pointer][owner] = true
-		}
-	}
-}
-
-// sameBindings compares finite owner sets independent of map iteration order.
-func sameBindings(left, right bindings) bool {
-	if len(left) != len(right) {
-		return false
-	}
-	for pointer, owners := range left {
-		if len(owners) != len(right[pointer]) {
-			return false
-		}
-		for owner := range owners {
-			if !right[pointer][owner] {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-// origins resolves local pointer copies and address expressions without interprocedural guesses.
-func (l *local) origins(expression ast.Expr, incoming bindings) map[*types.Var]bool {
-	if expression == nil {
-		return nil
-	}
-	expression = ast.Unparen(expression)
-	if pointer := l.variable(expression); pointer != nil && protectedPointer(pointer.Type()) {
-		return incoming[pointer]
-	}
-	if address, ok := expression.(*ast.UnaryExpr); ok && address.Op == token.AND {
-		if variable, shared := l.owner(address.X); variable != nil && !shared {
-			return map[*types.Var]bool{variable: true}
-		}
-		return nil
-	}
-
-	return nil
 }
 
 // owner reduces a field or array projection to its whole variable and shared-pointer access flag.
@@ -135,7 +56,7 @@ func (l *local) owner(expression ast.Expr) (*types.Var, bool) {
 }
 
 // checkWrite rejects shared writes and writes to a whole owner with any live local alias.
-func (l *local) checkWrite(point int, expression ast.Expr, incoming bindings, live map[*types.Var]flow.Set) {
+func (l *local) checkWrite(point int, expression ast.Expr, live map[*types.Var]flow.Set) {
 	owner, shared := l.owner(expression)
 	if shared {
 		l.sharedWrite(expression, owner)
@@ -148,30 +69,13 @@ func (l *local) checkWrite(point int, expression ast.Expr, incoming bindings, li
 		l.globalWrite(expression, owner)
 		return
 	}
-	wanted := owner
-	for _, definition := range l.operations[point].definitions {
-		if l.liveAfter(point, definition.target, live) && l.origins(definition.source, incoming)[wanted] {
-			l.borrowedWrite(point, expression, owner, definition.target, definition.source.Pos())
-			return
-		}
-	}
 	var conflict *types.Var
-	for pointer, owners := range incoming {
-		if live[pointer][point] && owners[wanted] && (conflict == nil || pointer.Pos() < conflict.Pos()) {
+	for pointer, borrowed := range l.pointers {
+		if live[pointer][point] && borrowed == owner && (conflict == nil || pointer.Pos() < conflict.Pos()) {
 			conflict = pointer
 		}
 	}
 	if conflict != nil {
-		l.borrowedWrite(point, expression, owner, conflict, token.NoPos)
+		l.borrowedWrite(point, expression, owner, conflict)
 	}
-}
-
-// liveAfter reports whether the new binding can be read before its next assignment.
-func (l *local) liveAfter(point int, pointer *types.Var, live map[*types.Var]flow.Set) bool {
-	for _, next := range l.graph.Succ[point] {
-		if live[pointer][next] {
-			return true
-		}
-	}
-	return false
 }

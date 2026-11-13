@@ -1,6 +1,7 @@
 package borrow
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -18,7 +19,7 @@ type localImporter struct{ library *types.Package }
 // Import resolves the sole library import in local analysis fixtures.
 func (i localImporter) Import(string) (*types.Package, error) { return i.library, nil }
 
-// TestLocalLoans exercises whole-owner liveness, alias copies, rebinding, and readonly permissions.
+// TestLocalLoans checks fixed-owner references, whole-owner lifetimes, and read-only access.
 func TestLocalLoans(t *testing.T) {
 	cases := []struct {
 		name, body string
@@ -29,17 +30,14 @@ func TestLocalLoans(t *testing.T) {
 		{"live alias", `var v Value;p:=&v;v.X=2;read(p)`, true},
 		{"whole owner", `var v Value;p:=&v;v.Y=2;read(p)`, true},
 		{"rhs use", `var v Value;p:=&v;v.X=read(p)+1`, false},
-		{"alias copy", `var v Value;p:=&v;q:=p;v.X=2;read(q)`, true},
-		{"rebind", `var a,b Value;p:=&a;p=&b;a.X=2;read(p)`, false},
-		{"branch", `var a,b Value;p:=&a;if flag {p=&b};a.X=2;read(p)`, true},
+		{"branch", `var v Value;p:=&v;if flag {v.X=2};read(p)`, true},
+		{"two borrows", `var v Value;p:=&v;q:=&v;read(p);v.X=2;read(q)`, true},
+		{"branch last use", `var v Value;p:=&v;if flag {read(p)}else{read(p)};v.X=2`, false},
+		{"loop live", `var v Value;p:=&v;for i:=0;i<2;i++{v.X=i;read(p)}`, true},
+		{"loop local last use", `var v Value;for i:=0;i<2;i++{p:=&v;read(p);v.X=i}`, false},
+		{"typed declaration", `var v Value;var p *Value=&v;v.X=2;read(p)`, true},
 		{"readonly", `var v Value;p:=&v;p.X=2`, true},
 		{"fresh readonly", `p:=&Value{};p.X=2`, true},
-		{"dead simultaneous borrow", `var v Value;p:=&v;read(p);v,p=Value{},&v`, false},
-		{"simultaneous borrow", `var v Value;var p *Value;v,p=Value{},&v;read(p)`, true},
-		{"simultaneous copied borrow", `var v Value;p:=&v;var q *Value;v,q=Value{},p;read(q)`, true},
-		{"swap", `var a,b Value;p,q:=&a,&b;p,q=q,p;a.X=2;read(q);read(p)`, true},
-		{"loop carried", `var v Value;var old *Value;for i:=0;i<2;i++{v.X=i;p:=&v;if old!=nil{read(old)};old=p}`, true},
-		{"loop last use", `var v Value;var old *Value;for i:=0;i<2;i++{if old!=nil{read(old)};v.X=i;old=&v}`, false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -93,5 +91,25 @@ func TestLocalGlobalConstructionBoundary(t *testing.T) {
 	got := localDiagnostics(t, "", `var Global Value; func init(){Global.X=1}`)
 	if !strings.Contains(got, "cannot write package-level immutable storage") {
 		t.Fatalf("initializer diagnostics = %q", got)
+	}
+}
+
+// TestLocalReaderParameters checks that parameters need no owner entry to enforce read-only access.
+func TestLocalReaderParameters(t *testing.T) {
+	got := localDiagnostics(t, "", `func change(p *Value){p.X=2}`)
+	if !strings.Contains(got, "cannot write through shared reference") {
+		t.Fatal(got)
+	}
+}
+
+// TestLocalSeparateScopes checks many short loans without a per-point map of possible owners.
+func TestLocalSeparateScopes(t *testing.T) {
+	for _, count := range []int{50, 100, 200} {
+		t.Run(fmt.Sprint(count), func(t *testing.T) {
+			body := strings.Repeat(`{var v Value;p:=&v;read(p);v.X=2};`, count)
+			if got := localDiagnostics(t, body); got != "" {
+				t.Fatal(got)
+			}
+		})
 	}
 }

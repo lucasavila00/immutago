@@ -69,7 +69,7 @@ func (l *local) lower(node ast.Node) {
 	}
 }
 
-// assign evaluates right-hand sides before simultaneous pointer rebinding and owner writes.
+// assign records reference declarations and evaluates values before owner writes.
 func (l *local) assign(targets, values []ast.Expr) {
 	for _, target := range targets {
 		l.readAddress(target)
@@ -81,12 +81,12 @@ func (l *local) assign(targets, values []ast.Expr) {
 	for index, target := range targets {
 		variable := l.variable(target)
 		if variable != nil && protectedPointer(variable.Type()) {
-			l.pointers[variable] = true
 			var value ast.Expr
 			if index < len(values) {
 				value = values[index]
 			}
-			op.definitions = append(op.definitions, assignment{target: variable, source: value})
+			op.definitions = append(op.definitions, variable)
+			l.reference(target, value, variable)
 		} else {
 			op.writes = append(op.writes, target)
 		}
@@ -121,10 +121,6 @@ func (l *local) read(node ast.Node) {
 		variable, ok := l.pass.TypesInfo.Uses[ident].(*types.Var)
 		if ok && protectedPointer(variable.Type()) {
 			uses[variable] = ident.Pos()
-			l.pointers[variable] = true
-			if _, defined := l.parameters[variable]; !defined {
-				l.parameters[variable] = map[*types.Var]bool{variable: true}
-			}
 		}
 		return true
 	})
@@ -145,4 +141,20 @@ func (l *local) rangeAssignment(block *cfg.Block) {
 		targets = append(targets, loop.Value)
 	}
 	l.assign(targets, nil)
+}
+
+// reference records the fixed owner of one local address declaration.
+func (l *local) reference(target, source ast.Expr, pointer *types.Var) {
+	id, ok := ast.Unparen(target).(*ast.Ident)
+	if !ok || l.pass.TypesInfo.Defs[id] != pointer || source == nil {
+		return
+	}
+	address, ok := ast.Unparen(source).(*ast.UnaryExpr)
+	if !ok || address.Op != token.AND {
+		return
+	}
+	owner, shared := l.owner(address.X)
+	if owner != nil && !shared {
+		l.pointers[pointer] = owner
+	}
 }

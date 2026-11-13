@@ -39,16 +39,12 @@ func (l *local) globalWrite(expression ast.Expr, owner *types.Var) {
 }
 
 // borrowedWrite names the whole owner, live binding, and a reachable use keeping the loan alive.
-func (l *local) borrowedWrite(point int, expression ast.Expr, owner, pointer *types.Var, borrow token.Pos) {
+func (l *local) borrowedWrite(point int, expression ast.Expr, owner, pointer *types.Var) {
 	message := fmt.Sprintf("cannot write borrowed immutable owner %s (%s) through %s: shared reference %s is still live; "+
 		"move this write after its final use, or copy the value before updating",
 		owner.Name(), typeName(owner.Type()), types.ExprString(expression), pointer.Name())
 	related := []analysis.RelatedInformation{{Pos: pointer.Pos(),
 		Message: "shared reference " + pointer.Name() + " declared here"}}
-	if borrow.IsValid() {
-		related = append(related, analysis.RelatedInformation{Pos: borrow,
-			Message: "this right-hand side borrows the owner before the assignment writes it"})
-	}
 	if use := l.futureUse(point, pointer); use.IsValid() {
 		related = append(related, analysis.RelatedInformation{Pos: use,
 			Message: "this reachable use keeps shared reference " + pointer.Name() + " live"})
@@ -82,7 +78,7 @@ func (l *local) futureUse(point int, pointer *types.Var) token.Pos {
 // defines checks whether an operation replaces the current pointer binding.
 func defines(op operation, pointer *types.Var) bool {
 	for _, definition := range op.definitions {
-		if definition.target == pointer {
+		if definition == pointer {
 			return true
 		}
 	}
