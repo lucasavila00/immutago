@@ -8,9 +8,6 @@ immutability checks.
 
 ## Create an example module
 
-Use a Go toolchain that meets the version in [go.mod](../go.mod). Create a new
-folder so the example does not conflict with an existing package:
-
 ```sh
 mkdir immutago-example
 cd immutago-example
@@ -18,10 +15,6 @@ go mod init example.com/immutago-example
 go get github.com/lucasavila00/immutago@latest
 go install github.com/lucasavila00/immutago/cmd/immutago@latest
 ```
-
-Put Go's binary installation directory on `PATH`. For repeatable builds, use
-the same version for the library and checker and record that version in your
-build configuration. For a source checkout, see [development](development.md).
 
 ## Build, borrow, and freeze
 
@@ -100,10 +93,7 @@ forms. Rejected examples there are not exhaustive.
 
 ## Add checks to an existing project
 
-Add the library to the existing module with `go get` and install the same
-checker version as above. Add the analyzer command to the project's CI before
-accepting code changes. The example module is only for learning; do not copy
-its `main.go` into an existing package unchanged.
+Add the `im` dependency and run `immutago ./...` in the project's CI.
 
 Run `immutago ./...` from the consumer module to check its packages. The driver
 also checks dependencies and reports relevant failures in imported code.
