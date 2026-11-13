@@ -100,6 +100,9 @@ point.x = 2; // allowed after the last read
 Every accepted reader follows the same contract: its references are shared and
 do not escape the call. Calls must be direct, synchronous, and typed. The
 checker verifies the callee too, including callees in other packages.
+Calls that pass or return protected values must name the function directly.
+A callback that only takes and returns scalars follows ordinary Go rules;
+for example, `n := callback(point.X)` passes a scalar copy.
 
 There is no `Box<T>` ownership model. For protected types, `new(T)` and `&T{}`
 are rejected. Use `value := T{}` followed by `pointer := &value`. Constructors
