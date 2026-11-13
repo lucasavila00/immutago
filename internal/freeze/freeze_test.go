@@ -48,6 +48,8 @@ func TestFreezeOwnership(t *testing.T) {
 		{"nil", `var s []int;_=im.FreezeSlice(s);_=im.FreezeMap[string,int](nil)`, false},
 		{"marked builder", `s:=[]V{{X:1}};s[0]=V{X:2};_=s[0]`, false},
 		{"reference element copy", `p:=&V{X:1};s:=[]*V{p};q:=s[0];s[0]=&V{X:2};_=im.FreezeSlice(s);_=q.X`, false},
+		{"fresh object from element", `s:=[]V{{X:1}};p:=&V{X:s[0].X};s[0]=V{X:2};_=im.FreezeSlice(s);_=p.X`, false},
+		{"fresh object from reference", `s:=[]*V{&V{X:1}};p:=&V{X:s[0].X};s[0]=&V{X:2};_=im.FreezeSlice(s);_=p.X`, false},
 		{"reference element append", `p:=&V{X:1};s:=[]*V{};s=append(s,p);_=im.FreezeSlice(s)`, false},
 		{"reference map key and value", `p:=&V{X:1};m:=map[*V]*V{p:p};q:=m[p];m[p]=&V{X:2};_=im.FreezeMap(m);_=q.X`, false},
 		{"reference clone", `p:=&V{X:1};f:=im.FreezeSlice([]*V{p});s:=f.Clone();s[0]=&V{X:2};_=im.FreezeSlice(s)`, false},
