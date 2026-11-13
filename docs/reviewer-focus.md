@@ -1,5 +1,7 @@
 # Reviewer requirements
 
+[Project reference](README.md)
+
 Use this checklist for every change to the supported Go subset. The
 [guide](guide/immutability.md) defines the allowed source forms. The
 [architecture notes](arch/README.md) explain how they are checked.

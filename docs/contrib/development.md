@@ -1,5 +1,7 @@
 # Development
 
+[Project reference](../README.md)
+
 This single-module Go monorepo follows the scaffolding in `../tgo`: a thin
 command, public packages, internal analysis, separate end-to-end tests, pinned
 lint tools, generated package documentation, and hosted CI.
@@ -32,6 +34,32 @@ Fixtures under `testdata` are exempt from function-comment and style checks.
 Edit package Go comments, then run `make docs`. Commit the generated `readme.md`
 files with their source comments. The gomarkdoc templates and source checks
 come from TGo; its compiler patches and language fixtures are not copied.
-Use the [ADR template](../adr/template/what.md) for substantial design decisions.
+Update the [guide](../guide/immutability.md) for changes to supported forms.
+Put implementation choices and their reasons in the relevant
+[architecture page](../arch/README.md). Follow the
+[reviewer requirements](../reviewer-focus.md) for changes to the checker.
+Keep these pages current; Git history preserves earlier decisions.
+
+## Diagnostic snapshots
+
+CLI fixtures in `tests/testdata/` store exact compiler and analyzer output in
+sibling `.txt` files. Snapshots include source positions, explanations, and
+suggested corrections. Some dependency-driver snapshots are in
+`tests/testdata/snapshots/`.
+
+Run the affected subtest first. After checking that each output change is
+correct, update that subtest's snapshots and review the diff:
+
+```sh
+go test ./tests -run '^TestCLI/review_convergence$' -count=1
+go test ./tests -run '^TestCLI/review_convergence$' -count=1 -update-snapshots
+git diff -- tests/testdata
+go test ./tests -run '^TestCLI/review_convergence$' -count=1
+```
+
+Replace `review_convergence` with the subtest that covers your change. An
+updated snapshot is not proof that the new behavior is correct. Check each
+changed diagnostic against the guide and the source fixture. Use hosted CI
+for the full suite.
 
 See [collection costs](../performance.md) for benchmark scope and allocation behavior.
