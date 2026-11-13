@@ -18,7 +18,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type User struct {
     im.Immut
-    Name string
+    Name   string
     Scores im.FrozenMap[string, int]
 }
 
@@ -26,15 +26,8 @@ func main() {
     scores := map[string]int{"go": 10}
     frozen := im.FreezeMap(scores)
     user := &User{Name: "alice", Scores: frozen}
-    shared := user
-    user = &User{Name: "bob", Scores: frozen}
-
-    next := shared.Scores.Clone()
-    next["go"] = 20
-    updated := im.FreezeMap(next)
-    oldScore, _ := shared.Scores.Get("go")
-    newScore, _ := updated.Get("go")
-    println(shared.Name, user.Name, oldScore, newScore)
+    score, _ := user.Scores.Get("go")
+    println(user.Name, score)
 }
 ```
 
@@ -45,9 +38,9 @@ immutago ./...
 go run .
 ```
 
-The checker reports no errors. The program prints `alice bob 10 20`.
-Rebinding `user` does not change the shared object. Freeze consumes the native
-builder without a copy. Clone gives independent mutable container storage.
+The program prints `alice 10`. `im.Immut` makes the user's fields read-only.
+`FreezeMap` transfers the map's storage without a copy; use `user.Scores` to
+read it after Freeze.
 
 Use `im.ImmutNoRef` when references must not be stored or returned. Both markers
 prohibit field writes from construction. See the [complete rules](rules.md)

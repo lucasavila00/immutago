@@ -12,13 +12,6 @@ func main() {
 	scores := map[string]int{"go": 10}
 	frozen := im.FreezeMap(scores)
 	user := &User{Name: "alice", Scores: frozen}
-	shared := user
-	user = &User{Name: "bob", Scores: frozen}
-
-	next := shared.Scores.Clone()
-	next["go"] = 20
-	updated := im.FreezeMap(next)
-	oldScore, _ := shared.Scores.Get("go")
-	newScore, _ := updated.Get("go")
-	println(shared.Name, user.Name, oldScore, newScore)
+	score, _ := user.Scores.Get("go")
+	println(user.Name, score)
 }
