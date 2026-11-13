@@ -118,7 +118,8 @@ synchronization orders the later read after the write. This example does not
 need a data race. The freeze analysis relies on the generic Go CFG's node
 placement. Its event lowering does not reconstruct this delayed assignment to
 the second receive target. The ownership checks need explicit select effects,
-or must reject protected receive targets until those effects are modeled.
+or must reject builder and protected-value receive targets until those effects
+are modeled.
 
 ## Cost and scope limits
 
@@ -150,3 +151,23 @@ proof machinery even though generic calls with protected types are rejected.
 Removing generic marked structs could reduce that machinery, but would change
 the supported API. Recursive collection types likewise explain the structural
 proof graph; deleting the graph first would remove needed failure propagation.
+
+## Simplification options
+
+These are review recommendations, not implemented rule changes:
+
+1. Reject promoted pointer methods on protected owners, and reject ownership
+   operations in select communication clauses. This closes the demonstrated
+   gaps by reducing source forms instead of adding more implicit-effect rules.
+2. Keep local shared borrows, but remove pointer copying and rebinding. A
+   reference then has one fixed owner. The forward possible-owner analysis can
+   be removed; backward liveness still permits writes after the last read.
+3. For a larger reduction, allow only direct reader calls such as `read(&value)`
+   and read-only reader parameters. Remove stored local references. This removes
+   local NLL and alias-origin analysis, but also removes useful supported code.
+
+Keep recursive field checks, builder alias checks, and dependency failure facts.
+They enforce required guarantees. The graph and map data structures are ordinary
+finite dataflow structures; the demonstrated soundness defects come from missing
+Go effects, not from using maps. Retaining irrelevant maps causes the measured
+memory concern and should be addressed separately.
