@@ -1,69 +1,29 @@
 package im
 
-import "hash/maphash"
+import "maps"
 
-// Map is an immutable mapping. Its zero value is empty.
-// K and V must be immutable, as checked by the analyzer. A persistent hash trie
-// shares unchanged branches between versions. Reads do not allocate.
-type Map[K comparable, V any] struct {
-	root   *mapNode[K, V]
-	seed   maphash.Seed
-	length int
+// FrozenMap is a read-only view of frozen map storage. Its zero value is empty.
+// K and V must be immutable. The analyzer checks them and rejects writes through
+// the original map or its aliases after freezing. A FrozenMap copy shares storage.
+type FrozenMap[K comparable, V any] struct {
+	values map[K]V
 }
 
-// NewMap copies values into an immutable mapping.
-func NewMap[K comparable, V any](values map[K]V) Map[K, V] {
-	var result Map[K, V]
-	for key, value := range values {
-		result = result.Set(key, value)
-	}
-	return result
+// FreezeMap freezes values without copying its entries or allocating.
+// The caller must not mutate values or any alias after this ownership transition.
+// The analyzer enforces that rule; FreezeMap adds no runtime checks.
+func FreezeMap[K comparable, V any](values map[K]V) FrozenMap[K, V] {
+	return FrozenMap[K, V]{values: values}
 }
 
 // Len returns the number of entries in O(1) time without allocations.
-func (m Map[K, V]) Len() int { return m.length }
+func (m FrozenMap[K, V]) Len() int { return len(m.values) }
 
-// Get returns the value for key and whether the key exists without allocations.
-// Lookup visits at most 13 trie levels plus any full-hash collision bucket.
-func (m Map[K, V]) Get(key K) (V, bool) {
-	if m.root != nil {
-		return getMapNode(m.root, maphash.Comparable(m.seed, key), key)
-	}
-	var zero V
-	return zero, false
-}
+// Get returns the value for key and whether it exists, using native map lookup.
+// It allocates no storage and preserves Go's key equality rules.
+func (m FrozenMap[K, V]) Get(key K) (V, bool) { value, found := m.values[key]; return value, found }
 
-// Values returns an independent map copy in O(n) time.
-func (m Map[K, V]) Values() map[K]V {
-	values := make(map[K]V, m.length)
-	copyMapValues(m.root, values)
-	return values
-}
-
-// Set returns a map with key set to value, sharing all unchanged branches.
-// It copies at most 13 trie levels plus any full-hash collision bucket.
-func (m Map[K, V]) Set(key K, value V) Map[K, V] {
-	if m.root == nil {
-		m.seed = maphash.MakeSeed()
-	}
-	var added bool
-	m.root, added = setMapNode(m.root, 0, maphash.Comparable(m.seed, key), key, value)
-	if added {
-		m.length++
-	}
-	return m
-}
-
-// Delete returns a map without key, sharing all unchanged branches.
-// It copies at most 13 trie levels plus any full-hash collision bucket.
-func (m Map[K, V]) Delete(key K) Map[K, V] {
-	if m.root == nil {
-		return m
-	}
-	var removed bool
-	m.root, removed = deleteMapNode(m.root, 0, maphash.Comparable(m.seed, key), key)
-	if removed {
-		m.length--
-	}
-	return m
-}
+// Clone returns an independent native map in O(n) time and space.
+// It copies keys and values by value and preserves nil. Mutating the copy does
+// not change the frozen map; immutable types make deeper copying unnecessary.
+func (m FrozenMap[K, V]) Clone() map[K]V { return maps.Clone(m.values) }

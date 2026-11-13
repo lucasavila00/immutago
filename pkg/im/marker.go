@@ -6,7 +6,8 @@
 // and updates. Shared references permit reads; writes to borrowed storage fail
 // while a conflicting loan is live. A value copy has independent storage.
 //
-// Slice and Map copy their inputs and outputs. Updates return new collections.
+// FreezeSlice and FreezeMap share their input storage without copying. The analyzer
+// rejects later writes through native aliases. Clone returns an independent copy.
 // Their zero values are empty collections. Element and key types must themselves
 // be immutable; the analyzer checks this requirement, including nested types.
 package im

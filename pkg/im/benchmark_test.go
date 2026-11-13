@@ -1,90 +1,97 @@
 package im
 
-import (
-	"strconv"
-	"testing"
-)
+import "testing"
 
-var benchmarkSlice Slice[int]
-var benchmarkMap Map[int, int]
+var benchmarkSlice FrozenSlice[int]
+var benchmarkMap FrozenMap[int, int]
 var benchmarkInt int
 var benchmarkFound bool
+var benchmarkSliceClone []int
+var benchmarkMapClone map[int]int
 
-// BenchmarkSliceAt measures allocation-free indexed reads at several tree depths.
+// BenchmarkFreezeSlice measures allocation-free wrapping of an existing backing array.
+func BenchmarkFreezeSlice(b *testing.B) {
+	input := make([]int, 1024)
+	b.ReportAllocs()
+	for b.Loop() {
+		benchmarkSlice = FreezeSlice(input)
+	}
+}
+
+// BenchmarkFreezeMap measures allocation-free wrapping of an existing native map.
+func BenchmarkFreezeMap(b *testing.B) {
+	input := make(map[int]int, 1024)
+	for i := range 1024 {
+		input[i] = i
+	}
+	b.ReportAllocs()
+	for b.Loop() {
+		benchmarkMap = FreezeMap(input)
+	}
+}
+
+// BenchmarkSliceAt measures native indexed reads without allocations.
 func BenchmarkSliceAt(b *testing.B) {
-	for _, size := range []int{32, 1024, 32768} {
-		b.Run(strconv.Itoa(size), func(b *testing.B) {
-			values := NewSlice(make([]int, size)...)
-			b.ReportAllocs()
-			b.ResetTimer()
-			for b.Loop() {
-				benchmarkInt = values.At(size / 2)
-			}
-		})
+	frozen := FreezeSlice(make([]int, 1024))
+	b.ReportAllocs()
+	for b.Loop() {
+		benchmarkInt = frozen.At(512)
 	}
 }
 
-// BenchmarkSliceSet measures a point update while retaining the original sequence.
-func BenchmarkSliceSet(b *testing.B) {
-	for _, size := range []int{32, 1024, 32768} {
-		b.Run(strconv.Itoa(size), func(b *testing.B) {
-			values := NewSlice(make([]int, size)...)
-			b.ReportAllocs()
-			b.ResetTimer()
-			for b.Loop() {
-				benchmarkSlice = values.Set(size/2, 1)
-			}
-		})
-	}
-}
-
-// BenchmarkSliceAppend measures append across a full tail without copying existing blocks.
-func BenchmarkSliceAppend(b *testing.B) {
-	for _, size := range []int{32, 1024, 32768} {
-		b.Run(strconv.Itoa(size), func(b *testing.B) {
-			values := NewSlice(make([]int, size)...)
-			b.ReportAllocs()
-			b.ResetTimer()
-			for b.Loop() {
-				benchmarkSlice = values.Append(1)
-			}
-		})
-	}
-}
-
-// BenchmarkMapGet measures allocation-free lookup at several map sizes.
+// BenchmarkMapGet measures native key lookup without allocations.
 func BenchmarkMapGet(b *testing.B) {
-	for _, size := range []int{32, 1024, 32768} {
-		b.Run(strconv.Itoa(size), func(b *testing.B) {
-			values := benchmarkMapOfSize(size)
-			b.ReportAllocs()
-			b.ResetTimer()
-			for b.Loop() {
-				benchmarkInt, benchmarkFound = values.Get(size / 2)
-			}
-		})
+	frozen := FreezeMap(map[int]int{1: 2})
+	b.ReportAllocs()
+	for b.Loop() {
+		benchmarkInt, benchmarkFound = frozen.Get(1)
 	}
 }
 
-// BenchmarkMapSet measures a replacement while retaining the original map.
-func BenchmarkMapSet(b *testing.B) {
-	for _, size := range []int{32, 1024, 32768} {
-		b.Run(strconv.Itoa(size), func(b *testing.B) {
-			values := benchmarkMapOfSize(size)
-			b.ReportAllocs()
-			b.ResetTimer()
-			for b.Loop() {
-				benchmarkMap = values.Set(size/2, 1)
-			}
-		})
+// BenchmarkSliceClone measures the explicit cost of independent mutable storage.
+func BenchmarkSliceClone(b *testing.B) {
+	frozen := FreezeSlice(make([]int, 1024))
+	b.ReportAllocs()
+	for b.Loop() {
+		benchmarkSliceClone = frozen.Clone()
 	}
 }
 
-// benchmarkMapOfSize constructs integer keys outside the timed benchmark region.
-func benchmarkMapOfSize(size int) Map[int, int] {
-	var values Map[int, int]
-	for key := 0; key < size; key++ {
-		values = values.Set(key, key)
+// BenchmarkMapClone measures the explicit cost of independent mutable map entries.
+func BenchmarkMapClone(b *testing.B) {
+	input := make(map[int]int, 1024)
+	for i := range 1024 {
+		input[i] = i
 	}
-	return values
+	frozen := FreezeMap(input)
+	b.ReportAllocs()
+	for b.Loop() {
+		benchmarkMapClone = frozen.Clone()
+	}
+}
+
+// BenchmarkSliceAll measures direct traversal without copying storage.
+func BenchmarkSliceAll(b *testing.B) {
+	frozen := FreezeSlice(make([]int, 1024))
+	b.ReportAllocs()
+	for b.Loop() {
+		for index, value := range frozen.All() {
+			benchmarkInt = index + value
+		}
+	}
+}
+
+// BenchmarkMapAll measures direct map traversal without copying entries.
+func BenchmarkMapAll(b *testing.B) {
+	input := make(map[int]int, 1024)
+	for i := range 1024 {
+		input[i] = i
+	}
+	frozen := FreezeMap(input)
+	b.ReportAllocs()
+	for b.Loop() {
+		for key, value := range frozen.All() {
+			benchmarkInt = key + value
+		}
+	}
 }
