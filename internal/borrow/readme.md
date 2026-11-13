@@ -86,8 +86,9 @@ Summary is a checked function's portable reference\-effect contract.
 
 ```go
 type Summary struct {
-    Inputs  []Effect
-    Results [][]Result
+    Unproved bool
+    Inputs   []Effect
+    Results  [][]Result
 }
 ```
 

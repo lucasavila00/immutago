@@ -1,6 +1,11 @@
 package borrow
 
-import "testing"
+import (
+	"go/types"
+	"testing"
+
+	"github.com/lucasavila00/immutago/internal/checker"
+)
 
 // TestMergeSummaryPreservesUnknown prevents wrappers from hiding unavailable callee effects.
 func TestMergeSummaryPreservesUnknown(t *testing.T) {
@@ -75,5 +80,34 @@ func TestDereferenceWideningRequiresUnknownEffects(t *testing.T) {
 		if _, changed := mergeSummary(merged, b); changed {
 			t.Fatal("dereference widening did not converge")
 		}
+	}
+}
+
+// TestImportsImmutable follows real package identity through transitive imports.
+func TestImportsImmutable(t *testing.T) {
+	library := types.NewPackage(checker.LibraryPath, "im")
+	wrapper := types.NewPackage("example/wrapper", "wrapper")
+	wrapper.SetImports([]*types.Package{library})
+	consumer := types.NewPackage("example/consumer", "consumer")
+	consumer.SetImports([]*types.Package{wrapper})
+	ordinary := types.NewPackage("example/ordinary", "im")
+	for _, pkg := range []*types.Package{library, wrapper, consumer} {
+		if !importsImmutable(pkg, make(map[*types.Package]bool)) {
+			t.Fatalf("missing immutable dependency for %s", pkg.Path())
+		}
+	}
+	if importsImmutable(ordinary, make(map[*types.Package]bool)) {
+		t.Fatal("package spelling was mistaken for immutable library identity")
+	}
+}
+
+// TestUnprovedObligationSurvivesZeroArgumentSummaries checks transitive facts without input aliases.
+func TestUnprovedObligationSurvivesZeroArgumentSummaries(t *testing.T) {
+	merged, changed := mergeSummary(Summary{}, Summary{Unproved: true})
+	if !changed || !merged.Unproved {
+		t.Fatal("lost function-wide obligation")
+	}
+	if next, changed := mergeSummary(merged, Summary{}); changed || !next.Unproved {
+		t.Fatal("function-wide obligation was not monotone")
 	}
 }

@@ -33,7 +33,8 @@ func TestRecursiveLocalTraversalConverges(t *testing.T) {
 		t.Fatal(err)
 	}
 	pass := &analysis.Pass{Fset: positions, Files: []*ast.File{file}, Pkg: pkg, TypesInfo: info,
-		TypesSizes: types.SizesFor("gc", "amd64"), Report: func(d analysis.Diagnostic) { t.Errorf("unexpected: %s", d.Message) }}
+		TypesSizes: types.SizesFor("gc", "amd64"),
+		Report:     func(d analysis.Diagnostic) { t.Errorf("unexpected: %s", d.Message) }}
 	if err := Check(pass); err != nil {
 		t.Fatal(err)
 	}

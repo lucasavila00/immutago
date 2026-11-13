@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/lucasavila00/immutago/internal/checker"
+
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/ssa"
 )
@@ -43,11 +45,31 @@ func Check(pass *analysis.Pass) error {
 		return 0
 	})
 	p.infer()
-	for _, fn := range p.functions {
-		newEngine(p, fn, true).run()
+	if importsImmutable(pass.Pkg, make(map[*types.Package]bool)) {
+		for _, fn := range p.functions {
+			newEngine(p, fn, true).run()
+		}
 	}
 	p.export()
 	return nil
+}
+
+// importsImmutable identifies packages that can originate marked storage through their imports.
+// Other packages still export parameter effects and function-wide unproved obligations.
+func importsImmutable(pkg *types.Package, seen map[*types.Package]bool) bool {
+	if pkg.Path() == checker.LibraryPath {
+		return true
+	}
+	if seen[pkg] {
+		return false
+	}
+	seen[pkg] = true
+	for _, imported := range pkg.Imports() {
+		if importsImmutable(imported, seen) {
+			return true
+		}
+	}
+	return false
 }
 
 // buildProgram builds SSA and registers package functions, methods, and closures.
@@ -183,10 +205,12 @@ func (p *program) report(position token.Pos, message string) {
 
 // mergeSummary monotonically unions parameter effects and returned alias alternatives.
 func mergeSummary(left, right Summary) (Summary, bool) {
-	result := Summary{Inputs: make([]Effect, max(len(left.Inputs), len(right.Inputs))),
+	result := Summary{Unproved: left.Unproved || right.Unproved,
+		Inputs:  make([]Effect, max(len(left.Inputs), len(right.Inputs))),
 		Results: make([][]Result, max(len(left.Results), len(right.Results)))}
 	copy(result.Inputs, left.Inputs)
-	changed := len(left.Inputs) != len(result.Inputs) || len(left.Results) != len(result.Results)
+	changed := left.Unproved != result.Unproved || len(left.Inputs) != len(result.Inputs) ||
+		len(left.Results) != len(result.Results)
 	for index, effect := range right.Inputs {
 		old := result.Inputs[index]
 		next := Effect{

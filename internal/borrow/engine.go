@@ -124,6 +124,7 @@ func (e *engine) root(value ssa.Value, t types.Type, global bool, input int, fre
 func (e *engine) refs(s state, value ssa.Value) []reference {
 	if fn, ok := value.(*ssa.Function); ok {
 		id := e.root(fn, fn.Type(), false, -1, false)
+		e.roots[id].protected = callableCapability(fn.Type())
 		return []reference{{place: Place{Root: id}, loan: -1, closure: fn, binding: -1}}
 	}
 	if global, ok := value.(*ssa.Global); ok {
@@ -216,6 +217,9 @@ func (e *engine) use(point int, pos token.Pos, r reference, write bool) {
 		e.loans[r.loan].uses.Add(point)
 	}
 	origin := e.roots[r.place.Root]
+	if origin.unknown && write {
+		e.summary.Unproved = true
+	}
 	if origin.input >= 0 {
 		effect := &e.summary.Inputs[origin.input]
 		effect.Read = true
@@ -255,4 +259,19 @@ func (e *engine) normalizeFresh() {
 			e.summary.Results[index][j] = result
 		}
 	}
+}
+
+// callableCapability identifies callbacks whose reference results can expose protected storage.
+// Interfaces and nested callbacks count because their concrete result can erase a protected alias.
+func callableCapability(t types.Type) bool {
+	signature, ok := t.Underlying().(*types.Signature)
+	if !ok {
+		return false
+	}
+	for i := 0; i < signature.Results().Len(); i++ {
+		if referenceType(signature.Results().At(i).Type()) {
+			return true
+		}
+	}
+	return false
 }

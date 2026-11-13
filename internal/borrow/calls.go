@@ -31,6 +31,10 @@ func (e *engine) call(point int, s state, call *ssa.CallCommon, deferred, asynch
 		e.unknownCall(point, s, call.Pos(), append(arguments, e.refs(s, call.Value)))
 		return e.unknownResults(point, call)
 	}
+	if summary.Unproved && e.record {
+		e.summary.Unproved = true
+		e.report(call.Pos(), "unsupported call with unproved reference effects")
+	}
 	e.argumentEffects(point, s, call, summary, arguments, deferred, asynchronous)
 	return e.callResults(point, s, call, summary, arguments)
 }
@@ -119,12 +123,7 @@ func (e *engine) unknownCall(point int, s state, pos token.Pos, arguments [][]re
 		for _, r := range args {
 			e.use(point, pos, r, false)
 			e.reachableEffects(point, pos, s, r, Effect{Unknown: true}, false, false)
-			if e.record && e.roots[r.place.Root].input >= 0 {
-				e.summary.Inputs[e.roots[r.place.Root].input].Unknown = true
-			}
-			if e.roots[r.place.Root].protected {
-				e.report(pos, "unsupported call effects for borrowed immutable storage")
-			}
+			e.unsupportedRetention(r, pos, "unsupported call effects for borrowed immutable storage")
 		}
 	}
 }
@@ -166,7 +165,8 @@ func (e *engine) freshResult(point int, call *ssa.CallCommon, alias Result, inde
 		typ := storageType(call.Signature().Results().At(index).Type())
 		id = len(e.roots)
 		e.callRoots[key] = id
-		e.roots = append(e.roots, root{typ: typ, protected: alias.Protected || checker.Contains(typ),
+		protected := alias.Protected || checker.Contains(typ) || callableCapability(typ)
+		e.roots = append(e.roots, root{typ: typ, protected: protected,
 			input: -1, global: alias.Global, synthetic: alias.Global, unknown: alias.Unknown, fresh: alias.Fresh, binding: -1})
 	}
 	r := reference{place: Place{Root: id, Path: alias.Path}, loan: -1, result: index}
@@ -208,6 +208,9 @@ func (e *engine) escape(point int, r reference, deferred bool) {
 	}
 	e.use(point, e.instructions[point].Pos(), r, false)
 	root := e.roots[r.place.Root]
+	if root.unknown {
+		e.summary.Unproved = true
+	}
 	if root.input >= 0 && !deferred {
 		e.summary.Inputs[root.input].Capture = true
 	}
@@ -284,9 +287,10 @@ func (e *engine) closure(point int, s state, op *ssa.MakeClosure) {
 			refs = append(refs, r)
 		}
 	}
-	if len(refs) == 0 {
-		id := e.root(op, types.NewSignatureType(nil, nil, nil, nil, nil, false), false, -1, false)
-		refs = []reference{{place: Place{Root: id}, loan: -1, closure: fn, binding: -1}}
+	if len(refs) == 0 || callableCapability(op.Type()) {
+		id := e.root(op, op.Type(), false, -1, false)
+		e.roots[id].protected = callableCapability(op.Type())
+		refs = append(refs, reference{place: Place{Root: id}, loan: -1, closure: fn, binding: -1})
 	}
 	s.values[op] = refs
 }
@@ -333,22 +337,29 @@ func (e *engine) reachableEffects(point int, pos token.Pos, s state, start refer
 		}
 		seen[key] = true
 		for _, stored := range s.cells {
-			if Overlap(r.place, stored.place, false) {
-				for _, target := range stored.refs {
-					e.use(point, pos, target, effect.Write)
-					if effect.Unknown {
-						e.unsupportedRetention(target, pos, "unsupported call effects for borrowed immutable storage")
-					}
-					if effect.Capture || asynchronous {
-						e.escape(point, target, false)
-					}
-					if deferred {
-						e.escape(point, target, true)
-					}
-					pending = append(pending, target)
-				}
+			if !Overlap(r.place, stored.place, false) {
+				continue
+			}
+			for _, target := range stored.refs {
+				e.reachableEffect(point, pos, target, effect, deferred, asynchronous)
+				pending = append(pending, target)
 			}
 		}
+	}
+}
+
+// reachableEffect applies one transitive effect without recursively revisiting memory slots.
+func (e *engine) reachableEffect(point int, pos token.Pos, target reference,
+	effect Effect, deferred, asynchronous bool) {
+	e.use(point, pos, target, effect.Write)
+	if effect.Unknown {
+		e.unsupportedRetention(target, pos, "unsupported call effects for borrowed immutable storage")
+	}
+	if effect.Capture || asynchronous {
+		e.escape(point, target, false)
+	}
+	if deferred {
+		e.escape(point, target, true)
 	}
 }
 
@@ -365,10 +376,13 @@ func (e *engine) unknownResults(point int, call *ssa.CallCommon) []reference {
 		if !ok {
 			id = len(e.roots)
 			e.callRoots[key] = id
-			protected := potentialInterior(storageType(typ))
+			protected := potentialInterior(storageType(typ)) || callableCapability(typ)
 			e.roots = append(e.roots, root{typ: storageType(typ), protected: protected, unknown: true, input: -1, binding: -1})
 		}
 		if e.roots[id].protected {
+			if e.record {
+				e.summary.Unproved = true
+			}
 			e.report(call.Pos(), "unsupported call effects for an unknown reference result")
 		}
 		refs = append(refs, reference{place: Place{Root: id}, loan: -1, shared: true, result: index})

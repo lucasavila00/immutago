@@ -33,6 +33,13 @@ func TestCLI(t *testing.T) {
 			t.Fatalf("unexpected diagnostics:\n%s", output)
 		}
 	})
+	t.Run("ordinary_callback_library", func(t *testing.T) {
+		dir := consumerModule(t, root, "rejected")
+		output := runCommand(t, dir, true, binary, "./callback_api")
+		if output != "" {
+			t.Fatalf("unrelated callback library rejected:\n%s", output)
+		}
+	})
 	t.Run("rejected", func(t *testing.T) {
 		dir := consumerModule(t, root, "rejected")
 		output := runCommand(t, dir, false, binary, "./...")

@@ -29,8 +29,9 @@ type Result struct {
 
 // Summary is a checked function's portable reference-effect contract.
 type Summary struct {
-	Inputs  []Effect
-	Results [][]Result
+	Unproved bool
+	Inputs   []Effect
+	Results  [][]Result
 }
 
 // AFact marks the summary as a go/analysis object fact.

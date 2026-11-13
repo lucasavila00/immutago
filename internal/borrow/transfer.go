@@ -215,6 +215,9 @@ func (e *engine) unsupportedRetention(r reference, pos token.Pos, message string
 		return
 	}
 	origin := e.roots[r.place.Root]
+	if origin.unknown {
+		e.summary.Unproved = true
+	}
 	if origin.input >= 0 {
 		e.summary.Inputs[origin.input].Unknown = true
 	}
@@ -252,6 +255,10 @@ func (e *engine) asserted(point int, s state, op *ssa.TypeAssert) []reference {
 		if checker.Contains(storageType(op.AssertedType)) ||
 			e.roots[r.place.Root].unknown && potentialInterior(storageType(op.AssertedType)) {
 			e.roots[r.place.Root].protected = true
+			if e.roots[r.place.Root].unknown && e.record {
+				e.summary.Unproved = true
+				e.report(op.Pos(), "unsupported asserted reference with unknown origin")
+			}
 		}
 	}
 	return refs
@@ -312,11 +319,14 @@ func (e *engine) convertValue(point int, s state, instruction ssa.Instruction) b
 	case *ssa.ChangeType:
 		s.values[op] = e.copied(point, op.Pos(), e.refs(s, op.X))
 	case *ssa.Convert:
-		s.values[op] = e.copied(point, op.Pos(), e.refs(s, op.X))
+		refs := e.copied(point, op.Pos(), e.refs(s, op.X))
+		if referenceType(op.Type()) {
+			s.values[op] = refs
+		}
 	case *ssa.ChangeInterface:
 		s.values[op] = e.copied(point, op.Pos(), e.refs(s, op.X))
 	case *ssa.MakeInterface:
-		s.values[op] = e.copied(point, op.Pos(), e.refs(s, op.X))
+		s.values[op] = e.boxedInterface(point, s, op)
 	case *ssa.TypeAssert:
 		s.values[op] = e.asserted(point, s, op)
 	case *ssa.Range:
@@ -365,4 +375,28 @@ func (e *engine) tupleReferences(point int, pos token.Pos, refs []reference, typ
 		}
 	}
 	return result
+}
+
+// boxedInterface retains reference-producing method capabilities even for receivers copied by value.
+func (e *engine) boxedInterface(point int, s state, op *ssa.MakeInterface) []reference {
+	refs := e.copied(point, op.Pos(), e.refs(s, op.X))
+	if !methodCapability(op.X.Type()) {
+		return refs
+	}
+	id := e.root(op, op.Type(), false, -1, false)
+	e.roots[id].protected = true
+	token := reference{place: Place{Root: id}, loan: -1, shared: true}
+	refs, _ = mergeReferences(refs, []reference{token})
+	return refs
+}
+
+// methodCapability identifies method sets that can reveal aliases independently of receiver storage.
+func methodCapability(t types.Type) bool {
+	methods := types.NewMethodSet(t)
+	for index := 0; index < methods.Len(); index++ {
+		if callableCapability(methods.At(index).Obj().Type()) {
+			return true
+		}
+	}
+	return false
 }
