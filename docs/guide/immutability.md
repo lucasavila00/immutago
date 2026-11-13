@@ -10,6 +10,9 @@ subset of Rust's ownership rules:
 
 The Rust below explains the rules. It is not an API you need to implement.
 
+This branch is implementing the explicit subset below. The first documentation
+commit records the target rules; implementation and regression checks follow.
+
 ## Owned values
 
 An owned Go local behaves like a Rust `let mut` binding:
@@ -65,8 +68,9 @@ let borrowed = &point;
 borrowed.x = 1; // rejected: this is &Point, not &mut Point
 ```
 
-Copies of a reference share its borrow. Reassigning one reference does not
-release the others. Branches and loops determine the last use.
+Each local reference is initialized once from an owned local or its marked
+child. Do not copy the reference or assign another pointer to it. Branches and
+loops still determine its last use.
 
 A borrow protects the **whole owner**. Borrowing a marked child also prevents
 writes to its parent's other fields. Unlike Rust, Immutago does not split loans
@@ -106,13 +110,10 @@ operations are supported. Anything not listed is rejected.
 
 | You can… | Go example |
 | --- | --- |
-| Declare a local reference | `var p *Point` |
+| Initialize a fixed local reference | `var p *Point = &point` |
 | Borrow a local value | `p := &point` |
 | Borrow a marked child of a local value | `p := &shape.Point` |
-| Copy a reference | `q := p` |
 | Discard a reference | `_ = p` |
-| Point a local reference at another local value | `p = &other` |
-| Clear a local reference | `p = nil` |
 | Read a field | `x := p.X` |
 | Copy the whole value, then change the copy | `next := *p; next.X = 1` |
 | Check whether a reference is nil | `if p != nil { ... }` |
@@ -128,7 +129,9 @@ func read(p *Point) int {
 ```
 
 You can also pass `&point` directly to `read`. The reference is used only during
-that call. Methods with a `*Point` receiver follow the same rule.
+that call. Use named functions for your readers. User-defined methods on
+protected values are unsupported, including methods promoted from embedded fields.
+Only the listed `im` methods are supported: `Get`, `At`, `Len`, `All`, and `Clone`.
 
 While a reference is still needed, you cannot change the original value:
 
@@ -148,6 +151,8 @@ of what works; an operation is not allowed just because it is absent below.
 
 | You cannot… | Rejected Go example | Use this instead |
 | --- | --- | --- |
+| Copy or reassign a reference | `q := p` or `p = &other` | Declare a separate reference from its owner. |
+| Call a user-defined method | `value.Read()` | Use `Read(&value)`. |
 | Write through a reference | `p.X = 1` | Change the owner before borrowing, or change a value copy. |
 | Return a reference | `return p` | Return `*p` as a value copy. |
 | Store a reference in a field or container | `Holder{P: p}` or `[]*Point{p}` | Store value copies in a marked struct or `im` collection. |
@@ -156,12 +161,44 @@ of what works; an operation is not allowed just because it is absent below.
 | Capture a reference in a closure | `func() { read(p) }` | Call `read(p)` directly. |
 | Defer or start a borrowed call in a goroutine | `defer read(p)` or `go read(p)` | Read synchronously, then use the returned value. |
 | Take a scalar field's address | `&point.X` | Read `point.X` or copy it to a separate local. |
-| Take a reference to a reference | `&p` | Copy the reference with `q := p`. |
+| Take a reference to a reference | `&p` | Pass `p` directly to a named reader. |
 | Build an owning pointer | `new(Point)` or `&Point{}` | Build `point := Point{}`, then borrow `&point`. |
 | Pass a reference to a generic helper | `readGeneric(p)` | Use a reader with a concrete `*Point` parameter. |
 
 The checker enforces this list of supported operations; there are no extra
 rules you must uphold by hand and no escape hatch for rejected operations.
+
+## Statement forms
+
+Use one assignment at a time when you change protected storage:
+
+```go
+value.X = 1 // allowed when no shared reference is still needed
+// value.X, p = 1, &value // rejected: multiple assignment
+```
+
+Use a separate statement to freeze a builder, then use the frozen value:
+
+```go
+frozen := im.FreezeSlice(values)
+use(frozen)
+// use(im.FreezeSlice(values)) // rejected: nested Freeze
+```
+
+Keep protected storage and builders out of `select` channel expressions and
+receive targets. The body of a case can contain ordinary checked operations:
+
+```go
+select {
+case <-ready:
+    values[0] = true
+}
+frozen := im.FreezeSlice(values)
+```
+
+Do not use `case _, values[0] = <-ready` or
+`case <-watch(im.FreezeSlice(values))`. Ordinary `if` statements and loops remain
+supported. These restrictions make writes and ownership transfers explicit.
 
 ## Allowed value types
 
@@ -233,7 +270,7 @@ containers of marked values. Unlisted operations are rejected.
 - Build a slice with `values = append(values, element)`.
 - Use map `delete`, clear with `clear`, or copy elements with built-in `copy`.
 - Iterate over its values with `range` while it remains mutable.
-- Consume it in a direct synchronous `im.FreezeSlice` or `im.FreezeMap` call.
+- Consume it in a direct synchronous Freeze call as a separate assignment or declaration.
 
 An inline fresh allocation or literal can be frozen directly. A builder cannot
 be frozen while a range over it is active. Branches and loops cannot make a
