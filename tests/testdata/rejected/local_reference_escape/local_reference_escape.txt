@@ -1,56 +1,56 @@
-local_reference_escape.go:11:2: immutable field Pointer: LocalRef references cannot be stored
+local_reference_escape.go:11:2: immutable field Pointer: LocalRef pointers cannot be stored
   owner: local_reference_escape.Stored; field type: *local_reference_escape.Local
   fix: replace the pointer field or argument with an owned immutable value
-local_reference_escape.go:14:5: unsupported immutable operation: global LocalRef references are unsupported
+local_reference_escape.go:14:5: unsupported immutable operation: global LocalRef pointers are unsupported
   source: global
   type: *local_reference_escape.Local
-  fix: keep the LocalRef reference local, or store a value copy
-local_reference_escape.go:16:38: unsupported immutable operation: returning LocalRef references is unsupported
+  fix: keep the LocalRef pointer local, or store a value copy
+local_reference_escape.go:16:38: unsupported immutable operation: returning LocalRef pointers is unsupported
   source: &Local{Value: 1}
   type: *local_reference_escape.Local
-  fix: return an LocalRef value copy, or use im.Shared for objects whose references must be shared
-local_reference_escape.go:16:6: unsupported immutable operation: returning LocalRef references is unsupported
+  fix: return a LocalRef value copy, or use im.Shared for objects whose pointers must be shared
+local_reference_escape.go:16:6: unsupported immutable operation: returning LocalRef pointers is unsupported
   source: returned
   type: func() *local_reference_escape.Local
-  fix: return an LocalRef value copy, or use im.Shared for objects whose references must be shared
-local_reference_escape.go:17:31: unsupported immutable operation: global LocalRef references are unsupported
+  fix: return a LocalRef value copy, or use im.Shared for objects whose pointers must be shared
+local_reference_escape.go:17:31: unsupported immutable operation: global LocalRef pointers are unsupported
   source: global
   type: *local_reference_escape.Local
-  fix: keep the LocalRef reference local, or store a value copy
+  fix: keep the LocalRef pointer local, or store a value copy
 local_reference_escape.go:17:40: unsupported immutable operation: reference operation is outside the supported allowlist
   source: value
   type: *local_reference_escape.Local
-  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared references can be stored or returned
+  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared pointers can be stored or returned
 local_reference_escape.go:20:28: unsupported immutable operation: reference operation is outside the supported allowlist
   source: value
   type: *local_reference_escape.Local
-  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared references can be stored or returned
-local_reference_escape.go:25:13: unsupported immutable operation: containers of LocalRef references are unsupported
+  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared pointers can be stored or returned
+local_reference_escape.go:25:13: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: []*Local{value}
   type: []*local_reference_escape.Local
-  fix: store LocalRef value copies or shared im.Shared references
+  fix: store LocalRef value copies or im.Shared pointers
 local_reference_escape.go:25:22: unsupported immutable operation: reference operation is outside the supported allowlist
   source: value
   type: *local_reference_escape.Local
-  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared references can be stored or returned
-local_reference_escape.go:25:2: unsupported immutable operation: containers of LocalRef references are unsupported
+  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared pointers can be stored or returned
+local_reference_escape.go:25:2: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: builder
   type: []*local_reference_escape.Local
-  fix: store LocalRef value copies or shared im.Shared references
-local_reference_escape.go:26:12: immutable collection: type argument 1: LocalRef references cannot be stored
+  fix: store LocalRef value copies or im.Shared pointers
+local_reference_escape.go:26:12: immutable collection: type argument 1: LocalRef pointers cannot be stored
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-local_reference_escape.go:26:15: immutable type argument: LocalRef references cannot be stored
+local_reference_escape.go:26:15: immutable type argument: LocalRef pointers cannot be stored
   type: *local_reference_escape.Local
   fix: replace the pointer field or argument with an owned immutable value
-local_reference_escape.go:26:27: unsupported immutable operation: containers of LocalRef references are unsupported
+local_reference_escape.go:26:27: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: builder
   type: []*local_reference_escape.Local
-  fix: store LocalRef value copies or shared im.Shared references
-local_reference_escape.go:26:2: immutable collection: type argument 1: LocalRef references cannot be stored
+  fix: store LocalRef value copies or im.Shared pointers
+local_reference_escape.go:26:2: immutable collection: type argument 1: LocalRef pointers cannot be stored
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-local_reference_escape.go:27:6: immutable collection: type argument 1: LocalRef references cannot be stored
+local_reference_escape.go:27:6: immutable collection: type argument 1: LocalRef pointers cannot be stored
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 local_reference_escape.go:31:34: unsupported immutable operation: closures cannot capture immutable storage

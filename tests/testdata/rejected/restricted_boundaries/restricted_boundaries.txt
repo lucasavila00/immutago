@@ -1,45 +1,45 @@
-restricted_boundaries.go:15:15: unsupported immutable operation: containers of LocalRef references are unsupported
+restricted_boundaries.go:15:15: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: []*Local
   type: []*restricted_boundaries.Local
-  fix: store LocalRef value copies or shared im.Shared references
-restricted_boundaries.go:15:6: unsupported immutable operation: containers of LocalRef references are unsupported
+  fix: store LocalRef value copies or im.Shared pointers
+restricted_boundaries.go:15:6: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: nilSlice
   type: []*restricted_boundaries.Local
-  fix: store LocalRef value copies or shared im.Shared references
-restricted_boundaries.go:16:16: unsupported immutable operation: containers of LocalRef references are unsupported
+  fix: store LocalRef value copies or im.Shared pointers
+restricted_boundaries.go:16:16: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: []*Local{}
   type: []*restricted_boundaries.Local
-  fix: store LocalRef value copies or shared im.Shared references
-restricted_boundaries.go:16:2: unsupported immutable operation: containers of LocalRef references are unsupported
+  fix: store LocalRef value copies or im.Shared pointers
+restricted_boundaries.go:16:2: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: emptySlice
   type: []*restricted_boundaries.Local
-  fix: store LocalRef value copies or shared im.Shared references
-restricted_boundaries.go:17:14: unsupported immutable operation: containers of LocalRef references are unsupported
+  fix: store LocalRef value copies or im.Shared pointers
+restricted_boundaries.go:17:14: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: make(map[int]*Local)
   type: map[int]*restricted_boundaries.Local
-  fix: store LocalRef value copies or shared im.Shared references
-restricted_boundaries.go:17:19: unsupported immutable operation: containers of LocalRef references are unsupported
+  fix: store LocalRef value copies or im.Shared pointers
+restricted_boundaries.go:17:19: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: map[int]*Local
   type: map[int]*restricted_boundaries.Local
-  fix: store LocalRef value copies or shared im.Shared references
-restricted_boundaries.go:17:2: unsupported immutable operation: containers of LocalRef references are unsupported
+  fix: store LocalRef value copies or im.Shared pointers
+restricted_boundaries.go:17:2: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: emptyMap
   type: map[int]*restricted_boundaries.Local
-  fix: store LocalRef value copies or shared im.Shared references
-restricted_boundaries.go:18:6: unsupported immutable operation: containers of LocalRef references are unsupported
+  fix: store LocalRef value copies or im.Shared pointers
+restricted_boundaries.go:18:6: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: nilSlice
   type: []*restricted_boundaries.Local
-  fix: store LocalRef value copies or shared im.Shared references
+  fix: store LocalRef value copies or im.Shared pointers
 restricted_boundaries.go:18:6: unsupported owned container nilSlice: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
-restricted_boundaries.go:19:6: unsupported immutable operation: containers of LocalRef references are unsupported
+restricted_boundaries.go:19:6: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: emptySlice
   type: []*restricted_boundaries.Local
-  fix: store LocalRef value copies or shared im.Shared references
+  fix: store LocalRef value copies or im.Shared pointers
 restricted_boundaries.go:19:6: unsupported owned container emptySlice: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
-restricted_boundaries.go:20:6: unsupported immutable operation: containers of LocalRef references are unsupported
+restricted_boundaries.go:20:6: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: emptyMap
   type: map[int]*restricted_boundaries.Local
-  fix: store LocalRef value copies or shared im.Shared references
+  fix: store LocalRef value copies or im.Shared pointers
 restricted_boundaries.go:20:6: unsupported owned container emptyMap: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 restricted_boundaries.go:25:9: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
   source: value

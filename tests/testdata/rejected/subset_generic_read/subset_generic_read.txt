@@ -13,4 +13,4 @@ subset_generic_read.go:19:34: unsupported immutable operation: user generic inst
 subset_generic_read.go:19:46: unsupported immutable operation: reference operation is outside the supported allowlist
   source: new(v)
   type: *rejected.Good
-  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared references can be stored or returned
+  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared pointers can be stored or returned

@@ -1,12 +1,12 @@
-invalid_noref.go:10:5: unsupported immutable operation: global LocalRef references are unsupported
+invalid_noref.go:10:5: unsupported immutable operation: global LocalRef pointers are unsupported
   source: retained
   type: *invalid_noref.Local
-  fix: keep the LocalRef reference local, or store a value copy
-invalid_noref.go:12:29: unsupported immutable operation: global LocalRef references are unsupported
+  fix: keep the LocalRef pointer local, or store a value copy
+invalid_noref.go:12:29: unsupported immutable operation: global LocalRef pointers are unsupported
   source: retained
   type: *invalid_noref.Local
-  fix: keep the LocalRef reference local, or store a value copy
+  fix: keep the LocalRef pointer local, or store a value copy
 invalid_noref.go:12:40: unsupported immutable operation: reference operation is outside the supported allowlist
   source: value
   type: *invalid_noref.Local
-  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared references can be stored or returned
+  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared pointers can be stored or returned
