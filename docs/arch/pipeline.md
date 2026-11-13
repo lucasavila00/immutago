@@ -46,17 +46,31 @@ whether an unmarked generic field can contain protected storage.
 
 ## Operation checks
 
-[The subset checker](../../pkg/analyzer/subset.go) builds an AST parent map,
-then checks source operations and inferred types. It rejects unsupported
-reference storage, returns, closures, interface transport, and native
-containers outside the builder rules.
+The [guide](../guide/immutability.md) is the source-language allowlist. Its allowed
+forms are complete. Rejection examples show common mistakes; they do not define
+the boundary.
 
-[Call checks](../../pkg/analyzer/subset_calls.go) resolve direct functions and
-methods, including generic syntax. Shared arguments require direct,
-synchronous, concrete typed calls. The checker does not compute arbitrary
-callee effects or pointer-return summaries. Instead, it checks each callee's
-source under the same restrictions and propagates package failures. Generic
-calls with protected type arguments are rejected outside the trusted library.
+For each operation involving protected storage, the checker must match a complete
+allowed shape using syntax and resolved types. It must then check the ownership
+rule for that shape. An unmatched shape is an error. A broad match such as
+"this is a method call" is not enough to accept the operation.
+
+For example, a fixed reference declaration matches `p := &owner` only when `p`
+is new, `owner` is an owned local or its marked child, and the declaration has
+one destination. `q := p`, `p = &other`, and iterator-produced references do not
+match that shape. They must fail instead of reaching the loan analysis as
+unclassified pointer origins.
+
+[The subset checker](../../pkg/analyzer/subset.go) uses an AST parent map to
+check expression and statement context. [Call checks](../../pkg/analyzer/subset_calls.go)
+resolve the function or method by compiler identity. Named readers have concrete,
+synchronous, non-escaping signatures. The only protected receiver calls are the
+listed methods of the exact `im` collection types.
+
+Tests must cover each accepted shape and nearby forms that do not match it.
+Adding a feature changes the docs, matcher, proof checks, and tests together.
+The explicit-subset branch is replacing broader checks with these rules; a
+written allowlist alone does not establish implementation correctness.
 
 ## Dependency facts
 

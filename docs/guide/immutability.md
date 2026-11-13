@@ -10,6 +10,10 @@ subset of Rust's ownership rules:
 
 The Rust below explains the rules. It is not an API you need to implement.
 
+The allowed Go forms in this guide define the supported language. The checker
+must match those forms and check their ownership rules. A form that does not
+match must be rejected. The examples of rejected code are not exhaustive.
+
 This branch is implementing the explicit subset below. The first documentation
 commit records the target rules; implementation and regression checks follow.
 

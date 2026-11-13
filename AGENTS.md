@@ -155,3 +155,15 @@ allowed replacement examples. State that rejection examples are not exhaustive.
 Do not replace these lists with abstract restrictions or explanations of intent.
 Keep the documentation, checker allowlist, and acceptance/rejection tests aligned.
 Distinguish rules still being implemented from behavior already verified.
+
+## 15. Accept Documented Shapes; Reject Everything Else
+
+The documentation defines the supported source language. For each operation on
+protected storage, match the complete documented Go shape using AST nodes and
+compiler type identity. Accept it only when that match and its proof checks
+succeed. Report an error for every other shape. The default path must reject.
+Do not accept a broad syntax category and rely on a growing list of forbidden
+special cases. Check implicit receiver operations, result bindings, and the
+statement context as part of the shape. A new source form requires a docs entry,
+a matcher, proof rules, acceptance tests, and tests that reject nearby forms.
+Keep ordinary Go code outside protected-storage analysis unaffected.
