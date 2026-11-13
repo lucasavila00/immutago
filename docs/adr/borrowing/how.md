@@ -12,12 +12,13 @@ Value copies create independent roots; reference copies retain their targets.
 
 Seed reference liveness at uses. Propagate region constraints backwards through
 control flow and between aliases. Compute active loans with a fixed-point
-worklist. At each write, check overlapping live loans before applying kills.
+worklist. At each write, expire out-of-region loans, then check overlapping live loans
+before applying overwrite kills.
 Unknown indices may overlap; only definite overlap can kill a loan.
 
 Infer function effects and returned aliases, including recursive calls. Carry
-summaries across package boundaries. Verify read-only calls and construction
-helpers from their bodies; unavailable effects are unsupported, not trusted.
+summaries across package boundaries. Verify read-only calls and factory
+results from their bodies; unavailable effects are unsupported, not trusted.
 
 ## Why NLL
 
