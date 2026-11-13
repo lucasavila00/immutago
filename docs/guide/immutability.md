@@ -298,7 +298,8 @@ path-copy updates.
 ### What you can do with a builder
 
 This list is **exhaustive** for a native container that you freeze, and for native
-containers of marked values. Unlisted operations are rejected.
+containers whose keys or elements contain marked values or frozen collections.
+Unlisted operations are rejected.
 
 | Allowed form | Go example |
 | --- | --- |
@@ -353,7 +354,8 @@ These are the supported collection methods and direct call forms:
 | Iterate over slice or map entries | `for key, value := range frozen.All() { ... }` |
 | Clone into mutable native storage | `next := frozen.Clone()` |
 
-The receiver can be a local frozen value or a shared reference to one.
+The receiver can be an expression of the frozen collection type, such as
+`frozen`, `value.Items`, or `makeFrozen()`, or a supported shared reference.
 Parentheses are allowed: `(frozen.Len)()` and `range (frozen.All())` have the same
 meaning. `Len`, `At`, and `Get` allocate no storage. `All` yields value copies
 without cloning the container. `Clone` creates independent storage.
@@ -380,7 +382,9 @@ entries := frozen.All()
 for key, value := range frozen.All() { ... }
 ```
 
-Iterators with only scalar keys and values follow ordinary Go iterator rules.
+Iterators whose key and value types contain no marked values or frozen
+collections follow ordinary Go iterator rules. For example, you can save
+`entries := frozen.All()` when the elements are `int` or `[2]int`.
 
 ## What we do not implement
 
