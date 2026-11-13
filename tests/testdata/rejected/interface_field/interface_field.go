@@ -8,7 +8,7 @@ type Good struct {
 	Array [2]int
 }
 
-type Bad struct { // want "immutable field Value: .*not provably immutable"
+type Bad struct {
 	im.Marker
 	Value any
 }

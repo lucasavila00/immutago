@@ -1,0 +1,1 @@
+subset_global_address.go:10:15: unsupported immutable borrow: only whole local values can be borrowed

@@ -1,0 +1,1 @@
+subset_global_reference.go:9:5: unsupported immutable borrow: global shared references are unsupported

@@ -1,0 +1,3 @@
+alias_collection.go:11:12: immutable collection: type argument 1: []int is not provably immutable
+alias_collection.go:11:15: immutable type argument: []int is not provably immutable
+alias_collection.go:11:6: immutable collection: type argument 1: []int is not provably immutable

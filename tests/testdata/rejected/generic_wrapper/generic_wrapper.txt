@@ -1,0 +1,4 @@
+generic_wrapper.go:10:21: unsupported unmarked field Value: unresolved generic storage
+generic_wrapper.go:10:6: unsupported unmarked field Value: unresolved generic storage
+generic_wrapper.go:12:5: unmarked struct contains immutable field Value; embed im.Marker
+generic_wrapper.go:12:9: unmarked struct contains immutable field Value; embed im.Marker

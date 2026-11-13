@@ -1,30 +1,29 @@
 # Borrowing: REVIEW
 
-## Reviewed rules
+## Scope
 
-The supported Rust subset is `T`, `&T`, and NLL. Owned values can change. Shared
-references cannot write. An owner can change again after its last shared borrow
-ends. Go copies values instead of moving them.
+The previous implementation tried to recover aliases across much of Go. The
+chosen subset rejects those escape mechanisms instead. Review the smaller
+language, not compatibility with the removed features.
 
-The implementation was compared with the pinned rustc algorithms. A write is
-checked against live loans before overwrite kills apply. Possible overlap is
-used to reject conflicts; definite overlap is required to kill a loan.
+Owned values and local shared references remain useful without pointer-return
+summaries, dynamic-call effects, or recursive reference paths. Whole-owner loans
+remove field-overlap decisions. Value constructors remove owning-pointer rules.
 
-## Review findings
+## Required checks
 
-The review found and corrected lost aliases through helpers, returned globals,
-loop iterations, pointer indirection, and copied analysis state. Scalar pointers
-into marked structs retain the same protection as pointers to the whole struct.
+Verify that every accepted reference has a visible local owner or a read-only
+parameter origin. Copies and rebinding must preserve all possible owners through
+branches and loops. A right-hand-side borrow must exist before an assignment
+writes its owner.
 
-Recursive pointer paths use a finite conservative representation. An unknown
-path cannot justify a write or end a borrow. Unknown effects must follow pointer
-slots to the storage they reference.
+Check that forbidden transport fails where introduced, including implicit Go
+conversions and method receivers. Fixed collection operations must preserve
+value-copy semantics without exposing backing storage.
 
-## Evidence
+Dependency errors must reach the selected consumer in both analyzer drivers.
+Diagnostics must identify the failed rule, relevant source context, and a
+concrete correction. Review the per-fixture snapshots before accepting updates.
 
-Targeted debugging covered owned construction, copies, constructors, last-use
-writes, and the rejection cases above. Independent reference solvers check the
-ported graph operations. End-to-end tests exercise the CLI and `go vet`.
-
-Hosted CI supplies the final cross-platform, race, lint, documentation, build,
-and repository checks. Passing a narrow test does not replace those checks.
+Hosted CI supplies final cross-platform, race, lint, documentation, build, and
+self-analysis evidence. Passing a narrow test does not replace those checks.

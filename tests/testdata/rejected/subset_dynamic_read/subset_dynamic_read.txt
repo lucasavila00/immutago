@@ -1,0 +1,1 @@
+subset_dynamic_read.go:9:34: unsupported immutable borrow: dynamic calls with immutable storage are unsupported

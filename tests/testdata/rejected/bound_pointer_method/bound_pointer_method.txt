@@ -1,0 +1,1 @@
+bound_pointer_method.go:17:12: unsupported immutable borrow: bound immutable methods are unsupported

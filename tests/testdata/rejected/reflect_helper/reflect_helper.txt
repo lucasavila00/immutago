@@ -1,0 +1,4 @@
+reflect_helper.go:3:8: unsupported reflect import; immutability cannot be proved
+reflect_helper.go:5:14: unsupported reflection value; immutability cannot be proved
+reflect_helper.go:5:22: unsupported reflection value; immutability cannot be proved
+reflect_helper.go:5:37: unsupported reflection value; immutability cannot be proved

@@ -1,0 +1,2 @@
+slice_field.go:11:10: immutable field Value: []string is not provably immutable
+slice_field.go:11:6: immutable field Value: []string is not provably immutable

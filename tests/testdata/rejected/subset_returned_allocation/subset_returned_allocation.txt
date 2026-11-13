@@ -1,0 +1,2 @@
+subset_returned_allocation.go:9:26: unsupported immutable borrow: returning shared references is unsupported
+subset_returned_allocation.go:9:6: unsupported immutable borrow: returning shared references is unsupported

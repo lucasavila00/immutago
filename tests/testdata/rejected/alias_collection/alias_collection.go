@@ -8,4 +8,4 @@ type Good struct {
 	Array [2]int
 }
 
-type Bad = im.Slice[[]int] // want "immutable collection: .*not provably immutable"
+type Bad = im.Slice[[]int]

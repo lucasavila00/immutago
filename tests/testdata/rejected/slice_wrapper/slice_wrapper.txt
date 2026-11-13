@@ -1,0 +1,4 @@
+slice_wrapper.go:11:10: unmarked struct contains immutable field Value; embed im.Marker
+slice_wrapper.go:11:18: unsupported immutable borrow: native slices of immutable storage are unsupported
+slice_wrapper.go:11:24: unsupported immutable borrow: native slices of immutable storage are unsupported
+slice_wrapper.go:11:6: unmarked struct contains immutable field Value; embed im.Marker

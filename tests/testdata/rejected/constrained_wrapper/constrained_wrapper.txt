@@ -1,0 +1,2 @@
+constrained_wrapper.go:9:18: unmarked struct contains immutable field Value; embed im.Marker
+constrained_wrapper.go:9:6: unmarked struct contains immutable field Value; embed im.Marker

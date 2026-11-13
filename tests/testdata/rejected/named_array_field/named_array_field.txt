@@ -1,0 +1,2 @@
+named_array_field.go:6:12: immutable field N: named array must be wrapped in a struct that embeds im.Marker
+named_array_field.go:6:6: immutable field N: named array must be wrapped in a struct that embeds im.Marker

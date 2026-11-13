@@ -1,0 +1,2 @@
+bound_array_method.go:10:28: cannot write through shared reference
+bound_array_method.go:20:12: unsupported immutable borrow: bound immutable methods are unsupported

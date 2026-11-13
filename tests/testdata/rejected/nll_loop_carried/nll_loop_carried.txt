@@ -1,0 +1,1 @@
+nll_loop_carried.go:24:3: cannot write borrowed immutable owner

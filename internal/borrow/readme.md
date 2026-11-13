@@ -32,6 +32,14 @@ func Overlap(a, b Place, definite bool) bool
 
 Overlap ports rustc's projection comparison with explicit may/must bias. Possible overlap is used for access checks; definite overlap is used for kills. Dereferences are already resolved to canonical allocation roots by the Go adapter.
 
+## func UsesImmutable
+
+```go
+func UsesImmutable(pkg *types.Package) bool
+```
+
+UsesImmutable reports whether a package can originate marked storage through its import graph.
+
 ## type Effect
 
 Effect describes operations on storage reachable from a function input.

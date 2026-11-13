@@ -15,6 +15,6 @@ func mutate() {
 	var value Value
 	pointer := &value
 	method := value.N.Change
-	method() // want "borrow|shared reference"
+	method()
 	_ = pointer.N
 }

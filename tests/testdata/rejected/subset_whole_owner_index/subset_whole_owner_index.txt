@@ -1,0 +1,2 @@
+subset_whole_owner_index.go:10:20: unsupported immutable borrow: only whole local values and marked fields can be borrowed
+subset_whole_owner_index.go:10:33: cannot write borrowed immutable owner

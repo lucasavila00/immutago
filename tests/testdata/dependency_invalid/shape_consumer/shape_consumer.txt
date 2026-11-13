@@ -1,0 +1,1 @@
+shape_consumer.go:3:8: unsupported dependency example.com/consumer/invalid_shape: immutability proof failed

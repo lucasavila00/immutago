@@ -8,4 +8,4 @@ type Good struct {
 	Array [2]int
 }
 
-type Bad struct{ Good } // want "unmarked struct contains immutable field"
+type Bad struct{ Good }

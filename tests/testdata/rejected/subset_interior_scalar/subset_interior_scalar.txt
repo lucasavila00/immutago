@@ -1,0 +1,1 @@
+subset_interior_scalar.go:9:21: unsupported immutable borrow: scalar interior addresses are unsupported

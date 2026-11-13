@@ -1,0 +1,3 @@
+subset_pointer_array.go:9:10: unsupported immutable borrow: arrays of shared references are unsupported
+subset_pointer_array.go:9:17: unsupported immutable borrow: arrays of shared references are unsupported
+subset_pointer_array.go:9:29: unsupported immutable borrow: arrays of shared references are unsupported

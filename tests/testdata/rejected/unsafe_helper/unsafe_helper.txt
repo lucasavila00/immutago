@@ -1,0 +1,3 @@
+unsafe_helper.go:3:8: unsupported unsafe import; immutability cannot be proved
+unsafe_helper.go:5:16: unsupported unsafe pointer; immutability cannot be proved
+unsafe_helper.go:5:23: unsupported unsafe pointer; immutability cannot be proved

@@ -1,0 +1,1 @@
+subset_slice_view.go:9:20: unsupported immutable borrow: slice views of immutable storage are unsupported

@@ -1,0 +1,1 @@
+nll_loop_reissuance.go:16:3: cannot write borrowed immutable owner

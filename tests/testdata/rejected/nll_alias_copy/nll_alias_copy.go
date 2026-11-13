@@ -15,7 +15,6 @@ type Good struct {
 
 func read(pointer *Good) int        { return pointer.X }
 func readInt(pointer *int) int      { return *pointer }
-func identity[T any](pointer *T) *T { return pointer }
 func (value *Good) Read() int       { return value.X }
 
 func bad() {
@@ -23,7 +22,7 @@ func bad() {
 	pointer := &value
 	alias := pointer
 	pointer = nil
-	value.X = 2 // want "borrow|shared reference"
+	value.X = 2
 	_ = read(alias)
 	_ = pointer
 }

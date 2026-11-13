@@ -60,39 +60,6 @@ func ShadowCopy() Good {
 	return value
 }
 
-func BoundReadMethod() Good {
-	var value Good
-	method := value.Read
-	_ = method()
-	value.X = 2
-	return value
-}
-
-func ClosureLastUse() Good {
-	var value Good
-	pointer := &value
-	readLater := func() int { return pointer.X }
-	_ = readLater()
-	value.X = 2
-	return value
-}
-
-func InterfaceLastUse() Good {
-	var value Good
-	var boxed any = &value
-	_ = read(boxed.(*Good))
-	value.X = 2
-	return value
-}
-
-func ScalarInterfaceLastUse() Good {
-	var value Good
-	var boxed any = &value.X
-	_ = readInt(boxed.(*int))
-	value.X = 2
-	return value
-}
-
 func LoopAliasLastUse(count int) Good {
 	var value Good
 	var previous *Good

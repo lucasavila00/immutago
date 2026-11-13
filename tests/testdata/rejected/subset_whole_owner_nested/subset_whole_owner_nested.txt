@@ -1,0 +1,1 @@
+subset_whole_owner_nested.go:9:30: cannot write borrowed immutable owner

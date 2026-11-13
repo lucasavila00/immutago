@@ -1,0 +1,2 @@
+unmarked_field.go:11:10: immutable field Value: struct does not embed im.Marker
+unmarked_field.go:11:6: immutable field Value: struct does not embed im.Marker

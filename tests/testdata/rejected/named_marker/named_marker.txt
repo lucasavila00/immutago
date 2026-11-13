@@ -1,0 +1,2 @@
+named_marker.go:11:10: im.Marker must be embedded by value
+named_marker.go:11:6: im.Marker must be embedded by value

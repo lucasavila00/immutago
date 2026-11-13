@@ -1,0 +1,3 @@
+reflect_mutation.go:13:17: unsupported reflection value; immutability cannot be proved
+reflect_mutation.go:13:33: unsupported immutable borrow: boxing immutable storage in interfaces is unsupported
+reflect_mutation.go:5:2: unsupported reflect import; immutability cannot be proved

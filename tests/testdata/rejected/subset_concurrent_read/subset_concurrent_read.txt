@@ -1,0 +1,1 @@
+subset_concurrent_read.go:9:21: unsupported immutable borrow: shared references require synchronous calls

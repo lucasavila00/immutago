@@ -1,0 +1,2 @@
+subset_literal_owner.go:9:16: unsupported immutable borrow: only whole local values and marked fields can be borrowed
+subset_literal_owner.go:9:24: cannot write through shared reference

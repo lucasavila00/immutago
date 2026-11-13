@@ -1,0 +1,2 @@
+constrained_interface.go:11:10: immutable field Value: interface{Read() int} is not provably immutable
+constrained_interface.go:11:6: immutable field Value: interface{Read() int} is not provably immutable

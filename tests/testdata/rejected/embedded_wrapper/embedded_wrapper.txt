@@ -1,0 +1,2 @@
+embedded_wrapper.go:11:10: unmarked struct contains immutable field Good; embed im.Marker
+embedded_wrapper.go:11:6: unmarked struct contains immutable field Good; embed im.Marker

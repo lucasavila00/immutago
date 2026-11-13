@@ -1,0 +1,4 @@
+generic_helper.go:11:28: immutable collection: type argument 1: type parameter constraint does not prove immutability
+generic_helper.go:11:31: immutable type argument: type parameter constraint does not prove immutability
+generic_helper.go:11:49: immutable collection: type argument 1: type parameter constraint does not prove immutability
+generic_helper.go:11:52: immutable type argument: type parameter constraint does not prove immutability

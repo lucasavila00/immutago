@@ -1,0 +1,2 @@
+blank_mutable.go:11:10: immutable field _: []int is not provably immutable
+blank_mutable.go:11:6: immutable field _: []int is not provably immutable

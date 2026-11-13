@@ -1,0 +1,2 @@
+pointer_field.go:11:10: immutable field Value: *int is not provably immutable
+pointer_field.go:11:6: immutable field Value: *int is not provably immutable

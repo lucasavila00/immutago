@@ -1,0 +1,1 @@
+subset_native_map.go:9:14: unsupported immutable borrow: native maps of immutable storage are unsupported

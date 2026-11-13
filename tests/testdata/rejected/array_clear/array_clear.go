@@ -10,6 +10,6 @@ type Good struct {
 func mutate() {
 	var value Good
 	pointer := &value
-	clear(value.Array[:]) // want "borrow|shared reference"
+	clear(value.Array[:])
 	_ = pointer.Array[0]
 }

@@ -2,7 +2,7 @@ package rejected
 
 import (
 	"github.com/lucasavila00/immutago/pkg/im"
-	"reflect" // want "unsupported reflect import"
+	"reflect"
 )
 
 type Value struct {

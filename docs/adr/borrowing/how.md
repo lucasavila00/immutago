@@ -1,30 +1,33 @@
 # Borrowing: HOW
 
-## Use rustc's borrow-checking algorithms
+## Local NLL
 
-Port the relevant algorithms from the
-[pinned rustc source](https://github.com/rust-lang/rust/tree/80196be0e787008b6fb14d2990aba92083cd68e1/compiler/rustc_borrowck).
-Keep their source attribution and license.
-
-A **place** identifies storage, such as `value.x`. A **loan** records a shared
-borrow of that place. A **region** contains the program points where the borrow
-must remain valid.
+Use Go's typed syntax and statement control-flow graph. An owner is a local
+value. A reference binding records which whole owners it can borrow.
 
 ```rust
-let borrowed = &value.x; // issue a loan
-let x = *borrowed;       // last use in its region
-value.x = 1;            // loan has ended
+let borrowed = &value;
+let copy = borrowed;
+read(copy); // both bindings refer to the same owner
+value.n = 1;
 ```
 
-Follow uses backward through branches and loops to compute NLL. Reference copies
-share the same loan. Before a write, expire loans whose regions have ended, then
-reject overlap with a live loan. Only a definite overwrite can kill a loan.
+Compute possible owners forward through assignments, branches, and loops. Trace
+reference uses backward to their binding definitions with the ported rustc
+liveness algorithm. A write fails if any live reference can borrow its owner.
+Writes through references always fail.
 
-## Adapt to Go
+Separate right-hand-side evaluation from assignment writes. Copies and pointer
+rebinding must preserve Go's evaluation order, including simultaneous assignment.
 
-Resolve Go pointer aliases to their original storage. Preserve that identity
-through assignments, calls, and returns. Export checked function effects across
-packages. Distinguish a returned owner from a returned borrow.
+## No hidden aliases
 
-Bound recursive reference paths conservatively. If the checker loses information
-needed for a proof, report an unsupported operation. Do not grant write access.
+Reject escape boundaries in source. Every accepted reader has the same shared,
+non-escaping contract. There is no inference of arbitrary callee effects,
+returned-pointer ownership, recursive pointer paths, or dynamic callbacks.
+
+Check dependency bodies and propagate proof failures through package facts,
+including when `go vet` suppresses dependency diagnostics. Preserve the original
+failure context for the importing caller.
+
+Retain the rustc source attribution and license for the algorithms still used.

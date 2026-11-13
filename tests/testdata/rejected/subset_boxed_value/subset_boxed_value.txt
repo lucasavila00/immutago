@@ -1,0 +1,1 @@
+subset_boxed_value.go:9:32: unsupported immutable borrow: boxing immutable storage in interfaces is unsupported

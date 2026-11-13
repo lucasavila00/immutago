@@ -12,11 +12,12 @@
 // permit reads; their loans end after the final required use on each control-flow
 // path. Writes to overlapping borrowed storage are rejected. Value copies have
 // independent storage. Package-level immutable values are read-only after init.
-// Function summaries preserve aliases and effects across package boundaries.
-// Analyze every consumer package, including dependencies that use these values.
+// Protected references stay local or pass to direct, non-escaping read-only calls.
+// Dependency proof failures propagate to importing consumers.
 package analyzer
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -32,14 +33,27 @@ var Analyzer = &analysis.Analyzer{
 	Name:      "immutago",
 	Doc:       "prove immutability of marked structs and immutable collection elements",
 	Run:       run,
-	FactTypes: []analysis.Fact{new(borrow.Summary)},
+	FactTypes: []analysis.Fact{new(invalidPackage)},
 }
 
 // run checks compiler-resolved types and source operations in one package.
 func run(pass *analysis.Pass) (any, error) {
-	if pass.Pkg.Path() == checker.LibraryPath {
+	if pass.Pkg.Path() == checker.LibraryPath || borrow.IsStandardLibrary(pass) {
 		return nil, nil
 	}
+	invalid, relevant, failures := invalidDependencies(pass)
+	report := pass.Report
+	pass.Report = func(d analysis.Diagnostic) {
+		invalid = true
+		failures = append(failures, localFailure(pass, d))
+		report(d)
+	}
+	defer func() {
+		pass.Report = report
+		if invalid && pass.ExportPackageFact != nil {
+			pass.ExportPackageFact(&invalidPackage{Relevant: relevant, Failures: uniqueFailures(failures)})
+		}
+	}()
 	c := &checks{pass: pass, reported: make(map[token.Pos]bool)}
 	for _, file := range pass.Files {
 		ast.Inspect(file, c.visit)
@@ -51,10 +65,12 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 		for i := 0; i < instance.TypeArgs.Len(); i++ {
 			if reason := checker.Reason(instance.TypeArgs.At(i)); reason != "" {
-				c.report(ident.Pos(), "immutable type argument: "+reason)
+				c.report(ident.Pos(), fmt.Sprintf("immutable type argument: %s\n  type: %s\n  fix: %s",
+					reason, diagnosticType(instance.TypeArgs.At(i)), structuralFix(instance.TypeArgs.At(i), reason)))
 			}
 		}
 	}
+	checkSubset(pass)
 	if err := borrow.Check(pass); err != nil {
 		return nil, err
 	}
@@ -80,7 +96,8 @@ func (c *checks) visit(node ast.Node) bool {
 	switch n := node.(type) {
 	case *ast.FuncDecl:
 		if n.Body == nil {
-			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved")
+			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
+				"provide a Go implementation so writes and shared borrows can be checked")
 		}
 	case *ast.ImportSpec:
 		c.checkImport(n)
@@ -104,21 +121,27 @@ func (c *checks) visit(node ast.Node) bool {
 // checkImport resolves both quoted forms before rejecting packages outside the supported proof boundary.
 func (c *checks) checkImport(spec *ast.ImportSpec) {
 	if path, err := strconv.Unquote(spec.Path.Value); err == nil && (path == "unsafe" || path == "reflect") {
-		c.report(spec.Pos(), "unsupported "+path+" import; immutability cannot be proved")
+		c.report(spec.Pos(), "unsupported "+path+" import; immutability cannot be proved\n  rule: reflection and unsafe "+
+			"operations can bypass typed ownership checks\n  fix: replace these operations with ordinary typed Go code")
 	}
 }
 
 // checkType checks collection arguments and disallows pointers that could expose mutable aliases.
 func (c *checks) checkType(pos token.Pos, t types.Type) {
 	if reflectionValue(t) {
-		c.report(pos, "unsupported reflection value; immutability cannot be proved")
+		c.report(pos, "unsupported reflection value; immutability cannot be proved\n  type: "+diagnosticType(t)+
+			"\n  fix: replace reflection values with concrete typed values and direct "+
+			"operations")
 	}
 	if basic, ok := t.Underlying().(*types.Basic); ok && basic.Kind() == types.UnsafePointer {
-		c.report(pos, "unsupported unsafe pointer; immutability cannot be proved")
+		c.report(pos, "unsupported unsafe pointer; immutability cannot be proved\n  type: "+diagnosticType(t)+
+			"\n  fix: use typed value copies or direct shared borrows; do not reinterpret "+
+			"storage")
 	}
 	if checker.IsCollection(t) {
 		if reason := checker.Reason(t); reason != "" {
-			c.report(pos, "immutable collection: "+reason)
+			c.report(pos, "immutable collection: "+reason+"\n  type: "+diagnosticType(t)+
+				"\n  fix: "+structuralFix(t, reason))
 		}
 	}
 	// Defined types can inherit a struct without a struct literal in this package.
@@ -161,23 +184,33 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	for field := range s.Fields() {
 		ft := field.Type()
 		if checker.IsLibraryType(ft, "Marker") && !field.Embedded() {
-			c.report(pos, "im.Marker must be embedded by value")
+			c.report(pos, "im.Marker must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
+				"\n  fix: declare an anonymous im.Marker field; remove its field name or pointer")
 			return
 		}
 		if ptr, ok := ft.Underlying().(*types.Pointer); ok && checker.IsLibraryType(ptr.Elem(), "Marker") {
-			c.report(pos, "im.Marker must be embedded by value")
+			c.report(pos, "im.Marker must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
+				"\n  fix: declare an anonymous im.Marker field; remove its field name or pointer")
 			return
 		}
 		if marked {
 			if reason := checker.Reason(ft); reason != "" {
-				c.report(pos, "immutable field "+field.Name()+": "+reason)
+				c.report(pos, "immutable field "+field.Name()+": "+reason+
+					"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
+					"\n  fix: "+structuralFix(ft, reason))
 				return
 			}
 		} else if checker.Contains(ft) {
-			c.report(pos, "unmarked struct contains immutable field "+field.Name()+"; embed im.Marker")
+			c.report(pos, "unmarked struct contains immutable field "+field.Name()+"; embed im.Marker"+
+				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
+				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+
+				"\n  fix: embed im.Marker in this struct and make all its fields immutable, or remove the immutable field")
 			return
 		} else if checker.PossibleStorage(ft) {
-			c.report(pos, "unsupported unmarked field "+field.Name()+": unresolved generic storage")
+			c.report(pos, "unsupported unmarked field "+field.Name()+": unresolved generic storage"+
+				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
+				"\n  fix: constrain the field to types that cannot contain immutable storage, "+
+				"or make the owner and field immutable")
 			return
 		}
 	}

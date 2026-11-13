@@ -1,0 +1,2 @@
+subset_generic_read.go:10:18: unsupported immutable borrow: generic calls with immutable types are unsupported
+subset_generic_read.go:10:30: unsupported immutable borrow: generic borrowing calls are unsupported

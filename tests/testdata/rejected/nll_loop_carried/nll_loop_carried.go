@@ -15,14 +15,13 @@ type Good struct {
 
 func read(pointer *Good) int        { return pointer.X }
 func readInt(pointer *int) int      { return *pointer }
-func identity[T any](pointer *T) *T { return pointer }
 func (value *Good) Read() int       { return value.X }
 
 func bad(count int) {
 	var value Good
 	pointer := &value
 	for index := 0; index < count; index++ {
-		value.X = index // want "borrow|shared reference"
+		value.X = index
 		_ = read(pointer)
 	}
 }

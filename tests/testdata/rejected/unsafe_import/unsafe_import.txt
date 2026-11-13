@@ -1,0 +1,4 @@
+unsafe_import.go:3:8: unsupported unsafe import; immutability cannot be proved
+unsafe_import.go:5:14: unsupported unsafe pointer; immutability cannot be proved
+unsafe_import.go:5:5: unsupported unsafe pointer; immutability cannot be proved
+unsafe_import.go:5:7: unsupported unsafe pointer; immutability cannot be proved

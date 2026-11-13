@@ -1,0 +1,2 @@
+channel_field.go:11:10: immutable field Value: chan int is not provably immutable
+channel_field.go:11:6: immutable field Value: chan int is not provably immutable

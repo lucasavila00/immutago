@@ -17,6 +17,6 @@ type Value struct {
 func mutate() {
 	var value Value
 	pointer := &value
-	value.N.Change() // want "borrow|shared reference"
+	value.N.Change()
 	_ = pointer.N
 }

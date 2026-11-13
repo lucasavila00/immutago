@@ -1,0 +1,2 @@
+indirect_reflection.go:5:13: unsupported reflection value; immutability cannot be proved
+indirect_reflection.go:5:5: unsupported reflection value; immutability cannot be proved

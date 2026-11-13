@@ -1,0 +1,2 @@
+zero_array.go:11:10: immutable field Value: *int is not provably immutable
+zero_array.go:11:6: immutable field Value: *int is not provably immutable

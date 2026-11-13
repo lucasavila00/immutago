@@ -1,0 +1,5 @@
+nested_collection.go:11:12: immutable type argument: type argument 2: []int is not provably immutable
+nested_collection.go:11:18: immutable collection: type argument 2: []int is not provably immutable
+nested_collection.go:11:21: immutable type argument: []int is not provably immutable
+nested_collection.go:11:5: immutable collection: type argument 1: type argument 2: []int is not provably immutable
+nested_collection.go:11:9: immutable collection: type argument 1: type argument 2: []int is not provably immutable

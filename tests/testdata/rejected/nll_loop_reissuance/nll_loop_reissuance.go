@@ -13,7 +13,7 @@ func bad(count int) {
 	var value Good
 	var previous *Good
 	for index := 0; index < count; index++ {
-		value.X = index // want "borrow|shared reference"
+		value.X = index
 		pointer := &value
 		if previous != nil {
 			_ = read(previous)

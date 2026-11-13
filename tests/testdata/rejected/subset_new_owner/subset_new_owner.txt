@@ -1,0 +1,3 @@
+subset_new_owner.go:9:16: unsupported immutable borrow: pointer-owned construction is unsupported
+subset_new_owner.go:9:20: unsupported immutable borrow: dynamic calls with immutable storage are unsupported
+subset_new_owner.go:9:26: cannot write through shared reference

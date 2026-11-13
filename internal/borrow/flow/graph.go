@@ -1,5 +1,5 @@
 // Copyright (c) The Rust Project Contributors
-// Adapted from rustc_mir_dataflow/src/framework/mod.rs::iterate_to_fixpoint.
+// Uses the reverse-postorder traversal used by rustc_mir_dataflow.
 // Source revision and license: third_party/rustc.
 
 package flow
@@ -46,38 +46,4 @@ func (g Graph) ReversePostorder() []int {
 	visit(0)
 	slices.Reverse(order)
 	return order
-}
-
-// Forward solves a union gen/kill analysis using rustc's minimum-rank dirty worklist.
-// Inputs are states before the point's kills; outputs are states after kills and generation.
-// Callers must check accesses before applying assignment kills. Unreachable points remain empty.
-func Forward(graph Graph, gen, kill []Set) (inputs, outputs []Set) {
-	count := len(graph.Succ)
-	inputs, outputs = make([]Set, count), make([]Set, count)
-	for point := range count {
-		inputs[point], outputs[point] = NewSet(), NewSet()
-	}
-	order := graph.ReversePostorder()
-	ranks, dirty := make([]int, count), make([]bool, len(order))
-	for rank, point := range order {
-		ranks[point], dirty[rank] = rank, true
-	}
-	for current := 0; current < len(order); {
-		point := order[current]
-		dirty[current] = false
-		state := inputs[point].Without(kill[point])
-		state.Union(gen[point])
-		outputs[point] = state
-		for _, target := range graph.Succ[point] {
-			if inputs[target].Union(state) {
-				rank := ranks[target]
-				dirty[rank] = true
-				current = min(current, rank)
-			}
-		}
-		for current < len(order) && !dirty[current] {
-			current++
-		}
-	}
-	return inputs, outputs
 }

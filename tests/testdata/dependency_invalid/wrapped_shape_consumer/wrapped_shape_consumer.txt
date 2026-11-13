@@ -1,0 +1,1 @@
+wrapped_shape_consumer.go:3:8: unsupported dependency example.com/consumer/shape_wrapper: immutability proof failed

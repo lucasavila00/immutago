@@ -6,4 +6,4 @@ type Good struct {
 	im.Marker
 	N int
 }
-type Bad[T Good] struct{ Value T } // want "unmarked struct contains immutable field"
+type Bad[T Good] struct{ Value T }

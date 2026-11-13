@@ -1,0 +1,1 @@
+bodyless_function.go:5:1: unsupported function without a Go body; immutability cannot be proved

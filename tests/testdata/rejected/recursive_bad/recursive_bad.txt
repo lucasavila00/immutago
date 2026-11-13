@@ -1,0 +1,6 @@
+recursive_bad.go:11:10: immutable field Children: type argument 1: Mutable: []int is not provably immutable
+recursive_bad.go:11:6: immutable field Children: type argument 1: Mutable: []int is not provably immutable
+recursive_bad.go:13:11: immutable collection: type argument 1: Mutable: []int is not provably immutable
+recursive_bad.go:13:14: immutable type argument: Mutable: []int is not provably immutable
+recursive_bad.go:13:20: immutable field Children: type argument 1: Mutable: []int is not provably immutable
+recursive_bad.go:13:2: immutable collection: type argument 1: Mutable: []int is not provably immutable

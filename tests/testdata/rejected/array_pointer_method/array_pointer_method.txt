@@ -1,0 +1,1 @@
+array_pointer_method.go:10:28: cannot write through shared reference

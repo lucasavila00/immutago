@@ -1,0 +1,1 @@
+implicit_pointer_method.go:17:2: unsupported immutable borrow: scalar interior pointer methods are unsupported

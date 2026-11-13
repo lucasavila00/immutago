@@ -1,0 +1,1 @@
+subset_iterator_storage.go:9:16: unsupported immutable borrow: immutable callbacks are unsupported

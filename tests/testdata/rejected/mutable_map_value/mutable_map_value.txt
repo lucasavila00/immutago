@@ -1,0 +1,3 @@
+mutable_map_value.go:11:12: immutable type argument: *int is not provably immutable
+mutable_map_value.go:11:5: immutable collection: type argument 2: *int is not provably immutable
+mutable_map_value.go:11:9: immutable collection: type argument 2: *int is not provably immutable

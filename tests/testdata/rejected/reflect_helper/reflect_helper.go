@@ -1,5 +1,5 @@
 package reflect_helper
 
-import "reflect" // want "unsupported reflect import"
+import "reflect"
 
 func Value() reflect.Value { return reflect.ValueOf(1) }

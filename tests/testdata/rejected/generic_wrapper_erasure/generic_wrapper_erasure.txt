@@ -1,0 +1,4 @@
+generic_wrapper_erasure.go:10:17: unsupported unmarked field Value: unresolved generic storage
+generic_wrapper_erasure.go:10:6: unsupported unmarked field Value: unresolved generic storage
+generic_wrapper_erasure.go:11:44: unsupported unmarked field Value: unresolved generic storage
+generic_wrapper_erasure.go:13:14: unsupported immutable borrow: generic calls with immutable types are unsupported

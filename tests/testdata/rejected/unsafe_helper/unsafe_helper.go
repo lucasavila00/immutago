@@ -1,5 +1,5 @@
 package unsafe_helper
 
-import "unsafe" // want "unsupported unsafe import"
+import "unsafe"
 
 func Pointer() unsafe.Pointer { return nil }

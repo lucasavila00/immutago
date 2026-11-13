@@ -124,7 +124,9 @@ Unmarked structs cannot own marked values or immutable collections.
 Permit construction and updates in owned local storage. Reject writes through
 shared references and writes that conflict with a live loan. Use source places
 and non-lexical loan lifetimes; do not substitute blanket pointer rejection or
-permanent freezing. Preserve alias provenance through checked function effects.
+permanent freezing. Use whole-owner loans and direct, typed, non-escaping
+read-only calls. Reject alias escape boundaries instead of inferring arbitrary
+function effects, pointer-return provenance, or dynamic callback behavior.
 Collections must not expose their storage. Updates preserve earlier versions.
 Test accepted, rejected, and unsupported programs through the real CLI.
 Keep runtime checks out of the immutability proof. Record collection costs and

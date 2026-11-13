@@ -1,0 +1,1 @@
+array_clear.go:13:8: unsupported immutable borrow: slice views of immutable storage are unsupported

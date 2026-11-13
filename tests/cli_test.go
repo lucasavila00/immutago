@@ -3,6 +3,7 @@ package tests
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/fs"
 	"os"
@@ -10,10 +11,13 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
 )
+
+var updateSnapshots = flag.Bool("update-snapshots", false, "update compiler and analyzer diagnostic snapshots")
 
 // TestCLI builds the shipped command and checks valid input, diagnostics, JSON, and go vet integration.
 func TestCLI(t *testing.T) {
@@ -29,28 +33,28 @@ func TestCLI(t *testing.T) {
 	t.Run("accepted", func(t *testing.T) {
 		dir := consumerModule(t, root, "accepted")
 		output := runCommand(t, dir, true, binary, "./...")
-		if output != "" {
-			t.Fatalf("unexpected diagnostics:\n%s", output)
-		}
+		checkFixtureSnapshots(t, root, "accepted", output)
+	})
+	t.Run("invalid_dependencies", func(t *testing.T) {
+		checkInvalidDependencies(t, root, binary)
 	})
 	t.Run("ordinary_callback_library", func(t *testing.T) {
 		dir := consumerModule(t, root, "rejected")
 		output := runCommand(t, dir, true, binary, "./callback_api")
-		if output != "" {
-			t.Fatalf("unrelated callback library rejected:\n%s", output)
-		}
+		checkFixtureSnapshots(t, root, "rejected/callback_api", output)
 	})
 	t.Run("rejected", func(t *testing.T) {
 		dir := consumerModule(t, root, "rejected")
 		output := runCommand(t, dir, false, binary, "./...")
-		checkDiagnostics(t, dir, output)
+		checkFixtureSnapshots(t, root, "rejected", output)
 	})
 	t.Run("vet", func(t *testing.T) {
 		dir := consumerModule(t, root, "accepted")
-		runCommand(t, dir, true, "go", "vet", "-vettool="+binary, "./...")
+		output := runCommand(t, dir, true, "go", "vet", "-vettool="+binary, "./...")
+		checkFixtureSnapshots(t, root, "accepted", output)
 		dir = consumerModule(t, root, "rejected")
-		output := runCommand(t, dir, false, "go", "vet", "-vettool="+binary, "./...")
-		checkDiagnostics(t, dir, output)
+		output = runCommand(t, dir, false, "go", "vet", "-vettool="+binary, "./...")
+		checkFixtureSnapshots(t, root, "rejected", output)
 	})
 	t.Run("json", func(t *testing.T) {
 		dir := consumerModule(t, root, "rejected")
@@ -66,11 +70,13 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("invalid_go", func(t *testing.T) {
 		dir := consumerModule(t, root, "accepted")
-		writeFile(t, filepath.Join(dir, "broken.go"), "package broken\nvar Invalid = doesNotExist\n")
-		output := runCommand(t, dir, false, binary, "./...")
-		if !strings.Contains(output, "doesNotExist") {
-			t.Fatalf("missing Go compiler error: %s", output)
+		source, err := os.ReadFile(filepath.Join(root, "tests/testdata/compiler_error/broken.go"))
+		if err != nil {
+			t.Fatal(err)
 		}
+		writeFile(t, filepath.Join(dir, "broken.go"), string(source))
+		output := runCommand(t, dir, false, binary, "./...")
+		checkSnapshot(t, filepath.Join(root, "tests/testdata/compiler_error/broken.txt"), normalizeOutput(output))
 	})
 }
 
@@ -120,57 +126,92 @@ func runCommand(t *testing.T, dir string, success bool, name string, args ...str
 	return string(output)
 }
 
-// checkDiagnostics checks each fixture's want expression at its exact file and line.
-func checkDiagnostics(t *testing.T, dir, output string) {
+// checkFixtureSnapshots checks each source against its sibling text snapshot.
+func checkFixtureSnapshots(t *testing.T, root, fixture, output string) {
 	t.Helper()
-	wants := 0
-	err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil {
+	directory := filepath.Join(root, "tests", "testdata", fixture)
+	lines := diagnosticRecords(output)
+	used := make(map[int]bool)
+	err := filepath.WalkDir(directory, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		if entry.IsDir() || !strings.HasSuffix(path, ".go") {
-			return nil
+		var diagnostics []string
+		for index, line := range lines {
+			if strings.HasPrefix(line, filepath.Base(path)+":") {
+				diagnostics = append(diagnostics, line)
+				used[index] = true
+			}
 		}
-		count, err := checkFileDiagnostics(t, path, output)
-		wants += count
-		return err
+		actual := ""
+		if len(diagnostics) > 0 {
+			actual = strings.Join(diagnostics, "\n") + "\n"
+		}
+		checkSnapshot(t, strings.TrimSuffix(path, ".go")+".txt", actual)
+		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if wants == 0 {
-		t.Fatal("fixture has no diagnostic expectations")
+	for index, line := range lines {
+		if line != "" && !used[index] {
+			t.Errorf("unmatched tool output: %s", line)
+		}
 	}
 }
 
-// checkFileDiagnostics checks expected findings in one source file and returns the expectation count.
-func checkFileDiagnostics(t *testing.T, path, output string) (int, error) {
+// checkSnapshot compares exact tool output with a checked-in sibling diagnostic snapshot.
+func checkSnapshot(t *testing.T, path, actual string) {
 	t.Helper()
-	source, err := os.ReadFile(path)
-	if err != nil {
-		return 0, err
+	if *updateSnapshots {
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			t.Fatal(err)
+		}
+		writeFile(t, path, actual)
+		return
 	}
-	wants := 0
-	for index, line := range strings.Split(string(source), "\n") {
-		_, expression, found := strings.Cut(line, "// want ")
-		if !found {
+	expected, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read snapshot: %v; use -update-snapshots to create it", err)
+	}
+	if actual != string(expected) {
+		t.Errorf("snapshot %s differs; inspect output before using -update-snapshots\nSAVED:\n%s\nACTUAL:\n%s",
+			path, expected, actual)
+	}
+}
+
+// normalizeOutput joins stable records without changing the order of their context lines.
+func normalizeOutput(output string) string {
+	records := diagnosticRecords(output)
+	if len(records) == 0 {
+		return ""
+	}
+	return strings.Join(records, "\n") + "\n"
+}
+
+// diagnosticRecords removes machine paths and sorts complete messages with their indented context.
+func diagnosticRecords(output string) []string {
+	location := regexp.MustCompile(`^.*?\.go:[0-9]+:[0-9]+: `)
+	output = strings.ReplaceAll(output, "\\", "/")
+	output = strings.ReplaceAll(output, "\r\n", "\n")
+	var records []string
+	for _, line := range strings.Split(output, "\n") {
+		if line == "" || strings.HasPrefix(line, "# ") {
 			continue
 		}
-		wants++
-		pattern, err := strconv.Unquote(strings.TrimSpace(expression))
-		if err != nil {
-			return wants, fmt.Errorf("%s:%d: bad expectation: %w", path, index+1, err)
+		trimmed := strings.TrimLeft(line, " \t")
+		indent := line[:len(line)-len(trimmed)]
+		if prefix := location.FindString(trimmed); prefix != "" {
+			line = indent + filepath.Base(prefix) + strings.TrimPrefix(trimmed, prefix)
 		}
-		location := regexp.QuoteMeta(filepath.Base(path) + ":" + strconv.Itoa(index+1) + ":")
-		matched, err := regexp.MatchString(location+`[0-9]+: `+pattern, output)
-		if err != nil {
-			return wants, err
-		}
-		if !matched {
-			t.Errorf("missing %s:%d: %s", path, index+1, pattern)
+		if indent != "" && len(records) > 0 {
+			records[len(records)-1] += "\n" + line
+		} else {
+			records = append(records, line)
 		}
 	}
-	return wants, nil
+	sort.Strings(records)
+	return records
 }
 
 // writeFile writes a generated consumer file and reports errors through the test.
@@ -178,5 +219,27 @@ func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// checkInvalidDependencies selects only consumers so driver-hidden dependency errors must propagate through facts.
+func checkInvalidDependencies(t *testing.T, root, binary string) {
+	t.Helper()
+	dir := consumerModule(t, root, "dependency_invalid")
+	cases := []string{
+		"shape_consumer", "unsafe_consumer", "borrow_consumer",
+		"wrapped_shape_consumer", "wrapped_borrow_consumer",
+	}
+	for _, name := range cases {
+		t.Run(name, func(t *testing.T) {
+			commands := [][]string{
+				{binary, "./" + name},
+				{"go", "vet", "-vettool=" + binary, "./" + name},
+			}
+			for _, command := range commands {
+				output := runCommand(t, dir, false, command[0], command[1:]...)
+				checkFixtureSnapshots(t, root, "dependency_invalid/"+name, output)
+			}
+		})
 	}
 }

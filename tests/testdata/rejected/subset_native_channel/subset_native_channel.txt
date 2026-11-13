@@ -1,0 +1,3 @@
+subset_native_channel.go:9:10: unsupported immutable borrow: channels of immutable storage are unsupported
+subset_native_channel.go:9:13: unsupported immutable borrow: channels of immutable storage are unsupported
+subset_native_channel.go:9:26: unsupported immutable borrow: channels of immutable storage are unsupported
