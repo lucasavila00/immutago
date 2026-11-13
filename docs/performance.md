@@ -7,6 +7,7 @@ construction and updates free: persistent storage needs allocations.
 | --- | --- |
 | `Slice.Len`, `Map.Len` | Constant time, no allocation |
 | `Slice.At` | At most one path through a 32-way tree, no allocation |
+| `Slice.All`, `Map.All` | Visit storage directly in O(n); direct range loops allocate nothing |
 | `Slice.Set` | Copy one path and one block of up to 32 elements |
 | `Slice.Append` | Copy the tail and affected paths; share other blocks |
 | `Map.Get` | At most 13 hash-trie levels and a collision bucket; no allocation |
@@ -24,5 +25,6 @@ retained versions with ordinary Go containers after random update sequences.
 
 Initial local measurements used Go 1.27.4 on darwin/arm64, Apple A18 Pro.
 `Slice.At` and `Map.Get` reported 0 B/op and 0 allocs/op at all three sizes.
+Direct `All()` iteration also reported 0 B/op and 0 allocs/op.
 These are local observations, not latency guarantees. The persistent data
 structures do not promise the same access cost as native mutable collections.

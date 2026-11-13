@@ -30,6 +30,14 @@ func NewMap[K comparable, V any](values map[K]V) Map[K, V]
 
 NewMap copies values into an immutable mapping.
 
+### func \(Map\[K, V\]\) All
+
+```go
+func (m Map[K, V]) All() iter.Seq2[K, V]
+```
+
+All returns an iterator over key\-value pairs in unspecified order. It visits shared storage directly in O\(n\) time without making a collection copy. The iterator can be reused and retains the value on which All was called.
+
 ### func \(Map\[K, V\]\) Delete
 
 ```go
@@ -95,6 +103,14 @@ func NewSlice[T any](values ...T) Slice[T]
 ```
 
 NewSlice copies values into an immutable sequence in O\(n\) time.
+
+### func \(Slice\[T\]\) All
+
+```go
+func (s Slice[T]) All() iter.Seq2[int, T]
+```
+
+All returns an iterator over index\-value pairs in increasing index order. It visits shared storage directly in O\(n\) time without making a collection copy. The iterator can be reused and retains the value on which All was called.
 
 ### func \(Slice\[T\]\) Append
 
