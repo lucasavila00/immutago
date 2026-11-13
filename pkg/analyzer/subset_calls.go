@@ -61,10 +61,22 @@ func (c *subsetChecks) call(call *ast.CallExpr) {
 	c.callArguments(call, obj, signature, static)
 
 	if libraryObject(obj) && obj.Name() == "All" && protectedCallable(c.pass.TypesInfo.TypeOf(call)) {
-		r, ok := c.parents[call].(*ast.RangeStmt)
-		if !ok || r.X != call {
+		r, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
+		if !ok || ast.Unparen(r.X) != call {
 			c.report(call, "immutable iterators must be consumed by direct range")
 		}
+	}
+}
+
+// unparenthesizedParent finds the context of an expression through parentheses.
+func (c *subsetChecks) unparenthesizedParent(expression ast.Expr) ast.Node {
+	parent := c.parents[expression]
+	for {
+		wrapped, ok := parent.(*ast.ParenExpr)
+		if !ok {
+			return parent
+		}
+		parent = c.parents[wrapped]
 	}
 }
 
@@ -133,11 +145,15 @@ func (c *subsetChecks) methodValue(sel *ast.SelectorExpr) {
 	if selection == nil || selection.Kind() == types.FieldVal || !c.protectedRoot(sel.X) {
 		return
 	}
+	if selection.Kind() == types.MethodExpr {
+		c.report(sel, "immutable method expressions are unsupported")
+		return
+	}
 	if !c.exactCollectionMethod(sel) {
 		c.report(sel, "user-defined methods on protected receivers are unsupported")
 		return
 	}
-	if call, ok := c.parents[sel].(*ast.CallExpr); ok && call.Fun == sel {
+	if call, ok := c.unparenthesizedParent(sel).(*ast.CallExpr); ok && ast.Unparen(call.Fun) == sel {
 		return
 	}
 	c.report(sel, "bound immutable methods are unsupported")
@@ -217,6 +233,10 @@ func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signa
 	direct, _ := obj.(*types.Func)
 
 	for i, arg := range call.Args {
+		if i < signature.Params().Len() && protectedReference(signature.Params().At(i).Type()) && c.nilExpression(arg) {
+			c.report(arg, "reference operation is outside the supported allowlist")
+			continue
+		}
 		t := c.pass.TypesInfo.TypeOf(arg)
 		if !checker.Contains(t) && !protectedCallable(t) {
 			continue

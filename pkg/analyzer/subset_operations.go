@@ -27,8 +27,9 @@ func (c *subsetChecks) referenceUse(expression ast.Expr) {
 func (c *subsetChecks) referenceSource(expression ast.Expr) bool {
 	switch source := expression.(type) {
 	case *ast.Ident:
-		if source.Name == "nil" {
-			return true
+		if c.nilExpression(source) {
+			comparison, ok := c.unparenthesizedParent(source).(*ast.BinaryExpr)
+			return ok && (comparison.Op == token.EQL || comparison.Op == token.NEQ)
 		}
 		variable, ok := c.pass.TypesInfo.ObjectOf(source).(*types.Var)
 		return ok && variable.Parent() != c.pass.Pkg.Scope()
@@ -38,6 +39,12 @@ func (c *subsetChecks) referenceSource(expression ast.Expr) bool {
 		return source.Op == token.AND
 	}
 	return false
+}
+
+// nilExpression identifies the predeclared nil value, including parentheses.
+func (c *subsetChecks) nilExpression(expression ast.Expr) bool {
+	name, ok := ast.Unparen(expression).(*ast.Ident)
+	return ok && c.pass.TypesInfo.ObjectOf(name) == types.Universe.Lookup("nil")
 }
 
 // referenceContext lists permitted reference uses; every other Go expression context is rejected.
