@@ -15,7 +15,6 @@ import (
 // owner records the sole creation site of a mutable native container.
 type owner struct {
 	variable *types.Var
-	source   ast.Expr
 	body     *ast.BlockStmt
 	fresh    bool
 }

@@ -26,7 +26,7 @@ func (p *proof) discover() {
 		})
 	}
 	for variable, item := range p.declarations {
-		if item.fresh && (checker.Contains(variable.Type()) || cloneSource(p, item.source)) {
+		if item.fresh && checker.Contains(variable.Type()) {
 			p.owners[variable] = item
 		}
 	}
@@ -47,8 +47,7 @@ func (p *proof) declare(node ast.Node, names []*ast.Ident, values []ast.Expr, ze
 		}
 		item := owner{variable: variable, body: p.body(node), fresh: zero}
 		if len(values) == len(names) {
-			item.source = values[index]
-			item.fresh = Fresh(p.pass, item.source)
+			item.fresh = Fresh(p.pass, values[index])
 		}
 		p.declarations[variable] = item
 	}
@@ -66,19 +65,6 @@ func (p *proof) body(node ast.Node) *ast.BlockStmt {
 		node = p.parents[node]
 	}
 	return nil
-}
-
-// cloneSource distinguishes fresh native Clone results even when their elements are primitive.
-func cloneSource(p *proof, expression ast.Expr) bool {
-	if expression == nil {
-		return false
-	}
-	call, ok := ast.Unparen(expression).(*ast.CallExpr)
-	if !ok || !Fresh(p.pass, call) {
-		return false
-	}
-	object := calledObject(p.pass, call.Fun)
-	return object != nil && object.Pkg() != nil && object.Pkg().Path() == checker.LibraryPath && object.Name() == "Clone"
 }
 
 // freezeInput requires a local owner or an immediately fresh allocation at every Freeze call.

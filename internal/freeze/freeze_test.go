@@ -36,6 +36,8 @@ func TestFreezeOwnership(t *testing.T) {
 	}{
 		{"slice builder", `s:=make([]int,1);s[0]=2;s=append(s,3);_=im.FreezeSlice(s)`, false},
 		{"map builder", `m:=map[string]int{};m["x"]=1;delete(m,"x");_=im.FreezeMap(m)`, false},
+		{"ordinary scalar clone", `f:=im.FreezeSlice([]int{1});s:=f.Clone();take(s)`, false},
+		{"clone escape before refreeze", `f:=im.FreezeSlice([]int{1});s:=f.Clone();take(s);_=im.FreezeSlice(s)`, true},
 		{"clone", `f:=im.FreezeSlice([]int{1});s:=f.Clone();s[0]=2;_=im.FreezeSlice(s)`, false},
 		{"nil", `var s []int;_=im.FreezeSlice(s);_=im.FreezeMap[string,int](nil)`, false},
 		{"marked builder", `s:=[]V{{X:1}};s[0].X=2;_=s[0]`, false},
