@@ -9,13 +9,13 @@ Both markers prohibit mutation from construction onward. The
 replacement and complete tracked native-builder element replacement. It rejects
 writes to protected fields, array elements, and dereferenced objects.
 
-References start at fresh allocations of concrete marked structs. Taking a
+Pointers start at fresh allocations of concrete marked structs. Taking a
 named variable's address would expose a slot that can later be rebound, so that
-form is rejected. `Shared` references may be copied, stored, and returned.
-`LocalRef` references remain local or pass through direct typed calls without
+form is rejected. `Shared` pointers may be copied, stored, and returned.
+`LocalRef` pointers remain local or pass through direct typed calls without
 escaping. The [source matcher](../../pkg/analyzer/subset_operations.go) checks
 these uses; the [type proof](../../internal/checker/proof.go) rejects stored
-NoRef pointers.
+`LocalRef` pointers.
 
 ## Native builders
 

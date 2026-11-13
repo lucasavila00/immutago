@@ -20,7 +20,7 @@ consumption checks. The analyzer adds no runtime state.
 ## Design pages
 
 - [Pipeline](pipeline.md): pass order, recursive type proofs, and dependency facts.
-- [Storage](ownership.md): immutable writes, reference escape rules, and builder flow.
+- [Storage](ownership.md): immutable writes, pointer escape rules, and builder flow.
 - [Validation](validation.md): trust boundary, test sources, and hosted checks.
 
 The [language contract](../rules.md) owns the complete allowed forms and examples.
