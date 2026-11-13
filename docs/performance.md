@@ -4,46 +4,31 @@
 
 ## Zero abstraction overhead
 
-The target is the C++ zero-overhead principle: equivalent handwritten native Go
-should not be faster merely because it avoids `im`. The wrapper should disappear
-after inlining. Freeze and reads should add no allocation, element copy, dynamic
-dispatch, runtime ownership check, or extra escape to the heap.
-
-Compare the same work. After `frozen := im.FreezeSlice(values)`, the performance
-baseline for `frozen.At(i)` is native `values[i]`. A map read has
-`value, found := entries[key]` as its baseline. Direct `All()` loops should have
-the same overhead as native `range`.
+Equivalent native Go is the performance baseline. After inlining, the wrapper
+should add no allocation, element copy, dynamic dispatch, runtime ownership
+check, or extra heap escape. Freeze copies only a native handle.
 
 | Operation | Storage work |
 | --- | --- |
-| `FreezeSlice`, `FreezeMap` | Copy the handle only; no allocation |
-| `FrozenSlice.Len`, `FrozenMap.Len` | Constant time; no allocation |
-| `FrozenSlice.At` | Native slice indexing; no allocation |
-| `FrozenMap.Get` | Native map lookup; no allocation |
-| Direct range over `All()` | O(n) traversal; no collection copy |
-| `Clone` | O(n) time and independent mutable storage |
+| `FreezeSlice`, `FreezeMap` | No allocation or element copy |
+| `Len` | Constant time; no allocation |
+| `At`, `Get` | Native indexing or lookup; no allocation |
+| Direct range over `All()` | O(n); no container copy |
+| `Clone` | O(n); independent mutable container storage |
 
-There are no persistent update methods. To change a frozen collection, clone it,
-edit the clone, and freeze the clone. Existing frozen copies retain the original
-storage. Element types must pass the checker so shallow cloning is sufficient.
-Pointer elements still refer to the same immutable objects after Clone; only
-the container slots are independent. Replacing a cloned slot does not change
-the original frozen slot.
+Clone is shallow. Pointer elements still refer to the same immutable objects;
+replacing a cloned slot does not change the frozen slot. There are no frozen
+update methods. Edit a clone, then freeze it.
 
-## Check the cost
+## Check costs
 
-[`make bench`](../pkg/im/benchmark_test.go) reports Freeze, read, iteration, and
-Clone costs. [Allocation tests](../pkg/im/iterator_test.go) check Freeze, reads,
-and direct iteration with prebuilt native storage. Clone tests check that the
-copy is independent. These checks cover the current operation costs; they do
-not compare every call site with a native baseline.
+[Benchmarks](../pkg/im/benchmark_test.go) compare collection operations.
+[Allocation tests](../pkg/im/iterator_test.go) separate native construction
+from Freeze, reads, and direct iteration. Slice and map tests check storage
+reuse and Clone independence. Run `make bench` for measurements.
 
-For a performance change, compare equivalent native and `im` consumer functions
-with the same input and observable result. Check inlining, bounds-check removal,
-and escape decisions with compiler diagnostics, then inspect generated code
-when the results differ. Check both a local-use case and a value returned from
-a helper. An allocation test alone cannot show zero abstraction overhead.
-
-Clone explicitly requests an independent copy. Its O(n) work is the cost of
-that operation, not an ownership-checking cost. Compare it with the same native
-storage copy, not with an in-place update.
+For a cost change, compare equivalent native and `im` functions with the same
+observable result. Check inlining, bounds checks, and heap escapes; inspect
+machine code if results differ. Test local use and values returned by helpers.
+Allocation counts alone do not prove zero overhead. Compare Clone with a native
+container copy, not an in-place edit. Use hosted CI for routine full validation.

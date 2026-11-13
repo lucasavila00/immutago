@@ -2,131 +2,66 @@
 
 [Documentation](README.md) · [Language rules](rules.md) · [Collection API](../pkg/im/readme.md)
 
-Immutago adds an analyzer and the `im` collection package to ordinary Go.
-It does not change the compiler. An ordinary `go build` does not run the
-immutability checks.
-
-## Create an example module
+In a Go module, add the library and install the checker:
 
 ```sh
-mkdir immutago-example
-cd immutago-example
-go mod init example.com/immutago-example
 go get github.com/lucasavila00/immutago@latest
 go install github.com/lucasavila00/immutago/cmd/immutago@latest
 ```
 
-## Build, share, and freeze
-
-Save this complete example as `main.go`:
+Save this as `main.go`:
 
 ```go
 package main
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
-// User owns a name and read-only scores.
 type User struct {
     im.Immut
-    Name   string
+    Name string
     Scores im.FrozenMap[string, int]
 }
 
-// scoreCount reads a shared user.
-func scoreCount(user *User) int {
-    return user.Scores.Len()
-}
-
-// main constructs and reads immutable storage.
 func main() {
     scores := map[string]int{"go": 10}
     frozen := im.FreezeMap(scores)
     user := &User{Name: "alice", Scores: frozen}
-
-    p := user
-    count := scoreCount(p)
+    shared := user
     user = &User{Name: "bob", Scores: frozen}
 
-    next := user.Scores.Clone()
+    next := shared.Scores.Clone()
     next["go"] = 20
     updated := im.FreezeMap(next)
-
-    oldScore, oldFound := user.Scores.Get("go")
-    newScore, newFound := updated.Get("go")
-    println(user.Name, count, oldScore, oldFound, newScore, newFound)
+    oldScore, _ := shared.Scores.Get("go")
+    newScore, _ := updated.Get("go")
+    println(shared.Name, user.Name, oldScore, newScore)
 }
 ```
 
-Check it, then run it:
+Check and run it:
 
 ```sh
 immutago ./...
 go run .
 ```
 
-The analyzer reports no errors. The program prints:
+The checker reports no errors. The program prints `alice bob 10 20`.
+Rebinding `user` does not change the shared object. Freeze consumes the native
+builder without a copy. Clone gives independent mutable container storage.
 
-```text
-bob 1 10 true 20 true
-```
+Use `im.ImmutNoRef` when references must not be stored or returned. Both markers
+prohibit field writes from construction. See the [complete rules](rules.md)
+for pointer targets, calls, statements, and builder operations.
 
-`im.Immut` permits shared references and must be embedded by value. Use
-`im.ImmutNoRef` when references must stay local or in direct typed calls that
-do not retain them. Both markers make fields immutable from construction. Each field must have an allowed immutable
-type. `&User{...}` constructs a shared immutable object. Writes through it are rejected.
-Marked fields are immutable from construction. The example replaces the whole
-`user` pointer variable with a new reference. Go manages reference lifetimes.
+## Project checks
 
-Freeze shares the native map's storage. After `im.FreezeMap(scores)`, any use of
-`scores` is rejected. Clone creates independent mutable storage, so changing
-`next` leaves `user.Scores` unchanged. See [costs](performance.md) before choosing
-Clone for frequent updates.
+Run `immutago ./...` in CI for each build configuration you ship. Dependencies
+are checked too. An ordinary Go build does not run the analyzer.
 
-For a slice, use the same sequence:
+For vet integration, use `go vet -vettool=/absolute/path/to/immutago ./...`.
+The normal CLI fails on diagnostics. Its standard `-json` mode can exit
+successfully with findings; do not use that exit status alone as a check.
 
-```go
-values := []int{10, 20}
-frozen := im.FreezeSlice(values)
-first := frozen.At(0)
-```
-
-These are introductory examples, not the full language. The
-[language rules](rules.md) list all supported reference, statement, and builder
-forms. Rejected examples there are not exhaustive.
-
-## Add checks to an existing project
-
-Add the `im` dependency and run `immutago ./...` in the project's CI.
-
-Run `immutago ./...` from the consumer module to check its packages. The driver
-also checks dependencies and reports relevant failures in imported code.
-Run it for each build configuration that you ship; Go build tags and target
-settings determine which files are loaded.
-
-You can use the same binary with `go vet`:
-
-```sh
-go vet -vettool=/absolute/path/to/immutago ./...
-```
-
-Use the platform's absolute path to the binary. Run `immutago -help` for driver
-flags. For automation, the normal CLI
-reports failure when it finds errors. The standard driver's `-json` mode can
-exit successfully with diagnostics, so do not use its exit status alone as a
-pass/fail check.
-
-## When a check fails
-
-Read the source location, failed rule, and suggested correction. For example,
-`p.Name = "bob"` is rejected. Construct a new value with
-`p = &User{Name: "bob", Scores: frozen}`. `next := p` shares that object;
-`next := *p` copies the value. Neither form permits field writes.
-
-An unsupported form is an error, even if a particular use seems safe. Rewrite
-it to a listed form. There are no suppression directives or user trust
-annotations. The checker enforces the rules; there is no additional alias
-rule for callers to uphold by hand.
-
-The checker trusts Go and the small `im` storage implementation. Freeze has no
-runtime validation when used without the analyzer. The
-[validation page](arch/validation.md#trusted-code) describes that boundary.
+An unsupported form is an error. Follow its correction and the allowed-form
+list. There are no suppressions or caller trust annotations. Freeze has no
+runtime ownership checks; see the [trusted boundary](arch/validation.md#trusted-code).
