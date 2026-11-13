@@ -100,10 +100,11 @@ checks for data or boundaries that the user declared trusted.
 
 ## 9. Use Hosted CI for Full Validation
 
-Use GitHub Actions for tests and repository-wide validation. The local machine
-is a small, slow MacBook; run local tests only to debug a specific failure.
-Do not run broad test suites, lint suites, or repository self-analysis locally.
-Check changed documentation and its local links, push the branch, and monitor CI.
+Use GitHub Actions for routine tests and repository-wide validation. The local
+machine is a small, slow MacBook. Use local tests, targeted analyzer runs, and
+profiling to debug specific failures or performance problems as needed. Avoid
+repeating broad validation locally; push the branch and monitor CI.
+Check changed documentation and its local links.
 
 ## 10. Do Not Post Comments Without a Request
 

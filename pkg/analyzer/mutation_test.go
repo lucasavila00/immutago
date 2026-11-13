@@ -44,6 +44,8 @@ func TestOwnedConstruction(t *testing.T) {
 // TestBorrowLifetimes distinguishes final-use liveness from lexical scope and permanent freezing.
 func TestBorrowLifetimes(t *testing.T) {
 	cases := []struct{ name, source string }{
+		{"collection native copy", `func f() { values:=im.NewSlice(Value{}).Values()
+         p:=&values[0]; _=read(p); values[0].X=2 }`},
 		{"slice last use", `func f(v Value) { view:=v.Array[:]; _=view[0]; v.Array[0]=2 }`},
 		{"owner after borrow", `func f() *Value { p:=&Value{}; q:=p; _=read(q); p.X=2; return p }`},
 		{"last use", `func f(v Value) { p:=&v; _=read(p); v.X=2; v=Value{} }`},
@@ -77,6 +79,8 @@ func TestBorrowLifetimes(t *testing.T) {
 // TestLiveBorrowConflicts rejects writes that overlap a shared loan or use a read-only reference.
 func TestLiveBorrowConflicts(t *testing.T) {
 	cases := []struct{ name, source string }{
+		{"collection native copy", `func f() { values:=im.NewSlice(Value{}).Values()
+         p:=&values[0]; values[0].X=2; _=read(p) }`},
 		{"slice view", `func f(v Value) { view:=v.Array[:]; v.Array[0]=2; _=view[0] }`},
 		{"slice view write", `func f(v Value) { view:=v.Array[:]; view[0]=2 }`},
 		{"owner live alias", `func f() { p:=&Value{}; q:=p; p.X=2; _=read(q) }`},

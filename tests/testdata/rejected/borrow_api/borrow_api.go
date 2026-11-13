@@ -1,6 +1,6 @@
 package borrow_api
 
-import im "github.com/lucasavila00/immutago/pkg/im"
+import "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
 	im.Marker

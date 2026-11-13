@@ -20,6 +20,7 @@ const testLibrary = `package im
  type Map[K comparable, V any] struct { values map[K]V }
  func NewSlice[T any](values ...T) Slice[T] { return Slice[T]{} }
  func NewMap[K comparable, V any](values map[K]V) Map[K,V] { return Map[K,V]{} }
+ func (values Slice[T]) Values() []T { return nil }
 `
 
 // testImporter gives compiler tests the library's type identities without loading external packages.

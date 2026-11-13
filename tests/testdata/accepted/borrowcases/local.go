@@ -1,6 +1,6 @@
 package borrowcases
 
-import im "github.com/lucasavila00/immutago/pkg/im"
+import "github.com/lucasavila00/immutago/pkg/im"
 
 type Child struct {
 	im.Marker
@@ -148,4 +148,12 @@ func OwnerAfterBorrow() *Good {
 	_ = read(shared)
 	owner.X = 2
 	return owner
+}
+
+func SliceCopyLastUse() []Good {
+	values := im.NewSlice(Good{}).Values()
+	pointer := &values[0]
+	_ = read(pointer)
+	values[0].X = 2
+	return values
 }

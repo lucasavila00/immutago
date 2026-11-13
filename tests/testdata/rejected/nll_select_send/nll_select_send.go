@@ -1,5 +1,5 @@
 package rejected
-import im "github.com/lucasavila00/immutago/pkg/im"
+import "github.com/lucasavila00/immutago/pkg/im"
 type Good struct { im.Marker; X int }
 var channel=make(chan *int,1)
 func send(pointer *int) { select {case channel<-pointer: default:} }

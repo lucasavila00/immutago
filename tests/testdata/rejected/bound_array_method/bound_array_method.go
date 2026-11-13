@@ -1,6 +1,6 @@
 package rejected
 
-import im "github.com/lucasavila00/immutago/pkg/im"
+import "github.com/lucasavila00/immutago/pkg/im"
 
 type Count struct {
 	im.Marker

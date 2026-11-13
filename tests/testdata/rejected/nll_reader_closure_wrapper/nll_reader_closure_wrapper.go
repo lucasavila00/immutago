@@ -1,6 +1,6 @@
 package rejected
 
-import im "github.com/lucasavila00/immutago/pkg/im"
+import "github.com/lucasavila00/immutago/pkg/im"
 type Good struct { im.Marker; X int }
 
 func reader(pointer *int) func() int { return func() int { return *pointer } }
