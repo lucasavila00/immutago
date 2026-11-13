@@ -168,37 +168,68 @@ of what works; an operation is not allowed just because it is absent below.
 The checker enforces this list of supported operations; there are no extra
 rules you must uphold by hand and no escape hatch for rejected operations.
 
-## Statement forms
+## What statements you can use
 
-Use one assignment at a time when you change protected storage:
+This list is **complete** for statements that use protected storage or a builder.
+Use the reference and builder operations listed in this guide within these forms.
+
+| Allowed form | Go example |
+| --- | --- |
+| Declare one value or builder | `value := Point{X: 1}` or `values := []int{1, 2}` |
+| Declare one fixed reference from its owner | `p := &value` |
+| Assign one destination | `value.X = 1` or `values[0] = 2` |
+| Update one destination | `value.X++` or `value.X += 2` |
+| Bind both results of the listed map reader to new locals | `value, found := frozen.Get(key)` |
+| Freeze into one variable | `frozen := im.FreezeSlice(values)` |
+| Freeze and discard the result | `_ = im.FreezeSlice(values)` |
+| Call a named reader | `read(p)` or `n := read(&value)` |
+| Return a value | `return value` or `return frozen` |
+| Use `if` and ordinary loops | `if ready { value.X = 1 }` or `for i := range values { values[i] = i }` |
+| Use checked operations inside a `select` case body | `case <-ready: values[0] = true` |
+
+Each write still requires an owned value with no live shared reference.
+A consumed builder cannot be used again. A Freeze call must be the only
+right-hand-side expression of its assignment or declaration. The two-result
+`Get` form creates new locals; it cannot assign into existing protected storage.
+
+## Statement examples that are not allowed
+
+These examples are **not a complete list**. Only the forms above are allowed.
 
 ```go
-value.X = 1 // allowed when no shared reference is still needed
-// value.X, p = 1, &value // rejected: multiple assignment
+// Rejected: two destinations involving protected storage.
+value.X, p = 1, &value
+
+// Allowed: one destination per statement.
+value.X = 1
+p := &value
 ```
 
-Use a separate statement to freeze a builder, then use the frozen value:
-
 ```go
+// Rejected: Freeze inside another expression.
+use(im.FreezeSlice(values))
+return im.FreezeSlice(values)
+
+// Allowed: bind the frozen value first.
 frozen := im.FreezeSlice(values)
 use(frozen)
-// use(im.FreezeSlice(values)) // rejected: nested Freeze
+return frozen
 ```
 
-Keep protected storage and builders out of `select` channel expressions and
-receive targets. The body of a case can contain ordinary checked operations:
-
 ```go
+// Rejected: a builder in a select receive target or channel expression.
+select {
+case _, values[0] = <-ready:
+case <-watch(im.FreezeSlice(values)):
+}
+
+// Allowed: receive first, then write inside the case body.
 select {
 case <-ready:
     values[0] = true
 }
 frozen := im.FreezeSlice(values)
 ```
-
-Do not use `case _, values[0] = <-ready` or
-`case <-watch(im.FreezeSlice(values))`. Ordinary `if` statements and loops remain
-supported. These restrictions make writes and ownership transfers explicit.
 
 ## Allowed value types
 

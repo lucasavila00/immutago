@@ -145,3 +145,13 @@ Prefer concise package names and calls that read naturally in user code.
 Use `im` for the immutable value package, so imports need no routine alias.
 Keep examples idiomatic and convenient. Preserve the immutability guarantees
 when improving the API; do not make callers repeat implementation details.
+
+## 14. Document Exact Allowed Forms
+
+For each supported-language rule, give a complete list of allowed Go forms
+with short Go examples. State that the list is complete and that unlisted
+operations are rejected. Describe rejected forms with concrete rejected and
+allowed replacement examples. State that rejection examples are not exhaustive.
+Do not replace these lists with abstract restrictions or explanations of intent.
+Keep the documentation, checker allowlist, and acceptance/rejection tests aligned.
+Distinguish rules still being implemented from behavior already verified.
