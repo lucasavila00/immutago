@@ -27,7 +27,7 @@ type Link struct { im.Immut; P *Point }
 | `im.ImmutNoRef` | References stay local or pass to direct typed non-retaining functions. No storage, returns, or captures. Value copies can be stored and returned. |
 
 In Rust terms, `Immut` resembles `Rc<T>`/`Arc<T>` with Go's GC managing lifetime;
-`ImmutNoRef` resembles a scoped `&'a T`. Neither uses NLL or mutable borrows.
+`ImmutNoRef` resembles a scoped `&'a T`.
 
 Every stored field, key, and element must recursively match this table:
 

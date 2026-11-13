@@ -15,7 +15,7 @@ form is rejected. `Immut` references may be copied, stored, and returned.
 `ImmutNoRef` references remain local or pass through direct typed calls without
 escaping. The [source matcher](../../pkg/analyzer/subset_operations.go) checks
 these uses; the [type proof](../../internal/checker/proof.go) rejects stored
-NoRef pointers. There is no loan lifetime or last-use analysis.
+NoRef pointers.
 
 ## Native builders
 

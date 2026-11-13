@@ -64,4 +64,4 @@ successfully with findings; do not use that exit status alone as a check.
 
 An unsupported form is an error. Follow its correction and the allowed-form
 list. There are no suppressions or caller trust annotations. Freeze has no
-runtime ownership checks; see the [trusted boundary](arch/validation.md#trusted-code).
+runtime ownership checks; see the [trusted boundary](arch/validation.md#trust-boundary).
