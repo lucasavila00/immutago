@@ -5,19 +5,10 @@ import (
 	"go/types"
 )
 
-// proofKey separates a stored interface value from a generic constraint with the same type.
-type proofKey struct {
-	typ        types.Type
-	constraint bool
-}
-
-// obligation records an AND or OR node in the structural proof graph.
+// obligation records one immutable type and the owners that depend on it.
 type obligation struct {
-	users        []proofUse
-	alternatives bool
-	dependencies int
-	failed       int
-	reason       string
+	users  []proofUse
+	reason string
 }
 
 // proofUse identifies an owner and its diagnostic path from a component obligation.
@@ -26,99 +17,63 @@ type proofUse struct {
 	label string
 }
 
-// proof stores one query's graph so shared type branches are visited only once.
-// Storage queries prove absence of immutable storage; other queries prove immutability.
+// proof visits each concrete type once and propagates failures through recursive owners.
 type proof struct {
-	nodes    map[proofKey]*obligation
+	nodes    map[types.Type]*obligation
 	failures []*obligation
-	storage  bool
 }
 
-// Reason returns an empty string when t is proved immutable, or the first failed obligation.
-// Recursive components start provisionally valid. Definite failures propagate
-// through all owners, including cycles, in linear time in the type graph.
+// Reason proves concrete immutable storage or returns the first failed component.
 func Reason(t types.Type) string {
-	p := &proof{nodes: make(map[proofKey]*obligation)}
-	return p.evaluate(t)
-}
-
-// PossibleStorage reports whether a type can contain immutable storage, including unresolved generic fields.
-// Ordinary interface values contain copies and do not imply stored immutable fields.
-func PossibleStorage(t types.Type) bool {
-	if t == nil {
-		return false
-	}
-	p := &proof{nodes: make(map[proofKey]*obligation), storage: true}
-	return p.evaluate(t) != ""
-}
-
-// evaluate propagates each failed component to its owners after the graph is complete.
-func (p *proof) evaluate(t types.Type) string {
-	root := p.node(t, false)
+	p := &proof{nodes: make(map[types.Type]*obligation)}
+	root := p.node(t)
 	for index := 0; index < len(p.failures); index++ {
 		child := p.failures[index]
 		for _, use := range child.users {
-			owner := use.owner
-			if owner.reason != "" {
-				continue
+			if use.owner.reason == "" {
+				use.owner.reason = use.label + child.reason
+				p.failures = append(p.failures, use.owner)
 			}
-			owner.failed++
-			if owner.alternatives && owner.failed != owner.dependencies {
-				continue
-			}
-			owner.reason = use.label + child.reason
-			if owner.alternatives {
-				owner.reason = "type parameter constraint does not prove immutability"
-			}
-			p.failures = append(p.failures, owner)
 		}
 	}
 	return root.reason
 }
 
-// node creates one obligation before descending, which terminates recursive type graphs.
-func (p *proof) node(t types.Type, constraint bool) *obligation {
+// node records an obligation before descending, so recursive references terminate.
+func (p *proof) node(t types.Type) *obligation {
 	t = types.Unalias(t)
-	key := proofKey{typ: t, constraint: constraint}
-	if existing := p.nodes[key]; existing != nil {
+	if existing := p.nodes[t]; existing != nil {
 		return existing
 	}
 	result := &obligation{}
-	p.nodes[key] = result
-	if constraint {
-		p.constraint(result, t)
-	} else if p.storage {
-		p.storageValue(result, t)
-	} else {
-		p.value(result, t)
-	}
+	p.nodes[t] = result
+	p.value(result, t)
 	if result.reason != "" {
 		p.failures = append(p.failures, result)
 	}
 	return result
 }
 
-// depend adds a component edge and its reverse propagation edge.
-func (p *proof) depend(owner *obligation, t types.Type, constraint bool, label string) {
-	owner.dependencies++
-	child := p.node(t, constraint)
+// depend adds a component and its reverse failure-propagation edge.
+func (p *proof) depend(owner *obligation, t types.Type, label string) {
+	child := p.node(t)
 	child.users = append(child.users, proofUse{owner: owner, label: label})
 }
 
-// value builds the obligations for one stored value using its Go compiler type.
+// value matches the complete concrete immutable storage forms.
 func (p *proof) value(result *obligation, t types.Type) {
 	if IsLibraryType(t, "Immut") || IsLibraryType(t, "ImmutNoRef") {
 		return
 	}
 	if IsCollection(t) {
 		args := t.(*types.Named).TypeArgs()
-		for i := 0; i < args.Len(); i++ {
-			p.depend(result, args.At(i), false, fmt.Sprintf("type argument %d: ", i+1))
+		for index := 0; index < args.Len(); index++ {
+			p.depend(result, args.At(index), fmt.Sprintf("type argument %d: ", index+1))
 		}
 		return
 	}
-	if parameter, ok := t.(*types.TypeParam); ok {
-		p.depend(result, parameter.Constraint(), true, "")
+	if _, generic := t.(*types.TypeParam); generic {
+		result.reason = "type parameters are unsupported in immutable storage"
 		return
 	}
 	if _, named := t.(*types.Named); named {
@@ -133,18 +88,18 @@ func (p *proof) value(result *obligation, t types.Type) {
 			result.reason = "ImmutNoRef references cannot be stored"
 			return
 		}
-		if _, nested := underlying.Elem().Underlying().(*types.Pointer); nested || !Contains(underlying.Elem()) {
-			result.reason = "stored pointers require a protected immutable value target"
+		if !Marked(underlying.Elem()) {
+			result.reason = "stored pointers require a concrete marked struct target"
 			return
 		}
-		p.depend(result, underlying.Elem(), false, "")
+		p.depend(result, underlying.Elem(), "")
 		return
 	case *types.Basic:
 		if underlying.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex|types.IsString) != 0 {
 			return
 		}
 	case *types.Array:
-		p.depend(result, underlying.Elem(), false, "")
+		p.depend(result, underlying.Elem(), "")
 		return
 	case *types.Struct:
 		p.structure(result, t, underlying)
@@ -153,7 +108,7 @@ func (p *proof) value(result *obligation, t types.Type) {
 	result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
 }
 
-// structure requires the marker and creates an obligation for every field.
+// structure requires one marker and checks every stored field.
 func (p *proof) structure(result *obligation, t types.Type, structure *types.Struct) {
 	if !Marked(t) {
 		result.reason = "struct does not embed im.Immut or im.ImmutNoRef"
@@ -164,61 +119,6 @@ func (p *proof) structure(result *obligation, t types.Type, structure *types.Str
 		return
 	}
 	for field := range structure.Fields() {
-		p.depend(result, field.Type(), false, field.Name()+": ")
-	}
-}
-
-// constraint models intersected bounds as alternatives: any safe bound proves the intersection safe.
-// Every union member must satisfy the query. Empty or method-only bounds prove nothing.
-func (p *proof) constraint(result *obligation, t types.Type) {
-	switch bound := t.Underlying().(type) {
-	case *types.Interface:
-		result.alternatives = true
-		for i := 0; i < bound.NumEmbeddeds(); i++ {
-			p.depend(result, bound.EmbeddedType(i), true, "")
-		}
-		if result.dependencies == 0 {
-			result.reason = "type parameter constraint does not prove immutability"
-		}
-	case *types.Union:
-		for i := 0; i < bound.Len(); i++ {
-			term := bound.Term(i)
-			if _, array := term.Type().Underlying().(*types.Array); array && term.Tilde() && !p.storage {
-				result.reason = "array type set permits named arrays without an immutable marker"
-				return
-			}
-			p.depend(result, term.Type(), false, "")
-		}
-	default:
-		p.depend(result, t, false, "")
-	}
-}
-
-// storageValue proves that a storage type excludes marked values for every permitted instantiation.
-func (p *proof) storageValue(result *obligation, t types.Type) {
-	if Marked(t) || IsCollection(t) {
-		result.reason = "contains immutable storage"
-		return
-	}
-	if parameter, ok := t.(*types.TypeParam); ok {
-		p.depend(result, parameter.Constraint(), true, "")
-		return
-	}
-	switch underlying := t.Underlying().(type) {
-	case *types.Pointer:
-		p.depend(result, underlying.Elem(), false, "")
-	case *types.Array:
-		p.depend(result, underlying.Elem(), false, "")
-	case *types.Slice:
-		p.depend(result, underlying.Elem(), false, "")
-	case *types.Chan:
-		p.depend(result, underlying.Elem(), false, "")
-	case *types.Map:
-		p.depend(result, underlying.Key(), false, "")
-		p.depend(result, underlying.Elem(), false, "")
-	case *types.Struct:
-		for field := range underlying.Fields() {
-			p.depend(result, field.Type(), false, field.Name()+": ")
-		}
+		p.depend(result, field.Type(), field.Name()+": ")
 	}
 }

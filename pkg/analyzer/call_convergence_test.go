@@ -18,7 +18,7 @@ func TestDirectCollectionCalls(t *testing.T) {
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type V struct{im.Marker;X int};`+source); got != "" {
+			if got := checkSource(t, `type V struct{im.Immut;X int};`+source); got != "" {
 				t.Fatalf("allowed call rejected: %s", got)
 			}
 		})
@@ -50,7 +50,7 @@ func TestDirectCollectionCallBoundaries(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.source, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Marker;X int};`+test.source)
+			got := checkSource(t, `type V struct{im.Immut;X int};`+test.source)
 			if !strings.Contains(got, test.diagnostic) {
 				t.Fatalf("missing %q: %s", test.diagnostic, got)
 			}

@@ -42,12 +42,12 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 	}
 	for id, instance := range pass.TypesInfo.Instances {
 		obj := pass.TypesInfo.Uses[id]
-		if _, ok := obj.(*types.Func); !ok || libraryObject(obj) {
+		if libraryObject(obj) {
 			continue
 		}
 		for i := 0; i < instance.TypeArgs.Len(); i++ {
-			if checker.Contains(instance.TypeArgs.At(i)) {
-				c.report(id, "generic calls with immutable types are unsupported")
+			if checker.Contains(instance.TypeArgs.At(i)) || protectedCallable(instance.TypeArgs.At(i)) {
+				c.report(id, "user generic instantiations with immutable types are unsupported")
 			}
 		}
 	}
@@ -57,7 +57,7 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 func (c *subsetChecks) report(n ast.Node, message string) {
 	if !c.reported[n.Pos()] {
 		c.reported[n.Pos()] = true
-		c.pass.Reportf(n.Pos(), "unsupported immutable borrow: %s%s\n  fix: %s",
+		c.pass.Reportf(n.Pos(), "unsupported immutable operation: %s%s\n  fix: %s",
 			message, sourceContext(c.pass, n), subsetFix(message))
 	}
 }
@@ -73,6 +73,8 @@ func (c *subsetChecks) visit(n ast.Node) bool {
 	}
 
 	switch x := n.(type) {
+	case *ast.CompositeLit:
+		c.compositeLiteral(x)
 	case *ast.TypeAssertExpr:
 		if checker.Contains(c.pass.TypesInfo.TypeOf(x)) {
 			c.report(x, "immutable interface assertions are unsupported")
@@ -93,6 +95,8 @@ func (c *subsetChecks) visit(n ast.Node) bool {
 		c.methodValue(x)
 	case *ast.AssignStmt:
 		c.assignment(x)
+	case *ast.IncDecStmt:
+		c.write(x.X)
 	case *ast.ValueSpec:
 		c.declaration(x)
 	case *ast.ReturnStmt:
@@ -121,8 +125,8 @@ func subsetType(t types.Type, seen map[types.Type]bool) string {
 		}
 		return subsetType(u.Elem(), seen)
 	case *types.Array:
-		if protectedReference(u.Elem()) {
-			return "arrays of shared references are unsupported"
+		if noRefReference(u.Elem()) {
+			return "arrays of ImmutNoRef references are unsupported"
 		}
 		return subsetType(u.Elem(), seen)
 	case *types.Signature:
@@ -166,31 +170,12 @@ func (c *subsetChecks) address(e *ast.UnaryExpr) {
 	if !c.protectedRoot(e.X) {
 		return
 	}
-	target := ast.Unparen(e.X)
-	if !checker.Contains(c.pass.TypesInfo.TypeOf(target)) {
+	if !checker.Contains(c.pass.TypesInfo.TypeOf(e.X)) {
 		c.report(e, "scalar interior addresses are unsupported")
 		return
 	}
-	for {
-		selection, ok := target.(*ast.SelectorExpr)
-		if !ok {
-			break
-		}
-		target = ast.Unparen(selection.X)
-	}
-	id, ok := target.(*ast.Ident)
-	if !ok {
-		c.report(e, "only whole local values and marked fields can be borrowed")
-		return
-	}
-
-	if protectedReference(c.pass.TypesInfo.TypeOf(id)) {
-		c.report(e, "borrowing through a shared reference is unsupported")
-		return
-	}
-	obj := c.pass.TypesInfo.ObjectOf(id)
-	if obj == nil || obj.Parent() == c.pass.Pkg.Scope() {
-		c.report(e, "only whole local values can be borrowed")
+	if _, fresh := ast.Unparen(e.X).(*ast.CompositeLit); !fresh {
+		c.report(e, "immutable references require fresh allocation")
 	}
 }
 
@@ -207,6 +192,9 @@ func stringType(t types.Type) bool {
 
 // assignment checks immutable transport in AssignStmt.
 func (c *subsetChecks) assignment(x *ast.AssignStmt) {
+	for _, destination := range x.Lhs {
+		c.write(destination)
+	}
 	if len(x.Rhs) == 1 {
 		var destinations []types.Type
 		for _, lhs := range x.Lhs {
@@ -238,8 +226,8 @@ func (c *subsetChecks) declaration(x *ast.ValueSpec) {
 		if obj == nil {
 			continue
 		}
-		if protectedReference(obj.Type()) && obj.Parent() == c.pass.Pkg.Scope() {
-			c.report(id, "global shared references are unsupported")
+		if noRefReference(obj.Type()) && obj.Parent() == c.pass.Pkg.Scope() {
+			c.report(id, "global ImmutNoRef references are unsupported")
 		}
 		if i < len(x.Values) {
 			c.transport(x.Values[i], obj.Type())
@@ -262,8 +250,8 @@ func (c *subsetChecks) returnedValues(x *ast.ReturnStmt) {
 		if destination := c.returnType(x, i); destination != nil {
 			c.transport(e, destination)
 		}
-		if protectedReference(c.pass.TypesInfo.TypeOf(e)) {
-			c.report(e, "returning shared references is unsupported")
+		if noRefReference(c.pass.TypesInfo.TypeOf(e)) {
+			c.report(e, "returning ImmutNoRef references is unsupported")
 		}
 	}
 }
@@ -290,8 +278,8 @@ func subsetContainer(t types.Type) string {
 // subsetResults rejects escaping shared references in function results.
 func subsetResults(results *types.Tuple) string {
 	for i := 0; i < results.Len(); i++ {
-		if protectedReference(results.At(i).Type()) {
-			return "returning shared references is unsupported"
+		if noRefReference(results.At(i).Type()) {
+			return "returning ImmutNoRef references is unsupported"
 		}
 	}
 	return ""

@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-const borrowTestTypes = `type Child struct { im.Marker; X, Y int }
- type Value struct { im.Marker; X, Y int; Child Child; Array [2]int }
+const borrowTestTypes = `type Child struct { im.Immut; X, Y int }
+ type Value struct { im.Immut; X, Y int; Child Child; Array [2]int }
  func read(pointer *Value) int { return pointer.X }
  func readInt(pointer *int) int { return *pointer }
  `
@@ -124,7 +124,7 @@ func TestBorrowCarriersCannotErasePermissions(t *testing.T) {
 func TestUnsafeHasNoSuppression(t *testing.T) {
 	source := `import "unsafe"
  //nolint:immutago
- var _ = unsafe.Sizeof(im.Marker{})`
+ var _ = unsafe.Sizeof(im.Immut{})`
 	if reports := checkSource(t, source); !strings.Contains(reports, "unsupported unsafe import") {
 		t.Fatalf("diagnostics = %q; want unsafe diagnostic", reports)
 	}
@@ -133,7 +133,7 @@ func TestUnsafeHasNoSuppression(t *testing.T) {
 // TestUnsafeReflection checks unsafe pointers returned without an explicit unsafe import.
 func TestUnsafeReflection(t *testing.T) {
 	source := `import "reflect"
- var _ = im.Marker{}
+ var _ = im.Immut{}
  func pointer(v reflect.Value) { _ = v.UnsafePointer() }`
 	if reports := checkSource(t, source); !strings.Contains(reports, "unsupported unsafe pointer") {
 		t.Fatalf("diagnostics = %q; want unsafe pointer diagnostic", reports)
@@ -142,7 +142,7 @@ func TestUnsafeReflection(t *testing.T) {
 
 // TestRawUnsafeImport checks that alternate import quoting cannot bypass the unsafe boundary.
 func TestRawUnsafeImport(t *testing.T) {
-	source := "import `unsafe`\nvar _ = unsafe.Sizeof(im.Marker{})"
+	source := "import `unsafe`\nvar _ = unsafe.Sizeof(im.Immut{})"
 	if reports := checkSource(t, source); !strings.Contains(reports, "unsupported unsafe import") {
 		t.Fatalf("diagnostics = %q; want unsafe import diagnostic", reports)
 	}
@@ -150,7 +150,7 @@ func TestRawUnsafeImport(t *testing.T) {
 
 // TestReflectionMutation checks the safe-Go reflection path into a marked slice element.
 func TestReflectionMutation(t *testing.T) {
-	source := "import `reflect`\n" + `type V struct { im.Marker; N int }
+	source := "import `reflect`\n" + `type V struct { im.Immut; N int }
  func f(values []V) { reflect.ValueOf(values).Index(0).FieldByName("N").SetInt(1) }`
 	if reports := checkSource(t, source); !strings.Contains(reports, "unsupported reflect import") {
 		t.Fatalf("diagnostics = %q; want reflection diagnostic", reports)
@@ -174,7 +174,7 @@ func TestIndirectReflectionType(t *testing.T) {
 
 // TestRecursivePointerType checks that unsupported-type detection terminates on recursive pointers.
 func TestRecursivePointerType(t *testing.T) {
-	reports := checkSource(t, "type P *P; var _ = im.Marker{}")
+	reports := checkSource(t, "type P *P; var _ = im.Immut{}")
 	if reports != "" {
 		t.Fatalf("ordinary pointer type rejected: %s", reports)
 	}

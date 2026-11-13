@@ -98,35 +98,3 @@ func (c *subsetChecks) rangeTarget(expression ast.Expr, statement *ast.RangeStmt
 		}
 	}
 }
-
-// referenceDefinition admits only a named reader parameter or one address-initialized local binding.
-func (c *subsetChecks) referenceDefinition(name *ast.Ident) bool {
-	object := c.pass.TypesInfo.Defs[name]
-	if object == nil || object.Parent() == c.pass.Pkg.Scope() {
-		return false
-	}
-	switch parent := c.parents[name].(type) {
-	case *ast.AssignStmt:
-		return parent.Tok == token.DEFINE && len(parent.Lhs) == 1 && len(parent.Rhs) == 1 && ownerAddress(parent.Rhs[0])
-	case *ast.ValueSpec:
-		return len(parent.Names) == 1 && len(parent.Values) == 1 && ownerAddress(parent.Values[0])
-	case *ast.Field:
-		list, ok := c.parents[parent].(*ast.FieldList)
-		if !ok {
-			return false
-		}
-		signature, ok := c.parents[list].(*ast.FuncType)
-		if !ok || signature.Params != list || signature.TypeParams != nil {
-			return false
-		}
-		declaration, ok := c.parents[signature].(*ast.FuncDecl)
-		return ok && declaration.Recv == nil
-	}
-	return false
-}
-
-// protectedVariable identifies reference definitions without treating field metadata as a use.
-func protectedVariable(object types.Object) bool {
-	variable, ok := object.(*types.Var)
-	return ok && !variable.IsField() && protectedReference(variable.Type())
-}

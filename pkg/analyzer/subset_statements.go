@@ -12,41 +12,25 @@ import (
 func (c *subsetChecks) statementBoundary(node ast.Node) {
 	switch statement := node.(type) {
 	case *ast.FuncDecl:
+		if statement.Type.TypeParams != nil {
+			c.genericStorage(statement, statement.Name)
+		}
 		if statement.Recv != nil && len(statement.Recv.List) > 0 &&
 			checker.Contains(c.pass.TypesInfo.TypeOf(statement.Recv.List[0].Type)) {
 			c.report(statement.Name, "user-defined methods on protected receivers are unsupported")
 		}
-	case *ast.AssignStmt:
-		c.fixedAssignment(statement)
 	case *ast.ValueSpec:
 		c.fixedDeclaration(statement)
+	case *ast.TypeSpec:
+		if statement.TypeParams != nil {
+			c.genericStorage(statement, statement.Name)
+		}
 	case *ast.RangeStmt:
 		c.rangeBoundary(statement)
 	case *ast.TypeSwitchStmt:
 		c.typeSwitch(statement)
 	case *ast.CommClause:
 		c.selectCommunication(statement)
-	}
-}
-
-// ownerAddress identifies the one supported local reference initializer; address checks validate its owner.
-func ownerAddress(expression ast.Expr) bool {
-	address, ok := ast.Unparen(expression).(*ast.UnaryExpr)
-	return ok && address.Op == token.AND
-}
-
-// fixedAssignment permits only one-time local reference initialization.
-func (c *subsetChecks) fixedAssignment(statement *ast.AssignStmt) {
-	for _, destination := range statement.Lhs {
-		name, ok := ast.Unparen(destination).(*ast.Ident)
-		if !ok || name.Name == "_" || !protectedReference(c.pass.TypesInfo.TypeOf(name)) {
-			continue
-		}
-		if statement.Tok == token.DEFINE && c.pass.TypesInfo.Defs[name] != nil &&
-			len(statement.Lhs) == 1 && len(statement.Rhs) == 1 && ownerAddress(statement.Rhs[0]) {
-			continue
-		}
-		c.report(name, "references require one fixed declaration from an owned local")
 	}
 }
 
@@ -59,13 +43,7 @@ func (c *subsetChecks) fixedDeclaration(statement *ast.ValueSpec) {
 			continue
 		}
 		protected = protected || checker.Contains(object.Type())
-		if !protectedReference(object.Type()) {
-			continue
-		}
-		if len(statement.Names) == 1 && len(statement.Values) == 1 && ownerAddress(statement.Values[0]) {
-			continue
-		}
-		c.report(name, "references require one fixed declaration from an owned local")
+
 	}
 	if protected && len(statement.Names) > 1 && !c.getDeclaration(statement) {
 		c.report(statement, "multiple assignments involving protected storage are unsupported")
@@ -196,8 +174,8 @@ func (c *subsetChecks) synchronousStorage(expression ast.Expr) {
 // rangeBoundary rejects implicit reference creation and unknown protected callback iteration.
 func (c *subsetChecks) rangeBoundary(statement *ast.RangeStmt) {
 	for _, target := range []ast.Expr{statement.Key, statement.Value} {
-		if target != nil && protectedReference(c.pass.TypesInfo.TypeOf(target)) {
-			c.report(target, "references require one fixed declaration from an owned local")
+		if target != nil && statement.Tok == token.ASSIGN {
+			c.write(target)
 		}
 	}
 	if !protectedCallable(c.pass.TypesInfo.TypeOf(statement.X)) {

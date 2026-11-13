@@ -4,18 +4,30 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+
+	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// referenceUse accepts only the implemented producers and uses of a protected pointer.
+// noRefReference identifies a reference whose concrete marked target forbids escape.
+func noRefReference(t types.Type) bool {
+	if t == nil {
+		return false
+	}
+	pointer, ok := t.Underlying().(*types.Pointer)
+	return ok && checker.NoRef(pointer.Elem())
+}
+
+// referenceUse checks the concrete target, source, and context of each immutable reference.
 func (c *subsetChecks) referenceUse(expression ast.Expr) {
-	info := c.pass.TypesInfo.Types[expression]
-	if info.IsType() || !protectedReference(c.pass.TypesInfo.TypeOf(expression)) {
+	if c.pass.TypesInfo.Types[expression].IsType() || !protectedReference(c.pass.TypesInfo.TypeOf(expression)) {
 		return
 	}
-	if id, ok := expression.(*ast.Ident); ok && c.pass.TypesInfo.Defs[id] != nil {
-		if protectedVariable(c.pass.TypesInfo.Defs[id]) && !c.referenceDefinition(id) {
-			c.report(id, "references require one fixed declaration from an owned local")
-		}
+	pointer := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Pointer)
+	if !checker.Marked(pointer.Elem()) {
+		c.report(expression, "immutable references require a concrete marked struct target")
+		return
+	}
+	if name, ok := expression.(*ast.Ident); ok && c.pass.TypesInfo.Defs[name] != nil {
 		return
 	}
 	if !c.referenceSource(expression) || !c.referenceContext(expression) {
@@ -23,20 +35,25 @@ func (c *subsetChecks) referenceUse(expression ast.Expr) {
 	}
 }
 
-// referenceSource lists the only expressions that can produce a local protected reference.
+// referenceSource lists fresh allocations and typed reads of existing immutable references.
 func (c *subsetChecks) referenceSource(expression ast.Expr) bool {
 	switch source := expression.(type) {
 	case *ast.Ident:
 		if c.nilExpression(source) {
-			comparison, ok := c.unparenthesizedParent(source).(*ast.BinaryExpr)
-			return ok && (comparison.Op == token.EQL || comparison.Op == token.NEQ)
+			return true
 		}
-		variable, ok := c.pass.TypesInfo.ObjectOf(source).(*types.Var)
-		return ok && variable.Parent() != c.pass.Pkg.Scope()
-	case *ast.ParenExpr:
+		_, variable := c.pass.TypesInfo.ObjectOf(source).(*types.Var)
+		return variable
+	case *ast.ParenExpr, *ast.SelectorExpr, *ast.IndexExpr:
 		return true
 	case *ast.UnaryExpr:
 		return source.Op == token.AND
+	case *ast.CallExpr:
+		if builtin, ok := c.calledObject(source.Fun).(*types.Builtin); ok {
+			return builtin.Name() == "new"
+		}
+		_, direct := c.calledObject(source.Fun).(*types.Func)
+		return direct
 	}
 	return false
 }
@@ -47,8 +64,9 @@ func (c *subsetChecks) nilExpression(expression ast.Expr) bool {
 	return ok && c.pass.TypesInfo.ObjectOf(name) == types.Universe.Lookup("nil")
 }
 
-// referenceContext lists permitted reference uses; every other Go expression context is rejected.
+// referenceContext separates shared storage from local-only ImmutNoRef references.
 func (c *subsetChecks) referenceContext(expression ast.Expr) bool {
+	local := noRefReference(c.pass.TypesInfo.TypeOf(expression))
 	switch parent := c.parents[expression].(type) {
 	case *ast.ParenExpr:
 		return true
@@ -59,8 +77,11 @@ func (c *subsetChecks) referenceContext(expression ast.Expr) bool {
 	case *ast.BinaryExpr:
 		return parent.Op == token.EQL || parent.Op == token.NEQ
 	case *ast.AssignStmt:
-		if len(parent.Lhs) != 1 || len(parent.Rhs) != 1 || parent.Rhs[0] != expression {
-			return false
+		if len(parent.Lhs) != 1 || len(parent.Rhs) != 1 {
+			return !local && c.freshGetAssignment(parent)
+		}
+		if !local {
+			return true
 		}
 		name, ok := parent.Lhs[0].(*ast.Ident)
 		if !ok {
@@ -69,20 +90,36 @@ func (c *subsetChecks) referenceContext(expression ast.Expr) bool {
 		if name.Name == "_" {
 			return true
 		}
-		return parent.Tok == token.DEFINE && c.pass.TypesInfo.Defs[name] != nil && ownerAddress(expression)
+		variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var)
+		return ok && variable.Parent() != c.pass.Pkg.Scope()
 	case *ast.ValueSpec:
-		return len(parent.Names) == 1 && len(parent.Values) == 1 && parent.Values[0] == expression && ownerAddress(expression)
-
+		return !local || len(parent.Names) == 1 && c.pass.TypesInfo.Defs[parent.Names[0]].Parent() != c.pass.Pkg.Scope()
+	case *ast.ReturnStmt, *ast.CompositeLit, *ast.KeyValueExpr:
+		return !local
+	case *ast.IndexExpr:
+		return !local && parent.Index == expression
 	case *ast.CallExpr:
 		return c.directReferenceArgument(parent, expression)
 	}
 	return false
 }
 
-// directReferenceArgument permits an exact typed parameter on a synchronous, non-generic direct call.
+// directReferenceArgument accepts concrete named calls and the fixed shared-reference storage operations.
 func (c *subsetChecks) directReferenceArgument(call *ast.CallExpr, expression ast.Expr) bool {
-	function, ok := c.calledObject(call.Fun).(*types.Func)
-	if !ok || libraryObject(function) || genericSignature(function.Origin().Type().(*types.Signature)) {
+	local := noRefReference(c.pass.TypesInfo.TypeOf(expression))
+	object := c.calledObject(call.Fun)
+	if !local && c.ownedBuiltin(call) {
+		return true
+	}
+	function, ok := object.(*types.Func)
+	if !ok {
+		return false
+	}
+	if libraryObject(function) {
+		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+		return !local && ok && c.exactCollectionMethod(selector) && function.Name() == "Get"
+	}
+	if genericSignature(function.Origin().Type().(*types.Signature)) {
 		return false
 	}
 	switch c.parents[call].(type) {
@@ -96,16 +133,12 @@ func (c *subsetChecks) directReferenceArgument(call *ast.CallExpr, expression as
 			}
 		}
 	}
-	signature, ok := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
-	if !ok {
-		return false
-	}
-	for i, arg := range call.Args {
-		if arg != expression || i >= signature.Params().Len() {
-			continue
+	signature := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
+	for index, argument := range call.Args {
+		if argument == expression && index < signature.Params().Len() {
+			parameter := signature.Params().At(index).Type()
+			return protectedReference(parameter) && types.Identical(parameter, c.pass.TypesInfo.TypeOf(expression))
 		}
-		parameter := signature.Params().At(i).Type()
-		return protectedReference(parameter) && types.Identical(parameter, c.pass.TypesInfo.TypeOf(expression))
 	}
 	return false
 }

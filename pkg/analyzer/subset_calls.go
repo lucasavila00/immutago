@@ -25,7 +25,7 @@ func (c *subsetChecks) calledObject(e ast.Expr) types.Object {
 // call restricts shared arguments to direct synchronous calls with exact typed parameters.
 func (c *subsetChecks) call(call *ast.CallExpr) {
 	obj := c.calledObject(call.Fun)
-	if builtin, ok := obj.(*types.Builtin); ok && builtin.Name() == "make" {
+	if builtin, ok := obj.(*types.Builtin); ok && (builtin.Name() == "make" || builtin.Name() == "new") {
 		return
 	}
 	if c.ownedBuiltin(call) {
@@ -40,11 +40,7 @@ func (c *subsetChecks) call(call *ast.CallExpr) {
 		}
 		return
 	}
-	if builtin, ok := obj.(*types.Builtin); ok && builtin.Name() == "new" &&
-		protectedReference(c.pass.TypesInfo.TypeOf(call)) {
-		c.report(call, "pointer-owned construction is unsupported")
-		return
-	}
+
 	signature, _ := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
 	if signature == nil {
 		return
@@ -195,7 +191,7 @@ func (c *subsetChecks) closure(literal *ast.FuncLit) {
 
 // globalStore prevents a shared local reference from entering package storage.
 func (c *subsetChecks) globalStore(destination, value ast.Expr) {
-	if !protectedReference(c.pass.TypesInfo.TypeOf(value)) {
+	if !noRefReference(c.pass.TypesInfo.TypeOf(value)) {
 		return
 	}
 	id, ok := ast.Unparen(destination).(*ast.Ident)
@@ -205,7 +201,7 @@ func (c *subsetChecks) globalStore(destination, value ast.Expr) {
 	}
 	obj := c.pass.TypesInfo.ObjectOf(id)
 	if obj != nil && obj.Parent() == c.pass.Pkg.Scope() {
-		c.report(destination, "global shared references are unsupported")
+		c.report(destination, "global ImmutNoRef references are unsupported")
 	}
 }
 
@@ -250,10 +246,7 @@ func genericSignature(signature *types.Signature) bool {
 // callArguments checks typed parameters and the effects of transporting each argument.
 func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signature *types.Signature, static bool) {
 	for i, arg := range call.Args {
-		if i < signature.Params().Len() && protectedReference(signature.Params().At(i).Type()) && c.nilExpression(arg) {
-			c.report(arg, "reference operation is outside the supported allowlist")
-			continue
-		}
+
 		t := c.pass.TypesInfo.TypeOf(arg)
 		if !checker.Contains(t) && !protectedCallable(t) {
 			continue
@@ -274,7 +267,7 @@ func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signa
 
 // borrowArgument requires synchronous, concrete calls for protected references.
 func (c *subsetChecks) borrowArgument(call *ast.CallExpr, argument ast.Expr, object types.Object) {
-	if !protectedReference(c.pass.TypesInfo.TypeOf(argument)) {
+	if !noRefReference(c.pass.TypesInfo.TypeOf(argument)) {
 		return
 	}
 	c.synchronous(call)

@@ -26,7 +26,6 @@ import (
 	"go/types"
 	"strconv"
 
-	"github.com/lucasavila00/immutago/internal/borrow"
 	"github.com/lucasavila00/immutago/internal/checker"
 	"github.com/lucasavila00/immutago/internal/freeze"
 	"golang.org/x/tools/go/analysis"
@@ -42,7 +41,7 @@ var Analyzer = &analysis.Analyzer{
 
 // run checks compiler-resolved types and source operations in one package.
 func run(pass *analysis.Pass) (any, error) {
-	if pass.Pkg.Path() == checker.LibraryPath || borrow.IsStandardLibrary(pass) {
+	if pass.Pkg.Path() == checker.LibraryPath || standardLibrary(pass) {
 		return nil, nil
 	}
 	invalid, relevant, failures := invalidDependencies(pass)
@@ -75,9 +74,6 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 	}
 	checkSubset(pass, freeze.Check(pass))
-	if err := borrow.Check(pass); err != nil {
-		return nil, err
-	}
 	return nil, nil
 }
 
@@ -185,20 +181,23 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		return
 	}
 	marked := checker.Marked(t)
+	if checker.Shared(t) && checker.NoRef(t) {
+		c.report(pos, "struct cannot embed both im.Immut and im.ImmutNoRef")
+	}
 	for field := range s.Fields() {
 		ft := field.Type()
 		fieldPos := pos
 		if field.Pkg() == c.pass.Pkg && field.Pos().IsValid() {
 			fieldPos = field.Pos()
 		}
-		if checker.IsLibraryType(ft, "Marker") && !field.Embedded() {
-			c.report(fieldPos, "im.Marker must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
-				"\n  fix: declare an anonymous im.Marker field; remove its field name or pointer")
+		if markerType(ft) && !field.Embedded() {
+			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
+				"\n  fix: embed im.Immut or im.ImmutNoRef; remove the marker field name or pointer")
 			continue
 		}
-		if ptr, ok := ft.Underlying().(*types.Pointer); ok && checker.IsLibraryType(ptr.Elem(), "Marker") {
-			c.report(fieldPos, "im.Marker must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
-				"\n  fix: declare an anonymous im.Marker field; remove its field name or pointer")
+		if ptr, ok := ft.Underlying().(*types.Pointer); ok && markerType(ptr.Elem()) {
+			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
+				"\n  fix: embed im.Immut or im.ImmutNoRef; remove the marker field name or pointer")
 			continue
 		}
 		if marked {
@@ -209,17 +208,17 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 				continue
 			}
 		} else if checker.Contains(ft) {
-			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed im.Marker"+
+			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+
-				"\n  fix: embed im.Marker in this struct and make all its fields immutable, or remove the immutable field")
+				"\n  fix: embed im.Immut or im.ImmutNoRef and make all fields immutable, or remove the immutable field")
 			continue
-		} else if checker.PossibleStorage(ft) {
-			c.report(fieldPos, "unsupported unmarked field "+field.Name()+": unresolved generic storage"+
-				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
-				"\n  fix: constrain the field to types that cannot contain immutable storage, "+
-				"or make the owner and field immutable")
-			continue
+
 		}
 	}
+}
+
+// markerType identifies either exact library marker before its placement is checked.
+func markerType(t types.Type) bool {
+	return checker.IsLibraryType(t, "Immut") || checker.IsLibraryType(t, "ImmutNoRef")
 }

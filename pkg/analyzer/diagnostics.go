@@ -37,6 +37,22 @@ func diagnosticType(t types.Type) string {
 
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
+	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
+		"im.Immut or im.ImmutNoRef; copy arrays and frozen collection values without taking their addresses",
+	"returning ImmutNoRef references is unsupported": "return an ImmutNoRef value copy, or use im.Immut " +
+		"for objects whose references must be shared",
+	"global ImmutNoRef references are unsupported":    "keep the ImmutNoRef reference local, or store a value copy",
+	"arrays of ImmutNoRef references are unsupported": "store ImmutNoRef value copies or shared im.Immut references",
+	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
+		"with concrete immutable types; the fixed im collection APIs remain supported",
+	"user generic instantiations with immutable types are unsupported": "use a non-generic declaration " +
+		"with concrete immutable types; the fixed im collection APIs remain supported",
+	"writes to immutable objects are unsupported": "construct a new value, or replace the whole variable; " +
+		"only a native builder's whole elements can be changed before Freeze",
+	"immutable references require fresh allocation": "use &T{...}, new(T), or new(value); " +
+		"do not take the address of an existing variable, field, or element",
+	"protected composite literals require a concrete storage type": "use a concrete " +
+		"marked field, value array, or checked builder; copy scalar data before storing it in a generic literal",
 	"protected operation is outside the supported statement forms": "use a separate " +
 		"assignment, direct synchronous call, value return, or documented conditional/loop form",
 

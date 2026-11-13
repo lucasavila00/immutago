@@ -7,7 +7,7 @@ import (
 
 // TestGenericAliasBoundaries checks that type erasure cannot hide conflicting loans or unmarked owners.
 func TestGenericAliasBoundaries(t *testing.T) {
-	const prefix = `type Value struct { im.Marker; N int }
+	const prefix = `type Value struct { im.Immut; N int }
  `
 	cases := []struct{ name, source, want string }{
 		{"wrapper", `type Box[T any] struct { V T }
@@ -27,7 +27,7 @@ func TestGenericAliasBoundaries(t *testing.T) {
 
 // TestGenericPointerBoundary rejects protected generic reference construction.
 func TestGenericPointerBoundary(t *testing.T) {
-	const prefix = `type Value struct { im.Marker; N int }
+	const prefix = `type Value struct { im.Immut; N int }
  `
 	cases := []string{
 		`func box[T any](v T) any { return &v }; var _ = box(Value{})`,
@@ -47,14 +47,14 @@ func TestGenericPointerBoundary(t *testing.T) {
 // TestSafeGenericStorage accepts bounds that exclude marked storage and ordinary interface copies.
 func TestSafeGenericStorage(t *testing.T) {
 	cases := []string{
-		`func box[T interface{ ~int | ~string }](v T) any { return &v }; var _ = im.Marker{}`,
+		`func box[T interface{ ~int | ~string }](v T) any { return &v }; var _ = im.Immut{}`,
 		`type Plain struct { X int }
-   func box[T Plain](v T) any { return &v }; var _ = im.Marker{}`,
+   func box[T Plain](v T) any { return &v }; var _ = im.Immut{}`,
 		`type Plain struct { X int }
-   type Box[T Plain] struct { Value T }; var _ = im.Marker{}`,
+   type Box[T Plain] struct { Value T }; var _ = im.Immut{}`,
 		`type Scalar interface { ~int | ~string }
    type Smaller interface { Scalar; ~int }
-   func box[T Smaller](v T) any { return &v }; var _ = im.Marker{}`,
+   func box[T Smaller](v T) any { return &v }; var _ = im.Immut{}`,
 	}
 	for _, source := range cases {
 		t.Run(source[:min(len(source), 40)], func(t *testing.T) {

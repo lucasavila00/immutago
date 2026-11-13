@@ -129,8 +129,8 @@ func TestSharedProofGraph(t *testing.T) {
 			types.NewField(token.NoPos, nil, "Left", current, false),
 			types.NewField(token.NoPos, nil, "Right", current, false))
 	}
-	p := &proof{nodes: make(map[proofKey]*obligation)}
-	p.node(current, false)
+	p := &proof{nodes: make(map[types.Type]*obligation)}
+	p.node(current)
 	if len(p.nodes) != 47 {
 		t.Fatalf("built %d obligations; want 47", len(p.nodes))
 	}
