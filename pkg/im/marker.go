@@ -1,10 +1,14 @@
-// Package im provides a marker and immutable value collections.
+// Package im provides markers and immutable value collections.
 //
-// Embed Marker in a struct to require immutable fields. Run the immutago
-// analyzer on all consumer packages; Go's type checker alone does not enforce
-// the field or collection element rules. Marked objects are immutable from
-// construction. Shared references can be copied, stored, and returned. Go manages
-// their lifetime. A value copy preserves references to the same immutable objects.
+// Embed Immut or ImmutNoRef in a struct to require immutable fields. Run the
+// immutago analyzer on all consumer packages; Go's type checker alone does not
+// enforce the field or collection element rules. Both markers make objects
+// immutable from construction. Whole variables can be rebound to another value.
+//
+// References to Immut objects can be copied, stored, and returned. References to
+// ImmutNoRef objects are restricted to local use and direct typed calls that do
+// not let the reference escape. Go manages object lifetimes. A value copy
+// preserves references to the same immutable objects.
 //
 // FreezeSlice and FreezeMap share their input storage without copying. The analyzer
 // requires exclusive ownership and rejects later source-handle uses. Clone returns
@@ -13,6 +17,10 @@
 // be immutable; the analyzer checks this requirement, including nested types.
 package im
 
-// Marker opts a struct into immutability checks when embedded by value.
-// A named field or pointer embedding does not satisfy the marker contract.
-type Marker struct{}
+// Immut marks an immutable struct whose shared references may be stored or returned.
+// Embed it by value. A named field or pointer embedding does not mark the struct.
+type Immut struct{}
+
+// ImmutNoRef marks an immutable struct whose references must not escape.
+// Embed it by value. A named field or pointer embedding does not mark the struct.
+type ImmutNoRef struct{}
