@@ -37,3 +37,16 @@ func writes() {
 	pointer := &Local{Value: 1}
 	pointer.Value = 2
 }
+
+func readLocal(value *Local) int { return value.Value }
+func delayed() {
+	value := &Local{Value: 1}
+	go readLocal(value)
+	defer readLocal(value)
+}
+
+type Both struct {
+	im.Immut
+	im.ImmutNoRef
+	Value int
+}

@@ -70,3 +70,10 @@ func capturedRead() func() int {
 	shared := &Node{Value: 1}
 	return func() int { return shared.Value }
 }
+
+func readNode(node *Node) int { return node.Value }
+func scheduledReads() {
+	shared := &Node{Value: 1}
+	go readNode(shared)
+	defer readNode(shared)
+}

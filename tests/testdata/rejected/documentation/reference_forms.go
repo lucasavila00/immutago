@@ -26,8 +26,13 @@ func liveArrayWrite() int {
 	return (*p)[0].X
 }
 
+type LocalPoint struct {
+	im.ImmutNoRef
+	X int
+}
+
 func ownerCapture() int {
-	point := Point{}
+	point := &LocalPoint{}
 	callback := func() int { return point.X }
 	return callback()
 }

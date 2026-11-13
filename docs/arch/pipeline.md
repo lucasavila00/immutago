@@ -62,8 +62,8 @@ and a reference result `return p` use separate allowed shapes. See the
 
 [The subset checker](../../pkg/analyzer/subset.go) uses an AST parent map to
 check expression and statement context. [Call checks](../../pkg/analyzer/subset_calls.go)
-resolve the function or method by compiler identity. Named readers have concrete,
-synchronous signatures. `Immut` references may be stored and returned.
+resolve the function or method by compiler identity. Named readers have concrete signatures. NoRef calls are synchronous and
+cannot retain their references. `Immut` references may be stored and returned.
 `ImmutNoRef` references cannot leave local storage or direct non-retaining calls. The only protected receiver calls are the
 listed methods of the exact `im` collection types.
 

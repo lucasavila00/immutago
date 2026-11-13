@@ -19,9 +19,9 @@ mutable initialization, field writes, or writes through a pointer.
 | Marker | Complete reference policy |
 | --- | --- |
 | `im.Immut` | References can be local, copied, rebound, stored, passed to direct typed functions, returned, and captured by a closure. |
-| `im.ImmutNoRef` | References can be used locally and passed to direct typed functions that do not retain them. References cannot be stored, returned, or captured. |
+| `im.ImmutNoRef` | References can be local, copied, rebound, and passed to direct typed functions that do not retain them. References cannot be stored, returned, or captured. |
 
-Embed the selected marker by value. `ImmutNoRef` restricts references, not value
+Embed exactly one selected marker by value. A struct with both markers is rejected. `ImmutNoRef` restricts references, not value
 copies: a value copy can be stored or returned. Go manages object lifetime for
 both markers. Neither marker supplies resource destruction or a general memory
 leak guarantee.
@@ -98,8 +98,11 @@ type Counts struct {
 ```
 
 Pointers to scalars and native slices, maps, channels, interfaces, and functions
-cannot be fields of a marked struct. A pointer target must itself contain
-protected storage and pass the recursive immutable type proof. Unmarked structs cannot contain marked values or
+cannot be fields of a marked struct. A stored pointer target must itself contain protected storage, pass the
+recursive immutable type proof, and not be a direct `ImmutNoRef` target.
+Inline `ImmutNoRef` values can be fields and collection elements. Arrays and
+frozen wrappers with those values can have shared pointers because their
+elements cannot be addressed. Unmarked structs cannot contain marked values or
 frozen collections, including through arrays or native containers. Recursive
 collection types are allowed when every reachable field passes:
 
@@ -212,7 +215,8 @@ func prepend(next *Node) *Node {
 ## Constructors and calls
 
 Named functions can construct, receive, and return protected values and shared
-references. Calls must be direct, synchronous, and typed. The checker checks
+references. Calls must be direct and typed. Calls with `ImmutNoRef` references must be
+synchronous and must not retain those references. The checker checks
 the callee too, including callees in other packages.
 
 ```go
@@ -227,8 +231,8 @@ func read(point *Point) int { return point.X }
 ```
 
 A callback with only scalar parameters and results can receive scalar copies.
-A closure can capture an `Immut` reference. It cannot capture an `ImmutNoRef`
-reference. Copy a scalar first when the reference must stay local:
+A closure can capture an `Immut` reference or an immutable value copy of either
+mode. It cannot capture an `ImmutNoRef` reference. Copy a scalar first when the reference must stay local:
 
 ```go
 x := point.X
@@ -238,7 +242,8 @@ callback := func() int { return x }
 ## What you can do with a reference
 
 This list is **exhaustive** for references to protected storage. A target can
-be a marked struct, frozen collection, or array containing protected values.
+be an `Immut` struct, frozen collection, or array containing protected values.
+A direct pointer to `ImmutNoRef` uses the local-only rules below.
 Scalar fields and scalar-only arrays cannot be addressed through protected
 storage. Unlisted operations are rejected.
 
@@ -248,6 +253,7 @@ storage. Unlisted operations are rejected.
 | Construct an immutable object | `p := &Point{X: 1}` or `p := new(Point)` |
 | Construct from a value copy | `p := new(point)` or `p := new(Point{X: 1})` |
 | Construct a protected array | `p := &[2]Point{}` |
+| Start or defer a direct call with shared references | `go read(p)` or `defer read(p)` |
 | Capture an `Immut` reference | `callback := func() int { return p.X }` |
 | Copy or rebind a reference variable | `q := p` or `p = q` or `p = nil` |
 | Store in a marked field | `node := Node{Next: p}` |
@@ -277,6 +283,7 @@ are rejected. A referenced type must pass the same recursive immutable proof.
 | Declare a zero local reference | `var p *Local` |
 | Construct a fresh local object | `p := &Local{X: 1}` or `p := new(Local)` |
 | Construct from a value copy | `p := new(local)` or `p := new(Local{X: 1})` |
+| Copy or rebind a local reference | `q := p` or `p = q` or `p = nil` |
 | Read or discard a local reference | `x := p.X` or `_ = p` |
 | Copy the referenced value | `value := *p` |
 | Compare references or nil | `same := p == q` or `if p != nil { ... }` |
@@ -323,7 +330,7 @@ These examples are **not exhaustive**. The allowed list above is complete.
 | `value.Read()` | `Read(&Point{X: value.X})` |
 | `var x any = p` | Use a concrete `*Point` variable. |
 | `func() { readLocal(localPointer) }` | Call `readLocal(localPointer)` directly. |
-| `defer read(p)` or `go read(p)` | Call `read(p)` synchronously. |
+| `defer readLocal(p)` or `go readLocal(p)` | Call `readLocal(p)` synchronously. |
 | `p[0].X` | `(*p)[0].X` |
 | `&point` or `&shape.Child` | Construct `&Point{X: point.X}`. |
 | `&point.X` | Read `point.X`, or copy it to a scalar local. |
@@ -347,6 +354,7 @@ Use the reference and builder operations listed in this guide within these forms
 | Bind both results of the listed map reader to new locals | `value, found := frozen.Get(key)` |
 | Freeze into one variable | `frozen := im.FreezeSlice(values)` |
 | Freeze and discard the result | `_ = im.FreezeSlice(values)` |
+| Start or defer a direct call with `Immut` references | `go read(p)` or `defer read(p)` |
 | Call a named reader | `read(p)` or `n := read(&Point{X: 1})` |
 | Return one or more values | `return value` or `return value, found` |
 | Forward a named function's results directly | `return makePair()` or `takePair(makePair())` |

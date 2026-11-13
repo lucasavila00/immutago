@@ -33,3 +33,16 @@ func allocatedLocal() int {
 	value = Local{Value: 2}
 	return read(pointer)
 }
+
+func localCopies() int {
+	first := &Local{Value: 1}
+	copied := first
+	first = &Local{Value: 2}
+	var zero *Local
+	zero = copied
+	return read(zero)
+}
+func valueCapture() func() int {
+	value := Local{Value: 1}
+	return func() int { return value.Value }
+}
