@@ -13,10 +13,8 @@ type Good struct {
 	Array [2]int
 }
 
-func read(pointer *Good) int             { return pointer.X }
-func readInt(pointer *int) int           { return *pointer }
-func (value *Good) Read() int            { return value.X }
-func (value Good) WithX(number int) Good { value.X = number; return value }
+func read(pointer *Good) int   { return pointer.X }
+func readInt(pointer *int) int { return *pointer }
 
 func Conditional(condition bool) Good {
 	var value Good
@@ -39,24 +37,14 @@ func LastUse() Good {
 	return value
 }
 
-func CopyAlias() Good {
-	var value Good
-	pointer := &value
-	alias := pointer
-	pointer = nil
-	_ = read(alias)
-	value.X = 2
-	_ = pointer
-	return value
-}
-
-func RebindAlias() Good {
-	var first, second Good
+func SeparateReferences() Good {
+	var first Good
+	var second Good
 	pointer := &first
 	_ = read(pointer)
-	pointer = &second
+	other := &second
 	first.X = 2
-	_ = read(pointer)
+	_ = read(other)
 	second.X = 3
 	return first
 }

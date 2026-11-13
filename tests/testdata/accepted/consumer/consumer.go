@@ -31,7 +31,7 @@ func Use() {
 	nativeMap["b"] = 2
 	delete(nativeMap, "a")
 	mapping := im.FreezeMap(nativeMap)
-	_, _ = mapping.Get("b")
+	mapping.Get("b")
 	_ = mapping.Len()
 	mappingCopy := mapping.Clone()
 	mappingCopy["b"] = 3

@@ -1,4 +1,12 @@
-nll_multiple_assignment.go:23:11: cannot write borrowed immutable owner value (rejected.Good) through value.X: shared reference pointer is still live; move this write after its final use, or copy the value before updating
-nll_multiple_assignment.go:22:6: 	shared reference pointer declared here
-nll_multiple_assignment.go:23:21: 	this right-hand side borrows the owner before the assignment writes it
-nll_multiple_assignment.go:24:11: 	this reachable use keeps shared reference pointer live
+nll_multiple_assignment.go:21:6: unsupported immutable borrow: references require one fixed declaration from an owned local
+  source: pointer
+  type: *rejected.Good
+  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
+nll_multiple_assignment.go:22:21: unsupported immutable borrow: reference operation is outside the supported allowlist
+  source: &value
+  type: *rejected.Good
+  fix: keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader
+nll_multiple_assignment.go:22:2: unsupported immutable borrow: references require one fixed declaration from an owned local
+  source: pointer
+  type: *rejected.Good
+  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference

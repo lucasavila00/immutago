@@ -64,9 +64,12 @@ func (c *subsetChecks) report(n ast.Node, message string) {
 
 // visit checks source operations and their inferred types.
 func (c *subsetChecks) visit(n ast.Node) bool {
+	c.statementBoundary(n)
 	if expression, ok := n.(ast.Expr); ok {
 		c.expressionType(expression)
 		c.freezeFunctionUse(expression)
+		c.synchronousStorage(expression)
+		c.statementShape(expression)
 	}
 
 	switch x := n.(type) {

@@ -84,7 +84,14 @@ func Fresh(pass *analysis.Pass, expression ast.Expr) bool {
 		return false
 	}
 	selection := pass.TypesInfo.Selections[selector]
-	return selection != nil && selection.Kind() == types.MethodVal && checker.IsCollection(selection.Recv())
+	if selection == nil || selection.Kind() != types.MethodVal {
+		return false
+	}
+	receiver := selection.Recv()
+	if pointer, ok := receiver.Underlying().(*types.Pointer); ok {
+		receiver = pointer.Elem()
+	}
+	return checker.IsCollection(receiver)
 }
 
 // native identifies mutable native handles rather than value arrays or frozen wrappers.

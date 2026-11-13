@@ -22,6 +22,9 @@ const testLibrary = `package im
  func FreezeMap[K comparable, V any](values map[K]V) FrozenMap[K,V] { return FrozenMap[K,V]{} }
  func (values FrozenSlice[T]) Clone() []T { return nil }
  func (values FrozenMap[K,V]) Clone() map[K]V { return nil }
+ func (values FrozenMap[K,V]) Get(key K)(V,bool) { var zero V;return zero,false }
+ func (values FrozenSlice[T]) At(index int)T { var zero T;return zero }
+ func (values FrozenSlice[T]) Len()int {return 0}
 `
 
 // testImporter gives compiler tests the library's type identities without loading external packages.
@@ -104,7 +107,7 @@ func TestValidTypes(t *testing.T) {
    func copyArray(v Value) { a := v.A; a[0] = 1 }`,
 		`type Value struct { im.Marker; S string }
    func text(v Value) string { return v.S[:] }`,
-		`type V struct { im.Marker }; func f[T V](x *T) {}`,
+		`type V struct { im.Marker }; func f(x *V) {}`,
 		`var _ = im.FreezeSlice([]int{1, 2})
    var _ = im.FreezeMap(map[string]int{"a": 1})`,
 	}

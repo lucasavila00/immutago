@@ -37,6 +37,29 @@ func diagnosticType(t types.Type) string {
 
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
+	"protected operation is outside the supported statement forms": "use a separate " +
+		"assignment, direct synchronous call, value return, or documented conditional/loop form",
+
+	"protected iteration requires a direct frozen All call": "use range frozen.All() " +
+		"for protected values; do not create protected references through a custom iterator",
+
+	"protected storage requires synchronous calls": "call the reader directly before " +
+		"continuing; do not pass protected values, references, or builders to go or defer",
+	"protected storage is unsupported in type switches": "keep concrete protected " +
+		"types in named function parameters instead of recovering values or references from interfaces",
+
+	"user-defined methods on protected receivers are unsupported": "use a named non-generic " +
+		"reader function with a concrete parameter; only direct Get, At, Len, All, and Clone " +
+		"calls on im collections are allowed",
+	"references require one fixed declaration from an owned local": "declare p := &owner or " +
+		"var p *T = &owner once; do not copy, clear, or reassign the reference",
+	"multiple assignments involving protected storage are unsupported": "write one protected " +
+		"destination per statement; bind a direct frozen.Get result only to two new local variables",
+	"protected storage is unsupported in select communication clauses": "keep protected " +
+		"values and native builders out of channel expressions and receive targets; use them in the selected case body",
+	"Freeze requires a standalone single binding": "assign frozen := im.FreezeSlice(builder) " +
+		"or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value",
+
 	"freeze functions must be called directly": "call im.FreezeMap(builder) or im.FreezeSlice(builder) " +
 		"directly so ownership consumption is checked",
 	"freezing requires a synchronous call": "freeze the local builder directly before " +
@@ -82,6 +105,8 @@ var subsetFixes = map[string]string{
 		"function directly with a concrete immutable parameter",
 	"immutable callbacks are unsupported": "call a named, non-generic " +
 		"function directly with a concrete immutable parameter",
+	"immutable method expressions are unsupported": "call the method on the collection directly " +
+		"(value.Method(...)); do not call it through the collection type",
 	"bound immutable methods are unsupported": "call the method directly " +
 		"(value.Method(...)); do not save or pass its method value",
 	"closures cannot capture immutable storage": "move the code to a named " +

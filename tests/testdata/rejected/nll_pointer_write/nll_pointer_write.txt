@@ -1,2 +1,2 @@
-nll_pointer_write.go:21:2: cannot write through shared reference pointer.X: shared references are read-only; update the owned value before borrowing, or copy the value and update the copy
-nll_pointer_write.go:20:10: 	shared reference pointer (*rejected.Good) declared here
+nll_pointer_write.go:20:2: cannot write through shared reference pointer.X: shared references are read-only; update the owned value before borrowing, or copy the value and update the copy
+nll_pointer_write.go:19:10: 	shared reference pointer (*rejected.Good) declared here

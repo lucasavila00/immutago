@@ -12,18 +12,16 @@ func BranchLocal(condition bool) Good {
 	return value
 }
 
-func BranchMerge(condition bool) Good {
-	var first, second Good
-	var pointer *Good
+func BranchLastUse(condition bool) Good {
+	var value Good
+	pointer := &value
 	if condition {
-		pointer = &first
+		_ = read(pointer)
 	} else {
-		pointer = &second
+		_ = read(pointer)
 	}
-	_ = read(pointer)
-	first.X = 1
-	second.X = 2
-	return first
+	value.X = 1
+	return value
 }
 
 func LoopLocal(count int) Good {
@@ -60,16 +58,12 @@ func ShadowCopy() Good {
 	return value
 }
 
-func LoopAliasLastUse(count int) Good {
+func LoopLastUse(count int) Good {
 	var value Good
-	var previous *Good
+	pointer := &value
 	for index := 0; index < count; index++ {
-		if previous != nil {
-			_ = read(previous)
-		}
-		value.X = index
-		pointer := &value
-		previous = pointer
+		_ = read(pointer)
 	}
+	value.X = count
 	return value
 }

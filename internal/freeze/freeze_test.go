@@ -39,6 +39,12 @@ func TestFreezeOwnership(t *testing.T) {
 		{"ordinary scalar clone", `f:=im.FreezeSlice([]int{1});s:=f.Clone();take(s)`, false},
 		{"clone escape before refreeze", `f:=im.FreezeSlice([]int{1});s:=f.Clone();take(s);_=im.FreezeSlice(s)`, true},
 		{"clone", `f:=im.FreezeSlice([]int{1});s:=f.Clone();s[0]=2;_=im.FreezeSlice(s)`, false},
+		{"borrowed slice clone", `f:=im.FreezeSlice([]int{1});p:=&f;s:=p.Clone();s[0]=2;_=im.FreezeSlice(s)`, false},
+		{"dereferenced slice clone", `f:=im.FreezeSlice([]int{1});p:=&f;s:=(*p).Clone();s[0]=2;_=im.FreezeSlice(s)`, false},
+		{"borrowed map clone", `f:=im.FreezeMap(map[string]int{"x":1});p:=&f;m:=p.Clone();m["x"]=2;_=im.FreezeMap(m)`, false},
+		{"dereferenced map clone", `f:=im.FreezeMap(map[string]int{"x":1});p:=&f;m:=(*p).Clone();` +
+			`m["x"]=2;_=im.FreezeMap(m)`, false},
+		{"named clone", `v:=Fake{};p:=&v;s:=p.Clone();_=im.FreezeSlice(s)`, true},
 		{"nil", `var s []int;_=im.FreezeSlice(s);_=im.FreezeMap[string,int](nil)`, false},
 		{"marked builder", `s:=[]V{{X:1}};s[0].X=2;_=s[0]`, false},
 		{"loop fresh", `for i:=0;i<2;i++{s:=[]int{i};_=im.FreezeSlice(s)}`, false},
@@ -89,6 +95,7 @@ func diagnostics(t *testing.T, body string) string {
 		t.Fatal(err)
 	}
 	source := `package sample;import "` + checker.LibraryPath + `";type V struct{im.Marker;X int};
+	 type Fake struct{};func(Fake)Clone()[]int{return nil};
  func take([]int){};func both(im.FrozenSlice[int],int){};
  func index(im.FrozenSlice[int])int{return 0};func key(im.FrozenMap[string,int])string{return "x"};
  func test(flag bool){` + body + `}`

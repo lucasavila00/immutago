@@ -2,7 +2,11 @@ subset_deferred_read.go:9:24: unsupported immutable borrow: shared references re
   source: read(&v)
   type: int
   fix: make the read-only call directly; do not use go or defer with this borrow
-subset_deferred_read.go:9:29: unsupported immutable borrow: reference operation is outside the supported allowlist
+subset_deferred_read.go:9:29: unsupported immutable borrow: protected storage requires synchronous calls
   source: &v
   type: *rejected.Good
-  fix: keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+subset_deferred_read.go:9:30: unsupported immutable borrow: protected storage requires synchronous calls
+  source: v
+  type: rejected.Good
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer

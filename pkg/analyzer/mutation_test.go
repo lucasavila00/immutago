@@ -12,7 +12,6 @@ const borrowTestTypes = `type Child struct { im.Marker; X, Y int }
  type Value struct { im.Marker; X, Y int; Child Child; Array [2]int }
  func read(pointer *Value) int { return pointer.X }
  func readInt(pointer *int) int { return *pointer }
- func (value *Value) Read() int { return value.X }
  `
 
 // TestOwnedConstruction accepts changes to owned values and copies without a live shared loan.
@@ -22,7 +21,7 @@ func TestOwnedConstruction(t *testing.T) {
 		{"repeated assignment", `func f(v Value) Value { v.X=1; v.X=2; v.X++; v.Y+=3; return v }`},
 		{"array", `func f(v Value) Value { v.Array[0]=1; return v }`},
 		{"range", `func f(v Value) Value { for v.X=range 2 {}; for v.Array[0]=range 2 {}; return v }`},
-		{"value receiver", `func (v Value) WithX(x int) Value { v.X=x; return v }`},
+		{"value copy function", `func WithX(v Value,x int) Value { v.X=x; return v }`},
 		{"read pointer", `func f(v *Value) int { return v.X }`},
 		{"copy", `func f(v Value) Value { p:=&v; copy:=v; copy.X=2; _=read(p); return copy }`},
 	}
@@ -39,13 +38,12 @@ func TestOwnedConstruction(t *testing.T) {
 func TestBorrowLifetimes(t *testing.T) {
 	cases := []struct{ name, source string }{
 		{"last use", `func f(v Value) { p:=&v; _=read(p); v.X=2; v=Value{} }`},
-		{"copy last use", `func f(v Value) { p:=&v; q:=p; p=nil; _=read(q); v.X=2; _=p }`},
-		{"rebind", `func f(a,b Value) { p:=&a; _=read(p); p=&b; a.X=2; _=read(p); b.X=2 }`},
+		{"copy last use", `func f(v Value) { p:=&v; q:=&v; _=read(p); _=read(q); v.X=2 }`},
+		{"rebind", `func f(a,b Value) { p:=&a; _=read(p); q:=&b; a.X=2; _=read(q); b.X=2 }`},
 		{"branch", `func f(v Value,b bool) { if b {p:=&v; _=read(p)} else {v.X=1}; v.X=2 }`},
-		{"branch join", `func f(a,b Value,c bool) { var p *Value; if c {p=&a} else {p=&b}; _=read(p); a.X=1; b.X=2 }`},
+		{"branch join", `func f(a,b Value,c bool) { if c {p:=&a;_=read(p)} else {p:=&b;_=read(p)}; a.X=1; b.X=2 }`},
 		{"loop", `func f(v Value,n int) { for i:=0;i<n;i++ {v.X=i; p:=&v; _=read(p)}; v.X=2 }`},
-		{"loop alias last use", `func f(v Value,n int) { var old *Value
-         for i:=0;i<n;i++ {if old!=nil {_=read(old)}; v.X=i; p:=&v; old=p} }`},
+
 		{"early return", `func f(v Value,b bool) { p:=&v; if b {_=read(p);return}; v.X=2 }`},
 		{"rhs", `func f(v Value) { v.X=read(&v)+1 }`},
 	}
@@ -82,7 +80,7 @@ func TestLiveBorrowConflicts(t *testing.T) {
 		{"loop loan reissuance", `func f(v Value,n int) { var old *Value
          for i:=0;i<n;i++ {v.X=i; p:=&v; if old!=nil {_=read(old)}; old=p} }`},
 		{"identity", `func identity[T any](p *T)*T{return p}; func f(v Value) { p:=identity(&v); v.X=2; _=read(p) }`},
-		{"method value", `func f(v Value) { later:=v.Read; v.X=2; _=later() }`},
+		{"method value", `func(value *Value)Read()int{return value.X};func f(v Value) { later:=v.Read; v.X=2; _=later() }`},
 		{"closure", `func f(v Value) { p:=&v; later:=func()int{return p.X}; v.X=2; _=later() }`},
 		{"interface", `func f(v Value) { var boxed any=&v; v.X=2; _=read(boxed.(*Value)) }`},
 		{"defer", `func f(v Value) { defer read(&v); v.X=2 }`},

@@ -10,6 +10,11 @@ subset of Rust's ownership rules:
 
 The Rust below explains the rules. It is not an API you need to implement.
 
+The allowed Go forms in this guide define the supported language. The checker
+must match those forms and check their ownership rules. A form that does not
+match must be rejected. The examples of rejected code are not exhaustive.
+
+
 ## Owned values
 
 An owned Go local behaves like a Rust `let mut` binding:
@@ -65,8 +70,9 @@ let borrowed = &point;
 borrowed.x = 1; // rejected: this is &Point, not &mut Point
 ```
 
-Copies of a reference share its borrow. Reassigning one reference does not
-release the others. Branches and loops determine the last use.
+Each local reference is initialized once from an owned local or its marked
+child. Do not copy the reference or assign another pointer to it. Branches and
+loops still determine its last use.
 
 A borrow protects the **whole owner**. Borrowing a marked child also prevents
 writes to its parent's other fields. Unlike Rust, Immutago does not split loans
@@ -94,6 +100,9 @@ point.x = 2; // allowed after the last read
 Every accepted reader follows the same contract: its references are shared and
 do not escape the call. Calls must be direct, synchronous, and typed. The
 checker verifies the callee too, including callees in other packages.
+Calls that pass or return protected values must name the function directly.
+A callback that only takes and returns scalars follows ordinary Go rules;
+for example, `n := callback(point.X)` passes a scalar copy.
 
 There is no `Box<T>` ownership model. For protected types, `new(T)` and `&T{}`
 are rejected. Use `value := T{}` followed by `pointer := &value`. Constructors
@@ -106,13 +115,10 @@ operations are supported. Anything not listed is rejected.
 
 | You can… | Go example |
 | --- | --- |
-| Declare a local reference | `var p *Point` |
+| Initialize a fixed local reference | `var p *Point = &point` |
 | Borrow a local value | `p := &point` |
 | Borrow a marked child of a local value | `p := &shape.Point` |
-| Copy a reference | `q := p` |
 | Discard a reference | `_ = p` |
-| Point a local reference at another local value | `p = &other` |
-| Clear a local reference | `p = nil` |
 | Read a field | `x := p.X` |
 | Copy the whole value, then change the copy | `next := *p; next.X = 1` |
 | Check whether a reference is nil | `if p != nil { ... }` |
@@ -128,7 +134,9 @@ func read(p *Point) int {
 ```
 
 You can also pass `&point` directly to `read`. The reference is used only during
-that call. Methods with a `*Point` receiver follow the same rule.
+that call. Use named functions for your readers. User-defined methods on
+protected values are unsupported, including methods promoted from embedded fields.
+Only the listed `im` methods are supported: `Get`, `At`, `Len`, `All`, and `Clone`.
 
 While a reference is still needed, you cannot change the original value:
 
@@ -148,6 +156,8 @@ of what works; an operation is not allowed just because it is absent below.
 
 | You cannot… | Rejected Go example | Use this instead |
 | --- | --- | --- |
+| Copy or reassign a reference | `q := p` or `p = &other` | Declare a separate reference from its owner. |
+| Call a user-defined method | `value.Read()` | Use `Read(&value)`. |
 | Write through a reference | `p.X = 1` | Change the owner before borrowing, or change a value copy. |
 | Return a reference | `return p` | Return `*p` as a value copy. |
 | Store a reference in a field or container | `Holder{P: p}` or `[]*Point{p}` | Store value copies in a marked struct or `im` collection. |
@@ -156,12 +166,89 @@ of what works; an operation is not allowed just because it is absent below.
 | Capture a reference in a closure | `func() { read(p) }` | Call `read(p)` directly. |
 | Defer or start a borrowed call in a goroutine | `defer read(p)` or `go read(p)` | Read synchronously, then use the returned value. |
 | Take a scalar field's address | `&point.X` | Read `point.X` or copy it to a separate local. |
-| Take a reference to a reference | `&p` | Copy the reference with `q := p`. |
+| Take a reference to a reference | `&p` | Pass `p` directly to a named reader. |
 | Build an owning pointer | `new(Point)` or `&Point{}` | Build `point := Point{}`, then borrow `&point`. |
 | Pass a reference to a generic helper | `readGeneric(p)` | Use a reader with a concrete `*Point` parameter. |
 
 The checker enforces this list of supported operations; there are no extra
 rules you must uphold by hand and no escape hatch for rejected operations.
+
+## What statements you can use
+
+This list is **complete** for statements that use protected storage or a builder.
+Use the reference and builder operations listed in this guide within these forms.
+
+| Allowed form | Go example |
+| --- | --- |
+| Declare one value or builder | `value := Point{X: 1}` or `values := []int{1, 2}` |
+| Declare one fixed reference from its owner | `p := &value` |
+| Assign one destination | `value.X = 1` or `values[0] = 2` |
+| Update one destination | `value.X++` or `value.X += 2` |
+| Bind both results of the listed map reader to new locals | `value, found := frozen.Get(key)` |
+| Freeze into one variable | `frozen := im.FreezeSlice(values)` |
+| Freeze and discard the result | `_ = im.FreezeSlice(values)` |
+| Call a named reader | `read(p)` or `n := read(&value)` |
+| Return a value | `return value` or `return frozen` |
+| Use ordinary value switches | `switch value.X { case 1: value.X = 2 }` |
+| Use `if` and ordinary loops | `if ready { value.X = 1 }` or `for i := range values { values[i] = i }` |
+| Assign one loop target | `for value.X = range count { ... }` |
+| Use checked operations inside a `select` case body | `case <-ready: values[0] = true` |
+
+Each write still requires an owned value with no live shared reference.
+A consumed builder cannot be used again. Blocks, `break`, `continue`, and other
+control flow without protected operands follow ordinary Go rules. A Freeze call must be the only
+right-hand-side expression of its assignment or declaration. The two-result
+`Get` form creates new locals; it cannot assign into existing protected storage.
+
+## Statement examples that are not allowed
+
+These examples are **not a complete list**. Only the forms above are allowed.
+
+```go
+// Rejected: two destinations involving protected storage.
+value.X, p = 1, &value
+
+// Allowed: one destination per statement.
+value.X = 1
+p := &value
+```
+
+```go
+// Rejected: two range targets, including a protected read in an index.
+for a[value.X], n = range numbers { ... }
+
+// Allowed: bind new loop variables, then assign each destination.
+for i, number := range numbers {
+    a[value.X] = i
+    n = number
+}
+```
+
+```go
+// Rejected: Freeze inside another expression.
+use(im.FreezeSlice(values))
+return im.FreezeSlice(values)
+
+// Allowed: bind the frozen value first.
+frozen := im.FreezeSlice(values)
+use(frozen)
+return frozen
+```
+
+```go
+// Rejected: a builder in a select receive target or channel expression.
+select {
+case _, values[0] = <-ready:
+case <-watch(im.FreezeSlice(values)):
+}
+
+// Allowed: receive first, then write inside the case body.
+select {
+case <-ready:
+    values[0] = true
+}
+frozen := im.FreezeSlice(values)
+```
 
 ## Allowed value types
 
@@ -226,14 +313,28 @@ path-copy updates.
 ### What you can do with a builder
 
 This list is **exhaustive** for a native container that you freeze, and for native
-containers of marked values. Unlisted operations are rejected.
+containers whose keys or elements contain marked values or frozen collections.
+Unlisted operations are rejected.
 
-- Create a local with `make`, a native literal, a zero/nil value, or `Clone`.
-- Read and write indexed elements; read `len` and slice `cap`.
-- Build a slice with `values = append(values, element)`.
-- Use map `delete`, clear with `clear`, or copy elements with built-in `copy`.
-- Iterate over its values with `range` while it remains mutable.
-- Consume it in a direct synchronous `im.FreezeSlice` or `im.FreezeMap` call.
+| Allowed form | Go example |
+| --- | --- |
+| Allocate a local slice or map | `values := make([]int, 2)` or `scores := make(map[string]int)` |
+| Initialize a local from a native literal | `values := []int{1, 2}` or `scores := map[string]int{"alice": 10}` |
+| Declare a zero or nil container | `var values []int` or `var scores map[string]int = nil` |
+| Clone a frozen collection into a local | `values := frozen.Clone()` |
+| Read an element | `value := values[i]` or `score := scores[key]` |
+| Write an element | `values[i] = 2` or `scores[key] = 10` |
+| Read the length or slice capacity | `n := len(values)` or `n := cap(values)` |
+| Append values to the same slice variable | `values = append(values, 1, 2)` |
+| Delete a map entry | `delete(scores, key)` |
+| Clear a container | `clear(values)` or `clear(scores)` |
+| Copy slice elements | `copy(destination, source)` |
+| Read elements in a loop | `for i, value := range values { ... }` |
+| Freeze into one variable | `frozen := im.FreezeSlice(values)` or `frozen := im.FreezeMap(scores)` |
+
+A local declaration can use `var` instead of `:=`. Each source and destination
+builder in `copy` must satisfy these rules. `append` takes individual elements;
+it does not accept another slice with `...`.
 
 An inline fresh allocation or literal can be frozen directly. A builder cannot
 be frozen while a range over it is active. Branches and loops cannot make a
@@ -243,21 +344,62 @@ consumed handle usable again.
 
 This list is **not exhaustive**; the list above defines what is supported.
 
-- Copy its handle into another variable, field, global, or interface.
-- Create a subslice, or take an element address.
-- Pass it to an arbitrary helper, capture it in a closure, or return it.
-- Freeze a parameter or a handle obtained from unknown code.
-- Read, write, inspect, or freeze the original handle again after freezing.
+| Rejected example | Allowed replacement |
+| --- | --- |
+| `alias := values` | `frozen := im.FreezeSlice(values)` shares read-only storage. |
+| `part := values[1:]` | Read elements with `values[i]`. |
+| `p := &values[0]` | Copy the element with `value := values[0]`. |
+| `update(values)` | Update elements in the current function before Freeze. |
+| `return values` | Freeze into a local, then return the frozen value. |
+| `im.FreezeSlice(parameter)` | Create and fill a local builder, then freeze it. |
+| `values[0] = 2` after Freeze | Use `next := frozen.Clone()`, then change `next[0]`. |
 
 These restrictions prevent writable aliases from surviving the ownership
 transfer. The checker verifies them; they are not obligations left to the caller.
 
 ### Reading frozen storage
 
-Use `Len`, slice `At`, and map `Get`. These operations allocate no storage.
-Direct `range` over `All()` yields value copies without cloning the container.
-Do not store or pass iterators that carry marked values. Use `Clone` when you
-need an independent mutable native container. See [collection costs](../performance.md).
+These are the supported collection methods and direct call forms:
+
+| Allowed form | Go example |
+| --- | --- |
+| Read the length | `n := frozen.Len()` |
+| Read a slice element | `value := frozen.At(i)` |
+| Read a map entry into new locals | `value, found := frozen.Get(key)` |
+| Iterate over slice or map entries | `for key, value := range frozen.All() { ... }` |
+| Clone into mutable native storage | `next := frozen.Clone()` |
+
+The receiver can be an expression of the frozen collection type, such as
+`frozen`, `value.Items`, or `makeFrozen()`, or a supported shared reference.
+Parentheses are allowed: `(frozen.Len)()` and `range (frozen.All())` have the same
+meaning. `Len`, `At`, and `Get` allocate no storage. `All` yields value copies
+without cloning the container. `Clone` creates independent storage.
+See [collection costs](../performance.md).
+
+These rejected examples are not exhaustive:
+
+```go
+// Rejected: save a method or call it through the type.
+read := frozen.At
+value := im.FrozenSlice[int].At(frozen, 0)
+
+// Allowed: call the method on the collection.
+value := frozen.At(0)
+```
+
+An iterator that carries marked values must be consumed by direct `range`:
+
+```go
+// Rejected when frozen contains marked values.
+entries := frozen.All()
+
+// Allowed: copy each element in a direct range.
+for key, value := range frozen.All() { ... }
+```
+
+Iterators whose key and value types contain no marked values or frozen
+collections follow ordinary Go iterator rules. For example, you can save
+`entries := frozen.All()` when the elements are `int` or `[2]int`.
 
 ## What we do not implement
 

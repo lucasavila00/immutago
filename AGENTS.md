@@ -145,3 +145,35 @@ Prefer concise package names and calls that read naturally in user code.
 Use `im` for the immutable value package, so imports need no routine alias.
 Keep examples idiomatic and convenient. Preserve the immutability guarantees
 when improving the API; do not make callers repeat implementation details.
+
+## 14. Document Exact Allowed Forms
+
+For each supported-language rule, give a complete list of allowed Go forms
+with short Go examples. State that the list is complete and that unlisted
+operations are rejected. Describe rejected forms with concrete rejected and
+allowed replacement examples. State that rejection examples are not exhaustive.
+Do not replace these lists with abstract restrictions or explanations of intent.
+Keep the documentation, checker allowlist, and acceptance/rejection tests aligned.
+Distinguish rules still being implemented from behavior already verified.
+
+## 15. Accept Documented Shapes; Reject Everything Else
+
+The documentation defines the supported source language. For each operation on
+protected storage, match the complete documented Go shape using AST nodes and
+compiler type identity. Accept it only when that match and its proof checks
+succeed. Report an error for every other shape. The default path must reject.
+Do not accept a broad syntax category and rely on a growing list of forbidden
+special cases. Check implicit receiver operations, result bindings, and the
+statement context as part of the shape. A new source form requires a docs entry,
+a matcher, proof rules, acceptance tests, and tests that reject nearby forms.
+Keep ordinary Go code outside protected-storage analysis unaffected.
+
+## 16. Review the Contract Against the Matcher
+
+Follow [the reviewer requirements](docs/reviewer-focus.md) for every checker or
+supported-language change. Reviewers must verify both required discussions:
+complete allowed-form documentation with concrete examples, and implementation
+by complete shape matches with a rejecting fallback. Trace each allowed form
+through docs, code, ownership checks, CLI fixtures, and diagnostic snapshots.
+A forbidden form passing the checker is a defect even when its example is not
+listed in the docs. Passing known rejection tests does not replace this review.

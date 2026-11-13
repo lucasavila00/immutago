@@ -24,3 +24,10 @@ storage. Element types must pass the checker so shallow cloning is sufficient.
 `make bench` reports Freeze, read, iteration, and clone costs. Allocation tests
 check Freeze and reads separately from native construction. Clone tests check
 that changes to the clone do not change the frozen source.
+
+## Checker memory
+
+Fixed references have one owner and need no forward possible-owner maps.
+A focused 200-reference CLI comparison reduced peak RSS from 348.2 MiB to
+97.8 MiB. This includes package loading and is one measurement, not a general
+memory bound. See [the measured review comparison](arch/validation.md).

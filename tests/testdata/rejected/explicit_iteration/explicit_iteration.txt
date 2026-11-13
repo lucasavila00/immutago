@@ -1,0 +1,12 @@
+explicit_iteration.go:13:23: unsupported immutable borrow: protected iteration requires a direct frozen All call
+  source: pointerIterator
+  type: func(yield func(*explicit_iteration.Good) bool)
+  fix: use range frozen.All() for protected values; do not create protected references through a custom iterator
+explicit_iteration.go:13:6: unsupported immutable borrow: references require one fixed declaration from an owned local
+  source: pointer
+  type: *explicit_iteration.Good
+  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
+explicit_iteration.go:18:21: unsupported immutable borrow: protected iteration requires a direct frozen All call
+  source: valueIterator
+  type: func(yield func(explicit_iteration.Good) bool)
+  fix: use range frozen.All() for protected values; do not create protected references through a custom iterator

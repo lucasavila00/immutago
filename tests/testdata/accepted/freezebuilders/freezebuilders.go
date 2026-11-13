@@ -7,16 +7,25 @@ type Value struct {
 	X int
 }
 
-func Slice() (im.FrozenSlice[int], im.FrozenSlice[int]) {
+type Slices struct {
+	im.Marker
+	First, Second im.FrozenSlice[int]
+}
+type Maps struct {
+	im.Marker
+	First, Second im.FrozenMap[string, int]
+}
+
+func Slice() Slices {
 	values := make([]int, 0, 3)
 	values = append(values, 1, 2)
 	first := im.FreezeSlice(values)
 	copy := first.Clone()
 	copy[0] = 9
 	second := im.FreezeSlice(copy)
-	return first, second
+	return Slices{First: first, Second: second}
 }
-func Map() (im.FrozenMap[string, int], im.FrozenMap[string, int]) {
+func Map() Maps {
 	values := make(map[string]int)
 	values["a"] = 1
 	values["b"] = 2
@@ -25,19 +34,21 @@ func Map() (im.FrozenMap[string, int], im.FrozenMap[string, int]) {
 	copy["a"] = 9
 	delete(copy, "b")
 	second := im.FreezeMap(copy)
-	return first, second
+	return Maps{First: first, Second: second}
 }
 func MarkedSlice() im.FrozenSlice[Value] {
 	values := []Value{{X: 1}}
 	values[0].X = 2
-	return im.FreezeSlice(values)
+	frozen := im.FreezeSlice(values)
+	return frozen
 }
 func MarkedMap() im.FrozenMap[string, Value] {
 	values := map[string]Value{"a": {X: 1}}
 	copy := values["a"]
 	copy.X = 2
 	values["a"] = copy
-	return im.FreezeMap(values)
+	frozen := im.FreezeMap(values)
+	return frozen
 }
 func Branch(condition bool) im.FrozenSlice[int] {
 	values := []int{1}
@@ -46,7 +57,8 @@ func Branch(condition bool) im.FrozenSlice[int] {
 	} else {
 		values[0] = 3
 	}
-	return im.FreezeSlice(values)
+	frozen := im.FreezeSlice(values)
+	return frozen
 }
 func Loop(count int) int {
 	total := 0
@@ -57,7 +69,7 @@ func Loop(count int) int {
 	}
 	return total
 }
-func Nil() im.FrozenSlice[int] { var values []int; return im.FreezeSlice(values) }
+func Nil() im.FrozenSlice[int] { var values []int; frozen := im.FreezeSlice(values); return frozen }
 
 var Global = im.FreezeSlice([]int{3})
 
@@ -66,14 +78,16 @@ func AppendMarked() im.FrozenSlice[Value] {
 	values = append(values, Value{X: 1})
 	_ = len(values)
 	_ = cap(values)
-	return im.FreezeSlice(values)
+	frozen := im.FreezeSlice(values)
+	return frozen
 }
 
 func CopyMarked() im.FrozenSlice[Value] {
 	values := make([]Value, 1)
 	source := []Value{{X: 4}}
 	copy(values, source)
-	return im.FreezeSlice(values)
+	frozen := im.FreezeSlice(values)
+	return frozen
 }
 
 func ClearMarkedMap() im.FrozenMap[Value, Value] {
@@ -83,5 +97,6 @@ func ClearMarkedMap() im.FrozenMap[Value, Value] {
 	values[Value{X: 2}] = Value{X: 3}
 	clear(values)
 	values[Value{X: 3}] = Value{X: 4}
-	return im.FreezeMap(values)
+	frozen := im.FreezeMap(values)
+	return frozen
 }

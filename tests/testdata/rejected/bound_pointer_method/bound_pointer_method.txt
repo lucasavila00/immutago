@@ -1,4 +1,4 @@
-bound_pointer_method.go:17:12: unsupported immutable borrow: bound immutable methods are unsupported
+bound_pointer_method.go:17:12: unsupported immutable borrow: user-defined methods on protected receivers are unsupported
   source: value.N.Change
   type: func()
-  fix: call the method directly (value.Method(...)); do not save or pass its method value
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed

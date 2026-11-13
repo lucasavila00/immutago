@@ -13,6 +13,9 @@ func (c *subsetChecks) referenceUse(expression ast.Expr) {
 		return
 	}
 	if id, ok := expression.(*ast.Ident); ok && c.pass.TypesInfo.Defs[id] != nil {
+		if protectedVariable(c.pass.TypesInfo.Defs[id]) && !c.referenceDefinition(id) {
+			c.report(id, "references require one fixed declaration from an owned local")
+		}
 		return
 	}
 	if !c.referenceSource(expression) || !c.referenceContext(expression) {
@@ -24,8 +27,9 @@ func (c *subsetChecks) referenceUse(expression ast.Expr) {
 func (c *subsetChecks) referenceSource(expression ast.Expr) bool {
 	switch source := expression.(type) {
 	case *ast.Ident:
-		if source.Name == "nil" {
-			return true
+		if c.nilExpression(source) {
+			comparison, ok := c.unparenthesizedParent(source).(*ast.BinaryExpr)
+			return ok && (comparison.Op == token.EQL || comparison.Op == token.NEQ)
 		}
 		variable, ok := c.pass.TypesInfo.ObjectOf(source).(*types.Var)
 		return ok && variable.Parent() != c.pass.Pkg.Scope()
@@ -35,6 +39,12 @@ func (c *subsetChecks) referenceSource(expression ast.Expr) bool {
 		return source.Op == token.AND
 	}
 	return false
+}
+
+// nilExpression identifies the predeclared nil value, including parentheses.
+func (c *subsetChecks) nilExpression(expression ast.Expr) bool {
+	name, ok := ast.Unparen(expression).(*ast.Ident)
+	return ok && c.pass.TypesInfo.ObjectOf(name) == types.Universe.Lookup("nil")
 }
 
 // referenceContext lists permitted reference uses; every other Go expression context is rejected.
@@ -49,39 +59,24 @@ func (c *subsetChecks) referenceContext(expression ast.Expr) bool {
 	case *ast.BinaryExpr:
 		return parent.Op == token.EQL || parent.Op == token.NEQ
 	case *ast.AssignStmt:
-		for i, rhs := range parent.Rhs {
-			if rhs == expression && i < len(parent.Lhs) {
-				return c.localReferenceSlot(parent.Lhs[i])
-			}
+		if len(parent.Lhs) != 1 || len(parent.Rhs) != 1 || parent.Rhs[0] != expression {
+			return false
 		}
-		for _, lhs := range parent.Lhs {
-			if lhs == expression {
-				return c.localReferenceSlot(lhs)
-			}
+		name, ok := parent.Lhs[0].(*ast.Ident)
+		if !ok {
+			return false
 		}
+		if name.Name == "_" {
+			return true
+		}
+		return parent.Tok == token.DEFINE && c.pass.TypesInfo.Defs[name] != nil && ownerAddress(expression)
 	case *ast.ValueSpec:
-		for i, value := range parent.Values {
-			if value == expression && i < len(parent.Names) {
-				return c.localReferenceSlot(parent.Names[i])
-			}
-		}
+		return len(parent.Names) == 1 && len(parent.Values) == 1 && parent.Values[0] == expression && ownerAddress(expression)
+
 	case *ast.CallExpr:
 		return c.directReferenceArgument(parent, expression)
 	}
 	return false
-}
-
-// localReferenceSlot permits local pointer bindings, assignments, and explicit discards.
-func (c *subsetChecks) localReferenceSlot(expression ast.Expr) bool {
-	id, ok := ast.Unparen(expression).(*ast.Ident)
-	if !ok {
-		return false
-	}
-	if id.Name == "_" {
-		return true
-	}
-	variable, ok := c.pass.TypesInfo.ObjectOf(id).(*types.Var)
-	return ok && variable.Parent() != c.pass.Pkg.Scope() && protectedReference(variable.Type())
 }
 
 // directReferenceArgument permits an exact typed parameter on a synchronous, non-generic direct call.

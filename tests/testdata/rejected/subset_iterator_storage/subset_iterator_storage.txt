@@ -1,4 +1,4 @@
-subset_iterator_storage.go:9:16: unsupported immutable borrow: immutable callbacks are unsupported
-  source: im.FreezeSlice([]Good{{}}).All()
+subset_iterator_storage.go:18:58: unsupported immutable borrow: immutable callbacks are unsupported
+  source: frozen.All()
   type: iter.Seq2[int, rejected.Good]
   fix: call a named, non-generic function directly with a concrete immutable parameter

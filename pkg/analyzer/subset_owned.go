@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/types"
 
+	"github.com/lucasavila00/immutago/internal/checker"
 	"github.com/lucasavila00/immutago/internal/freeze"
 )
 
@@ -99,6 +100,9 @@ func (c *subsetChecks) freezeFunctionUse(expression ast.Expr) {
 		c.report(expression, "freeze functions must be called directly")
 		return
 	}
+	if !c.standaloneFreeze(call) {
+		c.report(call, "Freeze requires a standalone single binding")
+	}
 	switch c.parents[call].(type) {
 	case *ast.GoStmt, *ast.DeferStmt:
 		c.report(call, "freezing requires a synchronous call")
@@ -141,6 +145,29 @@ func (c *subsetChecks) ownedBuiltin(call *ast.CallExpr) bool {
 	switch builtin.Name() {
 	case "len", "cap", "append", "clear", "delete", "copy":
 		return c.ownedExpression(call.Args[0])
+	}
+	return false
+}
+
+// standaloneFreeze admits only a single named frozen result or an explicit standalone discard.
+func (c *subsetChecks) standaloneFreeze(call *ast.CallExpr) bool {
+	var expression ast.Expr = call
+	for {
+		parent, ok := c.parents[expression].(*ast.ParenExpr)
+		if !ok {
+			break
+		}
+		expression = parent
+	}
+	switch statement := c.parents[expression].(type) {
+	case *ast.AssignStmt:
+		if len(statement.Lhs) != 1 || len(statement.Rhs) != 1 || statement.Rhs[0] != expression {
+			return false
+		}
+		name, ok := statement.Lhs[0].(*ast.Ident)
+		return ok && (name.Name == "_" || checker.IsCollection(c.pass.TypesInfo.TypeOf(name)))
+	case *ast.ValueSpec:
+		return len(statement.Names) == 1 && len(statement.Values) == 1 && statement.Values[0] == expression
 	}
 	return false
 }

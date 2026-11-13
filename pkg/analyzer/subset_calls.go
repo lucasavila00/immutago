@@ -57,14 +57,45 @@ func (c *subsetChecks) call(call *ast.CallExpr) {
 		c.tupleTransport(call.Args[0], destinations)
 	}
 	_, static := obj.(*types.Func)
-	static = c.methodCall(call, obj, static)
+	static = c.methodCall(call, static)
+	if !static && protectedCallResults(signature.Results()) {
+		c.report(call, "dynamic calls with immutable storage are unsupported")
+	}
 	c.callArguments(call, obj, signature, static)
 
+	c.iteratorResult(call, obj)
+}
+
+// iteratorResult permits protected iterators only as the source of direct range.
+func (c *subsetChecks) iteratorResult(call *ast.CallExpr, obj types.Object) {
 	if libraryObject(obj) && obj.Name() == "All" && protectedCallable(c.pass.TypesInfo.TypeOf(call)) {
-		r, ok := c.parents[call].(*ast.RangeStmt)
-		if !ok || r.X != call {
+		r, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
+		if !ok || ast.Unparen(r.X) != call {
 			c.report(call, "immutable iterators must be consumed by direct range")
 		}
+	}
+}
+
+// protectedCallResults checks each result for protected values or callbacks.
+func protectedCallResults(results *types.Tuple) bool {
+	for i := 0; i < results.Len(); i++ {
+		result := results.At(i).Type()
+		if checker.Contains(result) || protectedCallable(result) {
+			return true
+		}
+	}
+	return false
+}
+
+// unparenthesizedParent finds the context of an expression through parentheses.
+func (c *subsetChecks) unparenthesizedParent(expression ast.Expr) ast.Node {
+	parent := c.parents[expression]
+	for {
+		wrapped, ok := parent.(*ast.ParenExpr)
+		if !ok {
+			return parent
+		}
+		parent = c.parents[wrapped]
 	}
 }
 
@@ -130,10 +161,18 @@ func callableContains(t types.Type, seen map[types.Type]bool) bool {
 // methodValue rejects bound method references that retain protected receivers.
 func (c *subsetChecks) methodValue(sel *ast.SelectorExpr) {
 	selection := c.pass.TypesInfo.Selections[sel]
-	if selection == nil || selection.Kind() != types.MethodVal || !c.protectedRoot(sel.X) {
+	if selection == nil || selection.Kind() == types.FieldVal || !c.protectedRoot(sel.X) {
 		return
 	}
-	if call, ok := c.parents[sel].(*ast.CallExpr); ok && call.Fun == sel {
+	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) {
+		c.report(sel, "immutable method expressions are unsupported")
+		return
+	}
+	if !c.exactCollectionMethod(sel) {
+		c.report(sel, "user-defined methods on protected receivers are unsupported")
+		return
+	}
+	if call, ok := c.unparenthesizedParent(sel).(*ast.CallExpr); ok && ast.Unparen(call.Fun) == sel {
 		return
 	}
 	c.report(sel, "bound immutable methods are unsupported")
@@ -208,17 +247,13 @@ func genericSignature(signature *types.Signature) bool {
 	return signature.TypeParams().Len() > 0 || signature.RecvTypeParams().Len() > 0
 }
 
-// genericMethod uses the origin because an instantiated selection can erase receiver parameters.
-func genericMethod(obj types.Object) bool {
-	function, ok := obj.(*types.Func)
-	return ok && genericSignature(function.Origin().Type().(*types.Signature))
-}
-
 // callArguments checks typed parameters and the effects of transporting each argument.
 func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signature *types.Signature, static bool) {
-	direct, _ := obj.(*types.Func)
-
 	for i, arg := range call.Args {
+		if i < signature.Params().Len() && protectedReference(signature.Params().At(i).Type()) && c.nilExpression(arg) {
+			c.report(arg, "reference operation is outside the supported allowlist")
+			continue
+		}
 		t := c.pass.TypesInfo.TypeOf(arg)
 		if !checker.Contains(t) && !protectedCallable(t) {
 			continue
@@ -226,12 +261,7 @@ func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signa
 		if !static && !libraryObject(obj) {
 			c.report(arg, "dynamic calls with immutable storage are unsupported")
 		}
-		if protectedReference(t) {
-			c.synchronous(call)
-			if libraryObject(obj) || (direct != nil && genericSignature(direct.Origin().Type().(*types.Signature))) {
-				c.report(arg, "generic borrowing calls are unsupported")
-			}
-		}
+		c.borrowArgument(call, arg, obj)
 		parameter := i
 		if signature.Variadic() && parameter >= signature.Params().Len()-1 {
 			parameter = signature.Params().Len() - 1
@@ -242,8 +272,20 @@ func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signa
 	}
 }
 
+// borrowArgument requires synchronous, concrete calls for protected references.
+func (c *subsetChecks) borrowArgument(call *ast.CallExpr, argument ast.Expr, object types.Object) {
+	if !protectedReference(c.pass.TypesInfo.TypeOf(argument)) {
+		return
+	}
+	c.synchronous(call)
+	direct, _ := object.(*types.Func)
+	if libraryObject(object) || (direct != nil && genericSignature(direct.Origin().Type().(*types.Signature))) {
+		c.report(argument, "generic borrowing calls are unsupported")
+	}
+}
+
 // methodCall checks receiver transport and resolves whether dispatch is static.
-func (c *subsetChecks) methodCall(call *ast.CallExpr, obj types.Object, static bool) bool {
+func (c *subsetChecks) methodCall(call *ast.CallExpr, static bool) bool {
 	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 	if !ok {
 		return static
@@ -252,7 +294,6 @@ func (c *subsetChecks) methodCall(call *ast.CallExpr, obj types.Object, static b
 	if selection == nil {
 		return static
 	}
-	c.pointerReceiver(call, selector, selection, obj)
 	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
 		static = false
 	}
@@ -260,24 +301,4 @@ func (c *subsetChecks) methodCall(call *ast.CallExpr, obj types.Object, static b
 		c.synchronous(call)
 	}
 	return static
-}
-
-// pointerReceiver checks implicit pointer borrows made by direct method calls.
-func (c *subsetChecks) pointerReceiver(call *ast.CallExpr, selector *ast.SelectorExpr,
-	selection *types.Selection, obj types.Object) {
-	method, _ := selection.Obj().Type().(*types.Signature)
-	if method == nil || method.Recv() == nil {
-		return
-	}
-	_, pointer := method.Recv().Type().Underlying().(*types.Pointer)
-	if !pointer || !c.protectedRoot(selector.X) {
-		return
-	}
-	c.synchronous(call)
-	if genericMethod(selection.Obj()) && !libraryObject(obj) {
-		c.report(call, "generic borrowing calls are unsupported")
-	}
-	if !checker.Contains(c.pass.TypesInfo.TypeOf(selector.X)) {
-		c.report(call, "scalar interior pointer methods are unsupported")
-	}
 }

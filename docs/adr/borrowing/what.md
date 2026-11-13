@@ -18,14 +18,15 @@ borrows the whole owner, including its other fields.
 
 ## Explicit boundaries
 
-References stay local or pass to direct, typed, synchronous, non-escaping readers.
+References have fixed local declarations or enter named, typed, synchronous
+reader functions. Only listed `im` receiver methods are accepted.
 Reject reference returns, scalar interior pointers, pointer indirection and
 conversion, closure captures, interface/callback transport, reference storage,
-and generic borrowing helpers. Reject deferred or asynchronous borrowed calls.
+and generic borrowing helpers. Reject reference copies and rebinding, protected
+multiple assignments, nested Freeze, and protected select communication operands.
 
 Permit native containers of marked values only as checked exclusive local
 builders. Freeze consumes their handles into read-only collections without
 copying; Clone returns independent mutable storage. Retain direct value iteration. Marked fields remain recursively immutable.
 
-The checker enforces these boundaries. Unsupported code fails; it is never
-silently skipped. There are no suppression directives or trust annotations.
+Unmatched source forms fail. There are no suppression directives or trust annotations.

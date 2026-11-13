@@ -17,6 +17,13 @@ mutable copies. Negative fixtures cover use after transfer, aliases, escapes,
 branch joins, and loops. The runtime fixture checks the frozen values before
 and after edits to their clones.
 
+The explicit subset fixtures check fixed local references, named readers, and
+reference reads through type aliases and parentheses. They reject reference
+copies and assignments, user-defined methods (including promoted methods),
+multiple assignments with protected storage, and nested Freeze calls. Select
+fixtures reject protected communication clauses and permit checked case bodies.
+They include a receive that writes its second result into a consumed builder.
+
 Each source file has an adjacent `.txt` snapshot, as in TGo. Snapshots preserve
 exact diagnostic messages, source lines, and columns. Accepted sources have
 empty snapshots. CLI and `go vet` must produce the same per-source diagnostics.

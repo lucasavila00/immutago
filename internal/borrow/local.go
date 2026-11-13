@@ -13,29 +13,19 @@ import (
 	"golang.org/x/tools/go/cfg"
 )
 
-// assignment changes a pointer binding after all right-hand sides have been evaluated.
-type assignment struct {
-	target *types.Var
-	source ast.Expr
-}
-
 // operation separates uses from definitions and writes at one source location.
 type operation struct {
 	uses        map[*types.Var]token.Pos
-	definitions []assignment
+	definitions []*types.Var
 	writes      []ast.Expr
 }
-
-// bindings maps local pointer variables to all owners reaching the current point.
-type bindings map[*types.Var]map[*types.Var]bool
 
 // local owns one function's finite source-level control-flow analysis.
 type local struct {
 	pass       *analysis.Pass
 	operations []operation
 	graph      flow.Graph
-	pointers   map[*types.Var]bool
-	parameters bindings
+	pointers   map[*types.Var]*types.Var
 	reported   map[token.Pos]bool
 }
 
@@ -65,17 +55,16 @@ func Check(pass *analysis.Pass) error {
 
 // checkFunction lowers one body and checks shared permissions and live whole-owner loans.
 func checkFunction(pass *analysis.Pass, body *ast.BlockStmt) {
-	l := &local{pass: pass, pointers: make(map[*types.Var]bool), parameters: make(bindings),
+	l := &local{pass: pass, pointers: make(map[*types.Var]*types.Var),
 		reported: make(map[token.Pos]bool)}
 	l.build(cfg.New(body, func(*ast.CallExpr) bool { return true }))
 	if len(l.pointers) == 0 && !l.hasWrites() {
 		return
 	}
-	incoming := l.reaching()
 	live := l.liveness()
 	for point, op := range l.operations {
 		for _, expression := range op.writes {
-			l.checkWrite(point, expression, incoming[point], live)
+			l.checkWrite(point, expression, live)
 		}
 	}
 }

@@ -8,4 +8,4 @@ type Good struct {
 	Array [2]int
 }
 
-func (value Good) Mutate() { value.Value = 1 }
+func Mutate(value Good) { value.Value = 1 }
