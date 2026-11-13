@@ -6,7 +6,7 @@ type NamedInts struct {
 	im.Immut
 	Values [2]int
 }
-type Plain[T ~int | ~string] struct{ Value T }
+type Plain[T any] struct{ Value T }
 
 func boxScalar[T ~int | ~string](value T) *T { return &value }
 func ScalarPointerCopy() {

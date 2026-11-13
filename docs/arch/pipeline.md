@@ -32,8 +32,7 @@ are resolved. `Contains` follows fields and container element types to find
 protected storage. It uses a visited-type map to stop recursive traversal.
 
 [The structural proof](../../internal/checker/proof.go) creates a graph for
-each query. A node identifies a Go type and whether the type is being checked
-as a stored value or a constraint. Reverse edges point from a component to its
+each query. A node identifies a resolved Go type. Reverse edges point from a component to its
 owners. A failed component enters a queue; failure then propagates to owners.
 Recursive components start provisionally valid. A reachable invalid field
 causes the containing recursive structure to fail too.

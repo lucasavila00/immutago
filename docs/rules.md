@@ -123,10 +123,10 @@ The fixed `im` generic types and functions remain supported:
 values := im.FreezeSlice([]Point{{X: 1}})
 ```
 
-Ordinary generic Go code with scalar types remains supported. An unmarked
-generic field must prove that it excludes protected storage:
-`type Plain[T ~int] struct { Value T }` is allowed;
-`type Plain[T any] struct { Value T }` is rejected.
+Ordinary generic Go code remains supported when it does not handle protected
+storage. `type Plain[T any] struct { Value T }` is allowed with scalar type
+arguments, such as `Plain[int]`. A user generic type, alias, or function cannot
+be instantiated with a protected type argument, such as `Plain[Point]`.
 
 For example:
 
