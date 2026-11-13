@@ -41,6 +41,6 @@ copies that storage for further edits. There are no persistent update trees
 or mutable borrows. The checker recognizes the exact library types; it does
 not prove arbitrary storage libraries with native reference fields.
 
-The type proof graph, builder checks, and dependency facts remain necessary.
-A smaller source language does not replace those checks. See the
-[review requirements](../reviewer-focus.md) before extending it.
+Each accepted operation must pass both the source-form match and its ownership
+checks. Dependency failures must reach the consumer. See the
+[review requirements](../reviewer-focus.md) before changing these checks.

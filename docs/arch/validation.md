@@ -67,8 +67,7 @@ receivers, iterator bindings, and tuple results around each affected form.
 
 Runtime tests must check that Freeze reuses original storage and that Clone
 creates independent storage. Allocation tests separate native construction
-from Freeze, reads, and direct iteration. Keep the same generated loan programs
-when comparing checker memory. See [collection costs](../performance.md) and
+from Freeze, reads, and direct iteration. See [collection costs](../performance.md) and
 [reviewer requirements](../reviewer-focus.md).
 
 ## Regression cases to retain
@@ -88,11 +87,10 @@ Do not repair a regression by adding only its spelling to a forbidden list.
 Match the allowed form and reject its alternatives. Keep an accepted nearby
 example so the repair does not remove a documented operation.
 
-## Scope and cost
+## Scope
 
 The checker retains whole-owner loans, recursive type graphs, exclusive builder
 checks, and dependency facts. It does not infer mutable borrows, escaping
 reference effects, or pointer-return origins. See the [rules](../rules.md) for
 the complete supported forms and [ownership analysis](ownership.md) for the
-implementation. Measured memory results and their limits are recorded once in
-[costs](../performance.md#checker-memory).
+implementation.

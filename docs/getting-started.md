@@ -6,20 +6,22 @@ Immutago adds an analyzer and the `im` collection package to ordinary Go.
 It does not change the compiler. An ordinary `go build` does not run the
 immutability checks.
 
-## Add it to a project
+## Create an example module
 
-Use a Go toolchain that meets the version in [go.mod](../go.mod). In your Go
-module, add the library and install the matching checker:
+Use a Go toolchain that meets the version in [go.mod](../go.mod). Create a new
+folder so the example does not conflict with an existing package:
 
 ```sh
+mkdir immutago-example
+cd immutago-example
+go mod init example.com/immutago-example
 go get github.com/lucasavila00/immutago@latest
 go install github.com/lucasavila00/immutago/cmd/immutago@latest
 ```
 
 Put Go's binary installation directory on `PATH`. For repeatable builds, use
 the same version for the library and checker and record that version in your
-build configuration. From this repository, `make build` produces
-`bin/immutago` (`bin/immutago.exe` on Windows).
+build configuration. For a source checkout, see [development](development.md).
 
 ## Build, borrow, and freeze
 
@@ -96,7 +98,12 @@ These are introductory examples, not the full language. The
 [language rules](rules.md) list all supported reference, statement, and builder
 forms. Rejected examples there are not exhaustive.
 
-## Run checks in your build
+## Add checks to an existing project
+
+Add the library to the existing module with `go get` and install the same
+checker version as above. Add the analyzer command to the project's CI before
+accepting code changes. The example module is only for learning; do not copy
+its `main.go` into an existing package unchanged.
 
 Run `immutago ./...` from the consumer module to check its packages. The driver
 also checks dependencies and reports relevant failures in imported code.
@@ -109,7 +116,8 @@ You can use the same binary with `go vet`:
 go vet -vettool=/absolute/path/to/immutago ./...
 ```
 
-Use the platform's absolute path to the binary. For automation, the normal CLI
+Use the platform's absolute path to the binary. Run `immutago -help` for driver
+flags. For automation, the normal CLI
 reports failure when it finds errors. The standard driver's `-json` mode can
 exit successfully with diagnostics, so do not use its exit status alone as a
 pass/fail check.

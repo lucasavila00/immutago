@@ -27,7 +27,7 @@ Freeze transfers a native map or slice to a read-only collection without copying
 | Work on the repository as an agent | [Working rules](../AGENTS.md) |
 
 For integration, use the generated [analyzer API](../pkg/analyzer/readme.md)
-and [command reference](../cmd/immutago/readme.md). The
+and [CLI instructions](getting-started.md#add-checks-to-an-existing-project). The
 [Rust compiler source notes](../third_party/rustc/README.md) identify the adapted
 algorithms and their licenses.
 

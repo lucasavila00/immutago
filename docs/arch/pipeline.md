@@ -56,10 +56,10 @@ rule for that shape. An unmatched shape is an error. A broad match such as
 "this is a method call" is not enough to accept the operation.
 
 For example, a fixed reference declaration matches `p := &owner` only when `p`
-is new, `owner` is an owned local or its marked child, and the declaration has
+is new, `owner` is an owned local or its protected field, and the declaration has
 one destination. `q := p`, `p = &other`, and iterator-produced references do not
 match that shape. They must fail instead of reaching the loan analysis as
-unclassified pointer origins.
+unclassified pointer origins. See the [reference origins](../rules.md#what-you-can-do-with-a-reference).
 
 [The subset checker](../../pkg/analyzer/subset.go) uses an AST parent map to
 check expression and statement context. [Call checks](../../pkg/analyzer/subset_calls.go)
