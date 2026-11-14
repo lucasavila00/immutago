@@ -41,9 +41,17 @@ The checker knows that `limit` cannot save or return `config` because Config is
 Scoped. Another function that receives `*Config` gets the same rule. Renaming
 the parameter does not change it.
 
-Both markers also require immutable fields. A read-only field alone would not
-be enough: another pointer could still change its target. The checker proves
-the target type and rejects writes through every checked use.
+The marker selects the pointer rule:
+
+- `im.Shared`: callers can store or return pointers.
+- `im.Scoped`: callers can read through pointers but cannot save or return them.
+
+For either marker, the checker requires:
+
+- Immutable fields, including nested fields and array elements.
+- Immutable targets for stored pointers, so another pointer cannot change them.
+- Allowed key and element types in frozen collections.
+- No writes through another variable or a receiver method.
 
 This choice gives us one rule to declare, read, and check. The checker uses Go
 type identity instead of a separate pointer policy for each variable and
