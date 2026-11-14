@@ -30,8 +30,7 @@ func main() {
 The checker rejects aliases that could change the frozen data.
 Keys and elements must use the [allowed types](common-forms.md#markers-and-stored-types).
 
-The tables below and the [common forms](common-forms.md) give the complete list
-of allowed operations. Rejected examples are not exhaustive.
+Use these forms with the [common forms](common-forms.md).
 
 ## Build before freezing
 
@@ -40,7 +39,7 @@ also apply to Go containers whose keys or elements contain protected storage.
 Keep the slice or map in one local variable until Freeze. Clone copies the
 slice or map; pointer elements still point to the same read-only objects.
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | Declare from make, literal, zero, or Clone | `values := make([]int, 2)`, `values := []int{1}`, `var values []int`, `values := frozen.Clone()` |
 | Initialize with bare `nil` | `var values []int = nil`, `var scores map[string]int = nil` |
@@ -58,14 +57,14 @@ slice or map; pointer elements still point to the same read-only objects.
 
 Fresh inputs can go directly into Freeze; the same forms work for maps:
 
-| Input | Example |
+| Fresh Freeze inputs — exhaustive | Example |
 | --- | --- |
 | make | `frozen := im.FreezeSlice(make([]int, 2))` |
 | Literal | `frozen := im.FreezeSlice([]int{1})` |
 | Bare nil | `frozen := im.FreezeSlice[int](nil)` |
 | Clone | `next := im.FreezeSlice(frozen.Clone())` |
 
-| Rejected example | Replacement |
+| Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `alias := values`, `values[1:]`, `&values[0]` | Read/copy elements; use Clone for independent mutable storage. |
 | `values := []int(nil)` or `scores := map[string]int(nil)` | `var values []int` or `var scores map[string]int` |
@@ -87,7 +86,7 @@ rules if you never freeze it.
 Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 `values := im.FrozenSlice[int]{}`; the same forms work for `im.FrozenMap`.
 
-| Allowed method | Example |
+| Allowed methods — exhaustive | Example |
 | --- | --- |
 | Length | `n := frozen.Len()` |
 | Slice element | `value := frozen.At(i)` |
@@ -101,7 +100,7 @@ Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 - For iterators with protected values, use direct `range frozen.All()`.
 - Other iterators, such as those over `int` or `[2]int`, use ordinary Go rules.
 
-| Rejected example | Replacement |
+| Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `read := frozen.At` | `value := frozen.At(0)` |
 | `im.FrozenSlice[int].At(frozen, 0)` | `frozen.At(0)` |

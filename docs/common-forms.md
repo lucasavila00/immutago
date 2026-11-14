@@ -5,8 +5,7 @@ These forms apply to:
 - Structs that embed `im.Shared` or `im.Scoped`.
 - `im.FrozenSlice` and `im.FrozenMap` values.
 
-Combine them with each type's forms. The lists are complete; unlisted operations
-are rejected. Rejected examples are not exhaustive. [Owner](owner.md) has its own forms.
+Combine them with each type's forms. [Owner](owner.md) has its own forms.
 
 ## Markers and stored types
 
@@ -21,11 +20,11 @@ type SharedLink struct { im.Shared; P *SharedPoint }
 ```
 
 Use the types below for struct fields and frozen collection keys and elements.
-This list is complete. It also applies to each nested field, key, and element.
+They also apply to each nested field, key, and element.
 Service start arguments have one separate [unchecked dependency form](service-forms.md#concurrent-dependencies).
 An argument struct with a dependency field is not an allowed stored type.
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | Boolean, integer, float, complex, or string | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
 | Defined scalar | `type Count int` |
@@ -40,9 +39,7 @@ An argument struct with a dependency field is not an allowed stored type.
 | Service Ref | `supervise.Ref[ConfigLoader]`; see [Supervised services](services.md). |
 | Trusted handle | `im.UncheckedValue[baked]`; see [Unchecked immutable values](unchecked-values.md). |
 
-Rejected type examples (**not exhaustive**):
-
-| Rejected form | Replacement |
+| Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `type Bad struct { Mark im.Shared }` | `type Good struct { im.Shared }` |
 | `type Bad struct { *im.Shared }` | Embed `im.Shared` by value. |
@@ -53,16 +50,14 @@ Rejected type examples (**not exhaustive**):
 | `type Bad struct { im.Scoped; P *ScopedPoint }` | `type Good struct { im.Scoped; P ScopedPoint }` |
 | `type Counts [2]int` as a stored type | `type Counts struct { im.Shared; Values [2]int }` |
 
-Allowed generic forms:
+### Generics
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | Fixed im types and functions | `im.FrozenSlice[SharedPoint]`, `im.FreezeSlice([]SharedPoint{})` |
 | User generics without protected storage | `type Plain[T any] struct { Value T }`, used as `Plain[int]` |
 
-Rejected generic examples (**not exhaustive**):
-
-| Rejected form | Replacement |
+| Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `type Box[T any] struct { im.Shared; Value T }` | `type Box struct { im.Shared; Value SharedPoint }` |
 | `Plain[SharedPoint]` or `identity(point)` with generic `identity` | Use a concrete marked struct or copy `point` directly. |
@@ -79,7 +74,7 @@ q := p
 p = &SharedPoint{X: 2} // q still observes X == 1.
 ```
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | Zero value or literal | `var point SharedPoint`, `SharedPoint{X: 1}`, `[2]SharedPoint{}` |
 | Copy a value, field, or array element | `other := point`, `x := point.X`, `child := points[i]` |
@@ -100,7 +95,7 @@ p = &SharedPoint{X: 2} // q still observes X == 1.
 These forms apply to both `*SharedPoint` (`im.Shared`) and
 `*ScopedPoint` (`im.Scoped`).
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | Declare a zero or nil pointer | `var p *SharedPoint`, `var p *ScopedPoint = nil` |
 | Create a new object | `p := &SharedPoint{X: 1}`, `p := new(SharedPoint)` |
@@ -115,9 +110,7 @@ These forms apply to both `*SharedPoint` (`im.Shared`) and
 - Pointer targets must be structs with `im.Shared` or `im.Scoped`.
 - Construct pointers with the listed `new` or `&T{...}` forms.
 
-Rejected pointer examples (**not exhaustive**):
-
-| Rejected example | Replacement |
+| Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `point.X = 2`, `p.X = 2`, `*p = SharedPoint{}` | `point = SharedPoint{X: 2}` or `p = &SharedPoint{X: 2}` |
 | `p := &point` | `p := new(point)` |
@@ -147,10 +140,10 @@ group.SharedPoint.XValue()
 ```
 
 The receiver expression must have exactly the type in the method declaration.
-These forms are complete. Combine them with the construction, read, argument,
-result, and statement forms on this page.
+Combine these forms with the construction, read, argument, result, and statement
+forms on this page.
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | Value receiver on a marked struct | `func (p SharedPoint) XValue() int { return p.X }` |
 | Pointer receiver on a marked struct | `func (p *ScopedPoint) ReadX() int { return p.X }` |
@@ -166,9 +159,7 @@ result, and statement forms on this page.
 | Either marked struct | Cannot change protected fields or have generic receivers. |
 | Service or fixed library type | Separate listed API forms. |
 
-Rejected examples (**not exhaustive**):
-
-| Rejected form | Replacement |
+| Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `point.ReadX()` adds an implicit address | Construct `p := &SharedPoint{X: 3}`, then call `p.ReadX()`. |
 | `p.XValue()` adds an implicit dereference | `(*p).XValue()` |
@@ -182,7 +173,7 @@ Rejected examples (**not exhaustive**):
 
 Use the operations above inside these statement forms:
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | Declare one variable or assign one destination | `var value SharedPoint`, `value := SharedPoint{X: 1}`, `value = SharedPoint{X: 2}` |
 | Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
@@ -207,9 +198,7 @@ Use the operations above inside these statement forms:
 - Named functions need the exact parameter type, such as `func read(p *SharedPoint) int`.
   Call directly, without `go` or `defer`.
 
-Rejected statement and call examples (**not exhaustive**):
-
-| Rejected example | Replacement |
+| Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `point, found := makePair()` | Return a marked result struct and bind it to one variable. |
 | `value, p = SharedPoint{}, &SharedPoint{}` | Use two statements. |
