@@ -36,36 +36,88 @@ func main() {
 
 Methods use ordinary Go. Use locks where needed, as in `Add` above.
 
-## Not checked
+## Package variables
 
-The checker controls what goes into and out of a process: start arguments,
-method parameters and results, and process pointers. It does not check package
-variables or the functions that use them. Two processes can share a mutable
-global, and the checker accepts the program:
+A process method (any method with a process receiver, including `Run`) cannot
+use a package variable that another goroutine can change. This rule also
+applies to the functions that the method calls. The checker accepts a direct
+use or a call only in the forms below. The list is complete; it rejects all
+other uses of package variables in process methods.
 
-```go
-var seen = map[string]int{}
+| Allowed form | Example |
+| --- | --- |
+| Use a package `im.Owner` variable of any package with the [Owner forms](owner.md) | `var rates im.Owner[Rates]`; `rates.Store(&Rates{Base: 1})`, `r := rates.Load()` |
+| Read an unexported variable of the same package whose type is an allowed stored type, when only its declaration and `init` functions change it | `var defaultBase = 10`; `return r.base * defaultBase` |
+| Use a constant | `const maxStep = 3`; `return min(i, maxStep)` |
+| Call or name a function or method whose body, and the bodies of its static callees in checked packages, use only the variables above | `func publishRates(base int) { rates.Store(&Rates{Base: base}) }`; `publishRates(r.base)` |
 
-type Counter struct{ proc.Process[proc.None] }
+A variable is changed outside its declaration if code outside `init` functions
+assigns it or one of its elements or fields, uses `++` or `--` on it, assigns it
+in a `for ... = range` statement, takes its address with `&`, slices it when it
+is an array, or calls a pointer method on it. These are the Go operations that
+change or alias a variable.
 
-func (*Counter) Run(ctx context.Context) {
-    for ctx.Err() == nil {
-        seen["hits"]++ // Reader reads the same map: a data race
-    }
-}
+The checker looks at a function, or a concrete method, that the process method
+names directly: a call, `go` or `defer`, or a function value such as
+`f := record`. Each function of a checked package carries one fact: whether its
+body, or a function it names, uses a rejected variable. Code in a function
+literal counts as code of the function that contains it.
 
-type Reader struct{ proc.Process[proc.None] }
+Rejected examples are not exhaustive:
 
-func (*Reader) Run(ctx context.Context) {
-    for ctx.Err() == nil {
-        _ = seen["hits"]
-    }
-}
+| Rejected example | Allowed replacement |
+| --- | --- |
+| `var seen = map[string]int{}`; `seen["hits"]++` in `Run` | Keep the map in a process field and give the other processes an exported method. |
+| `var seen = map[string]int{}`; `func record(k string) { seen[k]++ }`; `record("hits")` in `Run` | Keep the map in a process field; call `record` from that process only, with the map as a parameter. |
+| `func outer() { record("a") }`; `outer()` in a method | The same: the checker follows the chain of static calls. |
+| `var mu sync.Mutex` and `var table map[string]int`, used under the lock | Keep both in one process. |
+| `var Limit = 10` (exported), `state.Limit` from another package | Pass the value in the start arguments: `proc.Start[RateKeeper](root, Args{Limit: 10})`. |
+| `var retries = 3` with `func set(n int) { retries = n }` | Pass the value in the start arguments, or publish it through an `im.Owner` field. |
+| `os.Stdout`, `os.Args`, `http.DefaultClient`, `io.EOF` | No allowed form yet for these dependencies. [Issue #52](https://github.com/lucasavila00/immutago/issues/52) tracks explicit start arguments for them. |
+| `var errMissing error = code("missing")` | `const errMissing code = "missing"`, where `code` is a defined string type with an `Error` method. |
+| `p := &defaultBase` in a method | `v := defaultBase` |
+
+Diagnostics name the variable, or the function and the variable it reaches:
+
+```text
+process method uses package variable seen, whose type map[string]int is not an allowed stored type; ...
+process method calls record, which uses package variable seen; ...
 ```
 
-`go test -race` finds this race; the checker does not. Keep shared state in one
-process and publish it through an `im.Owner` field, or protect the global with a
-lock.
+## Not checked
+
+The checker does not follow two kinds of calls:
+
+- A call into a package that the checker does not check (see the
+  [package boundary](rules.md#package-boundary)): the standard library,
+  third-party packages, and your packages that do not use `im` or `proc`.
+  `slog.Info("started")` and `log.Printf(...)` pass, and so does
+  `plain.Remember("a")` where `plain` has no `im` or `proc` use and
+  `func Remember(k string) { names[k] = k }` changes a package map. A direct
+  use of a variable of these packages, such as `os.Stdout`, is still rejected.
+- A call through an interface method. The concrete method is not known:
+
+  ```go
+  type recorder interface{ record(string) }
+  type mapRecorder struct{}
+  func (mapRecorder) record(k string) { seen[k]++ }
+
+  func (w *Worker) Run(ctx context.Context) {
+      var r recorder = mapRecorder{}
+      r.record("hits") // passes: the checker does not know which record runs
+  }
+  ```
+
+  A function value is followed where checked code names the function or
+  contains the function literal. A function value that comes from an interface
+  method or an unchecked package is not followed.
+
+Package initialization is trusted: do not start a process from a package
+variable initializer or an `init` function, because those can still change the
+variables that the process reads.
+
+These limits are not a way to share state. `go test -race` finds a race through
+them; the checker does not.
 
 ## Allowed forms
 

@@ -32,7 +32,7 @@ earlier loaded objects remain immutable. Go's garbage collector manages lifetime
 A [process](../../pkg/proc/proc.go) is mutable and is not a marked struct. The
 classifier treats `proc.Process[A]` as opaque, as it treats `im.Owner`, so the
 fields of a process are not protected storage. The
-[process matcher](../../pkg/analyzer/process.go) applies four rules:
+[process matcher](../../pkg/analyzer/process.go) applies five rules:
 
 - A process value or pointer is valid only as the receiver variable in a method
   of that process or as a direct `PID.Proc()` result. The receiver can select
@@ -44,14 +44,20 @@ fields of a process are not protected storage. The
 - Each parameter and result of an exported method other than `Run` must pass the
   [type proof](../../internal/checker/proof.go). A PID is a leaf of that proof.
 - The type argument of `proc.Process` must pass the same proof.
+- A process method cannot use a rejected package variable or name a function
+  that carries a [variable use fact](../../pkg/analyzer/variable_uses.go). The
+  [variable check](../../pkg/analyzer/process_variables.go) accepts `im.Owner`
+  variables and unexported variables of allowed stored types that only package
+  initialization changes. It finds changed variables with one walk per package.
 
 A process is not an Owner holder; the holder pointer rules do not apply to it.
 Methods with a process receiver are exempt from the rule against user-defined
-methods with protected storage, because the four rules leave a direct static
+methods with protected storage, because the rules leave a direct static
 call as the only use of such a method. The runtime creates a new value from the
 same arguments after each restart delay and stores it in the same PID.
 These rules do not check the origin or destination of mutable field handles
-in ordinary method bodies; they do not prove memory isolation.
+in ordinary method bodies, calls into unchecked packages, or interface method
+calls; they do not prove memory isolation.
 
 ## Native builders
 
