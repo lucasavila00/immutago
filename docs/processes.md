@@ -44,7 +44,7 @@ func (c *Counter) Add() int {
 }
 
 func main() {
-    root := proc.NewRoot()
+    root := proc.NewRoot(nil)
     counter := proc.Start[Counter](root, 1)
     fmt.Println(counter.Proc().Add()) // 1
     <-root.Stop()
@@ -119,18 +119,18 @@ first, and passes the failure to the parent supervisor. The parent restarts the
 subtree with the same retry rule. If the failure reaches the root, the program
 panics with the last panic value.
 
-A supervisor recovers these panics, so nothing logs them by default. To see
-them, pass `proc.OnPanic` to `NewRoot`. Its function gets the value and the
-stack of each panic that a supervisor of the tree recovers, before the restart
-delay. A nested supervisor that escalates is such a panic of its parent.
+Pass a reporting function to `proc.NewRoot`, or pass `nil` to disable reports.
+The function receives the value and stack of each recovered panic before the
+restart delay. Nested supervisors use the same function. An escalation from a
+nested supervisor is reported as a panic of its parent.
 The function can run concurrently for different children. The supervisor waits
 for it to return; a panic in the function is not recovered. Do not wait for
 the same supervisor to stop from inside the function.
 
 ```go
-root := proc.NewRoot(proc.OnPanic(func(value any, stack []byte) {
+root := proc.NewRoot(func(value any, stack []byte) {
     log.Printf("process panicked: %v\n%s", value, stack)
-}))
+})
 ```
 
 ## Stop

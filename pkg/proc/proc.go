@@ -17,7 +17,7 @@
 // panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and
 // escalates the panic to the parent supervisor, which restarts the subtree with
 // the same rule. At the root supervisor, the escalation panics again with the
-// last panic value, and the program exits. OnPanic reports each recovered panic.
+// last panic value, and the program exits. NewRoot accepts a function to report recovered panics.
 //
 // Stop cancels each Run context and waits for Run to return. Cancellation is
 // cooperative; Run must observe its context. Stop does not wait for direct
@@ -96,29 +96,17 @@ func (p PID[T]) Proc() *T {
 // Reserve returns a PID that is not started. Proc panics until StartReserved starts it.
 func Reserve[T any]() PID[T] { return PID[T]{value: new(atomic.Pointer[T])} }
 
-// Option configures a root supervisor.
-type Option func(*Supervisor)
-
-// OnPanic makes report receive the value and the stack of every panic that a
-// child of a supervisor in the tree recovers, before its restart delay. A
-// nested supervisor that escalates is such a child of its parent.
-// Calls can run concurrently. The supervisor waits for report to return.
-// A panic in report is not recovered.
-func OnPanic(report func(value any, stack []byte)) Option {
-	return func(s *Supervisor) { s.report = report }
-}
-
-// NewRoot returns a root supervisor.
-func NewRoot(options ...Option) *Supervisor {
-	return root(func(value any) { panic(value) }, options...)
+// NewRoot returns a root supervisor. Pass nil to disable panic reports.
+// Otherwise, report receives each recovered panic value and stack before the restart delay.
+// Nested supervisors inherit report. Calls can run concurrently, and the supervisor waits
+// for report to return. A panic in report is not recovered.
+func NewRoot(report func(value any, stack []byte)) *Supervisor {
+	return root(func(value any) { panic(value) }, report)
 }
 
 // root returns a root supervisor that calls exit with an escalated panic value.
-func root(exit func(any), options ...Option) *Supervisor {
-	s := &Supervisor{stopped: make(chan struct{})}
-	for _, option := range options {
-		option(s)
-	}
+func root(exit func(any), report func(value any, stack []byte)) *Supervisor {
+	s := &Supervisor{stopped: make(chan struct{}), report: report}
 	go func() {
 		if value, _, failed := attempt(context.Background(), s.serve, false); failed {
 			exit(value)

@@ -10,7 +10,7 @@ Package proc runs supervised processes.
 
 A process is a mutable struct that embeds Process\[A\] and has a Run\(context.Context\) method with a pointer receiver. A is the immutable argument type of the process; use None for a process without arguments. Start creates a new process value, gives it the arguments, runs Run in a new goroutine, and returns its PID. Callers keep the PID and call exported methods directly on the process pointer from PID.Proc. The immutago analyzer proves that these methods take and return only immutable values and PIDs. For processes that need each other's PIDs, Reserve a PID first and start it later with StartReserved.
 
-A supervisor runs its children until Stop. If Run returns, the process ends. If Run panics, the supervisor waits 1 s, doubling the delay for each restart in the last 5 minutes. It then creates a new process value from the same arguments, stores it in the same PID, and calls Run. Calls during the delay still use the old value; calls already in progress finish on that value. A sixth panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and escalates the panic to the parent supervisor, which restarts the subtree with the same rule. At the root supervisor, the escalation panics again with the last panic value, and the program exits. OnPanic reports each recovered panic.
+A supervisor runs its children until Stop. If Run returns, the process ends. If Run panics, the supervisor waits 1 s, doubling the delay for each restart in the last 5 minutes. It then creates a new process value from the same arguments, stores it in the same PID, and calls Run. Calls during the delay still use the old value; calls already in progress finish on that value. A sixth panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and escalates the panic to the parent supervisor, which restarts the subtree with the same rule. At the root supervisor, the escalation panics again with the last panic value, and the program exits. NewRoot accepts a function to report recovered panics.
 
 Stop cancels each Run context and waits for Run to return. Cancellation is cooperative; Run must observe its context. Stop does not wait for direct method calls. Process methods must synchronize their own shared state.
 
@@ -35,22 +35,6 @@ type None struct {
     im.Shared
 }
 ```
-
-## type Option
-
-Option configures a root supervisor.
-
-```go
-type Option func(*Supervisor)
-```
-
-### func OnPanic
-
-```go
-func OnPanic(report func(value any, stack []byte)) Option
-```
-
-OnPanic makes report receive the value and the stack of every panic that a child of a supervisor in the tree recovers, before its restart delay. A nested supervisor that escalates is such a child of its parent. Calls can run concurrently. The supervisor waits for report to return. A panic in report is not recovered.
 
 ## type PID
 
@@ -121,10 +105,10 @@ type Supervisor struct {
 ### func NewRoot
 
 ```go
-func NewRoot(options ...Option) *Supervisor
+func NewRoot(report func(value any, stack []byte)) *Supervisor
 ```
 
-NewRoot returns a root supervisor.
+NewRoot returns a root supervisor. Pass nil to disable panic reports. Otherwise, report receives each recovered panic value and stack before the restart delay. Nested supervisors inherit report. Calls can run concurrently, and the supervisor waits for report to return. A panic in report is not recovered.
 
 ### func StartSupervisor
 
