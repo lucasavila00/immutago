@@ -1,6 +1,6 @@
 # Get started
 
-[Documentation](README.md) · [Language rules](rules.md) · [Collection API](../pkg/im/readme.md)
+[Documentation](README.md) · [Language guide](rules.md) · [API](../pkg/im/readme.md)
 
 In a Go module, add the library and install the checker:
 
@@ -42,9 +42,10 @@ The program prints `alice 10`. The checker makes `User` fields read-only.
 `FreezeMap` transfers the map's storage without a copy; use `user.Scores` to
 read it after Freeze.
 
-Use `im.Scoped` when pointers must not be stored or returned. Both markers
-prohibit field writes from construction. See the [complete rules](rules.md)
-for pointer targets, calls, statements, and builder operations.
+Use [Scoped](scoped.md) to restrict reference retention. Existing Scoped pointers
+cannot be stored or returned; [Owner](owner.md) publishes fresh Scoped objects.
+Both markers prohibit field writes from construction. The [language guide](rules.md)
+links the complete object, collection, and common source forms.
 
 ## Project checks
 
