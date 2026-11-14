@@ -258,3 +258,30 @@ func TestChildrenOfProcessThatDoesNotRun(t *testing.T) {
 		expectEvents(t)
 	})
 }
+
+// returning is a process whose Run returns at once.
+type returning struct{ Process[None] }
+
+// Run returns at once.
+func (*returning) Run(context.Context) {}
+
+// TestReturnedChildrenAreRemoved verifies that a supervisor removes children whose Run returned.
+func TestReturnedChildrenAreRemoved(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		root := NewRoot()
+		Start[first](root, None{})
+		for range 1000 {
+			Start[returning](root, None{})
+		}
+		synctest.Wait()
+		root.mu.Lock()
+		entries := len(root.children)
+		root.mu.Unlock()
+		if entries != 1 {
+			t.Fatalf("root has %d entries, want 1", entries)
+		}
+		takeEvents()
+		<-root.Stop()
+		expectEvents(t, "stop first")
+	})
+}

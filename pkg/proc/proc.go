@@ -9,7 +9,7 @@
 // immutable values and PIDs. For processes that need each other's PIDs, Reserve
 // a PID first and start it later with StartReserved.
 //
-// A supervisor runs its children until Stop. If Run returns, the process ends.
+// A supervisor runs its children until Stop. If Run returns, the process ends, and the supervisor removes it.
 // If Run panics, the supervisor waits 1 s, doubling the delay for each restart
 // in the last 5 minutes. It then creates a new process value from the same
 // arguments, stores it in the same PID, and calls Run. Calls during the delay
@@ -290,8 +290,14 @@ func (s *Supervisor) release(c *child) {
 	s.mu.Unlock()
 	stop()
 	<-done
+	s.forget(c)
+}
+
+// forget prevents another launch of a child and removes it.
+func (s *Supervisor) forget(c *child) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	c.run = nil
 	// Keep the child order stable for any halt already reading a snapshot.
 	s.children = slices.DeleteFunc(slices.Clone(s.children), func(other *child) bool { return other == c })
 }
@@ -302,8 +308,14 @@ func (s *Supervisor) launch(c *child) {
 		return
 	}
 	ctx, cancel := context.WithCancel(s.ctx)
-	c.stop, c.done = cancel, make(chan struct{})
-	go watch(ctx, c.run, s.failure, c.done)
+	done := make(chan struct{})
+	c.stop, c.done = cancel, done
+	go func() {
+		if watch(ctx, c.run, s.failure) {
+			s.forget(c)
+		}
+		close(done)
+	}()
 }
 
 // serve runs one incarnation of s until its parent cancels ctx, s stops, or a child escalates.
@@ -351,13 +363,13 @@ func (s *Supervisor) halt() {
 }
 
 // watch runs run until it returns or ctx ends, and restarts it after a panic.
-func watch(ctx context.Context, run func(context.Context), failure chan<- any, done chan<- struct{}) {
-	defer close(done)
+// It reports whether run returned before ctx ended.
+func watch(ctx context.Context, run func(context.Context), failure chan<- any) bool {
 	var restarts []time.Time
 	for {
 		value, failed := attempt(ctx, run)
 		if !failed || ctx.Err() != nil {
-			return
+			return !failed && ctx.Err() == nil
 		}
 		now := time.Now()
 		restarts = slices.DeleteFunc(restarts, func(at time.Time) bool { return now.Sub(at) >= restartWindow })
@@ -366,7 +378,7 @@ func watch(ctx context.Context, run func(context.Context), failure chan<- any, d
 			case failure <- value:
 			default:
 			}
-			return
+			return false
 		}
 		delay := time.NewTimer(time.Second << len(restarts))
 		restarts = append(restarts, now)
@@ -374,7 +386,7 @@ func watch(ctx context.Context, run func(context.Context), failure chan<- any, d
 		case <-delay.C:
 		case <-ctx.Done():
 			delay.Stop()
-			return
+			return false
 		}
 	}
 }
