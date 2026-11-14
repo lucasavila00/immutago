@@ -13,8 +13,8 @@
 // If Run panics, the supervisor waits 1 s, doubling the delay for each restart
 // in the last 5 minutes. It then creates a new process value from the same
 // arguments, stores it in the same PID, and calls Run. Calls during the delay
-// still use the old value; calls already in progress finish on that value. A sixth panic in 5
-// minutes stops all children of the supervisor in reverse start order and
+// still use the old value; calls already in progress finish on that value. A sixth
+// panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and
 // escalates the panic to the parent supervisor, which restarts the subtree with
 // the same rule. At the root supervisor, the escalation panics again with the
 // last panic value, and the program exits.

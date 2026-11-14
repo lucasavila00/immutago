@@ -2,14 +2,10 @@
 
 [Language guide](rules.md) · [Stored types](common-forms.md#markers-and-stored-types) · [Process API](../pkg/proc/readme.md)
 
-
-Package `proc` runs supervised processes. A process is a mutable struct that
-embeds `proc.Process[A]` by value and has a `Run(ctx context.Context)` method
-with a pointer receiver. `A` is the argument type of the process. It must be an
-allowed stored type; use `proc.None` for a process without arguments. Other code
-keeps a `proc.PID[T]` and calls exported methods on the process pointer from
-`pid.Proc()`. Exported methods take and return only allowed stored types, and a
-PID is one of them.
+Use `proc` for a service that runs in the background, such as a config loader,
+cache refresher, or rate limiter. Start it with immutable arguments, keep its
+PID, and call its exported methods directly. Those methods take and return
+[allowed stored types](common-forms.md#markers-and-stored-types), including PIDs.
 
 The analyzer checks four rules: fields are selected through the receiver in its
 methods; start arguments and exported method parameters/results use allowed
@@ -24,31 +20,42 @@ Method bodies are ordinary Go. These checks do not isolate mutable state:
 helpers. Methods must follow their API contracts and synchronize shared state.
 
 ```go
-import "github.com/lucasavila00/immutago/pkg/proc"
+package main
 
-type Config struct { im.Scoped; Version int; Limits im.FrozenMap[string, int] }
+import (
+    "context"
+    "fmt"
+    "sync"
 
-type LoaderArgs struct { im.Shared; Path string; Every time.Duration }
+    "github.com/lucasavila00/immutago/pkg/proc"
+)
 
-type ConfigLoader struct {
-	proc.Process[LoaderArgs]
-	mu      sync.Mutex
-	version int
-	current im.Owner[Config]
+type Counter struct {
+    proc.Process[int]
+    mu sync.Mutex
+    count int
 }
 
-func (l *ConfigLoader) Run(ctx context.Context) { /* read l.Args().Path, then l.current.Store(&Config{...}) */ }
-func (l *ConfigLoader) Version() int            { l.mu.Lock(); defer l.mu.Unlock(); return l.version }
+func (*Counter) Run(ctx context.Context) { <-ctx.Done() }
 
-type LimiterArgs struct { im.Shared; Loader proc.PID[ConfigLoader]; Key string }
+func (c *Counter) Add() int {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    c.count += c.Args()
+    return c.count
+}
 
-type Limiter struct { proc.Process[LimiterArgs]; mu sync.Mutex; used int }
-
-root := proc.NewRoot()
-loader := proc.Start[ConfigLoader](root, LoaderArgs{Path: "config.json", Every: time.Second})
-limiter := proc.Start[Limiter](root, LimiterArgs{Loader: loader, Key: "requests"})
-v := loader.Proc().Version()
+func main() {
+    root := proc.NewRoot()
+    counter := proc.Start[Counter](root, 1)
+    fmt.Println(counter.Proc().Add()) // 1
+    <-root.Stop()
+}
 ```
+
+The [config loader](../tests/testdata/accepted/process/config_loader.go) and
+[limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
+and PIDs in start arguments. The tables use those example types.
 
 These allowed forms are complete. Other uses of a process, its type name, or a
 process pointer from `Proc()` are rejected. Parentheses preserve these forms.
@@ -114,7 +121,7 @@ The runtime behavior is not part of the proof:
   start empty again. Calls during the delay use the old value; calls already
   in progress finish on that value. Reserving PIDs is not a group-start barrier:
   a call to a peer that has not started can panic and cause this retry.
-- A sixth panic in 5 minutes stops the other children of the supervisor in
+- A sixth panic from the same child in 5 minutes stops the other children of the supervisor in
   reverse start order and escalates to the parent supervisor, which restarts
   the subtree with the same rule. At the root, the last panic value panics
   again and the program exits.
