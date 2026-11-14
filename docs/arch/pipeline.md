@@ -104,4 +104,4 @@ The vet driver does not re-export imported package facts. `AllPackageFacts`
 cannot supply all indirect origins, so each exported witness is self-contained.
 Carrying the full error graph in each fact would repeat its payload at every
 importer. One witness keeps each fact independent of the number of upstream
-packages and errors. See the [cost checks](../performance.md#dependency-fact-costs).
+packages and errors. See the [cost checks](performance.md#dependency-fact-costs).

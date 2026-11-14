@@ -21,6 +21,7 @@ consumption checks. The analyzer adds no runtime state.
 - [Pipeline](pipeline.md): pass order, recursive type proofs, and dependency facts.
 - [Storage](ownership.md): immutable writes, pointer escape rules, and builder flow.
 - [Validation](validation.md): trust boundary, test sources, and hosted checks.
+- [Performance checks](performance.md): benchmarks, profiles, and checker costs.
 
 The [language guide](../rules.md) links the complete allowed forms and examples.
 The [review requirements](../reviewer-focus.md) explain how to trace each form

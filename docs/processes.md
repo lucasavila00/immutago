@@ -1,22 +1,5 @@
 # Supervised processes
 
-Use `proc` for a service that runs in the background, such as a config loader,
-cache refresher, or rate limiter. Start it with immutable arguments, keep its
-PID, and call its exported methods directly. Those methods take and return
-[allowed stored types](common-forms.md#markers-and-stored-types), including PIDs.
-
-The analyzer checks four rules: fields are selected through the receiver in its
-methods; start arguments and exported method parameters/results use allowed
-stored types; process pointers are used only for the listed direct calls; and
-only `Start` or `StartReserved` creates a process.
-
-The existing immutable-field and Owner rules still apply. In particular, mutable
-process structs publish protected data through Owner fields.
-
-Method bodies are ordinary Go. These checks do not isolate mutable state:
-`shared = &p.count` or `p.table = globalMap` can share memory through globals or
-helpers. Methods must follow their API contracts and synchronize shared state.
-
 ```go
 package main
 
@@ -50,6 +33,10 @@ func main() {
     <-root.Stop()
 }
 ```
+
+Methods use ordinary Go. The checker restricts process pointers and method
+parameters/results; it does not prevent sharing mutable data through globals
+or helpers. Use locks where needed, as in `Add` above.
 
 The [config loader](../tests/testdata/accepted/process/config_loader.go) and
 [limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
@@ -105,7 +92,7 @@ Rejected examples are not exhaustive:
 | `type Bad struct { proc.Process[proc.None]; im.Shared }`, `M proc.Process[proc.None]`, `*proc.Process[proc.None]` | Embed one `proc.Process[A]` by value and no `im` marker. |
 | `type Bad struct { proc.Process[proc.None]; limits im.FrozenMap[string, int] }` | Put immutable data in the arguments, or publish it through an `im.Owner` field. |
 
-The runtime behavior is not part of the proof:
+## Start, restart, and stop
 
 - `Start` creates a new process value, gives it the arguments, stores it in the
   PID, and runs `Run` in a new goroutine. The PID is started when `Start` returns.
@@ -117,8 +104,9 @@ The runtime behavior is not part of the proof:
   restart in the last 5 minutes. It then creates a fresh value from the same
   arguments, publishes it through the PID, and calls `Run`. `im.Owner` fields
   start empty again. Calls during the delay use the old value; calls already
-  in progress finish on that value. Reserving PIDs is not a group-start barrier:
-  a call to a peer that has not started can panic and cause this retry.
+  in progress finish on that value. Reserve does not wait for
+  other processes to start. Calling a reserved PID before StartReserved can
+  panic and cause a retry.
 - A sixth panic from the same child in 5 minutes stops the other children of the supervisor in
   reverse start order and escalates to the parent supervisor, which restarts
   the subtree with the same rule. At the root, the last panic value panics
@@ -128,4 +116,3 @@ The runtime behavior is not part of the proof:
   Cancellation is cooperative: `Run` must observe its context. Stop does not
   wait for direct method calls, and methods must synchronize their shared state.
 - `proctest.NewRoot(t)` fails a test whose process tree does not stop in 5 s.
-

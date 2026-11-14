@@ -1,11 +1,5 @@
 # Language guide
 
-Use immutago to keep object fields read-only and control where pointers can be
-saved. Set the fields when you create an object. To change data, create another
-object.
-
-Choose the page for the value you need:
-
 | Guide | Use it to |
 | --- | --- |
 | [Shared](shared.md) | Store or return pointers to immutable objects. |
@@ -27,32 +21,27 @@ Run `immutago ./...` or `go vet -vettool=/absolute/path/to/immutago ./...`.
 
 ## Package boundary
 
-A package is checked when any selection form below applies. This list is complete.
-The fixed `im` and `proc` implementations, compiler-supplied standard library, and generated
-Go test runners are trusted separately; user test packages still follow these rules.
+The checker checks a package in any of the cases below. This list is complete.
+It also checks your test files.
 
-| Selection form | Example |
+| Check the package when it… | Example |
 | --- | --- |
-| Direct `im` or `proc` import, including an alias or blank import | `import _ "github.com/lucasavila00/immutago/pkg/im"` |
-| Used marked, frozen, Owner, or process type | `var point api.Point`, `var current api.Loader` |
-| Used callback, interface, or generic contract containing an im or proc type | `callback := api.Publish`, `var value api.Alias[int]` when its constraint contains an Owner |
-| Failed checked dependency, including through wrappers | Import a package whose immutable field proof failed. |
+| Imports `im` or `proc`, including an alias or blank import | `import _ "github.com/lucasavila00/immutago/pkg/im"` |
+| Uses an im or proc type, including inside another type | `var point api.Point`, where Point embeds `im.Shared` |
+| Uses a function, interface, or generic type that mentions an im or proc type | `callback := api.Publish`, where Publish takes `*api.Point`; `api.Alias[int]`, where Alias has an Owner type in its constraint |
+| Imports a package that failed its checks, directly or through another package | Import a package with an invalid immutable field. |
 
-Aliases, generic arguments, and constraints remain part of the used type contract.
-An ordinary scalar API does not select checking merely because its implementation
-uses `im` or `proc` privately. CLI and vet use the same boundary.
+Aliases, type arguments, and generic constraints also count. The CLI and
+`go vet` use the same rules. Other packages are trusted to follow Go rules,
+including not changing string bytes through `unsafe`.
 
-Other packages are ordinary Go, including when selected by `immutago ./...`.
-They may use `unsafe`, `reflect`, cgo, or functions without Go bodies. Their API
-contracts are trusted, including string immutability and no hidden writes to
-protected memory. The analyzer does not prove those implementations. Protected
-values still follow their listed transport rules; ordinary libraries add no
-suppression or trust-bypass annotations.
+The checker trusts the implementations of `im`, `proc`, and the Go standard
+library. It also skips the test runner that Go generates. There is no comment
+or annotation that lets user code bypass checks.
 
-Checked packages reject `unsafe`, `reflect`, cgo, and functions without Go bodies.
-Use checked typed Go code: replace `func readCount() int` with
-`func readCount() int { return 1 }`, for example. A checked cgo package is rejected
-as a whole.
+In a checked package, `unsafe`, `reflect`, cgo, and functions without Go bodies
+are rejected. For example, write `func readCount() int { return 1 }` instead of
+`func readCount() int`. A cgo package gets one package-level error.
 
-A dependency diagnostic shows one representative original failure and a command
-to check its origin package. Other dependency errors may exist.
+If an imported package fails, the error shows one cause and a command to check
+that package. Run that command to see its other errors.

@@ -1,9 +1,5 @@
 # Scoped objects
 
-Use `im.Scoped` when a pointer must stay local. You can pass it to a named
-function with the exact pointer parameter type. That function must not save
-or return the pointer:
-
 ```go
 type ScopedPoint struct { im.Scoped; X int }
 
@@ -18,11 +14,11 @@ func use() int {
 ## Allowed forms
 
 The [common forms](common-forms.md) give the complete list of allowed operations.
-Scoped does not add pointer storage or return forms. Other protected operations
-are rejected.
+A Scoped pointer cannot be saved in a field or package variable, or returned
+from a function. Operations not listed in the common forms are rejected.
 
 A value copy can be stored or returned: `value := *p`, then `return value`.
-To publish a fresh Scoped object, use the explicit [Owner forms](owner.md).
+To let other code read the current Scoped object, use [Owner](owner.md).
 An existing pointer cannot be passed to `Owner.Store`.
 
 ## Rejected examples
@@ -35,5 +31,3 @@ These examples are not exhaustive.
 | `saved = p` with `p *ScopedPoint` | Store the value copy `*p`. |
 | `callback := func() int { return p.X }` | Read `x := p.X` before creating the callback. |
 | `slot.Store(p)` | `slot.Store(&ScopedPoint{X: p.X})` |
-
-Use [Shared](shared.md) when pointers must be stored or returned.
