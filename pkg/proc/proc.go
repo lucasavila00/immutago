@@ -51,6 +51,7 @@ const (
 // Embed it by value. A named field or pointer embedding does not mark the struct.
 type Process[A any] struct {
 	args     A
+	report   func(value any, stack []byte)
 	mu       sync.Mutex
 	cancel   context.CancelFunc
 	unwatch  func() bool
@@ -59,7 +60,6 @@ type Process[A any] struct {
 	ended    bool
 	failure  any
 	failed   bool
-	report   func(value any, stack []byte)
 }
 
 // Args returns the arguments that Start or StartReserved gave to the process.
@@ -98,8 +98,8 @@ func (p *Process[A]) serve() {
 	}()
 }
 
-// bind sets the arguments of a new process value and the panic report of its run supervisors.
-func (p *Process[A]) bind(args A, report func(value any, stack []byte)) {
+// bind sets the arguments and panic reporter before the process is published.
+func (p *Process[A]) bind(args A, report func(any, []byte)) {
 	p.args, p.report = args, report
 }
 
@@ -238,7 +238,7 @@ func StartSupervisor(parent *Supervisor) *Supervisor {
 func Start[T, A any, P interface {
 	*T
 	Run(context.Context)
-	bind(A, func(value any, stack []byte))
+	bind(A, func(any, []byte))
 	begin(context.Context) context.Context
 	end()
 }](parent *Supervisor, args A) PID[T] {
@@ -253,7 +253,7 @@ func Start[T, A any, P interface {
 func StartReserved[T, A any, P interface {
 	*T
 	Run(context.Context)
-	bind(A, func(value any, stack []byte))
+	bind(A, func(any, []byte))
 	begin(context.Context) context.Context
 	end()
 }](parent *Supervisor, pid PID[T], args A) {
@@ -297,15 +297,18 @@ func (s *Supervisor) Stop() <-chan struct{} {
 	return s.stopped
 }
 
-// add records a child, runs it if s is running, and returns it.
+// add records a child unless s is stopping, runs it if s is running, and returns its entry.
 func (s *Supervisor) add(run func(context.Context)) *child {
 	done := make(chan struct{})
 	close(done)
 	c := &child{run: run, stop: func() {}, done: done}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.stopping {
+		return c
+	}
 	s.children = append(s.children, c)
-	if s.ctx != nil && !s.stopping {
+	if s.ctx != nil {
 		s.launch(c)
 	}
 	return c

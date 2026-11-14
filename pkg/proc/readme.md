@@ -22,7 +22,7 @@ Stop cancels each Run context and waits for Run to return. Cancellation is coope
 func StartReserved[T, A any, P interface {
     *T
     Run(context.Context)
-    bind(A, func(value any, stack []byte))
+    bind(A, func(any, []byte))
     begin(context.Context) context.Context
     end()
 }](parent *Supervisor, pid PID[T], args A)
@@ -64,7 +64,7 @@ Reserve returns a PID that is not started. Proc panics until StartReserved start
 func Start[T, A any, P interface {
     *T
     Run(context.Context)
-    bind(A, func(value any, stack []byte))
+    bind(A, func(any, []byte))
     begin(context.Context) context.Context
     end()
 }](parent *Supervisor, args A) PID[T]

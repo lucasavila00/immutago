@@ -58,7 +58,8 @@ groups in the tree.
 
 The version loader uses the same pattern for each loaded version. The new
 server calls `Ready` when it starts; only then does the loader stop the previous
-server. A request to Load does not mean the version is ready.
+server. A request to Load does not mean the version is ready. Repeated requests
+for a pending or current version do nothing.
 
 `Dispatcher.Run` calls `Refresh` too. After a restart, the new dispatcher has
 empty fields, so it rebuilds its groups from the config process. Keep the data

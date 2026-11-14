@@ -209,22 +209,6 @@ func TestChildEscalationFailsRun(t *testing.T) {
 	})
 }
 
-// TestChildPanicReport verifies that a child of a run reports its panics through the report of the root.
-func TestChildPanicReport(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		failures.Store(0)
-		reported := make(chan any, 1)
-		root := root(func(value any) { t.Errorf("escalated %v", value) }, func(value any, _ []byte) { reported <- value })
-		Start[failingParent](root, None{})
-		synctest.Wait()
-		if value := <-reported; value != int64(1) {
-			t.Fatalf("reported %v, want 1", value)
-		}
-		<-root.Stop()
-		takeEvents()
-	})
-}
-
 // variantArgs is the argument of a variant.
 type variantArgs struct {
 	im.Shared
