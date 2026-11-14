@@ -33,6 +33,7 @@ func f(s *supervise.Group, seen map[string]int) { supervise.Start[Worker](s, sup
 		{"trust anywhere", `func f() { d := supervise.AssumeConcurrentSafe(map[string]int{}); _ = d }`},
 		{"ordinary function", dependencyDefinitions + `func args(log supervise.ConcurrentSafe[*Logger]) FetcherArgs {
 	return FetcherArgs{Log: log} }`},
+		{"method parameter", dependencyDefinitions + `func (f *Fetcher) Use(log supervise.ConcurrentSafe[*Logger]) {}`},
 		{"local copy of value", dependencyDefinitions + `func (f *Fetcher) print() { log := f.Args().Log.Value()
 	log.Print("") }`},
 		{"scoped arguments", `type Args struct { im.Scoped; Log supervise.ConcurrentSafe[func()] }
@@ -50,7 +51,6 @@ func (r *Reporter) Run(context.Context) {}`},
 		{"func argument", `type Args struct { im.Shared; Dial func() }`},
 		{"method result", dependencyDefinitions + `func (f *Fetcher) Log() supervise.ConcurrentSafe[*Logger] {
 	return f.Args().Log }`},
-		{"method parameter", dependencyDefinitions + `func (f *Fetcher) Use(log supervise.ConcurrentSafe[*Logger]) {}`},
 		{"method result args", dependencyDefinitions + `func (f *Fetcher) Copy() FetcherArgs { return f.Args() }`},
 		{"owner value", `type State struct { im.Scoped; Log supervise.ConcurrentSafe[*int] }
 type Holder struct { supervise.Service[supervise.NoArgs]; state im.Owner[State] }

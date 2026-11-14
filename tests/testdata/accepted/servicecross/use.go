@@ -1,6 +1,7 @@
 package servicecross
 
 import (
+	"context"
 	"time"
 
 	"example.com/consumer/service"
@@ -13,5 +14,6 @@ func Version(root *supervise.Group) int {
 	if err != nil {
 		panic(err)
 	}
+	config.Current().Record(context.Background(), map[string]int{}, func(string) {}, "requests")
 	return config.Current().Version()
 }

@@ -100,8 +100,9 @@ listed in the [service reference](../service-forms.md):
    method declared on that service, other than `Init` and `Run`. The matcher
    checks the resolved method selection and statement context. It rejects
    saved pointers, field reads, promoted calls, method values, and direct go or
-   defer calls. The stored-type proof checks each parameter and result of the
-   declared exported method.
+   defer calls. The stored-type proof checks each result of the declared exported
+   method. Inputs use ordinary Go types; protected input operations still pass
+   through the common shape checks.
 4. `Children()` must be a direct synchronous call on the service receiver,
    outside a function literal. Its result must be the parent argument of
    `Start`, `StartReserved`, or `StartGroup`, directly or through one new local

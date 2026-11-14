@@ -52,7 +52,8 @@ The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and
 | --- | --- |
 | Start arguments | Embed `supervise.Service[A]`; read `p.Args()` in a service method. |
 | No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
-| Start arguments or inputs/results of methods called through Current | [Allowed stored types](common-forms.md#markers-and-stored-types), such as scalars, marked structs, frozen collections, and Refs. |
+| Start arguments and results of methods called through Current | [Allowed stored types](common-forms.md#markers-and-stored-types), such as scalars, marked structs, frozen collections, and Refs. |
+| Method inputs | Ordinary Go types, including interfaces, callbacks, pointers, slices, maps, and channels. Protected values follow the [common source rules](common-forms.md). |
 | Return a list | `im.FrozenSlice[string]`. |
 | Replace immutable configuration | An [im.Owner[Config]](owner.md) field. |
 

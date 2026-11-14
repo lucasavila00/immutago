@@ -19,7 +19,8 @@ Call a service:
 
 - Keep the Ref and use ref.Current\(\).Method\(\).
 - Calls run in the caller's goroutine and can overlap with Run and other calls. Synchronize access to mutable fields.
-- Start arguments and inputs/results of methods called through Current use immutable values or service Refs. The analyzer checks these types.
+- Start arguments and results of methods called through Current use immutable values or service Refs. The analyzer checks these types.
+- Method inputs follow ordinary Go rules. Protected values keep their immutability and pointer rules.
 - Start arguments can also use ConcurrentSafe. The caller promises safe concurrent use; the analyzer does not prove this promise.
 
 ### Groups and shutdown
