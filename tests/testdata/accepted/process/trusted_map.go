@@ -17,7 +17,7 @@ type Counter struct {
 // proc.Trust is a false promise here: the checker accepts the program, but it has a data race.
 func (c *Counter) Run(ctx context.Context) {
 	c.seen = map[string]int{}
-	children := proc.NewRoot()
+	children := proc.NewRoot(nil)
 	defer func() { <-children.Stop() }()
 	proc.Start[Reporter](children, ReporterArgs{Seen: proc.Trust(c.seen)})
 	for i := 0; ctx.Err() == nil; i++ {

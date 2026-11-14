@@ -3,6 +3,7 @@ package proc
 import (
 	"context"
 	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -201,7 +202,7 @@ func expectStarted(t *testing.T, want ...string) {
 // TestStart verifies a new value, a stable Proc, and calls from many goroutines.
 func TestStart(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		pid := Start[counter](root, None{})
 		process := pid.Proc()
 		if pid.Proc() != process || process.count != 0 {
@@ -226,7 +227,7 @@ func TestStart(t *testing.T) {
 // TestStopOrder verifies reverse start order for processes and nested supervisors.
 func TestStopOrder(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		Start[first](root, None{})
 		nested := StartSupervisor(root)
 		Start[second](nested, None{})
@@ -242,7 +243,7 @@ func TestStopOrder(t *testing.T) {
 // TestStopNested verifies that a stopped nested supervisor leaves its parent running.
 func TestStopNested(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		Start[first](root, None{})
 		nested := StartSupervisor(root)
 		Start[second](nested, None{})
@@ -259,7 +260,7 @@ func TestStopNested(t *testing.T) {
 // TestStopNestedReleases verifies that a parent keeps no reference to a nested supervisor after its Stop.
 func TestStopNestedReleases(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		Start[first](root, None{})
 		for range 3 {
 			nested := StartSupervisor(root)
@@ -286,7 +287,7 @@ func TestStopNestedReleases(t *testing.T) {
 // TestSelfStop verifies that a process can stop its own supervisor.
 func TestSelfStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		selfRoot = NewRoot()
+		selfRoot = NewRoot(nil)
 		Start[stopper](selfRoot, None{})
 		synctest.Wait()
 		expectEvents(t, "stopped")
@@ -299,7 +300,7 @@ func TestRestartAndEscalate(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
 		escalated := make(chan any, 1)
-		Start[failing](root(func(value any) { escalated <- value }), None{})
+		Start[failing](root(func(value any) { escalated <- value }, nil), None{})
 		if value := <-escalated; value != int64(6) {
 			t.Fatalf("escalated %v, want 6", value)
 		}
@@ -307,10 +308,64 @@ func TestRestartAndEscalate(t *testing.T) {
 	})
 }
 
+// TestPanicReport verifies that every recovered panic reaches the report with its stack before the escalation.
+func TestPanicReport(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		failures.Store(0)
+		var mu sync.Mutex
+		var reported []any
+		escalated := make(chan any, 1)
+		report := func(value any, stack []byte) {
+			if !strings.Contains(string(stack), "failing") {
+				t.Errorf("stack of %v does not name the process:\n%s", value, stack)
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			reported = append(reported, value)
+		}
+		Start[failing](root(func(value any) { escalated <- value }, report), None{})
+		<-escalated
+		takeEvents()
+		mu.Lock()
+		defer mu.Unlock()
+		want := []any{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}
+		if !slices.Equal(reported, want) {
+			t.Fatalf("reported %v, want %v", reported, want)
+		}
+	})
+}
+
+// TestPanicStackCapture checks stack capture only when a reporter needs it.
+func TestPanicStackCapture(t *testing.T) {
+	run := func(context.Context) { panic("failure") }
+	for _, capture := range []bool{false, true} {
+		value, stack, failed := attempt(context.Background(), run, capture)
+		if !failed || value != "failure" || (len(stack) != 0) != capture {
+			t.Fatalf("capture %t: value %v, stack length %d, failed %t", capture, value, len(stack), failed)
+		}
+	}
+}
+
+// TestNestedPanicReport checks that a nested supervisor inherits its reporter.
+func TestNestedPanicReport(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		failures.Store(0)
+		reported := make(chan any, 1)
+		root := NewRoot(func(value any, _ []byte) { reported <- value })
+		nested := StartSupervisor(root)
+		Start[failing](nested, None{})
+		if value := <-reported; value != int64(1) {
+			t.Fatalf("reported %v, want 1", value)
+		}
+		<-root.Stop()
+		takeEvents()
+	})
+}
+
 // TestRestartWindow verifies that restarts older than 5 minutes do not count.
 func TestRestartWindow(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
 		Start[slowFailing](root, None{})
 		time.Sleep(time.Hour)
 		<-root.Stop()
@@ -322,7 +377,7 @@ func TestRestartWindow(t *testing.T) {
 // TestEscalateToParent verifies that a nested supervisor stops its children and restarts its subtree.
 func TestEscalateToParent(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
 		nested := StartSupervisor(root)
 		Start[first](nested, None{})
 		Start[second](nested, None{})
@@ -345,7 +400,7 @@ func TestEscalateToParent(t *testing.T) {
 func TestRestartCreatesNewValue(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
-		root := NewRoot()
+		root := NewRoot(nil)
 		pid := Start[restarted](root, label{Name: "cache"})
 		before := pid.Proc()
 		synctest.Wait()
@@ -365,7 +420,7 @@ func TestRestartCreatesNewValue(t *testing.T) {
 // TestReserve verifies Proc before start, a second start, and a start cycle.
 func TestReserve(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		pongPID := Reserve[pong]()
 		expectPanic(t, "proc: PID not started", func() { pongPID.Proc() })
 		pingPID := Start[ping](root, pingArgs{Pong: pongPID})
@@ -392,7 +447,7 @@ func expectPanic(t *testing.T, want string, call func()) {
 // TestStartAfterStop verifies that a stopped supervisor does not run new processes.
 func TestStartAfterStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		<-root.Stop()
 		if Start[first](root, None{}).Proc() == nil {
 			t.Fatal("Start returned an empty PID")
@@ -404,7 +459,7 @@ func TestStartAfterStop(t *testing.T) {
 
 // BenchmarkPIDProc measures one PID.Proc call.
 func BenchmarkPIDProc(b *testing.B) {
-	root := NewRoot()
+	root := NewRoot(nil)
 	pid := Start[counter](root, None{})
 	b.ReportAllocs()
 	for b.Loop() {
@@ -441,7 +496,7 @@ func (r *reporter) Run(context.Context) { r.Args().Report.Value()("run") }
 // TestTrustedArgument checks that a process receives the trusted value from its arguments.
 func TestTrustedArgument(t *testing.T) {
 	reported := make(chan string, 1)
-	root := NewRoot()
+	root := NewRoot(nil)
 	Start[reporter](root, reporterArgs{Report: Trust(func(event string) { reported <- event })})
 	if got := <-reported; got != "run" {
 		t.Fatalf("reported %q", got)

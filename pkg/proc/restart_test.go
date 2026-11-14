@@ -54,7 +54,7 @@ func TestCallAcrossRestart(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		callEntered, callRelease, panicRun = make(chan struct{}), make(chan struct{}), make(chan struct{})
 		callRuns.Store(0)
-		root := NewRoot()
+		root := NewRoot(nil)
 		pid := Start[heldCall](root, None{})
 		before := pid.Proc()
 		result := make(chan int, 1)
@@ -78,7 +78,7 @@ func TestCallAcrossRestart(t *testing.T) {
 // TestPIDCallAllocations checks the direct call path after the process has started.
 func TestPIDCallAllocations(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		pid := Start[counter](root, None{})
 		synctest.Wait()
 		if allocations := testing.AllocsPerRun(100, func() { pid.Proc().Add() }); allocations != 0 {
