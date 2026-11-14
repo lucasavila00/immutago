@@ -15,6 +15,9 @@ type Buffer struct {
 // Run waits until ctx ends.
 func (b *Buffer) Run(ctx context.Context) { <-ctx.Done() }
 
+// Init sets the first size.
+func (b *Buffer) Init() { b.size = 1 }
+
 // grow increases the size.
 func (b *Buffer) grow() { b.size++ }
 
@@ -27,6 +30,7 @@ func (b *Buffer) misuse(ctx context.Context) {
 	defer b.grow()
 	grow := b.grow
 	b.Run(ctx)
+	b.Init()
 	*b = Buffer{}
 	marker := b.Process
 	b.Process = proc.Process[proc.None]{}

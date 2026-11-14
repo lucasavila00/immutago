@@ -116,7 +116,8 @@ shows a logger, a client, a factory function, and a test fake.
 
 The [config loader](../tests/testdata/accepted/process/config_loader.go) and
 [limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
-and PIDs in start arguments. The tables use those example types, and the
+and PIDs in start arguments. The [waker](../tests/testdata/accepted/process/waker.go)
+example shows `Init`. The tables use those example types, and the
 `FetcherArgs` type from [trusted dependencies](#trusted-dependencies).
 
 These allowed forms are complete. Other uses of a process, its type name, a
@@ -127,12 +128,13 @@ process pointer from `Proc()`, or a `proc.Dependency` are rejected. Parentheses 
 | Named, non-generic struct with one `proc.Process[A]` embedded by value; `A` is an allowed stored type, a `proc.Dependency[T]`, or a struct with exactly one `im` marker whose fields are allowed stored types or named `proc.Dependency[T]` fields; the other fields are ordinary Go without protected storage, or `im.Owner` fields | `type ConfigLoader struct { proc.Process[LoaderArgs]; mu sync.Mutex; current im.Owner[Config] }` |
 | Process without arguments | `type Cache struct { proc.Process[proc.None]; hits int }` |
 | Declare the entry point on the process | `func (l *ConfigLoader) Run(ctx context.Context) { ... }` (no results) |
+| Declare an initializer on the process; the runtime calls it before the value is reachable | `func (w *Waker) Init() { w.wake = make(chan struct{}, 1) }` (no parameters or results) |
 | Method with a pointer receiver | `func (l *ConfigLoader) Version() int { return l.version }` |
-| Exported method other than `Run` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (c *Cache) Latest() Entry` |
+| Exported method other than `Run` and `Init` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (c *Cache) Latest() Entry` |
 | In a method, select a field of the receiver other than the marker | `l.version++`, `l.mu.Lock()`, `defer l.mu.Unlock()`, `l.current.Store(&Config{})` |
-| In a method, call a method of the receiver directly and synchronously, other than `Run` | `l.publish()`, `l.Lock()` for an embedded `sync.Mutex` |
+| In a method, call a method of the receiver directly and synchronously, other than `Run` and `Init` | `l.publish()`, `l.Lock()` for an embedded `sync.Mutex` |
 | In a method, read the arguments with a direct call | `args := l.Args()`, `l.Args().Loader.Proc().Limit(l.Args().Key)` |
-| Call an exported method other than `Run`, declared on the process, directly and synchronously on `pid.Proc()` | `v := loader.Proc().Version()`, `(loader.Proc()).Version()` |
+| Call an exported method other than `Run` and `Init`, declared on the process, directly and synchronously on `pid.Proc()` | `v := loader.Proc().Version()`, `(loader.Proc()).Version()` |
 | Call through a PID in a field of a marked value | `peers.Loader.Proc().Version()` |
 | Keep, copy, store, pass, or return a PID | `type Peers struct { im.Shared; Loader proc.PID[ConfigLoader] }` |
 | Call through a PID in a function literal | `defer func() { limiter.Proc().Take() }()` |
@@ -157,6 +159,8 @@ Rejected examples are not exhaustive:
 | `p := loader.Proc()`, `saved = loader.Proc()`, `use(loader.Proc())`, `loader.Proc() == nil` | Keep the PID; call the method directly. |
 | `loader.Proc().version`, `loader.Proc().Args()` | Add an exported method. |
 | `loader.Proc().Run(ctx)`, `l.Run(ctx)` | Only the supervisor calls `Run`. |
+| `waker.Proc().Init()`, `w.Init()` | Only the runtime calls `Init`. |
+| `func (w *Waker) Init() error`, `func (w Waker) Init()`, a promoted `Init` | Declare `func (w *Waker) Init()`. |
 | `loader.Proc().publish()`, `loader.Proc().Lock()` for an embedded `sync.Mutex` | Declare an exported method on the process. |
 | `f := loader.Proc().Version`, `get := loader.Proc` | `v := loader.Proc().Version()` |
 | `go loader.Proc().Version()`, `defer loader.Proc().Version()` | `go func() { loader.Proc().Version() }()` |
@@ -183,15 +187,16 @@ Rejected examples are not exhaustive:
 
 ## Start, restart, and stop
 
-- `Start` creates a new process value, gives it the arguments, stores it in the
-  PID, and runs `Run` in a new goroutine. The PID is started when `Start` returns.
+- `Start` creates a new process value, gives it the arguments, calls `Init` if
+  the process declares it, stores the value in the PID, and runs `Run` in a new
+  goroutine. A panic in this first `Init` reaches the caller of `Start`. The PID is started when `Start` returns.
   `Proc` is one atomic load. It panics with `proc: PID not started` before
   `StartReserved` starts a reserved PID. `StartReserved` panics if the PID is
   already started.
 - Each run gets a context that ends with that run. If `Run` returns, the process
   ends. If `Run` panics, the supervisor waits 1 s, doubling the delay for each
   restart in the last 5 minutes. It then creates a fresh value from the same
-  arguments, publishes it through the PID, and calls `Run`. `im.Owner` fields
+  arguments, calls `Init`, publishes it through the PID, and calls `Run`. `im.Owner` fields
   start empty again. Calls during the delay use the old value; calls already
   in progress finish on that value. Reserve does not wait for
   other processes to start. Calling a reserved PID before StartReserved can

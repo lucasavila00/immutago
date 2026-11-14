@@ -15,6 +15,9 @@ type Counter struct {
 // Run waits until ctx ends.
 func (c *Counter) Run(ctx context.Context) { <-ctx.Done() }
 
+// Init resets the count.
+func (c *Counter) Init() { c.count = 0 }
+
 // Count returns the count.
 func (c *Counter) Count() int { return c.count }
 
@@ -33,6 +36,7 @@ func Transport(pid proc.PID[Counter]) {
 	_ = pid.Proc().count
 	pid.Proc().add()
 	pid.Proc().Run(context.Background())
+	pid.Proc().Init()
 	count := pid.Proc().Count
 	get := pid.Proc
 	go pid.Proc().Count()

@@ -90,6 +90,9 @@ func (c *Cache) Run(ctx context.Context) { _ = c.loader.Proc().Version() }`},
 		{"deferred proc in closure", `func f(pid proc.PID[ConfigLoader]) { defer func() { pid.Proc().Version() }() }`},
 		{"promoted receiver call", `type Locked struct { proc.Process[proc.None]; sync.Mutex; n int }
 func (l *Locked) Run(context.Context) { l.Lock(); l.n++; l.Unlock() }`},
+		{"initializer", `type Waker struct { proc.Process[proc.None]; wake chan struct{} }
+func (w *Waker) Init() { w.wake = make(chan struct{}, 1) }
+func (w *Waker) Run(ctx context.Context) { <-w.wake }`},
 	})
 }
 
@@ -123,9 +126,9 @@ func (Wrong) Run(context.Context) {}`},
 		{"promoted entry point", `type Runner struct{}
 func (*Runner) Run(context.Context) {}
 type Wrong struct { proc.Process[proc.None]; Runner }`},
+		{"scoped pointer arguments", `type P struct{ proc.Process[*Config] }`},
 		{"map arguments", `type P struct{ proc.Process[map[string]int] }`},
 		{"error arguments", `type P struct{ proc.Process[error] }`},
-		{"scoped pointer arguments", `type P struct{ proc.Process[*Config] }`},
 		{"two markers", `type Other = proc.Process[Status]; type P struct{ proc.Process[proc.None]; Other }`},
 		{"proc promoted", `type Locked struct { proc.Process[proc.None]; sync.Mutex }
 func (l *Locked) Run(context.Context) {}
@@ -171,5 +174,34 @@ func f(s *proc.Supervisor) { proc.Start[Plain](s, proc.None{}) }`},
 		{"pointer marker", `type P struct{ *proc.Process[proc.None] }`},
 		{"marked process", `type P struct{ proc.Process[proc.None]; im.Shared }`},
 		{"protected process field", `type P struct{ proc.Process[proc.None]; limits im.FrozenMap[string, int] }`},
+	})
+}
+
+// TestProcessInitRejected covers rejected Init declarations and calls.
+func TestProcessInitRejected(t *testing.T) {
+	checkProcessCases(t, true, [][2]string{
+		{"init result", `type P struct { proc.Process[proc.None] }
+func (*P) Run(context.Context) {}
+func (*P) Init() int { return 0 }`},
+		{"init parameter", `type P struct { proc.Process[proc.None] }
+func (*P) Run(context.Context) {}
+func (*P) Init(int) {}`},
+		{"init value receiver", `type P struct { proc.Process[proc.None] }
+func (*P) Run(context.Context) {}
+func (P) Init() {}`},
+		{"promoted init", `type Initializer struct{}
+func (*Initializer) Init() {}
+type P struct { proc.Process[proc.None]; Initializer }
+func (*P) Run(context.Context) {}`},
+		{"init field", `type P struct { proc.Process[proc.None]; Init func() }
+func (*P) Run(context.Context) {}`},
+		{"proc init", `type P struct { proc.Process[proc.None] }
+func (*P) Run(context.Context) {}
+func (*P) Init() {}
+func f(pid proc.PID[P]) { pid.Proc().Init() }`},
+		{"receiver init", `type P struct { proc.Process[proc.None] }
+func (*P) Run(context.Context) {}
+func (*P) Init() {}
+func (p *P) reset() { p.Init() }`},
 	})
 }

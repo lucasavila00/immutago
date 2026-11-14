@@ -2,3 +2,7 @@ process_entrypoints.go:10:17: a process must declare Run(context.Context) with a
 process_entrypoints.go:13:15: a process must declare Run(context.Context) with a pointer receiver and no results
 process_entrypoints.go:19:16: a process must declare Run(context.Context) with a pointer receiver and no results
 process_entrypoints.go:31:18: a process must declare Run(context.Context) with a pointer receiver and no results
+process_entrypoints.go:37:16: a process can declare Init() only with a pointer receiver, no parameters, and no results
+process_entrypoints.go:46:16: a process can declare Init() only with a pointer receiver, no parameters, and no results
+process_entrypoints.go:52:7: process type ValueInit can be named only in its declaration, a pointer receiver, proc.Start[ValueInit], proc.StartReserved[ValueInit], proc.Reserve[ValueInit], or proc.PID[ValueInit]
+process_entrypoints.go:61:19: a process can declare Init() only with a pointer receiver, no parameters, and no results
