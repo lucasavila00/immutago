@@ -404,7 +404,9 @@ func (s *Supervisor) halt() {
 
 // watch runs run until it returns or ctx ends, and restarts it after a panic.
 // It reports whether run returned before ctx ended.
-func watch(ctx context.Context, run func(context.Context), failure chan<- any, report func(value any, stack []byte)) bool {
+func watch(ctx context.Context, run func(context.Context), failure chan<- any,
+	report func(value any, stack []byte),
+) bool {
 	var restarts []time.Time
 	for {
 		value, stack, failed := attempt(ctx, run)
