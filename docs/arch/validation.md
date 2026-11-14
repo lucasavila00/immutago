@@ -15,7 +15,9 @@ Their unsafe, reflection, and cgo implementations are not proved.
 Application code must run through the analyzer for its selected build
 configuration. An ordinary Go build supplies no immutability checks. Checked
 code cannot use reflection, unsafe imports, or bodyless functions to bypass
-the proof. There are no user trust annotations or suppression directives.
+the proof. There are no suppression directives. The one user trust point is
+`proc.Trust`: a [process dependency](../processes.md#trusted-dependencies) is a
+promise of safe concurrent use that the checker does not prove.
 Failures from checked dependencies reach consumers through package facts. Runtime Freeze has
 no fallback validation when the analyzer is omitted.
 
@@ -28,7 +30,7 @@ no fallback validation when the analyzer is omitted.
 | Complete allowed shapes and nearby rejections | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go) |
 | Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
 | Storage reuse, clone independence, identity, and allocation counts | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [iterator tests](../../pkg/im/iterator_test.go) |
-| Process declarations, PIDs, receiver uses, and start arguments | [Process tests](../../pkg/analyzer/process_test.go), [marker tests](../../internal/checker/markers_test.go), [CLI fixtures](../../tests/testdata/accepted/process) |
+| Process declarations, PIDs, receiver uses, and start arguments | [Process tests](../../pkg/analyzer/process_test.go), [dependency tests](../../pkg/analyzer/process_dependency_test.go), [marker tests](../../internal/checker/markers_test.go), [CLI fixtures](../../tests/testdata/accepted/process) |
 | Restart, backoff, escalation, stop order, reserved PIDs, and the test helper | [Runtime tests](../../pkg/proc/proc_test.go), [helper tests](../../pkg/proc/proctest/proctest_test.go) |
 | Consumer-only dependency failures | [Dependency tests](../../pkg/analyzer/dependencies_test.go), [graph and gob tests](../../pkg/analyzer/dependencies_graph_test.go), [CLI fixtures](../../tests/cli_test.go) |
 

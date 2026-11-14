@@ -67,18 +67,64 @@ func (*Reader) Run(ctx context.Context) {
 process and publish it through an `im.Owner` field, or protect the global with a
 lock.
 
+## Trusted dependencies
+
+A process can need a logger, an HTTP client, a factory function, or a test
+fake. These values are mutable, so they are not allowed stored types. Wrap each
+one in `proc.Dependency[T]` with `proc.Trust`:
+
+```go
+type FetcherArgs struct {
+    im.Shared
+    BaseURL string
+    Log     proc.Dependency[*slog.Logger]
+    Client  proc.Dependency[*http.Client]
+}
+
+func (f *Fetcher) Run(ctx context.Context) {
+    f.Args().Log.Value().Info("start", "url", f.Args().BaseURL)
+}
+
+proc.Start[Fetcher](root, FetcherArgs{
+    BaseURL: "https://example.com",
+    Log:     proc.Trust(logger),
+    Client:  proc.Trust(http.DefaultClient),
+})
+```
+
+`proc.Trust(v)` is a promise from the caller: several processes can use `v` at
+the same time. The value is not immutable. The checker does not prove the
+promise. It only makes sure that the promise is written in the code, so that
+reviewers can find each `proc.Trust` call. `proc.Dependency` is the only way to
+give a process mutable data that the checker does not prove.
+
+A false promise is a data race that the checker cannot find. Without
+`proc.Trust`, the checker rejects a map in the start arguments. With it, the
+checker accepts the map, as in the
+[trusted map](../tests/testdata/accepted/process/trusted_map.go) example:
+
+```go
+proc.Start[Reporter](children, ReporterArgs{Seen: proc.Trust(c.seen)}) // accepted; c.seen is still written: a data race
+```
+
+Wrap only values that are safe for concurrent use, for example `*slog.Logger`,
+`*http.Client`, or a function that does not change shared memory. The
+[dependencies](../tests/testdata/accepted/process/dependencies.go) example
+shows a logger, a client, a factory function, and a test fake.
+
 ## Allowed forms
 
 The [config loader](../tests/testdata/accepted/process/config_loader.go) and
 [limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
-and PIDs in start arguments. The tables use those example types.
+and PIDs in start arguments. The tables use those example types, and the
+`FetcherArgs` type from [trusted dependencies](#trusted-dependencies).
 
-These allowed forms are complete. Other uses of a process, its type name, or a
-process pointer from `Proc()` are rejected. Parentheses preserve these forms.
+These allowed forms are complete. Other uses of a process, its type name, a
+process pointer from `Proc()`, or a `proc.Dependency` are rejected. Parentheses preserve these forms.
 
 | Allowed form | Example |
 | --- | --- |
-| Named, non-generic struct with one `proc.Process[A]` embedded by value; `A` is an allowed stored type; the other fields are ordinary Go without protected storage, or `im.Owner` fields | `type ConfigLoader struct { proc.Process[LoaderArgs]; mu sync.Mutex; current im.Owner[Config] }` |
+| Named, non-generic struct with one `proc.Process[A]` embedded by value; `A` is an allowed stored type, a `proc.Dependency[T]`, or a struct with exactly one `im` marker whose fields are allowed stored types or named `proc.Dependency[T]` fields; the other fields are ordinary Go without protected storage, or `im.Owner` fields | `type ConfigLoader struct { proc.Process[LoaderArgs]; mu sync.Mutex; current im.Owner[Config] }` |
 | Process without arguments | `type Cache struct { proc.Process[proc.None]; hits int }` |
 | Declare the entry point on the process | `func (l *ConfigLoader) Run(ctx context.Context) { ... }` (no results) |
 | Method with a pointer receiver | `func (l *ConfigLoader) Version() int { return l.version }` |
@@ -92,6 +138,10 @@ process pointer from `Proc()` are rejected. Parentheses preserve these forms.
 | Call through a PID in a function literal | `defer func() { limiter.Proc().Take() }()` |
 | Start a process with its arguments | `loader := proc.Start[ConfigLoader](root, LoaderArgs{Path: "config.json"})` |
 | Reserve a PID and start it later, for processes that need each other's PID | `pong := proc.Reserve[Pong](); ping := proc.Start[Ping](root, pong); proc.StartReserved(root, pong, ping)` |
+| Wrap a value in a dependency, anywhere | `log := proc.Trust(logger)`, `FetcherArgs{Log: proc.Trust(logger)}` |
+| Declare a named `proc.Dependency[T]` field in a struct with one `im` marker; `T` has no protected storage | `type FetcherArgs struct { im.Shared; Log proc.Dependency[*slog.Logger] }` |
+| Use a `proc.Dependency[T]` or a struct with a dependency field as a local value, an ordinary function parameter or result, or a start argument | `args := FetcherArgs{Log: log}`, `proc.Start[Fetcher](root, args)`, `proc.Start[Tracer](root, proc.Trust(logger))` |
+| In a method, call `Value` directly and synchronously on `l.Args()` or on one field of `l.Args()`, where `l` is the receiver | `f.Args().Log.Value().Info("start")`, `log := f.Args().Log.Value()`, `t.Args().Value()` for `proc.Process[proc.Dependency[*slog.Logger]]` |
 | Name a process type in its declaration, a pointer receiver, or the single type argument of `proc.Start`, `proc.StartReserved`, `proc.Reserve`, or `proc.PID` | `proc.PID[ConfigLoader]`, `proc.Reserve[Pong]()` |
 
 Rejected examples are not exhaustive:
@@ -122,6 +172,14 @@ Rejected examples are not exhaustive:
 | `type Bad[T any] struct { proc.Process[T] }`, `var x struct{ proc.Process[proc.None] }` | Declare a named, non-generic struct. |
 | `type Bad struct { proc.Process[proc.None]; im.Shared }`, `M proc.Process[proc.None]`, `*proc.Process[proc.None]` | Embed one `proc.Process[A]` by value and no `im` marker. |
 | `type Bad struct { proc.Process[proc.None]; limits im.FrozenMap[string, int] }` | Put immutable data in the arguments, or publish it through an `im.Owner` field. |
+| `type ReporterArgs struct { im.Shared; Seen map[string]int }` | `Seen proc.Dependency[map[string]int]` with `proc.Trust`, only if the map is safe for concurrent use. |
+| `type Fetcher struct { proc.Process[FetcherArgs]; log proc.Dependency[*slog.Logger] }`, `type deps struct { log proc.Dependency[*slog.Logger] }` | Keep the dependency in the arguments; in a method, `log := f.Args().Log.Value()`. A process field of type `*slog.Logger` is ordinary Go. |
+| `func (f *Fetcher) Log() proc.Dependency[*slog.Logger]`, `func (f *Fetcher) Arguments() FetcherArgs` | Return immutable data. |
+| `im.Owner[State]`, `im.FrozenSlice[proc.Dependency[*slog.Logger]]`, `im.FrozenSlice[FetcherArgs]`, where `State` has a dependency field | Keep dependencies only in start arguments. |
+| `type Envelope struct { im.Shared; Args FetcherArgs }`, `Args *FetcherArgs`, `Logs [2]proc.Dependency[*slog.Logger]` | Use `FetcherArgs` directly as `A` in `proc.Process[A]`. |
+| `type Args struct { im.Shared; proc.Dependency[*slog.Logger] }` (embedded) | Name the field: `Log proc.Dependency[*slog.Logger]`. |
+| `proc.Trust(&Snapshot{})`, where `Snapshot` embeds `im.Shared` | Put the immutable value in a field of the arguments. |
+| `args := f.Args(); args.Log.Value()`, `func use(d proc.Dependency[*slog.Logger]) { d.Value() }`, `get := f.Args().Log.Value`, `go f.Args().Log.Value()` | `f.Args().Log.Value()` in a process method. |
 
 ## Start, restart, and stop
 

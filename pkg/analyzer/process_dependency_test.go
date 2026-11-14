@@ -31,6 +31,8 @@ func (w *Worker) Run(context.Context) { w.Args().Value()["k"]++ }
 func f(s *proc.Supervisor, seen map[string]int) { proc.Start[Worker](s, proc.Trust(seen)) }`},
 		{"parenthesized value", dependencyDefinitions + `func (f *Fetcher) print() { ((f.Args()).Log).Value().Print("") }`},
 		{"trust anywhere", `func f() { d := proc.Trust(map[string]int{}); _ = d }`},
+		{"ordinary function", dependencyDefinitions + `func args(log proc.Dependency[*Logger]) FetcherArgs {
+	return FetcherArgs{Log: log} }`},
 		{"local copy of value", dependencyDefinitions + `func (f *Fetcher) print() { log := f.Args().Log.Value(); log.Print("") }`},
 		{"scoped arguments", `type Args struct { im.Scoped; Log proc.Dependency[func()] }
 type Worker struct { proc.Process[Args] }
