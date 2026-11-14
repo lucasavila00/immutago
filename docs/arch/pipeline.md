@@ -10,10 +10,11 @@ The same analyzer runs under `go vet -vettool`. Both provide compiler-resolved
 
 The [entry point](../../pkg/analyzer/analyzer.go) performs these stages:
 
-1. Skip the fixed `im` package and compiler-supplied standard library.
+1. Skip the fixed `im` and `proc` packages and compiler-supplied standard library.
 2. Reject cgo packages and export their failure before checking generated wrappers.
 3. Collect dependency failure facts and start recording local diagnostics.
-4. Check declarations, imports, field types, and fixed `im` type arguments.
+4. Check declarations, imports, field types, exported process methods, and fixed
+   `im` and `proc` type arguments.
 5. Run the native builder proof and obtain its set of tracked variables.
 6. Match protected operations and their enclosing statements.
 7. Export accumulated failures for importers.

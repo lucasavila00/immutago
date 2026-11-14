@@ -1,6 +1,7 @@
 # Language rules
 
-[Docs](README.md) · [Example](getting-started.md) · [API](../pkg/im/readme.md)
+[Docs](README.md) · [Example](getting-started.md) · [API](../pkg/im/readme.md) ·
+[Process API](../pkg/proc/readme.md)
 
 Objects are immutable from construction. Variables can be reassigned; their
 objects cannot change. The allowed forms below are complete. Other protected
@@ -44,6 +45,7 @@ must recursively match a row.
 | Recursive marked struct | `type SharedNode struct { im.Shared; Next *SharedNode }` |
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
+| Process PID | `proc.PID[ConfigLoader]`; see [Supervised processes](#supervised-processes) |
 
 Rejected type examples (**not exhaustive**):
 
@@ -181,7 +183,8 @@ func publish(l *Loader) { l.Current.Store(&ScopedPoint{X: 1}) }
 go publish(loader)
 ```
 
-A holder is a struct with a direct named slot field. Use holder pointers for
+A holder is a struct with a direct named slot field. A process struct is not a
+holder; the [process rules](#supervised-processes) replace the holder rules. Use holder pointers for
 calls; do not copy a holder or slot value. Slot and holder pointer captures, storage in fields, containers or package
 variables, pointer results, variadic pointer arguments, interfaces, indirect calls,
 user generic arguments, and `go` or `defer` slot operations are unsupported.
@@ -203,6 +206,115 @@ Rejected examples are not exhaustive:
 | `read := loader.Current.Load` | `point := loader.Current.Load()` |
 | `loader.Current.Load().X = 2` | `loader.Current.Store(&ScopedPoint{X: 2})` |
 | `type Outer struct { Value Loader }` | Keep the slot field in the unmarked holder. |
+
+## Supervised processes
+
+Package `proc` runs supervised processes. A process is a mutable struct that
+embeds `proc.Process[A]` by value and has a `Run(ctx context.Context)` method
+with a pointer receiver. `A` is the argument type of the process. It must be an
+allowed stored type; use `proc.None` for a process without arguments. Other code
+keeps a `proc.PID[T]` and calls exported methods on the process pointer from
+`pid.Proc()`. Exported methods take and return only allowed stored types, and a
+PID is one of them. Thus no mutable memory crosses a process boundary.
+
+```go
+import "github.com/lucasavila00/immutago/pkg/proc"
+
+type Config struct { im.Scoped; Version int; Limits im.FrozenMap[string, int] }
+
+type LoaderArgs struct { im.Shared; Path string; Every time.Duration }
+
+type ConfigLoader struct {
+	proc.Process[LoaderArgs]
+	mu      sync.Mutex
+	version int
+	current im.Owner[Config]
+}
+
+func (l *ConfigLoader) Run(ctx context.Context) { /* read l.Args().Path, then l.current.Store(&Config{...}) */ }
+func (l *ConfigLoader) Version() int            { l.mu.Lock(); defer l.mu.Unlock(); return l.version }
+
+type LimiterArgs struct { im.Shared; Loader proc.PID[ConfigLoader]; Key string }
+
+type Limiter struct { proc.Process[LimiterArgs]; mu sync.Mutex; used int }
+
+root := proc.NewRoot()
+loader := proc.Start[ConfigLoader](root, LoaderArgs{Path: "config.json", Every: time.Second})
+limiter := proc.Start[Limiter](root, LimiterArgs{Loader: loader, Key: "requests"})
+v := loader.Proc().Version()
+```
+
+These allowed forms are complete. Other uses of a process, its type name, or a
+process pointer from `Proc()` are rejected. Parentheses preserve these forms.
+
+| Allowed form | Example |
+| --- | --- |
+| Named, non-generic struct with one `proc.Process[A]` embedded by value; `A` is an allowed stored type; the other fields are ordinary Go without protected storage, or `im.Owner` fields | `type ConfigLoader struct { proc.Process[LoaderArgs]; mu sync.Mutex; current im.Owner[Config] }` |
+| Process without arguments | `type Cache struct { proc.Process[proc.None]; hits int }` |
+| Method with a pointer receiver | `func (l *ConfigLoader) Version() int { return l.version }` |
+| Exported method other than `Run` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (c *Cache) Latest() Entry` |
+| In a method, select a field of the receiver other than the marker | `l.version++`, `l.mu.Lock()`, `defer l.mu.Unlock()`, `l.current.Store(&Config{})` |
+| In a method, call a method of the receiver directly and synchronously, other than `Run` | `l.publish()`, `l.Lock()` for an embedded `sync.Mutex` |
+| In a method, read the arguments with a direct call | `args := l.Args()`, `l.Args().Loader.Proc().Limit(l.Args().Key)` |
+| Call an exported method other than `Run`, declared on the process, directly and synchronously on `pid.Proc()` | `v := loader.Proc().Version()`, `(loader.Proc()).Version()` |
+| Call through a PID in a field of a marked value | `peers.Loader.Proc().Version()` |
+| Keep, copy, store, pass, or return a PID | `type Peers struct { im.Shared; Loader proc.PID[ConfigLoader] }` |
+| Call through a PID in a function literal | `defer func() { limiter.Proc().Take() }()` |
+| Start a process with its arguments | `loader := proc.Start[ConfigLoader](root, LoaderArgs{Path: "config.json"})` |
+| Reserve a PID and start it later, for processes that need each other's PID | `pong := proc.Reserve[Pong](); ping := proc.Start[Ping](root, pong); proc.StartReserved(root, pong, ping)` |
+| Name a process type in its declaration, a pointer receiver, or the single type argument of `proc.Start`, `proc.Reserve`, or `proc.PID` | `proc.PID[ConfigLoader]`, `proc.Reserve[Pong]()` |
+
+Rejected examples are not exhaustive:
+
+| Rejected example | Allowed replacement |
+| --- | --- |
+| `func (l *ConfigLoader) Table() map[string]int` | Publish an object with an `im.FrozenMap`. |
+| `func (l *ConfigLoader) Each(visit func(string))` | Return immutable data. |
+| `func (l *ConfigLoader) Load() error` | Return a defined scalar status; `error` is an interface. |
+| `func (l *ConfigLoader) Keys(keys ...string)` | Take an `im.FrozenSlice[string]`. |
+| `func (l ConfigLoader) Version() int` | `func (l *ConfigLoader) Version() int` |
+| `p := loader.Proc()`, `saved = loader.Proc()`, `use(loader.Proc())`, `loader.Proc() == nil` | Keep the PID; call the method directly. |
+| `loader.Proc().version`, `loader.Proc().Args()` | Add an exported method. |
+| `loader.Proc().Run(ctx)`, `l.Run(ctx)` | Only the supervisor calls `Run`. |
+| `loader.Proc().publish()`, `loader.Proc().Lock()` for an embedded `sync.Mutex` | Declare an exported method on the process. |
+| `f := loader.Proc().Version`, `get := loader.Proc` | `v := loader.Proc().Version()` |
+| `go loader.Proc().Version()`, `defer loader.Proc().Version()` | `go func() { loader.Proc().Version() }()` |
+| In a method: `other := l`, `use(l)`, `l == nil`, `*l = ConfigLoader{}` | Select a field or call a method. |
+| In a method: `go l.publish()`, `defer l.publish()`, `f := l.publish` | Call `l.publish()` directly; use `defer l.mu.Unlock()` for field cleanup. |
+| In a method: `func() { l.version++ }` | Move the work into a method. |
+| In a method: `l.Process`, `&l.Process`, `f := l.Args` | `args := l.Args()` |
+| `&ConfigLoader{}`, `var l ConfigLoader`, `new(ConfigLoader)` | `proc.Start[ConfigLoader](root, args)` |
+| `func use(l *ConfigLoader)`, `type L = ConfigLoader`, `type Outer struct { ConfigLoader }`, `(*ConfigLoader).Version` | Pass a `proc.PID[ConfigLoader]`. |
+| `proc.Start[ConfigLoader, LoaderArgs](root, args)` | `proc.Start[ConfigLoader](root, args)` |
+| `proc.PID[int]`, `proc.Reserve[Plain]()`, `func f[T any](p proc.PID[T])` | Use a concrete process type. |
+| `type Bad struct { proc.Process[map[string]int] }`, `proc.Process[error]` | Use an allowed argument type, for example `proc.Process[LoaderArgs]`. |
+| `type Bad[T any] struct { proc.Process[T] }`, `var x struct{ proc.Process[proc.None] }` | Declare a named, non-generic struct. |
+| `type Bad struct { proc.Process[proc.None]; im.Shared }`, `M proc.Process[proc.None]`, `*proc.Process[proc.None]` | Embed one `proc.Process[A]` by value and no `im` marker. |
+| `type Bad struct { proc.Process[proc.None]; limits im.FrozenMap[string, int] }` | Put immutable data in the arguments, or publish it through an `im.Owner` field. |
+
+These rules do not track field values. A method can still send a pointer to a
+field through a package variable or a channel; that is ordinary Go code.
+
+The runtime behavior is not part of the proof:
+
+- `Start` creates a new process value, gives it the arguments, stores it in the
+  PID, and runs `Run` in a new goroutine. The PID is started when `Start` returns.
+  `Proc` is one atomic load. It panics with `proc: PID not started` before
+  `StartReserved` starts a reserved PID. `StartReserved` panics if the PID is
+  already started.
+- Each run gets a context that ends with that run. If `Run` returns, the process
+  ends. If `Run` panics, the supervisor creates a new value from the same
+  arguments, stores it in the same PID, and runs it after a delay of 1 s that
+  doubles for each restart in the last 5 minutes. `im.Owner` fields start empty
+  again. Calls in progress finish on the old value. A `Run` that panics because
+  a peer PID is not started yet runs again in this way.
+- A sixth panic in 5 minutes stops the other children of the supervisor in
+  reverse start order and escalates to the parent supervisor, which restarts
+  the subtree with the same rule. At the root, the last panic value panics
+  again and the program exits.
+- `proc.StartSupervisor(parent)` nests a supervisor. `Stop` begins stopping;
+  its channel closes when all children have stopped, last started first.
+- `proctest.NewRoot(t)` fails a test whose process tree does not stop in 5 s.
 
 ## Statements and calls
 
@@ -242,7 +354,7 @@ Rejected statement and call examples (**not exhaustive**):
 | `use(im.FreezeSlice(values))` | Bind Freeze to a local, then call `use`. |
 | `case _, values[0] = <-ready:` | Receive first; write in the case body. |
 | `case <-watch(im.FreezeSlice(values)):` | Freeze and compute the channel before the select; receive from the channel variable. |
-| `value.Read()` or `reader.Read(p)` with protected receiver/parameters/results | Use a named function: `Read(p)`. |
+| `value.Read()` or `reader.Read(p)` with protected receiver/parameters/results | Use a named function: `Read(p)`. Exported process methods are the exception; see [Supervised processes](#supervised-processes). |
 | `var value any = p` | Use a concrete `*SharedPoint` variable. |
 | `callback(p)` through a function variable with protected arguments | Use a direct named function. |
 | `callback := func() int { return point.X }` | `x := point.X; callback := func() int { return x }` |

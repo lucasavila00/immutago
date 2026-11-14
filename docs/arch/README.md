@@ -15,6 +15,7 @@ consumption checks. The analyzer adds no runtime state.
 | [internal/freeze](../../internal/freeze/freeze.go) | Require one native builder handle and reject use after Freeze. |
 | [internal/freeze/flow](../../internal/freeze/flow/graph.go) | Supply the builder solver's graph and set operations. |
 | [pkg/im](../../pkg/im/marker.go) | Define both markers and the trusted native storage wrappers. |
+| [pkg/proc](../../pkg/proc/proc.go) | Define the process marker, PIDs, and the trusted supervisor runtime. |
 | [tests](../../tests/cli_test.go) | Run consumer fixtures through the command and vet driver. |
 
 ## Design pages

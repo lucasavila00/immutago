@@ -18,6 +18,11 @@
 // Freeze calls consume exclusive native map and slice builders without copying.
 // Builder aliases and later uses are rejected; Clone creates independent native storage.
 // Dependency proof failures propagate to importing consumers.
+//
+// A struct that embeds proc.Process[A] is a mutable process. Its pointer is valid
+// only as a method receiver or as a direct PID.Proc result that receives a direct
+// call of an exported method. Exported process methods take and return only
+// allowed stored types, and only proc.Start and proc.StartReserved create processes.
 package analyzer
 
 import (

@@ -5,6 +5,7 @@
 - [Get started](getting-started.md): a complete example and check commands.
 - [Language rules](rules.md): the complete allowed forms and rejected examples.
 - [Collection API](../pkg/im/readme.md): signatures, zero values, and iteration.
+- [Process API](../pkg/proc/readme.md): supervisors, PIDs, and restarts.
 - [Performance](performance.md): storage sharing, Clone, and cost checks.
 
 ## Maintainers

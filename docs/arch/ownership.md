@@ -27,6 +27,30 @@ slot-bearing value check rejects copies of slots and holders. It also checks
 holder pointer transport and closure captures. The ordinary Scoped checks
 apply to each loaded pointer.
 
+## Supervised processes
+
+A [process](../../pkg/proc/proc.go) is mutable and is not a marked struct. The
+classifier treats `proc.Process[A]` as opaque, as it treats `im.Owner`, so the
+fields of a process are not protected storage. The
+[process matcher](../../pkg/analyzer/process.go) applies four rules:
+
+- A process value or pointer is valid only as the receiver variable in a method
+  of that process or as a direct `PID.Proc()` result. The receiver can select
+  fields other than the marker and call methods directly. A `Proc()` result can
+  only receive a direct synchronous call of an exported method other than `Run`
+  that is declared on the process.
+- The process type name can appear only in its declaration, pointer receivers,
+  and the type argument of `proc.Start`, `proc.Reserve`, and `proc.PID`.
+- Each parameter and result of an exported method other than `Run` must pass the
+  [type proof](../../internal/checker/proof.go). A PID is a leaf of that proof.
+- The type argument of `proc.Process` must pass the same proof.
+
+A process is not an Owner holder; the holder pointer rules do not apply to it.
+Methods with a process receiver are exempt from the rule against user-defined
+methods with protected storage, because the four rules leave a direct static
+call as the only use of such a method. The runtime creates a new value from the
+same arguments on each restart and stores it in the same PID.
+
 ## Native builders
 
 [Discovery](../../internal/freeze/discover.go) indexes local declarations by
