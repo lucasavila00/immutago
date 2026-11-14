@@ -1,0 +1,3 @@
+global.go:7:2: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: logx.Saved = current
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
