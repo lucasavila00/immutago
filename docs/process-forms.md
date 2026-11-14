@@ -5,7 +5,8 @@ For a complete example and the execution, restart, and stop rules, read
 
 The [config loader](../tests/testdata/accepted/process/config_loader.go) and
 [limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
-and PIDs in start arguments. The tables use those example types.
+and PIDs in start arguments. The [waker](../tests/testdata/accepted/process/waker.go)
+example shows `Init`. The tables use those example types.
 
 These allowed forms are complete. Other uses of a process, its type name, or a
 process pointer from `Proc()` are rejected. Parentheses preserve these forms.
@@ -17,22 +18,23 @@ process pointer from `Proc()` are rejected. Parentheses preserve these forms.
 | Named, non-generic struct with one `proc.Process[A]` embedded by value; `A` is an [allowed stored type](common-forms.md#markers-and-stored-types); the other fields are ordinary Go without [protected storage](rules.md), or [Owner](owner.md) fields | `type ConfigLoader struct { proc.Process[LoaderArgs]; mu sync.Mutex; current im.Owner[Config] }` |
 | Process without arguments | `type Cache struct { proc.Process[proc.None]; hits int }` |
 | Declare the entry point on the process | `func (l *ConfigLoader) Run(ctx context.Context) { ... }` (no results) |
+| Declare an initializer on the process; the runtime calls it on each new struct before the PID publishes it | `func (w *Waker) Init() { w.wake = make(chan struct{}, 1) }` (no parameters or results) |
 | Method with a pointer receiver | `func (l *ConfigLoader) Version() int { return l.version }` |
-| Exported method other than `Run` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (l *Limiter) Usage() Usage` |
+| Exported method other than `Run` and `Init` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (l *Limiter) Usage() Usage` |
 
 ## Use fields and arguments inside methods
 
 | Allowed form | Example |
 | --- | --- |
 | In a method, select a field of the receiver other than the marker | `l.version++`, `l.mu.Lock()`, `defer l.mu.Unlock()`, `l.current.Store(&Config{})` |
-| In a method, call a method of the receiver directly and synchronously, other than `Run` | `l.publish()`, `l.Lock()` for an embedded `sync.Mutex` |
+| In a method, call a method of the receiver directly and synchronously, other than `Run` and `Init` | `l.publish()`, `l.Lock()` for an embedded `sync.Mutex` |
 | In a method, read the arguments with a direct call | `args := l.Args()`, `l.Args().Loader.Proc().Limit(l.Args().Key)` |
 
 ## Call methods and pass PIDs
 
 | Allowed form | Example |
 | --- | --- |
-| Call an exported method other than `Run`, declared on the process, directly and synchronously on `pid.Proc()` | `v := loader.Proc().Version()`, `(loader.Proc()).Version()` |
+| Call an exported method other than `Run` and `Init`, declared on the process, directly and synchronously on `pid.Proc()` | `v := loader.Proc().Version()`, `(loader.Proc()).Version()` |
 | Call through a PID in a field of a marked value | `peers.Loader.Proc().Version()` |
 | Keep, copy, store, pass, or return a PID | `type Peers struct { im.Shared; Loader proc.PID[ConfigLoader] }` |
 | Call through a PID in a function literal | `defer func() { limiter.Proc().Take() }()` |
@@ -60,6 +62,8 @@ These examples are not exhaustive.
 | `p := loader.Proc()`, `saved = loader.Proc()`, `use(loader.Proc())`, `loader.Proc() == nil` | Keep the PID; call the method directly. |
 | `loader.Proc().version`, `loader.Proc().Args()` | Add an exported method. |
 | `loader.Proc().Run(ctx)`, `l.Run(ctx)` | Only the supervisor calls `Run`. |
+| `waker.Proc().Init()`, `w.Init()` | Only the runtime calls `Init`. |
+| `func (w *Waker) Init() error`, `func (w Waker) Init()`, a promoted `Init` | Declare `func (w *Waker) Init()`. |
 | `loader.Proc().publish()`, `loader.Proc().Lock()` for an embedded `sync.Mutex` | Declare an exported method on the process. |
 | `f := loader.Proc().Version`, `get := loader.Proc` | `v := loader.Proc().Version()` |
 | `go loader.Proc().Version()` | `go func() { loader.Proc().Version() }()` |

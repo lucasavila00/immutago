@@ -8,9 +8,9 @@ import "github.com/lucasavila00/immutago/pkg/proc"
 
 Package proc runs supervised processes.
 
-A process is a mutable struct that embeds Process\[A\] and has a Run\(context.Context\) method with a pointer receiver. A is the immutable argument type of the process; use None for a process without arguments. Start creates a new process value, gives it the arguments, runs Run in a new goroutine, and returns its PID. Callers keep the PID and call exported methods directly on the process pointer from PID.Proc. The immutago analyzer proves that these methods take and return only immutable values and PIDs. For processes that need each other's PIDs, Reserve a PID first and start it later with StartReserved.
+A process is a mutable struct that embeds Process\[A\] and has a Run\(context.Context\) method with a pointer receiver. A is the immutable argument type of the process; use None for a process without arguments. Start creates a new process value, gives it the arguments, calls its Init method if it has one, runs Run in a new goroutine, and returns its PID. Callers keep the PID and call exported methods directly on the process pointer from PID.Proc. The immutago analyzer proves that these methods take and return only immutable values and PIDs. For processes that need each other's PIDs, Reserve a PID first and start it later with StartReserved.
 
-A supervisor runs its children until Stop. If Run returns, the process ends. If Run panics, the supervisor waits 1 s, doubling the delay for each restart in the last 5 minutes. It then creates a new process value from the same arguments, stores it in the same PID, and calls Run. Calls during the delay still use the old value; calls already in progress finish on that value. A sixth panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and escalates the panic to the parent supervisor, which restarts the subtree with the same rule. At the root supervisor, the escalation panics again with the last panic value, and the program exits.
+A supervisor runs its children until Stop. If Run returns, the process ends. If Run panics, the supervisor waits 1 s, doubling the delay for each restart in the last 5 minutes. It then creates a new process value from the same arguments, calls Init, stores the value in the same PID, and calls Run. Calls during the delay still use the old value; calls already in progress finish on that value. A sixth panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and escalates the panic to the parent supervisor, which restarts the subtree with the same rule. At the root supervisor, the escalation panics again with the last panic value, and the program exits.
 
 Stop cancels each Run context and waits for Run to return. Cancellation is cooperative; Run must observe its context. Stop does not wait for direct method calls. Process methods must synchronize their own shared state.
 
@@ -24,7 +24,7 @@ func StartReserved[T, A any, P interface {
 }](parent *Supervisor, pid PID[T], args A)
 ```
 
-StartReserved creates a process value with args, stores it in pid, and runs its Run method under parent. The PID is started when StartReserved returns. Each restart creates a new value from the same args. If parent is stopped, the process does not run. StartReserved panics if pid is already started.
+StartReserved creates a process value with args, calls its Init method if it has one, stores it in pid, and runs its Run method under parent. A panic in the first Init reaches the caller. The PID is started when StartReserved returns. Each restart creates a new value from the same args. If parent is stopped, the process does not run. StartReserved panics if pid is already started.
 
 ## type None
 

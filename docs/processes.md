@@ -96,6 +96,22 @@ Start publishes the new struct before Run begins. A method can therefore run
 before Run initializes any fields. Put required initial data in the start
 arguments, and make methods handle the zero values of other fields.
 
+When a field needs a value before any method runs, such as a channel or a
+default that is not the zero value, declare `Init()` on the process. The
+runtime calls it on each new struct, at the first start and at each restart,
+before it publishes the struct through the PID. A method cannot set the field
+lazily instead: a function literal cannot capture the receiver, so
+`l.once.Do(func() { l.wake = make(chan struct{}, 1) })` is rejected. Only the
+runtime calls `Init`. The [waker example](../tests/testdata/accepted/process/waker.go)
+creates its channel in `Init`.
+
+```go
+func (w *Waker) Init() { w.wake = make(chan struct{}, 1) }
+```
+
+A panic in the first `Init` reaches the caller of Start. A panic in `Init` at a
+restart counts as a panic of the run.
+
 For two processes that need each other's PID, Reserve one PID, start the first
 process, then call StartReserved for the reserved PID. Reserve does not wait
 for startup. Calling Proc before StartReserved panics; coordinate the first
@@ -106,7 +122,8 @@ calls so that both processes have started.
 If Run returns, it is not restarted. If Run panics, the supervisor waits before
 restarting it: 1 second after the first panic, then twice as long for each
 restart in the last 5 minutes. It creates a new struct from the same start
-arguments and replaces the value behind the PID. Mutable fields return to their
+arguments, calls `Init` if the process declares it, and replaces the value
+behind the PID. Mutable fields return to their
 zero values, including empty Owner fields.
 
 During the delay, PID calls still use the old struct. A call already in progress
