@@ -3,10 +3,10 @@ package api
 import "github.com/lucasavila00/immutago/pkg/proc"
 
 // Dependency keeps the runtime identity through an exported alias.
-type Dependency = proc.UncheckedDependency[*int]
+type Dependency = proc.ConcurrentSafe[*int]
 
 // Wrap returns a dependency without exposing its value.
-func Wrap(value *int) Dependency { return proc.Trust(value) }
+func Wrap(value *int) Dependency { return proc.AssumeConcurrentSafe(value) }
 
 // Copy passes a dependency through an ordinary function.
 func Copy(value Dependency) Dependency { return value }

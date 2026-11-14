@@ -8,9 +8,9 @@ import (
 )
 
 // uncheckedTypeArguments identifies type syntax whose payload is explicitly trusted.
-// It does not exempt the value expression passed to Trust or the code that creates it.
+// It does not exempt the value expression passed to AssumeConcurrentSafe or the code that creates it.
 func uncheckedTypeArguments(info *types.Info, expression ast.Expr) bool {
-	if info.Types[expression].IsType() && checker.IsRuntimeType(info.TypeOf(expression), checker.UncheckedDependencyType) {
+	if info.Types[expression].IsType() && checker.IsRuntimeType(info.TypeOf(expression), checker.ConcurrentSafeType) {
 		return true
 	}
 	var base ast.Expr
@@ -24,16 +24,16 @@ func uncheckedTypeArguments(info *types.Info, expression ast.Expr) bool {
 	}
 	switch base := base.(type) {
 	case *ast.Ident:
-		return runtimeObject(info.ObjectOf(base), checker.TrustFunction)
+		return runtimeObject(info.ObjectOf(base), checker.AssumeConcurrentSafeFunction)
 	case *ast.SelectorExpr:
-		return runtimeObject(info.ObjectOf(base.Sel), checker.TrustFunction)
+		return runtimeObject(info.ObjectOf(base.Sel), checker.AssumeConcurrentSafeFunction)
 	}
 	return false
 }
 
 // dependencyArgument identifies the exact wrapper or a marked argument struct with a dependency field.
 func dependencyArgument(t types.Type) bool {
-	if checker.IsRuntimeType(t, checker.UncheckedDependencyType) {
+	if checker.IsRuntimeType(t, checker.ConcurrentSafeType) {
 		return true
 	}
 	structure, ok := t.Underlying().(*types.Struct)
@@ -48,14 +48,14 @@ func dependencyArgument(t types.Type) bool {
 	return false
 }
 
-// trustedValue matches the complete value operand of a direct Trust call.
+// trustedValue matches the complete value operand of a direct AssumeConcurrentSafe call.
 func (c *subsetChecks) trustedValue(expression ast.Expr) bool {
 	call, ok := c.unparenthesizedParent(expression).(*ast.CallExpr)
 	return ok && len(call.Args) == 1 && ast.Unparen(call.Args[0]) == ast.Unparen(expression) &&
-		runtimeObject(c.calledObject(call.Fun), checker.TrustFunction)
+		runtimeObject(c.calledObject(call.Fun), checker.AssumeConcurrentSafeFunction)
 }
 
-// trustedFunctionType permits a function literal signature at the explicit Trust boundary.
+// trustedFunctionType permits a function literal signature at the explicit AssumeConcurrentSafe boundary.
 func (c *subsetChecks) trustedFunctionType(expression ast.Expr) bool {
 	literal, ok := c.parents[expression].(*ast.FuncLit)
 	return ok && literal.Type == expression && c.trustedValue(literal)
@@ -65,7 +65,7 @@ func (c *subsetChecks) trustedFunctionType(expression ast.Expr) bool {
 func (c *subsetChecks) matchDependencyCall(
 	call *ast.CallExpr, object types.Object, signature *types.Signature,
 ) (bool, string) {
-	if runtimeObject(object, checker.TrustFunction) {
+	if runtimeObject(object, checker.AssumeConcurrentSafeFunction) {
 		if source := c.pass.TypesInfo.TypeOf(call.Args[0]); c.queries.Callable(source) &&
 			types.Identical(source, signature.Params().At(0).Type()) {
 			return true, ""

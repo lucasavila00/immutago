@@ -14,12 +14,12 @@ type Counter struct {
 }
 
 // Run starts a Reporter with the map, then writes the map.
-// proc.Trust is a false promise here: the checker accepts the program, but it has a data race.
+// proc.AssumeConcurrentSafe is a false promise here: the checker accepts the program, but it has a data race.
 func (c *Counter) Run(ctx context.Context) {
 	c.seen = map[string]int{}
 	children := proc.NewRoot(nil)
 	defer func() { <-children.Stop() }()
-	proc.Start[Reporter](children, ReporterArgs{Seen: proc.Trust(c.seen)})
+	proc.Start[Reporter](children, ReporterArgs{Seen: proc.AssumeConcurrentSafe(c.seen)})
 	for i := 0; ctx.Err() == nil; i++ {
 		c.seen["k"] = i
 	}
@@ -28,7 +28,7 @@ func (c *Counter) Run(ctx context.Context) {
 // ReporterArgs are the arguments of a Reporter.
 type ReporterArgs struct {
 	im.Shared
-	Seen proc.UncheckedDependency[map[string]int]
+	Seen proc.ConcurrentSafe[map[string]int]
 }
 
 // Reporter reads the map of a Counter.

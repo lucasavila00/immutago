@@ -14,19 +14,19 @@ Names of the process runtime identities in RuntimePath and of the process method
 
 ```go
 const (
-    ProcessMarker           = "Process"
-    PIDType                 = "PID"
-    StartFunction           = "Start"
-    ReserveFunction         = "Reserve"
-    StartReservedFunction   = "StartReserved"
-    StartSupervisorFunction = "StartSupervisor"
-    ProcMethod              = "Proc"
-    ArgsMethod              = "Args"
-    SupervisorMethod        = "Supervisor"
-    RunMethod               = "Run"
-    UncheckedDependencyType = "UncheckedDependency"
-    TrustFunction           = "Trust"
-    ValueMethod             = "Value"
+    ProcessMarker                = "Process"
+    PIDType                      = "PID"
+    StartFunction                = "Start"
+    ReserveFunction              = "Reserve"
+    StartReservedFunction        = "StartReserved"
+    StartSupervisorFunction      = "StartSupervisor"
+    ProcMethod                   = "Proc"
+    ArgsMethod                   = "Args"
+    SupervisorMethod             = "Supervisor"
+    RunMethod                    = "Run"
+    ConcurrentSafeType           = "ConcurrentSafe"
+    AssumeConcurrentSafeFunction = "AssumeConcurrentSafe"
+    ValueMethod                  = "Value"
 )
 ```
 
@@ -136,7 +136,7 @@ Shared reports the presence of an embedded im.Shared value, not type validity.
 func TrustedField(field *types.Var) bool
 ```
 
-TrustedField identifies a named proc.UncheckedDependency field. Only a marked process argument struct can store it.
+TrustedField identifies a named proc.ConcurrentSafe field. Only a marked process argument struct can store it.
 
 ## type Classifier
 
@@ -180,7 +180,7 @@ type Prover struct {
 func (p *Prover) ArgumentReason(t types.Type) string
 ```
 
-ArgumentReason proves a process argument type. It accepts proc.UncheckedDependency as the type, or as a TrustedField of a struct with exactly one marker. Every other component must be an allowed stored type.
+ArgumentReason proves a process argument type. It accepts proc.ConcurrentSafe as the type, or as a TrustedField of a struct with exactly one marker. Every other component must be an allowed stored type.
 
 ### func \(\*Prover\) Reason
 

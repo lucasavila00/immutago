@@ -12,7 +12,7 @@ func TestDependencyClassification(t *testing.T) {
 	value := markedType("Value", marker)
 	payload := classificationSignature(value)
 	pkg := types.NewPackage(RuntimePath, "proc")
-	wrapper := types.NewNamed(types.NewTypeName(token.NoPos, pkg, UncheckedDependencyType, nil),
+	wrapper := types.NewNamed(types.NewTypeName(token.NoPos, pkg, ConcurrentSafeType, nil),
 		types.NewStruct([]*types.Var{types.NewField(token.NoPos, pkg, "value", payload, false)}, nil), nil)
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), wrapper)
 	var queries Classifier
