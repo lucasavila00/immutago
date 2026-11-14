@@ -85,9 +85,8 @@ key and element types with the same Prover. Ownership alone does not admit an
 argument-only type as a builder element.
 
 A process is not an Owner holder; the holder pointer rules do not apply to it.
-Methods with a process receiver are exempt from the rule against user-defined
-methods with protected storage, because the five rules leave a direct static
-call as the only use of such a method. The runtime creates a new value from the
+Methods with a process receiver use the separate process rules above, not the
+marked-struct receiver rules. The runtime creates a new value from the
 same arguments after each restart delay and stores it in the same PID.
 These rules do not check the origin or destination of mutable field handles
 in ordinary method bodies; they do not prove memory isolation.

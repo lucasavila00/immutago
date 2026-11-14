@@ -3,7 +3,7 @@
 | Guide | Use it to |
 | --- | --- |
 | [Shared](shared.md) | Store or return pointers to immutable objects. |
-| [Scoped](scoped.md) | Keep pointers local; pass them to named functions that do not save them. |
+| [Scoped](scoped.md) | Keep pointers local; use functions and methods that do not save them. |
 | [Owner](owner.md) | Publish a new Scoped object and read the current one. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
 | [Supervised processes](processes.md) | Learn the execution and restart model. |
