@@ -140,14 +140,6 @@ func (o *Owner[T]) Store(value *T)
 
 Store publishes a freshly constructed object.
 
-## type Process
-
-Process marks a mutable struct that runs as a supervised process. Only proc.Start creates it, and other code calls its exported methods through a proc.Ref. Embed it by value. A named field or pointer embedding does not mark the struct.
-
-```go
-type Process struct{}
-```
-
 ## type Scoped
 
 Scoped marks an immutable struct whose pointers must not escape. Embed it by value. A named field or pointer embedding does not mark the struct.

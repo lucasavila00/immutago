@@ -8,10 +8,10 @@ import (
 	"github.com/lucasavila00/immutago/pkg/proc"
 )
 
-// Root returns a root supervisor that stops when t ends.
+// NewRoot returns a root supervisor that stops when t ends.
 // It fails t if the tree does not stop in 5 s.
-func Root(t testing.TB) *proc.Supervisor {
-	root := proc.New()
+func NewRoot(t testing.TB) *proc.Supervisor {
+	root := proc.NewRoot()
 	t.Cleanup(func() {
 		select {
 		case <-root.Stop():

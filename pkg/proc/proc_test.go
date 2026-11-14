@@ -129,25 +129,25 @@ func expectStarted(t *testing.T, want ...string) {
 	}
 }
 
-// TestStartFromZeroValue verifies the zero value, a stable Get, and calls from many goroutines.
+// TestStartFromZeroValue verifies the zero value, a stable Proc, and calls from many goroutines.
 func TestStartFromZeroValue(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := New()
-		ref := Start[counter](root)
-		process := ref.Get()
-		if ref.Get() != process || process.count != 0 {
-			t.Fatal("Get did not return one zero process")
+		root := NewRoot()
+		pid := Start[counter](root)
+		process := pid.Proc()
+		if pid.Proc() != process || process.count != 0 {
+			t.Fatal("Proc did not return one zero process")
 		}
 		var callers sync.WaitGroup
 		for range 4 {
 			callers.Go(func() {
 				for range 100 {
-					ref.Get().Add()
+					pid.Proc().Add()
 				}
 			})
 		}
 		callers.Wait()
-		if got := ref.Get().Add(); got != 401 {
+		if got := pid.Proc().Add(); got != 401 {
 			t.Fatalf("count = %d, want 401", got)
 		}
 		<-root.Stop()
@@ -157,9 +157,9 @@ func TestStartFromZeroValue(t *testing.T) {
 // TestStopOrder verifies reverse start order for processes and nested supervisors.
 func TestStopOrder(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := New()
+		root := NewRoot()
 		Start[first](root)
-		nested := root.Supervise()
+		nested := StartSupervisor(root)
 		Start[second](nested)
 		Start[third](root)
 		synctest.Wait()
@@ -173,9 +173,9 @@ func TestStopOrder(t *testing.T) {
 // TestStopNested verifies that a stopped nested supervisor leaves its parent running.
 func TestStopNested(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := New()
+		root := NewRoot()
 		Start[first](root)
-		nested := root.Supervise()
+		nested := StartSupervisor(root)
 		Start[second](nested)
 		synctest.Wait()
 		expectStarted(t, "start first", "start second")
@@ -190,7 +190,7 @@ func TestStopNested(t *testing.T) {
 // TestSelfStop verifies that a process can stop its own supervisor.
 func TestSelfStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		selfRoot = New()
+		selfRoot = NewRoot()
 		Start[stopper](selfRoot)
 		synctest.Wait()
 		expectEvents(t, "stopped")
@@ -202,9 +202,9 @@ func TestSelfStop(t *testing.T) {
 func TestRestartAndEscalate(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		escalated := make(chan any, 1)
-		ref := Start[failing](root(func(value any) { escalated <- value }))
-		if value := <-escalated; value != 6 || ref.Get().runs != 6 {
-			t.Fatalf("escalated %v after %d runs, want 6 after 6", value, ref.Get().runs)
+		pid := Start[failing](root(func(value any) { escalated <- value }))
+		if value := <-escalated; value != 6 || pid.Proc().runs != 6 {
+			t.Fatalf("escalated %v after %d runs, want 6 after 6", value, pid.Proc().runs)
 		}
 		expectEvents(t, "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31")
 	})
@@ -226,10 +226,10 @@ func TestRestartWindow(t *testing.T) {
 func TestEscalateToParent(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := root(func(value any) { t.Errorf("escalated %v", value) })
-		nested := root.Supervise()
+		nested := StartSupervisor(root)
 		Start[first](nested)
 		Start[second](nested)
-		ref := Start[failing](nested)
+		pid := Start[failing](nested)
 		synctest.Wait()
 		expectStarted(t, "start first", "start second", "00:00:00")
 		time.Sleep(31 * time.Second)
@@ -238,8 +238,8 @@ func TestEscalateToParent(t *testing.T) {
 		time.Sleep(time.Second)
 		synctest.Wait()
 		expectStarted(t, "start first", "start second", "00:00:32")
-		if ref.Get().runs != 7 {
-			t.Fatalf("runs = %d, want 7", ref.Get().runs)
+		if pid.Proc().runs != 7 {
+			t.Fatalf("runs = %d, want 7", pid.Proc().runs)
 		}
 		<-root.Stop()
 		takeEvents()
@@ -249,23 +249,23 @@ func TestEscalateToParent(t *testing.T) {
 // TestStartAfterStop verifies that a stopped supervisor does not run new processes.
 func TestStartAfterStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := New()
+		root := NewRoot()
 		<-root.Stop()
-		if Start[first](root).Get() == nil {
-			t.Fatal("Start returned an empty Ref")
+		if Start[first](root).Proc() == nil {
+			t.Fatal("Start returned an empty PID")
 		}
 		synctest.Wait()
 		expectEvents(t)
 	})
 }
 
-// BenchmarkRefGet measures one Ref.Get call.
-func BenchmarkRefGet(b *testing.B) {
-	root := New()
-	ref := Start[counter](root)
+// BenchmarkPIDProc measures one PID.Proc call.
+func BenchmarkPIDProc(b *testing.B) {
+	root := NewRoot()
+	pid := Start[counter](root)
 	b.ReportAllocs()
 	for b.Loop() {
-		_ = ref.Get()
+		_ = pid.Proc()
 	}
 	<-root.Stop()
 }

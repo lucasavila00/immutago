@@ -24,8 +24,3 @@ type Shared struct{}
 // Scoped marks an immutable struct whose pointers must not escape.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
 type Scoped struct{}
-
-// Process marks a mutable struct that runs as a supervised process.
-// Only proc.Start creates it, and other code calls its exported methods through a proc.Ref.
-// Embed it by value. A named field or pointer embedding does not mark the struct.
-type Process struct{}

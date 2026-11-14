@@ -5,7 +5,6 @@ import (
 	"testing"
 	"testing/synctest"
 
-	"github.com/lucasavila00/immutago/pkg/im"
 	"github.com/lucasavila00/immutago/pkg/proc"
 )
 
@@ -13,7 +12,7 @@ var release chan struct{}
 
 // stuck is a process that does not stop when its context ends.
 type stuck struct {
-	im.Process
+	proc.Process
 }
 
 // Run waits for release and ignores its context.
@@ -32,15 +31,15 @@ func (r *recorder) Cleanup(cleanup func()) { r.cleanups = append(r.cleanups, cle
 // Errorf counts an error.
 func (r *recorder) Errorf(string, ...any) { r.errors++ }
 
-// TestRoot verifies that Root fails a test whose tree does not stop.
-func TestRoot(t *testing.T) {
+// TestNewRoot verifies that NewRoot fails a test whose tree does not stop.
+func TestNewRoot(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		passing := &recorder{TB: t}
-		Root(passing)
+		NewRoot(passing)
 		passing.cleanups[0]()
 		release = make(chan struct{})
 		failing := &recorder{TB: t}
-		root := Root(failing)
+		root := NewRoot(failing)
 		proc.Start[stuck](root)
 		synctest.Wait()
 		failing.cleanups[0]()

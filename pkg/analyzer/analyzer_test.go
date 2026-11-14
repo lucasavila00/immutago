@@ -17,7 +17,6 @@ import (
 const testLibrary = `package im
  type Shared struct{}
  type Scoped struct{}
- type Process struct{}
  type Owner[T any] struct{}
  func (o *Owner[T]) Load() *T { return nil }
  func (o *Owner[T]) Store(p *T) {}
@@ -36,10 +35,11 @@ const testLibrary = `package im
 
 const testRuntime = `package proc
  import "context"
+ type Process struct{}
  type Supervisor struct{}
- type Ref[T any] struct { value *T }
- func (r Ref[T]) Get() *T { return r.value }
- func Start[T any, P interface{ *T; Run(context.Context) }](parent *Supervisor) Ref[T] { return Ref[T]{} }
+ type PID[T any] struct { value *T }
+ func (p PID[T]) Proc() *T { return p.value }
+ func Start[T any, P interface{ *T; Run(context.Context) }](parent *Supervisor) PID[T] { return PID[T]{} }
 `
 
 // testImporter gives compiler tests the library's type identities without loading external packages.

@@ -110,7 +110,7 @@ func (p *proof) value(result *obligation, t types.Type) {
 		result.reason = "Owner slots are mutable"
 		return
 	}
-	if IsLibraryType(t, "Shared") || IsLibraryType(t, "Scoped") || IsRef(t) {
+	if IsLibraryType(t, "Shared") || IsLibraryType(t, "Scoped") || IsRuntimeType(t, PIDType) {
 		return
 	}
 	if IsCollection(t) {

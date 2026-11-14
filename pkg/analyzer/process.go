@@ -29,6 +29,14 @@ func processDeclaration(t types.Type) bool {
 	return named && checker.Process(t)
 }
 
+// processName returns the type name of a process or a process pointer.
+func processName(t types.Type) string {
+	if pointer, ok := t.Underlying().(*types.Pointer); ok {
+		t = pointer.Elem()
+	}
+	return types.Unalias(t).(*types.Named).Obj().Name()
+}
+
 // processValue identifies a process or a pointer to one.
 func (c *subsetChecks) processValue(t types.Type) bool {
 	if pointer, ok := t.Underlying().(*types.Pointer); ok {
@@ -47,16 +55,18 @@ func runtimeObject(object types.Object, name string) bool {
 	return object != nil && object.Pkg() != nil && object.Pkg().Path() == checker.RuntimePath && object.Name() == name
 }
 
-// processTypeArgument identifies proc.Ref and proc.Start, which take a process type argument.
+// processTypeArgument identifies proc.PID and proc.Start, which take a process type argument.
 func processTypeArgument(object types.Object) bool {
-	return runtimeObject(object, checker.RefType) || runtimeObject(object, checker.StartFunction)
+	return runtimeObject(object, checker.PIDType) || runtimeObject(object, checker.StartFunction)
 }
 
-// refGet identifies the proc.Ref.Get method.
-func refGet(object types.Object) bool { return runtimeObject(object, checker.GetMethod) }
+// procMethod identifies the proc.PID.Proc method.
+func procMethod(object types.Object) bool { return runtimeObject(object, checker.ProcMethod) }
 
-// processMarker identifies the exact im.Process marker type.
-func processMarker(t types.Type) bool { return checker.IsLibraryType(t, checker.ProcessMarker) }
+// processMarker identifies the exact proc.Process marker type.
+func processMarker(t types.Type) bool { return checker.IsRuntimeType(t, checker.ProcessMarker) }
+
+const processEscape = "process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call"
 
 // checkProcessNode checks process declarations, process type names, and process values.
 func (c *subsetChecks) checkProcessNode(node ast.Node) {
@@ -66,8 +76,8 @@ func (c *subsetChecks) checkProcessNode(node ast.Node) {
 	case *ast.Ident:
 		c.checkProcessName(n)
 	case *ast.SelectorExpr:
-		if refGet(c.pass.TypesInfo.ObjectOf(n.Sel)) && !c.directRefGet(n) {
-			c.pass.Reportf(n.Pos(), "proc.Ref.Get requires a direct call")
+		if procMethod(c.pass.TypesInfo.ObjectOf(n.Sel)) && !c.directProc(n) {
+			c.pass.Reportf(n.Pos(), processEscape)
 		}
 	}
 	if expression, ok := node.(ast.Expr); ok {
@@ -75,7 +85,7 @@ func (c *subsetChecks) checkProcessNode(node ast.Node) {
 	}
 }
 
-// checkProcessStruct requires one embedded im.Process in a defined, non-generic struct without a marker.
+// checkProcessStruct requires one embedded proc.Process in a defined, non-generic struct without a marker.
 func (c *subsetChecks) checkProcessStruct(n *ast.StructType) {
 	t := c.pass.TypesInfo.TypeOf(n)
 	structure, _ := t.Underlying().(*types.Struct)
@@ -90,7 +100,7 @@ func (c *subsetChecks) checkProcessStruct(n *ast.StructType) {
 		}
 		pointer, ok := field.Type().Underlying().(*types.Pointer)
 		if processMarker(field.Type()) || ok && processMarker(pointer.Elem()) {
-			c.pass.Reportf(n.Pos(), "im.Process must be embedded by value")
+			c.pass.Reportf(n.Pos(), "proc.Process must be embedded by value")
 		}
 	}
 	if count == 0 {
@@ -103,7 +113,7 @@ func (c *subsetChecks) checkProcessStruct(n *ast.StructType) {
 	case spec.TypeParams != nil:
 		c.pass.Reportf(n.Pos(), "processes cannot be generic")
 	case count > 1 || checker.Marked(t):
-		c.pass.Reportf(n.Pos(), "processes embed im.Process once and no immutable marker")
+		c.pass.Reportf(n.Pos(), "processes embed proc.Process once and no immutable marker")
 	}
 }
 
@@ -128,8 +138,8 @@ func (c *subsetChecks) checkProcessName(id *ast.Ident) {
 			return
 		}
 	}
-	c.pass.Reportf(id.Pos(), "process types can be named only in their declaration, a pointer receiver, "+
-		"proc.Start, or proc.Ref")
+	c.pass.Reportf(id.Pos(), "process type %[1]s can be named only in its declaration, a pointer receiver, "+
+		"proc.Start[%[1]s], or proc.PID[%[1]s]", id.Name)
 }
 
 // processReceiver identifies the type of a method receiver.
@@ -143,13 +153,13 @@ func (c *subsetChecks) processReceiver(receiver *ast.StarExpr) bool {
 	return ok && declaration.Recv == list
 }
 
-// checkProcessExpression permits process values only as a method receiver or a direct Ref.Get result.
+// checkProcessExpression permits process values only as a method receiver or a direct PID.Proc result.
 func (c *subsetChecks) checkProcessExpression(expression ast.Expr) {
 	if _, paren := expression.(*ast.ParenExpr); paren || c.pass.TypesInfo.Types[expression].IsType() {
 		return
 	}
 	id, name := expression.(*ast.Ident)
-	if name && c.pass.TypesInfo.Defs[id] != nil {
+	if _, typeName := c.pass.TypesInfo.Uses[id].(*types.TypeName); name && (typeName || c.pass.TypesInfo.Defs[id] != nil) {
 		return
 	}
 	t := c.pass.TypesInfo.TypeOf(expression)
@@ -164,13 +174,30 @@ func (c *subsetChecks) checkProcessExpression(expression ast.Expr) {
 		}
 		return
 	}
-	if call, ok := expression.(*ast.CallExpr); ok && refGet(c.calledObject(call.Fun)) {
-		if !c.allowedGetUse(call) {
-			c.pass.Reportf(call.Pos(), "a Ref.Get result can only receive a direct call of an exported method other than Run")
+	if call, ok := expression.(*ast.CallExpr); ok && procMethod(c.calledObject(call.Fun)) {
+		if !c.allowedProcUse(call) {
+			c.pass.Reportf(call.Pos(), processEscape)
 		}
 		return
 	}
-	c.pass.Reportf(expression.Pos(), "process values can only come from a method receiver or Ref.Get")
+	if c.processCreation(expression) {
+		c.pass.Reportf(expression.Pos(), "process %[1]s is created outside proc.Start; use proc.Start[%[1]s](parent)",
+			processName(t))
+		return
+	}
+	c.pass.Reportf(expression.Pos(), processEscape)
+}
+
+// processCreation identifies a composite literal or a new call.
+func (c *subsetChecks) processCreation(expression ast.Expr) bool {
+	switch creation := expression.(type) {
+	case *ast.CompositeLit:
+		return true
+	case *ast.CallExpr:
+		builtin, ok := c.calledObject(creation.Fun).(*types.Builtin)
+		return ok && builtin.Name() == "new"
+	}
+	return false
 }
 
 // insideClosure reports a use in a function literal within the method.
@@ -203,10 +230,10 @@ func (c *subsetChecks) allowedReceiverUse(receiver *ast.Ident) bool {
 	return selection.Kind() == types.MethodVal && selection.Obj().Name() != "Run" && c.synchronousCall(selector)
 }
 
-// allowedGetUse permits a direct synchronous call of an exported method declared on the process.
-func (c *subsetChecks) allowedGetUse(get *ast.CallExpr) bool {
-	selector, ok := c.unparenthesizedParent(get).(*ast.SelectorExpr)
-	if !ok || ast.Unparen(selector.X) != get {
+// allowedProcUse permits a direct synchronous call of an exported method declared on the process.
+func (c *subsetChecks) allowedProcUse(proc *ast.CallExpr) bool {
+	selector, ok := c.unparenthesizedParent(proc).(*ast.SelectorExpr)
+	if !ok || ast.Unparen(selector.X) != proc {
 		return false
 	}
 	selection := c.pass.TypesInfo.Selections[selector]
@@ -227,8 +254,8 @@ func (c *subsetChecks) synchronousCall(selector *ast.SelectorExpr) bool {
 	return true
 }
 
-// directRefGet identifies a Ref.Get method selection that is called directly.
-func (c *subsetChecks) directRefGet(selector *ast.SelectorExpr) bool {
+// directProc identifies a PID.Proc method selection that is called directly.
+func (c *subsetChecks) directProc(selector *ast.SelectorExpr) bool {
 	selection := c.pass.TypesInfo.Selections[selector]
 	return selection != nil && selection.Kind() == types.MethodVal && c.directCall(selector) != nil
 }

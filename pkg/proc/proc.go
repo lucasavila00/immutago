@@ -1,10 +1,10 @@
 // Package proc runs supervised processes.
 //
-// A process is a struct that embeds im.Process and has a Run(context.Context)
+// A process is a mutable struct that embeds Process and has a Run(context.Context)
 // method with a pointer receiver. Start creates the process from its zero value,
-// runs Run in a new goroutine, and returns a Ref. Callers keep the Ref and call
-// exported methods directly on the result of Ref.Get. The immutago analyzer
-// proves that these methods take and return only immutable values and Refs.
+// runs Run in a new goroutine, and returns its PID. Callers keep the PID and call
+// exported methods directly on the process pointer from PID.Proc. The immutago
+// analyzer proves that these methods take and return only immutable values and PIDs.
 //
 // A supervisor runs its children until Stop. If Run returns, the process ends.
 // If Run panics, the supervisor runs it again on the same value after a delay of
@@ -28,6 +28,11 @@ const (
 	restartWindow = 5 * time.Minute
 )
 
+// Process marks a mutable struct that runs as a supervised process.
+// Only Start creates it, and other code calls its exported methods through a PID.
+// Embed it by value. A named field or pointer embedding does not mark the struct.
+type Process struct{}
+
 // Supervisor runs processes and nested supervisors.
 type Supervisor struct {
 	mu       sync.Mutex
@@ -45,16 +50,16 @@ type child struct {
 	done chan struct{}
 }
 
-// Ref refers to a process that Start created.
-type Ref[T any] struct {
+// PID identifies a process that Start created.
+type PID[T any] struct {
 	value *atomic.Pointer[T]
 }
 
-// Get returns the process with one atomic load.
-func (r Ref[T]) Get() *T { return r.value.Load() }
+// Proc returns the process pointer with one atomic load.
+func (p PID[T]) Proc() *T { return p.value.Load() }
 
-// New returns a root supervisor.
-func New() *Supervisor { return root(func(value any) { panic(value) }) }
+// NewRoot returns a root supervisor.
+func NewRoot() *Supervisor { return root(func(value any) { panic(value) }) }
 
 // root returns a root supervisor that calls exit with an escalated panic value.
 func root(exit func(any)) *Supervisor {
@@ -67,29 +72,28 @@ func root(exit func(any)) *Supervisor {
 	return s
 }
 
-// Supervise returns a new supervisor that s runs as a child.
-func (s *Supervisor) Supervise() *Supervisor {
+// StartSupervisor returns a new supervisor that parent runs as a child.
+func StartSupervisor(parent *Supervisor) *Supervisor {
 	nested := &Supervisor{stopped: make(chan struct{})}
-	s.add(nested.serve)
+	parent.add(nested.serve)
 	return nested
 }
 
 // Start creates a T from its zero value and runs its Run method under parent.
-// If parent is stopped, Start returns the Ref and does not run the process.
+// If parent is stopped, Start returns the PID and does not run the process.
 func Start[T any, P interface {
 	*T
 	Run(context.Context)
-}](parent *Supervisor) Ref[T] {
+}](parent *Supervisor) PID[T] {
 	value := new(T)
-	ref := Ref[T]{value: new(atomic.Pointer[T])}
-	ref.value.Store(value)
+	pid := PID[T]{value: new(atomic.Pointer[T])}
+	pid.value.Store(value)
 	parent.add(P(value).Run)
-	return ref
+	return pid
 }
 
-// Stop stops the children of s in reverse start order and does not wait.
-// The returned channel closes when all children have stopped.
-// A process can stop its own supervisor from Run.
+// Stop begins stopping; the channel closes when all children have stopped, last started first.
+// Stop does not wait, so a process can stop its own supervisor from Run.
 func (s *Supervisor) Stop() <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()

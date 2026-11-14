@@ -77,7 +77,7 @@ func checkLibraryArguments(pass *analysis.Pass, c *checks) {
 	for ident, instance := range pass.TypesInfo.Instances {
 		obj := pass.TypesInfo.Uses[ident]
 		if processTypeArgument(obj) && !processDeclaration(instance.TypeArgs.At(0)) {
-			c.report(ident.Pos(), "proc.Ref and proc.Start require a process type argument")
+			c.report(ident.Pos(), "proc.Start and proc.PID need a process type argument")
 		}
 		if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
 			continue

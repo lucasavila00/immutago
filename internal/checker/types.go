@@ -14,12 +14,12 @@ const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 // RuntimePath is the package whose supervised process runtime is trusted.
 const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
 
-// Names of the process marker in LibraryPath and of the process runtime identities in RuntimePath.
+// Names of the process runtime identities in RuntimePath.
 const (
 	ProcessMarker = "Process"
-	RefType       = "Ref"
+	PIDType       = "PID"
 	StartFunction = "Start"
-	GetMethod     = "Get"
+	ProcMethod    = "Proc"
 )
 
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
@@ -28,10 +28,10 @@ func IsLibraryType(t types.Type, name string) bool {
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == LibraryPath && n.Obj().Name() == name
 }
 
-// IsRef identifies proc.Ref by package identity and name, not spelling at its use site.
-func IsRef(t types.Type) bool {
+// IsRuntimeType identifies a process runtime type by package identity and name, not spelling at its use site.
+func IsRuntimeType(t types.Type, name string) bool {
 	n, ok := types.Unalias(t).(*types.Named)
-	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == RuntimePath && n.Obj().Name() == RefType
+	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == RuntimePath && n.Obj().Name() == name
 }
 
 // IsCollection reports whether t is one of the library's sealed collection types.
@@ -51,8 +51,22 @@ func Shared(t types.Type) bool { return embedsMarker(t, "Shared") }
 // Scoped reports the presence of an embedded im.Scoped value, not type validity.
 func Scoped(t types.Type) bool { return embedsMarker(t, "Scoped") }
 
-// Process reports the presence of an embedded im.Process value. A process is not a marked struct.
-func Process(t types.Type) bool { return embedsMarker(t, ProcessMarker) }
+// Process reports the presence of an embedded proc.Process value. A process is not a marked struct.
+func Process(t types.Type) bool {
+	if t == nil {
+		return false
+	}
+	s, ok := t.Underlying().(*types.Struct)
+	if !ok {
+		return false
+	}
+	for field := range s.Fields() {
+		if field.Embedded() && IsRuntimeType(field.Type(), ProcessMarker) {
+			return true
+		}
+	}
+	return false
+}
 
 // MarkerCount counts direct embedded marker identities, including aliases of the same marker.
 func MarkerCount(t types.Type) int {
