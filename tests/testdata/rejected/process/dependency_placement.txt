@@ -1,0 +1,27 @@
+dependency_placement.go:20:2: proc.Dependency field log is allowed only in a marked process argument struct
+  owner: process.Sender
+  fix: move the field into the argument struct of the process
+dependency_placement.go:27:18: exported process method Logger carries proc.Dependency[*slog.Logger], which is not an allowed stored type: proc.Dependency is allowed only as a process argument type or a field of one
+dependency_placement.go:30:18: exported process method Arguments carries process.SenderArgs, which is not an allowed stored type: Log: proc.Dependency is allowed only as a process argument type or a field of one
+dependency_placement.go:35:9: call Value only directly on l.Args() or on a field of l.Args() in a process method
+dependency_placement.go:35:9: unsupported immutable operation: user-defined methods with immutable storage are unsupported
+  source: args.Log.Value()
+  type: *slog.Logger
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+dependency_placement.go:47:11: Owner requires a concrete, valid Scoped struct
+dependency_placement.go:56:2: immutable field Args: Log: proc.Dependency is allowed only as a process argument type or a field of one
+  owner: process.Envelope; field type: process.SenderArgs
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+dependency_placement.go:60:13: immutable collection: type argument 1: proc.Dependency is allowed only as a process argument type or a field of one
+  type: im.FrozenSlice[proc.Dependency[*slog.Logger]]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+dependency_placement.go:60:16: immutable type argument: proc.Dependency is allowed only as a process argument type or a field of one
+  type: proc.Dependency[*slog.Logger]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+dependency_placement.go:60:5: immutable collection: type argument 1: proc.Dependency is allowed only as a process argument type or a field of one
+  type: im.FrozenSlice[proc.Dependency[*slog.Logger]]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+dependency_placement.go:64:2: proc.Dependency field log is allowed only in a marked process argument struct
+  owner: process.handlers
+  fix: move the field into the argument struct of the process
+dependency_placement.go:68:70: call Value only directly on l.Args() or on a field of l.Args() in a process method
