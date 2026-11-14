@@ -71,6 +71,7 @@ func (c *subsetChecks) report(n ast.Node, message string) {
 
 // visit sends each protected operation through the complete source-form matcher.
 func (c *subsetChecks) visit(node ast.Node) bool {
+	c.checkOwnerNode(node)
 	c.declarationNode(node)
 	expression, ok := node.(ast.Expr)
 	if !ok {
