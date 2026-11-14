@@ -15,16 +15,24 @@ func (c *subsetChecks) statementOperation(expression ast.Expr) ast.Node {
 
 // protectedStorage includes native builders and scalar projections of protected owners.
 func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
-	if c.protectedRoot(expression) || c.ownedExpression(expression) {
-		return true
-	}
-	switch node := ast.Unparen(expression).(type) {
-	case *ast.IndexExpr:
-		return c.protectedStorage(node.X)
-	case *ast.SelectorExpr:
-		return c.protectedStorage(node.X)
-	case *ast.StarExpr:
-		return c.protectedStorage(node.X)
+	for expression != nil {
+		if c.queries.Contains(c.pass.TypesInfo.TypeOf(expression)) {
+			return true
+		}
+		switch node := expression.(type) {
+		case *ast.Ident:
+			return c.ownedExpression(node)
+		case *ast.ParenExpr:
+			expression = node.X
+		case *ast.IndexExpr:
+			expression = node.X
+		case *ast.SelectorExpr:
+			expression = node.X
+		case *ast.StarExpr:
+			expression = node.X
+		default:
+			return false
+		}
 	}
 	return false
 }
