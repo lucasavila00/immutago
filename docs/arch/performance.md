@@ -73,7 +73,7 @@ manually with a baseline revision:
 
 - Fresh vet facts on dense graphs; record total/largest fact size, time, peak memory, and profiles.
 - Ordinary graphs without im imports must pass both drivers.
-- Checked graphs import im and retain 101 local unsafe errors per package;
+- Checked graphs import im and contain 50 invalid immutable fields per package;
   consumers report one cause.
 - [Graph tests](../../pkg/analyzer/dependencies_graph_test.go) check cause selection,
   exact gob round trips, and constant fact size across deep, wide, and dense graphs.

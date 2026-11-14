@@ -35,11 +35,11 @@ func checkInvalidDependencyPropagation(t *testing.T, serialized bool) {
 	t.Helper()
 	library := types.NewPackage(checker.LibraryPath, "im")
 	library.MarkComplete()
-	packages := dependencyImporter{"unsafe": types.Unsafe, checker.LibraryPath: library}
+	packages := dependencyImporter{checker.LibraryPath: library}
 	invalid := make(map[*types.Package]invalidPackage)
 	cases := []struct{ path, source, diagnostic string }{
-		{"example/bad", `package bad; import ("unsafe"; _ "` + checker.LibraryPath + `"); var _ unsafe.Pointer`,
-			"unsupported unsafe"},
+		{"example/bad", `package bad; import _ "` + checker.LibraryPath + `"; func missing(); func other()`,
+			"unsupported function without a Go body"},
 		{"example/wrapper", `package wrapper; import _ "example/bad"`, "unsupported dependency example/bad"},
 		{"example/consumer", `package consumer; import (_ "example/wrapper"; _ "` + checker.LibraryPath + `")`,
 			"unsupported dependency example/wrapper"},
@@ -81,8 +81,8 @@ func checkInvalidDependencyPropagation(t *testing.T, serialized bool) {
 		if tc.path == "example/consumer" {
 			checkDependencyContext(t, got)
 		}
-		if tc.path == "example/bad" && len(reports) != 4 {
-			t.Fatalf("direct analysis reported %d local errors, want all four", len(reports))
+		if tc.path == "example/bad" && len(reports) != 2 {
+			t.Fatalf("direct analysis reported %d local errors, want both", len(reports))
 		}
 
 		packages[tc.path] = pkg
@@ -134,7 +134,7 @@ func TestInvalidProofKeepsRelevanceWhenVetPrunesImports(t *testing.T) {
 func checkDependencyContext(t *testing.T, got string) {
 	t.Helper()
 	for _, want := range []string{
-		"representative failure: example/bad/proof.go:1:", "unsupported unsafe import",
+		"representative failure: example/bad/proof.go:1:", "unsupported function without a Go body",
 		"other dependency errors may exist", "run immutago example/bad,",
 	} {
 		if !strings.Contains(got, want) {

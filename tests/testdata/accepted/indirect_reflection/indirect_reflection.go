@@ -1,4 +1,4 @@
-package rejected
+package accepted
 
 import "example.com/consumer/reflect_helper"
 import _ "github.com/lucasavila00/immutago/pkg/im"
