@@ -40,7 +40,10 @@ container copy, not an in-place edit.
 `make bench-core` measures type proofs, builder flow, source matching, and the
 full package pass at increasing input sizes. Parsing and Go type checking are
 outside the timed loop. Stress tests compare recursive proofs and flow results
-with independent reachability calculations.
+with independent reachability calculations. The [projection benchmark](../pkg/analyzer/projection_test.go)
+measures one storage classification at increasing projection depths. Each query
+visits each selector, index, dereference, or parenthesis at most once. This does
+not bound the cost of the complete analyzer pass.
 
 Run [Core performance](../.github/workflows/core-performance.yml) manually from
 GitHub Actions when changing checker costs. It saves repeated
