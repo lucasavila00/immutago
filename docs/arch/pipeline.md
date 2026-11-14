@@ -30,7 +30,14 @@ line directives retain the source package line in both drivers; the original
 
 [Type predicates](../../internal/checker/types.go) resolve aliases and identify
 both markers and frozen collections by package path and named type.
-`Contains` follows storage components with a visited-type set.
+The pass-local [classifier](../../internal/checker/classification.go) caches
+storage and callback results in separate type graphs. Storage edges follow
+fields and containers; callback edges also follow interface methods and function
+parameters and results. Type-parameter constraints use a separate traversal mode.
+The classifier builds every reachable edge before it propagates positive results
+through reverse edges. Thus cycles cannot leave a cached false result before a
+reachable protected type is found. Queries do not change source-form checks or
+skip packages without markers.
 
 [Reason](../../internal/checker/proof.go) builds one obligation per concrete
 type. It records the node before visiting components, so recursive types

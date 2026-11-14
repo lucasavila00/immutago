@@ -93,11 +93,12 @@ func dependencyMessage(consumer, path string, fact invalidPackage) string {
 
 // protectedPackage also checks source types because vet can prune transitive package imports.
 func protectedPackage(pass *analysis.Pass) bool {
+	var queries checker.Classifier
 	if usesImmutable(pass.Pkg) {
 		return true
 	}
 	for _, value := range pass.TypesInfo.Types {
-		if value.Type != nil && checker.Contains(value.Type) {
+		if value.Type != nil && queries.Contains(value.Type) {
 			return true
 		}
 	}
