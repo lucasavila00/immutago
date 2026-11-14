@@ -8,7 +8,35 @@ import (
 	"github.com/lucasavila00/immutago/pkg/proc"
 )
 
-// GroupArgs are the arguments of the processes in the group of one variant.
+// VariantSet is one published set of variant names.
+type VariantSet struct {
+	im.Scoped
+	Names im.FrozenSlice[string]
+}
+
+// VariantConfig keeps the current set of variants. It survives a restart of the Dispatcher.
+type VariantConfig struct {
+	proc.Process[proc.None]
+	current im.Owner[VariantSet]
+}
+
+// Run waits until ctx ends.
+func (*VariantConfig) Run(ctx context.Context) { <-ctx.Done() }
+
+// Set publishes a new set of variant names.
+func (c *VariantConfig) Set(names im.FrozenSlice[string]) { c.current.Store(&VariantSet{Names: names}) }
+
+// Names returns the current variant names, or no names before the first Set.
+func (c *VariantConfig) Names() im.FrozenSlice[string] {
+	set := c.current.Load()
+	if set == nil {
+		var none im.FrozenSlice[string]
+		return none
+	}
+	return set.Names
+}
+
+// GroupArgs are the arguments of a Throttle.
 type GroupArgs struct {
 	im.Shared
 	Variant string
@@ -21,45 +49,79 @@ type Throttle struct{ proc.Process[GroupArgs] }
 // Run waits until ctx ends.
 func (*Throttle) Run(ctx context.Context) { <-ctx.Done() }
 
+// VersionLoaderArgs are the arguments of a VersionLoader.
+type VersionLoaderArgs struct {
+	im.Shared
+	Variant string
+	Self    proc.PID[VersionLoader]
+}
+
 // VersionArgs are the arguments of a VersionServer.
 type VersionArgs struct {
 	im.Shared
-	Variant string
 	Version int
+	Loader  proc.PID[VersionLoader]
 }
 
 // VersionServer serves one version of a variant.
 type VersionServer struct{ proc.Process[VersionArgs] }
 
-// Run waits until ctx ends.
-func (*VersionServer) Run(ctx context.Context) { <-ctx.Done() }
+// Run tells the loader that the version runs, then waits until ctx ends.
+func (s *VersionServer) Run(ctx context.Context) {
+	s.Args().Loader.Proc().Ready(s.Args().Version)
+	<-ctx.Done()
+}
 
-// Version returns the served version.
-func (s *VersionServer) Version() int { return s.Args().Version }
-
-// VersionLoader starts one VersionServer for each loaded version.
+// VersionLoader starts one VersionServer for each loaded version, each in its own nested supervisor.
 type VersionLoader struct {
-	proc.Process[GroupArgs]
+	proc.Process[VersionLoaderArgs]
 	mu      sync.Mutex
+	pending map[int]*proc.Supervisor
 	current *proc.Supervisor
+	version int
 }
 
 // Run waits until ctx ends.
 func (*VersionLoader) Run(ctx context.Context) { <-ctx.Done() }
 
-// Load starts a server for version, then stops the server of the previous version.
-func (l *VersionLoader) Load(version int) int {
+// Load starts a server for version. The server calls Ready when it runs.
+func (l *VersionLoader) Load(version int) {
 	next := proc.StartSupervisor(l.Supervisor())
-	server := proc.Start[VersionServer](next, VersionArgs{Variant: l.Args().Variant, Version: version})
-	ready := server.Proc().Version()
 	l.mu.Lock()
-	previous := l.current
-	l.current = next
+	if l.pending == nil {
+		l.pending = make(map[int]*proc.Supervisor)
+	}
+	l.pending[version] = next
 	l.mu.Unlock()
-	if previous != nil {
+	proc.Start[VersionServer](next, VersionArgs{Version: version, Loader: l.Args().Self})
+}
+
+// Ready makes a running version current and stops the server of the previous version.
+func (l *VersionLoader) Ready(version int) {
+	l.mu.Lock()
+	next, ok := l.pending[version]
+	delete(l.pending, version)
+	previous := l.current
+	if ok {
+		l.current, l.version = next, version
+	}
+	l.mu.Unlock()
+	if ok && previous != nil {
 		<-previous.Stop()
 	}
-	return ready
+}
+
+// Version returns the version whose server runs, or 0 before the first server runs.
+func (l *VersionLoader) Version() int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.version
+}
+
+// DispatcherArgs are the arguments of a Dispatcher.
+type DispatcherArgs struct {
+	im.Shared
+	Config proc.PID[VariantConfig]
 }
 
 // group is the nested supervisor and the loader of one variant.
@@ -70,13 +132,16 @@ type group struct {
 
 // Dispatcher keeps one group of processes for each configured variant.
 type Dispatcher struct {
-	proc.Process[proc.None]
+	proc.Process[DispatcherArgs]
 	mu     sync.Mutex
 	groups map[string]group
 }
 
-// Run waits until ctx ends.
-func (*Dispatcher) Run(ctx context.Context) { <-ctx.Done() }
+// Run starts the groups of the current variants, because a restart starts with no groups, and waits until ctx ends.
+func (d *Dispatcher) Run(ctx context.Context) {
+	d.Apply(d.Args().Config.Proc().Names())
+	<-ctx.Done()
+}
 
 // Apply starts the groups of new variants, stops the groups of removed variants, and returns the group count.
 func (d *Dispatcher) Apply(variants im.FrozenSlice[string]) int {
@@ -92,9 +157,10 @@ func (d *Dispatcher) Apply(variants im.FrozenSlice[string]) int {
 	for name := range wanted {
 		if _, ok := d.groups[name]; !ok {
 			sub := proc.StartSupervisor(d.Supervisor())
-			args := GroupArgs{Variant: name, Rate: 10}
-			proc.Start[Throttle](sub, args)
-			d.groups[name] = group{sub: sub, loader: proc.Start[VersionLoader](sub, args)}
+			proc.Start[Throttle](sub, GroupArgs{Variant: name, Rate: 10})
+			loader := proc.Reserve[VersionLoader]()
+			proc.StartReserved(sub, loader, VersionLoaderArgs{Variant: name, Self: loader})
+			d.groups[name] = group{sub: sub, loader: loader}
 		}
 	}
 	for name, g := range d.groups {
@@ -111,7 +177,8 @@ func (d *Dispatcher) Apply(variants im.FrozenSlice[string]) int {
 	return count
 }
 
-// Load loads a version for one variant and stops the group of the variant if the version is not valid.
+// Load asks the loader of one variant to load a version, and stops the group of the variant if the version is
+// not valid. It returns false if the variant has no group.
 func (d *Dispatcher) Load(variant string, version int) bool {
 	d.mu.Lock()
 	g, ok := d.groups[variant]
@@ -126,5 +193,6 @@ func (d *Dispatcher) Load(variant string, version int) bool {
 		<-g.sub.Stop()
 		return false
 	}
-	return g.loader.Proc().Load(version) == version
+	g.loader.Proc().Load(version)
+	return true
 }

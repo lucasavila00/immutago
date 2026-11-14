@@ -1,4 +1,4 @@
-# Language guide
+# Language reference
 
 | Guide | Use it to |
 | --- | --- |
@@ -6,7 +6,8 @@
 | [Scoped](scoped.md) | Keep pointers local; pass them to named functions that do not save them. |
 | [Owner](owner.md) | Publish a new Scoped object and read the current one. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
-| [Supervised processes](processes.md) | Run mutable services with typed start arguments and immutable method messages. |
+| [Supervised processes](processes.md) | Learn the execution and restart model. |
+| [Process forms](process-forms.md) | Look up supported process declarations and calls. |
 | [Opaque values](opaque.md) | Hold a value that the analyzer trusts and does not prove. |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 
@@ -23,7 +24,7 @@ promise:
 | Marker | Promise | Where |
 | --- | --- | --- |
 | [`im.Opaque[T]`](opaque.md), from `im.Seal` | The value never changes after `im.Seal`. Only the package that declares `T` can seal or read it. | Anywhere a stored type is allowed. |
-| [`proc.UncheckedDependency[T]`](processes.md#trusted-dependencies), from `proc.Trust` | The value is safe for concurrent use by several processes. | Only in process start arguments. |
+| [`proc.UncheckedDependency[T]`](processes.md#unchecked-dependencies), from `proc.Trust` | The value is safe for concurrent use by several processes. | Only in process start arguments. |
 
 ## Check the program
 
@@ -48,8 +49,7 @@ including not changing string bytes through `unsafe`.
 
 The checker trusts the implementations of `im`, `proc`, and the Go standard
 library. It also skips the test runner that Go generates. There is no comment
-or annotation that lets user code bypass checks. The only trusted values in user
-code are the two [trust markers](#trust-markers).
+or annotation that lets user code bypass checks.
 
 In a checked package, `unsafe`, `reflect`, cgo, and functions without Go bodies
 are rejected. For example, write `func readCount() int { return 1 }` instead of

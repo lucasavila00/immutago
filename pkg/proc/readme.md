@@ -10,9 +10,9 @@ Package proc runs supervised processes.
 
 A process is a mutable struct that embeds Process\[A\] and has a Run\(context.Context\) method with a pointer receiver. A is the immutable argument type of the process; use None for a process without arguments. Start creates a new process value, gives it the arguments, calls its Init method if it has one, runs Run in a new goroutine, and returns its PID. Callers keep the PID and call exported methods directly on the process pointer from PID.Proc. The immutago analyzer proves that these methods take and return only immutable values and PIDs. For processes that need each other's PIDs, Reserve a PID first and start it later with StartReserved.
 
-A supervisor runs its children until Stop. If Run returns, the process ends. If Run panics, the supervisor waits 1 s, doubling the delay for each restart in the last 5 minutes. It then creates a new process value from the same arguments, calls Init, stores the value in the same PID, and calls Run. Calls during the delay still use the old value; calls already in progress finish on that value. A sixth panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and escalates the panic to the parent supervisor, which restarts the subtree with the same rule. At the root supervisor, the escalation panics again with the last panic value, and the program exits. OnPanic reports each recovered panic.
+A supervisor runs its children until Stop. If Run returns, the process ends, and the supervisor removes it. If Run panics, the supervisor waits 1 s, doubling the delay for each restart in the last 5 minutes. It then creates a new process value from the same arguments, calls Init, stores the value in the same PID, and calls Run. Calls during the delay still use the old value; calls already in progress finish on that value. A sixth panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and escalates the panic to the parent supervisor, which restarts the subtree with the same rule. At the root supervisor, the escalation panics again with the last panic value, and the program exits. OnPanic reports each recovered panic.
 
-A process can start children under the Supervisor of its current run. When the run ends, the runtime stops these children in reverse start order before the process restarts or stops. A child that escalates fails the run.
+A process can start children under the Supervisor of its current run. When the process stops, the runtime stops these children in reverse start order before the Run context ends, so children can still call the process. When Run returns or panics, the runtime stops them before the process restarts or ends. A child that escalates fails the run.
 
 Stop cancels each Run context and waits for Run to return. Cancellation is cooperative; Run must observe its context. Stop does not wait for direct method calls. Process methods must synchronize their own shared state.
 
@@ -120,7 +120,7 @@ Args returns the arguments that Start or StartReserved gave to the process.
 func (p *Process[A]) Supervisor() *Supervisor
 ```
 
-Supervisor returns the supervisor of the current run of the process. Each run has its own supervisor. Processes started under it before Run begins start with the run. When Run returns or panics, the runtime stops its children, last started first, and waits for them before the run ends. After the run ends, Supervisor returns a stopped supervisor, and processes started under it do not run. If a child escalates, the run context ends and the run fails with the panic value of the child.
+Supervisor returns the supervisor of the current run of the process. Each run has its own supervisor. Processes started under it before Run begins start with the run. When the process stops, the runtime stops its children, last started first, and waits for them before the Run context ends. When Run returns or panics, the runtime stops them and waits for them before the run ends. After the run ends, Supervisor returns a stopped supervisor, and processes started under it do not run. If a child escalates, the run context ends and the run fails with the panic value of the child.
 
 ## type Supervisor
 
@@ -154,7 +154,7 @@ StartSupervisor returns a new supervisor that parent runs as a child. When the n
 func (s *Supervisor) Stop() <-chan struct{}
 ```
 
-Stop begins stopping; the channel closes when all children have stopped, last started first. Stop does not wait, so a process can stop its own supervisor from Run.
+Stop begins stopping; the channel closes when all children have stopped, last started first. Stop does not wait, so a process can stop its own supervisor from Run. For a nested supervisor, completion also means its parent has removed its child entry.
 
 ## type UncheckedDependency
 

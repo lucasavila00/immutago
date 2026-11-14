@@ -55,15 +55,74 @@ func (p *failingParent) Run(ctx context.Context) {
 	record("stop parent")
 }
 
-// TestChildrenStopAfterRun verifies that a stopped process stops its children last started first.
-func TestChildrenStopAfterRun(t *testing.T) {
+// TestChildrenStopBeforeRun verifies that a stopped process stops its children last started first
+// before the context of its run ends.
+func TestChildrenStopBeforeRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot()
 		Start[pool](root, None{})
 		synctest.Wait()
 		expectStarted(t, "start pool", "start first", "start second", "start third")
 		<-root.Stop()
-		expectEvents(t, "stop pool", "stop third", "stop second", "stop first")
+		expectEvents(t, "stop third", "stop second", "stop first", "stop pool")
+	})
+}
+
+// askerArgs is the argument of an asker.
+type askerArgs struct {
+	im.Shared
+	Self PID[asker]
+}
+
+// asker is a process whose Run answers the calls of its child.
+type asker struct {
+	Process[askerArgs]
+	requests chan chan int
+}
+
+// Run starts a child that calls Ask and answers each request until ctx ends.
+func (a *asker) Run(ctx context.Context) {
+	a.requests = make(chan chan int)
+	Start[caller](a.Supervisor(), a.Args().Self)
+	for {
+		select {
+		case <-ctx.Done():
+			record("stop asker")
+			return
+		case reply := <-a.requests:
+			reply <- 1
+		}
+	}
+}
+
+// Ask sends a request to Run and waits for the answer.
+func (a *asker) Ask() int {
+	reply := make(chan int)
+	a.requests <- reply
+	return <-reply
+}
+
+// caller is a process that calls its parent until ctx ends.
+type caller struct{ Process[PID[asker]] }
+
+// Run calls Ask on the parent until ctx ends.
+func (c *caller) Run(ctx context.Context) {
+	for ctx.Err() == nil {
+		c.Args().Proc().Ask()
+		time.Sleep(time.Millisecond)
+	}
+	record("stop caller")
+}
+
+// TestChildCallsParentDuringStop verifies that a child can call its parent until the child stops.
+func TestChildCallsParentDuringStop(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		root := NewRoot()
+		pid := Reserve[asker]()
+		StartReserved(root, pid, askerArgs{Self: pid})
+		time.Sleep(time.Second)
+		<-root.Stop()
+		expectEvents(t, "stop caller", "stop asker")
 	})
 }
 
@@ -197,5 +256,192 @@ func TestChildrenOfProcessThatDoesNotRun(t *testing.T) {
 		pid.Proc().Add("a")
 		synctest.Wait()
 		expectEvents(t)
+	})
+}
+
+// returning is a process whose Run returns at once.
+type returning struct{ Process[None] }
+
+// Run returns at once.
+func (*returning) Run(context.Context) {}
+
+// TestReturnedChildrenAreRemoved verifies that a supervisor removes children whose Run returned.
+func TestReturnedChildrenAreRemoved(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		root := NewRoot()
+		Start[first](root, None{})
+		for range 1000 {
+			Start[returning](root, None{})
+		}
+		synctest.Wait()
+		root.mu.Lock()
+		entries := len(root.children)
+		root.mu.Unlock()
+		if entries != 1 {
+			t.Fatalf("root has %d entries, want 1", entries)
+		}
+		takeEvents()
+		<-root.Stop()
+		expectEvents(t, "stop first")
+	})
+}
+
+// shortParent is a process whose Run starts two children and returns after 1 s.
+type shortParent struct{ Process[None] }
+
+// Run starts the children and returns after 1 s.
+func (p *shortParent) Run(context.Context) {
+	Start[first](p.Supervisor(), None{})
+	Start[second](p.Supervisor(), None{})
+	time.Sleep(time.Second)
+}
+
+// TestChildrenStopWhenRunReturns verifies that the children stop when Run returns and the process ends.
+func TestChildrenStopWhenRunReturns(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		Start[shortParent](root, None{})
+		synctest.Wait()
+		expectStarted(t, "start first", "start second")
+		time.Sleep(time.Minute)
+		synctest.Wait()
+		expectEvents(t, "stop second", "stop first")
+		<-root.Stop()
+		expectEvents(t)
+	})
+}
+
+// slowStop is a process that takes 10 s to stop.
+type slowStop struct{ Process[None] }
+
+// Run waits until ctx ends, then waits 10 s.
+func (*slowStop) Run(ctx context.Context) {
+	<-ctx.Done()
+	time.Sleep(10 * time.Second)
+	record("stop slow")
+}
+
+// stoppingParent is a process with a failing child and a slow child.
+type stoppingParent struct{ Process[None] }
+
+// Run starts the failing child, then the slow child, and waits until ctx ends.
+func (p *stoppingParent) Run(ctx context.Context) {
+	Start[failing](p.Supervisor(), None{})
+	Start[slowStop](p.Supervisor(), None{})
+	<-ctx.Done()
+	record("stop parent")
+}
+
+// TestChildEscalatesDuringStop verifies that an escalation during Stop does not block or restart the parent.
+func TestChildEscalatesDuringStop(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		failures.Store(0)
+		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		Start[stoppingParent](root, None{})
+		time.Sleep(30 * time.Second)
+		synctest.Wait()
+		takeEvents()
+		<-root.Stop()
+		expectEvents(t, "00:00:31", "stop slow", "stop parent")
+	})
+}
+
+// lateParent is a process that tries to start a child after its child escalated.
+type lateParent struct{ Process[None] }
+
+// Run starts a failing child, waits until ctx ends, and then starts another child.
+func (p *lateParent) Run(ctx context.Context) {
+	Start[failing](p.Supervisor(), None{})
+	<-ctx.Done()
+	Start[first](p.Supervisor(), None{})
+	record("late start")
+}
+
+// TestStartAfterEscalation verifies that a child started after an escalation in the same run does not run.
+func TestStartAfterEscalation(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		failures.Store(0)
+		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		Start[lateParent](root, None{})
+		time.Sleep(31 * time.Second)
+		synctest.Wait()
+		expectEvents(t, "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31", "late start")
+		<-root.Stop()
+		takeEvents()
+	})
+}
+
+// TestMethodsRaceStop verifies that children started by methods during Stop either stop or never run.
+func TestMethodsRaceStop(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		root := NewRoot()
+		pid := Start[router](root, None{})
+		synctest.Wait()
+		var callers sync.WaitGroup
+		callers.Go(func() {
+			for range 200 {
+				pid.Proc().Add("x")
+			}
+		})
+		<-root.Stop()
+		callers.Wait()
+		synctest.Wait()
+		starts, stops := 0, 0
+		for _, event := range takeEvents() {
+			switch event {
+			case "start x":
+				starts++
+			case "stop x":
+				stops++
+			}
+		}
+		if starts != stops {
+			t.Fatalf("%d starts and %d stops, want the same count", starts, stops)
+		}
+	})
+}
+
+// namedVariant is a process that panics on each run if its name is bad.
+type namedVariant struct{ Process[variantArgs] }
+
+// Run panics for the bad variant and otherwise records the start and the stop.
+func (v *namedVariant) Run(ctx context.Context) {
+	if v.Args().Name == "bad" {
+		panic("bad variant")
+	}
+	track(ctx, v.Args().Name)
+}
+
+// variantNames is the argument of a rebuilding dispatcher.
+type variantNames struct {
+	im.Shared
+	Names im.FrozenSlice[string]
+}
+
+// rebuilding is a dispatcher that starts one group for each variant in Run.
+type rebuilding struct{ Process[variantNames] }
+
+// Run starts one nested group for each variant and waits until ctx ends.
+func (r *rebuilding) Run(ctx context.Context) {
+	for _, name := range r.Args().Names.All() {
+		Start[namedVariant](StartSupervisor(r.Supervisor()), variantArgs{Name: name})
+	}
+	<-ctx.Done()
+}
+
+// TestGroupEscalation verifies that a failing group restarts alone at first, then fails the run, and the new run
+// starts the groups again.
+func TestGroupEscalation(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		Start[rebuilding](root, variantNames{Names: im.FreezeSlice([]string{"good", "bad"})})
+		time.Sleep(216 * time.Second)
+		synctest.Wait()
+		expectEvents(t, "start good")
+		time.Sleep(2 * time.Second)
+		synctest.Wait()
+		expectEvents(t, "stop good", "start good")
+		<-root.Stop()
+		expectEvents(t, "stop good")
 	})
 }
