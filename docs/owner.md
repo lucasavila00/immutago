@@ -18,8 +18,8 @@ func use() int {
 }
 ```
 
-`Load` returns nil before the first `Store`. Both calls use atomic pointer
-operations. An earlier loaded pointer remains valid after a later `Store`.
+`Load` returns nil before the first `Store`. Readers and publishers can call
+these methods from different goroutines.
 
 ## Allowed forms
 
