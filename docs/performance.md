@@ -74,8 +74,8 @@ files; exact original diagnostics require that data across silent wrappers.
 Reports build routes only for relevant consumers. Report storage includes the
 text that must be shown to the user; no errors are capped or discarded.
 
-[Dependency performance CI](../.github/workflows/dependency-performance.yml)
-measures merging, gob encoding, and reporting separately. It also compares the
+Run [Dependency performance](../.github/workflows/dependency-performance.yml)
+manually from GitHub Actions when changing dependency fact costs. It measures merging, gob encoding, and reporting separately. It also compares the
 base and changed commands on dense 16- and 64-package graphs, then checks 144,
 256, and 400 packages with the changed command. Each package imports every
 package in the preceding layer and has the issue's 50 unsafe conversions.
