@@ -1,12 +1,11 @@
 # Unchecked immutable values
 
-Use `im.UncheckedValue[T]` for data your package promises not to change, when its
-implementation does not fit the checked forms. The checker does not prove that
-promise.
+Use `im.UncheckedValue[T]` when your package must supply immutable data that
+does not fit the checked forms:
 
-Only the package that declares `T` can use `im.Trust` to wrap its pointer or
-`im.Unwrap` to read it. Other packages can store and pass the handle. They call
-your package's functions to read the data.
+- Your package promises not to change the data; the checker does not prove this.
+- Only the package that declares `T` can wrap it with `im.Trust` or read it with `im.Unwrap`.
+- Other packages can keep the handle and call your functions to read the data.
 
 ```go
 type baked struct { weights []float64 }
@@ -53,18 +52,11 @@ such as `baked[int]`, belongs to the package that declares `baked`. Parentheses
 preserve the forms above. `UncheckedValue` has no methods; an interface call or
 a promoted method cannot expose its pointer.
 
-What the analyzer proves:
-
-- The handle is an allowed stored type, so a marked object that holds it
-  follows every other rule: its fields cannot be written and its handle cannot
-  be replaced.
-- Only the package that declares `T` can wrap or read the value.
-
-What is trusted and not proven:
-
-- The declaring package does not change the value after `im.Trust`, and its
-  functions do not give out a way to change it. Review these functions as trusted
-  code.
+| Responsibility | Who checks it |
+| --- | --- |
+| A marked object's handle field cannot be replaced | Analyzer |
+| Only the package that declares `T` can call Trust or Unwrap | Analyzer |
+| The data never changes after Trust, and no function exposes a way to change it | Declaring package; review its code |
 
 ## Rejected examples
 

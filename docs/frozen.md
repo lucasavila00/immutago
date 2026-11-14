@@ -1,11 +1,12 @@
 # Frozen collections
 
-Use `im.FrozenSlice[T]` or `im.FrozenMap[K, V]` to build data once and pass it to
-readers without letting them change it. Prepare a normal Go slice or map, then
-call Freeze. Freeze reuses that storage; it does not copy the entries.
+`im.FrozenSlice[T]` and `im.FrozenMap[K, V]` provide read-only collections:
 
-To make a changed version, Clone the frozen collection, edit the copy, and
-freeze it. The original stays unchanged:
+1. Build a normal Go slice or map.
+2. Freeze it without copying entries. Use only the frozen value after this call.
+3. To make a changed version, Clone, edit the copy, and Freeze again.
+
+The original map stays unchanged:
 
 ```go
 package main
@@ -26,8 +27,7 @@ func main() {
 }
 ```
 
-After Freeze, read through `frozen`, not `scores`. The checker rejects aliases
-to the original slice or map, so another variable cannot change the frozen data.
+The checker rejects aliases that could change the frozen data.
 Keys and elements must use the [allowed types](common-forms.md#markers-and-stored-types).
 
 The tables below and the [common forms](common-forms.md) give the complete list
@@ -51,12 +51,19 @@ slice or map; pointer elements still point to the same read-only objects.
 | Range over elements | `for i, value := range values { ... }` |
 | Freeze the slice or map | `frozen := im.FreezeSlice(values)`, `frozen := im.FreezeMap(scores)` |
 
-`var` declarations also work. `copy` operands must satisfy the builder rules.
-Bare `nil` means Go's predeclared `nil`; `(nil)` also works.
-Direct fresh Freeze inputs can be `make`, a literal, bare `nil`, or a Clone result:
-`im.FreezeSlice(make([]int, 2))`, `im.FreezeSlice([]int{1})`,
-`im.FreezeSlice[int](nil)`, `im.FreezeSlice(frozen.Clone())`.
-Each needs its own assignment/declaration; matching map forms work too.
+- `var` declarations also work.
+- Both `copy` operands must satisfy the builder rules.
+- Bare `nil` means Go's predeclared `nil`; `(nil)` also works.
+- Freeze needs its own assignment or declaration.
+
+Fresh inputs can go directly into Freeze; the same forms work for maps:
+
+| Input | Example |
+| --- | --- |
+| make | `frozen := im.FreezeSlice(make([]int, 2))` |
+| Literal | `frozen := im.FreezeSlice([]int{1})` |
+| Bare nil | `frozen := im.FreezeSlice[int](nil)` |
+| Clone | `next := im.FreezeSlice(frozen.Clone())` |
 
 | Rejected example | Replacement |
 | --- | --- |
@@ -88,12 +95,15 @@ Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 | Iteration | `for key, value := range frozen.All() { ... }` |
 | Independent mutable copy | `next := frozen.Clone()` |
 
-Call these methods on a local variable, a struct field, or a result from a named
-function. Pass `im.FrozenSlice[T]` or `im.FrozenMap[K, V]` to functions by value.
-Parentheses around a call or range expression are allowed.
+- Call methods on a local variable, a struct field, or a named function's result.
+- Pass frozen collections to functions by value.
+- Parentheses around a call or range expression are allowed.
+- For iterators with protected values, use direct `range frozen.All()`.
+- Other iterators, such as those over `int` or `[2]int`, use ordinary Go rules.
 
-Saving methods (`read := frozen.At`) or calling through the type
-(`im.FrozenSlice[int].At(frozen, 0)`) fails; use `frozen.At(0)`.
-Iterators carrying protected values require direct `range frozen.All()`.
-Other iterators, such as those over `int` or `[2]int`, follow ordinary Go rules.
+| Rejected example | Replacement |
+| --- | --- |
+| `read := frozen.At` | `value := frozen.At(0)` |
+| `im.FrozenSlice[int].At(frozen, 0)` | `frozen.At(0)` |
+
 See [performance](performance.md) for operation costs.

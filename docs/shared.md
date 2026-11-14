@@ -1,11 +1,12 @@
 # Shared objects
 
-Use `im.Shared` for data that several parts of a program need to keep and read,
-such as a product description. Functions can return pointers to it, and other
-Shared objects can store those pointers. The checker rejects changes to its fields.
+Use `im.Shared` for objects that callers need to keep:
 
-This order keeps a pointer to the product. Reading the order does not copy the
-product:
+- Fields are read-only.
+- Functions can return pointers to the object.
+- Marked structs can store those pointers.
+
+This order stores a product pointer; reading it does not copy the product:
 
 ```go
 package main

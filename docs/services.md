@@ -1,9 +1,12 @@
 # Supervised services
 
-Use `supervise` for application state with background work, such as a cache
-that refreshes a file. A **service** is a mutable Go struct. A **group** starts
-services, restarts failed background work, and stops related services together.
-A **reference** lets callers reach a service after a restart replaces its struct.
+Use `supervise` for state with background work, such as a cache that refreshes a file.
+
+| API | Purpose |
+| --- | --- |
+| `Service[A]` | Mutable service state with start arguments of type A. |
+| `Group` | Start, restart, and stop related services. |
+| `Ref[T]` | Reach the current service after a restart replaces its struct. |
 
 ## Refresh a file and serve its contents
 
@@ -104,33 +107,24 @@ Check the program with `immutago ./...`, then run it with `go run .`. See
 [Get started](getting-started.md) for installation. The example stops after
 its first read; an application keeps the root group until shutdown.
 
-`Start[FileCache]` creates a new cache, sets its arguments, and calls `Init`.
-After `Init` succeeds, callers can read through the returned
-`supervise.Ref[FileCache]`. `Run` starts in a managed goroutine. It need not have
-started when `Start` returns.
-
-`cache.Current().Text()` is an ordinary Go call in the caller's goroutine.
-Several callers and `Run` can run at the same time. The cache uses a mutex to
-protect the text. Keep the reference and call a method directly on `Current()`;
-do not save the returned service pointer.
-
-If a later file read fails, this example panics from `Run`. The group waits,
-then builds a new cache with the same arguments. Calls keep using the old
-cache until the new cache's `Init` succeeds. Each call already in progress
-finishes on the old cache.
+1. `Start[FileCache]` creates the cache, sets its arguments, and calls `Init`.
+2. After Init succeeds, Start returns `Ref[FileCache]` and schedules Run in a
+   goroutine. Run might not have started when Start returns.
+3. `cache.Current().Text()` runs in the caller's goroutine. The mutex protects
+   concurrent reads and refreshes. Keep `cache`; call methods directly on Current.
+4. A later file-read error makes Run panic. The group waits, then creates a
+   replacement with the same arguments. Calls use the old cache until the new
+   Init succeeds; calls already in progress finish on the old cache.
 
 ## Choose arguments and results
 
-Embed `supervise.Service[A]` to declare the start argument type `A`. Read that
-value with `Args()` inside a service method. For a service without arguments,
-use `supervise.Service[supervise.NoArgs]` and pass `supervise.NoArgs{}` to Start.
-
-Start arguments and the parameters/results of methods called through Current
-use the [allowed stored types](common-forms.md#markers-and-stored-types). These include
-scalars, marked structs, frozen collections, and service references. For
-example, return a list as `im.FrozenSlice[string]`. Use an `im.Owner[Config]`
-field when readers must use an immutable configuration while the service
-publishes its next version; see [Owner](owner.md).
+| Need | Use |
+| --- | --- |
+| Start arguments | Embed `supervise.Service[A]`; read `p.Args()` in a service method. |
+| No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
+| Arguments or method inputs/results | [Allowed stored types](common-forms.md#markers-and-stored-types), such as scalars, marked structs, frozen collections, and Refs. |
+| Return a list | `im.FrozenSlice[string]`. |
+| Replace immutable configuration | An [im.Owner[Config]](owner.md) field. |
 
 A reference can be a field of another service's arguments. The
 [limiter](../tests/testdata/accepted/service/limiter.go) takes a reference to a
@@ -157,21 +151,16 @@ create or remove related work while it runs.
 
 ## Startup errors and reservations
 
-If the first Init returns an error, Start returns that error and an empty
-reference. An Init panic reaches the Start caller. Only the runtime calls Init
-and Run. A service that needs no setup can use the default Init from Service.
+- Only the runtime calls Init and Run. Use the default Init when no setup is needed.
+- A first Init error makes Start return an empty Ref and that error.
+- A first Init panic reaches the Start caller.
+- To pass a reference before startup: `ref := supervise.Reserve[T]()`, then
+  `err := supervise.StartReserved(parent, ref, args)`. Failed Init permits a retry.
+- A zero `Ref[T]` is empty, not reserved. Current panics on empty or unstarted Refs.
+- Init must not call an unstarted peer. For readiness that depends on Run,
+  expose a method such as `Ready() bool`.
 
-To pass a reference before its service exists, create it with
-`supervise.Reserve[T]()`, then start it with
-`supervise.StartReserved(parent, ref, args)`. Check the returned error. A failed
-Init leaves the reserved reference available for another attempt. The
-[startup example](../tests/testdata/accepted/serviceinit/main.go) shows both
-startup errors and a retry.
-
-The zero value of `Ref[T]` is empty; it is not a reservation. `Current()` panics
-until a reserved reference has completed initialization. Init must not call an
-unstarted peer. If later background work determines readiness, expose that
-separate state with a method such as `Ready() bool`.
+The [startup example](../tests/testdata/accepted/serviceinit/main.go) shows errors and a retry.
 
 ## Concurrent dependencies
 
@@ -199,18 +188,17 @@ args := FetcherArgs{
 }
 ```
 
-Pass args to Start for a service that embeds `supervise.Service[FetcherArgs]`.
-Inside its methods, read the logger with `f.Args().Log.Value()`. For example,
-`f.Args().Log.Value().Info("start")` writes a log message. The value can also be
-saved in an ordinary local, such as `log := f.Args().Log.Value()`. The complete
-[dependency example](../tests/testdata/accepted/service/dependencies.go) also
-passes a factory function and uses a test fake.
+| Operation | Example |
+| --- | --- |
+| Give the service these arguments | Embed `supervise.Service[FetcherArgs]`; pass `args` to Start. |
+| Read a dependency inside a service method | `log := f.Args().Log.Value()` |
+| Use it directly | `f.Args().Log.Value().Info("start")` |
 
-`AssumeConcurrentSafe` records the caller's promise. It does not freeze the
-value, add synchronization, or prove that concurrent use is safe. A false
-promise can cause a data race. The checker permits this wrapper only in the
-listed [dependency forms](service-forms.md#concurrent-dependencies); it is not
-an immutable stored type.
+`AssumeConcurrentSafe` is a caller promise, not a proof, lock, or freeze.
+An incorrect promise can cause a data race. Use only the listed
+[dependency forms](service-forms.md#concurrent-dependencies).
+The [complete example](../tests/testdata/accepted/service/dependencies.go)
+also shows a factory function and a test fake.
 
 ## Failure and shutdown
 
@@ -235,22 +223,24 @@ root := supervise.NewRoot(func(value any, stack []byte) {
 })
 ```
 
-The report receives each recovered panic or restart Init error before the
-delay. Nested groups use the same report function. A failure passed up by a
-nested group is reported again by its parent. Reports can run concurrently for
-different children. The group waits for a report to return, and does not
-recover a panic in that function. Do not wait for that same group to stop from
-its report function.
+Report rules:
 
-`Stop()` requests shutdown and returns a completion channel. Wait on
-`<-root.Stop()` to wait for the tree to stop. Each Run must observe its context
-and return. Init has no cancellation context and must return before an attempt
-can finish. Stop does not wait for direct method calls.
+- Called before the delay for each recovered panic or restart Init error.
+- Shared by nested groups; a failure passed to a parent is reported again.
+- Can run concurrently for different children.
+- Must return; the group waits for it and does not recover its panics.
+- Must not wait for its own group to stop; that would wait for the report itself.
 
-Construct groups with NewRoot or StartGroup; a zero Group is not ready to run.
-Starting under a stopped group still calls Init and can return success, but Run
-will not run. `Current()` means the last published value, not a running service:
-calls can still use that value after Run ends or Stop completes.
+Shutdown rules:
+
+- `Stop()` requests shutdown; `<-root.Stop()` waits for the tree to stop.
+- Run must return when its context ends.
+- Init has no cancellation context and must return before its attempt can finish.
+- Stop does not wait for direct method calls.
+- Current still returns the last published value after Run or Stop ends.
+
+Create groups with NewRoot or StartGroup. A zero Group cannot run. Starting
+under a stopped group still calls Init and can succeed, but Run will not run.
 
 In tests, use
 [`supervisetest.NewRoot(t)`](../pkg/supervise/supervisetest/readme.md). It stops
@@ -259,11 +249,11 @@ seconds.
 
 ## What the checker covers
 
-The checker checks the listed argument, method, reference, and child-group
-forms. Ordinary mutable state still follows Go rules. For example, two services
-can access a global map or share values through ordinary helpers. Synchronize
-that state and test with `go test -race`; the race detector checks accesses that
-the tests execute.
+| Checked by immutago | Still ordinary Go |
+| --- | --- |
+| Listed argument, method, Ref, and child-group forms | Mutable service fields, global maps, and data shared through ordinary helpers |
+
+Synchronize shared mutable state. Use `go test -race` to check the accesses your tests execute.
 
 Use the [service reference](service-forms.md) for all allowed source forms and
 concrete rejected examples. The [API reference](../pkg/supervise/readme.md)

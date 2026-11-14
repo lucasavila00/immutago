@@ -8,23 +8,36 @@ import "github.com/lucasavila00/immutago/pkg/supervise"
 
 Package supervise manages background services and restarts them after a panic.
 
-A service is a mutable Go struct that embeds Service\[A\]. A is its start argument type; use NoArgs when there are no arguments. Declare Run\(context.Context\) on a pointer receiver for the background work. Declare Init\(\) error when the service needs setup before callers can use it. Start calls Init, then returns a Ref\[T\] and runs Run in a managed goroutine.
+Define a service:
 
-Keep the reference and call methods with ref.Current\(\).Method\(\). These are ordinary Go calls in the caller's goroutine. Calls can overlap with each other and with Run, so the service must synchronize access to its mutable fields. The immutago analyzer checks start arguments and the parameters and results of methods called through Current. These use immutable values or service references. Start arguments can also contain ConcurrentSafe values whose callers promise safe concurrent use; the analyzer does not prove them.
+- Embed Service\[A\] for start arguments of type A; use NoArgs for no arguments.
+- Declare Run\(context.Context\) on a pointer receiver for background work.
+- Declare Init\(\) error for setup before callers can use the service.
+- Start calls Init, returns Ref\[T\], and schedules Run in a managed goroutine.
+
+Call a service:
+
+- Keep the Ref and use ref.Current\(\).Method\(\).
+- Calls run in the caller's goroutine and can overlap with Run and other calls. Synchronize access to mutable fields.
+- Start arguments and method inputs/results use immutable values or service Refs. Start arguments can also use ConcurrentSafe for a caller's concurrency promise.
 
 ### Groups and shutdown
 
-NewRoot creates a group for the application. StartGroup creates a nested group that can stop or restart as a unit. Service.Children supplies the child group of one service run. Children started during Init wait for Run to begin.
-
-Group.Stop returns a channel that closes when its children have stopped, last started first. A service's children stop before its Run context is cancelled. Run must return when its context ends. Stop cannot force it to return and does not wait for direct method calls. Init has no cancellation context.
+- NewRoot creates an application group; StartGroup creates a nested group.
+- Service.Children supplies the group for one run. Children created during Init wait for Run to begin.
+- Group.Stop returns a completion channel. Children stop last started first, before their parent's Run context is cancelled.
+- Run must return when its context ends. Stop cannot force it to return and does not wait for direct method calls. Init has no cancellation context.
 
 ### Replacement and failure
 
-A normal return from Run ends the service. A panic causes a restart after a delay: 1 second for the first failure, then twice as long for each restart in the last 5 minutes. Each attempt creates a fresh value with the same arguments and calls Init. Only successful setup replaces the value in the reference. An Init error or panic counts as another failed attempt.
-
-The sixth failure from one child within 5 minutes stops its siblings and passes the failure to the parent group. The parent restarts that group with the same rule. A failure that reaches the root panics and ends the program. NewRoot can report recovered panics and restart initialization errors before each delay.
-
-Current selects the last published value, including during a restart delay and after stop. Calls in progress finish on their selected value. A panic from a direct call belongs to its calling goroutine. Calls made by Run or a restart Init can fail that runtime attempt. The first Init panic reaches the startup caller. A child reference does not follow a restart of its parent service.
+- Normal Run return ends the service. A panic starts a delayed restart.
+- Delay starts at 1 second and doubles for each restart in the last 5 minutes.
+- Each attempt creates a fresh value with the same arguments and calls Init. Successful setup replaces the current value; failed setup counts as a failure.
+- Six failures from one child in 5 minutes stop its siblings and pass failure to the parent group. The parent restarts that group under the same rules. Failure at the root panics and ends the program.
+- NewRoot can report recovered panics and restart Init errors before each delay.
+- Current selects the last published value, even during delays and after stop. Calls in progress finish on their selected value.
+- A direct call's panic stays in its goroutine. Calls from Run or a restart Init can fail that attempt. The first Init panic reaches the Start caller.
+- A child Ref does not follow its parent's restart.
 
 ## func StartReserved
 
