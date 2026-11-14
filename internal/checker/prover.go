@@ -39,8 +39,8 @@ func (p *Prover) Reason(t types.Type) string {
 	return reason
 }
 
-// ArgumentReason proves a process argument type. It accepts proc.UncheckedDependency as the type, or as a TrustedField of a
-// struct with exactly one marker. Every other component must be an allowed stored type.
+// ArgumentReason proves a process argument type. It accepts proc.UncheckedDependency as the type,
+// or as a TrustedField of a struct with exactly one marker. Every other component must be an allowed stored type.
 func (p *Prover) ArgumentReason(t types.Type) string {
 	if IsRuntimeType(t, UncheckedDependencyType) {
 		return ""

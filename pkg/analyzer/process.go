@@ -130,8 +130,8 @@ func (c *subsetChecks) checkProcessNode(node ast.Node) {
 	}
 }
 
-// dependencyValue permits a direct synchronous proc.UncheckedDependency.Value call on the arguments of the process receiver
-// or on one of their fields.
+// dependencyValue permits a direct synchronous proc.UncheckedDependency.Value call
+// on the arguments of the process receiver or on one of their fields.
 func (c *subsetChecks) dependencyValue(selector *ast.SelectorExpr) bool {
 	if !runtimeMethod(c.pass.TypesInfo.ObjectOf(selector.Sel), checker.UncheckedDependencyType, checker.ValueMethod) ||
 		!c.synchronousCall(selector) {

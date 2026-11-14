@@ -49,7 +49,8 @@ including not changing string bytes through `unsafe`.
 
 The checker trusts the implementations of `im`, `proc`, and the Go standard
 library. It also skips the test runner that Go generates. There is no comment
-or annotation that lets user code bypass checks.
+or annotation that lets user code bypass checks. The only trusted values in user
+code are the two [trust markers](#trust-markers).
 
 In a checked package, `unsafe`, `reflect`, cgo, and functions without Go bodies
 are rejected. For example, write `func readCount() int { return 1 }` instead of

@@ -54,7 +54,9 @@ func StartFetcher(root *proc.Supervisor, log *slog.Logger) proc.PID[Fetcher] {
 }
 
 // Tracer is a process whose argument is one dependency.
-type Tracer struct{ proc.Process[proc.UncheckedDependency[*slog.Logger]] }
+type Tracer struct {
+	proc.Process[proc.UncheckedDependency[*slog.Logger]]
+}
 
 // Run logs once.
 func (t *Tracer) Run(ctx context.Context) { t.Args().Value().Info("trace") }
