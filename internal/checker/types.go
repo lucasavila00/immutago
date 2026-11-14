@@ -22,8 +22,38 @@ func IsCollection(t types.Type) bool {
 	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap")
 }
 
-// Marked reports whether a struct directly embeds Marker by value.
+// Marked reports the presence of either embedded marker, including invalid combinations.
+// It does not prove immutability; Reason checks the complete type contract.
 func Marked(t types.Type) bool {
+	return Shared(t) || LocalRef(t)
+}
+
+// Shared reports the presence of an embedded im.Shared value, not type validity.
+func Shared(t types.Type) bool { return embedsMarker(t, "Shared") }
+
+// LocalRef reports the presence of an embedded im.LocalRef value, not type validity.
+func LocalRef(t types.Type) bool { return embedsMarker(t, "LocalRef") }
+
+// MarkerCount counts direct embedded marker identities, including aliases of the same marker.
+func MarkerCount(t types.Type) int {
+	if t == nil {
+		return 0
+	}
+	structure, ok := t.Underlying().(*types.Struct)
+	if !ok {
+		return 0
+	}
+	count := 0
+	for field := range structure.Fields() {
+		if field.Embedded() && (IsLibraryType(field.Type(), "Shared") || IsLibraryType(field.Type(), "LocalRef")) {
+			count++
+		}
+	}
+	return count
+}
+
+// embedsMarker resolves one marker through the compiler's embedded-field identities.
+func embedsMarker(t types.Type, name string) bool {
 	if t == nil {
 		return false
 	}
@@ -32,7 +62,7 @@ func Marked(t types.Type) bool {
 		return false
 	}
 	for field := range s.Fields() {
-		if field.Embedded() && IsLibraryType(field.Type(), "Marker") {
+		if field.Embedded() && IsLibraryType(field.Type(), name) {
 			return true
 		}
 	}

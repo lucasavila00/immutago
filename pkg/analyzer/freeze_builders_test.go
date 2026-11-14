@@ -11,7 +11,7 @@ func TestMarkedBuilderOperations(t *testing.T) {
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type V struct{im.Marker;X int};`+source); got != "" {
+			if got := checkSource(t, `type V struct{im.Shared;X int};`+source); got != "" {
 				t.Fatal(got)
 			}
 		})

@@ -1,0 +1,9 @@
+builder_declarations.go:12:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: left, right := []int{1}, []int{2}
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
+builder_declarations.go:18:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: values, count := make([]int, 1), 2
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
+builder_declarations.go:6:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: values, count := []int{1}, 2
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

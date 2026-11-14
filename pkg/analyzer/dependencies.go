@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lucasavila00/immutago/internal/borrow"
 	"github.com/lucasavila00/immutago/internal/checker"
 	"golang.org/x/tools/go/analysis"
 )
@@ -94,7 +93,7 @@ func dependencyMessage(consumer, path string, fact invalidPackage) string {
 
 // protectedPackage also checks source types because vet can prune transitive package imports.
 func protectedPackage(pass *analysis.Pass) bool {
-	if borrow.UsesImmutable(pass.Pkg) {
+	if usesImmutable(pass.Pkg) {
 		return true
 	}
 	for _, value := range pass.TypesInfo.Types {

@@ -1,0 +1,4 @@
+frozen_conversion.go:8:15: unsupported immutable operation: protected value conversions are unsupported
+  source: UnmarkedFrozen(value)
+  type: review_convergence.UnmarkedFrozen
+  fix: construct the destination marked value from copied fields; keep frozen collections in their original im type

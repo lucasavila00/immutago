@@ -24,5 +24,6 @@ func (s FrozenSlice[T]) At(index int) T { return s.values[index] }
 
 // Clone returns an independent native slice in O(n) time and space.
 // It copies elements by value and preserves nil. Mutating the copy does not
-// change the frozen slice; immutable element types make deeper copying unnecessary.
+// change the frozen slice. References still point to the same immutable objects;
+// immutable element types make deeper copying unnecessary.
 func (s FrozenSlice[T]) Clone() []T { return slices.Clone(s.values) }

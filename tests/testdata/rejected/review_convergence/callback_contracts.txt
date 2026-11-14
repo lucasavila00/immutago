@@ -1,0 +1,40 @@
+callback_contracts.go:10:11: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(ConversionValue)
+  type: func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:13:20: unsupported immutable operation: immutable callbacks are unsupported
+  source: CallbackHolder
+  type: review_convergence.CallbackHolder
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:14:21: unsupported immutable operation: immutable callbacks are unsupported
+  source: chan func(ConversionValue)
+  type: chan func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:14:26: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(ConversionValue)
+  type: func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:15:21: unsupported immutable operation: immutable callbacks are unsupported
+  source: *func(ConversionValue)
+  type: *func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:15:22: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(ConversionValue)
+  type: func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:17:37: unsupported immutable operation: immutable callbacks are unsupported
+  source: CallbackHolder
+  type: review_convergence.CallbackHolder
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:3:21: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(ConversionValue)
+  type: func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:5:33: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(ConversionValue)
+  type: func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:9:21: unsupported immutable operation: immutable callbacks are unsupported
+  source: struct { Callback func(ConversionValue) }
+  type: struct{Callback func(review_convergence.ConversionValue)}
+  fix: call a named, non-generic function directly with a concrete immutable parameter

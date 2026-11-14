@@ -1,12 +1,16 @@
-explicit_iteration.go:13:23: unsupported immutable borrow: protected iteration requires a direct frozen All call
+explicit_iteration.go:10:28: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(*Good) bool
+  type: func(*explicit_iteration.Good) bool
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+explicit_iteration.go:11:26: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(Good) bool
+  type: func(explicit_iteration.Good) bool
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+explicit_iteration.go:13:23: unsupported immutable operation: immutable callbacks are unsupported
   source: pointerIterator
   type: func(yield func(*explicit_iteration.Good) bool)
-  fix: use range frozen.All() for protected values; do not create protected references through a custom iterator
-explicit_iteration.go:13:6: unsupported immutable borrow: references require one fixed declaration from an owned local
-  source: pointer
-  type: *explicit_iteration.Good
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
-explicit_iteration.go:18:21: unsupported immutable borrow: protected iteration requires a direct frozen All call
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+explicit_iteration.go:18:21: unsupported immutable operation: immutable callbacks are unsupported
   source: valueIterator
   type: func(yield func(explicit_iteration.Good) bool)
-  fix: use range frozen.All() for protected values; do not create protected references through a custom iterator
+  fix: call a named, non-generic function directly with a concrete immutable parameter

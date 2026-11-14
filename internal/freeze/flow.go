@@ -8,7 +8,8 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/lucasavila00/immutago/internal/borrow/flow"
+	"github.com/lucasavila00/immutago/internal/checker"
+	"github.com/lucasavila00/immutago/internal/freeze/flow"
 	"golang.org/x/tools/go/cfg"
 )
 
@@ -107,6 +108,9 @@ func (p *proof) events(node ast.Node) []event {
 			return false
 		}
 		if _, nested := node.(*ast.FuncLit); nested {
+			return false
+		}
+		if checker.Unevaluated(p.pass.TypesInfo, p.parents, node) {
 			return false
 		}
 		stack = append(stack, node)

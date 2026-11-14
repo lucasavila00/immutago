@@ -1,0 +1,27 @@
+owner_local.go:22:3: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X = 1
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:24:3: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X = 2
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X += 3
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:27:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.Y++
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:35:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X = 2
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:46:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: first.X = 2
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:48:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: second.X = 3
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:54:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X = read(new(value)) + 1
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:62:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: copied.X = 2
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

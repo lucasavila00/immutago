@@ -1,4 +1,4 @@
-invalid_borrow.go:12:49: unsupported immutable borrow: scalar interior addresses are unsupported
+invalid_borrow.go:12:49: unsupported immutable operation: scalar interior addresses are unsupported
   source: &value.X
   type: *int
-  fix: read or update the field through its owned value; do not take a field pointer or call its pointer-receiver method
+  fix: copy the scalar field into a local; do not take a pointer into immutable storage

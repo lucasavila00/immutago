@@ -7,13 +7,13 @@ type Count int
 func (p *Count) Change() { *p = 1 }
 
 type Value struct {
-	im.Marker
+	im.Shared
 	N Count
 }
 
 func mutate() {
 	var value Value
-	pointer := &value
+	pointer := new(value)
 	method := value.N.Change
 	method()
 	_ = pointer.N

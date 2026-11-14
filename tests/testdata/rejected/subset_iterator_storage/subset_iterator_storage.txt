@@ -1,4 +1,11 @@
-subset_iterator_storage.go:18:58: unsupported immutable borrow: immutable callbacks are unsupported
+subset_iterator_storage.go:18:52: unsupported immutable operation: immutable callbacks are unsupported
+  source: it := frozen.All()
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+subset_iterator_storage.go:18:58: unsupported immutable operation: immutable iterators must be consumed by direct range
   source: frozen.All()
+  type: iter.Seq2[int, rejected.Good]
+  fix: write for key, value := range collection.All() { ... }; do not retain or pass the iterator
+subset_iterator_storage.go:18:76: unsupported immutable operation: immutable callbacks are unsupported
+  source: it
   type: iter.Seq2[int, rejected.Good]
   fix: call a named, non-generic function directly with a concrete immutable parameter

@@ -1,3 +1,0 @@
-nll_loop_carried.go:23:3: cannot write borrowed immutable owner value (rejected.Good) through value.X: shared reference pointer is still live; move this write after its final use, or copy the value before updating
-nll_loop_carried.go:21:2: 	shared reference pointer declared here
-nll_loop_carried.go:24:12: 	this reachable use keeps shared reference pointer live

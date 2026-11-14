@@ -3,7 +3,7 @@ unsafe_helper.go:3:8: unsupported unsafe import; immutability cannot be proved
   fix: replace these operations with ordinary typed Go code
 unsafe_helper.go:5:16: unsupported unsafe pointer; immutability cannot be proved
   type: unsafe.Pointer
-  fix: use typed value copies or direct shared borrows; do not reinterpret storage
+  fix: use typed value copies or immutable references; do not reinterpret storage
 unsafe_helper.go:5:23: unsupported unsafe pointer; immutability cannot be proved
   type: unsafe.Pointer
-  fix: use typed value copies or direct shared borrows; do not reinterpret storage
+  fix: use typed value copies or immutable references; do not reinterpret storage

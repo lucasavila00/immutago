@@ -1,0 +1,72 @@
+package immutable_objects
+
+import "github.com/lucasavila00/immutago/pkg/im"
+
+type Node struct {
+	im.Shared
+	Value int
+	Next  *Node
+}
+type Holder struct {
+	im.Shared
+	Node  *Node
+	Items im.FrozenSlice[*Node]
+}
+
+var saved *Node
+
+func makeNode(next *Node) *Node { return &Node{Value: 1, Next: next} }
+func share(node *Node) *Node    { saved = node; return node }
+func build() Holder {
+	first := new(Node)
+	second := makeNode(first)
+	copied := second
+	second = &Node{Value: 2}
+	var empty *Node
+	empty = copied
+	_ = share(empty)
+	builder := []*Node{first, copied, second}
+	frozen := im.FreezeSlice(builder)
+	return Holder{Node: copied, Items: frozen}
+}
+
+func slots() im.FrozenSlice[*Node] {
+	builder := []*Node{&Node{Value: 1}}
+	alias := builder[0]
+	builder[0] = &Node{Value: 2}
+	_ = alias.Value
+	frozen := im.FreezeSlice(builder)
+	cloned := frozen.Clone()
+	cloned[0] = &Node{Value: 3}
+	result := im.FreezeSlice(cloned)
+	return result
+}
+func pointerMap() im.FrozenMap[*Node, *Node] {
+	key := &Node{Value: 1}
+	builder := map[*Node]*Node{key: &Node{Value: 2}}
+	frozen := im.FreezeMap(builder)
+	value, found := frozen.Get(key)
+	_ = value
+	_ = found
+	return frozen
+}
+
+func allocatedCopies() *Node {
+	value := Node{Value: 1}
+	pointer := new(value)
+	value = Node{Value: 2}
+	_ = new(Node{Value: 3})
+	return pointer
+}
+
+var current Node
+
+func replaceGlobal() Node {
+	current = Node{Value: 2}
+	return current
+}
+
+func nilReference() *Node {
+	var pointer *Node = nil
+	return pointer
+}

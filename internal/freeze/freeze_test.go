@@ -13,7 +13,7 @@ import (
 )
 
 const librarySource = `package im
- type Marker struct{}
+ type Shared struct{}
  type FrozenSlice[T any] struct{}
  type FrozenMap[K comparable,V any] struct{}
  func FreezeSlice[T any](v []T)FrozenSlice[T]{return FrozenSlice[T]{}}
@@ -39,18 +39,31 @@ func TestFreezeOwnership(t *testing.T) {
 		{"ordinary scalar clone", `f:=im.FreezeSlice([]int{1});s:=f.Clone();take(s)`, false},
 		{"clone escape before refreeze", `f:=im.FreezeSlice([]int{1});s:=f.Clone();take(s);_=im.FreezeSlice(s)`, true},
 		{"clone", `f:=im.FreezeSlice([]int{1});s:=f.Clone();s[0]=2;_=im.FreezeSlice(s)`, false},
-		{"borrowed slice clone", `f:=im.FreezeSlice([]int{1});p:=&f;s:=p.Clone();s[0]=2;_=im.FreezeSlice(s)`, false},
-		{"dereferenced slice clone", `f:=im.FreezeSlice([]int{1});p:=&f;s:=(*p).Clone();s[0]=2;_=im.FreezeSlice(s)`, false},
-		{"borrowed map clone", `f:=im.FreezeMap(map[string]int{"x":1});p:=&f;m:=p.Clone();m["x"]=2;_=im.FreezeMap(m)`, false},
-		{"dereferenced map clone", `f:=im.FreezeMap(map[string]int{"x":1});p:=&f;m:=(*p).Clone();` +
-			`m["x"]=2;_=im.FreezeMap(m)`, false},
 		{"named clone", `v:=Fake{};p:=&v;s:=p.Clone();_=im.FreezeSlice(s)`, true},
 		{"nil", `var s []int;_=im.FreezeSlice(s);_=im.FreezeMap[string,int](nil)`, false},
-		{"marked builder", `s:=[]V{{X:1}};s[0].X=2;_=s[0]`, false},
+		{"marked builder", `s:=[]V{{X:1}};s[0]=V{X:2};_=s[0]`, false},
+		{"reference element copy", `p:=&V{X:1};s:=[]*V{p};q:=s[0];s[0]=&V{X:2};_=im.FreezeSlice(s);_=q.X`, false},
+		{"fresh object from element", `s:=[]V{{X:1}};p:=&V{X:s[0].X};s[0]=V{X:2};_=im.FreezeSlice(s);_=p.X`, false},
+		{"fresh object from reference", `s:=[]*V{&V{X:1}};p:=&V{X:s[0].X};s[0]=&V{X:2};_=im.FreezeSlice(s);_=p.X`, false},
+		{"reference element append", `p:=&V{X:1};s:=[]*V{};s=append(s,p);_=im.FreezeSlice(s)`, false},
+		{"reference map key and value", `p:=&V{X:1};m:=map[*V]*V{p:p};q:=m[p];m[p]=&V{X:2};_=im.FreezeMap(m);_=q.X`, false},
+		{"reference clone", `p:=&V{X:1};f:=im.FreezeSlice([]*V{p});s:=f.Clone();s[0]=&V{X:2};_=im.FreezeSlice(s)`, false},
+		{"reference slot address", `s:=[]*V{&V{X:1}};p:=&s[0];_=p;_=im.FreezeSlice(s)`, true},
+		{"marked field address", `s:=[]V{{X:1}};p:=&s[0].X;_=p;_=im.FreezeSlice(s)`, true},
+		{"reference handle alias without freeze", `s:=[]*V{&V{X:1}};a:=s;_=a`, true},
+		{"reference map alias without freeze", `p:=&V{X:1};m:=map[*V]*V{p:p};a:=m;_=a`, true},
+		{"reference slot address without freeze", `s:=[]*V{&V{X:1}};p:=&s[0];_=p`, true},
+		{"reference handle alias", `s:=[]*V{&V{X:1}};a:=s;_=a;_=im.FreezeSlice(s)`, true},
+		{"reference read after freeze", `s:=[]*V{&V{X:1}};_=im.FreezeSlice(s);_=s[0]`, true},
 		{"loop fresh", `for i:=0;i<2;i++{s:=[]int{i};_=im.FreezeSlice(s)}`, false},
 		{"read after", `s:=[]int{1};_=im.FreezeSlice(s);_=s[0]`, true},
 		{"write after", `s:=[]int{1};_=im.FreezeSlice(s);s[0]=2`, true},
 		{"len after", `s:=[]int{1};_=im.FreezeSlice(s);_=len(s)`, true},
+		{"constant before", `s:=[]int{1};const n=len([1][]int{s});_=n;_=im.FreezeSlice(s)`, false},
+		{"constant after", `s:=[]int{1};_=im.FreezeSlice(s);const n=len([1][]int{s});_=n`, false},
+		{"constant address", `s:=[]int{1};_=im.FreezeSlice(s);const n=len([1]*[]int{&s});_=n`, false},
+		{"constant element", `s:=[]int{1};_=im.FreezeSlice(s);const n=len([1]int{s[99]});_=n`, false},
+		{"evaluated element", `s:=[]int{1};_=im.FreezeSlice(s);_=len([1]int{s[index(im.FrozenSlice[int]{})]})`, true},
 		{"dead alias", `s:=[]int{1};a:=s;_=a;_=im.FreezeSlice(s)`, true},
 		{"slice view", `s:=[]int{1};a:=s[:];_=a;_=im.FreezeSlice(s)`, true},
 		{"address", `s:=[]int{1};p:=&s[0];_=p;_=im.FreezeSlice(s)`, true},
@@ -94,7 +107,7 @@ func diagnostics(t *testing.T, body string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	source := `package sample;import "` + checker.LibraryPath + `";type V struct{im.Marker;X int};
+	source := `package sample;import "` + checker.LibraryPath + `";type V struct{im.Shared;X int};
 	 type Fake struct{};func(Fake)Clone()[]int{return nil};
  func take([]int){};func both(im.FrozenSlice[int],int){};
  func index(im.FrozenSlice[int])int{return 0};func key(im.FrozenMap[string,int])string{return "x"};

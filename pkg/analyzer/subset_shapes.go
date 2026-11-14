@@ -1,10 +1,17 @@
 package analyzer
 
-import (
-	"go/ast"
-	"go/token"
-	"go/types"
-)
+import "go/ast"
+
+// statementOperation identifies the statement or declaration that owns an operand.
+func (c *subsetChecks) statementOperation(expression ast.Expr) ast.Node {
+	for parent := c.parents[expression]; parent != nil; parent = c.parents[parent] {
+		switch parent.(type) {
+		case ast.Stmt, *ast.ValueSpec:
+			return parent
+		}
+	}
+	return expression
+}
 
 // protectedStorage includes native builders and scalar projections of protected owners.
 func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
@@ -22,111 +29,51 @@ func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 	return false
 }
 
-// statementShape permits only documented statement forms for protected expressions.
-func (c *subsetChecks) statementShape(expression ast.Expr) {
-	if name, ok := expression.(*ast.Ident); ok {
-		if _, typeName := c.pass.TypesInfo.ObjectOf(name).(*types.TypeName); typeName {
-			return
-		}
-	}
-
-	if c.pass.TypesInfo.Types[expression].IsType() ||
-		(!c.protectedStorage(expression) && !protectedResult(c.pass.TypesInfo.TypeOf(expression))) {
-		return
-	}
-	if name, ok := expression.(*ast.Ident); ok && c.pass.TypesInfo.Defs[name] != nil {
-		return
-	}
+// matchStatement finds the complete statement that owns a protected operand.
+func (c *subsetChecks) matchStatement(expression ast.Expr) string {
 	for parent := c.parents[expression]; parent != nil; parent = c.parents[parent] {
-		if c.statementContext(expression, parent) {
-			return
+		if declaration, ok := parent.(*ast.ValueSpec); ok {
+			return c.matchDeclaration(declaration)
 		}
-	}
-	c.report(expression, "protected operation is outside the supported statement forms")
-}
-
-// statementContext checks the first statement or declaration around a protected operand.
-func (c *subsetChecks) statementContext(expression ast.Expr, parent ast.Node) bool {
-	switch node := parent.(type) {
-	case *ast.AssignStmt:
-		if len(node.Lhs) != 1 || len(node.Rhs) != 1 {
-			if !c.freshGetAssignment(node) {
-				c.report(node, "multiple assignments involving protected storage are unsupported")
-			}
-		}
-		return true
-	case *ast.ValueSpec:
-		if len(node.Names) != 1 || len(node.Values) > 1 {
-			if !c.getDeclaration(node) {
-				c.report(node, "multiple assignments involving protected storage are unsupported")
-			}
-		}
-		return true
-	case *ast.DeclStmt, *ast.IncDecStmt, *ast.ReturnStmt,
-		*ast.IfStmt, *ast.ForStmt, *ast.SwitchStmt,
-		*ast.FuncDecl, *ast.FuncLit:
-		return true
-	case *ast.RangeStmt:
-		c.rangeTarget(expression, node)
-		return true
-	case *ast.ExprStmt:
-		if _, call := ast.Unparen(node.X).(*ast.CallExpr); call {
-			return true
-		}
-	case *ast.CaseClause:
-		if _, ordinary := c.parents[c.parents[node]].(*ast.SwitchStmt); ordinary {
-			return true
-		}
-	default:
-		if _, statement := parent.(ast.Stmt); !statement {
-			return false
-		}
-	}
-	c.report(expression, "protected operation is outside the supported statement forms")
-	return true
-}
-
-// rangeTarget requires one existing target when its evaluation uses protected storage.
-func (c *subsetChecks) rangeTarget(expression ast.Expr, statement *ast.RangeStmt) {
-	if statement.Tok != token.ASSIGN || statement.Key == nil || statement.Value == nil {
-		return
-	}
-	for node := ast.Node(expression); node != statement; node = c.parents[node] {
-		if node == statement.Key || node == statement.Value {
-			c.report(statement, "multiple assignments involving protected storage are unsupported")
-			return
-		}
-	}
-}
-
-// referenceDefinition admits only a named reader parameter or one address-initialized local binding.
-func (c *subsetChecks) referenceDefinition(name *ast.Ident) bool {
-	object := c.pass.TypesInfo.Defs[name]
-	if object == nil || object.Parent() == c.pass.Pkg.Scope() {
-		return false
-	}
-	switch parent := c.parents[name].(type) {
-	case *ast.AssignStmt:
-		return parent.Tok == token.DEFINE && len(parent.Lhs) == 1 && len(parent.Rhs) == 1 && ownerAddress(parent.Rhs[0])
-	case *ast.ValueSpec:
-		return len(parent.Names) == 1 && len(parent.Values) == 1 && ownerAddress(parent.Values[0])
-	case *ast.Field:
-		list, ok := c.parents[parent].(*ast.FieldList)
+		statement, ok := parent.(ast.Stmt)
 		if !ok {
-			return false
+			continue
 		}
-		signature, ok := c.parents[list].(*ast.FuncType)
-		if !ok || signature.Params != list || signature.TypeParams != nil {
-			return false
+		if clause, ok := c.parents[statement].(*ast.CommClause); ok && clause.Comm == statement {
+			return "protected storage is unsupported in select communication clauses"
 		}
-		declaration, ok := c.parents[signature].(*ast.FuncDecl)
-		return ok && declaration.Recv == nil
+		return c.matchStatementNode(statement)
 	}
-	return false
+	return "protected operation is outside the supported statement forms"
 }
 
-// protectedVariable identifies reference definitions without treating field metadata as a use.
-func protectedVariable(object types.Object) bool {
-	variable, ok := object.(*types.Var)
-	return ok && !variable.IsField() && protectedReference(variable.Type())
+// matchStatementNode lists each complete supported statement and rejects the remaining Go statements.
+func (c *subsetChecks) matchStatementNode(statement ast.Stmt) string {
+	switch statement := statement.(type) {
+	case *ast.AssignStmt:
+		return c.matchAssignment(statement)
+	case *ast.ReturnStmt:
+		return c.matchReturn(statement)
+	case *ast.IncDecStmt:
+		return c.matchWrite(statement.X)
+	case *ast.RangeStmt:
+		return c.matchRange(statement)
+	case *ast.SwitchStmt:
+		return c.matchSwitch(statement)
+	case *ast.IfStmt, *ast.ForStmt:
+		return ""
+	case *ast.ExprStmt:
+		if call, ok := ast.Unparen(statement.X).(*ast.CallExpr); ok {
+			return c.matchCall(call)
+		}
+	case *ast.GoStmt, *ast.DeferStmt:
+		return "protected storage requires synchronous calls"
+	case *ast.CaseClause:
+		if block, ok := c.parents[statement].(*ast.BlockStmt); ok {
+			if parent, ok := c.parents[block].(*ast.SwitchStmt); ok {
+				return c.matchSwitch(parent)
+			}
+		}
+	}
+	return "protected operation is outside the supported statement forms"
 }

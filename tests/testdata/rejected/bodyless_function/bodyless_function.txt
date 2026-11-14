@@ -1,2 +1,2 @@
 bodyless_function.go:5:1: unsupported function without a Go body; immutability cannot be proved
-  fix: provide a Go implementation so writes and shared borrows can be checked
+  fix: provide a Go implementation so writes and pointer transport can be checked

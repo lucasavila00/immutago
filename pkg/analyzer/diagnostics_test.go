@@ -11,13 +11,13 @@ func TestStructuralDiagnosticContext(t *testing.T) {
 		source string
 		want   []string
 	}{
-		{`type Value struct{im.Marker; Items []string}`, []string{
+		{`type Value struct{im.Shared; Items []string}`, []string{
 			"immutable field Items", "owner: sample.Value; field type: []string",
 			"fix: replace the native slice with im.FrozenSlice[T]",
 		}},
-		{`type Child struct{im.Marker}; type Parent struct{Child Child}`, []string{
+		{`type Child struct{im.Shared}; type Parent struct{Child Child}`, []string{
 			"unmarked struct", "owner: sample.Parent; field type: sample.Child",
-			"fix: embed im.Marker",
+			"fix: embed im.Shared",
 		}},
 		{`var _ = im.FreezeSlice([]*int{new(int)})`, []string{
 			"immutable type argument", "type: *int", "fix: replace the pointer field or argument with an owned immutable value",
@@ -50,7 +50,7 @@ func TestDependencyFailureDeduplication(t *testing.T) {
 
 // TestFieldDiagnosticsUseOneDeclarationSite reports each failed field once across repeated type visits.
 func TestFieldDiagnosticsUseOneDeclarationSite(t *testing.T) {
-	got := checkSource(t, `type Value struct{im.Marker; Items []string; Pointer *int}; var _ Value`)
+	got := checkSource(t, `type Value struct{im.Shared; Items []string; Pointer *int}; var _ Value`)
 	for _, field := range []string{"Items", "Pointer"} {
 		if count := strings.Count(got, "immutable field "+field+":"); count != 1 {
 			t.Fatalf("field %s reported %d times: %s", field, count, got)
@@ -58,10 +58,10 @@ func TestFieldDiagnosticsUseOneDeclarationSite(t *testing.T) {
 	}
 }
 
-// TestPointerConstructorDiagnosticDoesNotClassifyItsTypeAsAnArgument keeps the actionable allocation error.
-func TestPointerConstructorDiagnosticDoesNotClassifyItsTypeAsAnArgument(t *testing.T) {
-	got := checkSource(t, `type Value struct{im.Marker};func f(){_=new(Value)}`)
-	if !strings.Contains(got, "pointer-owned construction") || strings.Contains(got, "dynamic calls") {
+// TestPointerConstructorAcceptsCompilerBuiltinSignature checks the fresh allocation boundary.
+func TestPointerConstructorAcceptsCompilerBuiltinSignature(t *testing.T) {
+	got := checkSource(t, `type Value struct{im.Shared};func f(){_=new(Value)}`)
+	if got != "" {
 		t.Fatalf("incorrect constructor diagnostic: %s", got)
 	}
 }

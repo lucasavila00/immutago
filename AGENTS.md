@@ -124,12 +124,18 @@ Check every field and collection type argument. Use resolved Go type identity,
 not source spelling. Do not accept unknown cases or add escape hatches.
 Support cases that can be proved. Report unsupported cases explicitly.
 Unmarked structs cannot own marked values or immutable collections.
-Permit construction and updates in owned local storage. Reject writes through
-shared references and writes that conflict with a live loan. Use source places
-and non-lexical loan lifetimes; do not substitute blanket pointer rejection or
-permanent freezing. Use whole-owner loans and direct, typed, non-escaping
-read-only calls. Reject alias escape boundaries instead of inferring arbitrary
-function effects, pointer-return provenance, or dynamic callback behavior.
+Both `im.Shared` and `im.LocalRef` require immutable objects from construction.
+Reject field, element, and dereference writes to protected objects. Permit
+reassignment of whole variable bindings. Protected references originate from
+fresh construction, never addresses of reassignable local storage. Protected
+pointers target concrete marked structs only. Reject user generics involving
+protected storage, protected closure captures and callback transport, and
+protected operations in go or defer. Keep the fixed generic im collection APIs.
+`Shared` references can be shared, stored, and returned. `LocalRef` references
+stay local or pass through direct typed non-escaping calls; reject storing,
+returning, or capturing them. Do not add mutable initialization, loan lifetimes,
+or runtime ownership state. Keep unsupported transport explicit instead of
+inferring arbitrary callback effects.
 Frozen collections must not expose writable storage. Freeze consumes a proved
 exclusive native builder without a copy. Reject builder aliases and use after
 freeze. Clone returns independent mutable storage; there are no frozen updates.
@@ -180,3 +186,11 @@ by complete shape matches with a rejecting fallback. Trace each allowed form
 through docs, code, ownership checks, CLI fixtures, and diagnostic snapshots.
 A forbidden form passing the checker is a defect even when its example is not
 listed in the docs. Passing known rejection tests does not replace this review.
+
+## 17. Fix the Class of Issue
+
+For every checker defect, identify why the operation missed a matcher or passed
+an incomplete match. Fix the general classification or matching rule. Check
+related forms, including declarations, nil and zero values, aliases, nested
+storage, tuples, and variadic arguments where relevant. Add accepted and rejected
+regressions. Do not replace a class-wide fix with an exception for one example.

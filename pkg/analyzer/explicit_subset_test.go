@@ -10,16 +10,11 @@ func TestExplicitSubsetRejects(t *testing.T) {
 	cases := []struct{ name, source string }{
 		{"method", `func(v V)Read()int{return v.X}`},
 		{"promoted method", `type Count int;func(c Count)Read()int{return int(c)}
-   type W struct{im.Marker;Count};func f(){var w W;_=w.Read()}`},
+   type W struct{im.Shared;Count};func f(){var w W;_=w.Read()}`},
 		{"range protected value", `func empty(yield func(V)bool){};func f(){for v:=range empty{_=v.X}}`},
 		{"native multiple", `func f(){s:=[]int{1};var x int;s[0],x=2,3;_=x;_=im.FreezeSlice(s)}`},
 		{"protected send", `func f(ch chan int){var v V;ch<-v.X}`},
 		{"range reference", `func empty(yield func(*V)bool){};func f(){for p:=range empty{_=p.X}}`},
-		{"copy", `func f(){var v V;p:=&v;q:=p;_=q.X}`},
-		{"rebind", `func f(){var a,b V;p:=&a;p=&b;_=p.X}`},
-		{"nil", `func f(){var p *V=nil;_=p}`},
-		{"uninitialized", `func f(){var p *V;_=p}`},
-		{"parameter rebind", `func f(p *V){p=nil}`},
 		{"multiple write", `func f(){var v V;v.X,v.X=1,2}`},
 		{"multiple value", `func f(){a,b:=V{},V{};_,_=a,b}`},
 		{"existing Get", `func f(){m:=im.FreezeMap(map[int]V{});var v V;v,ok:=m.Get(1);_=v;_=ok}`},
@@ -34,28 +29,32 @@ func TestExplicitSubsetRejects(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Marker;X int};`+tc.source)
-			if !strings.Contains(got, "unsupported immutable borrow") {
+			got := checkSource(t, `type V struct{im.Shared;X int};`+tc.source)
+			if !strings.Contains(got, "unsupported immutable operation") {
 				t.Fatalf("unsupported form accepted: %s", got)
 			}
 		})
 	}
 }
 
-// TestExplicitSubsetAccepts checks fixed references, fresh map results, and explicit Freeze statements.
+// TestExplicitSubsetAccepts checks reference bindings, fresh map results, and explicit Freeze statements.
 func TestExplicitSubsetAccepts(t *testing.T) {
 	cases := []string{
-		`func read(p *V)int{return p.X};func f(){var v V;var p *V=&v;_=read(p);v.X=2}`,
+		`func f(){p:=&V{};q:=p;p=&V{X:2};_=q;_=p}`,
+		`func f(){var p *V=nil;_=p}`,
+		`func f(){var p *V;_=p}`,
+		`func f(p *V){p=nil}`,
+		`func read(p *V)int{return p.X};func f(){var v V;var p *V=new(v);_=read(p);v=V{X:2}}`,
 		`func f(){m:=im.FreezeMap(map[int]V{});v,ok:=m.Get(1);_=v;_=ok}`,
 		`func f(){m:=im.FreezeMap(map[int]V{});var v,ok=m.Get(1);_=v;_=ok}`,
 		`var frozen=im.FreezeSlice([]int{1})`,
 		`func f(){_=im.FreezeSlice([]int{1})}`,
-		`func f(ch chan bool){var v V;select{case <-ch:v.X=2};_=v}`,
-		`func f(){var v V;switch v.X{case 0:v.X=2};_=v}`,
+		`func f(ch chan bool){var v V;select{case <-ch:v=V{X:2}};_=v}`,
+		`func f(){var v V;switch v.X{case 0:v=V{X:2}};_=v}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type V struct{im.Marker;X int};`+source); got != "" {
+			if got := checkSource(t, `type V struct{im.Shared;X int};`+source); got != "" {
 				t.Fatalf("documented form rejected: %s", got)
 			}
 		})

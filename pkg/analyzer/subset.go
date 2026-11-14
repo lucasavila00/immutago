@@ -9,7 +9,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// subsetChecks rejects transports outside the local, synchronous borrow contract.
+// subsetChecks matches immutable operations and rejects unsupported transport.
 type subsetChecks struct {
 	pass     *analysis.Pass
 	parents  map[ast.Node]ast.Node
@@ -18,7 +18,7 @@ type subsetChecks struct {
 	owners   map[*types.Var]bool
 }
 
-// checkSubset checks the supported borrow boundary with compiler-resolved types.
+// checkSubset checks the supported immutable forms with compiler-resolved types.
 func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 	c := &subsetChecks{pass: pass, parents: make(map[ast.Node]ast.Node),
 		owners: owners, exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool)}
@@ -42,12 +42,12 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 	}
 	for id, instance := range pass.TypesInfo.Instances {
 		obj := pass.TypesInfo.Uses[id]
-		if _, ok := obj.(*types.Func); !ok || libraryObject(obj) {
+		if libraryObject(obj) {
 			continue
 		}
 		for i := 0; i < instance.TypeArgs.Len(); i++ {
-			if checker.Contains(instance.TypeArgs.At(i)) {
-				c.report(id, "generic calls with immutable types are unsupported")
+			if checker.Contains(instance.TypeArgs.At(i)) || protectedCallable(instance.TypeArgs.At(i)) {
+				c.report(id, "user generic instantiations with immutable types are unsupported")
 			}
 		}
 	}
@@ -57,53 +57,23 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 func (c *subsetChecks) report(n ast.Node, message string) {
 	if !c.reported[n.Pos()] {
 		c.reported[n.Pos()] = true
-		c.pass.Reportf(n.Pos(), "unsupported immutable borrow: %s%s\n  fix: %s",
+		c.pass.Reportf(n.Pos(), "unsupported immutable operation: %s%s\n  fix: %s",
 			message, sourceContext(c.pass, n), subsetFix(message))
 	}
 }
 
-// visit checks source operations and their inferred types.
-func (c *subsetChecks) visit(n ast.Node) bool {
-	c.statementBoundary(n)
-	if expression, ok := n.(ast.Expr); ok {
-		c.expressionType(expression)
-		c.freezeFunctionUse(expression)
-		c.synchronousStorage(expression)
-		c.statementShape(expression)
+// visit sends each protected operation through the complete source-form matcher.
+func (c *subsetChecks) visit(node ast.Node) bool {
+	c.declarationNode(node)
+	expression, ok := node.(ast.Expr)
+	if !ok {
+		return true
 	}
-
-	switch x := n.(type) {
-	case *ast.TypeAssertExpr:
-		if checker.Contains(c.pass.TypesInfo.TypeOf(x)) {
-			c.report(x, "immutable interface assertions are unsupported")
+	c.expressionType(expression)
+	if c.operationExpression(expression) {
+		if operation, rule := c.matchOperation(expression); rule != "" {
+			c.report(operation, rule)
 		}
-	case *ast.UnaryExpr:
-		if x.Op == token.AND {
-			c.address(x)
-		}
-	case *ast.SliceExpr:
-		if !stringType(c.pass.TypesInfo.TypeOf(x.X)) && c.protectedRoot(x.X) {
-			c.report(x, "slice views of immutable storage are unsupported")
-		}
-	case *ast.CallExpr:
-		c.call(x)
-	case *ast.FuncLit:
-		c.closure(x)
-	case *ast.SelectorExpr:
-		c.methodValue(x)
-	case *ast.AssignStmt:
-		c.assignment(x)
-	case *ast.ValueSpec:
-		c.declaration(x)
-	case *ast.ReturnStmt:
-		c.returnedValues(x)
-	case *ast.SendStmt:
-		if channel, ok := c.pass.TypesInfo.TypeOf(x.Chan).Underlying().(*types.Chan); ok {
-			c.transport(x.Value, channel.Elem())
-		}
-	}
-	if expression, ok := n.(ast.Expr); ok {
-		c.referenceUse(expression)
 	}
 	return true
 }
@@ -119,11 +89,11 @@ func subsetType(t types.Type, seen map[types.Type]bool) string {
 		if _, ok := u.Elem().Underlying().(*types.Pointer); ok && checker.Contains(t) {
 			return "pointer indirection is unsupported"
 		}
+		if checker.Contains(t) && !checker.Marked(u.Elem()) {
+			return "immutable references require a concrete marked struct target"
+		}
 		return subsetType(u.Elem(), seen)
 	case *types.Array:
-		if protectedReference(u.Elem()) {
-			return "arrays of shared references are unsupported"
-		}
 		return subsetType(u.Elem(), seen)
 	case *types.Signature:
 		return subsetResults(u.Results())
@@ -161,39 +131,6 @@ func (c *subsetChecks) protectedRoot(e ast.Expr) bool {
 	return false
 }
 
-// address permits only a whole local owner as the source of a shared borrow.
-func (c *subsetChecks) address(e *ast.UnaryExpr) {
-	if !c.protectedRoot(e.X) {
-		return
-	}
-	target := ast.Unparen(e.X)
-	if !checker.Contains(c.pass.TypesInfo.TypeOf(target)) {
-		c.report(e, "scalar interior addresses are unsupported")
-		return
-	}
-	for {
-		selection, ok := target.(*ast.SelectorExpr)
-		if !ok {
-			break
-		}
-		target = ast.Unparen(selection.X)
-	}
-	id, ok := target.(*ast.Ident)
-	if !ok {
-		c.report(e, "only whole local values and marked fields can be borrowed")
-		return
-	}
-
-	if protectedReference(c.pass.TypesInfo.TypeOf(id)) {
-		c.report(e, "borrowing through a shared reference is unsupported")
-		return
-	}
-	obj := c.pass.TypesInfo.ObjectOf(id)
-	if obj == nil || obj.Parent() == c.pass.Pkg.Scope() {
-		c.report(e, "only whole local values can be borrowed")
-	}
-}
-
 // libraryObject identifies the fixed library by package identity.
 func libraryObject(obj types.Object) bool {
 	return obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == checker.LibraryPath
@@ -203,69 +140,6 @@ func libraryObject(obj types.Object) bool {
 func stringType(t types.Type) bool {
 	basic, ok := t.Underlying().(*types.Basic)
 	return ok && basic.Info()&types.IsString != 0
-}
-
-// assignment checks immutable transport in AssignStmt.
-func (c *subsetChecks) assignment(x *ast.AssignStmt) {
-	if len(x.Rhs) == 1 {
-		var destinations []types.Type
-		for _, lhs := range x.Lhs {
-			destinations = append(destinations, c.pass.TypesInfo.TypeOf(lhs))
-		}
-		c.tupleTransport(x.Rhs[0], destinations)
-	}
-	for i, rhs := range x.Rhs {
-		if i < len(x.Lhs) {
-			c.transport(rhs, c.pass.TypesInfo.TypeOf(x.Lhs[i]))
-			c.globalStore(x.Lhs[i], rhs)
-		}
-	}
-}
-
-// declaration checks immutable transport in ValueSpec.
-func (c *subsetChecks) declaration(x *ast.ValueSpec) {
-	if len(x.Values) == 1 {
-		var destinations []types.Type
-		for _, id := range x.Names {
-			if obj := c.pass.TypesInfo.Defs[id]; obj != nil {
-				destinations = append(destinations, obj.Type())
-			}
-		}
-		c.tupleTransport(x.Values[0], destinations)
-	}
-	for i, id := range x.Names {
-		obj := c.pass.TypesInfo.Defs[id]
-		if obj == nil {
-			continue
-		}
-		if protectedReference(obj.Type()) && obj.Parent() == c.pass.Pkg.Scope() {
-			c.report(id, "global shared references are unsupported")
-		}
-		if i < len(x.Values) {
-			c.transport(x.Values[i], obj.Type())
-		}
-	}
-}
-
-// returnedValues checks immutable transport in ReturnStmt.
-func (c *subsetChecks) returnedValues(x *ast.ReturnStmt) {
-	if len(x.Results) == 1 {
-		if tuple, ok := c.pass.TypesInfo.TypeOf(x.Results[0]).(*types.Tuple); ok {
-			var destinations []types.Type
-			for i := 0; i < tuple.Len(); i++ {
-				destinations = append(destinations, c.returnType(x, i))
-			}
-			c.tupleTransport(x.Results[0], destinations)
-		}
-	}
-	for i, e := range x.Results {
-		if destination := c.returnType(x, i); destination != nil {
-			c.transport(e, destination)
-		}
-		if protectedReference(c.pass.TypesInfo.TypeOf(e)) {
-			c.report(e, "returning shared references is unsupported")
-		}
-	}
 }
 
 // subsetContainer checks the three native container forms excluded from immutable storage.
@@ -287,11 +161,11 @@ func subsetContainer(t types.Type) string {
 	return ""
 }
 
-// subsetResults rejects escaping shared references in function results.
+// subsetResults rejects local-only references in function results.
 func subsetResults(results *types.Tuple) string {
 	for i := 0; i < results.Len(); i++ {
-		if protectedReference(results.At(i).Type()) {
-			return "returning shared references is unsupported"
+		if localReference(results.At(i).Type()) {
+			return "returning LocalRef pointers is unsupported"
 		}
 	}
 	return ""
@@ -309,11 +183,56 @@ func subsetTuple(tuple *types.Tuple, seen map[types.Type]bool) string {
 
 // expressionType checks resolved types while admitting native builders checked by ownership analysis.
 func (c *subsetChecks) expressionType(expression ast.Expr) {
+	if checker.Unevaluated(c.pass.TypesInfo, c.parents, expression) {
+		return
+	}
+	// A builtin signature describes this call, not a user function's return boundary.
+	if name, ok := expression.(*ast.Ident); ok {
+		if c.pass.TypesInfo.Defs[name] != nil {
+			return
+		}
+		if _, builtin := c.pass.TypesInfo.ObjectOf(name).(*types.Builtin); builtin {
+			return
+		}
+	}
 	t := c.pass.TypesInfo.TypeOf(expression)
+	if c.pass.TypesInfo.Types[expression].IsType() && protectedCallable(t) {
+		if _, declaration := c.parents[expression].(*ast.FuncDecl); !declaration {
+			c.report(expression, "immutable callbacks are unsupported")
+		}
+	}
+	if storedLocalReference(t, make(map[types.Type]bool)) {
+		c.report(expression, "containers of LocalRef pointers are unsupported")
+	}
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return
 	}
 	if reason := subsetType(t, make(map[types.Type]bool)); reason != "" {
 		c.report(expression, reason)
 	}
+}
+
+// storedLocalReference checks native container elements even when the handle has an ownership proof.
+func storedLocalReference(t types.Type, seen map[types.Type]bool) bool {
+	if t == nil || seen[t] {
+		return false
+	}
+	seen[t] = true
+	var elements []types.Type
+	switch storage := t.Underlying().(type) {
+	case *types.Array:
+		elements = []types.Type{storage.Elem()}
+	case *types.Slice:
+		elements = []types.Type{storage.Elem()}
+	case *types.Map:
+		elements = []types.Type{storage.Key(), storage.Elem()}
+	case *types.Chan:
+		elements = []types.Type{storage.Elem()}
+	}
+	for _, element := range elements {
+		if localReference(element) || storedLocalReference(element, seen) {
+			return true
+		}
+	}
+	return false
 }

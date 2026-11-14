@@ -1,0 +1,3 @@
+range_existing_targets.go:9:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: for index, value = range values { }
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

@@ -8,15 +8,15 @@ func (c *Counter) Increment() { *c++ }
 func (c Counter) Read() int   { return int(c) }
 
 type Good struct {
-	im.Marker
+	im.Shared
 	Counter
 }
 
-func promoted()                  { var value Good; pointer := &value; pointer.Increment() }
+func promoted()                  { var value Good; pointer := new(value); pointer.Increment() }
 func promotedRead()              { var value Good; _ = value.Read() }
 func (value *Good) OwnRead() int { return int(value.Counter) }
-func direct()                    { var value Good; pointer := &value; _ = pointer.OwnRead() }
-func expression()                { var value Good; _ = (*Good).OwnRead(&value) }
+func direct()                    { var value Good; pointer := new(value); _ = pointer.OwnRead() }
+func expression()                { var value Good; _ = (*Good).OwnRead(new(value)) }
 
 func (c Counter) Len() int                  { return int(c) }
 func (c Counter) At(index int) int          { return int(c) + index }

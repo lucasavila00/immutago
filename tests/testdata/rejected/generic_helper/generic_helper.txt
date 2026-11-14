@@ -1,18 +1,22 @@
-generic_helper.go:11:28: immutable collection: type argument 1: type parameter constraint does not prove immutability
+generic_helper.go:11:28: immutable collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
-  fix: restrict the type parameter to immutable concrete types; any and mutable alternatives cannot prove this field
-generic_helper.go:11:31: immutable type argument: type parameter constraint does not prove immutability
+  fix: use a concrete type; user generic declarations cannot contain immutable storage
+generic_helper.go:11:31: immutable type argument: type parameters are unsupported in immutable storage
   type: T
-  fix: restrict the type parameter to immutable concrete types; any and mutable alternatives cannot prove this field
-generic_helper.go:11:48: immutable collection: type argument 1: type parameter constraint does not prove immutability
+  fix: use a concrete type; user generic declarations cannot contain immutable storage
+generic_helper.go:11:48: immutable collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
-  fix: restrict the type parameter to immutable concrete types; any and mutable alternatives cannot prove this field
-generic_helper.go:11:58: immutable collection: type argument 1: type parameter constraint does not prove immutability
+  fix: use a concrete type; user generic declarations cannot contain immutable storage
+generic_helper.go:11:58: immutable collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
-  fix: restrict the type parameter to immutable concrete types; any and mutable alternatives cannot prove this field
-generic_helper.go:11:61: immutable type argument: type parameter constraint does not prove immutability
+  fix: use a concrete type; user generic declarations cannot contain immutable storage
+generic_helper.go:11:61: immutable type argument: type parameters are unsupported in immutable storage
   type: T
-  fix: restrict the type parameter to immutable concrete types; any and mutable alternatives cannot prove this field
-generic_helper.go:11:93: immutable collection: type argument 1: type parameter constraint does not prove immutability
+  fix: use a concrete type; user generic declarations cannot contain immutable storage
+generic_helper.go:11:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: Build
+  type: func[T any](value T) im.FrozenSlice[T]
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+generic_helper.go:11:93: immutable collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
-  fix: restrict the type parameter to immutable concrete types; any and mutable alternatives cannot prove this field
+  fix: use a concrete type; user generic declarations cannot contain immutable storage

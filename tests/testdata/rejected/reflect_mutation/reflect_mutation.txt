@@ -1,10 +1,14 @@
+reflect_mutation.go:13:17: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: reflect.ValueOf([]Value{{N: 1}})
+  type: reflect.Value
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 reflect_mutation.go:13:17: unsupported reflection value; immutability cannot be proved
   type: reflect.Value
   fix: replace reflection values with concrete typed values and direct operations
-reflect_mutation.go:13:33: unsupported immutable borrow: boxing immutable storage in interfaces is unsupported
+reflect_mutation.go:13:33: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []Value{{N: 1}}
   type: []rejected.Value
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
 reflect_mutation.go:5:2: unsupported reflect import; immutability cannot be proved
   rule: reflection and unsafe operations can bypass typed ownership checks
   fix: replace these operations with ordinary typed Go code

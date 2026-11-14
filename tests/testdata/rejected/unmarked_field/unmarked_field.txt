@@ -1,3 +1,3 @@
-unmarked_field.go:13:2: immutable field Value: struct does not embed im.Marker
+unmarked_field.go:13:2: immutable field Value: struct does not embed im.Shared or im.LocalRef
   owner: rejected.Bad; field type: struct{Count int}
-  fix: embed im.Marker in the owned struct and make each of its fields immutable
+  fix: embed im.Shared or im.LocalRef in the struct and make each field immutable

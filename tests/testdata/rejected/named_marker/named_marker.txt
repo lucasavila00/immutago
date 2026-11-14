@@ -1,3 +1,3 @@
-named_marker.go:12:2: im.Marker must be embedded by value
+named_marker.go:12:2: immutable markers must be embedded by value
   field: rejected.Bad.Marker
-  fix: declare an anonymous im.Marker field; remove its field name or pointer
+  fix: embed im.Shared or im.LocalRef; remove the marker field name or pointer

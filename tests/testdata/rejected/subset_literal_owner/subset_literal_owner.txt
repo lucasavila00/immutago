@@ -1,6 +1,3 @@
-subset_literal_owner.go:9:16: unsupported immutable borrow: only whole local values and marked fields can be borrowed
-  source: &Good{}
-  type: *rejected.Good
-  fix: copy the value into a named local, then borrow that local or one of its marked fields
-subset_literal_owner.go:9:24: cannot write through shared reference p.X: shared references are read-only; update the owned value before borrowing, or copy the value and update the copy
-subset_literal_owner.go:9:13: 	shared reference p (*rejected.Good) declared here
+subset_literal_owner.go:9:24: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.X = 1
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

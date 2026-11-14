@@ -3,7 +3,7 @@ package explicit_iteration
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
-	im.Marker
+	im.Shared
 	X int
 }
 

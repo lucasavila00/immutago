@@ -1,3 +1,3 @@
-zero_array.go:13:2: immutable field Value: *int is not provably immutable
+zero_array.go:13:2: immutable field Value: stored pointers require a concrete marked struct target
   owner: rejected.Bad; field type: [0]*int
   fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments

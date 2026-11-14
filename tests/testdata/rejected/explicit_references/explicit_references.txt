@@ -1,58 +1,6 @@
-explicit_references.go:11:59: unsupported immutable borrow: references require one fixed declaration from an owned local
-  source: q
-  type: *explicit_references.Good
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
-explicit_references.go:11:64: unsupported immutable borrow: reference operation is outside the supported allowlist
-  source: p
-  type: *explicit_references.Good
-  fix: keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader
-explicit_references.go:16:2: unsupported immutable borrow: references require one fixed declaration from an owned local
-  source: p
-  type: *explicit_references.Good
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
-explicit_references.go:16:6: unsupported immutable borrow: reference operation is outside the supported allowlist
-  source: &second
-  type: *explicit_references.Good
-  fix: keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader
-explicit_references.go:19:47: unsupported immutable borrow: references require one fixed declaration from an owned local
-  source: p
-  type: *explicit_references.Good
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
-explicit_references.go:20:38: unsupported immutable borrow: references require one fixed declaration from an owned local
-  source: p
-  type: *explicit_references.Good
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
-explicit_references.go:20:47: unsupported immutable borrow: references require one fixed declaration from an owned local
-  source: p
-  type: *explicit_references.Good
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
-explicit_references.go:20:51: unsupported immutable borrow: reference operation is outside the supported allowlist
-  source: &value
-  type: *explicit_references.Good
-  fix: keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader
-explicit_references.go:24:6: unsupported immutable borrow: references require one fixed declaration from an owned local
-  source: p
-  type: *explicit_references.Good
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
-explicit_references.go:26:3: unsupported immutable borrow: references require one fixed declaration from an owned local
-  source: p
-  type: *explicit_references.Good
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
-explicit_references.go:26:7: unsupported immutable borrow: reference operation is outside the supported allowlist
-  source: &first
-  type: *explicit_references.Good
-  fix: keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader
-explicit_references.go:28:3: unsupported immutable borrow: references require one fixed declaration from an owned local
-  source: p
-  type: *explicit_references.Good
-  fix: declare p := &owner or var p *T = &owner once; do not copy, clear, or reassign the reference
-explicit_references.go:28:7: unsupported immutable borrow: reference operation is outside the supported allowlist
-  source: &second
-  type: *explicit_references.Good
-  fix: keep the borrow in a local *T binding; read its fields, copy *p, compare with nil, or pass it to a direct typed reader
-explicit_references.go:36:2: cannot write borrowed immutable owner value (explicit_references.Good) through value.X: shared reference p is still live; move this write after its final use, or copy the value before updating
-explicit_references.go:35:2: 	shared reference p declared here
-explicit_references.go:38:12: 	this reachable use keeps shared reference p live
-explicit_references.go:45:3: cannot write borrowed immutable owner value (explicit_references.Good) through value.X: shared reference p is still live; move this write after its final use, or copy the value before updating
-explicit_references.go:43:2: 	shared reference p declared here
-explicit_references.go:46:12: 	this reachable use keeps shared reference p live
+explicit_references.go:14:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X = 1
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+explicit_references.go:23:3: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.X = index
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

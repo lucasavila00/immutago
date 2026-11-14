@@ -2,7 +2,7 @@ package model
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type MarkerAlias = im.Marker
+type MarkerAlias = im.Shared
 type Number int
 type Title = string
 
@@ -19,18 +19,16 @@ type Leaf struct {
 }
 
 type Tree struct {
-	im.Marker
+	im.Shared
 	Leaf     Leaf
 	Children im.FrozenSlice[Tree]
 	Index    im.FrozenMap[string, Tree]
 }
 
-type Scalar interface{ ~int | ~string }
-type Box[T Scalar] struct {
-	im.Marker
-	Value T
+type CountBox struct {
+	im.Shared
+	Value int
 }
-type CountBox = Box[int]
 type Alias = Leaf
 type Derived Leaf
 

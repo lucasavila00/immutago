@@ -1,0 +1,15 @@
+implicit_conversion.go:13:48: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: retainArguments(value)
+  type: ()
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+implicit_conversion.go:14:48: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: retainArguments(conversionPair())
+  type: ()
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+implicit_conversion.go:15:64: unsupported immutable operation: immutable callbacks are unsupported
+  source: makeConversionValue
+  type: func() review_convergence.ConversionValue
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+implicit_conversion.go:18:2: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: case value:
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

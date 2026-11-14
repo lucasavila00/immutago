@@ -1,0 +1,21 @@
+immutable_object_writes.go:15:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: alias.Value = 3
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+immutable_object_writes.go:16:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: *alias = Node{Value: 4}
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+immutable_object_writes.go:20:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: node.Next.Value++
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+immutable_object_writes.go:22:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: builder[0].Value = 3
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+immutable_object_writes.go:25:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: shared.Value += 4
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+immutable_object_writes.go:30:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: copy.Value = 2
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+immutable_object_writes.go:35:22: unsupported immutable operation: writes to immutable objects are unsupported
+  source: current.Value = 2
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

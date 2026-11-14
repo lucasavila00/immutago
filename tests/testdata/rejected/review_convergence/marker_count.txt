@@ -1,0 +1,6 @@
+marker_count.go:10:22: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+marker_count.go:10:6: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+marker_count.go:15:21: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+marker_count.go:15:6: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+marker_count.go:20:19: struct cannot embed both im.Shared and im.LocalRef
+marker_count.go:20:6: struct cannot embed both im.Shared and im.LocalRef

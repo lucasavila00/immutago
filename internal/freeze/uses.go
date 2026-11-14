@@ -4,6 +4,8 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+
+	"github.com/lucasavila00/immutago/internal/checker"
 )
 
 // checkUses rejects every handle-aliasing operation, including aliases created before freezing.
@@ -12,6 +14,9 @@ func (p *proof) checkUses() {
 		ast.Inspect(file, func(node ast.Node) bool {
 			id, ok := node.(*ast.Ident)
 			if !ok {
+				return true
+			}
+			if checker.Unevaluated(p.pass.TypesInfo, p.parents, id) {
 				return true
 			}
 			variable, _ := p.pass.TypesInfo.Uses[id].(*types.Var)
@@ -67,26 +72,33 @@ func (p *proof) allowedUse(expression ast.Expr, parent ast.Node, variable *types
 
 // safeElement rejects explicit and implicit addresses into storage before they can outlive the builder.
 func (p *proof) safeElement(node ast.Node) bool {
-	for node != nil {
-		if address, ok := node.(*ast.UnaryExpr); ok && address.Op == token.AND {
-			return false
-		}
-		if _, slice := node.(*ast.SliceExpr); slice {
-			return false
-		}
-		if _, loop := node.(*ast.RangeStmt); loop {
-			return false
-		}
-
-		if p.pointerMethod(node) {
-			return false
-		}
-		if _, expression := node.(ast.Expr); !expression {
+	for {
+		parent := p.parents[node]
+		switch next := parent.(type) {
+		case *ast.ParenExpr:
+		case *ast.SelectorExpr:
+			if next.X != node {
+				return true
+			}
+			if p.pointerMethod(next) {
+				return false
+			}
+		case *ast.IndexExpr:
+			if next.X != node {
+				return true
+			}
+		case *ast.StarExpr:
+		case *ast.UnaryExpr:
+			return next.Op != token.AND
+		case *ast.SliceExpr:
+			return next.X != node
+		case *ast.RangeStmt:
+			return next.X != node
+		default:
 			return true
 		}
-		node = p.parents[node]
+		node = parent
 	}
-	return true
 }
 
 // allowedCall admits built-in element operations and synchronous ownership consumption.

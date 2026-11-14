@@ -1,0 +1,3 @@
+range_write.go:13:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: for value.Value = range []int{1} { }
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

@@ -1,10 +1,14 @@
-// Package im provides a marker and immutable value collections.
+// Package im provides markers and immutable value collections.
 //
-// Embed Marker in a struct to require immutable fields. Run the immutago
-// analyzer on all consumer packages; Go's type checker alone does not enforce
-// the field or collection element rules. Owned local values permit construction
-// and updates. Shared references permit reads; writes to borrowed storage fail
-// while a conflicting loan is live. A value copy has independent storage.
+// Embed Shared or LocalRef in a struct to require immutable fields. Run the
+// immutago analyzer on all consumer packages; Go's type checker alone does not
+// enforce the field or collection element rules. Both markers make objects
+// immutable from construction. Whole variables can be rebound to another value.
+//
+// Pointers to Shared objects can be copied, stored, and returned. Pointers to
+// LocalRef objects are restricted to local use and direct typed calls that do
+// not let the pointer escape. Go manages object lifetimes. A value copy
+// preserves pointers to the same immutable objects.
 //
 // FreezeSlice and FreezeMap share their input storage without copying. The analyzer
 // requires exclusive ownership and rejects later source-handle uses. Clone returns
@@ -13,6 +17,10 @@
 // be immutable; the analyzer checks this requirement, including nested types.
 package im
 
-// Marker opts a struct into immutability checks when embedded by value.
-// A named field or pointer embedding does not satisfy the marker contract.
-type Marker struct{}
+// Shared marks an immutable struct whose shared pointers may be stored or returned.
+// Embed it by value. A named field or pointer embedding does not mark the struct.
+type Shared struct{}
+
+// LocalRef marks an immutable struct whose pointers must not escape.
+// Embed it by value. A named field or pointer embedding does not mark the struct.
+type LocalRef struct{}

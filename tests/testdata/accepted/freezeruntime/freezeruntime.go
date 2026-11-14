@@ -3,6 +3,7 @@ package main
 import (
 	"example.com/consumer/freezebuilders"
 	"fmt"
+	"github.com/lucasavila00/immutago/pkg/im"
 )
 
 func main() {
@@ -25,4 +26,13 @@ func main() {
 	marked := freezebuilders.ClearMarkedMap()
 	entry, ok := marked.Get(freezebuilders.Value{X: 3})
 	fmt.Println(entry.X, ok, marked.Len())
+	shared := &freezebuilders.Value{X: 5}
+	alias := shared
+	shared = &freezebuilders.Value{X: 6}
+	native := []*freezebuilders.Value{alias}
+	frozen := im.FreezeSlice(native)
+	clone := frozen.Clone()
+	clone[0] = shared
+	updated := im.FreezeSlice(clone)
+	fmt.Println(alias.X, shared.X, frozen.At(0).X, updated.At(0).X)
 }

@@ -6,7 +6,7 @@ import (
 )
 
 type Record struct {
-	im.Marker
+	im.Shared
 	Model   model.Tree
 	Names   im.FrozenSlice[string]
 	Lookups im.FrozenMap[[2]int, im.FrozenSlice[model.Leaf]]
@@ -36,11 +36,11 @@ func Use() {
 	mappingCopy := mapping.Clone()
 	mappingCopy["b"] = 3
 	_ = Record{Model: value, Names: names}
-	_ = model.Box[string]{Value: "generic"}
+	_ = model.CountBox{Value: 1}
 	_ = model.Derived{}
 	_ = im.FreezeSlice([][2]string{{"a", "b"}})
 	_ = struct {
-		im.Marker
+		im.Shared
 		Value int
 	}{Value: 1}
 }

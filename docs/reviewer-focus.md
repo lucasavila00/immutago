@@ -1,95 +1,54 @@
 # Reviewer requirements
 
-[Documentation](README.md) · [Validation](arch/validation.md)
+[Documentation](README.md) · [Language rules](rules.md) · [Validation](arch/validation.md)
 
-Use this checklist for every change to the supported Go subset. The
-[guide](rules.md) defines the allowed source forms. The
-[architecture notes](arch/README.md) explain how they are checked.
+Review every checker or supported-language change against these two requirements.
 
-## 1. Document what is allowed
+## 1. Complete allowed forms
 
-The allowed-form list must be complete for the operation being described.
-Each entry must include a short Go example. State that all other forms are
-rejected. Use concrete rejected examples and allowed replacements; state that
-those rejection examples are not exhaustive.
+The guide must list every allowed Go form with a short example. It must say
+that unlisted operations are rejected. Rejection examples must include allowed
+replacements and must be identified as non-exhaustive.
 
-For example:
+Check concrete construction, assignment, parameter, result, receiver, and
+statement shapes. Intent such as “keep aliases visible” is not a source rule.
+Run complete examples through the real CLI.
 
-```go
-// Allowed: one new reference from an owned local.
-p := &value
+## 2. Complete matches with a rejecting fallback
 
-// Rejected: copying a reference.
-q := p
+The checker must match the whole documented shape using AST nodes and resolved
+Go type identity, then apply its proof checks. Unknown forms must fail. Do not
+accept a broad syntax class and add exceptions after defects are found.
 
-// Allowed replacement: borrow the owner directly.
-q := &value
-```
+For example, fresh protected construction requires `&T{...}` or a supported
+`new` form, a concrete marked target, and an allowed statement context.
+`&variable` and `&value.Field` must fail. Whole-variable replacement must not
+admit field, element, or pointer-target writes.
 
-Do not substitute phrases such as "keep aliases visible" for an exact form.
-Check the source examples against the real CLI, including imports and types.
-A claim that a list is complete requires evidence from the matcher and tests.
+Check `Shared` sharing and `LocalRef` pointer escape separately. Builder
+exclusivity and consumption remain required for both modes.
 
-## 2. Match allowed shapes; reject the rest
-
-The implementation must match the complete allowed form, like function clauses
-that match specific argument shapes and finish with a rejecting fallback.
-
-For a local reference, match all of these parts:
-
-- One new local binding.
-- One address expression as its initializer.
-- An owned local value or its protected field as the address target.
-- A resolved protected pointer type.
-- An allowed statement context.
-
-Use the [reference-origin rules](rules.md#what-you-can-do-with-a-reference) to
-check the target type. Only after that match may the loan analysis record the owner. A declaration from
-an iterator, a pointer copy, a nil initializer, or a reassignment must reach the
-rejecting path. Do not accept every declaration and add exceptions after bugs
-appear. Use compiler identities, not only names such as `Get` or `FreezeSlice`.
-
-Check each allowed method's actual receiver and each statement's Go evaluation
-order. Source syntax can hide an implicit address or a delayed write. A correct
-liveness algorithm does not repair an incorrect input operation graph.
-
-## Required review evidence
+## Required evidence
 
 For each changed form, identify:
 
-1. Its allowed entry and example in the guide.
-2. The matcher that accepts it and the fallback that rejects other forms.
-3. The ownership checks applied after the match.
-4. Accepted CLI fixtures and rejected nearby forms, with sibling snapshots.
-5. Dependency checks when the behavior crosses package boundaries.
+1. Its guide entry and Go example.
+2. Its complete matcher and rejecting fallback.
+3. Its type, write, escape, or builder proof checks.
+4. Accepted CLI fixtures and nearby rejected forms, with exact snapshots.
+5. Dependency coverage when the form crosses package boundaries.
 
-Test new bindings as well as ordinary uses. Iterator bindings and type-switch
-bindings must not bypass checks because they are absent from assignment nodes.
-Test implicit operations, parentheses, type aliases, and extra results. Preserve
-ordinary Go operations that do not involve protected storage.
+Check implicit conversions and receivers, actual source and destination types,
+new bindings, aliases, parentheses, tuple results, variadic elements, and statement
+evaluation order. Preserve ordinary Go outside protected storage.
+A forbidden form passing is a defect even if the guide does not show that
+rejection example. Known negative tests do not replace the matcher review.
 
-A new supported form requires docs, a matcher, ownership rules, and tests in the
-same change. Do not call a gap fixed by changing only the docs, only a rejection
-example, or only one spelling of an unsupported operation.
+For each defect, identify why the operation missed a matcher or passed an
+incomplete match. Check the same path through declarations, nil and zero values,
+aliases, nested storage, tuples, and variadic arguments where relevant. Fix that
+path and test both allowed and rejected forms. A test for one failing example
+alone is not sufficient.
 
-## Review documentation changes
-
-Check both reading paths from the documentation index. A user must be able to
-install the tool, run a complete example, find an allowed form, and understand
-a diagnostic. A maintainer must be able to find the check, its invariant, its
-tests, and the validation command.
-
-Check claims against resolved type checks, source-form matches, ownership code,
-and fixtures. Keep rule definitions on the rules page; architecture pages
-explain the mechanism and link to the rule. Remove stale future-tense plans and
-avoid repeating historical reports as current behavior. Keep temporary
-investigation reports in the change history, not in the reference pages.
-
-Run complete new examples through the CLI. Check relative links and anchors
-after moving pages, and check template paths if documentation tooling moves.
-Generated references must still match their Go comments.
-
-For collection performance changes, compare equivalent native Go and `im` code.
-Check inlining and heap escapes as well as allocations and elapsed time. The
-[zero-overhead target](performance.md#zero-abstraction-overhead) is stronger than
-having no runtime ownership checks.
+Check changed links and generated package references. Use hosted CI for full
+validation. For collection changes, also check the [cost contract](performance.md).

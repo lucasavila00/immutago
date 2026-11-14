@@ -3,31 +3,32 @@ package docrejected
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Point struct {
-	im.Marker
+	im.Shared
 	X int
 }
 
-func implicitArrayIndex() int {
-	values := [2]Point{}
-	p := &values
-	return p[0].X
+type PointArray struct {
+	im.Shared
+	Values [2]Point
 }
 
+func arrayReference() { p := &[2]Point{}; _ = p }
 func sharedArrayWrite() {
+	p := &PointArray{}
+	p.Values[0].X = 1
+}
+func localArrayWrite() {
 	values := [2]Point{}
-	p := &values
-	(*p)[0].X = 1
+	values[0].X = 1
 }
 
-func liveArrayWrite() int {
-	values := [2]Point{}
-	p := &values
-	values[0].X = 1
-	return (*p)[0].X
+type LocalPoint struct {
+	im.LocalRef
+	X int
 }
 
 func ownerCapture() int {
-	point := Point{}
+	point := &LocalPoint{}
 	callback := func() int { return point.X }
 	return callback()
 }

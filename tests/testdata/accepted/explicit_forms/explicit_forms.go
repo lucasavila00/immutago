@@ -3,7 +3,7 @@ package explicit_forms
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
-	im.Marker
+	im.Shared
 	X int
 }
 type Alias = Good
@@ -11,9 +11,9 @@ type Alias = Good
 func read(value *Alias) int { return value.X }
 func fixed() Good {
 	var value Good
-	var pointer *Alias = (&value)
+	var pointer *Alias = (&Alias{})
 	_ = read((pointer))
-	value.X = 1
+	value = Good{X: 1}
 	return value
 }
 func selectBody(ready <-chan int) im.FrozenSlice[bool] {
@@ -31,37 +31,37 @@ func selectValueBody(ready <-chan int) Good {
 	var value Good
 	select {
 	case <-ready:
-		value.X = 1
+		value = Good{X: 1}
 	default:
-		value.X = 2
+		value = Good{X: 2}
 	}
 	return value
 }
 
 type Parent struct {
-	im.Marker
+	im.Shared
 	Child Good
 	Other int
 }
 
 func referenceReads() Parent {
 	var value Parent
-	p := &value.Child
-	q := &value.Child
+	p := &Good{}
+	q := p
 	_ = p
 	_ = p.X
 	_ = p == q
 	_ = p != nil
 	copy := *p
-	copy.X = 3
-	value.Other = copy.X
+	copy = Good{X: 3}
+	value = Parent{Child: *p, Other: copy.X}
 	return value
 }
 func declaredGet() Good {
 	frozen := im.FreezeMap(map[string]Good{"first": {X: 1}})
 	var value, ok = frozen.Get("first")
 	_ = ok
-	value.X = 2
+	value = Good{X: 2}
 	return value
 }
 
@@ -69,9 +69,9 @@ func valueSwitch() Good {
 	value := Good{X: 1}
 	switch value.X {
 	case 1:
-		value.X = 2
+		value = Good{X: 2}
 	default:
-		value.X = 3
+		value = Good{X: 3}
 	}
 	return value
 }
@@ -79,7 +79,7 @@ func arrayRange() Good {
 	values := [2]Good{{X: 1}, {X: 2}}
 	var result Good
 	for _, value := range values {
-		result.X += value.X
+		result = Good{X: result.X + value.X}
 	}
 	return result
 }
