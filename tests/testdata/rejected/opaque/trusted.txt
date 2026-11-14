@@ -1,11 +1,11 @@
-trusted.go:15:59: im.Trust requires a type that this package declares
+trusted.go:15:56: im.Seal requires a type that this package declares
   type: T
-  rule: only the package that declares T can wrap or read an im.Unchecked[T]
+  rule: only the package that declares T can wrap or read an im.Opaque[T]
   fix: call a function of the package that declares the type
-trusted.go:18:56: im.Trust requires a type that this package declares
+trusted.go:18:53: im.Seal requires a type that this package declares
   type: []int
-  rule: only the package that declares T can wrap or read an im.Unchecked[T]
+  rule: only the package that declares T can wrap or read an im.Opaque[T]
   fix: call a function of the package that declares the type
 trusted.go:21:23: unsupported immutable operation: writes to immutable objects are unsupported
-  source: b.Table = im.Trust(&Table{})
+  source: b.Table = im.Seal(&Table{})
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

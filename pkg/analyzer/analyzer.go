@@ -92,11 +92,11 @@ func checkLibraryArguments(pass *analysis.Pass, c *checks) {
 		if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
 			continue
 		}
-		if obj.Name() == "Unchecked" {
+		if obj.Name() == "Opaque" {
 			continue
 		}
-		if obj.Name() == "Trust" {
-			c.checkTrustedPackage(ident.Pos(), instance.TypeArgs.At(0), "im.Trust")
+		if obj.Name() == "Seal" {
+			c.checkTrustedPackage(ident.Pos(), instance.TypeArgs.At(0), "im.Seal")
 			continue
 		}
 		if obj.Name() == "Owner" {
@@ -150,7 +150,7 @@ func (c *checks) visit(node ast.Node) bool {
 	case *ast.StructType:
 		c.checkStruct(n.Pos(), c.pass.TypesInfo.TypeOf(n))
 	case *ast.SelectorExpr:
-		c.checkUncheckedValue(n)
+		c.checkOpaqueValue(n)
 	}
 	if expr, ok := node.(ast.Expr); ok {
 		t := c.pass.TypesInfo.TypeOf(expr)
@@ -216,7 +216,7 @@ func reflectionValue(t types.Type) bool {
 
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
-	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") || checker.IsUnchecked(t) ||
+	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") || checker.IsOpaque(t) ||
 		checker.IsRuntimeType(t, checker.ProcessMarker) {
 		return
 	}

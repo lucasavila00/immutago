@@ -8,8 +8,8 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// checkUncheckedValue permits the Value method of im.Unchecked only in the package that declares its type argument.
-func (c *checks) checkUncheckedValue(selector *ast.SelectorExpr) {
+// checkOpaqueValue permits the Value method of im.Opaque only in the package that declares its type argument.
+func (c *checks) checkOpaqueValue(selector *ast.SelectorExpr) {
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection == nil || selection.Kind() == types.FieldVal || !libraryObject(selection.Obj()) ||
 		selection.Obj().Name() != "Value" {
@@ -19,10 +19,10 @@ func (c *checks) checkUncheckedValue(selector *ast.SelectorExpr) {
 	if pointer, ok := receiver.Underlying().(*types.Pointer); ok {
 		receiver = pointer.Elem()
 	}
-	if !checker.IsUnchecked(receiver) {
+	if !checker.IsOpaque(receiver) {
 		return
 	}
-	c.checkTrustedPackage(selector.Sel.Pos(), types.Unalias(receiver).(*types.Named).TypeArgs().At(0), "Unchecked.Value")
+	c.checkTrustedPackage(selector.Sel.Pos(), types.Unalias(receiver).(*types.Named).TypeArgs().At(0), "Opaque.Value")
 }
 
 // checkTrustedPackage requires a named type argument that the current package declares.
@@ -32,6 +32,6 @@ func (c *checks) checkTrustedPackage(pos token.Pos, argument types.Type, use str
 		return
 	}
 	c.report(pos, use+" requires a type that this package declares\n  type: "+diagnosticType(argument)+
-		"\n  rule: only the package that declares T can wrap or read an im.Unchecked[T]"+
+		"\n  rule: only the package that declares T can wrap or read an im.Opaque[T]"+
 		"\n  fix: call a function of the package that declares the type")
 }

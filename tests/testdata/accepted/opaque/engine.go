@@ -1,4 +1,4 @@
-package unchecked
+package opaque
 
 import (
 	"sync"
@@ -16,12 +16,12 @@ type baked struct {
 type Model struct {
 	im.Shared
 	Name   string
-	engine im.Unchecked[baked]
+	engine im.Opaque[baked]
 }
 
 // Load builds a model and trusts its internal part.
 func Load(name string, weights []float64) *Model {
-	return &Model{Name: name, engine: im.Trust(&baked{weights: weights})}
+	return &Model{Name: name, engine: im.Seal(&baked{weights: weights})}
 }
 
 // Predict reads the internal part through the API of the declaring package.

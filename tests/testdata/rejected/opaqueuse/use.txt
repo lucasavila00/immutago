@@ -1,0 +1,19 @@
+use.go:14:19: Opaque.Value requires a type that this package declares
+  type: opaque.Table
+  rule: only the package that declares T can wrap or read an im.Opaque[T]
+  fix: call a function of the package that declares the type
+use.go:18:42: Opaque.Value requires a type that this package declares
+  type: opaque.Table
+  rule: only the package that declares T can wrap or read an im.Opaque[T]
+  fix: call a function of the package that declares the type
+use.go:4:2: unsupported dependency example.com/consumer/opaque: immutability proof failed
+  representative failure: example.com/consumer/opaque/trusted.go:15:56: im.Seal requires a type that this package declares
+    type: T
+    rule: only the package that declares T can wrap or read an im.Opaque[T]
+    fix: call a function of the package that declares the type
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/opaque, correct its errors, then rerun immutago on this package
+use.go:9:49: im.Seal requires a type that this package declares
+  type: opaque.Table
+  rule: only the package that declares T can wrap or read an im.Opaque[T]
+  fix: call a function of the package that declares the type
