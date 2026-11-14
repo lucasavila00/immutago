@@ -400,3 +400,48 @@ func TestMethodsRaceStop(t *testing.T) {
 		}
 	})
 }
+
+// namedVariant is a process that panics on each run if its name is bad.
+type namedVariant struct{ Process[variantArgs] }
+
+// Run panics for the bad variant and otherwise records the start and the stop.
+func (v *namedVariant) Run(ctx context.Context) {
+	if v.Args().Name == "bad" {
+		panic("bad variant")
+	}
+	track(ctx, v.Args().Name)
+}
+
+// variantNames is the argument of a rebuilding dispatcher.
+type variantNames struct {
+	im.Shared
+	Names im.FrozenSlice[string]
+}
+
+// rebuilding is a dispatcher that starts one group for each variant in Run.
+type rebuilding struct{ Process[variantNames] }
+
+// Run starts one nested group for each variant and waits until ctx ends.
+func (r *rebuilding) Run(ctx context.Context) {
+	for _, name := range r.Args().Names.All() {
+		Start[namedVariant](StartSupervisor(r.Supervisor()), variantArgs{Name: name})
+	}
+	<-ctx.Done()
+}
+
+// TestGroupEscalation verifies that a failing group restarts alone at first, then fails the run, and the new run
+// starts the groups again.
+func TestGroupEscalation(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		Start[rebuilding](root, variantNames{Names: im.FreezeSlice([]string{"good", "bad"})})
+		time.Sleep(216 * time.Second)
+		synctest.Wait()
+		expectEvents(t, "start good")
+		time.Sleep(2 * time.Second)
+		synctest.Wait()
+		expectEvents(t, "stop good", "start good")
+		<-root.Stop()
+		expectEvents(t, "stop good")
+	})
+}
