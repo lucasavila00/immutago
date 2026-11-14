@@ -30,8 +30,8 @@ To use a different file or key:
 go run ./examples/configuration/cmd/limits -config /path/to/limits.json -key batch
 ```
 
-The JSON object maps keys to nonnegative integer limits; `null` is rejected. A missing key has a
-zero limit. A lower limit does not erase requests already counted in the current
+The JSON object maps keys to nonnegative integer limits; `null` is rejected.
+A missing key has a zero limit. A lower limit does not erase requests already counted in the current
 window. A file read failure makes FileCache restart; invalid JSON keeps the last
 valid configuration and reports the parse error.
 

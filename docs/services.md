@@ -11,101 +11,31 @@ Use `supervise` for state with background work, such as a cache that refreshes a
 ## Refresh a file and serve its contents
 
 This cache reads a file before startup succeeds. It then refreshes the contents
-once per second. Calls to `Text` return the last contents without reading the
+at the configured interval. Calls to `Text` return the last contents without reading the
 file again.
 
-Create `settings.txt` with the text `ready`, then run this
-[complete example](../tests/testdata/accepted/servicedoc/main.go):
+The [configuration project](../examples/configuration/README.md) runs this
+[FileCache](../examples/configuration/filecache.go), a JSON configuration loader,
+and a request limiter. Run it from the repository root:
 
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    "sync"
-    "time"
-
-    "github.com/lucasavila00/immutago/pkg/im"
-    "github.com/lucasavila00/immutago/pkg/supervise"
-)
-
-// FileArgs selects a file and its refresh interval.
-type FileArgs struct {
-    im.Shared
-    Path  string
-    Every time.Duration
-}
-
-// FileCache serves the last file contents.
-type FileCache struct {
-    supervise.Service[FileArgs]
-    mu   sync.RWMutex
-    text string
-}
-
-// Init loads the first contents before calls begin.
-func (c *FileCache) Init() error {
-    if c.Args().Every <= 0 {
-        return fmt.Errorf("refresh interval must be positive")
-    }
-    return c.read()
-}
-
-// Run refreshes the file until ctx ends.
-func (c *FileCache) Run(ctx context.Context) {
-    ticker := time.NewTicker(c.Args().Every)
-    defer ticker.Stop()
-    for {
-        select {
-        case <-ctx.Done():
-            return
-        case <-ticker.C:
-            if err := c.read(); err != nil {
-                panic(err)
-            }
-        }
-    }
-}
-
-// read replaces the contents after a successful read.
-func (c *FileCache) read() error {
-    path := c.Args().Path
-    data, err := os.ReadFile(path)
-    if err != nil {
-        return err
-    }
-    c.mu.Lock()
-    c.text = string(data)
-    c.mu.Unlock()
-    return nil
-}
-
-// Text returns the last contents.
-func (c *FileCache) Text() string {
-    c.mu.RLock()
-    defer c.mu.RUnlock()
-    return c.text
-}
-
-// main starts the cache, reads it, and stops its group.
-func main() {
-    root := supervise.NewRoot(nil)
-    cache, err := supervise.Start[FileCache](root, FileArgs{
-        Path: "settings.txt", Every: time.Second,
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Print(cache.Current().Text())
-    <-root.Stop()
-}
+```sh
+go run ./examples/configuration/cmd/limits
 ```
 
-Check the program with `immutago ./...`, then run it with `go run .`. See
-[Get started](getting-started.md) for installation. The example stops after
-its first read; an application keeps the root group until shutdown.
+The command reads [limits.json](../examples/configuration/limits.json). Edit a
+limit while it runs and observe the changed request decisions. Press Ctrl+C to
+stop the group. Its file cache starts with these arguments:
+
+```go
+cache, err := supervise.Start[configuration.FileCache](root, configuration.FileArgs{
+    Path: path, Every: 100 * time.Millisecond,
+})
+if err != nil { panic(err) }
+fmt.Print(cache.Current().Text())
+```
+
+The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and
+`path`. FileCache loads in Init, polls in Run, and protects its text with a mutex.
 
 1. `Start[FileCache]` creates the cache, sets its arguments, and calls `Init`.
 2. After Init succeeds, Start returns `Ref[FileCache]` and schedules Run in a
@@ -127,26 +57,26 @@ its first read; an application keeps the root group until shutdown.
 | Replace immutable configuration | An [im.Owner[Config]](owner.md) field. |
 
 A reference can be a field of another service's arguments. The
-[limiter](../tests/testdata/accepted/service/limiter.go) takes a reference to a
-[configuration loader](../tests/testdata/accepted/service/config_loader.go).
+[limiter](../examples/configuration/limiter.go) takes a reference to a
+[configuration loader](../examples/configuration/config.go).
 With those types, start both in one group:
 
 ```go
 group := supervise.StartGroup(root)
-loader, err := supervise.Start[ConfigLoader](group, LoaderArgs{
-    Path: "api", Every: time.Minute,
+loader, err := supervise.Start[configuration.ConfigLoader](group, configuration.LoaderArgs{
+    Cache: cache, Every: 100 * time.Millisecond,
 })
 if err != nil { panic(err) }
-limiter, err := supervise.Start[Limiter](group, LimiterArgs{
-    Loader: loader, Key: "api",
+limiter, err := supervise.Start[configuration.Limiter](group, configuration.LimiterArgs{
+    Loader: loader, Key: "api", Window: time.Second,
 })
 if err != nil { panic(err) }
 decision := limiter.Current().Take()
 ```
 
-The limiter calls the loader through that reference. It returns `Limited`
-until the loader publishes its first limit. Wait on `<-group.Stop()` to stop
-both services. Use [child groups](service-children.md) when a service must
+The loader parses the initial limits in Init. The limiter reads the current
+limit through its reference and resets its request count every Window.
+Wait on `<-group.Stop()` to stop both services. Use [child groups](service-children.md) when a service must
 create or remove related work while it runs.
 
 ## Startup errors and reservations
@@ -160,31 +90,36 @@ create or remove related work while it runs.
 - Init must not call an unstarted peer. For readiness that depends on Run,
   expose a method such as `Ready() bool`.
 
-The [startup example](../tests/testdata/accepted/serviceinit/main.go) shows errors and a retry.
+The [startup and retry example](../examples/configuration/README.md#startup-and-retry) shows errors and a retry.
 
 ## Concurrent dependencies
 
 Some start arguments are mutable values that several goroutines can use
 safely, such as a logger or an HTTP client. Declare a named
 `supervise.ConcurrentSafe[T]` field and wrap its value with
-`supervise.AssumeConcurrentSafe`:
+`supervise.AssumeConcurrentSafe`. The [model service](../examples/models/fetcher.go)
+uses these arguments; [Store](../examples/models/store.go) saves each valid document:
 
 ```go
 type FetcherArgs struct {
     im.Shared
-    BaseURL string
-    Log     supervise.ConcurrentSafe[*slog.Logger]
-    Client  supervise.ConcurrentSafe[*http.Client]
+    URL      string
+    Every    time.Duration
+    Log      supervise.ConcurrentSafe[*slog.Logger]
+    Client   supervise.ConcurrentSafe[*http.Client]
+    NewStore supervise.ConcurrentSafe[func(name string) Store]
 }
 ```
 
 Build the arguments where you start the service:
 
 ```go
-args := FetcherArgs{
-    BaseURL: "https://example.com",
-    Log:     supervise.AssumeConcurrentSafe(logger),
-    Client:  supervise.AssumeConcurrentSafe(http.DefaultClient),
+args := models.FetcherArgs{
+    URL:      "http://localhost:8080/model.json",
+    Every:    time.Second,
+    Log:      supervise.AssumeConcurrentSafe(logger),
+    Client:   supervise.AssumeConcurrentSafe(http.DefaultClient),
+    NewStore: supervise.AssumeConcurrentSafe(factory),
 }
 ```
 
@@ -198,8 +133,10 @@ args := FetcherArgs{
 An incorrect promise can cause a data race. Use only the listed
 [dependency forms](service-forms.md#concurrent-dependencies).
 `supervise.ConcurrentSafe` is not an immutable stored type.
-The [complete example](../tests/testdata/accepted/service/dependencies.go)
-also shows a factory function and a test fake.
+The [model project](../examples/models/README.md) downloads real model data,
+saves it through the factory's store, and serves predictions during reloads.
+Its [command](../examples/models/cmd/models/main.go) supplies `logger` and
+`factory`; its tests use a local HTTP server and a shared recording store.
 
 ## Failure and shutdown
 

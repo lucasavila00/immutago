@@ -5,6 +5,7 @@ A Go checker and library for immutable data and supervised services.
 | Task | Guide |
 | --- | --- |
 | Install the checker and run a complete example | [Get started](docs/getting-started.md) |
+| Run tested programs that use the public APIs | [Example projects](examples/README.md) |
 | Share read-only objects | [Shared](docs/shared.md) |
 | Prevent functions from saving object pointers | [Scoped](docs/scoped.md) |
 | Replace data while readers finish with the previous version | [Owner](docs/owner.md) |

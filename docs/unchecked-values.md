@@ -20,17 +20,26 @@ func Load(name string, weights []float64) *Model {
     return &Model{Name: name, engine: im.Trust(&baked{weights: slices.Clone(weights)})}
 }
 
-func Predict(m *Model, row int) float64 {
+func Predict(m *Model, features im.FrozenSlice[float64]) float64 {
     b := im.Unwrap(m.engine)
-    return b.weights[row]
+    if features.Len() != len(b.weights) {
+        panic("feature count does not match model")
+    }
+    var score float64
+    for i, weight := range b.weights {
+        score += weight * features.At(i)
+    }
+    return score
 }
 ```
 
 Load copies the input with `slices.Clone`, so later changes by the caller do not
 change the trusted object. `im.Trust` itself does not copy or freeze the data.
 
-The [engine](../tests/testdata/accepted/uncheckedvalue/engine.go) and
-[user](../tests/testdata/accepted/uncheckedvalueuse/use.go) examples show both sides.
+The [model package](../examples/models/model/model.go) owns the trusted pointer.
+The [HTTP service](../examples/models/fetcher.go) uses its public prediction API.
+Run the [model project](../examples/models/README.md) to load models and make
+predictions while their data changes.
 
 ## Allowed forms — exhaustive
 
