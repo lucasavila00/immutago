@@ -14,6 +14,7 @@ type subsetChecks struct {
 	slots       map[types.Type]bool
 	holderRefs  map[types.Type]bool
 	queries     checker.Classifier
+	proofs      *checker.Prover
 	pass        *analysis.Pass
 	parents     map[ast.Node]ast.Node
 	unevaluated map[ast.Node]bool
@@ -25,8 +26,8 @@ type subsetChecks struct {
 }
 
 // checkSubset checks the supported immutable forms with compiler-resolved types.
-func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
-	c := &subsetChecks{pass: pass, parents: make(map[ast.Node]ast.Node),
+func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checker.Prover) {
+	c := &subsetChecks{pass: pass, proofs: proofs, parents: make(map[ast.Node]ast.Node),
 		owners: owners, exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool),
 		literals: make(map[*ast.CompositeLit]string), unevaluated: make(map[ast.Node]bool)}
 	for _, file := range pass.Files {
@@ -46,18 +47,6 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 	c.ownedInputs()
 	for _, file := range pass.Files {
 		ast.Inspect(file, c.visit)
-	}
-	for id, instance := range pass.TypesInfo.Instances {
-		obj := pass.TypesInfo.Uses[id]
-		if libraryObject(obj) || obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == checker.RuntimePath {
-			continue
-		}
-		for i := 0; i < instance.TypeArgs.Len(); i++ {
-			arg := instance.TypeArgs.At(i)
-			if c.queries.Contains(arg) || c.slotRelevant(arg) || c.queries.Callable(arg) {
-				c.report(id, "user generic instantiations with immutable types are unsupported")
-			}
-		}
 	}
 }
 
@@ -79,6 +68,9 @@ func (c *subsetChecks) visit(node ast.Node) bool {
 	c.checkOwnerNode(node)
 	c.checkProcessNode(node)
 	c.declarationNode(node)
+	if name, ok := node.(*ast.Ident); ok {
+		c.genericInstance(name)
+	}
 	expression, ok := node.(ast.Expr)
 	if !ok {
 		return true
@@ -89,7 +81,7 @@ func (c *subsetChecks) visit(node ast.Node) bool {
 			c.report(operation, rule)
 		}
 	}
-	return true
+	return !uncheckedTypeArguments(c.pass.TypesInfo, expression)
 }
 
 // subsetType rejects hidden references and native containers, including inferred result types.
@@ -106,8 +98,18 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 		if c.queries.Contains(t) && !checker.Marked(u.Elem()) {
 			return "immutable references require a concrete marked struct target"
 		}
+		if checker.Marked(u.Elem()) {
+			if reason := c.proofs.Reason(u.Elem()); reason != "" {
+				return reason
+			}
+		}
 		return c.subsetType(u.Elem(), seen)
 	case *types.Array:
+		if c.queries.Contains(t) {
+			if reason := c.proofs.Reason(t); reason != "" {
+				return reason
+			}
+		}
 		return c.subsetType(u.Elem(), seen)
 	case *types.Signature:
 		return subsetResults(u.Results())
@@ -213,7 +215,7 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 		return
 	}
 	t := c.pass.TypesInfo.TypeOf(expression)
-	if c.pass.TypesInfo.Types[expression].IsType() && c.queries.Callable(t) {
+	if c.pass.TypesInfo.Types[expression].IsType() && c.queries.Callable(t) && !c.trustedFunctionType(expression) {
 		if _, declaration := c.parents[expression].(*ast.FuncDecl); !declaration {
 			c.report(expression, "immutable callbacks are unsupported")
 		}

@@ -49,10 +49,14 @@ fields of a process are not protected storage. The
   with exactly one marker.
 
 `proc.UncheckedDependency[T]` is an [unchecked dependency](../processes.md#unchecked-dependencies).
+The classifier treats the wrapper as protected storage and does not inspect `T`.
 The type proof rejects it, so it cannot be in an Owner value, a frozen
 collection, another marked struct, or an exported method signature. `checkStruct`
 rejects a `proc.UncheckedDependency` field in an unmarked struct, which includes a
-process. `dependencyValue` accepts `Value` only as a direct synchronous call on
+process. The source matcher rejects defined copies, pointers, arrays, native
+containers, interface boxing, and package variables. Type arguments are checked
+in the source walk so the explicit unchecked payload is skipped. `dependencyValue`
+accepts `Value` only as a direct synchronous call on
 `l.Args()` or on one field of it in a method of process `l`. The `T` value is
 not proved; `proc.Trust` is the promise.
 

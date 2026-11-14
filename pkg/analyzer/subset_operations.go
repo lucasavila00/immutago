@@ -100,6 +100,9 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	case *ast.TypeAssertExpr:
 		return "immutable interface assertions are unsupported"
 	case *ast.FuncLit:
+		if c.trustedValue(source) {
+			return ""
+		}
 		return "immutable callbacks are unsupported"
 	}
 	return "protected operation is outside the supported expression forms"
@@ -165,8 +168,7 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 
 // matchFunctionValue permits protected functions only as direct callees.
 func (c *subsetChecks) matchFunctionValue(expression ast.Expr) string {
-	if call, ok := c.unparenthesizedParent(expression).(*ast.CallExpr); ok && len(call.Args) == 1 &&
-		ast.Unparen(call.Args[0]) == ast.Unparen(expression) && runtimeObject(c.calledObject(call.Fun), checker.TrustFunction) {
+	if c.trustedValue(expression) {
 		return ""
 	}
 	if call := c.directCall(expression); call != nil {

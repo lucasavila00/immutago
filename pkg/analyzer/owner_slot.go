@@ -29,7 +29,7 @@ func (c *subsetChecks) ownedSlotCall(call *ast.CallExpr) bool {
 
 // containsSlotValue finds slots in value storage, without following pointers.
 func (c *subsetChecks) containsSlotValue(t types.Type, seen map[types.Type]bool) bool {
-	if t == nil || seen[t] {
+	if t == nil || seen[t] || checker.IsRuntimeType(t, checker.UncheckedDependencyType) {
 		return false
 	}
 	if result, ok := c.slots[t]; ok {

@@ -1,0 +1,13 @@
+dependency.go:12:49: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+dependency.go:16:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: getter interface{ Value() *int } = value
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+dependency.go:21:55: call Value only directly on l.Args() or on a field of l.Args() in a process method
+dependency.go:21:55: unsupported immutable operation: user-defined methods with immutable storage are unsupported
+  source: value.Value()
+  type: *int
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+dependency.go:6:6: defined copies of proc.UncheckedDependency are unsupported; use a type alias
+dependency.go:9:21: proc.UncheckedDependency field Value is allowed only in a marked process argument struct
+  owner: dependency.Holder
+  fix: move the field into the argument struct of the process

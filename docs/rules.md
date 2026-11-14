@@ -13,7 +13,8 @@
 The common lists and each type's lists define the complete supported forms.
 Other protected operations are rejected. Rejection examples are not exhaustive.
 **Protected storage** means marked values, their fields, frozen collections,
-and arrays containing them. Owner slots and holders have their own listed forms.
+and arrays containing them. Process dependencies use the same transport checks;
+their contents are unchecked. Owner slots and holders have their own listed forms.
 
 ## Check the program
 
