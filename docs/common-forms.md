@@ -134,11 +134,15 @@ Declare methods on a concrete marked struct or its pointer. For example:
 func (p SharedPoint) XValue() int { return p.X }
 func (p *SharedPoint) ReadX() int { return p.X }
 
+type PointGroup struct { im.Shared; SharedPoint }
+
 point := SharedPoint{X: 3}
 p := &SharedPoint{X: 3}
+group := PointGroup{SharedPoint: point}
 point.XValue()
 p.ReadX()
 (*p).XValue()
+group.SharedPoint.XValue()
 ```
 
 The receiver expression must have exactly the type in the method declaration.
@@ -150,7 +154,7 @@ result, and statement forms on this page.
 | Value receiver on a marked struct | `func (p SharedPoint) XValue() int { return p.X }` |
 | Pointer receiver on a marked struct | `func (p *ScopedPoint) ReadX() int { return p.X }` |
 | Direct call on a value or pointer of the declared receiver type | `point.XValue()`, `p.ReadX()`, `(*p).XValue()` |
-| Explicit field or element as receiver | `order.Product.Cost()`, `products[i].Cost()` |
+| Explicit field or element as receiver | `group.SharedPoint.XValue()`, `points[i].XValue()` |
 | Constructed value, new pointer, or direct call result as receiver | `SharedPoint{X: 3}.XValue()`, `(&SharedPoint{X: 3}).ReadX()`, `makePoint().XValue()` |
 | Alias or parentheses in these forms | `type Position = SharedPoint`, `(p).ReadX()` |
 
@@ -165,7 +169,7 @@ Rejected examples (**not exhaustive**):
 | --- | --- |
 | `point.ReadX()` adds an implicit address | Construct `p := &SharedPoint{X: 3}`, then call `p.ReadX()`. |
 | `p.XValue()` adds an implicit dereference | `(*p).XValue()` |
-| `order.Cost()` selects a method from an embedded Product | `order.Product.Cost()` |
+| `group.XValue()` selects a method from an embedded SharedPoint | `group.SharedPoint.XValue()` |
 | `p.Counter.Inc()` calls a method on a protected scalar field | Copy the scalar first: `count := p.Counter; count.Inc()`. |
 | `read := p.ReadX` or `(*SharedPoint).ReadX(p)` | `p.ReadX()` |
 | `reader.Read(p)` where reader has an unmarked type | Use a named function: `Read(p)`. |
