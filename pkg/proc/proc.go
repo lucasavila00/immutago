@@ -316,10 +316,10 @@ func (s *Supervisor) launch(c *child) {
 	c.stop, c.done = cancel, done
 	run := c.run
 	go func() {
+		defer close(done)
 		if watch(ctx, run, s.failure) {
 			s.forget(c)
 		}
-		close(done)
 	}()
 }
 

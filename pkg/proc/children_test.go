@@ -2,6 +2,7 @@ package proc
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -10,6 +11,22 @@ import (
 
 	"github.com/lucasavila00/immutago/pkg/im"
 )
+
+// TestGoexitStopsWatcher checks completion when a child ends its goroutine.
+func TestGoexitStopsWatcher(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		root := NewRoot()
+		root.add(func(context.Context) { runtime.Goexit() })
+		synctest.Wait()
+		done := root.Stop()
+		synctest.Wait()
+		select {
+		case <-done:
+		default:
+			t.Fatal("supervisor did not stop after Goexit")
+		}
+	})
+}
 
 // pool is a process that starts three children under its own supervisor.
 type pool struct{ Process[None] }
