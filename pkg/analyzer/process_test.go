@@ -193,6 +193,16 @@ func (P) Init() {}`},
 func (*Initializer) Init() {}
 type P struct { proc.Process[proc.None]; Initializer }
 func (*P) Run(context.Context) {}`},
+		{"ambiguous init methods", `type First struct{}
+func (*First) Init() {}
+type Second struct{}
+func (*Second) Init() {}
+type P struct { proc.Process[proc.None]; First; Second }
+func (*P) Run(context.Context) {}`},
+		{"ambiguous init fields", `type First struct { Init int }
+type Second struct { Init int }
+type P struct { proc.Process[proc.None]; First; Second }
+func (*P) Run(context.Context) {}`},
 		{"init field", `type P struct { proc.Process[proc.None]; Init func() }
 func (*P) Run(context.Context) {}`},
 		{"proc init", `type P struct { proc.Process[proc.None] }

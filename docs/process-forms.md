@@ -63,7 +63,7 @@ These examples are not exhaustive.
 | `loader.Proc().version`, `loader.Proc().Args()` | Add an exported method. |
 | `loader.Proc().Run(ctx)`, `l.Run(ctx)` | Only the supervisor calls `Run`. |
 | `waker.Proc().Init()`, `w.Init()` | Only the runtime calls `Init`. |
-| `func (w *Waker) Init() error`, `func (w Waker) Init()`, a promoted `Init` | Declare `func (w *Waker) Init()`. |
+| `func (w *Waker) Init() error`, `func (w Waker) Init()`, a promoted or ambiguous `Init` | Declare `func (w *Waker) Init()`. |
 | `loader.Proc().publish()`, `loader.Proc().Lock()` for an embedded `sync.Mutex` | Declare an exported method on the process. |
 | `f := loader.Proc().Version`, `get := loader.Proc` | `v := loader.Proc().Version()` |
 | `go loader.Proc().Version()` | `go func() { loader.Proc().Version() }()` |

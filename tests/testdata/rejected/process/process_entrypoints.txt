@@ -6,3 +6,4 @@ process_entrypoints.go:37:16: a process can declare Init() only with a pointer r
 process_entrypoints.go:46:16: a process can declare Init() only with a pointer receiver, no parameters, and no results
 process_entrypoints.go:52:7: process type ValueInit can be named only in its declaration, a pointer receiver, proc.Start[ValueInit], proc.StartReserved[ValueInit], proc.Reserve[ValueInit], or proc.PID[ValueInit]
 process_entrypoints.go:61:19: a process can declare Init() only with a pointer receiver, no parameters, and no results
+process_entrypoints.go:76:20: a process can declare Init() only with a pointer receiver, no parameters, and no results

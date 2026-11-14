@@ -158,7 +158,7 @@ func (c *subsetChecks) checkProcessStruct(n *ast.StructType) {
 func processInit(t types.Type) bool {
 	object, index, _ := types.LookupFieldOrMethod(types.NewPointer(t), false, nil, checker.InitMethod)
 	if object == nil {
-		return true
+		return index == nil // A non-nil index means the promoted name is ambiguous.
 	}
 	method, ok := object.(*types.Func)
 	if !ok || len(index) != 1 {

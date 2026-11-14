@@ -65,3 +65,19 @@ type PromotedInit struct {
 
 // Run waits for cancellation.
 func (*PromotedInit) Run(ctx context.Context) { <-ctx.Done() }
+
+// OtherInitializer has a second Init method.
+type OtherInitializer struct{}
+
+// Init does nothing.
+func (*OtherInitializer) Init() {}
+
+// AmbiguousInit has two embedded initializers; neither can be called by the runtime.
+type AmbiguousInit struct {
+	proc.Process[proc.None]
+	Initializer
+	OtherInitializer
+}
+
+// Run waits for cancellation.
+func (*AmbiguousInit) Run(ctx context.Context) { <-ctx.Done() }
