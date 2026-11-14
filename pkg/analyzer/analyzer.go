@@ -250,7 +250,8 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	}
 }
 
-// unprovedField reports a misplaced marker or proc.UncheckedDependency field and identifies a field without a type proof.
+// unprovedField reports a misplaced marker or proc.UncheckedDependency field.
+// It identifies a field without a type proof.
 func (c *checks) unprovedField(pos token.Pos, t types.Type, field *types.Var, marked bool) bool {
 	if invalidMarkerField(field) {
 		c.report(pos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+

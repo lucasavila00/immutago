@@ -48,7 +48,8 @@ func TestDependencyRejected(t *testing.T) {
 type Reporter struct { proc.Process[ReporterArgs] }
 func (r *Reporter) Run(context.Context) {}`},
 		{"func argument", `type Args struct { im.Shared; Dial func() }`},
-		{"method result", dependencyDefinitions + `func (f *Fetcher) Log() proc.UncheckedDependency[*Logger] { return f.Args().Log }`},
+		{"method result", dependencyDefinitions + `func (f *Fetcher) Log() proc.UncheckedDependency[*Logger] {
+	return f.Args().Log }`},
 		{"method parameter", dependencyDefinitions + `func (f *Fetcher) Use(log proc.UncheckedDependency[*Logger]) {}`},
 		{"method result args", dependencyDefinitions + `func (f *Fetcher) Copy() FetcherArgs { return f.Args() }`},
 		{"owner value", `type State struct { im.Scoped; Log proc.UncheckedDependency[*int] }
