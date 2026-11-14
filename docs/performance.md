@@ -67,14 +67,15 @@ The [marked graph benchmarks](../pkg/analyzer/proof_scaling_test.go) measure the
 complete pass on connected marked types and frozen collections.
 `BenchmarkCoreMarked` has no errors; `BenchmarkCoreMarkedInvalid` measures many
 invalid roots. [Proof-query tests](../internal/checker/prover_test.go) check
-reused validity and exact diagnostic ordering against independent oracles.
+reused validity against independent reachability and check cause paths against
+compiler type components.
 
-The prover retains each reachable obligation and edge once per pass. Validity
-expansion and failure propagation cost O(V + E) across its queries. Exact
-messages for R distinct invalid roots can still require O(R × (V + E)) replay
-work, plus the diagnostic bytes. Completed messages are cached by root and
-retain O(total message bytes) until the pass ends. This is not a universal
-linear bound for rejected programs.
+Each concrete proof obligation is expanded once, and each failure edge is
+processed a bounded number of times per cache. Empty pointer and array labels
+do not add a chain of render work. Rendering is proportional to the retained
+message text, and repeated queries reuse that message. The graph and cached
+messages stay in memory until the pass ends. These bounds do not include all
+compiler-type inspection or the complete analyzer pass.
 
 ## Dependency fact costs
 

@@ -5,27 +5,38 @@ import (
 	"go/types"
 )
 
-// obligation stores fixed component edges, a terminal error, and its propagated validity.
+// obligation retains a terminal reason or a label with an earlier failure cause.
+// Only an unfailed owner can get a cause, so cause links cannot form a cycle.
 type obligation struct {
-	users  []*obligation
-	parts  []proofPart
+	users  []proofUse
 	reason string
-	failed bool
+	cause  *obligation
 }
 
-// proofPart keeps the source order and label of each component obligation.
-type proofPart struct {
-	node  *obligation
+// proofUse identifies an owner and the component label on its reverse edge.
+type proofUse struct {
+	owner *obligation
 	label string
 }
+
+// proofSeed retains a new edge to a child whose failure was already known.
+type proofSeed struct {
+	owner *obligation
+	child *obligation
+	label string
+}
+
+// failed includes empty-label pointer failures as well as terminal errors.
+func (n *obligation) failed() bool { return n.reason != "" || n.cause != nil }
 
 // proof visits each concrete type once and propagates failures through recursive owners.
 type proof struct {
 	nodes    map[types.Type]*obligation
 	failures []*obligation
+	pending  []proofSeed
 }
 
-// Reason proves concrete immutable storage or returns the first failed component.
+// Reason proves concrete immutable storage or returns a failed component.
 func Reason(t types.Type) string {
 	var prover Prover
 	return prover.Reason(t)
@@ -40,35 +51,54 @@ func (p *proof) node(t types.Type) *obligation {
 	result := &obligation{}
 	p.nodes[t] = result
 	p.value(result, t)
-	if result.reason != "" {
-		p.fail(result)
+	if result.reason != "" && result.cause == nil {
+		p.failures = append(p.failures, result)
 	}
 	return result
 }
 
-// depend records both ordered component edges and reverse failure edges.
+// depend records an owner and handles children that failed in an earlier query.
 func (p *proof) depend(owner *obligation, t types.Type, label string) {
 	child := p.node(t)
-	owner.parts = append(owner.parts, proofPart{node: child, label: label})
-	child.users = append(child.users, owner)
-	if child.failed {
-		p.fail(owner)
+	child.users = append(child.users, proofUse{owner: owner, label: label})
+	if child.failed() {
+		p.pending = append(p.pending, proofSeed{owner: owner, child: child, label: label})
 	}
 }
 
-// fail queues a failed obligation once, including new owners of previously failed children.
-func (p *proof) fail(node *obligation) {
-	if !node.failed {
-		node.failed = true
-		p.failures = append(p.failures, node)
+// fail links an unfailed owner to an earlier failure with nonempty text.
+// Skipping an empty-label child bounds rendering work by the message length.
+func (p *proof) fail(owner, child *obligation, label string) {
+	if !owner.failed() {
+		if child.reason == "" {
+			child = child.cause
+		}
+		owner.reason, owner.cause = label, child
+		p.failures = append(p.failures, owner)
 	}
 }
 
-// propagate completes truth propagation after the reachable graph has been built.
+// propagate prefers terminal failures before it seeds paths through earlier failed children.
 func (p *proof) propagate() {
+	for _, seed := range p.pending {
+		if seed.child.cause == nil {
+			p.fail(seed.owner, seed.child, seed.label)
+		}
+	}
+	p.drainFailures()
+	for _, seed := range p.pending {
+		p.fail(seed.owner, seed.child, seed.label)
+	}
+	p.drainFailures()
+	p.pending = p.pending[:0]
+}
+
+// drainFailures visits each newly failed owner once after graph expansion is complete.
+func (p *proof) drainFailures() {
 	for index := 0; index < len(p.failures); index++ {
-		for _, owner := range p.failures[index].users {
-			p.fail(owner)
+		child := p.failures[index]
+		for _, use := range child.users {
+			p.fail(use.owner, child, use.label)
 		}
 	}
 	p.failures = p.failures[:0]
