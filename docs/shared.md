@@ -1,6 +1,7 @@
 # Shared objects
 
-Use `im.Shared` for objects that callers need to keep:
+`im.Shared` is an empty struct embedded as a marker for the checker.
+Use it for objects that callers need to keep:
 
 - Fields are read-only.
 - Functions can return pointers to the object.

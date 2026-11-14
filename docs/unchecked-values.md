@@ -1,7 +1,7 @@
 # Unchecked immutable values
 
-Use `im.UncheckedValue[T]` when your package must supply immutable data that
-does not fit the checked forms:
+`im.UncheckedValue[T]` holds a `*T`: Trust stores the pointer, and Unwrap returns it.
+Use it when your package supplies immutable data that does not fit the checked forms:
 
 - Your package promises not to change the data; the checker does not prove this.
 - Only the package that declares `T` can wrap it with `im.Trust` or read it with `im.Unwrap`.
