@@ -1,13 +1,17 @@
 # Owner
 
-Use `im.Owner[T]` to replace data while readers finish with the previous version:
+`im.Owner[T]` wraps Go's `atomic.Pointer[T]`. Load and Store are atomic pointer
+operations; the checker adds rules for the objects they access.
 
-- `T` is a struct with `im.Scoped`.
-- `Store` publishes a new object; existing readers keep the previous object.
-- `Load` reads the current object, or returns nil before the first Store.
-- Load and Store can run in different goroutines.
+| Runtime operation | Checker rule |
+| --- | --- |
+| `Store` replaces the pointer without copying the object | T must embed `im.Scoped`; supply a new object. |
+| `Load` returns the current pointer, or nil before the first Store | Read through a local pointer; do not store it in a field or global, capture it, or return it. |
+| Readers can keep using an old pointer after Store replaces it | The old object stays read-only. |
 
-This example replaces the request limit:
+Go's GC keeps loaded objects alive while readers use them. Load and Store can
+run in different goroutines. For example, update the request limit while requests
+read the current configuration:
 
 ```go
 package main
@@ -19,16 +23,10 @@ type Config struct {
     Limit int
 }
 
-type Service struct {
-    Current im.Owner[Config]
-}
+var current im.Owner[Config]
 
-func configure(service *Service, limit int) {
-    service.Current.Store(&Config{Limit: limit})
-}
-
-func allowed(service *Service, used int) bool {
-    config := service.Current.Load()
+func allowed(used int) bool {
+    config := current.Load()
     if config == nil {
         return false
     }
@@ -36,66 +34,55 @@ func allowed(service *Service, used int) bool {
 }
 
 func main() {
-    service := &Service{}
-    configure(service, 100)
-    previous := service.Current.Load()
-    println(allowed(service, 80)) // true
-    configure(service, 50)
-    println(allowed(service, 80)) // false
-    println(previous.Limit) // 100: this reader keeps its earlier version.
+    current.Store(&Config{Limit: 100})
+    println(allowed(80)) // true
+    current.Store(&Config{Limit: 50})
+    println(allowed(80)) // false
 }
 ```
 
-## Allowed forms
+## Allowed forms — exhaustive
 
-An Owner field or variable is a **slot**. A struct with a slot field, such as
-`Service`, is a **holder**. These allowed forms are complete; other slot and
-holder operations are rejected.
-
-- Parentheses preserve an allowed form.
-- A package-qualified slot works: `state.Current.Load()`.
-- Call Load and Store directly, without `go` or `defer`.
-- Load results follow the [Scoped rules](scoped.md).
-
-| Allowed form | Example |
+| Form | Example |
 | --- | --- |
-| Named Owner field in a struct without an im marker | `type Service struct { Current im.Owner[Config] }` |
-| Declare a package Owner variable without an initializer | `var current im.Owner[Config]` |
-| Declare a local or package holder variable without an initializer | `var service Service` |
-| Create a holder and keep its pointer in a local variable | `service := &Service{}` or `service := new(Service)` |
-| Copy a holder pointer to one local variable | `other := service` |
-| Pass a holder pointer to a direct, non-generic function with a fixed parameter | `publish(service)` where `func publish(l *Service)` |
-| Store a fresh object in a direct slot field or package slot | `service.Current.Store(&Config{Limit: 1})`, `current.Store(new(Config))` |
-| Load into one local pointer | `config := service.Current.Load()`, `var config = current.Load()`, `config = current.Load()` |
+| Package Owner variable without an initializer | `var current im.Owner[Config]` |
+| Named Owner field in a struct without an im marker | `type State struct { Current im.Owner[Config] }` |
+| Local or package variable of that struct without an initializer | `var state State` |
+| New struct pointer in a local variable | `state := &State{}` or `state := new(State)` |
+| Copy that pointer to a local variable | `other := state` |
+| Pass that pointer to a named, non-generic function with the exact fixed parameter type | `publish(state)` where `func publish(s *State)` |
+| Store with exactly `&T{...}` or `new(T)`, as a direct call statement | `current.Store(&Config{Limit: 1})`, `state.Current.Store(new(Config))` |
+| Load from a package variable or direct field into one local pointer | `config := current.Load()`, `var config = state.Current.Load()`, `config = current.Load()` |
+| Package-qualified calls | `config := settings.Current.Load()` |
+| Parentheses around an allowed expression | `config := (current).Load()` |
 
-A named function can publish in a background goroutine:
+Loaded pointers use the [Scoped forms](scoped.md).
+[Supervised services](service-forms.md#inside-a-service-method) have separate
+rules for methods that access Owner fields.
+
+A named publisher can run in a goroutine:
 
 ```go
-func publish(l *Service) { l.Current.Store(&Config{Limit: 1}) }
+func publish(s *State) { s.Current.Store(&Config{Limit: 1}) }
 
 func start() {
-    service := &Service{}
-    go publish(service)
+    state := &State{}
+    go publish(state)
 }
 ```
 
-[Services](services.md) have separate rules for methods that use Owner fields.
+## Rejected examples — non-exhaustive
 
-## Rejected examples
-
-These examples are not exhaustive.
-
-| Rejected form | Allowed replacement |
+| Rejected form | Replacement |
 | --- | --- |
-| `im.Owner[SharedConfig]`, where SharedConfig embeds `im.Shared` | Use `im.Owner[Config]`. |
-| `copy := service.Current` or `copy := *service` | Keep and pass `service` as a pointer. |
-| `service.Current.Store(config)` | `service.Current.Store(&Config{Limit: config.Limit})` |
-| `return service.Current.Load()` | `config := service.Current.Load(); return *config` with a value result. |
-| `retain(service)` where `retain` takes `...*Service` | Use a direct function with a fixed `*Service` parameter. |
-| `var saved *Service` at package scope | Keep the pointer in a local variable. |
-| Store `service` in a field, slice, map, or closure; return `service` | Pass the local pointer to a named function. |
-| Pass `&service.Current` as `*im.Owner[Config]` | Pass `service` as `*Service`. |
-| `go service.Current.Store(&Config{})` or `defer service.Current.Load()` | Call Load and Store directly. A named publisher can run with `go publish(service)`. |
-| `read := service.Current.Load` | `config := service.Current.Load()` |
-| `service.Current.Load().Limit = 2` | `service.Current.Store(&Config{Limit: 2})` |
-| `type Outer struct { Value Service }` | Keep the slot field in the unmarked holder. |
+| `im.Owner[SharedConfig]`, where SharedConfig embeds `im.Shared` | Use `im.Owner[Config]` with `im.Scoped`. |
+| `copy := state.Current` or `copy := *state` | Pass the struct pointer; do not copy the atomic pointer or its containing struct. |
+| `current.Store(config)` | `current.Store(&Config{Limit: config.Limit})` |
+| `return current.Load()` | Load locally and return a Config value copy: `return *config`. |
+| `retain(state)` where retain takes `...*State` | Use a fixed `*State` parameter. |
+| Store state in a field, slice, map, global, or closure; return state | Keep the pointer local or pass it to a named function. |
+| Pass `&state.Current` as `*im.Owner[Config]` | Pass `state` as `*State`. |
+| `go current.Store(&Config{})` or `defer current.Load()` | Call directly. Use `go publish(state)` for a background publisher. |
+| `read := current.Load` | `config := current.Load()` |
+| `current.Load().Limit = 2` | `current.Store(&Config{Limit: 2})` |
+| `type Outer struct { Value State }` | Keep the Owner field directly in State. |

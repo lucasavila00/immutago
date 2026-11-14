@@ -1,6 +1,7 @@
 # Scoped objects
 
-Use `im.Scoped` for objects that functions can read without keeping their pointers:
+`im.Scoped` is an empty struct embedded as a marker for the checker.
+Use it for objects that functions can read without keeping their pointers:
 
 - Fields are read-only.
 - Functions and [methods](common-forms.md#methods) can read fields and return values.

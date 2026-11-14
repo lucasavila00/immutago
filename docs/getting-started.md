@@ -41,7 +41,8 @@ go run .
 
 The program prints `alice 10`.
 
-- `im.Shared` makes the struct's fields read-only and permits sharing its pointer.
+- `im.Shared` is an empty embedded marker. The checker rejects field writes and
+  permits sharing the object's pointer.
 - `FreezeMap` reuses the Go map without copying its entries. After this call,
   read through the frozen map, not `scores`.
 - `Get` returns the score and whether the key exists.

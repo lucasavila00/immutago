@@ -1,6 +1,7 @@
 # Frozen collections
 
-`im.FrozenSlice[T]` and `im.FrozenMap[K, V]` provide read-only collections:
+`im.FrozenSlice[T]` wraps a Go slice; `im.FrozenMap[K, V]` wraps a Go map.
+The checker rejects aliases and use of the original collection after Freeze.
 
 1. Build a normal Go slice or map.
 2. Freeze it without copying entries. Use only the frozen value after this call.
@@ -27,7 +28,6 @@ func main() {
 }
 ```
 
-The checker rejects aliases that could change the frozen data.
 Keys and elements must use the [allowed types](common-forms.md#markers-and-stored-types).
 
 The tables below and the [common forms](common-forms.md) give the complete list
