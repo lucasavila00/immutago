@@ -67,7 +67,6 @@ func run(pass *analysis.Pass) (any, error) {
 		ast.Inspect(file, c.visit)
 	}
 	checkLibraryArguments(pass, c)
-	checkOwner(pass)
 	checkSubset(pass, freeze.Check(pass))
 	return nil, nil
 }
