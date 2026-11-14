@@ -38,6 +38,19 @@ var compilerSourceDirectory = sync.OnceValues(func() (string, error) {
 	return filepath.Join(strings.TrimSpace(string(output)), "src"), nil
 })
 
+// testMainPackage identifies the Go test runner by its compiler-checked internal import.
+func testMainPackage(pkg *types.Package) bool {
+	if pkg.Name() != "main" || !strings.HasSuffix(pkg.Path(), ".test") {
+		return false
+	}
+	for _, imported := range pkg.Imports() {
+		if imported.Path() == "testing/internal/testdeps" {
+			return true
+		}
+	}
+	return false
+}
+
 // usesImmutable identifies marked-storage import dependencies without inferring their bodies.
 func usesImmutable(pkg *types.Package) bool {
 	return importsImmutable(pkg, make(map[*types.Package]bool))

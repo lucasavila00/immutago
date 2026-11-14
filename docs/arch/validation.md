@@ -6,8 +6,10 @@
 
 The checker trusts the Go compiler, runtime, standard library, and fixed `im`
 implementation. [Toolchain detection](../../pkg/analyzer/toolchain.go) identifies
-standard library source under the active `go env GOROOT`. The analyzer does not
-prove those implementations.
+standard library source under the active `go env GOROOT`. It identifies generated
+Go test runners by their `.test` main package and compiler-checked standard
+internal test dependency. It still checks user test packages. The analyzer does
+not prove those toolchain implementations.
 
 Application code must run through the analyzer for its selected build
 configuration. An ordinary Go build supplies no immutability checks. Checked
