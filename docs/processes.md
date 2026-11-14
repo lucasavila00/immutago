@@ -67,6 +67,27 @@ func (*Reader) Run(ctx context.Context) {
 process and publish it through an `im.Owner` field, or protect the global with a
 lock.
 
+The checker also does not check the lifetime of PIDs. A process can reserve a
+PID outside its run and start it under the supervisor of its run:
+
+```go
+type PoolArgs struct {
+    im.Shared
+    Spare proc.PID[Worker] // reserved by the caller
+}
+
+func (p *Pool) Run(ctx context.Context) {
+    proc.StartReserved(p.Supervisor(), p.Args().Spare, WorkerArgs{})
+    <-ctx.Done()
+}
+```
+
+After a restart of `Pool`, the new run calls `StartReserved` on a PID that is
+already started. It panics with `proc: PID already started` on each run, and
+after six panics in 5 minutes the panic escalates to the parent supervisor. Call
+`proc.Reserve` in the same method as `StartReserved`, as the
+[dispatcher](../tests/testdata/accepted/process/dispatcher.go) does.
+
 ## Allowed forms
 
 The [config loader](../tests/testdata/accepted/process/config_loader.go) and
@@ -145,35 +166,49 @@ Rejected examples are not exhaustive:
   `StartReserved` starts a reserved PID. `StartReserved` panics if the PID is
   already started.
 - Each run gets a context that ends with that run. If `Run` returns, the process
-  ends. If `Run` panics, the supervisor waits 1 s, doubling the delay for each
+  ends, and its supervisor removes it. If `Run` panics, the supervisor waits 1 s, doubling the delay for each
   restart in the last 5 minutes. It then creates a fresh value from the same
   arguments, publishes it through the PID, and calls `Run`. `im.Owner` fields
   start empty again. Calls during the delay use the old value; calls already
   in progress finish on that value. Reserve does not wait for
   other processes to start. Calling a reserved PID before StartReserved can
   panic and cause a retry.
-- A sixth panic from the same child in 5 minutes stops the other children of the supervisor in
-  reverse start order and escalates to the parent supervisor, which restarts
-  the subtree with the same rule. At the root, the last panic value panics
+- A sixth panic from the same child in 5 minutes stops the other children of
+  the supervisor in reverse start order and escalates to the parent supervisor,
+  which restarts the subtree with the same rule. At the root, the last panic value panics
   again and the program exits.
 - In a method, `p.Supervisor()` returns the supervisor of the current run of
   that process value. The first call for the value creates it. Children that a
-  method starts before `Run` begins start with the run. When `Run` returns or
-  panics, also after `Stop`, the runtime stops the children of this supervisor,
-  last started first, and waits for them. Then the run ends: the restart delay
-  starts, or `Stop` continues. After the run ends, `p.Supervisor()` returns a
-  stopped supervisor, and processes started under it do not run. A new run
-  uses a new process value, so it starts with no children. A PID of an old
-  child keeps its last value, but that child does not run again.
-  `StartReserved` panics on a PID from an earlier run, so reserve the PIDs of
-  children in the same run. If a child passes its restart limit, the run
-  context ends and the run fails with the panic value of the child. The
-  supervisor of the process counts this failure as a panic of the process.
+  method starts before `Run` begins start with the run.
+- When the process stops, the runtime stops the children of this supervisor,
+  last started first, and waits for them. Then it ends the `Run` context, so a
+  child can call methods of its parent while the child stops. When `Run`
+  returns or panics, the runtime stops the children and waits for them. Then
+  the run ends: the restart delay starts, or `Stop` continues.
+- After the run ends, `p.Supervisor()` returns a stopped supervisor. `Start`
+  under it, or under a stored nested supervisor of that run, returns a PID
+  whose `Run` never runs.
+- If a child passes its restart limit, the run context ends and the run fails
+  with the panic value of the child. The supervisor of the process counts this
+  failure as a panic of the process. A group in a nested supervisor first
+  restarts alone; if the group fails six times in 5 minutes, the run fails.
+- A new run uses a new process value, so it starts with no children and empty
+  fields. Children that methods started are gone too. `Run` must start them
+  again from data that survives the restart: the start arguments, or a peer
+  process, for example a config process with an `im.Owner`, whose PID is in the
+  arguments. The [dispatcher](../tests/testdata/accepted/process/dispatcher.go)
+  asks its config peer for the current variants in `Run`.
+- After a restart of the parent, a PID of an old child keeps its old value, but
+  that child does not run again. Do not publish child PIDs: do not store them
+  in an `im.Owner`, send them to other processes, or return them from methods.
+  Reach a child through its parent on each call.
 - To start and stop single children during one run, give each child its own
   nested supervisor: `sub := proc.StartSupervisor(p.Supervisor())`, then
   `proc.Start[Worker](sub, args)`. Keep `sub` in a field, and call
   `<-sub.Stop()` from any method to stop that child. The stopped nested
-  supervisor is removed from the supervisor of the run.
+  supervisor is removed from the supervisor of the run. A child must not
+  synchronously call a parent method that stops the group of that child:
+  `Stop` waits for the child, and the child waits for the call.
 - `proc.StartSupervisor(parent)` nests a supervisor. `Stop` begins stopping;
   its channel closes when all children have stopped, last started first.
   When a nested supervisor's own Stop channel closes, its parent has removed
