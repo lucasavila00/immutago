@@ -25,18 +25,19 @@ func TestNilBuilderForms(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, syntax := range []string{"%s(nil)", "(%s)((nil))"} {
-				checkNilBuilderSites(t, tc.declarations, fmt.Sprintf(syntax, tc.target), tc.freeze)
+				checkNilBuilderSites(t, tc.declarations, tc.target, fmt.Sprintf(syntax, tc.target), tc.freeze)
 			}
 		})
 	}
 }
 
 // checkNilBuilderSites checks the same source at each documented construction boundary.
-func checkNilBuilderSites(t *testing.T, declarations, source, freeze string) {
+func checkNilBuilderSites(t *testing.T, declarations, target, source, freeze string) {
 	t.Helper()
 	for _, body := range []string{
 		"values := %s; _ = im.%s(values)",
 		"var values = %s; _ = im.%s(values)",
+		"var values " + target + " = %s; _ = im.%s(values)",
 		"_ = im.%[2]s(%[1]s)",
 	} {
 		program := declarations + "\nfunc f(){" + fmt.Sprintf(body, source, freeze) + "}"
