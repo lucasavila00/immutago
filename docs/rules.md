@@ -6,15 +6,15 @@
 | [Scoped](scoped.md) | Keep pointers local; use functions and methods that do not save them. |
 | [Owner](owner.md) | Publish a new Scoped object and read the current one. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
-| [Supervised processes](processes.md) | Learn the execution and restart model. |
-| [Process forms](process-forms.md) | Look up supported process declarations and calls. |
+| [Supervised services](services.md) | Learn the execution and restart model. |
+| [Service forms](service-forms.md) | Look up supported service declarations and calls. |
 | [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 
 The common lists and each type's lists define the complete supported forms.
 Other protected operations are rejected. Rejection examples are not exhaustive.
 **Protected storage** means marked values, their fields, frozen collections,
-and arrays containing them. Process dependencies use the same transport checks;
+and arrays containing them. Service dependencies use the same transport checks;
 their contents are unchecked. Owner slots and holders have their own listed forms.
 
 ## Trust markers
@@ -25,7 +25,7 @@ promise:
 | Marker | Promise | Where |
 | --- | --- | --- |
 | [`im.UncheckedValue[T]`](unchecked-values.md), from `im.Trust` | The value never changes after `im.Trust`. Only the package that declares `T` can wrap or read it. | Anywhere a stored type is allowed. |
-| [`proc.ConcurrentSafe[T]`](processes.md#concurrent-dependencies), from `proc.AssumeConcurrentSafe` | The value is safe for concurrent use by several processes. | Only in process start arguments. |
+| [`supervise.ConcurrentSafe[T]`](services.md#concurrent-dependencies), from `supervise.AssumeConcurrentSafe` | The value is safe for concurrent use by several services. | Only in service start arguments. |
 
 ## Check the program
 
@@ -39,16 +39,16 @@ It also checks your test files.
 
 | Check the package when it… | Example |
 | --- | --- |
-| Imports `im` or `proc`, including an alias or blank import | `import _ "github.com/lucasavila00/immutago/pkg/im"` |
-| Uses an im or proc type, including inside another type | `var point api.Point`, where Point embeds `im.Shared` |
-| Uses a function, interface, or generic type that mentions an im or proc type | `callback := api.Publish`, where Publish takes `*api.Point`; `api.Alias[int]`, where Alias has an Owner type in its constraint |
+| Imports `im` or `supervise`, including an alias or blank import | `import _ "github.com/lucasavila00/immutago/pkg/im"` |
+| Uses an im or supervise type, including inside another type | `var point api.Point`, where Point embeds `im.Shared` |
+| Uses a function, interface, or generic type that mentions an im or supervise type | `callback := api.Publish`, where Publish takes `*api.Point`; `api.Alias[int]`, where Alias has an Owner type in its constraint |
 | Imports a package that failed its checks, directly or through another package | Import a package with an invalid immutable field. |
 
 Aliases, type arguments, and generic constraints also count. The CLI and
 `go vet` use the same rules. Other packages are trusted to follow Go rules,
 including not changing string bytes through `unsafe`.
 
-The checker trusts the implementations of `im`, `proc`, and the Go standard
+The checker trusts the implementations of `im`, `supervise`, and the Go standard
 library. It also skips the test runner that Go generates. There is no comment
 or annotation that lets user code bypass checks. The only trusted values in user
 code are the two [trust markers](#trust-markers).

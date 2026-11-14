@@ -31,7 +31,7 @@ func TestCLI(t *testing.T) {
 	}
 	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
 	for _, group := range []string{
-		"review_convergence", "documentation", "owner", "process", "uncheckedvalue", "uncheckedvalueuse",
+		"review_convergence", "documentation", "owner", "service", "uncheckedvalue", "uncheckedvalueuse",
 	} {
 		t.Run(group, func(t *testing.T) {
 			for _, fixture := range []string{"accepted", "rejected"} {
@@ -48,10 +48,10 @@ func TestCLI(t *testing.T) {
 		output := runCommand(t, dir, true, binary, "./ownercross")
 		checkFixtureSnapshots(t, root, "accepted/ownercross", output)
 	})
-	t.Run("process_cross_package", func(t *testing.T) {
+	t.Run("service_cross_package", func(t *testing.T) {
 		dir := consumerModule(t, root, "accepted")
-		output := runCommand(t, dir, true, binary, "./processcross")
-		checkFixtureSnapshots(t, root, "accepted/processcross", output)
+		output := runCommand(t, dir, true, binary, "./servicecross")
+		checkFixtureSnapshots(t, root, "accepted/servicecross", output)
 	})
 	t.Run("accepted", func(t *testing.T) {
 		dir := consumerModule(t, root, "accepted")
@@ -63,14 +63,17 @@ func TestCLI(t *testing.T) {
 		output := runCommand(t, dir, true, "go", "run", "./freezeruntime")
 		checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/freezeruntime/stdout.txt"), output)
 	})
-	t.Run("process_init", func(t *testing.T) {
+	t.Run("service_init", func(t *testing.T) {
 		dir := consumerModule(t, root, "accepted")
-		output := runCommand(t, dir, true, binary, "./processinit")
-		checkFixtureSnapshots(t, root, "accepted/processinit", output)
-		output = runCommand(t, dir, true, "go", "vet", "-vettool="+binary, "./processinit")
-		checkFixtureSnapshots(t, root, "accepted/processinit", output)
-		output = runCommand(t, dir, true, "go", "run", "./processinit")
-		checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/processinit/stdout.txt"), output)
+		output := runCommand(t, dir, true, binary, "./serviceinit")
+		checkFixtureSnapshots(t, root, "accepted/serviceinit", output)
+		output = runCommand(t, dir, true, "go", "vet", "-vettool="+binary, "./serviceinit")
+		checkFixtureSnapshots(t, root, "accepted/serviceinit", output)
+		output = runCommand(t, dir, true, "go", "run", "./serviceinit")
+		checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/serviceinit/stdout.txt"), output)
+	})
+	t.Run("service_guide", func(t *testing.T) {
+		checkServiceGuide(t, root, binary)
 	})
 	t.Run("invalid_dependencies", func(t *testing.T) {
 		checkInvalidDependencies(t, root, binary)
@@ -115,6 +118,19 @@ func TestCLI(t *testing.T) {
 		output := runCommand(t, dir, false, binary, "./...")
 		checkSnapshot(t, filepath.Join(root, "tests/testdata/compiler_error/broken.txt"), normalizeOutput(output))
 	})
+}
+
+// checkServiceGuide checks the guide source, program output, and background refresh under the race detector.
+func checkServiceGuide(t *testing.T, root, binary string) {
+	t.Helper()
+	dir := consumerModule(t, root, "accepted")
+	output := runCommand(t, dir, true, binary, "./servicedoc")
+	checkFixtureSnapshots(t, root, "accepted/servicedoc", output)
+	output = runCommand(t, dir, true, "go", "vet", "-vettool="+binary, "./servicedoc")
+	checkFixtureSnapshots(t, root, "accepted/servicedoc", output)
+	output = runCommand(t, filepath.Join(dir, "servicedoc"), true, "go", "run", ".")
+	checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/servicedoc/stdout.txt"), output)
+	runCommand(t, filepath.Join(dir, "servicedoc"), true, "go", "test", "-race", "-count=1", ".")
 }
 
 // consumerModule copies fixtures into an independent module that resolves the library to this checkout.

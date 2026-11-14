@@ -1,9 +1,9 @@
 builder_declarations.go:12:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: left, right := []int{1}, []int{2}
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 builder_declarations.go:18:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: values, count := make([]int, 1), 2
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 builder_declarations.go:6:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: values, count := []int{1}, 2
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start

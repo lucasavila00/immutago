@@ -3,7 +3,7 @@
 ## Trust boundary
 
 The checker trusts the Go compiler, runtime, standard library, and fixed `im`
-and `proc` implementations. [Toolchain detection](../../pkg/analyzer/toolchain.go) identifies
+and `supervise` implementations. [Toolchain detection](../../pkg/analyzer/toolchain.go) identifies
 standard library source under the active `go env GOROOT`. It identifies generated
 Go test runners by their `.test` main package and compiler-checked standard
 internal test dependency. It still checks user test packages. The analyzer does
@@ -16,7 +16,7 @@ Application code must run through the analyzer for its selected build
 configuration. An ordinary Go build supplies no immutability checks. Checked
 code cannot use reflection, unsafe imports, or bodyless functions to bypass
 the proof. There are no suppression directives. The two user trust points are
-`proc.AssumeConcurrentSafe` for safe concurrent use and `im.Trust` for immutable data. The checker
+`supervise.AssumeConcurrentSafe` for safe concurrent use and `im.Trust` for immutable data. The checker
 does not prove either [promise](../rules.md#trust-markers).
 Failures from checked dependencies reach consumers through package facts. Runtime Freeze has
 no fallback validation when the analyzer is omitted.
@@ -30,10 +30,11 @@ no fallback validation when the analyzer is omitted.
 | Complete allowed shapes and nearby rejections | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go) |
 | Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
 | Storage reuse, clone independence, identity, and allocation counts | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [iterator tests](../../pkg/im/iterator_test.go) |
-| Process declarations, PIDs, receiver uses, and start arguments | [Process tests](../../pkg/analyzer/process_test.go), [dependency tests](../../pkg/analyzer/process_dependency_test.go), [marker tests](../../internal/checker/markers_test.go), [CLI fixtures](../../tests/testdata/accepted/process) |
-| Init signatures, startup errors, publication, and failed setup cleanup | [Checker tests](../../pkg/analyzer/process_init_test.go), [runtime tests](../../pkg/proc/init_test.go), [CLI example](../../tests/testdata/accepted/processinit/main.go) |
+| Service declarations, Refs, receiver uses, and start arguments | [Service tests](../../pkg/analyzer/service_test.go), [dependency tests](../../pkg/analyzer/service_dependency_test.go), [marker tests](../../internal/checker/markers_test.go), [CLI fixtures](../../tests/testdata/accepted/service) |
+| Init signatures, startup errors, publication, and failed setup cleanup | [Checker tests](../../pkg/analyzer/service_init_test.go), [runtime tests](../../pkg/supervise/init_test.go), [CLI example](../../tests/testdata/accepted/serviceinit/main.go) |
+| Service guide startup and background file refresh | [Guide program](../../tests/testdata/accepted/servicedoc/main.go), [refresh test](../../tests/testdata/accepted/servicedoc/main_test.go), [child-pool fixture](../../tests/testdata/accepted/service/pool_init.go) |
 | UncheckedValue handles: declaring-package wrap and read, and storage as an allowed type | [UncheckedValue tests](../../pkg/analyzer/unchecked_value_test.go), [CLI fixtures](../../tests/testdata/accepted/uncheckedvalue) |
-| Restart, backoff, escalation, stop order, reserved PIDs, and the test helper | [Runtime tests](../../pkg/proc/proc_test.go), [helper tests](../../pkg/proc/proctest/proctest_test.go) |
+| Restart, backoff, escalation, stop order, reserved Refs, and the test helper | [Runtime tests](../../pkg/supervise/supervise_test.go), [helper tests](../../pkg/supervise/supervisetest/supervisetest_test.go) |
 | Consumer-only dependency failures | [Dependency tests](../../pkg/analyzer/dependencies_test.go), [graph and gob tests](../../pkg/analyzer/dependencies_graph_test.go), [CLI fixtures](../../tests/cli_test.go) |
 
 The CLI harness builds the shipped command and loads independent consumer

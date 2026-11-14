@@ -49,8 +49,8 @@ var subsetFixes = map[string]string{
 	"returning Scoped pointers is unsupported": "return a Scoped value copy, or use im.Shared " +
 		"for objects whose pointers must be shared",
 	"global Scoped pointers are unsupported": "keep the Scoped pointer local, or store a value copy",
-	"process dependencies cannot enter package variables": "build the process arguments in a local variable " +
-		"and pass them to proc.Start or proc.StartReserved",
+	"service dependencies cannot enter package variables": "build the service arguments in a local variable " +
+		"and pass them to supervise.Start or supervise.StartReserved",
 	"containers of Scoped pointers are unsupported": "store Scoped value copies or im.Shared pointers",
 	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",
@@ -77,7 +77,7 @@ var subsetFixes = map[string]string{
 	"immutable method receivers must match their declared type exactly": "use an existing pointer for a pointer " +
 		"receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage",
 	"multiple assignments involving protected storage are unsupported": "write one protected " +
-		"destination per statement; use two new locals for frozen.Get, or two local names for proc.Start",
+		"destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start",
 	"protected storage is unsupported in select communication clauses": "keep protected " +
 		"values and native builders out of channel expressions and receive targets; use them in the selected case body",
 	"Freeze requires a standalone single binding": "assign frozen := im.FreezeSlice(builder) " +

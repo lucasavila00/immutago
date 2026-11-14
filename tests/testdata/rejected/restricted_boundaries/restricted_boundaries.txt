@@ -37,7 +37,7 @@ restricted_boundaries.go:20:6: unsupported immutable operation: containers of Sc
 restricted_boundaries.go:20:6: unsupported owned container emptyMap: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 restricted_boundaries.go:25:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for _, value = range frozen.All() { _ = value }
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 restricted_boundaries.go:32:15: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
   source: Read
   type: func(value *restricted_boundaries.Node) int

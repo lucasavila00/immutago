@@ -111,10 +111,10 @@ func (p *proof) value(result *obligation, t types.Type) {
 		return
 	}
 	if IsRuntimeType(t, ConcurrentSafeType) {
-		result.reason = "proc.ConcurrentSafe is allowed only as a process argument type or a field of one"
+		result.reason = "supervise.ConcurrentSafe is allowed only as a service argument type or a field of one"
 		return
 	}
-	if IsLibraryType(t, "Shared") || IsLibraryType(t, "Scoped") || IsRuntimeType(t, PIDType) || IsUncheckedValue(t) {
+	if IsLibraryType(t, "Shared") || IsLibraryType(t, "Scoped") || IsRuntimeType(t, RefType) || IsUncheckedValue(t) {
 		return
 	}
 	if IsCollection(t) {

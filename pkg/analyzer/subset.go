@@ -21,7 +21,7 @@ type subsetChecks struct {
 	reported   map[token.Pos]bool
 	owners     map[*types.Var]bool
 	literals   map[*ast.CompositeLit]string
-	processes  map[types.Type]bool
+	services   map[types.Type]bool
 }
 
 // checkSubset checks the supported immutable forms with compiler-resolved types.
@@ -66,7 +66,7 @@ func (c *subsetChecks) visit(node ast.Node) bool {
 		return false
 	}
 	c.checkOwnerNode(node)
-	c.checkProcessNode(node)
+	c.checkServiceNode(node)
 	c.declarationNode(node)
 	if name, ok := node.(*ast.Ident); ok {
 		c.genericInstance(name)

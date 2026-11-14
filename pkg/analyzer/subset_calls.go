@@ -44,14 +44,14 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	if libraryObject(object) {
 		return c.matchLibraryCall(call, object)
 	}
-	if trustedRuntimeCall(object) || procMethod(object) {
+	if trustedRuntimeCall(object) || currentMethod(object) {
 		return ""
 	}
 	protected := c.queries.Callable(signature) || c.protectedCallArguments(call)
 	if selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok {
 		if selection := c.pass.TypesInfo.Selections[selector]; selection != nil && selection.Kind() != types.FieldVal &&
 			(protected || c.protectedStorage(selector.X)) {
-			if !c.processSignature(selection.Obj().Type().(*types.Signature)) {
+			if !c.serviceSignature(selection.Obj().Type().(*types.Signature)) {
 				return c.matchMarkedMethod(selector)
 			}
 		}

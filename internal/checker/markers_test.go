@@ -61,35 +61,35 @@ func TestRecursivePointerProof(t *testing.T) {
 	}
 }
 
-// TestProcessProofs checks that a PID is an allowed stored value and a process is not.
-func TestProcessProofs(t *testing.T) {
+// TestServiceProofs checks that a Ref is an allowed stored value and a service is not.
+func TestServiceProofs(t *testing.T) {
 	sharedMarker, _ := testTypes()
-	runtime := types.NewPackage(RuntimePath, "proc")
-	processMarker := types.NewNamed(types.NewTypeName(token.NoPos, runtime, "Process", nil),
+	runtime := types.NewPackage(RuntimePath, "supervise")
+	serviceMarker := types.NewNamed(types.NewTypeName(token.NoPos, runtime, "Service", nil),
 		types.NewStruct(nil, nil), nil)
-	process := types.NewNamed(types.NewTypeName(token.NoPos, nil, "ConfigLoader", nil), types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Process", processMarker, true),
+	service := types.NewNamed(types.NewTypeName(token.NoPos, nil, "ConfigLoader", nil), types.NewStruct([]*types.Var{
+		types.NewField(token.NoPos, nil, "Service", serviceMarker, true),
 		types.NewField(token.NoPos, nil, "version", types.Typ[types.Int], false),
 	}, nil), nil)
-	pid := types.NewNamed(types.NewTypeName(token.NoPos, runtime, "PID", nil), types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, runtime, "value", types.NewPointer(process), false),
+	ref := types.NewNamed(types.NewTypeName(token.NoPos, runtime, "Ref", nil), types.NewStruct([]*types.Var{
+		types.NewField(token.NoPos, runtime, "value", types.NewPointer(service), false),
 	}, nil), nil)
-	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "LoaderPID", nil), pid)
-	if !Process(process) || Marked(process) || MarkerCount(process) != 0 ||
-		!IsRuntimeType(alias, PIDType) || IsRuntimeType(process, PIDType) {
-		t.Fatal("process identities were not preserved")
+	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "LoaderRef", nil), ref)
+	if !Service(service) || Marked(service) || MarkerCount(service) != 0 ||
+		!IsRuntimeType(alias, RefType) || IsRuntimeType(service, RefType) {
+		t.Fatal("service identities were not preserved")
 	}
 	for _, value := range []types.Type{
-		pid, alias, types.NewArray(pid, 2),
-		markedType("Peers", sharedMarker, types.NewField(token.NoPos, nil, "Config", pid, false)),
+		ref, alias, types.NewArray(ref, 2),
+		markedType("Peers", sharedMarker, types.NewField(token.NoPos, nil, "Config", ref, false)),
 	} {
 		if reason := Reason(value); reason != "" {
-			t.Errorf("PID value %s rejected: %s", value, reason)
+			t.Errorf("Ref value %s rejected: %s", value, reason)
 		}
 	}
-	for _, value := range []types.Type{process, types.NewPointer(process)} {
+	for _, value := range []types.Type{service, types.NewPointer(service)} {
 		if Reason(value) == "" {
-			t.Errorf("process value %s accepted", value)
+			t.Errorf("service value %s accepted", value)
 		}
 	}
 }

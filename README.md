@@ -9,8 +9,8 @@ A Go checker and library for immutable data and supervised services.
 | Prevent functions from saving object pointers | [Scoped](docs/scoped.md) |
 | Replace data while readers finish with the previous version | [Owner](docs/owner.md) |
 | Build a slice or map, then make it read-only | [Frozen collections](docs/frozen.md) |
-| Run a service with supervised restarts | [Processes](docs/processes.md) |
-| Give a process a logger or a client that the checker does not check | [Unchecked dependencies](docs/processes.md#concurrent-dependencies) |
+| Run a service with supervised restarts | [Services](docs/services.md) |
+| Give a service a logger or a client that the checker does not check | [Unchecked dependencies](docs/services.md#concurrent-dependencies) |
 
 Run `immutago ./...` to check your code. `go build` does not enforce these rules.
 

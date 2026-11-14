@@ -4,5 +4,5 @@ freeze_delayed_assignment.go:8:25: unsupported immutable operation: Freeze requi
   fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
 freeze_delayed_assignment.go:8:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: values[0], frozen = 2, im.FreezeSlice(values)
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 freeze_delayed_assignment.go:8:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder

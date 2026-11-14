@@ -1,0 +1,2 @@
+direct.go:15:13: service Counter is created outside supervise.Start; use supervise.Start[Counter](parent, args)
+direct.go:15:17: service type Counter can be named only in its declaration, a pointer receiver, supervise.Start[Counter], supervise.StartReserved[Counter], supervise.Reserve[Counter], or supervise.Ref[Counter]

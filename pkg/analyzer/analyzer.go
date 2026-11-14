@@ -17,16 +17,16 @@
 // Struct and array copies copy their values; frozen fields share read-only storage.
 // Freeze calls consume exclusive native map and slice builders without copying.
 // Builder aliases and later uses are rejected; Clone creates independent native storage.
-// Direct im or proc imports, locally used im or proc type contracts, and failed
+// Direct im or supervise imports, locally used im or supervise type contracts, and failed
 // checked dependencies select proof checking. Other packages use ordinary Go API
 // trust, including string immutability. Checked failures propagate to consumers.
 //
-// A struct that embeds proc.Process[A] is a mutable process. Its pointer is valid
-// only as a method receiver or as a direct PID.Proc result that receives a direct
-// call of an exported method. Exported process methods take and return only
-// allowed stored types, and only proc.Start and proc.StartReserved create processes.
-// Process arguments can also carry proc.ConcurrentSafe fields. The wrapper
-// has restricted source forms; its contents are trusted for concurrent use.
+// Supervised services have a separate source boundary. The analyzer matches the
+// exact Service, Ref, and startup identities from package supervise. Callers keep
+// a Ref and use Current only for a direct exported method call. Exported method
+// inputs and outputs must be allowed stored types. Service receivers can access
+// their mutable fields, but cannot escape their methods. Start arguments may
+// contain explicit ConcurrentSafe values whose concurrency promise is not proved.
 package analyzer
 
 import (
@@ -145,13 +145,13 @@ func (c *checks) visit(node ast.Node) bool {
 			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
 				"provide a Go implementation so writes and pointer transport can be checked")
 		}
-		c.checkProcessMethod(n)
+		c.checkServiceMethod(n)
 	case *ast.ImportSpec:
 		c.checkImport(n)
 
 	case *ast.TypeSpec:
 		if !n.Assign.IsValid() && checker.IsRuntimeType(c.pass.TypesInfo.TypeOf(n.Type), checker.ConcurrentSafeType) {
-			c.report(n.Pos(), "defined copies of proc.ConcurrentSafe are unsupported; use a type alias")
+			c.report(n.Pos(), "defined copies of supervise.ConcurrentSafe are unsupported; use a type alias")
 		}
 		if obj := c.pass.TypesInfo.Defs[n.Name]; obj != nil {
 			c.checkType(n.Pos(), obj.Type())
@@ -224,7 +224,7 @@ func reflectionValue(t types.Type) bool {
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") || checker.IsUncheckedValue(t) ||
-		checker.IsRuntimeType(t, checker.ProcessMarker) || checker.IsRuntimeType(t, checker.ConcurrentSafeType) {
+		checker.IsRuntimeType(t, checker.ServiceMarker) || checker.IsRuntimeType(t, checker.ConcurrentSafeType) {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)
@@ -253,8 +253,8 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 					"\n  fix: "+structuralFix(ft, reason))
 				continue
 			}
-		} else if c.queries.Contains(ft) && checker.Process(t) {
-			c.report(fieldPos, "process field "+field.Name()+" contains immutable storage; publish it through an im.Owner field")
+		} else if c.queries.Contains(ft) && checker.Service(t) {
+			c.report(fieldPos, "service field "+field.Name()+" contains immutable storage; publish it through an im.Owner field")
 			continue
 		} else if c.queries.Contains(ft) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
@@ -266,7 +266,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	}
 }
 
-// unprovedField reports a misplaced marker or proc.ConcurrentSafe field.
+// unprovedField reports a misplaced marker or supervise.ConcurrentSafe field.
 // It identifies a field without a type proof.
 func (c *checks) unprovedField(pos token.Pos, t types.Type, field *types.Var, marked bool) bool {
 	if invalidMarkerField(field) {
@@ -278,8 +278,8 @@ func (c *checks) unprovedField(pos token.Pos, t types.Type, field *types.Var, ma
 		return false
 	}
 	if !marked {
-		c.report(pos, "proc.ConcurrentSafe field "+field.Name()+" is allowed only in a marked process argument struct"+
-			"\n  owner: "+diagnosticType(t)+"\n  fix: move the field into the argument struct of the process")
+		c.report(pos, "supervise.ConcurrentSafe field "+field.Name()+" is allowed only in a marked service argument struct"+
+			"\n  owner: "+diagnosticType(t)+"\n  fix: move the field into the argument struct of the service")
 	}
 	return true
 }

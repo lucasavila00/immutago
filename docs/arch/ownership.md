@@ -35,66 +35,90 @@ holder pointer transport and closure captures. The ordinary Scoped checks
 apply to each loaded pointer. A later Store replaces the slot's reference;
 earlier loaded objects remain immutable. Go's garbage collector manages lifetime.
 
-## Supervised processes
+## Services and groups
 
-A [process](../../pkg/proc/proc.go) is mutable and is not a marked struct. The
-classifier treats `proc.Process[A]` as opaque, as it treats `im.Owner`, so the
-fields of a process are not protected storage. The
-[process matcher](../../pkg/analyzer/process.go) applies five rules:
+The service boundary has two parts: the analyzer checks source forms, and the
+trusted [runtime](../../pkg/supervise/supervise.go) manages service values and
+groups. These checks do not prove that ordinary method bodies isolate mutable
+memory. A service can still reach a shared map through ordinary Go code.
 
-- A process value or pointer is valid only as the receiver variable in a method
-  of that process or as a direct `PID.Proc()` result. The receiver can select
-  fields other than the marker and call methods directly. A `Proc()` result can
-  only receive a direct synchronous call of an exported method other than `Init` and `Run`
-  that is declared on the process.
-- The process type name can appear only in its declaration, pointer receivers,
-  and the type argument of `proc.Start`, `proc.StartReserved`, `proc.Reserve`, and `proc.PID`.
-- Each parameter and result of an exported method other than `Init` and `Run` must pass the
-  [type proof](../../internal/checker/proof.go). A PID is a leaf of that proof.
-- The type argument of `proc.Process` must pass the same proof, with one
-  exception: `Prover.ArgumentReason` also accepts `proc.ConcurrentSafe[T]` as the
-  argument type, and named `proc.ConcurrentSafe[T]` fields of an argument struct
-  with exactly one marker.
-- `Process.Supervisor` is valid only as a direct synchronous call on the
-  receiver of a process method, outside function literals. Its result must be
-  the first argument of a direct synchronous `proc.Start`, `proc.StartReserved`,
-  or `proc.StartSupervisor` call, directly or through one local variable from
-  `:=` that has no other use. The supervisor of the run itself therefore does
-  not escape the method, and only the runtime stops it. A nested supervisor
-  from `proc.StartSupervisor(l.Supervisor())` is an ordinary value: the process
-  can store it, start children under it from any method, and stop it. It cannot
-  be a start argument or an exported method parameter or result, because
-  `*proc.Supervisor` is not an allowed stored type. Other uses follow ordinary
-  Go rules. It stops with the run. `Start` under it after the run ends returns a PID
-  whose `Run` never runs. The checker does not check PID lifetimes, such as a
-  PID reserved outside the run.
+### Compiler identities and source forms
 
-`proc.ConcurrentSafe[T]` is an [unchecked dependency](../processes.md#concurrent-dependencies).
-The classifier treats the wrapper as protected storage and does not inspect `T`.
-The type proof rejects it, so it cannot be in an Owner value, a frozen
-collection, another marked struct, or an exported method signature. `checkStruct`
-rejects a `proc.ConcurrentSafe` field in an unmarked struct, which includes a
-process. The source matcher rejects defined copies, pointers, arrays, native
-containers, interface boxing, and package variables. Type arguments are checked
-in the source walk so the explicit unchecked payload is skipped. `dependencyValue`
-accepts `Value` only as a direct synchronous call on
-`l.Args()` or on one field of it in a method of process `l`. The `T` value is
-not proved; `proc.AssumeConcurrentSafe` is the promise.
-Before exempting an owned native handle, the source checker proves its protected
-key and element types with the same Prover. Ownership alone does not admit an
-argument-only type as a builder element.
+[Runtime identities](../../internal/checker/types.go) use the resolved package
+path `github.com/lucasavila00/immutago/pkg/supervise` and named objects. Source
+spelling and import aliases do not establish identity. The classifier stops at
+`Service[A]`; its runtime fields are not immutable application storage. `Ref[T]`
+is a leaf of the stored-type proof. The service value itself is not immutable.
 
-A process is not an Owner holder; the holder pointer rules do not apply to it.
-Methods with a process receiver use the separate process rules above, not the
-marked-struct receiver rules. The runtime creates a new value from the
-same arguments after each restart delay, calls Init, and stores it in the same PID
-only after Init succeeds. The checker accepts the exact `Init() error` signature
-or the default from `proc.Process`; user calls to either runtime entry point fail.
-Exact Start calls with protected arguments gain the two-local-result binding
-form (`:=` or `=`). Scalar-only calls keep ordinary Go binding rules. Other tuple rules stay
-unchanged. Failed setup stops staged children before the candidate is discarded.
-These rules do not check the origin or destination of mutable field handles
-in ordinary method bodies; they do not prove memory isolation.
+The [service matcher](../../pkg/analyzer/service.go) checks the complete shapes
+listed in the [service reference](../service-forms.md):
+
+1. A service declaration must be a named, non-generic struct with one embedded
+   `Service[A]` value and no immutable marker. `Run` must be declared on its
+   pointer receiver with the exact context parameter and no results. `Init` is
+   either the embedded default or a declared pointer method with no parameters
+   and the exact `error` result. Promoted user entry points do not pass.
+2. A service type name is valid only in its declaration, pointer receiver, or
+   single type argument of `Start`, `StartReserved`, `Reserve`, or `Ref`.
+   Construction outside the runtime therefore fails. A service receiver can
+   select fields other than `Service` and make direct synchronous method calls
+   other than `Init` and `Run`. Captures and other receiver uses fail.
+3. A `Ref.Current()` result must receive a direct synchronous call of an exported
+   method declared on that service, other than `Init` and `Run`. The matcher
+   checks the resolved method selection and statement context. It rejects
+   saved pointers, field reads, promoted calls, method values, and direct go or
+   defer calls. The stored-type proof checks each parameter and result of the
+   declared exported method.
+4. `Children()` must be a direct synchronous call on the service receiver,
+   outside a function literal. Its result must be the parent argument of
+   `Start`, `StartReserved`, or `StartGroup`, directly or through one new local
+   from `:=`. Every use of that local must match the same parent position in
+   the same method. A nested group returned by `StartGroup` is ordinary mutable
+   data; it can be stored in the service and stopped from another method.
+5. The start argument type must pass `Prover.ArgumentReason`. This accepts the
+   stored types plus `ConcurrentSafe[T]` as the whole argument or a named field
+   of an argument struct with exactly one immutable marker. Service fields
+   cannot hold protected data directly, except for the listed Owner forms.
+
+`ConcurrentSafe` has its own [trust contract](../services.md#concurrent-dependencies).
+The classifier treats its handle as protected but does not inspect its payload.
+The ordinary stored-type proof rejects the wrapper, so it cannot enter an Owner,
+a frozen collection, or an exported service method signature. Its source checks
+reject defined copies, pointers, arrays, native containers, interface boxing,
+and package variables. Exact aliases remain valid. `Value` must be called
+directly and synchronously on the receiver's `Args()` result or one field of that
+result. `AssumeConcurrentSafe` records a caller promise; it adds no proof or lock.
+Owned native builders still need proved key and element types, so ownership does
+not admit these argument-only wrappers into collections.
+
+The receiver and reference rules are separate from the marked-object and Owner
+holder rules. Each dispatcher path uses the same service classification cache.
+Unmatched uses fail instead of falling back to ordinary protected calls.
+
+### Publication and child lifetimes
+
+A reference contains a pointer to an atomic pointer, so copied references select
+the same current value. `StartReserved` creates a fresh service, binds its
+arguments, and calls `Init`. Successful initial setup publishes with
+compare-and-swap. A losing concurrent start cleans up its staged children before
+it panics. Later successful restart attempts replace the current pointer with
+an atomic store; failed setup leaves the previous value available to callers.
+`Current` needs one atomic load and no allocation.
+
+A run owns a distinct child group. Children created during `Init` are registered
+but wait until the run begins. Failed setup stops those children. During shutdown,
+the child group stops before the runtime cancels the parent's Run context. On a
+normal return or panic, child cleanup finishes before the run ends or waits to
+restart. A completed run keeps a stopped child group, so later method calls can
+initialize children but cannot run them. The checker does not prove whether a
+saved child reference belongs to the current parent run.
+
+The source matcher accepts the fixed Start result forms when arguments contain
+protected storage, including two local result bindings and a matching named
+function return. Calls with only ordinary arguments retain ordinary Go binding
+rules. The `Init` error result does not admit `error` into other exported service
+method signatures. [CLI fixtures](../../tests/testdata/accepted/serviceinit/main.go)
+and [runtime tests](../../pkg/supervise/init_test.go) check these separate rules.
 
 ## Native builders
 
