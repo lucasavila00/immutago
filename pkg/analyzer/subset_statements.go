@@ -324,7 +324,7 @@ func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 	if pointer, ok := receiver.Underlying().(*types.Pointer); ok {
 		receiver = pointer.Elem()
 	}
-	if checker.IsUnchecked(receiver) {
+	if checker.IsOpaque(receiver) {
 		return selection.Obj().Name() == "Value"
 	}
 	if !checker.IsCollection(receiver) {
