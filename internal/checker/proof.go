@@ -3,21 +3,19 @@ package checker
 import (
 	"fmt"
 	"go/types"
-	"strings"
 )
 
-// obligation records a terminal reason or an edge label with its first failure cause.
-// Each cause points to an already failed node; only unfailed owners get causes.
-// Thus cause links cannot form a cycle.
+// obligation stores fixed component edges, a terminal error, and its propagated validity.
 type obligation struct {
-	users  []proofUse
+	users  []*obligation
+	parts  []proofPart
 	reason string
-	cause  *obligation
+	failed bool
 }
 
-// proofUse identifies an owner and its diagnostic path from a component obligation.
-type proofUse struct {
-	owner *obligation
+// proofPart keeps the source order and label of each component obligation.
+type proofPart struct {
+	node  *obligation
 	label string
 }
 
@@ -29,28 +27,8 @@ type proof struct {
 
 // Reason proves concrete immutable storage or returns the first failed component.
 func Reason(t types.Type) string {
-	p := &proof{nodes: make(map[types.Type]*obligation)}
-	root := p.node(t)
-	for index := 0; index < len(p.failures); index++ {
-		child := p.failures[index]
-		for _, use := range child.users {
-			if use.owner.reason == "" && use.owner.cause == nil {
-				use.owner.reason = use.label
-				use.owner.cause = child
-				p.failures = append(p.failures, use.owner)
-			}
-		}
-	}
-	if root.cause == nil {
-		return root.reason
-	}
-	var message strings.Builder
-	for root.cause != nil {
-		message.WriteString(root.reason)
-		root = root.cause
-	}
-	message.WriteString(root.reason)
-	return message.String()
+	var prover Prover
+	return prover.Reason(t)
 }
 
 // node records an obligation before descending, so recursive references terminate.
@@ -63,15 +41,37 @@ func (p *proof) node(t types.Type) *obligation {
 	p.nodes[t] = result
 	p.value(result, t)
 	if result.reason != "" {
-		p.failures = append(p.failures, result)
+		p.fail(result)
 	}
 	return result
 }
 
-// depend adds a component and its reverse failure-propagation edge.
+// depend records both ordered component edges and reverse failure edges.
 func (p *proof) depend(owner *obligation, t types.Type, label string) {
 	child := p.node(t)
-	child.users = append(child.users, proofUse{owner: owner, label: label})
+	owner.parts = append(owner.parts, proofPart{node: child, label: label})
+	child.users = append(child.users, owner)
+	if child.failed {
+		p.fail(owner)
+	}
+}
+
+// fail queues a failed obligation once, including new owners of previously failed children.
+func (p *proof) fail(node *obligation) {
+	if !node.failed {
+		node.failed = true
+		p.failures = append(p.failures, node)
+	}
+}
+
+// propagate completes truth propagation after the reachable graph has been built.
+func (p *proof) propagate() {
+	for index := 0; index < len(p.failures); index++ {
+		for _, owner := range p.failures[index].users {
+			p.fail(owner)
+		}
+	}
+	p.failures = p.failures[:0]
 }
 
 // value matches the complete concrete immutable storage forms.
