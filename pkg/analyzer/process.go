@@ -102,8 +102,9 @@ func processMarker(t types.Type) bool { return checker.IsRuntimeType(t, checker.
 
 const processEscape = "process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call"
 
-const runSupervisorRule = "call l.Supervisor() directly on the receiver in Run, and pass the result only as the parent " +
-	"of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable"
+const runSupervisorRule = "call l.Supervisor() directly on the receiver in Run, " +
+	"and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, " +
+	"directly or through one local variable"
 
 // checkProcessNode checks process declarations, process type names, and process values.
 func (c *subsetChecks) checkProcessNode(node ast.Node) {

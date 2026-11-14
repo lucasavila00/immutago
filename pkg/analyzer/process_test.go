@@ -215,8 +215,10 @@ func TestProcessSupervisorRejected(t *testing.T) {
 		{"comparison", poolDefinitions + `func (p *Pool) Run(context.Context) { _ = p.Supervisor() == nil }`},
 		{"discard", poolDefinitions + `func (p *Pool) Run(context.Context) { _ = p.Supervisor() }`},
 		{"method value", poolDefinitions + `func (p *Pool) Run(context.Context) { f := p.Supervisor; _ = f }`},
-		{"go start", poolDefinitions + `func (p *Pool) Run(context.Context) { go proc.Start[Worker](p.Supervisor(), WorkerArgs{}) }`},
-		{"defer start", poolDefinitions + `func (p *Pool) Run(context.Context) { defer proc.Start[Worker](p.Supervisor(), WorkerArgs{}) }`},
+		{"go start", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	go proc.Start[Worker](p.Supervisor(), WorkerArgs{}) }`},
+		{"defer start", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	defer proc.Start[Worker](p.Supervisor(), WorkerArgs{}) }`},
 		{"go call", poolDefinitions + `func (p *Pool) Run(context.Context) { go p.Supervisor() }`},
 		{"closure", poolDefinitions + `func (p *Pool) Run(context.Context) {
 	func() { proc.Start[Worker](p.Supervisor(), WorkerArgs{}) }() }`},
@@ -226,29 +228,39 @@ func (p *Pool) Grow() { proc.Start[Worker](p.Supervisor(), WorkerArgs{}) }`},
 func (p *Pool) owned() *proc.Supervisor { return p.Supervisor() }`},
 		{"proc", poolDefinitions + `func (p *Pool) Run(context.Context) {}
 func f(pid proc.PID[Pool]) { proc.Start[Worker](pid.Proc().Supervisor(), WorkerArgs{}) }`},
-		{"marker", poolDefinitions + `func (p *Pool) Run(context.Context) { proc.Start[Worker](p.Process.Supervisor(), WorkerArgs{}) }`},
+		{"marker", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	proc.Start[Worker](p.Process.Supervisor(), WorkerArgs{}) }`},
 		{"plain marker", poolDefinitions + `func (p *Pool) Run(context.Context) {}
 func f(s *proc.Supervisor) { var m proc.Process[proc.None]; proc.Start[Worker](m.Supervisor(), WorkerArgs{}) }`},
 		{"method expression", poolDefinitions + `func (p *Pool) Run(context.Context) {}
 var get = (*proc.Process[int]).Supervisor`},
-		{"var local", poolDefinitions + `func (p *Pool) Run(context.Context) { var sup = p.Supervisor(); proc.StartSupervisor(sup) }`},
+		{"var local", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	var sup = p.Supervisor(); proc.StartSupervisor(sup) }`},
 		{"reassigned local", poolDefinitions + `func (p *Pool) Run(context.Context) {
 	var sup *proc.Supervisor; sup = p.Supervisor(); proc.StartSupervisor(sup) }`},
 		{"local field", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Supervisor(); p.sup = sup }`},
-		{"local global", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Supervisor(); proc.StartSupervisor(sup); saved = sup }`},
+		{"local global", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	sup := p.Supervisor(); proc.StartSupervisor(sup); saved = sup }`},
 		{"local helper", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Supervisor(); use(sup) }`},
-		{"local copy", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Supervisor(); other := sup; proc.StartSupervisor(other) }`},
+		{"local copy", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	sup := p.Supervisor(); other := sup; proc.StartSupervisor(other) }`},
 		{"local address", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Supervisor(); _ = &sup }`},
-		{"local overwrite", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Supervisor(); sup = proc.NewRoot(); proc.StartSupervisor(sup) }`},
+		{"local overwrite", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	sup := p.Supervisor(); sup = proc.NewRoot(); proc.StartSupervisor(sup) }`},
 		{"local stop", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Supervisor(); <-sup.Stop() }`},
 		{"local closure", poolDefinitions + `func (p *Pool) Run(context.Context) {
 	sup := p.Supervisor(); go func() { proc.Start[Worker](sup, WorkerArgs{}) }() }`},
-		{"local go", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Supervisor(); go proc.StartSupervisor(sup) }`},
-		{"local defer", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Supervisor(); defer proc.StartSupervisor(sup) }`},
-		{"tuple local", poolDefinitions + `func (p *Pool) Run(context.Context) { sup, n := p.Supervisor(), 1; _ = n; proc.StartSupervisor(sup) }`},
-		{"start value", poolDefinitions + `func (p *Pool) Run(context.Context) { start := proc.StartSupervisor; start(p.Supervisor()) }`},
+		{"local go", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	sup := p.Supervisor(); go proc.StartSupervisor(sup) }`},
+		{"local defer", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	sup := p.Supervisor(); defer proc.StartSupervisor(sup) }`},
+		{"tuple local", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	sup, n := p.Supervisor(), 1; _ = n; proc.StartSupervisor(sup) }`},
+		{"start value", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	start := proc.StartSupervisor; start(p.Supervisor()) }`},
 		{"start argument", poolDefinitions + `type Hold struct { proc.Process[proc.None] }
 func (*Hold) Run(context.Context) {}
-func (p *Pool) Run(context.Context) { proc.Start[Worker](proc.NewRoot(), WorkerArgs{ID: len([]*proc.Supervisor{p.Supervisor()})}) }`},
+func (p *Pool) Run(context.Context) {
+	proc.Start[Worker](proc.NewRoot(), WorkerArgs{ID: len([]*proc.Supervisor{p.Supervisor()})}) }`},
 	})
 }
