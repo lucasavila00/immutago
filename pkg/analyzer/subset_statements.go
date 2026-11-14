@@ -49,8 +49,7 @@ func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 	if genericSignature(signature) {
 		c.genericStorage(declaration, declaration.Name)
 	}
-	if signature.Recv() != nil && !c.serviceSignature(signature) &&
-		(c.queries.Contains(signature.Recv().Type()) || c.queries.Callable(signature)) && !c.markedMethodReceiver(signature) {
+	if signature.Recv() != nil && c.queries.Contains(signature.Recv().Type()) && !c.markedMethodReceiver(signature) {
 		c.report(declaration.Name, "immutable methods require a concrete non-generic marked receiver")
 	}
 }
@@ -110,12 +109,6 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	if rule := c.matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
 		return rule
 	}
-	if name, ok := ast.Unparen(destination).(*ast.Ident); ok {
-		if variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var); ok &&
-			variable.Parent() == c.pass.Pkg.Scope() && dependencyArgument(source) {
-			return "service dependencies cannot enter package variables"
-		}
-	}
 	if !localReference(source) {
 		return ""
 	}
@@ -145,9 +138,6 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 	}
 	for _, name := range declaration.Names {
 		variable := c.pass.TypesInfo.Defs[name]
-		if variable != nil && variable.Parent() == c.pass.Pkg.Scope() && dependencyArgument(variable.Type()) {
-			return "service dependencies cannot enter package variables"
-		}
 		if variable != nil && localReference(variable.Type()) && variable.Parent() == c.pass.Pkg.Scope() {
 			return "global Scoped pointers are unsupported"
 		}
@@ -365,7 +355,11 @@ func (c *subsetChecks) pairCall(values []ast.Expr) bool {
 		return false
 	}
 	call, ok := ast.Unparen(values[0]).(*ast.CallExpr)
-	return ok && runtimeObject(c.calledObject(call.Fun), checker.StartFunction)
+	if !ok {
+		return false
+	}
+	object := c.calledObject(call.Fun)
+	return runtimeObject(object) && object.Name() == "Start"
 }
 
 // pairAssignment requires new locals for Get and permits reused locals for Start.

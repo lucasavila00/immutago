@@ -20,8 +20,9 @@ func (c *subsetChecks) markedMethodReceiver(signature *types.Signature) bool {
 	return ok && named.TypeParams().Len() == 0 && checker.Marked(named) && c.proofs.Reason(named) == ""
 }
 
-// matchMarkedMethod permits direct calls without promotion or implicit receiver changes.
-func (c *subsetChecks) matchMarkedMethod(selector *ast.SelectorExpr) string {
+// matchMethod requires direct concrete calls for protected arguments and results.
+// Protected receivers also require an exact, non-promoted immutable receiver.
+func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection.Kind() != types.MethodVal {
 		return "immutable method expressions are unsupported"
@@ -31,6 +32,13 @@ func (c *subsetChecks) matchMarkedMethod(selector *ast.SelectorExpr) string {
 	}
 	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
 		return "dynamic calls with immutable storage are unsupported"
+	}
+	if !c.queries.Contains(c.pass.TypesInfo.TypeOf(selector.X)) {
+		signature := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
+		if genericSignature(signature) && !runtimeObject(selection.Obj()) {
+			return "user generic instantiations with immutable types are unsupported"
+		}
+		return ""
 	}
 	if len(selection.Index()) != 1 {
 		return "promoted immutable methods are unsupported"

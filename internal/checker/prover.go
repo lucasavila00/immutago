@@ -39,23 +39,11 @@ func (p *Prover) Reason(t types.Type) string {
 	return reason
 }
 
-// ArgumentReason proves a service argument type. It accepts supervise.ConcurrentSafe as the type,
-// or as a TrustedField of a struct with exactly one marker. Every other component must be an allowed stored type.
-func (p *Prover) ArgumentReason(t types.Type) string {
-	if IsRuntimeType(t, ConcurrentSafeType) {
-		return ""
+// ScopedResultReason proves an immutable result returned by value.
+// A returned pointer has its own identity and does not satisfy this result contract.
+func (p *Prover) ScopedResultReason(t types.Type) string {
+	if _, pointer := types.Unalias(t).Underlying().(*types.Pointer); pointer {
+		return "a Scoped result must be a value, not a pointer"
 	}
-	structure, ok := t.Underlying().(*types.Struct)
-	if !ok || MarkerCount(t) != 1 {
-		return p.Reason(t)
-	}
-	for field := range structure.Fields() {
-		if TrustedField(field) {
-			continue
-		}
-		if reason := p.Reason(field.Type()); reason != "" {
-			return field.Name() + ": " + reason
-		}
-	}
-	return ""
+	return p.Reason(t)
 }

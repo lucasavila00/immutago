@@ -35,25 +35,20 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	if !ok {
 		return "protected operation is outside the supported expression forms"
 	}
-	if matched, rule := c.matchDependencyCall(call, object, signature); matched {
-		return rule
-	}
 	if rule := c.matchCallArguments(call, signature); rule != "" {
 		return rule
 	}
 	if libraryObject(object) {
 		return c.matchLibraryCall(call, object)
 	}
-	if trustedRuntimeCall(object) || currentMethod(object) {
+	if runtimeObject(object) {
 		return ""
 	}
 	protected := c.queries.Callable(signature) || c.protectedCallArguments(call)
 	if selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok {
 		if selection := c.pass.TypesInfo.Selections[selector]; selection != nil && selection.Kind() != types.FieldVal &&
 			(protected || c.protectedStorage(selector.X)) {
-			if !c.serviceSignature(selection.Obj().Type().(*types.Signature)) {
-				return c.matchMarkedMethod(selector)
-			}
+			return c.matchMethod(selector)
 		}
 	}
 	if !protected {

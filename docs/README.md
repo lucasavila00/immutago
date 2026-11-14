@@ -20,7 +20,7 @@
 | Start a service and understand restarts | [Supervised services](services.md) |
 | Create and replace groups of workers | [Child services](service-children.md) |
 | Supply a logger, client, or other safe concurrent dependency | [Concurrent dependencies](services.md#concurrent-dependencies) |
-| Look up declarations and allowed calls | [Service source forms](service-forms.md) |
+| Check method result types | [Scoped results](scoped-results.md) |
 | Look up signatures and lifecycle behavior | [supervise API](../pkg/supervise/readme.md) |
 
 ## Checker, costs, and examples
