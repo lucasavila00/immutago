@@ -148,6 +148,9 @@ Rejected examples are not exhaustive:
   reverse start order and escalates to the parent supervisor, which restarts
   the subtree with the same rule. At the root, the last panic value panics
   again and the program exits.
+- `proc.NewRoot(proc.OnPanic(report))` calls `report` with the value and the
+  stack of each panic that a supervisor of the tree recovers, before the restart
+  delay, for example to log it: `proc.OnPanic(func(value any, stack []byte) { log.Printf("%v\n%s", value, stack) })`.
 - `proc.StartSupervisor(parent)` nests a supervisor. `Stop` begins stopping;
   its channel closes when all children have stopped, last started first.
   When a nested supervisor's own Stop channel closes, its parent has removed

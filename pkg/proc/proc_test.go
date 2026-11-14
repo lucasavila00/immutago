@@ -3,6 +3,7 @@ package proc
 import (
 	"context"
 	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -304,6 +305,33 @@ func TestRestartAndEscalate(t *testing.T) {
 			t.Fatalf("escalated %v, want 6", value)
 		}
 		expectEvents(t, "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31")
+	})
+}
+
+// TestOnPanic verifies that every recovered panic reaches the report with its stack before the escalation.
+func TestOnPanic(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		failures.Store(0)
+		var mu sync.Mutex
+		var reported []any
+		escalated := make(chan any, 1)
+		report := OnPanic(func(value any, stack []byte) {
+			if !strings.Contains(string(stack), "failing") {
+				t.Errorf("stack of %v does not name the process:\n%s", value, stack)
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			reported = append(reported, value)
+		})
+		Start[failing](root(func(value any) { escalated <- value }, report), None{})
+		<-escalated
+		takeEvents()
+		mu.Lock()
+		defer mu.Unlock()
+		want := []any{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}
+		if !slices.Equal(reported, want) {
+			t.Fatalf("reported %v, want %v", reported, want)
+		}
 	})
 }
 
