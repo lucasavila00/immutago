@@ -23,12 +23,29 @@ func (c *checks) checkProcessVariables(declaration *ast.FuncDecl) {
 	if !checker.Process(receiver) {
 		return
 	}
+	uses := c.variableUses()
+	called := make(map[*ast.Ident]bool)
 	ast.Inspect(declaration.Body, func(node ast.Node) bool {
-		if id, ok := node.(*ast.Ident); ok {
-			if variable := packageVariable(c.pass.TypesInfo.Uses[id]); variable != nil {
+		switch n := node.(type) {
+		case *ast.CallExpr:
+			if id := calledName(n.Fun); id != nil {
+				called[id] = true
+			}
+		case *ast.Ident:
+			object := c.pass.TypesInfo.Uses[n]
+			if variable := packageVariable(object); variable != nil {
 				if reason := c.processVariableReason(variable); reason != "" {
-					c.report(id.Pos(), "process method uses package variable "+c.variableName(variable)+reason+
+					c.report(n.Pos(), "process method uses package variable "+c.variableName(variable)+reason+
 						processVariableFix)
+				}
+			} else if function := staticFunction(object); function != nil && !processMethod(function) {
+				if use := c.functionUse(uses, function); use != nil {
+					verb := "refers to "
+					if called[n] {
+						verb = "calls "
+					}
+					c.report(n.Pos(), "process method "+verb+c.functionName(function)+", which uses package variable "+
+						use.display(c.pass.Pkg)+processVariableFix)
 				}
 			}
 		}
@@ -53,7 +70,8 @@ func (c *checks) variableName(variable *types.Var) string {
 	return variable.Pkg().Name() + "." + variable.Name()
 }
 
-// processVariableReason accepts an Owner slot and an unexported variable of this package whose type is an
+// processVariableReason returns why a function of this package cannot use a package variable in a process.
+// It accepts an Owner slot and an unexported variable of this package whose type is an
 // allowed stored type and that only package initialization changes.
 func (c *checks) processVariableReason(variable *types.Var) string {
 	switch {

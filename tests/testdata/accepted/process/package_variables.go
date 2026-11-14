@@ -33,6 +33,9 @@ const maxStep = 3
 // clampStep keeps a step index in range.
 func clampStep(i int) int { return min(i, maxStep) }
 
+// publishRates uses only the Owner slot.
+func publishRates(base int) { rates.Store(&Rates{Base: base}) }
+
 // RateKeeper reads package variables that the process rules permit.
 type RateKeeper struct {
 	proc.Process[proc.None]
@@ -42,7 +45,7 @@ type RateKeeper struct {
 // Run publishes the first rate table and waits until ctx ends.
 func (r *RateKeeper) Run(ctx context.Context) {
 	r.base = defaultBase
-	rates.Store(&Rates{Base: r.base})
+	publishRates(r.base)
 	<-ctx.Done()
 }
 

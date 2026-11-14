@@ -44,7 +44,7 @@ var Analyzer = &analysis.Analyzer{
 	Name:      "immutago",
 	Doc:       "prove immutability of marked structs and immutable collection elements",
 	Run:       run,
-	FactTypes: []analysis.Fact{new(invalidPackage)},
+	FactTypes: []analysis.Fact{new(invalidPackage), new(variableUse)},
 }
 
 // run checks compiler-resolved types and source operations in one package.
@@ -79,6 +79,7 @@ func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
 		ast.Inspect(file, c.visit)
 	}
+	c.variableUses()
 	checkLibraryArguments(pass, c)
 	checkSubset(pass, freeze.Check(pass))
 	return nil, nil
@@ -115,6 +116,7 @@ type checks struct {
 	pass     *analysis.Pass
 	reported map[token.Pos]bool
 	changed  map[*types.Var]bool
+	uses     map[*types.Func]*variableUse
 }
 
 // report emits a diagnostic once for a source position.

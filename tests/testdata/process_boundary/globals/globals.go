@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"example.com/consumer/plain"
+	"example.com/consumer/relay"
 	"example.com/consumer/state"
 	"github.com/lucasavila00/immutago/pkg/proc"
 )
@@ -28,3 +29,21 @@ func (*Tally) Name() string { return plain.Names["a"] }
 
 // Version reads a string of a package that the checker does not check.
 func (*Tally) Version() string { return plain.Version }
+
+// Record calls a function that changes a map of a checked package.
+func (*Tally) Record() { state.Record("a") }
+
+// Relay reaches the same map through a function of a third package.
+func (*Tally) Relay() { relay.Relay("a") }
+
+// Track calls a method of a package that this package does not import.
+func (*Tally) Track() { relay.NewTracker().Add("a") }
+
+// Publish calls a function that uses only an Owner slot.
+func (*Tally) Publish() { state.Publish(2) }
+
+// Remember calls a function of a package that the checker does not check.
+func (*Tally) Remember() { plain.Remember("a") }
+
+// Forward reaches a checked map through a package that the checker does not check.
+func (*Tally) Forward() { plain.Forward("a") }

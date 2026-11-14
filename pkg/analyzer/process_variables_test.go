@@ -26,7 +26,7 @@ func checkProcessVariableCases(t *testing.T, reject bool, cases [][2]string) {
 	for _, tc := range cases {
 		t.Run(tc[0], func(t *testing.T) {
 			got := checkSource(t, processVariableDefinitions+tc[1])
-			if reject != strings.Contains(got, "process method uses package variable") || !reject && got != "" {
+			if reject != strings.Contains(got, "package variable") || !reject && got != "" {
 				t.Fatalf("diagnostics=%q rejected=%v", got, reject)
 			}
 		})
@@ -60,9 +60,28 @@ func (w *Worker) Value() int { return helper() }`},
 		{"standard function call", `func (w *Worker) Write(path string) { _, _ = os.ReadFile(path) }`},
 		{"variable outside process method", `var seen = map[string]int{}
 func count() { seen["hits"]++ }`},
-		{"helper is not followed", `var seen = map[string]int{}
-func hits() int { return seen["hits"] }
-func (w *Worker) Hits() int { return hits() }`},
+		{"helper with owner slot", `var current im.Owner[Config]
+func publish(v int) { current.Store(&Config{Version: v}) }
+func (w *Worker) Publish() { publish(w.n) }`},
+		{"helper with unchanged scalar", `var limit = 10
+func scaled(v int) int { return v * limit }
+func (w *Worker) Scaled() int { return scaled(w.n) }`},
+		{"recursive helper without variables", `func fib(n int) int { if n < 2 { return n }; return fib(n-1) + fib(n-2) }
+func (w *Worker) Fib() int { return fib(w.n) }`},
+		{"helper outside process method", `var seen = map[string]int{}
+func record(k string) { seen[k]++ }
+func count() { record("a") }`},
+		{"interface method is not followed", `var seen = map[string]int{}
+type recorder interface{ record(string) }
+type mapRecorder struct{}
+func (mapRecorder) record(k string) { seen[k]++ }
+func (w *Worker) Run2() { var r recorder = mapRecorder{}; r.record("a") }`},
+		{"standard function", `func (w *Worker) Read(path string) { _, _ = os.ReadFile(path) }`},
+		{"other process method", `type Other struct { proc.Process[proc.None] }
+var seen = map[string]int{}
+func (o *Other) Run(context.Context) {}
+func (o *Other) Hits() int { return 0 }
+func (w *Worker) Ask(pid proc.PID[Other]) int { return pid.Proc().Hits() }`},
 		{"local shadow", `var seen = map[string]int{}
 func (w *Worker) Local() int { seen := map[string]int{}; return seen["a"] }`},
 	})
@@ -133,6 +152,57 @@ func (r *Reader) Run(ctx context.Context) { _ = seen["a"] }`},
 		{"holder variable", `type Holder struct { Current im.Owner[Config] }
 var holder Holder
 func (w *Worker) Value() { holder.Current.Store(&Config{}) }`},
+		{"helper", `var seen = map[string]int{}
+func record(k string) { seen[k]++ }
+func (w *Worker) Run2(ctx context.Context) { for ctx.Err() == nil { record("hits") } }`},
+		{"helper reads", `var seen = map[string]int{}
+func hits() int { return seen["hits"] }
+func (w *Worker) Hits() int { return hits() }`},
+		{"two levels", `var seen = map[string]int{}
+func inner(k string) { seen[k]++ }
+func outer(k string) { inner(k) }
+func (w *Worker) Count() { outer("a") }`},
+		{"helper declared later through a chain", `func (w *Worker) Count() { first() }
+func first() { second() }
+func second() { third() }
+func third() { seen["a"]++ }
+var seen = map[string]int{}`},
+		{"recursive helpers", `var seen = map[string]int{}
+func even(n int) bool { if n == 0 { seen["e"]++; return true }; return odd(n - 1) }
+func odd(n int) bool { if n == 0 { return false }; return even(n - 1) }
+func (w *Worker) Odd() bool { return odd(w.n) }`},
+		{"method on ordinary type", `var seen = map[string]int{}
+type tracker struct{}
+func (tracker) record(k string) { seen[k]++ }
+func (w *Worker) Count() { tracker{}.record("a") }`},
+		{"pointer method on ordinary type", `var seen = map[string]int{}
+type tracker struct{ n int }
+func (t *tracker) record(k string) { t.n += seen[k] }
+func (w *Worker) Count() { t := &tracker{}; t.record("a") }`},
+		{"helper value", `var seen = map[string]int{}
+func record(k string) { seen[k]++ }
+func (w *Worker) Count() { f := record; f("a") }`},
+		{"helper in goroutine", `var seen = map[string]int{}
+func record(k string) { seen[k]++ }
+func (w *Worker) Count() { go record("a") }`},
+		{"generic helper", `var seen = map[string]int{}
+func record[T any](k string) { seen[k]++ }
+func (w *Worker) Count() { record[int]("a") }`},
+		{"helper with changed scalar", `var limit = 10
+func set(v int) { limit = v }
+func scaled(v int) int { return v * limit }
+func (w *Worker) Scaled() int { return scaled(w.n) }`},
+		{"helper with standard variable", `func show(s string) { _, _ = io.WriteString(os.Stdout, s) }
+func (w *Worker) Show() { show("x") }`},
+		{"function value variable", `var seen = map[string]int{}
+var record = func(k string) { seen[k]++ }
+func (w *Worker) Count() { record("a") }`},
+		{"function value factory", `var seen = map[string]int{}
+func recorder() func(string) { return func(k string) { seen[k]++ } }
+func (w *Worker) Count() { f := recorder(); f("a") }`},
+		{"helper in closure", `var seen = map[string]int{}
+func record(k string) { seen[k]++ }
+func (w *Worker) Count() { func() { record("a") }() }`},
 		{"standard error variable", `func (w *Worker) eof(err error) bool { return err == io.EOF }`},
 		{"standard client variable", `func (w *Worker) Client() { _ = http.DefaultClient.Timeout }`},
 		{"standard file variable", `func (w *Worker) Print() { _, _ = io.WriteString(os.Stdout, "x") }`},

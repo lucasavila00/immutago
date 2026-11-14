@@ -80,3 +80,20 @@ func (*GlobalUser) Print() { _, _ = os.Stdout.WriteString("x") }
 
 // Client uses the standard library default client.
 func (*GlobalUser) Client() bool { return http.DefaultClient.Timeout == 0 }
+
+// record changes the shared map for its caller.
+func record(key string) { seen[key]++ }
+
+// countAll reaches the shared map through record.
+func countAll(key string) { record(key) }
+
+// HelperCounter changes the shared map through helpers.
+type HelperCounter struct{ proc.Process[proc.None] }
+
+// Run calls helpers that change the shared map until ctx ends.
+func (*HelperCounter) Run(ctx context.Context) {
+	for ctx.Err() == nil {
+		record("hits")
+		countAll("hits")
+	}
+}
