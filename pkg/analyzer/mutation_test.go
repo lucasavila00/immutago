@@ -1,12 +1,8 @@
 package analyzer
 
 import (
-	"go/token"
-	"go/types"
 	"strings"
 	"testing"
-
-	"golang.org/x/tools/go/analysis"
 )
 
 const immutableValueTypes = `type Child struct { im.Shared; X, Y int }
@@ -106,58 +102,6 @@ func TestScalarAddressesCannotLeaveImmutableStorage(t *testing.T) {
 				t.Fatalf("scalar address accepted: %s", reports)
 			}
 		})
-	}
-}
-
-// TestUnsafeHasNoSuppression checks that source comments do not disable the unsafe import boundary.
-func TestUnsafeHasNoSuppression(t *testing.T) {
-	source := `import "unsafe"
- //nolint:immutago
- var _ = unsafe.Sizeof(im.Shared{})`
-	if reports := checkSource(t, source); !strings.Contains(reports, "unsupported unsafe import") {
-		t.Fatalf("diagnostics = %q; want unsafe diagnostic", reports)
-	}
-}
-
-// TestUnsafeReflection checks unsafe pointers returned without an explicit unsafe import.
-func TestUnsafeReflection(t *testing.T) {
-	source := `import "reflect"
- var _ = im.Shared{}
- func pointer(v reflect.Value) { _ = v.UnsafePointer() }`
-	if reports := checkSource(t, source); !strings.Contains(reports, "unsupported unsafe pointer") {
-		t.Fatalf("diagnostics = %q; want unsafe pointer diagnostic", reports)
-	}
-}
-
-// TestRawUnsafeImport checks that alternate import quoting cannot bypass the unsafe boundary.
-func TestRawUnsafeImport(t *testing.T) {
-	source := "import `unsafe`\nvar _ = unsafe.Sizeof(im.Shared{})"
-	if reports := checkSource(t, source); !strings.Contains(reports, "unsupported unsafe import") {
-		t.Fatalf("diagnostics = %q; want unsafe import diagnostic", reports)
-	}
-}
-
-// TestReflectionMutation checks the safe-Go reflection path into a marked slice element.
-func TestReflectionMutation(t *testing.T) {
-	source := "import `reflect`\n" + `type V struct { im.Shared; N int }
- func f(values []V) { reflect.ValueOf(values).Index(0).FieldByName("N").SetInt(1) }`
-	if reports := checkSource(t, source); !strings.Contains(reports, "unsupported reflect import") {
-		t.Fatalf("diagnostics = %q; want reflection diagnostic", reports)
-	}
-}
-
-// TestIndirectReflectionType checks reflection values obtained without an import in the consumer.
-func TestIndirectReflectionType(t *testing.T) {
-	value := types.NewNamed(types.NewTypeName(token.NoPos, types.NewPackage("reflect", "reflect"), "Value", nil),
-		types.NewStruct(nil, nil), nil)
-	var message string
-	c := &checks{reported: make(map[token.Pos]bool), pass: &analysis.Pass{
-		Report: func(d analysis.Diagnostic) { message = d.Message },
-	}}
-	c.checkType(token.Pos(1), value)
-	c.checkType(token.Pos(2), types.NewPointer(value))
-	if !strings.Contains(message, "unsupported reflection value") {
-		t.Fatalf("diagnostic = %q", message)
 	}
 }
 

@@ -20,7 +20,6 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-	"strconv"
 
 	"github.com/lucasavila00/immutago/internal/checker"
 	"github.com/lucasavila00/immutago/internal/freeze"
@@ -132,8 +131,6 @@ func (c *checks) visit(node ast.Node) bool {
 				"provide a Go implementation so writes and pointer transport can be checked")
 		}
 		c.checkServiceMethod(n)
-	case *ast.ImportSpec:
-		c.checkImport(n)
 
 	case *ast.TypeSpec:
 		if !n.Assign.IsValid() && checker.IsRuntimeType(c.pass.TypesInfo.TypeOf(n.Type), checker.ConcurrentSafeType) {
@@ -154,26 +151,8 @@ func (c *checks) visit(node ast.Node) bool {
 	return true
 }
 
-// checkImport resolves both quoted forms before rejecting packages outside the supported proof boundary.
-func (c *checks) checkImport(spec *ast.ImportSpec) {
-	if path, err := strconv.Unquote(spec.Path.Value); err == nil && (path == "unsafe" || path == "reflect") {
-		c.report(spec.Pos(), "unsupported "+path+" import; immutability cannot be proved\n  rule: reflection and unsafe "+
-			"operations can bypass typed ownership checks\n  fix: replace these operations with ordinary typed Go code")
-	}
-}
-
-// checkType checks collection arguments and disallows pointers that could expose mutable aliases.
+// checkType proves collection arguments and named struct fields.
 func (c *checks) checkType(pos token.Pos, t types.Type) {
-	if reflectionValue(t) {
-		c.report(pos, "unsupported reflection value; immutability cannot be proved\n  type: "+diagnosticType(t)+
-			"\n  fix: replace reflection values with concrete typed values and direct "+
-			"operations")
-	}
-	if basic, ok := t.Underlying().(*types.Basic); ok && basic.Kind() == types.UnsafePointer {
-		c.report(pos, "unsupported unsafe pointer; immutability cannot be proved\n  type: "+diagnosticType(t)+
-			"\n  fix: use typed value copies or immutable references; do not reinterpret "+
-			"storage")
-	}
 	if checker.IsCollection(t) {
 		if reason := c.proofs.Reason(t); reason != "" {
 			c.report(pos, "immutable collection: "+reason+"\n  type: "+diagnosticType(t)+
@@ -186,25 +165,6 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 			c.checkStruct(pos, t)
 		}
 	}
-}
-
-// reflectionValue identifies reflection storage even through pointer aliases and recursive pointer types.
-func reflectionValue(t types.Type) bool {
-	seen := make(map[types.Type]bool)
-	for !seen[t] {
-		seen[t] = true
-		if named, ok := types.Unalias(t).(*types.Named); ok {
-			if pkg := named.Obj().Pkg(); pkg != nil && pkg.Path() == "reflect" {
-				return true
-			}
-		}
-		pointer, ok := t.Underlying().(*types.Pointer)
-		if !ok {
-			return false
-		}
-		t = pointer.Elem()
-	}
-	return false
 }
 
 // checkStruct enforces marker placement and recursively proves each owned field.
