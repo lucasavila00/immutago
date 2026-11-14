@@ -1,0 +1,19 @@
+use.go:14:19: Unchecked.Value requires a type that this package declares
+  type: unchecked.Table
+  rule: only the package that declares T can wrap or read an im.Unchecked[T]
+  fix: call a function of the package that declares the type
+use.go:18:48: Unchecked.Value requires a type that this package declares
+  type: unchecked.Table
+  rule: only the package that declares T can wrap or read an im.Unchecked[T]
+  fix: call a function of the package that declares the type
+use.go:4:2: unsupported dependency example.com/consumer/unchecked: immutability proof failed
+  representative failure: example.com/consumer/unchecked/trusted.go:15:59: im.Trust requires a type that this package declares
+    type: T
+    rule: only the package that declares T can wrap or read an im.Unchecked[T]
+    fix: call a function of the package that declares the type
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/unchecked, correct its errors, then rerun immutago on this package
+use.go:9:55: im.Trust requires a type that this package declares
+  type: unchecked.Table
+  rule: only the package that declares T can wrap or read an im.Unchecked[T]
+  fix: call a function of the package that declares the type

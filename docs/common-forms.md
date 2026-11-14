@@ -33,6 +33,7 @@ This list is complete. It also applies to each nested field, key, and element.
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
 | Process PID | `proc.PID[ConfigLoader]`; see [Supervised processes](processes.md). |
+| Trusted handle | `im.Unchecked[baked]`; see [Unchecked values](unchecked.md). |
 
 Rejected type examples (**not exhaustive**):
 

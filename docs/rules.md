@@ -7,12 +7,19 @@
 | [Owner](owner.md) | Publish a new Scoped object and read the current one. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
 | [Supervised processes](processes.md) | Run mutable services with typed start arguments and immutable method messages. |
+| [Unchecked values](unchecked.md) | Hold a value that the analyzer trusts and does not prove. |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 
 The common lists and each type's lists define the complete supported forms.
 Other protected operations are rejected. Rejection examples are not exhaustive.
 **Protected storage** means marked values, their fields, frozen collections,
 and arrays containing them. Owner slots and holders have their own listed forms.
+
+## Trust boundary
+
+`im.Unchecked[T]` is the only trusted part of a checked package. The analyzer
+does not prove that the value it holds is immutable; the package that declares
+`T` is trusted. See [Unchecked values](unchecked.md).
 
 ## Check the program
 

@@ -20,6 +20,9 @@ const testLibrary = `package im
  type Owner[T any] struct{}
  func (o *Owner[T]) Load() *T { return nil }
  func (o *Owner[T]) Store(p *T) {}
+ type Unchecked[T any] struct { value *T }
+ func Trust[T any](value *T) Unchecked[T] { return Unchecked[T]{value: value} }
+ func (u Unchecked[T]) Value() *T { return u.value }
  type FrozenSlice[T any] struct { values []T }
  type FrozenMap[K comparable, V any] struct { values map[K]V }
  func FreezeSlice[T any](values []T) FrozenSlice[T] { return FrozenSlice[T]{} }

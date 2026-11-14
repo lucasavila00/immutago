@@ -314,7 +314,7 @@ func (c *subsetChecks) protectedResult(t types.Type) bool {
 	return false
 }
 
-// exactCollectionMethod recognizes only the fixed library receiver rather than promoted wrapper methods.
+// exactCollectionMethod recognizes only the fixed library receivers rather than promoted wrapper methods.
 func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection == nil || selection.Kind() != types.MethodVal || !libraryObject(selection.Obj()) {
@@ -323,6 +323,9 @@ func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 	receiver := selection.Recv()
 	if pointer, ok := receiver.Underlying().(*types.Pointer); ok {
 		receiver = pointer.Elem()
+	}
+	if checker.IsUnchecked(receiver) {
+		return selection.Obj().Name() == "Value"
 	}
 	if !checker.IsCollection(receiver) {
 		return false
