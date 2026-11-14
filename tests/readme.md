@@ -14,7 +14,8 @@ including wrappers. Runtime tests check storage transfer, Clone independence,
 and unchanged shared objects after pointer rebinding.
 
 [Cgo tests](cgo_test.go) check real compiler-generated wrappers through CLI and
-vet, including consumer-only dependency reports. They run when cgo is enabled.
+vet, including consumer-only reports for a cgo wrapper and its invalid dependency.
+They run when cgo is enabled.
 
 For a changed group:
 

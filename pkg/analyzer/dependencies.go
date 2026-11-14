@@ -53,19 +53,7 @@ func localFailure(pass *analysis.Pass, diagnostic analysis.Diagnostic) proofFail
 
 // invalidDependencies preserves original failures through drivers that hide dependency diagnostics.
 func invalidDependencies(pass *analysis.Pass) (bool, bool, map[string]invalidPackage) {
-	relevant := protectedPackage(pass)
-	if pass.ImportPackageFact == nil {
-		return false, relevant, nil
-	}
-	invalid := make(map[string]invalidPackage)
-	for _, imported := range pass.Pkg.Imports() {
-		var fact invalidPackage
-		if !pass.ImportPackageFact(imported, &fact) {
-			continue
-		}
-		invalid[imported.Path()] = fact
-		relevant = relevant || fact.Relevant
-	}
+	relevant, invalid := collectDependencyFacts(pass)
 	if len(invalid) == 0 || !relevant {
 		return len(invalid) > 0, relevant, invalid
 	}
@@ -81,6 +69,24 @@ func invalidDependencies(pass *analysis.Pass) (bool, bool, map[string]invalidPac
 		}
 	}
 	return true, relevant, invalid
+}
+
+// collectDependencyFacts reads direct failures without emitting dependency diagnostics.
+func collectDependencyFacts(pass *analysis.Pass) (bool, map[string]invalidPackage) {
+	relevant := protectedPackage(pass)
+	if pass.ImportPackageFact == nil {
+		return relevant, nil
+	}
+	invalid := make(map[string]invalidPackage)
+	for _, imported := range pass.Pkg.Imports() {
+		var fact invalidPackage
+		if !pass.ImportPackageFact(imported, &fact) {
+			continue
+		}
+		invalid[imported.Path()] = fact
+		relevant = relevant || fact.Relevant
+	}
+	return relevant, invalid
 }
 
 // packageFailureFact joins flat records before export, without copying local failures or import chains.
