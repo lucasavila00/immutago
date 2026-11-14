@@ -1,0 +1,9 @@
+consumer.go:4:2: unsupported dependency example.com/consumer/cgolib: immutability proof failed
+  import chain: example.com/consumer/consumer -> example.com/consumer/cgolib -> example.com/consumer/bad
+  original failure: example.com/consumer/bad/bad.go:3:8: unsupported unsafe import; immutability cannot be proved
+    rule: reflection and unsafe operations can bypass typed ownership checks
+    fix: replace these operations with ordinary typed Go code
+  import chain: example.com/consumer/consumer -> example.com/consumer/cgolib
+  original failure: example.com/consumer/cgolib/cgo.go:1:1: cgo is not supported; immutability cannot be proved
+    fix: replace cgo with checked Go code
+  fix: correct the original dependency error above, then rerun immutago on this package
