@@ -11,3 +11,10 @@
 [gomarkdoc templates](gomarkdoc/package.gotxt) generate package references from
 Go comments. [.gomarkdoc.yml](../.gomarkdoc.yml) selects the templates;
 `make docs` writes the references and `make docs-check` checks them.
+
+[dependency-stress](dependency-stress/main.go) writes the dense package graph
+from issue 20. Use `go run ./scripts/dependency-stress -scale 5 -out /tmp/deps`
+for 400 packages. Add `-library /absolute/path/to/immutago` to create a relevant
+consumer that must report all original errors. The
+[dependency workflow](../.github/workflows/dependency-performance.yml) runs it
+through both analysis drivers and saves measurements.

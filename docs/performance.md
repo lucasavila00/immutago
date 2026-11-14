@@ -40,7 +40,8 @@ full package pass at increasing input sizes. Parsing and Go type checking are
 outside the timed loop. Stress tests compare recursive proofs and flow results
 with independent reachability calculations.
 
-[Core performance CI](../.github/workflows/core-performance.yml) saves repeated
+Run [Core performance](../.github/workflows/core-performance.yml) manually from
+GitHub Actions when changing checker costs. It saves repeated
 benchmark samples, CPU and allocation profiles, the test binary, and runner
 information as artifacts. Profile setup can appear in the profiles; benchmark
 allocation counts exclude setup. Compare the same cases and Go version before
@@ -53,9 +54,38 @@ and callback storage. [Classification benchmarks](../internal/checker/classifica
 measure repeated queries at 16, 64, and 256 types. The
 [ordinary type graph benchmark](../pkg/analyzer/type_scaling_test.go) measures the
 full analyzer pass on connected structs and interfaces without markers at 8,
-16, 32, and 64 types. These cases keep repeated graph traversal visible in CI.
+16, 32, and 64 types. These cases measure repeated graph traversal.
 
 The pass-local type classifier expands each reachable type and classification
 mode once per cache. Reverse edges propagate positive results through cycles;
 completed queries reuse the stored result. The graph stays in memory until its
 pass ends. Ordinary packages still receive structural and source checks.
+
+## Dependency fact costs
+
+Dependency facts share local failure records and retain direct import edges.
+For a graph with P packages, E invalid import edges, and F bytes of local error
+data, the CLI retains O(P + E + F) record data plus the per-fact tables of reachable
+package pointers. Those tables, and the driver's package-fact maps, can still
+contain O(P²) pointers. Facts contain no per-error copies of full import chains.
+
+Each serialized fact contains one copy of each reachable package record and
+its local errors and edges. Vet can still repeat that data in different fact
+files; exact original diagnostics require that data across silent wrappers.
+Reports build routes only for relevant consumers. Report storage includes the
+text that must be shown to the user; no errors are capped or discarded.
+
+Run [Dependency performance](../.github/workflows/dependency-performance.yml)
+manually from GitHub Actions when changing dependency fact costs. It measures merging, gob encoding, and reporting separately. It also compares the
+base and changed commands on dense 16- and 64-package graphs, then checks 144,
+256, and 400 packages with the changed command. Each package imports every
+package in the preceding layer and has the issue's 50 unsafe conversions.
+With the repository's Go version, these produce 101 local errors per package:
+one import error and two source positions per conversion. Both drivers must
+preserve the exact count. A separate relevant consumer must receive all 40,400
+original errors through a silent wrapper.
+
+The workflow saves timing, peak-memory, allocation, CPU-profile, and runner
+data. The baseline 400-package run is omitted because the reported failure is
+an out-of-memory exit. The graph tests also bound encoded size by one copy of
+each record and compare reports with the previous propagation algorithm.

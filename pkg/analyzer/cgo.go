@@ -20,9 +20,8 @@ func rejectCgo(pass *analysis.Pass) bool {
 	diagnostic := analysis.Diagnostic{Pos: position, Message: cgoDiagnostic}
 	pass.Report(diagnostic)
 	if pass.ExportPackageFact != nil {
-		pass.ExportPackageFact(&invalidPackage{
-			Relevant: protectedPackage(pass), Failures: []proofFailure{localFailure(pass, diagnostic)},
-		})
+		pass.ExportPackageFact(packageFailureFact(pass.Pkg.Path(), protectedPackage(pass), nil,
+			[]proofFailure{localFailure(pass, diagnostic)}))
 	}
 	return true
 }

@@ -63,8 +63,19 @@ and actual parameter types, including tuple results and variadic elements.
 Per-pass caches reuse literal type matches and compiler-constant operand
 classification. Each operand still passes its use and statement checks.
 
-[Dependency facts](../../pkg/analyzer/dependencies.go) retain failure locations,
-messages, relevance, and import chains. Consumers report relevant failures at
-imports and export them again. Duplicate failures use one deterministic route
-through a diamond import graph. These facts carry errors, not inferred function
-effects; they preserve failures that a consumer-only driver run could hide.
+[Dependency facts](../../pkg/analyzer/dependencies.go) contain a flat table of
+package records. Each record stores local failure locations and messages, plus
+its direct invalid import paths. Importers merge records by package path and
+share the records without changing them. A fact contains each reachable record
+once. It stores no per-error import chains.
+
+A relevant consumer builds one lexical route to each origin and reports errors
+in source-location and message order. A string builder renders the report.
+Silent wrappers still export their records and relevance, so a later consumer
+cannot lose a failure. These facts carry errors, not inferred function effects.
+
+Each fact must contain the reachable records: the vet driver does not re-export
+imported package facts, so `AllPackageFacts` cannot supply all indirect origins.
+The flat table also prevents gob from expanding shared pointer subtrees through
+each diamond path. The CLI shares records in memory; vet still serializes each
+fact's reachable records. See the [cost checks](../performance.md#dependency-fact-costs).

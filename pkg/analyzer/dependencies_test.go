@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -22,6 +23,16 @@ func (packages dependencyImporter) Import(path string) (*types.Package, error) {
 
 // TestInvalidDependencyProofPropagates checks local diagnostics, silent wrappers, and relevant consumers.
 func TestInvalidDependencyProofPropagates(t *testing.T) {
+	for _, serialized := range []bool{false, true} {
+		t.Run(fmt.Sprintf("serialized=%t", serialized), func(t *testing.T) {
+			checkInvalidDependencyPropagation(t, serialized)
+		})
+	}
+}
+
+// checkInvalidDependencyPropagation supplies only direct facts, as the vet driver does.
+func checkInvalidDependencyPropagation(t *testing.T, serialized bool) {
+	t.Helper()
 	library := types.NewPackage(checker.LibraryPath, "im")
 	library.MarkComplete()
 	packages := dependencyImporter{"unsafe": types.Unsafe, checker.LibraryPath: library}
@@ -46,11 +57,12 @@ func TestInvalidDependencyProofPropagates(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		available := directDependencyFacts(t, pkg, invalid, serialized)
 		var reports []string
 		pass := &analysis.Pass{Analyzer: Analyzer, Fset: positions, Pkg: pkg, Files: []*ast.File{file}, TypesInfo: info,
 			Report: func(d analysis.Diagnostic) { reports = append(reports, d.Message) },
 			ImportPackageFact: func(p *types.Package, fact analysis.Fact) bool {
-				value, ok := invalid[p]
+				value, ok := available[p]
 				*fact.(*invalidPackage) = value
 				return ok
 			},
@@ -73,6 +85,22 @@ func TestInvalidDependencyProofPropagates(t *testing.T) {
 	}
 }
 
+// directDependencyFacts copies only the imported facts, with an optional serialization boundary.
+func directDependencyFacts(t *testing.T, pkg *types.Package, facts map[*types.Package]invalidPackage,
+	serialized bool) map[*types.Package]invalidPackage {
+	t.Helper()
+	available := make(map[*types.Package]invalidPackage)
+	for _, imported := range pkg.Imports() {
+		if fact, ok := facts[imported]; ok {
+			if serialized {
+				fact = *roundTripFact(t, &fact)
+			}
+			available[imported] = fact
+		}
+	}
+	return available
+}
+
 // TestInvalidProofKeepsRelevanceWhenVetPrunesImports checks the scope bit carried by package facts.
 func TestInvalidProofKeepsRelevanceWhenVetPrunesImports(t *testing.T) {
 	positions := token.NewFileSet()
@@ -86,7 +114,7 @@ func TestInvalidProofKeepsRelevanceWhenVetPrunesImports(t *testing.T) {
 	var reports []string
 	pass := &analysis.Pass{Pkg: wrapper, Fset: positions, Files: []*ast.File{file}, TypesInfo: &types.Info{},
 		ImportPackageFact: func(_ *types.Package, fact analysis.Fact) bool {
-			fact.(*invalidPackage).Relevant = true
+			*fact.(*invalidPackage) = *packageFailureFact("example/bad", true, nil, nil)
 			return true
 		},
 		Report: func(d analysis.Diagnostic) { reports = append(reports, d.Message) }}

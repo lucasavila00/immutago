@@ -2,6 +2,7 @@ name: Immutago
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:

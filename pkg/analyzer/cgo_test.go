@@ -55,7 +55,8 @@ func checkCgoReport(t *testing.T, positions *token.FileSet, files []*ast.File, s
 	if got := positions.Position(reports[0].Pos).String(); got != source+":1:1" {
 		t.Fatalf("reported generated source: %s", got)
 	}
-	if fact == nil || len(fact.Failures) != 1 || fact.Failures[0].Message != cgoDiagnostic {
+	if fact == nil || len(fact.Packages) != 1 || fact.Packages[0].Path != pass.Pkg.Path() ||
+		len(fact.Packages[0].Failures) != 1 || fact.Packages[0].Failures[0].Message != cgoDiagnostic {
 		t.Fatalf("missing cgo dependency failure: %+v", fact)
 	}
 }
