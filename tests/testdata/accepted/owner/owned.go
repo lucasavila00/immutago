@@ -42,3 +42,9 @@ func Global() {
 
 // Background starts a checked publisher with a direct holder argument.
 func Background(l *Loader) { go Publish(l, "next", nil) }
+
+// NewLoader uses the zero holder allocation form.
+func NewLoader() {
+	l := new(Loader)
+	l.Current.Store(new(Model))
+}

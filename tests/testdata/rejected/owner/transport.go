@@ -15,3 +15,12 @@ func badTransport(l *Loader) {
 	retain(l)
 	savedLoader = l
 }
+
+func publish(l *Loader)  { l.Current.Store(&Model{}) }
+func (*Loader) publish() {}
+func badCallbacks() {
+	f := publish
+	_ = f
+	g := (*Loader).publish
+	_ = g
+}

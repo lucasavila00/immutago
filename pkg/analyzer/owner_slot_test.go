@@ -71,6 +71,9 @@ func f(){l:=&Loader{};retain(l)}`, true},
 		{"holder pointer capture", `var saved *Loader; func f(l *Loader){ saved=l }`, true},
 		{"background publisher", `func publish(l *Loader){l.Current.Store(&Model{})}
 func f(l *Loader){go publish(l)}`, false},
+		{"holder new allocation", `func f(){ l:=new(Loader); l.Current.Store(&Model{}) }`, false},
+		{"holder named callback", `func publish(l *Loader){};func f(){callback:=publish;_=callback}`, true},
+		{"holder method callback", `func(l *Loader) publish(){};func f(){callback:=(*Loader).publish;_=callback}`, true},
 		{"holder construction", `func f(){ l:=&Loader{}; l.Current.Store(&Model{}) }`, false},
 		{"generic holder", `func f[T any](*T){}; func g(l *Loader){ f(l) }`, true},
 	}

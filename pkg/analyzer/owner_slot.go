@@ -273,7 +273,7 @@ func (c *subsetChecks) checkSlotExpression(expression ast.Expr) {
 			return
 		}
 		switch object := c.pass.TypesInfo.ObjectOf(id).(type) {
-		case *types.TypeName, *types.Func:
+		case *types.TypeName, *types.Builtin:
 			return
 		case *types.Var:
 			if object.IsField() {
@@ -282,6 +282,14 @@ func (c *subsetChecks) checkSlotExpression(expression ast.Expr) {
 		}
 	}
 	typ := c.pass.TypesInfo.TypeOf(expression)
+	if typ == nil {
+		return
+	}
+	if _, callable := typ.Underlying().(*types.Signature); callable &&
+		c.hasHolderReference(typ) && c.directCall(expression) == nil {
+		c.pass.Reportf(expression.Pos(), "function values cannot carry Owner holder pointers")
+		return
+	}
 	if c.holderPointer(typ) && (!c.validHolderSource(expression) || !c.allowedHolderPointer(expression)) {
 		c.pass.Reportf(expression.Pos(), "Owner holder pointers require local bindings or direct typed calls")
 		return
