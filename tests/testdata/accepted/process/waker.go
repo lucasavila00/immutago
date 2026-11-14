@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"sync"
 
 	"github.com/lucasavila00/immutago/pkg/proc"
 )
@@ -9,29 +10,39 @@ import (
 // Waker runs a step each time a caller wakes it.
 type Waker struct {
 	proc.Process[proc.None]
+	mu    sync.Mutex
 	wake  chan struct{}
 	steps int
 }
 
-// Init prepares the channel before callers can reach the process.
-func (w *Waker) Init() { w.wake = make(chan struct{}, 1) }
+// wakeChannel creates the channel once, before either Run or Wake uses it.
+func (w *Waker) wakeChannel() chan struct{} {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.wake == nil {
+		w.wake = make(chan struct{}, 1)
+	}
+	return w.wake
+}
 
 // Run counts one step after each wake until ctx ends.
 func (w *Waker) Run(ctx context.Context) {
+	wake := w.wakeChannel()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-w.wake:
+		case <-wake:
 			w.steps++
 		}
 	}
 }
 
-// Wake asks for one more step.
+// Wake requests one step, including before Run begins. Repeated requests can combine into one step.
 func (w *Waker) Wake() {
+	wake := w.wakeChannel()
 	select {
-	case w.wake <- struct{}{}:
+	case wake <- struct{}{}:
 	default:
 	}
 }

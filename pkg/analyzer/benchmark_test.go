@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/lucasavila00/immutago/internal/checker"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -17,7 +18,7 @@ func BenchmarkCoreMatcher(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					checkSubset(pass, nil)
+					checkSubset(pass, nil, new(checker.Prover))
 				}
 			})
 		}

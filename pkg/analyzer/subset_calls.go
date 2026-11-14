@@ -35,6 +35,9 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	if !ok {
 		return "protected operation is outside the supported expression forms"
 	}
+	if matched, rule := c.matchDependencyCall(call, object, signature); matched {
+		return rule
+	}
 	if rule := c.matchCallArguments(call, signature); rule != "" {
 		return rule
 	}
@@ -133,7 +136,7 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 			return ""
 		}
 		return "Freeze requires a standalone single binding"
-	case "Get", "At", "Len", "All", "Clone", "Value":
+	case "Get", "At", "Len", "All", "Clone":
 		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 		if !ok || !c.exactCollectionMethod(selector) {
 			return "immutable method expressions are unsupported"

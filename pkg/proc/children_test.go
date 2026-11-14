@@ -2,6 +2,7 @@ package proc
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -10,6 +11,22 @@ import (
 
 	"github.com/lucasavila00/immutago/pkg/im"
 )
+
+// TestGoexitStopsWatcher checks completion when a child ends its goroutine.
+func TestGoexitStopsWatcher(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		root := NewRoot()
+		root.add(func(context.Context) { runtime.Goexit() })
+		synctest.Wait()
+		done := root.Stop()
+		synctest.Wait()
+		select {
+		case <-done:
+		default:
+			t.Fatal("supervisor did not stop after Goexit")
+		}
+	})
+}
 
 // pool is a process that starts three children under its own supervisor.
 type pool struct{ Process[None] }
@@ -65,6 +82,34 @@ func TestChildrenStopBeforeRun(t *testing.T) {
 		expectStarted(t, "start pool", "start first", "start second", "start third")
 		<-root.Stop()
 		expectEvents(t, "stop third", "stop second", "stop first", "stop pool")
+	})
+}
+
+// TestSupervisorDuringHalt checks that a late child cannot start while the run stops.
+func TestSupervisorDuringHalt(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		entered := make(chan struct{})
+		resume := make(chan struct{})
+		var once sync.Once
+		p := &Process[None]{
+			cancel:  func() { once.Do(func() { close(entered); <-resume }) },
+			unwatch: func() bool { return true },
+		}
+		halted := make(chan struct{})
+		go func() { p.halt(); close(halted) }()
+		<-entered
+		s := p.Supervisor()
+		ran := make(chan struct{})
+		s.add(func(context.Context) { close(ran) })
+		synctest.Wait()
+		close(resume)
+		<-halted
+		p.end()
+		select {
+		case <-ran:
+			t.Fatal("child started after halt began")
+		default:
+		}
 	})
 }
 

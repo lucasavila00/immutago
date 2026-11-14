@@ -32,36 +32,3 @@ type PromotedRun struct {
 	proc.Process[proc.None]
 	Runner
 }
-
-// WrongInit has an initializer with a result.
-type WrongInit struct{ proc.Process[proc.None] }
-
-// Run waits for cancellation.
-func (*WrongInit) Run(ctx context.Context) { <-ctx.Done() }
-
-// Init has an unsupported result.
-func (*WrongInit) Init() int { return 0 }
-
-// ValueInit has an initializer with a value receiver.
-type ValueInit struct{ proc.Process[proc.None] }
-
-// Run waits for cancellation.
-func (*ValueInit) Run(ctx context.Context) { <-ctx.Done() }
-
-// Init cannot change the process value.
-func (ValueInit) Init() {}
-
-// Initializer has an Init method but is not a process.
-type Initializer struct{}
-
-// Init does nothing.
-func (*Initializer) Init() {}
-
-// PromotedInit inherits Init instead of declaring a process receiver.
-type PromotedInit struct {
-	proc.Process[proc.None]
-	Initializer
-}
-
-// Run waits for cancellation.
-func (*PromotedInit) Run(ctx context.Context) { <-ctx.Done() }

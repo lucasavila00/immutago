@@ -47,14 +47,6 @@ fields of a process are not protected storage. The
   exception: `Prover.ArgumentReason` also accepts `proc.UncheckedDependency[T]` as the
   argument type, and named `proc.UncheckedDependency[T]` fields of an argument struct
   with exactly one marker.
-
-`proc.UncheckedDependency[T]` is an [unchecked dependency](../processes.md#unchecked-dependencies).
-The type proof rejects it, so it cannot be in an Owner value, a frozen
-collection, another marked struct, or an exported method signature. `checkStruct`
-rejects a `proc.UncheckedDependency` field in an unmarked struct, which includes a
-process. `dependencyValue` accepts `Value` only as a direct synchronous call on
-`l.Args()` or on one field of it in a method of process `l`. The `T` value is
-not proved; `proc.Trust` is the promise.
 - `Process.Supervisor` is valid only as a direct synchronous call on the
   receiver of a process method, outside function literals. Its result must be
   the first argument of a direct synchronous `proc.Start`, `proc.StartReserved`,
@@ -62,33 +54,35 @@ not proved; `proc.Trust` is the promise.
   `:=` that has no other use. The supervisor of the run itself therefore does
   not escape the method, and only the runtime stops it. A nested supervisor
   from `proc.StartSupervisor(l.Supervisor())` is an ordinary value: the process
-  can store it, start children under it from any method, and stop it. It stays
-  in the process, because `*proc.Supervisor` is not an allowed stored type, and
-  it stops with the run. `Start` under it after the run ends returns a PID
+  can store it, start children under it from any method, and stop it. It cannot
+  be a start argument or an exported method parameter or result, because
+  `*proc.Supervisor` is not an allowed stored type. Other uses follow ordinary
+  Go rules. It stops with the run. `Start` under it after the run ends returns a PID
   whose `Run` never runs. The checker does not check PID lifetimes, such as a
   PID reserved outside the run.
+
+`proc.UncheckedDependency[T]` is an [unchecked dependency](../processes.md#unchecked-dependencies).
+The classifier treats the wrapper as protected storage and does not inspect `T`.
+The type proof rejects it, so it cannot be in an Owner value, a frozen
+collection, another marked struct, or an exported method signature. `checkStruct`
+rejects a `proc.UncheckedDependency` field in an unmarked struct, which includes a
+process. The source matcher rejects defined copies, pointers, arrays, native
+containers, interface boxing, and package variables. Type arguments are checked
+in the source walk so the explicit unchecked payload is skipped. `dependencyValue`
+accepts `Value` only as a direct synchronous call on
+`l.Args()` or on one field of it in a method of process `l`. The `T` value is
+not proved; `proc.Trust` is the promise.
+Before exempting an owned native handle, the source checker proves its protected
+key and element types with the same Prover. Ownership alone does not admit an
+argument-only type as a builder element.
 
 A process is not an Owner holder; the holder pointer rules do not apply to it.
 Methods with a process receiver are exempt from the rule against user-defined
 methods with protected storage, because the five rules leave a direct static
-- The type argument of `proc.Process` must pass the same proof.
-- A process method cannot use a rejected package variable or name a function
-  that carries a [variable use fact](../../pkg/analyzer/variable_uses.go). The
-  [variable check](../../pkg/analyzer/process_variables.go) accepts `im.Owner`
-  variables, unexported variables of allowed stored types that only package
-  initialization changes, and the [narrow forms](../../pkg/analyzer/process_variable_forms.go):
-  scalar atomics used only as direct method receivers, compared `error`
-  variables, and empty structs. It finds changed variables, method receivers,
-  and compared names with at most one walk each per package.
-
-A process is not an Owner holder; the holder pointer rules do not apply to it.
-Methods with a process receiver are exempt from the rule against user-defined
-methods with protected storage, because the rules leave a direct static
 call as the only use of such a method. The runtime creates a new value from the
 same arguments after each restart delay and stores it in the same PID.
 These rules do not check the origin or destination of mutable field handles
-in ordinary method bodies, calls into unchecked packages, or interface method
-calls; they do not prove memory isolation.
+in ordinary method bodies; they do not prove memory isolation.
 
 ## Native builders
 

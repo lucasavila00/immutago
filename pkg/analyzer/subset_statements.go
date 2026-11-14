@@ -110,6 +110,12 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	if rule := c.matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
 		return rule
 	}
+	if name, ok := ast.Unparen(destination).(*ast.Ident); ok {
+		if variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var); ok &&
+			variable.Parent() == c.pass.Pkg.Scope() && dependencyArgument(source) {
+			return "process dependencies cannot enter package variables"
+		}
+	}
 	if !localReference(source) {
 		return ""
 	}
@@ -129,6 +135,9 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 
 // matchDeclaration accepts one binding or the exact two-result frozen map reader.
 func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
+	if group, ok := c.parents[declaration].(*ast.GenDecl); ok && group.Tok != token.VAR {
+		return "protected operation is outside the supported statement forms"
+	}
 	if len(declaration.Names) != 1 || len(declaration.Values) > 1 {
 		if !c.getDeclaration(declaration) {
 			return "multiple assignments involving protected storage are unsupported"
@@ -136,6 +145,9 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 	}
 	for _, name := range declaration.Names {
 		variable := c.pass.TypesInfo.Defs[name]
+		if variable != nil && variable.Parent() == c.pass.Pkg.Scope() && dependencyArgument(variable.Type()) {
+			return "process dependencies cannot enter package variables"
+		}
 		if variable != nil && localReference(variable.Type()) && variable.Parent() == c.pass.Pkg.Scope() {
 			return "global Scoped pointers are unsupported"
 		}
@@ -280,9 +292,6 @@ func (c *subsetChecks) matchClosure(literal *ast.FuncLit) {
 		if !ok {
 			return true
 		}
-		if checker.Unevaluated(c.pass.TypesInfo, c.parents, c.unevaluated, name) {
-			return true
-		}
 		variable, ok := c.pass.TypesInfo.Uses[name].(*types.Var)
 		if !ok || variable.IsField() || !c.queries.Contains(variable.Type()) {
 			return true
@@ -314,7 +323,7 @@ func (c *subsetChecks) protectedResult(t types.Type) bool {
 	return false
 }
 
-// exactCollectionMethod recognizes only the fixed library receivers rather than promoted wrapper methods.
+// exactCollectionMethod recognizes only the fixed library receiver rather than promoted wrapper methods.
 func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection == nil || selection.Kind() != types.MethodVal || !libraryObject(selection.Obj()) {
@@ -323,9 +332,6 @@ func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 	receiver := selection.Recv()
 	if pointer, ok := receiver.Underlying().(*types.Pointer); ok {
 		receiver = pointer.Elem()
-	}
-	if checker.IsOpaque(receiver) {
-		return selection.Obj().Name() == "Value"
 	}
 	if !checker.IsCollection(receiver) {
 		return false

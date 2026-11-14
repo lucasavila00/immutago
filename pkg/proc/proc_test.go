@@ -3,7 +3,6 @@ package proc
 import (
 	"context"
 	"slices"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -308,33 +307,6 @@ func TestRestartAndEscalate(t *testing.T) {
 	})
 }
 
-// TestOnPanic verifies that every recovered panic reaches the report with its stack before the escalation.
-func TestOnPanic(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		failures.Store(0)
-		var mu sync.Mutex
-		var reported []any
-		escalated := make(chan any, 1)
-		report := OnPanic(func(value any, stack []byte) {
-			if !strings.Contains(string(stack), "failing") {
-				t.Errorf("stack of %v does not name the process:\n%s", value, stack)
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			reported = append(reported, value)
-		})
-		Start[failing](root(func(value any) { escalated <- value }, report), None{})
-		<-escalated
-		takeEvents()
-		mu.Lock()
-		defer mu.Unlock()
-		want := []any{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}
-		if !slices.Equal(reported, want) {
-			t.Fatalf("reported %v, want %v", reported, want)
-		}
-	})
-}
-
 // TestRestartWindow verifies that restarts older than 5 minutes do not count.
 func TestRestartWindow(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
@@ -441,6 +413,15 @@ func BenchmarkPIDProc(b *testing.B) {
 	<-root.Stop()
 }
 
+// TestStopNestedRightAfterStart verifies that a nested supervisor can stop while its parent launches it.
+func TestStopNestedRightAfterStart(t *testing.T) {
+	root := NewRoot()
+	for range 100 {
+		<-StartSupervisor(root).Stop()
+	}
+	<-root.Stop()
+}
+
 // TestTrustValue checks that Value returns the value that Trust wraps.
 func TestTrustValue(t *testing.T) {
 	counts := map[string]int{"a": 1}
@@ -473,15 +454,6 @@ func TestTrustedArgument(t *testing.T) {
 	Start[reporter](root, reporterArgs{Report: Trust(func(event string) { reported <- event })})
 	if got := <-reported; got != "run" {
 		t.Fatalf("reported %q", got)
-	}
-	<-root.Stop()
-}
-
-// TestStopNestedRightAfterStart verifies that a nested supervisor can stop while its parent launches it.
-func TestStopNestedRightAfterStart(t *testing.T) {
-	root := NewRoot()
-	for range 100 {
-		<-StartSupervisor(root).Stop()
 	}
 	<-root.Stop()
 }

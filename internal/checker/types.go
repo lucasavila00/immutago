@@ -14,7 +14,7 @@ const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 // RuntimePath is the package whose supervised process runtime is trusted.
 const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
 
-// Names of the process runtime identities in RuntimePath and of the process methods that only the runtime calls.
+// Names of the process runtime identities in RuntimePath and of the process method that only the runtime calls.
 const (
 	ProcessMarker           = "Process"
 	PIDType                 = "PID"
@@ -27,8 +27,8 @@ const (
 	SupervisorMethod        = "Supervisor"
 	RunMethod               = "Run"
 	UncheckedDependencyType = "UncheckedDependency"
+	TrustFunction           = "Trust"
 	ValueMethod             = "Value"
-	InitMethod              = "Init"
 )
 
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
@@ -42,9 +42,6 @@ func IsRuntimeType(t types.Type, name string) bool {
 	n, ok := types.Unalias(t).(*types.Named)
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == RuntimePath && n.Obj().Name() == name
 }
-
-// IsOpaque reports whether t is the library's trusted opaque wrapper.
-func IsOpaque(t types.Type) bool { return IsLibraryType(t, "Opaque") }
 
 // IsCollection reports whether t is one of the library's sealed collection types.
 func IsCollection(t types.Type) bool {
@@ -115,7 +112,7 @@ func embedsMarker(t types.Type, name string) bool {
 	return false
 }
 
-// Contains reports whether a type stores a marked value or sealed collection.
+// Contains reports whether a type stores a marked value, sealed collection, or process dependency.
 // It runs one query; use Classifier to reuse results across queries.
 func Contains(t types.Type) bool {
 	var classifier Classifier

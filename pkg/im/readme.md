@@ -114,34 +114,6 @@ func (s FrozenSlice[T]) Len() int
 
 Len returns the number of elements in O\(1\) time without allocations.
 
-## type Opaque
-
-Opaque holds a pointer to a value that the analyzer does not look inside. It is one of the two trust markers of immutago, with proc.UncheckedDependency: the analyzer does not prove that the value is immutable. The package that declares T trusts its own code to never change the value after Seal.
-
-Opaque is an allowed stored type. Any package can store, copy, and pass it. Only the package that declares T can call Seal and Value, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/opaque.md for the complete forms.
-
-```go
-type Opaque[T any] struct {
-    // contains filtered or unexported fields
-}
-```
-
-### func Seal
-
-```go
-func Seal[T any](value *T) Opaque[T]
-```
-
-Seal wraps value. The package that declares T must not change the value after this call.
-
-### func \(Opaque\[T\]\) Value
-
-```go
-func (o Opaque[T]) Value() *T
-```
-
-Value returns the wrapped pointer, or nil for the zero Opaque.
-
 ## type Owner
 
 Owner stores one pointer to an immutable Scoped object. Declare a slot as a package variable or a direct named field of an unmarked struct. Its zero value is empty. An Owner value must not be copied. See https://github.com/lucasavila00/immutago/blob/main/docs/owner.md for the complete forms.

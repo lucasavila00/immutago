@@ -116,11 +116,11 @@ proc.Start[Fetcher](root, FetcherArgs{
 })
 ```
 
-The dependency is unchecked: the checker does not look inside; the caller's
-promise that the value is safe for concurrent use. `proc.Trust(v)` writes that
-promise in the code, so that reviewers can find each one. The value is not
-immutable. `proc.UncheckedDependency` is the only way to give a process mutable
-data that the checker does not prove.
+The checker does not look inside the dependency. With `proc.Trust(v)`, you
+promise that concurrent use of `v` is safe. The call makes that promise visible
+to reviewers; it does not make `v` immutable. `proc.UncheckedDependency` is the
+only exception to the immutable start-argument rules. Code that creates `v`
+and uses the result of `Value()` still follows the normal source rules.
 
 A false promise is a data race that the checker cannot find. Without
 `proc.Trust`, the checker rejects a map in the start arguments. With it, the
@@ -140,40 +140,49 @@ only with `l.Args().Log.Value()` in a process method. The
 
 ## Start and readiness
 
-Start publishes the new struct before Run begins. A method can therefore run
-before Run initializes any fields. Put required initial data in the start
-arguments, and make methods handle the zero values of other fields.
+A caller can call a process method before Run starts. Keep required data in
+the start arguments. If Run and another method both need a private field,
+initialize it under a mutex:
+
+```go
+func (w *Waker) wakeChannel() chan struct{} {
+    w.mu.Lock()
+    defer w.mu.Unlock()
+    if w.wake == nil {
+        w.wake = make(chan struct{}, 1)
+    }
+    return w.wake
+}
+```
+
+Both `Run` and `Wake` call this method in the
+[waker example](../tests/testdata/accepted/process/waker.go). A caller can request
+work before Run begins; the channel holds that request.
+Loading a file or waiting for a server is a separate readiness condition. Expose
+that condition through a process method, such as `Ready() bool`.
 
 For two processes that need each other's PID, Reserve one PID, start the first
 process, then call StartReserved for the reserved PID. Reserve does not wait
 for startup. Calling Proc before StartReserved panics; coordinate the first
 calls so that both processes have started.
 
-A process can declare `Init()`. The runtime calls it on each new struct, at the
-first start and at each restart, before the struct is reachable through the
-PID. Only the runtime calls `Init`.
-
 ## Restart and failure
 
-If Run returns, it is not restarted, and its supervisor removes it. If Run panics, the supervisor waits before
-restarting it: 1 second after the first panic, then twice as long for each
-restart in the last 5 minutes. It creates a new struct from the same start
+If Run returns, it is not restarted, and its supervisor removes it. If Run
+panics, the supervisor waits before restarting it: 1 second after the first
+panic, then twice as long for each restart in the last 5 minutes. It creates a new struct from the same start
 arguments and replaces the value behind the PID. Mutable fields return to their
 zero values, including empty Owner fields.
 
 During the delay, PID calls still use the old struct. A call already in progress
-finishes on that old struct after the replacement. A method panic propagates in the caller's goroutine. The supervisor handles
-it only if it leaves a supervised Run. The restart rules apply to the process
-whose Run failed.
+finishes on that old struct after the replacement. A method panic propagates
+in the caller's goroutine. The supervisor handles it only if it leaves a
+supervised Run. The restart rules apply to the process whose Run failed.
 
 A sixth panic from the same child in 5 minutes stops its siblings, last started
 first, and passes the failure to the parent supervisor. The parent restarts the
 subtree with the same retry rule. If the failure reaches the root, the program
 panics with the last panic value.
-
-Pass `proc.OnPanic(report)` to `proc.NewRoot` to receive the value and the
-stack of each panic that a supervisor of the tree recovers, before the restart
-delay, for example to log it.
 
 ## Stop
 
@@ -184,98 +193,36 @@ calls. A PID can still call methods on its last struct after Run ends or Stop
 completes.
 
 Use `proc.StartSupervisor(parent)` to stop a group together and restart that
-group after a child exceeds the restart limit. In tests, [proctest.NewRoot(t)](../pkg/proc/proctest/readme.md) stops the
-tree during cleanup and fails if it does not stop within 5 seconds.
+group after a child exceeds the restart limit. In tests,
+[proctest.NewRoot(t)](../pkg/proc/proctest/readme.md) stops the tree during
+cleanup and fails if it does not stop within 5 seconds.
 
 ## Start children
 
-A process can start children under the supervisor of its current run. Pass
-`p.Supervisor()` directly to `proc.Start`, `proc.StartReserved`, or
-`proc.StartSupervisor`, from `Run` or from any other method:
+Use `p.Supervisor()` when a process decides which workers to run. For example,
+a dispatcher can add one group for each configuration entry and remove a group
+when that entry is deleted. These children stop with the process. A restart
+starts a new process with no children; its Run builds the groups again.
 
 ```go
-func (p *WorkerPool) Run(ctx context.Context) {
-    sup := p.Supervisor()
-    for i := range p.Args().Workers {
-        proc.Start[Worker](sup, WorkerArgs{ID: i})
-    }
-    <-ctx.Done()
-}
+proc.Start[Worker](p.Supervisor(), WorkerArgs{ID: 1})
 ```
 
-- In a method, `p.Supervisor()` returns the supervisor of the current run of
-  that process value. The first call for the value creates it. Children that a
-  method starts before `Run` begins start with the run.
-- When the process stops, the runtime stops the children of this supervisor,
-  last started first, and waits for them. Then it ends the `Run` context, so a
-  child can call methods of its parent while the child stops. When `Run`
-  returns or panics, the runtime stops the children and waits for them. Then
-  the run ends: the restart delay starts, or `Stop` continues.
-- After the run ends, `p.Supervisor()` returns a stopped supervisor. `Start`
-  under it, or under a stored nested supervisor of that run, returns a PID
-  whose `Run` never runs.
-- If a child passes its restart limit, the run context ends and the run fails
-  with the panic value of the child. The supervisor of the process counts this
-  failure as a panic of the process. A group in a nested supervisor first
-  restarts alone; if the group fails six times in 5 minutes, the run fails.
-- A new run uses a new process value, so it starts with no children and empty
-  fields. Children that methods started are gone too. `Run` must start them
-  again from data that survives the restart: the start arguments, or a peer
-  process, for example a config process with an `im.Owner`, whose PID is in the
-  arguments. The [dispatcher](../tests/testdata/accepted/process/dispatcher.go)
-  asks its config peer for the current variants in `Run`.
-- After a restart of the parent, a PID of an old child keeps its old value, but
-  that child does not run again. Do not publish child PIDs: do not store them
-  in an `im.Owner`, send them to other processes, or return them from methods.
-  Reach a child through its parent on each call.
-- To start and stop single children during one run, give each child its own
-  nested supervisor: `sub := proc.StartSupervisor(p.Supervisor())`, then
-  `proc.Start[Worker](sub, args)`. Keep `sub` in a field, and call
-  `<-sub.Stop()` from any method to stop that child. The stopped nested
-  supervisor is removed from the supervisor of the run. A child must not
-  synchronously call a parent method that stops the group of that child:
-  `Stop` waits for the child, and the child waits for the call.
-
-The [process reference](process-forms.md#start-children-under-the-supervisor-of-the-run)
-## Package variables
-
-A process method, including `Run`, cannot use a package variable that another
-goroutine can change. The checker also follows static calls to functions and
-methods of checked packages, so a helper such as
-`func record(k string) { seen[k]++ }` is rejected when `Run` calls it. Keep
-shared state in one process, and publish it through an `im.Owner` field or an
-exported method. The [process reference](process-forms.md#package-variables)
-lists the allowed forms.
+To stop a group separately, start it with
+`sub := proc.StartSupervisor(p.Supervisor())`, then wait on `<-sub.Stop()`.
+The [child-process guide](process-children.md) shows a worker pool and a
+dispatcher that changes its groups while it runs.
 
 ## Not checked
 
-The checker does not follow calls into packages that it does not check, such as
-the standard library, or calls through interface methods. See
-[calls that are not followed](process-forms.md#calls-that-are-not-followed).
-These checks also do not isolate mutable process fields. Use locks for data that
-methods and `Run` share, and run tests with `go test -race`. The race detector
+These checks do not isolate ordinary mutable state. Two processes can still
+access the same global map or share data through ordinary helper functions.
+Use locks for that data, and run tests with `go test -race`. The race detector
 can find a race only when the test executes the conflicting accesses.
 
-The checker also does not check the lifetime of PIDs. A process can reserve a
-PID outside its run and start it under the supervisor of its run:
-
-```go
-type PoolArgs struct {
-    im.Shared
-    Spare proc.PID[Worker] // reserved by the caller
-}
-
-func (p *Pool) Run(ctx context.Context) {
-    proc.StartReserved(p.Supervisor(), p.Args().Spare, WorkerArgs{})
-    <-ctx.Done()
-}
-```
-
-After a restart of `Pool`, the new run calls `StartReserved` on a PID that is
-already started. It panics with `proc: PID already started` on each run, and
-after six panics in 5 minutes the panic escalates to the parent supervisor. Call
-`proc.Reserve` in the same method as `StartReserved`, as the
-[dispatcher](../tests/testdata/accepted/process/dispatcher.go) does.
+The checker does not check whether a child PID belongs to an old run. See
+[child lifetimes](process-children.md#child-lifetimes) before storing or sharing
+child PIDs.
 
 ## Reference
 

@@ -10,7 +10,7 @@ Package checker proves structural immutability from Go compiler type information
 
 ## Constants
 
-Names of the process runtime identities in RuntimePath and of the process methods that only the runtime calls.
+Names of the process runtime identities in RuntimePath and of the process method that only the runtime calls.
 
 ```go
 const (
@@ -25,8 +25,8 @@ const (
     SupervisorMethod        = "Supervisor"
     RunMethod               = "Run"
     UncheckedDependencyType = "UncheckedDependency"
+    TrustFunction           = "Trust"
     ValueMethod             = "Value"
-    InitMethod              = "Init"
 )
 ```
 
@@ -48,7 +48,7 @@ const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
 func Contains(t types.Type) bool
 ```
 
-Contains reports whether a type stores a marked value or sealed collection. It runs one query; use Classifier to reuse results across queries.
+Contains reports whether a type stores a marked value, sealed collection, or process dependency. It runs one query; use Classifier to reuse results across queries.
 
 ## func IsCollection
 
@@ -65,14 +65,6 @@ func IsLibraryType(t types.Type, name string) bool
 ```
 
 IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
-
-## func IsOpaque
-
-```go
-func IsOpaque(t types.Type) bool
-```
-
-IsOpaque reports whether t is the library's trusted opaque wrapper.
 
 ## func IsRuntimeType
 
@@ -138,14 +130,6 @@ func TrustedField(field *types.Var) bool
 
 TrustedField identifies a named proc.UncheckedDependency field. Only a marked process argument struct can store it.
 
-## func Unevaluated
-
-```go
-func Unevaluated(info *types.Info, parents map[ast.Node]ast.Node, cache map[ast.Node]bool, node ast.Node) bool
-```
-
-Unevaluated identifies operands of compiler\-proved constant expressions. The cache belongs to one pass with fixed type information and parent links. Runtime operation and ownership checks use the same evaluation boundary.
-
 ## type Classifier
 
 Classifier caches protected storage and callback queries for one analysis pass. Its zero value is ready for use. Types must not change after their first query. A Classifier must not be used by concurrent passes.
@@ -170,7 +154,7 @@ Callable reports whether t contains a callback contract that carries protected s
 func (c *Classifier) Contains(t types.Type) bool
 ```
 
-Contains reports whether t stores a marked value or a sealed collection.
+Contains reports whether t stores a marked value, sealed collection, or process dependency.
 
 ## type Prover
 

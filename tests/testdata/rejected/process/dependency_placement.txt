@@ -1,8 +1,36 @@
 dependency_placement.go:20:2: proc.UncheckedDependency field log is allowed only in a marked process argument struct
   owner: process.Sender
   fix: move the field into the argument struct of the process
+dependency_placement.go:24:9: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: *Sender
+  type: *process.Sender
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
 dependency_placement.go:27:18: exported process method Logger carries proc.UncheckedDependency[*slog.Logger], which is not an allowed stored type: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+dependency_placement.go:27:75: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: s
+  type: *process.Sender
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
+dependency_placement.go:27:9: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: *Sender
+  type: *process.Sender
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
 dependency_placement.go:30:18: exported process method Arguments carries process.SenderArgs, which is not an allowed stored type: Log: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+dependency_placement.go:30:50: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: s
+  type: *process.Sender
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
+dependency_placement.go:30:9: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: *Sender
+  type: *process.Sender
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
+dependency_placement.go:33:9: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: *Sender
+  type: *process.Sender
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
+dependency_placement.go:34:10: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: s
+  type: *process.Sender
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
 dependency_placement.go:35:9: call Value only directly on l.Args() or on a field of l.Args() in a process method
 dependency_placement.go:35:9: unsupported immutable operation: user-defined methods with immutable storage are unsupported
   source: args.Log.Value()
@@ -25,3 +53,7 @@ dependency_placement.go:64:2: proc.UncheckedDependency field log is allowed only
   owner: process.handlers
   fix: move the field into the argument struct of the process
 dependency_placement.go:68:79: call Value only directly on l.Args() or on a field of l.Args() in a process method
+dependency_placement.go:68:79: unsupported immutable operation: user-defined methods with immutable storage are unsupported
+  source: log.Value()
+  type: *slog.Logger
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed

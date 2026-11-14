@@ -40,6 +40,9 @@ func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 // matchStatement finds the complete statement that owns a protected operand.
 func (c *subsetChecks) matchStatement(expression ast.Expr) string {
 	for parent := c.parents[expression]; parent != nil; parent = c.parents[parent] {
+		if typ, ok := parent.(ast.Expr); ok && c.pass.TypesInfo.Types[typ].IsType() {
+			return "protected operation is outside the supported statement forms"
+		}
 		if declaration, ok := parent.(*ast.ValueSpec); ok {
 			return c.matchDeclaration(declaration)
 		}
