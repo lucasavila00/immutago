@@ -109,6 +109,9 @@ each function enters it once and recursion ends. A fact holds the first variable
 found, not the call path. Process methods read these facts for direct calls and
 function names. Facts exist only for marked functions; vet carries them to direct
 importers, and the fact of a callee already includes the facts of its own callees.
+A second object fact marks an exported `error` variable that its own package
+changes outside `init`. Checked importers read it before they accept a
+comparison with the variable, and cannot change the variable themselves.
 
 The vet driver does not re-export imported package facts. `AllPackageFacts`
 cannot supply all indirect origins, so each exported witness is self-contained.

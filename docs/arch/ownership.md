@@ -47,8 +47,11 @@ fields of a process are not protected storage. The
 - A process method cannot use a rejected package variable or name a function
   that carries a [variable use fact](../../pkg/analyzer/variable_uses.go). The
   [variable check](../../pkg/analyzer/process_variables.go) accepts `im.Owner`
-  variables and unexported variables of allowed stored types that only package
-  initialization changes. It finds changed variables with one walk per package.
+  variables, unexported variables of allowed stored types that only package
+  initialization changes, and the [narrow forms](../../pkg/analyzer/process_variable_forms.go):
+  scalar atomics used only as direct method receivers, compared `error`
+  variables, and empty structs. It finds changed variables, method receivers,
+  and compared names with at most one walk each per package.
 
 A process is not an Owner holder; the holder pointer rules do not apply to it.
 Methods with a process receiver are exempt from the rule against user-defined

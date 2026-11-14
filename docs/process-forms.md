@@ -57,6 +57,9 @@ other uses of package variables in process methods.
 | --- | --- |
 | Use a package `im.Owner` variable of any package with the [Owner forms](owner.md) | `var rates im.Owner[Rates]`; `rates.Store(&Rates{Base: 1})`, `r := rates.Load()` |
 | Read an unexported variable of the same package whose type is an allowed stored type, when only its declaration and `init` functions change it | `var defaultBase = 10`; `return r.base * defaultBase` |
+| Call a method directly on an unexported `atomic.Bool`, `atomic.Int32`, `atomic.Int64`, `atomic.Uint32`, or `atomic.Uint64` variable of the same package, when every use of the variable in the package is the receiver of a direct method call | `var lookups atomic.Int64`; `lookups.Add(1)`, `n := lookups.Load()`, `lookups.CompareAndSwap(1, 2)` |
+| Compare with an `error` variable of any package: an operand of `==` or `!=`, a value of a `switch` case, or the second argument of `errors.Is`, when no checked code changes the variable after package initialization | `err == io.EOF`, `errors.Is(err, state.ErrFull)`, `switch err { case io.EOF: }` |
+| Use a variable of any package whose type is a struct with only empty struct fields | `binary.LittleEndian.PutUint64(out[:], v)`, `body == http.NoBody` |
 | Use a constant | `const maxStep = 3`; `return min(i, maxStep)` |
 | Call or name a function or method whose body, and the bodies of its static callees in checked packages, use only the variables above | `func publishRates(base int) { rates.Store(&Rates{Base: base}) }`; `publishRates(r.base)` |
 
@@ -65,6 +68,11 @@ assigns it or one of its elements or fields, uses `++` or `--` on it, assigns it
 in a `for ... = range` statement, takes its address with `&`, slices it when it
 is an array, or calls a pointer method on it. These are the Go operations that
 change or alias a variable.
+
+Checked code cannot assign an `error` variable of another package or take its
+address: `io.EOF = nil` and `&state.ErrFull` are rejected in every checked
+package. An exported `error` variable that its own package changes outside
+`init` carries a fact, so importers do not accept it in a comparison.
 
 The checker looks at a function, or a concrete method, that the process method
 names directly: a call, `go` or `defer`, or a function value such as
@@ -82,8 +90,10 @@ Rejected examples are not exhaustive:
 | `var mu sync.Mutex` and `var table map[string]int`, used under the lock | Keep both in one process. |
 | `var Limit = 10` (exported), `state.Limit` from another package | Pass the value in the start arguments: `proc.Start[RateKeeper](root, Args{Limit: 10})`. |
 | `var retries = 3` with `func set(n int) { retries = n }` | Pass the value in the start arguments, or publish it through an `im.Owner` field. |
-| `os.Stdout`, `os.Args`, `http.DefaultClient`, `io.EOF` | No allowed form yet for these dependencies. [Issue #52](https://github.com/lucasavila00/immutago/issues/52) tracks explicit start arguments for them. |
-| `var errMissing error = code("missing")` | `const errMissing code = "missing"`, where `code` is a defined string type with an `Error` method. |
+| `os.Stdout`, `os.Stderr`, `http.DefaultClient`, `http.DefaultTransport`, a package logger, `time.UTC`, `base64.StdEncoding`, a package `*regexp.Regexp`, `sync.Pool`, `sync.Once`, a package template, `embed.FS`, a metric vector | Give the process the dependency in its start arguments with `proc.UncheckedDependency` ([#60](https://github.com/lucasavila00/immutago/pull/60)), or keep a read-only structure in a marked object with `im.Opaque` ([#61](https://github.com/lucasavila00/immutago/pull/61)). |
+| `return io.EOF`, `io.EOF.Error()`, `fmt.Errorf("read: %w", io.EOF)`, `errors.As(err, &target)` with a package variable | Compare the error in the process method, then return a defined status or a constant error. |
+| `var lookups atomic.Int64` with `p := &lookups` or `f := lookups.Add` anywhere in the package | Call the methods directly: `lookups.Add(1)`. |
+| `var current atomic.Value`, `atomic.Pointer[T]`, `atomic.Uintptr`, or a struct or array of atomics | Publish the value through an `im.Owner` field. |
 | `p := &defaultBase` in a method | `v := defaultBase` |
 
 Diagnostics name the variable, or the function and the variable it reaches:
@@ -104,6 +114,9 @@ The checker does not follow two kinds of calls:
   `plain.Remember("a")` where `plain` has no `im` or `proc` use and
   `func Remember(k string) { names[k] = k }` changes a package map. A direct
   use of a variable of these packages, such as `os.Stdout`, is still rejected.
+  So `slog.Info("started")` passes because it is a function call, while a
+  package variable `var log = slog.Default()` is rejected because a process
+  method uses the variable directly.
 - A call through an interface method. The concrete method is not known:
 
   ```go
@@ -120,6 +133,10 @@ The checker does not follow two kinds of calls:
   A function value is followed where checked code names the function or
   contains the function literal. A function value that comes from an interface
   method or an unchecked package is not followed.
+
+Code in unchecked packages can still assign an `error` variable of another
+package, for example `io.EOF = nil` in a third-party package. The checker
+cannot see that assignment, so a comparison with `io.EOF` stays allowed.
 
 Package initialization is trusted: do not start a process from a package
 variable initializer or an `init` function, because those can still change the
