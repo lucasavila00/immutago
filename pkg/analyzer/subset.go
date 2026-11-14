@@ -16,12 +16,14 @@ type subsetChecks struct {
 	exempt   map[ast.Node]bool
 	reported map[token.Pos]bool
 	owners   map[*types.Var]bool
+	literals map[*ast.CompositeLit]string
 }
 
 // checkSubset checks the supported immutable forms with compiler-resolved types.
 func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 	c := &subsetChecks{pass: pass, parents: make(map[ast.Node]ast.Node),
-		owners: owners, exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool)}
+		owners: owners, exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool),
+		literals: make(map[*ast.CompositeLit]string)}
 	for _, file := range pass.Files {
 		var stack []ast.Node
 		ast.Inspect(file, func(n ast.Node) bool {

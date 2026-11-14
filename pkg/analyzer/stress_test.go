@@ -62,15 +62,20 @@ func stressSource(shape string, count int, invalid bool) string {
 			source.WriteString("value.N=2;\n")
 		}
 	case "builders":
-		source.WriteString("func f(){\n")
-		for index := range count {
-			source.WriteString("{ values:=[]int{1}; frozen:=im.FreezeSlice(values);_=frozen.Len();")
-			if invalid && index == count-1 {
-				source.WriteString("values[0]=2;")
-			}
-			source.WriteString("};\n")
-		}
+		writeStressBuilders(&source, count, invalid)
 	}
 	source.WriteString("}\n")
 	return source.String()
+}
+
+// writeStressBuilders emits separate owned containers with an optional final use after Freeze.
+func writeStressBuilders(source *strings.Builder, count int, invalid bool) {
+	source.WriteString("func f(){\n")
+	for index := range count {
+		source.WriteString("{ values:=[]int{1}; frozen:=im.FreezeSlice(values);_=frozen.Len();")
+		if invalid && index == count-1 {
+			source.WriteString("values[0]=2;")
+		}
+		source.WriteString("};\n")
+	}
 }
