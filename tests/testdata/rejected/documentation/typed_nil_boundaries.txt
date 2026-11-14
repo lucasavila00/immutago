@@ -1,0 +1,37 @@
+typed_nil_boundaries.go:11:2: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:11:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: values := []int(nil)
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
+typed_nil_boundaries.go:13:6: cannot freeze scores: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:13:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: scores = map[string]int(nil)
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
+typed_nil_boundaries.go:15:6: cannot freeze named: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:15:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: named nilInts = nilInts(nil)
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
+typed_nil_boundaries.go:17:2: cannot freeze alias: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:17:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: alias := (nilIntsAlias)((nil))
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
+typed_nil_boundaries.go:19:13: unsupported immutable operation: protected value conversions are unsupported
+  source: []nilShared(nil)
+  type: []docrejected.nilShared
+  fix: construct the destination marked value from copied fields; keep frozen collections in their original im type
+typed_nil_boundaries.go:19:2: cannot freeze objects: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:19:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: objects := []nilShared(nil)
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
+typed_nil_boundaries.go:25:21: cannot freeze this expression: pass an exclusively owned local builder or a fresh make, literal, bare nil, or Clone result
+typed_nil_boundaries.go:26:19: cannot freeze this expression: pass an exclusively owned local builder or a fresh make, literal, bare nil, or Clone result
+typed_nil_boundaries.go:27:21: cannot freeze this expression: pass an exclusively owned local builder or a fresh make, literal, bare nil, or Clone result
+typed_nil_boundaries.go:28:21: cannot freeze this expression: pass an exclusively owned local builder or a fresh make, literal, bare nil, or Clone result
+typed_nil_boundaries.go:29:21: cannot freeze this expression: pass an exclusively owned local builder or a fresh make, literal, bare nil, or Clone result
+typed_nil_boundaries.go:29:21: unsupported immutable operation: protected value conversions are unsupported
+  source: []nilShared(nil)
+  type: []docrejected.nilShared
+  fix: construct the destination marked value from copied fields; keep frozen collections in their original im type
+typed_nil_boundaries.go:35:6: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:35:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: values []int = nil
+  fix: declare one fresh local builder; use values = append(values, element) to extend it

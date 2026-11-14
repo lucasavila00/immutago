@@ -22,7 +22,7 @@ these uses; the [type proof](../../internal/checker/proof.go) rejects stored
 [Discovery](../../internal/freeze/discover.go) indexes local declarations by
 compiler variable identity. It tracks fresh native containers with protected
 contents and native inputs to Freeze. Valid initial sources are allocation,
-literal, nil, zero declaration, or an exact collection `Clone` call.
+literal, bare nil, zero declaration, or an exact collection `Clone` call.
 
 [Use checks](../../internal/freeze/uses.go) match the builder operations before
 and after Freeze. They reject handle copies, subslices, slot addresses, escape,

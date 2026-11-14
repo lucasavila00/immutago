@@ -1,2 +1,2 @@
-freeze_global_source.go:5:5: cannot freeze values: ownership requires a fresh local make, literal, nil, or Clone result; create a local builder first
+freeze_global_source.go:5:5: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 freeze_global_source.go:8:14: unsupported owned container values: capturing or using a builder outside its declaring function; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder

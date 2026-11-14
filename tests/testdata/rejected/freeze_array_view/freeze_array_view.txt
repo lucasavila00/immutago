@@ -1,4 +1,4 @@
-freeze_array_view.go:5:37: cannot freeze values: ownership requires a fresh local make, literal, nil, or Clone result; create a local builder first
+freeze_array_view.go:5:37: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 freeze_array_view.go:5:37: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: values := array[:]
   fix: declare one fresh local builder; use values = append(values, element) to extend it
