@@ -16,7 +16,7 @@ func TestMarkerIdentities(t *testing.T) {
 		match func(types.Type) bool
 	}{
 		{"Shared", Shared},
-		{"LocalRef", LocalRef},
+		{"Scoped", Scoped},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			marker := types.NewNamed(types.NewTypeName(token.NoPos, library, test.name, nil),
@@ -47,14 +47,14 @@ func TestMarkerIdentities(t *testing.T) {
 // TestLocalPointerIdentity checks that aliases and defined pointer types retain the storage restriction.
 func TestLocalPointerIdentity(t *testing.T) {
 	library := types.NewPackage(LibraryPath, "im")
-	marker := types.NewNamed(types.NewTypeName(token.NoPos, library, "LocalRef", nil),
+	marker := types.NewNamed(types.NewTypeName(token.NoPos, library, "Scoped", nil),
 		types.NewStruct(nil, nil), nil)
 	value := markedType("Value", marker)
 	pointer := types.NewPointer(value)
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), pointer)
 	defined := types.NewNamed(types.NewTypeName(token.NoPos, nil, "Defined", nil), pointer, nil)
 	for _, stored := range []types.Type{pointer, alias, defined} {
-		if reason := Reason(stored); !strings.Contains(reason, "LocalRef pointers cannot be stored") {
+		if reason := Reason(stored); !strings.Contains(reason, "Scoped pointers cannot be stored") {
 			t.Errorf("local pointer %s accepted: %s", stored, reason)
 		}
 	}

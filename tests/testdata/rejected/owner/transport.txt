@@ -1,0 +1,17 @@
+transport.go:11:1: Owner holder pointers require direct non-variadic parameters
+transport.go:12:1: Owner holder pointers cannot be returned
+transport.go:15:9: Owner holder pointers require local bindings or direct typed calls
+transport.go:16:16: Owner holder pointers require local bindings or direct typed calls
+transport.go:16:2: Owner holder pointers require local bindings or direct typed calls
+transport.go:22:7: function values cannot carry Owner holder pointers
+transport.go:23:6: function values cannot carry Owner holder pointers
+transport.go:24:7: function values cannot carry Owner holder pointers
+transport.go:25:6: function values cannot carry Owner holder pointers
+transport.go:3:18: containers of Owner slots or holders are unsupported
+transport.go:3:5: Owner holder pointers cannot be stored in package variables
+transport.go:4:5: Owner holder pointers cannot be stored in package variables
+transport.go:5:15: containers of Owner slots or holders are unsupported
+transport.go:5:5: Owner holder pointers cannot be stored in package variables
+transport.go:6:19: containers of Owner slots or holders are unsupported
+transport.go:6:5: Owner holder pointers cannot be stored in package variables
+transport.go:9:16: Owner holder pointers cannot be stored in fields

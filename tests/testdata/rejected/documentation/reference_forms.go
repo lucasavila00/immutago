@@ -23,7 +23,7 @@ func localArrayWrite() {
 }
 
 type LocalPoint struct {
-	im.LocalRef
+	im.Scoped
 	X int
 }
 

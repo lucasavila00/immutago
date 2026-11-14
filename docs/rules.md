@@ -17,17 +17,17 @@ Embed exactly one marker by value:
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type SharedPoint struct { im.Shared; X int }
-type LocalRefPoint struct { im.LocalRef; X int }
+type ScopedPoint struct { im.Scoped; X int }
 type SharedLink struct { im.Shared; P *SharedPoint }
 ```
 
 | Marker | Pointer policy |
 | --- | --- |
 | `im.Shared` | **Shareable pointers:** copy, store, pass to direct typed functions, or return them. |
-| `im.LocalRef` | **Local pointers:** keep them in local variables or pass them to direct typed non-retaining functions. Value copies can be stored and returned. |
+| `im.Scoped` | **Local pointers:** keep them in local variables or pass them to direct typed non-retaining functions. Value copies can be stored and returned. |
 
 In Rust terms, `Shared` resembles `Rc<T>`/`Arc<T>` with Go's GC managing lifetime;
-`LocalRef` resembles a scoped `&'a T`.
+`Scoped` resembles a scoped `&'a T`.
 
 The allowed stored types are complete below. Every field, key, and element
 must recursively match a row.
@@ -37,9 +37,9 @@ must recursively match a row.
 | Boolean, integer, float, complex, or string | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
 | Defined scalar | `type Count int` |
 | Unnamed array of allowed elements | `[2]int`, `[2]SharedPoint` |
-| Struct with one embedded marker and allowed fields | `SharedPoint`, `LocalRefPoint` above |
+| Struct with one embedded marker and allowed fields | `SharedPoint`, `ScopedPoint` above |
 | Embedded marker alias | `type Mark = im.Shared; type Value struct { Mark; X int }` |
-| Nested marked value, with either marker on the parent or child | `type LocalParent struct { im.LocalRef; Child LocalRefPoint }`, `type SharedParent struct { im.Shared; Child LocalRefPoint }` |
+| Nested marked value, with either marker on the parent or child | `type LocalParent struct { im.Scoped; Child ScopedPoint }`, `type SharedParent struct { im.Shared; Child ScopedPoint }` |
 | Pointer to a concrete Shared struct | `*SharedPoint` |
 | Recursive marked struct | `type SharedNode struct { im.Shared; Next *SharedNode }` |
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
@@ -51,11 +51,11 @@ Rejected type examples (**not exhaustive**):
 | --- | --- |
 | `type Bad struct { Mark im.Shared }` | `type Good struct { im.Shared }` |
 | `type Bad struct { *im.Shared }` | Embed `im.Shared` by value. |
-| `type Bad struct { im.Shared; im.LocalRef }` | Embed one marker. |
+| `type Bad struct { im.Shared; im.Scoped }` | Embed one marker. |
 | `type Bad struct { Child SharedPoint }` | `type Good struct { im.Shared; Child SharedPoint }` |
 | `type Bad struct { Children []SharedPoint }` | `type Good struct { im.Shared; Children im.FrozenSlice[SharedPoint] }` |
-| `type Bad struct { im.Shared; P *LocalRefPoint }` | Store `LocalRefPoint` by value, or use `*SharedPoint` for sharing. |
-| `type Bad struct { im.LocalRef; P *LocalRefPoint }` | `type Good struct { im.LocalRef; P LocalRefPoint }` |
+| `type Bad struct { im.Shared; P *ScopedPoint }` | Store `ScopedPoint` by value, or use `*SharedPoint` for sharing. |
+| `type Bad struct { im.Scoped; P *ScopedPoint }` | `type Good struct { im.Scoped; P ScopedPoint }` |
 | `type Counts [2]int` as a stored type | `type Counts struct { im.Shared; Values [2]int }` |
 
 Allowed generic forms:
@@ -110,11 +110,11 @@ not perform runtime reads or create storage.
 ### Pointers: both markers
 
 These forms apply to both `*SharedPoint` (`im.Shared`) and
-`*LocalRefPoint` (`im.LocalRef`).
+`*ScopedPoint` (`im.Scoped`).
 
 | Allowed form | Example |
 | --- | --- |
-| Declare a zero or nil pointer | `var p *SharedPoint`, `var p *LocalRefPoint = nil` |
+| Declare a zero or nil pointer | `var p *SharedPoint`, `var p *ScopedPoint = nil` |
 | Construct fresh storage | `p := &SharedPoint{X: 1}`, `p := new(SharedPoint)` |
 | Copy a value into fresh storage | `p := new(point)`, `p := new(SharedPoint{X: 1})` |
 | Copy, rebind, or discard a pointer | `q := p`, `p = q`, `p = nil`, `_ = p` |
@@ -148,8 +148,61 @@ Rejected pointer examples (**not exhaustive**):
 | `&[2]SharedPoint{}` | Put the array in a marked struct. |
 | `[]*SharedPoint{{X: 1}}` | Use explicit allocation: `[]*SharedPoint{&SharedPoint{X: 1}}`. |
 | `(*SharedPoint)(nil)` | `var p *SharedPoint = nil` |
-| `return p` with `p *LocalRefPoint` | `return *p` with a `LocalRefPoint` result. |
-| `saved = p` with `p *LocalRefPoint` | Store the value copy `*p`. |
+| `return p` with `p *ScopedPoint` | `return *p` with a `ScopedPoint` result. |
+| `saved = p` with `p *ScopedPoint` | Store the value copy `*p`. |
+
+## Atomic Scoped slots
+
+`im.Owner[T]` holds the current pointer to a concrete, valid `im.Scoped`
+struct. The slot is mutable; the object is immutable. `Load` returns nil
+before the first `Store`. `Store` and `Load` use atomic pointer operations.
+An earlier loaded pointer remains valid after a later `Store`. Go does not
+specify when an unused object is collected.
+
+These allowed forms are complete. Other slot and holder operations are rejected.
+Parentheses preserve these forms. Exported package slots can also use a
+package qualifier.
+
+| Allowed form | Example |
+| --- | --- |
+| Named slot field in an unmarked struct | `type Loader struct { Current im.Owner[ScopedPoint] }` |
+| Zero package slot | `var current im.Owner[ScopedPoint]` |
+| Zero holder local or package variable | `var loader Loader` |
+| Fresh holder pointer in a local | `loader := &Loader{}` or `loader := new(Loader)` |
+| Copy a holder pointer to one local | `other := loader` |
+| Pass a holder pointer to a direct, concrete function | `publish(loader)` where `func publish(l *Loader)` |
+| Store a fresh object in a direct slot field or package slot | `loader.Current.Store(&ScopedPoint{X: 1})`, `current.Store(new(ScopedPoint))` |
+| Load into one local pointer | `point := loader.Current.Load()`, `var point = current.Load()`, `point = current.Load()` |
+
+A named function can publish in a background goroutine:
+
+```go
+func publish(l *Loader) { l.Current.Store(&ScopedPoint{X: 1}) }
+go publish(loader)
+```
+
+A holder is a struct with a direct named slot field. Use holder pointers for
+calls; do not copy a holder or slot value. Slot and holder pointer captures, storage in fields, containers or package
+variables, pointer results, variadic pointer arguments, interfaces, indirect calls,
+user generic arguments, and `go` or `defer` slot operations are unsupported.
+Holder pointers can pass to fixed concrete parameters of direct named functions.
+A direct named publisher can run in a goroutine, as shown above. A loaded pointer follows all Scoped pointer
+rules. Load it into a local before use. A Store argument must be the direct
+`&T{...}` or `new(T)` construction for the slot's exact `T`.
+
+Rejected examples are not exhaustive:
+
+| Rejected form | Allowed replacement |
+| --- | --- |
+| `im.Owner[SharedPoint]` | Use `im.Owner[ScopedPoint]`. |
+| `copy := loader.Current` or `copy := *loader` | Keep and pass `loader` as a pointer. |
+| `loader.Current.Store(point)` | `loader.Current.Store(&ScopedPoint{X: point.X})` |
+| `return loader.Current.Load()` | `point := loader.Current.Load(); return *point` with a value result. |
+| `retain(loader)` where `retain` takes `...*Loader` | Use a direct function with a fixed `*Loader` parameter. |
+| `var saved *Loader` at package scope | Keep the pointer in a local variable. |
+| `read := loader.Current.Load` | `point := loader.Current.Load()` |
+| `loader.Current.Load().X = 2` | `loader.Current.Store(&ScopedPoint{X: 2})` |
+| `type Outer struct { Value Loader }` | Keep the slot field in the unmarked holder. |
 
 ## Statements and calls
 

@@ -16,6 +16,9 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 	if parameter, ok := types.Unalias(t).(*types.TypeParam); ok {
 		return classificationConstraintOracle(parameter.Constraint(), seen)
 	}
+	if IsLibraryType(t, "Owner") {
+		return false
+	}
 	if IsCollection(t) || Marked(t) {
 		return true
 	}
@@ -199,7 +202,7 @@ func classificationShapes(t *testing.T) []types.Type {
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "T", nil), constraint)
 	ordinary := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "U", nil),
 		types.NewInterfaceType(nil, nil).Complete())
-	localName := types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "LocalRef", nil)
+	localName := types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "Scoped", nil)
 	localMarker := types.NewNamed(localName, types.NewStruct(nil, nil), nil)
 	local := markedType("Local", localMarker)
 	results := types.NewTuple(types.NewParam(token.NoPos, nil, "value", value))
@@ -245,6 +248,21 @@ func TestClassificationMatchesWalkers(t *testing.T) {
 			if got := classifier.Contains(typ); got != wantStored {
 				t.Fatalf("shape=%d reverse=%t: Contains=%t, want %t", query, reverse, got, wantStored)
 			}
+		}
+	}
+}
+
+// TestClassifierOwnerIsOpaque checks that slot implementation fields are not immutable storage.
+func TestClassifierOwnerIsOpaque(t *testing.T) {
+	marker, _ := testTypes()
+	value := markedType("Value", marker)
+	field := types.NewField(token.NoPos, marker.Obj().Pkg(), "value", types.NewPointer(value), false)
+	name := types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "Owner", nil)
+	owner := types.NewNamed(name, types.NewStruct([]*types.Var{field}, nil), nil)
+	var queries Classifier
+	for _, typ := range []types.Type{owner, types.NewPointer(owner), types.NewArray(owner, 1)} {
+		if queries.Contains(typ) || Contains(typ) {
+			t.Errorf("Owner implementation is not opaque for %s", typ)
 		}
 	}
 }

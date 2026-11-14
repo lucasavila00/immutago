@@ -3,7 +3,7 @@ package restricted_boundaries
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Local struct {
-	im.LocalRef
+	im.Scoped
 	Value int
 }
 type Node struct {

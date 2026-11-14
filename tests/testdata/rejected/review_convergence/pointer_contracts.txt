@@ -1,12 +1,12 @@
 pointer_contracts.go:10:19: unsupported immutable operation: immutable references require a concrete marked struct target
   source: *im.FrozenSlice[int]
   type: *im.FrozenSlice[int]
-  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
 pointer_contracts.go:12:26: unsupported immutable operation: immutable references require a concrete marked struct target
   source: *im.FrozenSlice[int]
   type: *im.FrozenSlice[int]
-  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
 pointer_contracts.go:14:35: unsupported immutable operation: immutable references require a concrete marked struct target
   source: *[1]PointerValue
   type: *[1]review_convergence.PointerValue
-  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses

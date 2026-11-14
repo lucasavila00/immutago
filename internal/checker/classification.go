@@ -98,6 +98,9 @@ func (c *Classifier) mark(node *classificationNode) {
 
 // expand matches the outgoing edges for one classification mode.
 func (c *Classifier) expand(node *classificationNode) {
+	if IsLibraryType(node.key.typ, "Owner") {
+		return
+	}
 	switch node.key.mode {
 	case constraintMode:
 		c.constraintEdges(node)

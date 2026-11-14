@@ -20,7 +20,7 @@ func TestNilBuilderForms(t *testing.T) {
 		{"generic scalar slice", "type List[T any] []T", "List[int]", "FreezeSlice"},
 		{"marked values", "type V struct{ im.Shared }", "[]V", "FreezeSlice"},
 		{"shared pointers", "type V struct{ im.Shared }", "[]*V", "FreezeSlice"},
-		{"local values", "type V struct{ im.LocalRef }", "[]V", "FreezeSlice"},
+		{"local values", "type V struct{ im.Scoped }", "[]V", "FreezeSlice"},
 		{"marked map", "type V struct{ im.Shared }", "map[*V]V", "FreezeMap"},
 	}
 	for _, tc := range cases {

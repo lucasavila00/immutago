@@ -187,8 +187,9 @@ func protectedPackage(pass *analysis.Pass) bool {
 	if usesImmutable(pass.Pkg) {
 		return true
 	}
+	c := &subsetChecks{}
 	for _, value := range pass.TypesInfo.Types {
-		if value.Type != nil && queries.Contains(value.Type) {
+		if value.Type != nil && (queries.Contains(value.Type) || c.slotRelevant(value.Type)) {
 			return true
 		}
 	}

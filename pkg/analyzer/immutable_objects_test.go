@@ -7,7 +7,7 @@ import (
 
 const immutableTestTypes = `
 type Shared struct { im.Shared; X int; Array [2]int }
-type Local struct { im.LocalRef; X int }
+type Local struct { im.Scoped; X int }
 func readShared(value *Shared) int { if value == nil { return 0 }; return value.X }
 func readLocal(value *Local) int { if value == nil { return 0 }; return value.X }
 `
@@ -47,22 +47,22 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"array field", `func f(){v:=Shared{};v.Array[0]=1}`, "writes to immutable objects"},
 		{"pointer field", `func f(){p:=&Shared{};p.X++}`, "writes to immutable objects"},
 		{"pointer object", `func f(){p:=&Shared{};*p=Shared{X:1}}`, "writes to immutable objects"},
-		{"LocalRef field", `func f(){p:=&Local{};p.X=1}`, "writes to immutable objects"},
+		{"Scoped field", `func f(){p:=&Local{};p.X=1}`, "writes to immutable objects"},
 		{"builder object field", `func f(){v:=[]Shared{{}};v[0].X=1;_=im.FreezeSlice(v)}`, "writes to immutable objects"},
 		{"named address", `func f(){v:=Shared{};p:=&v;_=p}`, "fresh allocation"},
 		{"frozen pointer", `func f(){p:=new(im.FrozenSlice[int]);_=p}`, "concrete marked struct target"},
 		{"array pointer", `func f(){p:=new([2]Shared);_=p}`, "concrete marked struct target"},
-		{"LocalRef return", `func f()*Local{return &Local{}}`, "returning LocalRef pointers"},
-		{"LocalRef nil result", `func f()*Local{return nil}`, "returning LocalRef pointers"},
-		{"LocalRef global", `var p *Local`, "global LocalRef pointers"},
-		{"LocalRef stored field", `type Owner struct{im.Shared;P *Local}`, "LocalRef pointers cannot be stored"},
-		{"LocalRef stored array", `func f(){p:=&Local{};_=[1]*Local{p}}`, "LocalRef"},
-		{"LocalRef stored slice", `func f(){p:=&Local{};values:=[]*Local{p};_=len(values)}`,
-			"containers of LocalRef pointers"},
-		{"LocalRef capture", `func f(){p:=&Local{};_=func()int{return p.X}}`, "closures cannot capture"},
+		{"Scoped return", `func f()*Local{return &Local{}}`, "returning Scoped pointers"},
+		{"Scoped nil result", `func f()*Local{return nil}`, "returning Scoped pointers"},
+		{"Scoped global", `var p *Local`, "global Scoped pointers"},
+		{"Scoped stored field", `type Owner struct{im.Shared;P *Local}`, "Scoped pointers cannot be stored"},
+		{"Scoped stored array", `func f(){p:=&Local{};_=[1]*Local{p}}`, "Scoped"},
+		{"Scoped stored slice", `func f(){p:=&Local{};values:=[]*Local{p};_=len(values)}`,
+			"containers of Scoped pointers"},
+		{"Scoped capture", `func f(){p:=&Local{};_=func()int{return p.X}}`, "closures cannot capture"},
 		{"shared capture", `func f(){p:=&Shared{};_=func()int{return p.X}}`, "closures cannot capture"},
 		{"shared asynchronous", `func f(){p:=&Shared{};go readShared(p)}`, "synchronous"},
-		{"mixed markers", `type Mixed struct{im.Shared;im.LocalRef}`, "cannot embed both"},
+		{"mixed markers", `type Mixed struct{im.Shared;im.Scoped}`, "cannot embed both"},
 		{"generic marked", `type Box[T any]struct{im.Shared;X int}`, "user generic declarations"},
 		{"generic local", `func f[T any](){v:=Shared{};_=v}`, "user generic declarations"},
 		{
@@ -76,8 +76,8 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 			`type Box[T any]struct{V T};func(b Box[T])Read()int{v:=Shared{};return v.X}`,
 			"user generic declarations",
 		},
-		{"LocalRef nil builder", `func f(){values:=[]*Local{nil};_=len(values)}`, "LocalRef"},
-		{"LocalRef empty builder", `func f(){var values []*Local;_=len(values)}`, "LocalRef"},
+		{"Scoped nil builder", `func f(){values:=[]*Local{nil};_=len(values)}`, "Scoped"},
+		{"Scoped empty builder", `func f(){var values []*Local;_=len(values)}`, "Scoped"},
 		{
 			"range interface",
 			`func f(){values:=im.FreezeMap(map[Shared]int{{}:1});var boxed any;for boxed=range values.All(){};_=boxed}`,

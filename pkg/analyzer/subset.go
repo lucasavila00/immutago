@@ -11,6 +11,8 @@ import (
 
 // subsetChecks matches immutable operations and rejects unsupported transport.
 type subsetChecks struct {
+	slots       map[types.Type]bool
+	holderRefs  map[types.Type]bool
 	queries     checker.Classifier
 	pass        *analysis.Pass
 	parents     map[ast.Node]ast.Node
@@ -50,7 +52,8 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 			continue
 		}
 		for i := 0; i < instance.TypeArgs.Len(); i++ {
-			if c.queries.Contains(instance.TypeArgs.At(i)) || c.queries.Callable(instance.TypeArgs.At(i)) {
+			arg := instance.TypeArgs.At(i)
+			if c.queries.Contains(arg) || c.slotRelevant(arg) || c.queries.Callable(arg) {
 				c.report(id, "user generic instantiations with immutable types are unsupported")
 			}
 		}
@@ -169,7 +172,7 @@ func (c *subsetChecks) subsetContainer(t types.Type) string {
 func subsetResults(results *types.Tuple) string {
 	for i := 0; i < results.Len(); i++ {
 		if localReference(results.At(i).Type()) {
-			return "returning LocalRef pointers is unsupported"
+			return "returning Scoped pointers is unsupported"
 		}
 	}
 	return ""
@@ -199,14 +202,17 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 			return
 		}
 	}
+	if c.directSlotMethodExpression(expression) {
+		return
+	}
 	t := c.pass.TypesInfo.TypeOf(expression)
 	if c.pass.TypesInfo.Types[expression].IsType() && c.queries.Callable(t) {
 		if _, declaration := c.parents[expression].(*ast.FuncDecl); !declaration {
 			c.report(expression, "immutable callbacks are unsupported")
 		}
 	}
-	if storedLocalReference(t, make(map[types.Type]bool)) {
-		c.report(expression, "containers of LocalRef pointers are unsupported")
+	if storedScopedReference(t, make(map[types.Type]bool)) {
+		c.report(expression, "containers of Scoped pointers are unsupported")
 	}
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return
@@ -216,8 +222,24 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 	}
 }
 
-// storedLocalReference checks native container elements even when the handle has an ownership proof.
-func storedLocalReference(t types.Type, seen map[types.Type]bool) bool {
+// directSlotMethodExpression identifies method syntax in a checked slot call.
+func (c *subsetChecks) directSlotMethodExpression(expression ast.Expr) bool {
+	selector, ok := expression.(*ast.SelectorExpr)
+	if !ok {
+		id, isName := expression.(*ast.Ident)
+		if !isName {
+			return false
+		}
+		selector, ok = c.parents[id].(*ast.SelectorExpr)
+		if !ok || selector.Sel != id {
+			return false
+		}
+	}
+	return c.ownedSlotSelector(selector) && c.directCall(selector) != nil
+}
+
+// storedScopedReference checks native container elements even when the handle has an ownership proof.
+func storedScopedReference(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] {
 		return false
 	}
@@ -234,7 +256,7 @@ func storedLocalReference(t types.Type, seen map[types.Type]bool) bool {
 		elements = []types.Type{storage.Elem()}
 	}
 	for _, element := range elements {
-		if localReference(element) || storedLocalReference(element, seen) {
+		if localReference(element) || storedScopedReference(element, seen) {
 			return true
 		}
 	}

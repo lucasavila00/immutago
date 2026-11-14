@@ -8,13 +8,13 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// localReference identifies a pointer to a concrete im.LocalRef struct.
+// localReference identifies a pointer to a concrete im.Scoped struct.
 func localReference(t types.Type) bool {
 	if t == nil {
 		return false
 	}
 	pointer, ok := t.Underlying().(*types.Pointer)
-	return ok && checker.LocalRef(pointer.Elem())
+	return ok && checker.Scoped(pointer.Elem())
 }
 
 // operationExpression separates runtime operands from compiler type and field metadata.
@@ -192,6 +192,9 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 	}
 	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) {
 		return "immutable method expressions are unsupported"
+	}
+	if c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
+		return ""
 	}
 	if !c.exactCollectionMethod(selector) {
 		return "user-defined methods with immutable storage are unsupported"

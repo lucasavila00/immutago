@@ -12,10 +12,20 @@ writes to protected fields, array elements, and dereferenced objects.
 Pointers start at fresh allocations of concrete marked structs. Taking a
 named variable's address would expose a slot that can later be rebound, so that
 form is rejected. `Shared` pointers may be copied, stored, and returned.
-`LocalRef` pointers remain local or pass through direct typed calls without
+`Scoped` pointers remain local or pass through direct typed calls without
 escaping. The [source matcher](../../pkg/analyzer/subset_operations.go) checks
 these uses; the [type proof](../../internal/checker/proof.go) rejects stored
-`LocalRef` pointers.
+`Scoped` pointers.
+
+## Atomic Scoped slots
+
+[Owner](../../pkg/im/owner.go) stores a pointer with `atomic.Pointer`. The slot
+is mutable and is not an immutable type. The
+[slot matcher](../../pkg/analyzer/owner_slot.go) checks its type argument,
+receiver, direct call, fresh Store input, and local Load binding. A separate
+slot-bearing value check rejects copies of slots and holders. It also checks
+holder pointer transport and closure captures. The ordinary Scoped checks
+apply to each loaded pointer.
 
 ## Native builders
 

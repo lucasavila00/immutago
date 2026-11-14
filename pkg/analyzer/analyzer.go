@@ -1,6 +1,6 @@
 // Package analyzer exposes the immutago go/analysis analyzer.
 //
-// Structs that embed im.Shared or im.LocalRef are immutable from construction.
+// Structs that embed im.Shared or im.Scoped are immutable from construction.
 // Their fields must be scalars, unnamed arrays, other marked structs, pointers
 // to concrete Shared structs, or frozen collections of allowed types. Each
 // component is checked recursively. Unmarked structs cannot store protected
@@ -10,7 +10,7 @@
 // Whole variable bindings can be replaced. Field, element, and pointer-target
 // writes to protected objects are rejected. Protected pointers start with
 // fresh construction and target concrete marked structs. Shared pointers can
-// be copied, stored, and returned. LocalRef pointers stay local or pass to
+// be copied, stored, and returned. Scoped pointers stay local or pass to
 // direct typed calls that do not retain them. Neither mode permits protected
 // closure captures or protected operations in go or defer.
 //
@@ -66,9 +66,24 @@ func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
 		ast.Inspect(file, c.visit)
 	}
+	checkLibraryArguments(pass, c)
+	checkOwner(pass)
+	checkSubset(pass, freeze.Check(pass))
+	return nil, nil
+}
+
+// checkLibraryArguments proves type arguments of the fixed library types.
+func checkLibraryArguments(pass *analysis.Pass, c *checks) {
 	for ident, instance := range pass.TypesInfo.Instances {
 		obj := pass.TypesInfo.Uses[ident]
 		if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
+			continue
+		}
+		if obj.Name() == "Owner" {
+			arg := instance.TypeArgs.At(0)
+			if !checker.Scoped(arg) || checker.Shared(arg) || checker.Reason(arg) != "" {
+				c.report(ident.Pos(), "Owner requires a concrete, valid Scoped struct")
+			}
 			continue
 		}
 		for i := 0; i < instance.TypeArgs.Len(); i++ {
@@ -78,8 +93,6 @@ func run(pass *analysis.Pass) (any, error) {
 			}
 		}
 	}
-	checkSubset(pass, freeze.Check(pass))
-	return nil, nil
 }
 
 // checks carries one package's state and suppresses duplicate reports at the same position.
@@ -179,7 +192,7 @@ func reflectionValue(t types.Type) bool {
 
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
-	if t == nil || checker.IsCollection(t) {
+	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)
@@ -187,8 +200,8 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		return
 	}
 	marked := checker.Marked(t)
-	if checker.Shared(t) && checker.LocalRef(t) {
-		c.report(pos, "struct cannot embed both im.Shared and im.LocalRef")
+	if checker.Shared(t) && checker.Scoped(t) {
+		c.report(pos, "struct cannot embed both im.Shared and im.Scoped")
 	} else if checker.MarkerCount(t) > 1 {
 		c.report(pos, "struct must embed exactly one immutable marker; each embedded alias counts as a marker")
 	}
@@ -200,7 +213,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		}
 		if invalidMarkerField(field) {
 			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
-				"\n  fix: embed im.Shared or im.LocalRef; remove the marker field name or pointer")
+				"\n  fix: embed im.Shared or im.Scoped; remove the marker field name or pointer")
 			continue
 		}
 		if marked {
@@ -214,7 +227,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+
-				"\n  fix: embed im.Shared or im.LocalRef and make all fields immutable, or remove the immutable field")
+				"\n  fix: embed im.Shared or im.Scoped and make all fields immutable, or remove the immutable field")
 			continue
 		}
 	}
@@ -231,5 +244,5 @@ func invalidMarkerField(field *types.Var) bool {
 
 // markerType identifies either exact library marker before its placement is checked.
 func markerType(t types.Type) bool {
-	return checker.IsLibraryType(t, "Shared") || checker.IsLibraryType(t, "LocalRef")
+	return checker.IsLibraryType(t, "Shared") || checker.IsLibraryType(t, "Scoped")
 }

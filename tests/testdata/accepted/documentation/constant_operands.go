@@ -13,7 +13,7 @@ func constantBuilderOperands() {
 }
 
 type ConstantLocal struct {
-	im.LocalRef
+	im.Scoped
 }
 
 func constantClosureOperands() {

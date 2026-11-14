@@ -1,41 +1,41 @@
-local_reference_escape.go:11:2: immutable field Pointer: LocalRef pointers cannot be stored
+local_reference_escape.go:11:2: immutable field Pointer: Scoped pointers cannot be stored
   owner: local_reference_escape.Stored; field type: *local_reference_escape.Local
   fix: replace the pointer field or argument with an owned immutable value
-local_reference_escape.go:14:5: unsupported immutable operation: global LocalRef pointers are unsupported
+local_reference_escape.go:14:5: unsupported immutable operation: global Scoped pointers are unsupported
   source: global *Local
-  fix: keep the LocalRef pointer local, or store a value copy
-local_reference_escape.go:16:31: unsupported immutable operation: returning LocalRef pointers is unsupported
+  fix: keep the Scoped pointer local, or store a value copy
+local_reference_escape.go:16:31: unsupported immutable operation: returning Scoped pointers is unsupported
   source: return &Local{Value: 1}
-  fix: return a LocalRef value copy, or use im.Shared for objects whose pointers must be shared
-local_reference_escape.go:16:6: unsupported immutable operation: returning LocalRef pointers is unsupported
+  fix: return a Scoped value copy, or use im.Shared for objects whose pointers must be shared
+local_reference_escape.go:16:6: unsupported immutable operation: returning Scoped pointers is unsupported
   source: returned
   type: func() *local_reference_escape.Local
-  fix: return a LocalRef value copy, or use im.Shared for objects whose pointers must be shared
-local_reference_escape.go:17:31: unsupported immutable operation: global LocalRef pointers are unsupported
+  fix: return a Scoped value copy, or use im.Shared for objects whose pointers must be shared
+local_reference_escape.go:17:31: unsupported immutable operation: global Scoped pointers are unsupported
   source: global = value
-  fix: keep the LocalRef pointer local, or store a value copy
-local_reference_escape.go:20:12: unsupported immutable operation: LocalRef pointers cannot enter aggregate storage
+  fix: keep the Scoped pointer local, or store a value copy
+local_reference_escape.go:20:12: unsupported immutable operation: Scoped pointers cannot enter aggregate storage
   source: Stored{Pointer: value}
   type: local_reference_escape.Stored
-  fix: store a LocalRef value copy or a Shared pointer
-local_reference_escape.go:25:13: unsupported immutable operation: containers of LocalRef pointers are unsupported
+  fix: store a Scoped value copy or a Shared pointer
+local_reference_escape.go:25:13: unsupported immutable operation: containers of Scoped pointers are unsupported
   source: []*Local{value}
   type: []*local_reference_escape.Local
-  fix: store LocalRef value copies or im.Shared pointers
-local_reference_escape.go:26:12: immutable collection: type argument 1: LocalRef pointers cannot be stored
+  fix: store Scoped value copies or im.Shared pointers
+local_reference_escape.go:26:12: immutable collection: type argument 1: Scoped pointers cannot be stored
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-local_reference_escape.go:26:15: immutable type argument: LocalRef pointers cannot be stored
+local_reference_escape.go:26:15: immutable type argument: Scoped pointers cannot be stored
   type: *local_reference_escape.Local
   fix: replace the pointer field or argument with an owned immutable value
-local_reference_escape.go:26:27: unsupported immutable operation: containers of LocalRef pointers are unsupported
+local_reference_escape.go:26:27: unsupported immutable operation: containers of Scoped pointers are unsupported
   source: builder
   type: []*local_reference_escape.Local
-  fix: store LocalRef value copies or im.Shared pointers
-local_reference_escape.go:26:2: immutable collection: type argument 1: LocalRef pointers cannot be stored
+  fix: store Scoped value copies or im.Shared pointers
+local_reference_escape.go:26:2: immutable collection: type argument 1: Scoped pointers cannot be stored
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-local_reference_escape.go:27:6: immutable collection: type argument 1: LocalRef pointers cannot be stored
+local_reference_escape.go:27:6: immutable collection: type argument 1: Scoped pointers cannot be stored
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 local_reference_escape.go:31:34: unsupported immutable operation: closures cannot capture immutable storage
@@ -54,8 +54,8 @@ local_reference_escape.go:44:2: unsupported immutable operation: protected stora
 local_reference_escape.go:45:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer readLocal(value)
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-local_reference_escape.go:48:11: struct cannot embed both im.Shared and im.LocalRef
-local_reference_escape.go:48:6: struct cannot embed both im.Shared and im.LocalRef
-local_reference_escape.go:56:2: immutable field Pointer: LocalRef pointers cannot be stored
+local_reference_escape.go:48:11: struct cannot embed both im.Shared and im.Scoped
+local_reference_escape.go:48:6: struct cannot embed both im.Shared and im.Scoped
+local_reference_escape.go:56:2: immutable field Pointer: Scoped pointers cannot be stored
   owner: local_reference_escape.LocalStored; field type: *local_reference_escape.Local
   fix: replace the pointer field or argument with an owned immutable value
