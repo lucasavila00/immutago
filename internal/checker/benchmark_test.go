@@ -35,8 +35,8 @@ func benchmarkCoreReasonGraph(b *testing.B, shape string, size int, valid bool) 
 	}
 }
 
-// BenchmarkCoreContains measures searches through unmarked recursive storage.
-func BenchmarkCoreContains(b *testing.B) {
+// BenchmarkCoreContainsCold measures a fresh classifier on unmarked recursive storage.
+func BenchmarkCoreContainsCold(b *testing.B) {
 	for _, size := range []int{16, 128, 1024} {
 		for _, protected := range []bool{false, true} {
 			b.Run(fmt.Sprintf("Cycle/%d/protected=%t", size, protected), func(b *testing.B) {
