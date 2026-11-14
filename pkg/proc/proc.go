@@ -71,7 +71,7 @@ type Supervisor struct {
 
 // child is one process or nested supervisor and its current goroutine.
 type child struct {
-	run  func(context.Context)
+	run  func(context.Context) // nil while a permanent stop waits for the current watcher
 	stop context.CancelFunc
 	done chan struct{}
 }
@@ -108,7 +108,8 @@ func root(exit func(any)) *Supervisor {
 	return s
 }
 
-// StartSupervisor returns a new supervisor that parent runs as a child. After Stop, parent releases it.
+// StartSupervisor returns a new supervisor that parent runs as a child.
+// When the nested supervisor's Stop channel closes, its parent has removed its child entry.
 func StartSupervisor(parent *Supervisor) *Supervisor {
 	nested := &Supervisor{stopped: make(chan struct{}), parent: parent}
 	nested.entry = parent.add(nested.serve)
@@ -161,10 +162,11 @@ func (s *Supervisor) Stop() <-chan struct{} {
 		s.stopping = true
 		go func() {
 			s.halt()
-			close(s.stopped)
 			if s.parent != nil {
 				s.parent.release(s.entry)
+				s.parent, s.entry = nil, nil
 			}
+			close(s.stopped)
 		}()
 	}
 	return s.stopped
@@ -184,19 +186,25 @@ func (s *Supervisor) add(run func(context.Context)) *child {
 	return c
 }
 
-// release waits for a stopped child to return and removes it, so s keeps no reference to it.
+// release cancels a child, prevents another launch, and removes it after its watcher returns.
 func (s *Supervisor) release(c *child) {
 	s.mu.Lock()
-	done := c.done
+	c.run = nil
+	stop, done := c.stop, c.done
 	s.mu.Unlock()
+	stop()
 	<-done
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// Keep the child order stable for any halt already reading a snapshot.
 	s.children = slices.DeleteFunc(slices.Clone(s.children), func(other *child) bool { return other == c })
 }
 
 // launch runs c in a new goroutine. The caller holds s.mu.
 func (s *Supervisor) launch(c *child) {
+	if c.run == nil {
+		return
+	}
 	ctx, cancel := context.WithCancel(s.ctx)
 	c.stop, c.done = cancel, make(chan struct{})
 	go watch(ctx, c.run, s.failure, c.done)

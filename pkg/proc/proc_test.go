@@ -265,14 +265,17 @@ func TestStopNestedReleases(t *testing.T) {
 			nested := StartSupervisor(root)
 			Start[second](nested, None{})
 			synctest.Wait()
+			entry := nested.entry
 			<-nested.Stop()
-			synctest.Wait()
+			if nested.parent != nil || nested.entry != nil || entry.run != nil {
+				t.Error("stopped supervisor keeps its parent links or run callback")
+			}
 		}
 		root.mu.Lock()
 		children := len(root.children)
 		root.mu.Unlock()
 		if children != 1 {
-			t.Fatalf("root keeps %d children, want 1", children)
+			t.Errorf("root keeps %d children, want 1", children)
 		}
 		takeEvents()
 		<-root.Stop()
