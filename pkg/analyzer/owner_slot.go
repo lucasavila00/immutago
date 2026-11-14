@@ -6,7 +6,6 @@ import (
 	"go/types"
 
 	"github.com/lucasavila00/immutago/internal/checker"
-	"golang.org/x/tools/go/analysis"
 )
 
 // ownedSlotSelector resolves a method on the sealed slot type.
@@ -110,28 +109,6 @@ func (c *subsetChecks) slotRelevant(t types.Type) bool {
 		t = pointer.Elem()
 	}
 	return false
-}
-
-// checkOwner rejects all slot and holder value operations except the listed forms.
-func checkOwner(pass *analysis.Pass) {
-	c := &subsetChecks{pass: pass, parents: make(map[ast.Node]ast.Node)}
-	for _, file := range pass.Files {
-		var stack []ast.Node
-		ast.Inspect(file, func(n ast.Node) bool {
-			if n == nil {
-				stack = stack[:len(stack)-1]
-				return false
-			}
-			if len(stack) > 0 {
-				c.parents[n] = stack[len(stack)-1]
-			}
-			stack = append(stack, n)
-			return true
-		})
-	}
-	for _, file := range pass.Files {
-		ast.Inspect(file, func(n ast.Node) bool { c.checkOwnerNode(n); return true })
-	}
 }
 
 // checkOwnerNode verifies slot placement and value uses.
