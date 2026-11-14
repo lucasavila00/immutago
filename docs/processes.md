@@ -1,25 +1,5 @@
 # Supervised processes
 
-[Language guide](rules.md) · [Stored types](common-forms.md#markers-and-stored-types) · [Process API](../pkg/proc/readme.md)
-
-Use `proc` for a service that runs in the background, such as a config loader,
-cache refresher, or rate limiter. Start it with its arguments, keep its
-PID, and call its exported methods directly. Those methods take and return
-[allowed stored types](common-forms.md#markers-and-stored-types), including PIDs.
-
-The analyzer checks four rules: fields are selected through the receiver in its
-methods; exported method parameters/results, and start arguments that contain
-protected storage, use allowed stored types; process pointers are used only for the listed direct calls; and
-only `Start` or `StartReserved` creates a process.
-
-The existing immutable-field and Owner rules still apply. In particular, mutable
-process structs publish protected data through Owner fields.
-
-Method bodies are ordinary Go. These checks do not isolate mutable state:
-`shared = &p.count` or `p.table = globalMap` can share memory through globals or
-helpers, and ordinary start arguments, such as a logger or a client, share
-memory with the code that started the process. Methods must follow their API contracts and synchronize shared state.
-
 ```go
 package main
 
@@ -53,6 +33,41 @@ func main() {
     <-root.Stop()
 }
 ```
+
+Methods use ordinary Go. Use locks where needed, as in `Add` above.
+
+## Not checked
+
+The checker controls what goes into and out of a process: start arguments,
+method parameters and results, and process pointers. It does not check package
+variables or the functions that use them. Two processes can share a mutable
+global, and the checker accepts the program:
+
+```go
+var seen = map[string]int{}
+
+type Counter struct{ proc.Process[proc.None] }
+
+func (*Counter) Run(ctx context.Context) {
+    for ctx.Err() == nil {
+        seen["hits"]++ // Reader reads the same map: a data race
+    }
+}
+
+type Reader struct{ proc.Process[proc.None] }
+
+func (*Reader) Run(ctx context.Context) {
+    for ctx.Err() == nil {
+        _ = seen["hits"]
+    }
+}
+```
+
+`go test -race` finds this race; the checker does not. Keep shared state in one
+process and publish it through an `im.Owner` field, or protect the global with a
+lock.
+
+## Allowed forms
 
 The [config loader](../tests/testdata/accepted/process/config_loader.go) and
 [limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
@@ -113,7 +128,7 @@ Rejected examples are not exhaustive:
 | `type Bad struct { proc.Process[proc.None]; im.Shared }`, `M proc.Process[proc.None]`, `*proc.Process[proc.None]` | Embed one `proc.Process[A]` by value and no `im` marker. |
 | `type Bad struct { proc.Process[proc.None]; limits im.FrozenMap[string, int] }` | Put immutable data in the arguments, or publish it through an `im.Owner` field. |
 
-The runtime behavior is not part of the proof:
+## Start, restart, and stop
 
 - `Start` creates a new process value, gives it the arguments, calls `Init` if
   the process declares it, stores the value in the PID, and runs `Run` in a new
@@ -126,16 +141,17 @@ The runtime behavior is not part of the proof:
   restart in the last 5 minutes. It then creates a fresh value from the same
   arguments, calls `Init`, publishes it through the PID, and calls `Run`. `im.Owner` fields
   start empty again. Calls during the delay use the old value; calls already
-  in progress finish on that value. Reserving PIDs is not a group-start barrier:
-  a call to a peer that has not started can panic and cause this retry.
+  in progress finish on that value. Reserve does not wait for
+  other processes to start. Calling a reserved PID before StartReserved can
+  panic and cause a retry.
 - A sixth panic from the same child in 5 minutes stops the other children of the supervisor in
   reverse start order and escalates to the parent supervisor, which restarts
   the subtree with the same rule. At the root, the last panic value panics
   again and the program exits.
 - `proc.StartSupervisor(parent)` nests a supervisor. `Stop` begins stopping;
   its channel closes when all children have stopped, last started first.
-  After a nested supervisor stops, its parent keeps no reference to it.
+  When a nested supervisor's own Stop channel closes, its parent has removed
+  its child entry.
   Cancellation is cooperative: `Run` must observe its context. Stop does not
   wait for direct method calls, and methods must synchronize their shared state.
 - `proctest.NewRoot(t)` fails a test whose process tree does not stop in 5 s.
-

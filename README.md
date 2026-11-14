@@ -10,6 +10,8 @@ and pointer use; it does not guarantee prompt collection or prevent all leaks.
 
 Run [supervised processes](docs/processes.md) with package `proc`; their exported
 methods take and return only immutable values and PIDs.
+The checker does not check package variables, so processes can still share a
+mutable global. See [what is not checked](docs/processes.md#not-checked).
 
 The analyzer must run; `go build` alone does not enforce these rules.
 

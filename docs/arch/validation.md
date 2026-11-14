@@ -1,7 +1,5 @@
 # Validation
 
-[Architecture](README.md) · [Review requirements](../reviewer-focus.md)
-
 ## Trust boundary
 
 The checker trusts the Go compiler, runtime, standard library, and fixed `im`

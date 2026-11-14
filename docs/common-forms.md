@@ -1,14 +1,9 @@
 # Common source forms
 
-[Language guide](rules.md) · [Shared](shared.md) · [Scoped](scoped.md) · [Frozen collections](frozen.md)
-
 These forms apply to structs that embed Shared or Scoped, and to frozen slices
 and maps. Combine them with the forms on the type's page. The lists are complete;
 other operations on these values are rejected. Rejected examples are not exhaustive.
 [Owner](owner.md) has its own forms.
-
-[Types](#markers-and-stored-types) · [Values](#construction-and-scalar-reads) ·
-[Pointers](#common-pointer-forms) · [Statements](#statements-and-calls)
 
 ## Markers and stored types
 
@@ -69,10 +64,6 @@ Rejected generic examples (**not exhaustive**):
 
 ## Construction and scalar reads
 
-Calculate field values in local variables, then create the object. To change a
-value, create another object. Copies of frozen collections and Shared pointers
-use the same read-only data.
-
 ```go
 x := 1
 if condition { x = 2 }
@@ -100,10 +91,6 @@ does not remove its rules.
 Go does not evaluate operands used only for a compiler constant, such as the
 array in `len([1]SharedPoint{})`; these forms are allowed.
 
-Strings also follow ordinary Go rules, including when read from a marked field.
-Ordinary library APIs are trusted to keep string bytes immutable. There is no
-string provenance tracking or automatic copy. See the [package boundary](rules.md#package-boundary).
-
 ## Common pointer forms
 
 These forms apply to both `*SharedPoint` (`im.Shared`) and
@@ -119,9 +106,9 @@ These forms apply to both `*SharedPoint` (`im.Shared`) and
 | Compare pointers or nil | `same := p == q`, `if p != nil { ... }` |
 | Pass to a direct function with an exact concrete parameter type | `read(p)`; `func read(p *SharedPoint) int { return p.X }` |
 
-Parentheses and aliases preserve the pointer forms here and on the marker pages.
-Targets are concrete marked structs. Pointers originate in the listed fresh
-constructions.
+Type aliases and parentheses are allowed in these forms. A pointer must point
+to a struct with an im marker. Create it with one of the `new` or `&T{...}`
+forms above; do not take the address of an existing variable.
 
 Rejected pointer examples (**not exhaustive**):
 
@@ -158,9 +145,9 @@ The one-destination rule applies to assignments and declarations, not returns.
 `Get` is the only two-destination exception; both destinations must be new local
 names or blanks. Blocks, `break`, and `continue` follow ordinary Go rules.
 Assignments to package variables follow the same one-destination rule.
-Calls carrying protected values or pointers must be direct, synchronous, and
-concretely typed; packages using these contracts are checked under the
-[package boundary](rules.md#package-boundary).
+Pass these values and pointers to named functions with the exact parameter
+type, such as `func read(p *SharedPoint) int`. Call the function normally,
+without `go` or `defer`.
 
 Rejected statement and call examples (**not exhaustive**):
 

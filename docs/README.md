@@ -4,15 +4,15 @@
 
 - [Get started](getting-started.md): a complete example and check commands.
 - [Language guide](rules.md): choose a type and check the supported forms.
-- [Shared](shared.md) and [Scoped](scoped.md): immutable objects with different pointer-retention rules.
-- [Owner](owner.md): publish fresh Scoped objects through atomic slots.
+- [Shared](shared.md) and [Scoped](scoped.md): choose whether pointers can be saved or returned.
+- [Owner](owner.md): replace the current Scoped object while readers use the previous one.
 - [Frozen collections](frozen.md): builders, Freeze, reads, and Clone.
 - [Unchecked values](unchecked.md): the one trusted, unproven value.
 - [Common forms](common-forms.md): stored types, value operations, pointers, and statements.
 - [Collection API](../pkg/im/readme.md): signatures, zero values, and iteration.
 - [Supervised processes](processes.md): typed start arguments and direct calls.
 - [Process API](../pkg/proc/readme.md): supervisors, PIDs, and restarts.
-- [Performance](performance.md): storage sharing, Clone, and cost checks.
+- [Performance](performance.md): operation costs.
 
 ## Maintainers
 

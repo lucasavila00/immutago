@@ -1,7 +1,5 @@
 # Development
 
-[Documentation](README.md) · [Architecture](arch/README.md) · [Review](reviewer-focus.md)
-
 Use the Go version in [go.mod](../go.mod). Run repository commands from the root.
 Read the [rules](rules.md), then change the matcher, proof checks, documentation,
 and accepted/rejected tests together. Each new form needs a rejecting fallback.
