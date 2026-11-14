@@ -45,11 +45,12 @@ fields of a process are not protected storage. The
   [type proof](../../internal/checker/proof.go). A PID is a leaf of that proof.
 - The type argument of `proc.Process` must pass the same proof.
 - `Process.Supervisor` is valid only as a direct synchronous call on the
-  receiver of `Run`, outside function literals. Its result must be the first
-  argument of a direct synchronous `proc.Start`, `proc.StartReserved`, or
-  `proc.StartSupervisor` call, directly or through one local variable from `:=`
-  that has no other use. The supervisor of a run therefore does not escape the
-  run, and only the runtime stops it.
+  receiver of a process method, outside function literals. Its result must be
+  the first argument of a direct synchronous `proc.Start`, `proc.StartReserved`,
+  or `proc.StartSupervisor` call, directly or through one local variable from
+  `:=` that has no other use. The supervisor of a run therefore does not escape
+  the process, and only the runtime stops it. A nested supervisor from
+  `proc.StartSupervisor` is an ordinary value; it stops with the run.
 
 A process is not an Owner holder; the holder pointer rules do not apply to it.
 Methods with a process receiver are exempt from the rule against user-defined
