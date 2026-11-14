@@ -41,8 +41,12 @@ const testRuntime = `package proc
  type Process[A any] struct { args A }
  func (p *Process[A]) Args() A { return p.args }
  func (p *Process[A]) bind(args A) { p.args = args }
+ func (p *Process[A]) Supervisor() *Supervisor { return nil }
  type None struct { im.Shared }
  type Supervisor struct{}
+ func NewRoot(func(any, []byte)) *Supervisor { return nil }
+ func StartSupervisor(parent *Supervisor) *Supervisor { return nil }
+ func (s *Supervisor) Stop() <-chan struct{} { return nil }
  type PID[T any] struct { value *T }
  func (p PID[T]) Proc() *T { return p.value }
  func Reserve[T any]() PID[T] { return PID[T]{} }

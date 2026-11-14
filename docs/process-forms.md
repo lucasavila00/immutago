@@ -5,8 +5,11 @@ For a complete example and the execution, restart, and stop rules, read
 
 The [config loader](../tests/testdata/accepted/process/config_loader.go) and
 [limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
-and PIDs in start arguments. The tables use those example types, and the
-`FetcherArgs` type from [unchecked dependencies](processes.md#unchecked-dependencies).
+and PIDs in start arguments. The
+[worker pool](../tests/testdata/accepted/process/worker_pool.go) starts children;
+the [dispatcher](../tests/testdata/accepted/process/dispatcher.go) adds and removes
+child groups from its methods. The tables also use `FetcherArgs` from
+[unchecked dependencies](processes.md#unchecked-dependencies).
 
 These allowed forms are complete. Other uses of a process, its type name, a
 process pointer from `Proc()`, or a `proc.UncheckedDependency` are rejected. Parentheses preserve these forms.
@@ -47,6 +50,18 @@ Dependency values also use the [common statement forms](common-forms.md#statemen
 | Reserve a PID and start it later, for processes that need each other's PID | `pong := proc.Reserve[Pong](); ping := proc.Start[Ping](root, pong); proc.StartReserved(root, pong, ping)` |
 | Name a process type in its declaration, a pointer receiver, or the single type argument of `proc.Start`, `proc.StartReserved`, `proc.Reserve`, or `proc.PID` | `proc.PID[ConfigLoader]`, `proc.Reserve[Pong]()` |
 
+## Start children
+
+These `Supervisor()` forms are allowed only inside a process method, outside
+function literals. All calls below are direct and synchronous. For the worker
+and group examples, read [Child processes](process-children.md).
+
+| Allowed form | Example |
+| --- | --- |
+| Pass `p.Supervisor()` as the first argument of `proc.Start`, `proc.StartReserved`, or `proc.StartSupervisor`, where `p` is the receiver | `proc.Start[Worker](p.Supervisor(), WorkerArgs{ID: i})`, `proc.StartReserved(p.Supervisor(), spare, args)`, `proc.StartSupervisor(p.Supervisor())` |
+| Bind `p.Supervisor()` to one new local with `:=`; use that local only as the first argument of those three functions in the same method | `sup := p.Supervisor(); for i := range p.Args().Workers { proc.Start[Worker](sup, WorkerArgs{ID: i}) }` |
+| Keep, store, start under, and stop the result of `proc.StartSupervisor(p.Supervisor())`; it is an ordinary `*proc.Supervisor` | `sub := proc.StartSupervisor(d.Supervisor()); d.groups[name] = group{sub: sub}`, later `<-g.sub.Stop()` |
+
 ## Unchecked dependencies
 
 | Allowed form | Example |
@@ -81,6 +96,13 @@ These examples are not exhaustive.
 | In a method: `go l.publish()`, `defer l.publish()`, `f := l.publish` | Call `l.publish()` directly; use `defer l.mu.Unlock()` for field cleanup. |
 | In a method: `func() { l.version++ }` | Move the work into a method. |
 | In a method: `l.Process`, `&l.Process`, `f := l.Args` | `args := l.Args()` |
+| In a method: `p.sup = p.Supervisor()`, `saved = p.Supervisor()`, `keep(p.Supervisor())`, `_ = p.Supervisor()` | `proc.Start[Worker](p.Supervisor(), args)` |
+| In a method: `p.Supervisor().Stop()`, `sup := p.Supervisor(); <-sup.Stop()` | Stop a nested supervisor: `sub := proc.StartSupervisor(p.Supervisor())`, later `<-sub.Stop()`. The runtime stops the supervisor of the run. |
+| In a method: `get := p.Supervisor`, `go p.Supervisor()`, `go proc.Start[Worker](p.Supervisor(), args)`, `defer proc.StartSupervisor(sup)` | Call `proc.Start[Worker](p.Supervisor(), args)` directly. |
+| In a method: `func() { proc.Start[Worker](p.Supervisor(), args) }()`, `sup := p.Supervisor(); go func() { proc.Start[Worker](sup, args) }()` | Start the child in the method, outside the function literal. |
+| In a method: `var sup = p.Supervisor()`, `sup = p.Supervisor()`, `sup, n := p.Supervisor(), 1`, `other := sup`, `keep(sup)` | `sup := p.Supervisor()`, then `proc.Start[Worker](sup, args)` |
+| `func (p *WorkerPool) owned() *proc.Supervisor { return p.Supervisor() }` | Return `proc.StartSupervisor(p.Supervisor())`, or start the children in the method. |
+| `pool.Proc().Supervisor()`, `p.Process.Supervisor()`, `(*proc.Process[PoolArgs]).Supervisor` | A process starts children only under its own run, in its own methods. |
 | `&ConfigLoader{}`, `var l ConfigLoader`, `new(ConfigLoader)` | `proc.Start[ConfigLoader](root, args)` |
 | `func use(l *ConfigLoader)`, `type L = ConfigLoader`, `type Outer struct { ConfigLoader }`, `(*ConfigLoader).Version` | Pass a `proc.PID[ConfigLoader]`. |
 | `proc.Start[ConfigLoader, LoaderArgs](root, args)` | `proc.Start[ConfigLoader](root, args)` |

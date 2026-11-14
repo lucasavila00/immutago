@@ -140,9 +140,26 @@ only with `l.Args().Log.Value()` in a process method. The
 
 ## Start and readiness
 
-Start publishes the new struct before Run begins. A method can therefore run
-before Run initializes any fields. Put required initial data in the start
-arguments, and make methods handle the zero values of other fields.
+A caller can call a process method before Run starts. Keep required data in
+the start arguments. If Run and another method both need a private field,
+initialize it under a mutex:
+
+```go
+func (w *Waker) wakeChannel() chan struct{} {
+    w.mu.Lock()
+    defer w.mu.Unlock()
+    if w.wake == nil {
+        w.wake = make(chan struct{}, 1)
+    }
+    return w.wake
+}
+```
+
+Both `Run` and `Wake` call this method in the
+[waker example](../tests/testdata/accepted/process/waker.go). A caller can request
+work before Run begins; the channel holds that request.
+Loading a file or waiting for a server is a separate readiness condition. Expose
+that condition through a process method, such as `Ready() bool`.
 
 For two processes that need each other's PID, Reserve one PID, start the first
 process, then call StartReserved for the reserved PID. Reserve does not wait
@@ -151,16 +168,16 @@ calls so that both processes have started.
 
 ## Restart and failure
 
-If Run returns, it is not restarted. If Run panics, the supervisor waits before
-restarting it: 1 second after the first panic, then twice as long for each
-restart in the last 5 minutes. It creates a new struct from the same start
+If Run returns, it is not restarted, and its supervisor removes it. If Run
+panics, the supervisor waits before restarting it: 1 second after the first
+panic, then twice as long for each restart in the last 5 minutes. It creates a new struct from the same start
 arguments and replaces the value behind the PID. Mutable fields return to their
 zero values, including empty Owner fields.
 
 During the delay, PID calls still use the old struct. A call already in progress
-finishes on that old struct after the replacement. A method panic propagates in the caller's goroutine. The supervisor handles
-it only if it leaves a supervised Run. The restart rules apply to the process
-whose Run failed.
+finishes on that old struct after the replacement. A method panic propagates
+in the caller's goroutine. The supervisor handles it only if it leaves a
+supervised Run. The restart rules apply to the process whose Run failed.
 
 A sixth panic from the same child in 5 minutes stops its siblings, last started
 first, and passes the failure to the parent supervisor. The parent restarts the
@@ -190,8 +207,25 @@ calls. A PID can still call methods on its last struct after Run ends or Stop
 completes.
 
 Use `proc.StartSupervisor(parent)` to stop a group together and restart that
-group after a child exceeds the restart limit. In tests, [proctest.NewRoot(t)](../pkg/proc/proctest/readme.md) stops the
-tree during cleanup and fails if it does not stop within 5 seconds.
+group after a child exceeds the restart limit. In tests,
+[proctest.NewRoot(t)](../pkg/proc/proctest/readme.md) stops the tree during
+cleanup and fails if it does not stop within 5 seconds.
+
+## Start children
+
+Use `p.Supervisor()` when a process decides which workers to run. For example,
+a dispatcher can add one group for each configuration entry and remove a group
+when that entry is deleted. These children stop with the process. A restart
+starts a new process with no children; its Run builds the groups again.
+
+```go
+proc.Start[Worker](p.Supervisor(), WorkerArgs{ID: 1})
+```
+
+To stop a group separately, start it with
+`sub := proc.StartSupervisor(p.Supervisor())`, then wait on `<-sub.Stop()`.
+The [child-process guide](process-children.md) shows a worker pool and a
+dispatcher that changes its groups while it runs.
 
 ## Not checked
 
@@ -199,6 +233,10 @@ These checks do not isolate ordinary mutable state. Two processes can still
 access the same global map or share data through ordinary helper functions.
 Use locks for that data, and run tests with `go test -race`. The race detector
 can find a race only when the test executes the conflicting accesses.
+
+The checker does not check whether a child PID belongs to an old run. See
+[child lifetimes](process-children.md#child-lifetimes) before storing or sharing
+child PIDs.
 
 ## Reference
 
