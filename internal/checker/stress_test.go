@@ -54,14 +54,7 @@ func stressReaches(edges [][]int, root, target int) bool {
 // TestStressProofReachability checks all edge patterns in a small cyclic graph.
 func TestStressProofReachability(t *testing.T) {
 	for mask := 0; mask < 256; mask++ {
-		edges := make([][]int, 4)
-		for node := range edges {
-			for edge := 0; edge < 2; edge++ {
-				if mask&(1<<(node*2+edge)) != 0 {
-					edges[node] = append(edges[node], (node+edge+1)%4)
-				}
-			}
-		}
+		edges := stressPatternEdges(mask)
 		for bad := -1; bad < len(edges); bad++ {
 			nodes := stressGraph(edges, bad, mask%2 == 0)
 			for root, node := range nodes {
@@ -75,6 +68,19 @@ func TestStressProofReachability(t *testing.T) {
 			}
 		}
 	}
+}
+
+// stressPatternEdges selects the eight possible edges in a four-node graph.
+func stressPatternEdges(mask int) [][]int {
+	edges := make([][]int, 4)
+	for node := range edges {
+		for edge := 0; edge < 2; edge++ {
+			if mask&(1<<(node*2+edge)) != 0 {
+				edges[node] = append(edges[node], (node+edge+1)%4)
+			}
+		}
+	}
+	return edges
 }
 
 // stressEdges builds chains, repeated-edge fanout graphs, and cycles.
