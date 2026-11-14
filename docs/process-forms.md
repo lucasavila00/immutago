@@ -21,23 +21,24 @@ Dependency values also use the [common statement forms](common-forms.md#statemen
 | --- | --- |
 | Named, non-generic struct with one `proc.Process[A]` embedded by value; `A` is an [allowed stored type](common-forms.md#markers-and-stored-types), a `proc.ConcurrentSafe[T]`, or a struct with exactly one `im` marker whose fields are allowed stored types or named `proc.ConcurrentSafe[T]` fields; the other fields are ordinary Go without [protected storage](rules.md), or [Owner](owner.md) fields | `type ConfigLoader struct { proc.Process[LoaderArgs]; mu sync.Mutex; current im.Owner[Config] }` |
 | Process without arguments | `type Cache struct { proc.Process[proc.None]; hits int }` |
+| Declare setup on the process, or use the embedded default | `func (l *ConfigLoader) Init() error { ... }` (no parameters, exact `error` result) |
 | Declare the entry point on the process | `func (l *ConfigLoader) Run(ctx context.Context) { ... }` (no results) |
 | Method with a pointer receiver | `func (l *ConfigLoader) Version() int { return l.version }` |
-| Exported method other than `Run` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (l *Limiter) Usage() Usage` |
+| Exported method other than `Init` and `Run` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (l *Limiter) Usage() Usage` |
 
 ## Use fields and arguments inside methods
 
 | Allowed form | Example |
 | --- | --- |
 | In a method, select a field of the receiver other than the marker | `l.version++`, `l.mu.Lock()`, `defer l.mu.Unlock()`, `l.current.Store(&Config{})` |
-| In a method, call a method of the receiver directly and synchronously, other than `Run` | `l.publish()`, `l.Lock()` for an embedded `sync.Mutex` |
+| In a method, call a method of the receiver directly and synchronously, other than `Init` and `Run` | `l.publish()`, `l.Lock()` for an embedded `sync.Mutex` |
 | In a method, read the arguments with a direct call | `args := l.Args()`, `l.Args().Loader.Proc().Limit(l.Args().Key)` |
 
 ## Call methods and pass PIDs
 
 | Allowed form | Example |
 | --- | --- |
-| Call an exported method other than `Run`, declared on the process, directly and synchronously on `pid.Proc()` | `v := loader.Proc().Version()`, `(loader.Proc()).Version()` |
+| Call an exported method other than `Init` and `Run`, declared on the process, directly and synchronously on `pid.Proc()` | `v := loader.Proc().Version()`, `(loader.Proc()).Version()` |
 | Call through a PID in a field of a marked value | `peers.Loader.Proc().Version()` |
 | Keep, copy, store, pass, or return a PID | `type Peers struct { im.Shared; Loader proc.PID[ConfigLoader] }` |
 | Call through a PID in a function literal | `defer func() { limiter.Proc().Take() }()` |
@@ -46,9 +47,16 @@ Dependency values also use the [common statement forms](common-forms.md#statemen
 
 | Allowed form | Example |
 | --- | --- |
-| Start a process with its arguments | `loader := proc.Start[ConfigLoader](root, LoaderArgs{Path: "config.json", Every: time.Minute})` |
-| Reserve a PID and start it later, for processes that need each other's PID | `pong := proc.Reserve[Pong](); ping := proc.Start[Ping](root, pong); proc.StartReserved(root, pong, ping)` |
+| Start a process with its arguments | `loader, err := proc.Start[ConfigLoader](root, args)` |
+| Reserve a PID and start it later | `pong := proc.Reserve[Pong](); err := proc.StartReserved(root, pong, ping)` |
+| When Start has protected arguments, bind its results with `:=` or `=` to two local names or blanks | `loader, err := proc.Start[Loader](root, args); loader, err = proc.Start[Loader](root, args)` |
+| Bind Start results in a local declaration | `var loader, err = proc.Start[Loader](root, args)` |
+| Forward Start results from a named function with `(proc.PID[T], error)` results | `return proc.Start[Loader](root, args)` |
 | Name a process type in its declaration, a pointer receiver, or the single type argument of `proc.Start`, `proc.StartReserved`, `proc.Reserve`, or `proc.PID` | `proc.PID[ConfigLoader]`, `proc.Reserve[Pong]()` |
+
+Start calls with only ordinary arguments, such as `proc.Start[Counter](root, 1)`,
+follow ordinary Go binding rules. The extra pair-binding form above applies
+when arguments contain protected storage.
 
 ## Start children
 
@@ -87,7 +95,10 @@ These examples are not exhaustive.
 | `func (l ConfigLoader) Version() int` | `func (l *ConfigLoader) Version() int` |
 | `p := loader.Proc()`, `saved = loader.Proc()`, `use(loader.Proc())`, `loader.Proc() == nil` | Keep the PID; call the method directly. |
 | `loader.Proc().version`, `loader.Proc().Args()` | Add an exported method. |
-| `loader.Proc().Run(ctx)`, `l.Run(ctx)` | Only the supervisor calls `Run`. |
+| `loader.Proc().Init()`, `l.Init()`, `loader.Proc().Run(ctx)`, `l.Run(ctx)` | Only the runtime calls Init and Run. |
+| `Init(int) error`, `Init()`, `Init() *MyError`, or a value receiver on Init | Declare `func (l *ConfigLoader) Init() error`, or omit it. |
+| Init promoted from a user embedded struct | Declare Init on the process, or use the default from `proc.Process`. |
+| `holder.PID, err = proc.Start[Loader](root, protectedArgs)` | Bind the results to locals, then assign `holder.PID` separately. |
 | `loader.Proc().publish()`, `loader.Proc().Lock()` for an embedded `sync.Mutex` | Declare an exported method on the process. |
 | `f := loader.Proc().Version`, `get := loader.Proc` | `v := loader.Proc().Version()` |
 | `go loader.Proc().Version()` | `go func() { loader.Proc().Version() }()` |
