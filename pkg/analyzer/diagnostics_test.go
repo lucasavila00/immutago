@@ -35,16 +35,24 @@ func TestStructuralDiagnosticContext(t *testing.T) {
 	}
 }
 
-// TestDependencyFailureDeduplication retains distinct local errors and removes repeated reports.
-func TestDependencyFailureDeduplication(t *testing.T) {
-	failures := []proofFailure{
+// TestDependencyWitnessSelection keeps the first cause without changing local errors or imported facts.
+func TestDependencyWitnessSelection(t *testing.T) {
+	failures := [...]proofFailure{
 		{Location: "origin/a.go:1:1", Message: "rule A"},
 		{Location: "origin/b.go:2:1", Message: "rule B"},
 		{Location: "origin/a.go:1:1", Message: "rule A"},
 	}
-	got := uniqueFailures(failures)
-	if len(got) != 2 || got[0].Message != "rule A" || got[1].Message != "rule B" {
-		t.Fatalf("local failure causes changed: %+v", got)
+	before := failures
+	original := invalidPackage{Relevant: true, Origin: "earlier", Failure: failures[0]}
+	imports := map[string]invalidPackage{"wrapper": original}
+	for range 10 {
+		got := packageFailureFact("origin", false, imports, failures[:])
+		if got.Relevant || got.Origin != "earlier" || got.Failure != failures[0] {
+			t.Fatalf("first cause changed: %+v", got)
+		}
+		if failures != before || imports["wrapper"] != original {
+			t.Fatal("selecting a witness changed an original error")
+		}
 	}
 }
 

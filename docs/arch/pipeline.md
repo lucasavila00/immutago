@@ -63,19 +63,22 @@ and actual parameter types, including tuple results and variadic elements.
 Per-pass caches reuse literal type matches and compiler-constant operand
 classification. Each operand still passes its use and statement checks.
 
-[Dependency facts](../../pkg/analyzer/dependencies.go) contain a flat table of
-package records. Each record stores local failure locations and messages, plus
-its direct invalid import paths. Importers merge records by package path and
-share the records without changing them. A fact contains each reachable record
-once. It stores no per-error import chains.
+[Dependency facts](../../pkg/analyzer/dependencies.go) contain one original
+failure: its package path, portable source location, and exact message. Each
+package selects the first cause by source location, message, and origin package.
+The minimum of the imported witnesses and local errors is also the first cause
+in the full failing dependency graph. Shared paths and import order do not change
+the choice. The relevance bit is collected separately from this choice.
 
-A relevant consumer builds one lexical route to each origin and reports errors
-in source-location and message order. A string builder renders the report.
-Silent wrappers still export their records and relevance, so a later consumer
-cannot lose a failure. These facts carry errors, not inferred function effects.
+A failed fact still crosses silent wrappers. Relevant consumers report one
+representative cause for each failed direct import. The report names the
+original package to check, because running a silent wrapper can print no errors.
+Reports from direct package analysis do not change. No original message is shortened,
+but downstream reports do not enumerate all causes or show full import routes.
+These facts carry errors, not inferred function effects.
 
-Each fact must contain the reachable records: the vet driver does not re-export
-imported package facts, so `AllPackageFacts` cannot supply all indirect origins.
-The flat table also prevents gob from expanding shared pointer subtrees through
-each diamond path. The CLI shares records in memory; vet still serializes each
-fact's reachable records. See the [cost checks](../performance.md#dependency-fact-costs).
+The vet driver does not re-export imported package facts. `AllPackageFacts`
+cannot supply all indirect origins, so each exported witness is self-contained.
+Carrying the full error graph in each fact would repeat its payload at every
+importer. One witness keeps each fact independent of the number of upstream
+packages and errors. See the [cost checks](../performance.md#dependency-fact-costs).

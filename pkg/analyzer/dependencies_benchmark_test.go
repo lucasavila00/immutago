@@ -34,7 +34,7 @@ func BenchmarkCoreDependencyFacts(b *testing.B) {
 		b.Run(fmt.Sprintf("report/layers=%d", size), func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
-				_ = dependencyMessage("consumer", path, *last)
+				_ = dependencyMessage(path, *last)
 			}
 		})
 	}

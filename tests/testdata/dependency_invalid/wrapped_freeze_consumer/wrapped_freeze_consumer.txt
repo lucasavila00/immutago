@@ -1,4 +1,4 @@
 wrapped_freeze_consumer.go:3:8: unsupported dependency example.com/consumer/freeze_wrapper: immutability proof failed
-  import chain: example.com/consumer/wrapped_freeze_consumer -> example.com/consumer/freeze_wrapper -> example.com/consumer/invalid_freeze
-  original failure: example.com/consumer/invalid_freeze/invalid_freeze.go:10:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-  fix: correct the original dependency error above, then rerun immutago on this package
+  representative failure: example.com/consumer/invalid_freeze/invalid_freeze.go:10:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/invalid_freeze, correct its errors, then rerun immutago on this package

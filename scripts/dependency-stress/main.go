@@ -1,4 +1,4 @@
-// Command dependency-stress writes the layered package graph from issue 20.
+// Command dependency-stress writes the layered package graph from issues 20 and 28.
 package main
 
 import (
@@ -69,7 +69,7 @@ func packageSource(name string, layer, width int) string {
 	return source.String()
 }
 
-// writeConsumer adds a silent wrapper and a consumer that requires every original failure.
+// writeConsumer adds a silent wrapper and a consumer that must receive an original failure.
 func writeConsumer(out string, size int) error {
 	var source strings.Builder
 	source.WriteString("package wrapper\n\nimport (\n")

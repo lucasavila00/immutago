@@ -65,29 +65,21 @@ pass ends. Ordinary packages still receive structural and source checks.
 
 ## Dependency fact costs
 
-Dependency facts share local failure records and retain direct import edges.
-For a graph with P packages, E invalid import edges, and F bytes of local error
-data, the CLI retains O(P + E + F) record data plus the per-fact tables of reachable
-package pointers. Those tables, and the driver's package-fact maps, can still
-contain O(P²) pointers. Facts contain no per-error copies of full import chains.
+Each failed package exports one representative original failure and a relevance
+bit. The witness contains the origin package, source location, and exact message.
+Downstream reports name that cause and the origin package to check; other errors
+may exist. Reports from direct package analysis do not change.
 
-Each serialized fact contains one copy of each reachable package record and
-its local errors and edges. Vet can still repeat that data in different fact
-files; exact original diagnostics require that data across silent wrappers.
-Reports build routes only for relevant consumers. Report storage includes the
-text that must be shown to the user; no errors are capped or discarded.
+For P failed packages, E direct invalid import edges, and a largest witness of
+B bytes, serialized analyzer facts use O(P × B) bytes in total. Vet reads
+O(E × B) bytes of these facts. B depends on the diagnostic and path lengths;
+messages are not truncated. The CLI driver's inherited fact maps can still
+hold O(P²) pointers. The payload bound does not bound all driver data or the
+cost of the import graph.
 
 Run [Dependency performance](../.github/workflows/dependency-performance.yml)
-manually from GitHub Actions when changing dependency fact costs. It measures merging, gob encoding, and reporting separately. It also compares the
-base and changed commands on dense 16- and 64-package graphs, then checks 144,
-256, and 400 packages with the changed command. Each package imports every
-package in the preceding layer and has the issue's 50 unsafe conversions.
-With the repository's Go version, these produce 101 local errors per package:
-one import error and two source positions per conversion. Both drivers must
-preserve the exact count. A separate relevant consumer must receive all 40,400
-original errors through a silent wrapper.
-
-The workflow saves timing, peak-memory, allocation, CPU-profile, and runner
-data. The baseline 400-package run is omitted because the reported failure is
-an out-of-memory exit. The graph tests also bound encoded size by one copy of
-each record and compare reports with the previous propagation algorithm.
+manually in GitHub Actions and select a baseline revision. It compares dense
+graphs with fresh vet facts and records their total and largest file sizes,
+timing, peak memory, and profiles. [Graph tests](../pkg/analyzer/dependencies_graph_test.go)
+check the selected cause against all original errors, exact gob round trips,
+and constant fact size across deep, wide, and dense graphs.

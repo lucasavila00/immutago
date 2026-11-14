@@ -334,3 +334,7 @@ a checked Go implementation such as `func readCount() int { return 1 }`.
 
 Cgo packages are rejected as a whole, with one error at a source `package`
 line. Replace `import "C"` and its C calls with checked Go code.
+
+A dependency diagnostic shows one representative original failure, its source
+location, and a command to check the original package. Other dependency errors
+may exist. Reports from direct package analysis do not change.
