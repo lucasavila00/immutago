@@ -133,7 +133,7 @@ Shared reports the presence of an embedded im.Shared value, not type validity.
 func TrustedField(field *types.Var) bool
 ```
 
-TrustedField identifies a named proc.UncheckedDependency field, which only a marked process argument struct can store.
+TrustedField identifies a named proc.UncheckedDependency field. Only a marked process argument struct can store it.
 
 ## func Unevaluated
 

@@ -122,11 +122,12 @@ request body when the user requests that issue or pull request.
 
 Check every field and collection type argument. Use resolved Go type identity,
 not source spelling. Do not accept unknown cases or add escape hatches. There
-are exactly two trust markers, each with its own promise, and neither is proved:
-`proc.UncheckedDependency[T]` from `proc.Trust` is a concurrency-safe dependency in
-process start arguments (the user decided this in issue #52), and `im.Opaque[T]`
-from `im.Seal` is an immutable value that only the package that declares `T`
-can seal or read. Do not add other escape hatches.
+are exactly two trust markers, each with its own promise, and the checker proves
+neither: `proc.UncheckedDependency[T]` from `proc.Trust` in process start
+arguments, whose caller promises that the value is safe for concurrent use (the
+user decided this in issue #52), and `im.Opaque[T]` from `im.Seal`, whose
+declaring package promises that the value never changes; only the package that
+declares `T` can seal or read it. Do not add other escape hatches.
 Support cases that can be proved. Report unsupported cases explicitly.
 Unmarked structs cannot own marked values or immutable collections.
 Both `im.Shared` and `im.Scoped` require immutable objects from construction.
