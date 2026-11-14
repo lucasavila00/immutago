@@ -17,7 +17,7 @@ func BenchmarkCoreConsumedFlow(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					consumedFlow(graph, gen, kill)
+					consumedFlow(graph, gen, kill, count)
 				}
 			})
 		}

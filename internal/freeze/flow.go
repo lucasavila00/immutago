@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-	"maps"
 	"slices"
 
 	"github.com/lucasavila00/immutago/internal/checker"
@@ -74,22 +73,25 @@ func (p *proof) functionFlow(body *ast.BlockStmt) {
 // consumption treats fresh declarations as new allocations even when the declaration executes in a loop.
 func (p *proof) consumption(graph flow.Graph, events []event) {
 	ids := make(map[*types.Var]int)
-	for variable := range p.owners {
-		ids[variable] = len(ids)
+	for _, e := range events {
+		if e.variable != nil {
+			if _, found := ids[e.variable]; !found {
+				ids[e.variable] = len(ids)
+			}
+		}
 	}
 	gen, kill := make([]flow.Set, len(events)), make([]flow.Set, len(events))
 	for point, e := range events {
-		gen[point], kill[point] = flow.NewSet(), flow.NewSet()
 		if e.consume {
-			gen[point].Add(ids[e.variable])
+			gen[point] = flow.NewSet(ids[e.variable])
 		}
 		if e.reset {
-			kill[point].Add(ids[e.variable])
+			kill[point] = flow.NewSet(ids[e.variable])
 		}
 	}
-	incoming := consumedFlow(graph, gen, kill)
+	incoming := consumedFlow(graph, gen, kill, len(ids))
 	for point, e := range events {
-		if e.variable != nil && !e.consume && !e.reset && incoming[point][ids[e.variable]] {
+		if e.variable != nil && !e.consume && !e.reset && incoming.has(point, ids[e.variable]) {
 			p.report(e.pos, "use of consumed owned container "+e.variable.Name()+
 				": Freeze transferred its storage; use the frozen value, or call Clone to create a new builder")
 		}
@@ -165,33 +167,54 @@ func (p *proof) reset(id *ast.Ident) []event {
 	return nil
 }
 
+// consumedFacts stores the incoming owner facts for each point in dense words.
+type consumedFacts struct {
+	words int
+	bits  []uint64
+}
+
+// has reports whether the owner can be consumed before the point.
+func (facts consumedFacts) has(point, owner int) bool {
+	return facts.bits[point*facts.words+owner/64]&(uint64(1)<<uint(owner%64)) != 0
+}
+
 // consumedFlow solves the finite forward may-consumed equations in reverse postorder.
-func consumedFlow(graph flow.Graph, gen, kill []flow.Set) []flow.Set {
-	inputs, outputs := make([]flow.Set, len(gen)), make([]flow.Set, len(gen))
+func consumedFlow(graph flow.Graph, gen, kill []flow.Set, owners int) consumedFacts {
+	words := (owners + 63) / 64
+	inputs := consumedFacts{words: words, bits: make([]uint64, len(gen)*words)}
+	outputs := make([]uint64, len(gen)*words)
+	scratch := make([]uint64, words)
 	order := graph.ReversePostorder()
 	for changed := true; changed; {
 		changed = false
 		for _, point := range order {
-			input := flow.NewSet()
-			for _, previous := range graph.Pred[point] {
-				for id := range outputs[previous] {
-					input[id] = true
-				}
-			}
-			output := maps.Clone(input)
+			input := inputs.bits[point*words : (point+1)*words]
+			mergePredecessors(input, outputs, graph.Pred[point], words)
+			copy(scratch, input)
 			for id := range kill[point] {
-				delete(output, id)
+				scratch[id/64] &^= uint64(1) << uint(id%64)
 			}
 			for id := range gen[point] {
-				output[id] = true
+				scratch[id/64] |= uint64(1) << uint(id%64)
 			}
-			if !maps.Equal(output, outputs[point]) {
+			output := outputs[point*words : (point+1)*words]
+			if !slices.Equal(output, scratch) {
+				copy(output, scratch)
 				changed = true
 			}
-			inputs[point], outputs[point] = input, output
 		}
 	}
 	return inputs
+}
+
+// mergePredecessors combines reachable predecessor outputs into the input.
+func mergePredecessors(input, outputs []uint64, predecessors []int, words int) {
+	clear(input)
+	for _, previous := range predecessors {
+		for word, value := range outputs[previous*words : (previous+1)*words] {
+			input[word] |= value
+		}
+	}
 }
 
 // storageAccess records an element access or delayed store after its operand evaluation completes.
