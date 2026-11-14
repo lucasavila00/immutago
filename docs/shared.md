@@ -60,5 +60,5 @@ These examples are not exhaustive.
 | Rejected form | Allowed replacement |
 | --- | --- |
 | `p.Price = 9` | `p = &Product{Price: 9}` |
-| `p := &point` | `p := new(point)` |
+| `value := Product{}; p := &value` | `value := Product{}; p := new(value)` |
 | `var value any = p` | Keep a concrete `*Product` variable. |

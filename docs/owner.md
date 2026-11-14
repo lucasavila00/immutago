@@ -97,7 +97,7 @@ These examples are not exhaustive.
 
 | Rejected form | Allowed replacement |
 | --- | --- |
-| `im.Owner[SharedConfig]` | Use `im.Owner[Config]`. |
+| `im.Owner[SharedConfig]`, where SharedConfig embeds `im.Shared` | Use `im.Owner[Config]`. |
 | `copy := service.Current` or `copy := *service` | Keep and pass `service` as a pointer. |
 | `service.Current.Store(config)` | `service.Current.Store(&Config{Limit: config.Limit})` |
 | `return service.Current.Load()` | `config := service.Current.Load(); return *config` with a value result. |

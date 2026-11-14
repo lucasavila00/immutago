@@ -110,8 +110,9 @@ arguments and replaces the value behind the PID. Mutable fields return to their
 zero values, including empty Owner fields.
 
 During the delay, PID calls still use the old struct. A call already in progress
-finishes on that old struct after the replacement. A method panic propagates to its caller; the target process's supervisor does
-not catch it. If the panic reaches another process's Run, that caller can restart.
+finishes on that old struct after the replacement. A method panic propagates in the caller's goroutine. The supervisor handles
+it only if it leaves a supervised Run. The restart rules apply to the process
+whose Run failed.
 
 A sixth panic from the same child in 5 minutes stops its siblings, last started
 first, and passes the failure to the parent supervisor. The parent restarts the
@@ -126,8 +127,8 @@ is cancelled; Stop cannot force it to exit. Stop does not wait for direct method
 calls. A PID can still call methods on its last struct after Run ends or Stop
 completes.
 
-Use `proc.StartSupervisor(parent)` for processes that must stop or restart as
-a group. In tests, [proctest.NewRoot(t)](../pkg/proc/proctest/readme.md) stops the
+Use `proc.StartSupervisor(parent)` to stop a group together and restart that
+group after a child exceeds the restart limit. In tests, [proctest.NewRoot(t)](../pkg/proc/proctest/readme.md) stops the
 tree during cleanup and fails if it does not stop within 5 seconds.
 
 ## Not checked
