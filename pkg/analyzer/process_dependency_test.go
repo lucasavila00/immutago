@@ -66,8 +66,6 @@ func (w *Worker) Run(context.Context) {}`},
 type Worker struct { proc.Process[Args] }
 func (w *Worker) Run(context.Context) {}`},
 		{"array field", `type Args struct { im.Shared; Logs [2]proc.UncheckedDependency[*int] }`},
-		{"protected value", `type Snapshot2 struct { im.Shared; N int }
-func f() { d := proc.Trust(&Snapshot2{}); _ = d }`},
 		{"value outside process", `func f(d proc.UncheckedDependency[*int]) *int { return d.Value() }`},
 		{"value from local args", dependencyDefinitions + `func (f *Fetcher) print() { args := f.Args()
 	args.Log.Value().Print("") }`},

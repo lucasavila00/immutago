@@ -10,6 +10,7 @@ and PIDs in start arguments. The tables use those example types, and the
 
 These allowed forms are complete. Other uses of a process, its type name, a
 process pointer from `Proc()`, or a `proc.UncheckedDependency` are rejected. Parentheses preserve these forms.
+Dependency values also use the [common statement forms](common-forms.md#statements-and-calls).
 
 ## Declare a process
 
@@ -50,8 +51,10 @@ process pointer from `Proc()`, or a `proc.UncheckedDependency` are rejected. Par
 
 | Allowed form | Example |
 | --- | --- |
-| Wrap a value in a dependency, anywhere | `log := proc.Trust(logger)`, `FetcherArgs{Log: proc.Trust(logger)}` |
-| Declare a named `proc.UncheckedDependency[T]` field in a struct with one `im` marker; `T` has no protected storage | `type FetcherArgs struct { im.Shared; Log proc.UncheckedDependency[*slog.Logger] }` |
+| Call `proc.Trust` directly to wrap a value in any function; use the result in the value forms below | `log := proc.Trust(logger)`, `FetcherArgs{Log: proc.Trust(logger)}` |
+| Declare a named `proc.UncheckedDependency[T]` field in a struct with one `im` marker; the checker does not inspect `T` through the wrapper | `type FetcherArgs struct { im.Shared; Log proc.UncheckedDependency[*slog.Logger] }` |
+| Use an alias for a dependency type | `type Log = proc.UncheckedDependency[*slog.Logger]` |
+| Declare a zero dependency or an empty dependency literal; `Value` returns the zero value of `T` | `var log proc.UncheckedDependency[*slog.Logger]`, `proc.UncheckedDependency[*slog.Logger]{}` |
 | Use a `proc.UncheckedDependency[T]` or a struct with a dependency field as a local value, an ordinary function parameter or result, or a start argument | `args := FetcherArgs{Log: log}`, `proc.Start[Fetcher](root, args)`, `proc.Start[Tracer](root, proc.Trust(logger))` |
 | In a method, call `Value` directly and synchronously on `l.Args()` or on one field of `l.Args()`, where `l` is the receiver | `f.Args().Log.Value().Info("start")`, `log := f.Args().Log.Value()`, `t.Args().Value()` for `proc.Process[proc.UncheckedDependency[*slog.Logger]]` |
 
@@ -92,5 +95,6 @@ These examples are not exhaustive.
 | `im.Owner[State]`, `im.FrozenSlice[proc.UncheckedDependency[*slog.Logger]]`, `im.FrozenSlice[FetcherArgs]`, where `State` has a dependency field | Keep dependencies only in start arguments. |
 | `type Envelope struct { im.Shared; Args FetcherArgs }`, `Args *FetcherArgs`, `Logs [2]proc.UncheckedDependency[*slog.Logger]` | Use `FetcherArgs` directly as `A` in `proc.Process[A]`. |
 | `type Args struct { im.Shared; proc.UncheckedDependency[*slog.Logger] }` (embedded) | Name the field: `Log proc.UncheckedDependency[*slog.Logger]`. |
-| `proc.Trust(&Snapshot{})`, where `Snapshot` embeds `im.Shared` | Put the immutable value in a field of the arguments. |
+| `type Log proc.UncheckedDependency[*slog.Logger]`, `[]proc.UncheckedDependency[*slog.Logger]`, `var x any = proc.Trust(logger)` | Keep the dependency value in its exact type or an alias, then pass it in the start arguments. |
+| A package variable of dependency type, or of a struct with a dependency field | Build the arguments in the function that starts the process. |
 | `args := f.Args(); args.Log.Value()`, `func use(d proc.UncheckedDependency[*slog.Logger]) { d.Value() }`, `get := f.Args().Log.Value`, `go f.Args().Log.Value()` | `f.Args().Log.Value()` in a process method. |

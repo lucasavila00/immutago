@@ -79,38 +79,35 @@ func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
 		ast.Inspect(file, c.visit)
 	}
-	checkLibraryArguments(pass, c)
-	checkSubset(pass, freeze.Check(pass))
+	checkSubset(pass, freeze.Check(pass), &c.proofs)
 	return nil, nil
 }
 
-// checkLibraryArguments proves type arguments of the fixed library types.
-func checkLibraryArguments(pass *analysis.Pass, c *checks) {
-	for ident, instance := range pass.TypesInfo.Instances {
-		obj := pass.TypesInfo.Uses[ident]
-		c.checkRuntimeArguments(ident, obj, instance)
-		if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
-			continue
+// checkLibraryArguments proves type arguments outside unchecked dependency payloads.
+func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance) {
+	obj := c.pass.TypesInfo.Uses[ident]
+	c.checkRuntimeArguments(ident, obj, instance)
+	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
+		return
+	}
+	if obj.Name() == "Opaque" {
+		return
+	}
+	if obj.Name() == "Seal" {
+		c.checkTrustedPackage(ident.Pos(), instance.TypeArgs.At(0), "im.Seal")
+		return
+	}
+	if obj.Name() == "Owner" {
+		arg := instance.TypeArgs.At(0)
+		if !checker.Scoped(arg) || checker.Shared(arg) || c.proofs.Reason(arg) != "" {
+			c.report(ident.Pos(), "Owner requires a concrete, valid Scoped struct")
 		}
-		if obj.Name() == "Opaque" {
-			continue
-		}
-		if obj.Name() == "Seal" {
-			c.checkTrustedPackage(ident.Pos(), instance.TypeArgs.At(0), "im.Seal")
-			continue
-		}
-		if obj.Name() == "Owner" {
-			arg := instance.TypeArgs.At(0)
-			if !checker.Scoped(arg) || checker.Shared(arg) || c.proofs.Reason(arg) != "" {
-				c.report(ident.Pos(), "Owner requires a concrete, valid Scoped struct")
-			}
-			continue
-		}
-		for i := 0; i < instance.TypeArgs.Len(); i++ {
-			if reason := c.proofs.Reason(instance.TypeArgs.At(i)); reason != "" {
-				c.report(ident.Pos(), fmt.Sprintf("immutable type argument: %s\n  type: %s\n  fix: %s",
-					reason, diagnosticType(instance.TypeArgs.At(i)), structuralFix(instance.TypeArgs.At(i), reason)))
-			}
+		return
+	}
+	for i := 0; i < instance.TypeArgs.Len(); i++ {
+		if reason := c.proofs.Reason(instance.TypeArgs.At(i)); reason != "" {
+			c.report(ident.Pos(), fmt.Sprintf("immutable type argument: %s\n  type: %s\n  fix: %s",
+				reason, diagnosticType(instance.TypeArgs.At(i)), structuralFix(instance.TypeArgs.At(i), reason)))
 		}
 	}
 }
@@ -133,7 +130,14 @@ func (c *checks) report(pos token.Pos, message string) {
 
 // visit checks struct contracts, collection instantiations, and mutation sites.
 func (c *checks) visit(node ast.Node) bool {
+	if expression, ok := node.(ast.Expr); ok && uncheckedTypeArguments(c.pass.TypesInfo, expression) {
+		return false
+	}
 	switch n := node.(type) {
+	case *ast.Ident:
+		if instance, ok := c.pass.TypesInfo.Instances[n]; ok {
+			c.checkLibraryArguments(n, instance)
+		}
 	case *ast.FuncDecl:
 		if n.Body == nil {
 			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
@@ -144,6 +148,9 @@ func (c *checks) visit(node ast.Node) bool {
 		c.checkImport(n)
 
 	case *ast.TypeSpec:
+		if !n.Assign.IsValid() && checker.IsRuntimeType(c.pass.TypesInfo.TypeOf(n.Type), checker.UncheckedDependencyType) {
+			c.report(n.Pos(), "defined copies of proc.UncheckedDependency are unsupported; use a type alias")
+		}
 		if obj := c.pass.TypesInfo.Defs[n.Name]; obj != nil {
 			c.checkType(n.Pos(), obj.Type())
 		}
@@ -217,7 +224,7 @@ func reflectionValue(t types.Type) bool {
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") || checker.IsOpaque(t) ||
-		checker.IsRuntimeType(t, checker.ProcessMarker) {
+		checker.IsRuntimeType(t, checker.ProcessMarker) || checker.IsRuntimeType(t, checker.UncheckedDependencyType) {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)

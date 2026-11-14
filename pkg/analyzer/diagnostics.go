@@ -48,7 +48,9 @@ var subsetFixes = map[string]string{
 		"im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses",
 	"returning Scoped pointers is unsupported": "return a Scoped value copy, or use im.Shared " +
 		"for objects whose pointers must be shared",
-	"global Scoped pointers are unsupported":        "keep the Scoped pointer local, or store a value copy",
+	"global Scoped pointers are unsupported": "keep the Scoped pointer local, or store a value copy",
+	"process dependencies cannot enter package variables": "build the process arguments in a local variable " +
+		"and pass them to proc.Start or proc.StartReserved",
 	"containers of Scoped pointers are unsupported": "store Scoped value copies or im.Shared pointers",
 	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",

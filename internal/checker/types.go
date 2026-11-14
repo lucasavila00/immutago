@@ -25,6 +25,7 @@ const (
 	ArgsMethod              = "Args"
 	RunMethod               = "Run"
 	UncheckedDependencyType = "UncheckedDependency"
+	TrustFunction           = "Trust"
 	ValueMethod             = "Value"
 )
 
@@ -112,7 +113,7 @@ func embedsMarker(t types.Type, name string) bool {
 	return false
 }
 
-// Contains reports whether a type stores a marked value or sealed collection.
+// Contains reports whether a type stores a marked value, sealed collection, or process dependency.
 // It runs one query; use Classifier to reuse results across queries.
 func Contains(t types.Type) bool {
 	var classifier Classifier
