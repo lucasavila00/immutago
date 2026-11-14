@@ -46,6 +46,14 @@ func IsLibraryType(t types.Type, name string) bool
 
 IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
 
+## func IsRef
+
+```go
+func IsRef(t types.Type) bool
+```
+
+IsRef identifies proc.Ref by package identity and name, not spelling at its use site.
+
 ## func Marked
 
 ```go
@@ -61,6 +69,14 @@ func MarkerCount(t types.Type) int
 ```
 
 MarkerCount counts direct embedded marker identities, including aliases of the same marker.
+
+## func Process
+
+```go
+func Process(t types.Type) bool
+```
+
+Process reports the presence of an embedded im.Process value. A process is not a marked struct.
 
 ## func Reason
 

@@ -60,3 +60,35 @@ func TestRecursivePointerProof(t *testing.T) {
 		t.Fatalf("mutable recursive field accepted: %s", reason)
 	}
 }
+
+// TestProcessProofs checks that a Ref is an allowed stored value and a process is not.
+func TestProcessProofs(t *testing.T) {
+	sharedMarker, _ := testTypes()
+	processMarker := types.NewNamed(types.NewTypeName(token.NoPos, sharedMarker.Obj().Pkg(), "Process", nil),
+		types.NewStruct(nil, nil), nil)
+	process := types.NewNamed(types.NewTypeName(token.NoPos, nil, "Loader", nil), types.NewStruct([]*types.Var{
+		types.NewField(token.NoPos, nil, "Process", processMarker, true),
+		types.NewField(token.NoPos, nil, "version", types.Typ[types.Int], false),
+	}, nil), nil)
+	runtime := types.NewPackage(RuntimePath, "proc")
+	ref := types.NewNamed(types.NewTypeName(token.NoPos, runtime, "Ref", nil), types.NewStruct([]*types.Var{
+		types.NewField(token.NoPos, runtime, "value", types.NewPointer(process), false),
+	}, nil), nil)
+	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "LoaderRef", nil), ref)
+	if !Process(process) || Marked(process) || MarkerCount(process) != 0 || !IsRef(alias) || IsRef(process) {
+		t.Fatal("process identities were not preserved")
+	}
+	for _, value := range []types.Type{
+		ref, alias, types.NewArray(ref, 2),
+		markedType("Peers", sharedMarker, types.NewField(token.NoPos, nil, "Loader", ref, false)),
+	} {
+		if reason := Reason(value); reason != "" {
+			t.Errorf("Ref value %s rejected: %s", value, reason)
+		}
+	}
+	for _, value := range []types.Type{process, types.NewPointer(process)} {
+		if Reason(value) == "" {
+			t.Errorf("process value %s accepted", value)
+		}
+	}
+}

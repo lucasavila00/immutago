@@ -20,6 +20,12 @@ func IsLibraryType(t types.Type, name string) bool {
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == LibraryPath && n.Obj().Name() == name
 }
 
+// IsRef identifies proc.Ref by package identity and name, not spelling at its use site.
+func IsRef(t types.Type) bool {
+	n, ok := types.Unalias(t).(*types.Named)
+	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == RuntimePath && n.Obj().Name() == "Ref"
+}
+
 // IsCollection reports whether t is one of the library's sealed collection types.
 func IsCollection(t types.Type) bool {
 	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap")
@@ -36,6 +42,9 @@ func Shared(t types.Type) bool { return embedsMarker(t, "Shared") }
 
 // Scoped reports the presence of an embedded im.Scoped value, not type validity.
 func Scoped(t types.Type) bool { return embedsMarker(t, "Scoped") }
+
+// Process reports the presence of an embedded im.Process value. A process is not a marked struct.
+func Process(t types.Type) bool { return embedsMarker(t, "Process") }
 
 // MarkerCount counts direct embedded marker identities, including aliases of the same marker.
 func MarkerCount(t types.Type) int {
