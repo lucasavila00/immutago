@@ -63,6 +63,19 @@ mode once per cache. Reverse edges propagate positive results through cycles;
 completed queries reuse the stored result. The graph stays in memory until its
 pass ends. Ordinary packages still receive structural and source checks.
 
+The [marked graph benchmarks](../pkg/analyzer/proof_scaling_test.go) measure the
+complete pass on connected marked types and frozen collections.
+`BenchmarkCoreMarked` has no errors; `BenchmarkCoreMarkedInvalid` measures many
+invalid roots. [Proof-query tests](../internal/checker/prover_test.go) check
+reused validity and exact diagnostic ordering against independent oracles.
+
+The prover retains each reachable obligation and edge once per pass. Validity
+expansion and failure propagation cost O(V + E) across its queries. Exact
+messages for R distinct invalid roots can still require O(R × (V + E)) replay
+work, plus the diagnostic bytes. Completed messages are cached by root and
+retain O(total message bytes) until the pass ends. This is not a universal
+linear bound for rejected programs.
+
 ## Dependency fact costs
 
 Dependency facts share local failure records and retain direct import edges.
@@ -91,20 +104,3 @@ The workflow saves timing, peak-memory, allocation, CPU-profile, and runner
 data. The baseline 400-package run is omitted because the reported failure is
 an out-of-memory exit. The graph tests also bound encoded size by one copy of
 each record and compare reports with the previous propagation algorithm.
-
-[Proof-query tests](../internal/checker/prover_test.go) compare reused validity
-with independent reachability and exact diagnostics with the original fresh
-proof. They include cycles, query order, aliases, repeated edges, terminal
-failures, and new owners of failed children.
-The [marked graph benchmarks](../pkg/analyzer/proof_scaling_test.go) measure the
-complete analyzer on connected marked types, frozen slices and maps, and ten
-construction/read sequences per function. `BenchmarkCoreMarked` has no errors;
-`BenchmarkCoreMarkedInvalid` keeps the cost of many invalid roots visible.
-
-The prover retains each reachable obligation and edge once per pass. Validity
-expansion and failure propagation cost O(V + E) across its queries. Exact
-messages for R distinct invalid roots can still require O(R × (V + E)) replay
-work, plus the diagnostic bytes. Completed messages are cached by root and
-retain O(total message bytes) until the pass ends. This is not a universal
-linear bound for rejected programs. Parsing and type checking remain outside
-the benchmark's timed pass.
