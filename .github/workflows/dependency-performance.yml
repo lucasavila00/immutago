@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       baseline:
-        description: Revision for the 16- and 64-package comparison
+        description: Baseline branch, tag, or full commit SHA for the 16- and 64-package comparison
         default: main
         required: true
 
