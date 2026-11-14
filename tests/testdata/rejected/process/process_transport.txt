@@ -1,4 +1,4 @@
-process_transport.go:24:12: process type Counter can be named only in its declaration, a pointer receiver, proc.Start[Counter], proc.Reserve[Counter], or proc.PID[Counter]
+process_transport.go:24:12: process type Counter can be named only in its declaration, a pointer receiver, proc.Start[Counter], proc.StartReserved[Counter], proc.Reserve[Counter], or proc.PID[Counter]
 process_transport.go:31:13: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
 process_transport.go:32:10: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
 process_transport.go:32:2: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call

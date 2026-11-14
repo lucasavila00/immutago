@@ -1,12 +1,12 @@
 process_creation.go:22:12: proc.Process must be embedded by value
-process_creation.go:28:11: process type Ticker can be named only in its declaration, a pointer receiver, proc.Start[Ticker], proc.Reserve[Ticker], or proc.PID[Ticker]
+process_creation.go:28:11: process type Ticker can be named only in its declaration, a pointer receiver, proc.Start[Ticker], proc.StartReserved[Ticker], proc.Reserve[Ticker], or proc.PID[Ticker]
 process_creation.go:32:13: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
-process_creation.go:32:14: process Ticker is created outside proc.Start; use proc.Start[Ticker](parent)
-process_creation.go:32:14: process type Ticker can be named only in its declaration, a pointer receiver, proc.Start[Ticker], proc.Reserve[Ticker], or proc.PID[Ticker]
-process_creation.go:33:11: process type Ticker can be named only in its declaration, a pointer receiver, proc.Start[Ticker], proc.Reserve[Ticker], or proc.PID[Ticker]
-process_creation.go:34:15: process Ticker is created outside proc.Start; use proc.Start[Ticker](parent)
-process_creation.go:34:19: process type Ticker can be named only in its declaration, a pointer receiver, proc.Start[Ticker], proc.Reserve[Ticker], or proc.PID[Ticker]
-process_creation.go:35:13: process type Ticker can be named only in its declaration, a pointer receiver, proc.Start[Ticker], proc.Reserve[Ticker], or proc.PID[Ticker]
+process_creation.go:32:14: process Ticker is created outside proc.Start; use proc.Start[Ticker](parent, args)
+process_creation.go:32:14: process type Ticker can be named only in its declaration, a pointer receiver, proc.Start[Ticker], proc.StartReserved[Ticker], proc.Reserve[Ticker], or proc.PID[Ticker]
+process_creation.go:33:11: process type Ticker can be named only in its declaration, a pointer receiver, proc.Start[Ticker], proc.StartReserved[Ticker], proc.Reserve[Ticker], or proc.PID[Ticker]
+process_creation.go:34:15: process Ticker is created outside proc.Start; use proc.Start[Ticker](parent, args)
+process_creation.go:34:19: process type Ticker can be named only in its declaration, a pointer receiver, proc.Start[Ticker], proc.StartReserved[Ticker], proc.Reserve[Ticker], or proc.PID[Ticker]
+process_creation.go:35:13: process type Ticker can be named only in its declaration, a pointer receiver, proc.Start[Ticker], proc.StartReserved[Ticker], proc.Reserve[Ticker], or proc.PID[Ticker]
 process_creation.go:36:7: proc.Start, proc.StartReserved, proc.Reserve, and proc.PID need a process type argument
 process_creation.go:37:18: proc.Start, proc.StartReserved, proc.Reserve, and proc.PID need a process type argument
 process_creation.go:38:19: proc.Start, proc.StartReserved, proc.Reserve, and proc.PID need a process type argument

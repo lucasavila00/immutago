@@ -41,7 +41,8 @@ func start() {
 }
 ```
 
-A holder is an unmarked struct with a direct named slot field. The slot fields
+A holder is an unmarked struct with a direct named slot field.
+[Processes](processes.md) follow their own receiver rules instead. The slot fields
 and zero holder variables in the table are allowed. Slot and holder values
 cannot be copied.
 

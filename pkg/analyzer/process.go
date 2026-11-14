@@ -194,7 +194,7 @@ func (c *subsetChecks) checkProcessName(id *ast.Ident) {
 		}
 	}
 	c.pass.Reportf(id.Pos(), "process type %[1]s can be named only in its declaration, a pointer receiver, "+
-		"proc.Start[%[1]s], proc.Reserve[%[1]s], or proc.PID[%[1]s]", id.Name)
+		"proc.Start[%[1]s], proc.StartReserved[%[1]s], proc.Reserve[%[1]s], or proc.PID[%[1]s]", id.Name)
 }
 
 // processReceiver identifies the type of a method receiver.
@@ -236,7 +236,7 @@ func (c *subsetChecks) checkProcessExpression(expression ast.Expr) {
 		return
 	}
 	if c.processCreation(expression) {
-		c.pass.Reportf(expression.Pos(), "process %[1]s is created outside proc.Start; use proc.Start[%[1]s](parent)",
+		c.pass.Reportf(expression.Pos(), "process %[1]s is created outside proc.Start; use proc.Start[%[1]s](parent, args)",
 			processName(t))
 		return
 	}
