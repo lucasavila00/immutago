@@ -1,15 +1,12 @@
 # Unchecked immutable values
 
-`im.UncheckedValue[T]` is one of the two [trust markers](rules.md#trust-markers) of
-immutago; the other is `proc.UncheckedDependency[T]`, with a different promise.
-It holds a pointer to a value that the analyzer does not check. The analyzer does not
-prove that the value is immutable: the package that declares `T` is trusted to
-never change it after `im.Trust`.
+Use `im.UncheckedValue[T]` for data your package promises not to change, when its
+implementation does not fit the checked forms. The checker does not prove that
+promise.
 
-Use it for an internal structure that a package builds once and only reads
-afterwards, but that is not written in the checked forms, such as an engine
-with its own scratch types. Other packages store and pass the handle, and reach
-the value only through the functions of the declaring package.
+Only the package that declares `T` can use `im.Trust` to wrap its pointer or
+`im.Unwrap` to read it. Other packages can store and pass the handle. They call
+your package's functions to read the data.
 
 ```go
 type baked struct { weights []float64 }
@@ -66,8 +63,8 @@ What the analyzer proves:
 What is trusted and not proven:
 
 - The declaring package does not change the value after `im.Trust`, and its
-  functions do not give out a way to change it. The functions of the declaring
-  package are the read-only proxy of the value; review them as trusted code.
+  functions do not give out a way to change it. Review these functions as trusted
+  code.
 
 ## Rejected examples
 
