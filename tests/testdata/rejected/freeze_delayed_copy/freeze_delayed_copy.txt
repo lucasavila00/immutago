@@ -3,3 +3,7 @@ freeze_delayed_copy.go:5:47: unsupported immutable operation: Freeze requires a 
   source: im.FreezeSlice(values)
   type: im.FrozenSlice[int]
   fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
+freeze_delayed_copy.go:5:62: unsupported immutable operation: Freeze requires a standalone single binding
+  source: values
+  type: []int
+  fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value

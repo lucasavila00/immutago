@@ -1,3 +1,7 @@
+subset_concurrent_read.go:18:23: unsupported immutable operation: protected storage requires synchronous calls
+  source: read
+  type: func(p *rejected.Good) int
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 subset_concurrent_read.go:18:28: unsupported immutable operation: protected storage requires synchronous calls
   source: new(v)
   type: *rejected.Good

@@ -2,12 +2,15 @@ local_reference_escape.go:11:2: immutable field Pointer: LocalRef pointers canno
   owner: local_reference_escape.Stored; field type: *local_reference_escape.Local
   fix: replace the pointer field or argument with an owned immutable value
 local_reference_escape.go:14:5: unsupported immutable operation: global LocalRef pointers are unsupported
-  source: global
-  type: *local_reference_escape.Local
+  source: global *Local
   fix: keep the LocalRef pointer local, or store a value copy
 local_reference_escape.go:16:38: unsupported immutable operation: returning LocalRef pointers is unsupported
   source: &Local{Value: 1}
   type: *local_reference_escape.Local
+  fix: return a LocalRef value copy, or use im.Shared for objects whose pointers must be shared
+local_reference_escape.go:16:39: unsupported immutable operation: returning LocalRef pointers is unsupported
+  source: Local{Value: 1}
+  type: local_reference_escape.Local
   fix: return a LocalRef value copy, or use im.Shared for objects whose pointers must be shared
 local_reference_escape.go:16:6: unsupported immutable operation: returning LocalRef pointers is unsupported
   source: returned
@@ -17,22 +20,26 @@ local_reference_escape.go:17:31: unsupported immutable operation: global LocalRe
   source: global
   type: *local_reference_escape.Local
   fix: keep the LocalRef pointer local, or store a value copy
-local_reference_escape.go:17:40: unsupported immutable operation: reference operation is outside the supported allowlist
+local_reference_escape.go:17:40: unsupported immutable operation: global LocalRef pointers are unsupported
   source: value
   type: *local_reference_escape.Local
-  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared pointers can be stored or returned
-local_reference_escape.go:20:28: unsupported immutable operation: reference operation is outside the supported allowlist
+  fix: keep the LocalRef pointer local, or store a value copy
+local_reference_escape.go:20:12: unsupported immutable operation: LocalRef pointers cannot enter aggregate storage
+  source: Stored{Pointer: value}
+  type: local_reference_escape.Stored
+  fix: store a LocalRef value copy or a Shared pointer
+local_reference_escape.go:20:28: unsupported immutable operation: LocalRef pointers cannot enter aggregate storage
   source: value
   type: *local_reference_escape.Local
-  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared pointers can be stored or returned
+  fix: store a LocalRef value copy or a Shared pointer
 local_reference_escape.go:25:13: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: []*Local{value}
   type: []*local_reference_escape.Local
   fix: store LocalRef value copies or im.Shared pointers
-local_reference_escape.go:25:22: unsupported immutable operation: reference operation is outside the supported allowlist
+local_reference_escape.go:25:22: unsupported immutable operation: LocalRef pointers cannot enter aggregate storage
   source: value
   type: *local_reference_escape.Local
-  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared pointers can be stored or returned
+  fix: store a LocalRef value copy or a Shared pointer
 local_reference_escape.go:25:2: unsupported immutable operation: containers of LocalRef pointers are unsupported
   source: builder
   type: []*local_reference_escape.Local
@@ -69,9 +76,17 @@ local_reference_escape.go:44:15: unsupported immutable operation: protected stor
   source: value
   type: *local_reference_escape.Local
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+local_reference_escape.go:44:5: unsupported immutable operation: protected storage requires synchronous calls
+  source: readLocal
+  type: func(value *local_reference_escape.Local) int
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 local_reference_escape.go:45:18: unsupported immutable operation: protected storage requires synchronous calls
   source: value
   type: *local_reference_escape.Local
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+local_reference_escape.go:45:8: unsupported immutable operation: protected storage requires synchronous calls
+  source: readLocal
+  type: func(value *local_reference_escape.Local) int
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 local_reference_escape.go:48:11: struct cannot embed both im.Shared and im.LocalRef
 local_reference_escape.go:48:6: struct cannot embed both im.Shared and im.LocalRef

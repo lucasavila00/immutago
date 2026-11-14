@@ -1,0 +1,4 @@
+forward_capture.go:10:42: unsupported immutable operation: closures cannot capture immutable storage
+  source: laterValue
+  type: *review_convergence.CapturedValue
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

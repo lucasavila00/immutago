@@ -1,10 +1,10 @@
-reference_forms.go:15:25: unsupported immutable operation: immutable references require a concrete marked struct target
-  source: p
-  type: *[2]docrejected.Point
-  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
 reference_forms.go:15:30: unsupported immutable operation: immutable references require a concrete marked struct target
   source: &[2]Point{}
   type: *[2]docrejected.Point
+  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
+reference_forms.go:15:31: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: [2]Point{}
+  type: [2]docrejected.Point
   fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
 reference_forms.go:15:47: unsupported immutable operation: immutable references require a concrete marked struct target
   source: p
@@ -22,10 +22,15 @@ reference_forms.go:32:34: unsupported immutable operation: closures cannot captu
   source: point
   type: *docrejected.LocalPoint
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-reference_forms.go:40:9: unsupported immutable operation: user generic instantiations with immutable types are unsupported
-  source: identity
-  type: func(value docrejected.Point) docrejected.Point
+reference_forms.go:40:18: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: point
+  type: docrejected.Point
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
-reference_forms.go:46:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: point, found := makePair()
+reference_forms.go:40:9: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: identity(point)
+  type: docrejected.Point
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+reference_forms.go:46:18: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: makePair()
+  type: (docrejected.Point, bool)
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

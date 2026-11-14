@@ -1,8 +1,12 @@
 subset_dynamic_read.go:18:35: unsupported immutable operation: dynamic calls with immutable storage are unsupported
-  source: f(new(v))
-  type: ()
+  source: f
+  type: func(*rejected.Good)
   fix: call a named, non-generic function directly with a concrete immutable parameter
 subset_dynamic_read.go:18:37: unsupported immutable operation: dynamic calls with immutable storage are unsupported
   source: new(v)
   type: *rejected.Good
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+subset_dynamic_read.go:18:41: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: v
+  type: rejected.Good
   fix: call a named, non-generic function directly with a concrete immutable parameter

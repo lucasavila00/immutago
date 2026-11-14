@@ -1,8 +1,8 @@
-explicit_iteration.go:13:23: unsupported immutable operation: protected iteration requires a direct frozen All call
+explicit_iteration.go:13:23: unsupported immutable operation: immutable callbacks are unsupported
   source: pointerIterator
   type: func(yield func(*explicit_iteration.Good) bool)
-  fix: use range frozen.All() for protected values; do not create protected references through a custom iterator
-explicit_iteration.go:18:21: unsupported immutable operation: protected iteration requires a direct frozen All call
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+explicit_iteration.go:18:21: unsupported immutable operation: immutable callbacks are unsupported
   source: valueIterator
   type: func(yield func(explicit_iteration.Good) bool)
-  fix: use range frozen.All() for protected values; do not create protected references through a custom iterator
+  fix: call a named, non-generic function directly with a concrete immutable parameter

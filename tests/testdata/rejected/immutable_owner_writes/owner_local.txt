@@ -26,6 +26,18 @@ owner_local.go:48:2: unsupported immutable operation: writes to immutable object
   source: second.X
   type: int
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:54:12: unsupported immutable operation: writes to immutable objects are unsupported
+  source: read
+  type: func(pointer *borrowcases.Good) int
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:54:17: unsupported immutable operation: writes to immutable objects are unsupported
+  source: new(value)
+  type: *borrowcases.Good
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owner_local.go:54:21: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value
+  type: borrowcases.Good
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
 owner_local.go:54:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: value.X
   type: int

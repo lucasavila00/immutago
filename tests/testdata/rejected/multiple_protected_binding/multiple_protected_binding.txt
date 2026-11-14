@@ -1,7 +1,20 @@
-multiple_protected_binding.go:22:19: unsupported immutable operation: reference operation is outside the supported allowlist
+multiple_protected_binding.go:22:11: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: value
+  type: rejected.Good
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
+multiple_protected_binding.go:22:19: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: new(value)
   type: *rejected.Good
-  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Shared pointers can be stored or returned
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
+multiple_protected_binding.go:22:23: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: value
+  type: rejected.Good
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 multiple_protected_binding.go:22:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: pointer, value = new(value), Good{X: 2}
+  source: pointer
+  type: *rejected.Good
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
+multiple_protected_binding.go:22:31: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: Good{X: 2}
+  type: rejected.Good
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

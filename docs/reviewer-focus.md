@@ -38,8 +38,9 @@ For each changed form, identify:
 4. Accepted CLI fixtures and nearby rejected forms, with exact snapshots.
 5. Dependency coverage when the form crosses package boundaries.
 
-Check implicit receivers, new bindings, aliases, parentheses, tuple results,
-and statement evaluation order. Preserve ordinary Go outside protected storage.
+Check implicit conversions and receivers, actual source and destination types,
+new bindings, aliases, parentheses, tuple results, variadic elements, and statement
+evaluation order. Preserve ordinary Go outside protected storage.
 A forbidden form passing is a defect even if the guide does not show that
 rejection example. Known negative tests do not replace the matcher review.
 

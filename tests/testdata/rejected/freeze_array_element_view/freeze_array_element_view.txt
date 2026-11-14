@@ -1,1 +1,5 @@
+freeze_array_element_view.go:7:11: unsupported immutable operation: slice views of immutable storage are unsupported
+  source: values[0]
+  type: [2]int
+  fix: copy the array into local storage before slicing it, or use im.FrozenSlice for immutable sequence values
 freeze_array_element_view.go:7:11: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder

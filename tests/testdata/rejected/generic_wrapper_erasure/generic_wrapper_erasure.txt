@@ -2,3 +2,7 @@ generic_wrapper_erasure.go:13:14: unsupported immutable operation: user generic 
   source: wrap
   type: func(value rejected.Good) any
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+generic_wrapper_erasure.go:13:19: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: Good{Value: 1}
+  type: rejected.Good
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported

@@ -41,10 +41,10 @@ restricted_boundaries.go:20:6: unsupported immutable operation: containers of Lo
   type: map[int]*restricted_boundaries.Local
   fix: store LocalRef value copies or im.Shared pointers
 restricted_boundaries.go:20:6: unsupported owned container emptyMap: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
-restricted_boundaries.go:25:9: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
-  source: value
-  type: any
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+restricted_boundaries.go:25:23: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: frozen.All()
+  type: iter.Seq2[int, restricted_boundaries.Node]
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 restricted_boundaries.go:32:15: unsupported immutable operation: user-defined methods with immutable storage are unsupported
   source: Read
   type: func(value *restricted_boundaries.Node) int

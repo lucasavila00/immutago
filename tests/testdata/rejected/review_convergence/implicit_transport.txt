@@ -1,6 +1,10 @@
+implicit_transport.go:14:11: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: protectedPair()
+  type: (review_convergence.Value, int)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
 implicit_transport.go:14:2: unsupported immutable operation: dynamic calls with immutable storage are unsupported
-  source: callback(protectedPair())
-  type: ()
+  source: callback
+  type: func(review_convergence.Value, int)
   fix: call a named, non-generic function directly with a concrete immutable parameter
 implicit_transport.go:4:9: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
   source: pointer

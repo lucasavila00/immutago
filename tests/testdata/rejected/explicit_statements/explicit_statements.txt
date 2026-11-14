@@ -1,18 +1,15 @@
-explicit_statements.go:11:32: unsupported immutable operation: writes to immutable objects are unsupported
+explicit_statements.go:11:32: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: value.X
   type: int
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
-explicit_statements.go:11:41: unsupported immutable operation: writes to immutable objects are unsupported
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
+explicit_statements.go:11:41: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: value.Ready
   type: bool
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 explicit_statements.go:15:10: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: value.Ready
   type: bool
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
-explicit_statements.go:15:7: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: _, value.Ready = <-ready
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 explicit_statements.go:18:11: unsupported immutable operation: channels of immutable storage are unsupported
   source: ready
   type: chan<- explicit_statements.Good
@@ -25,66 +22,83 @@ explicit_statements.go:21:16: unsupported immutable operation: protected storage
   source: value
   type: explicit_statements.Good
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
-explicit_statements.go:21:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
+explicit_statements.go:21:7: unsupported immutable operation: channels of immutable storage are unsupported
   source: ready
   type: chan<- explicit_statements.Good
-  fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
+  fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset
 explicit_statements.go:28:10: unsupported immutable operation: protected storage is unsupported in select communication clauses
-  source: values
-  type: []bool
+  source: values[0]
+  type: bool
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
 explicit_statements.go:28:10: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-explicit_statements.go:28:7: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: _, values[0] = <-ready
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 explicit_statements.go:35:10: unsupported immutable operation: protected storage is unsupported in select communication clauses
-  source: values
-  type: []bool
+  source: values[0]
+  type: bool
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
-explicit_statements.go:35:7: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: _, values[0] = <-ready
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 explicit_statements.go:39:79: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeSlice(values)
   type: im.FrozenSlice[int]
+  fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
+explicit_statements.go:39:94: unsupported immutable operation: Freeze requires a standalone single binding
+  source: values
+  type: []int
   fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
 explicit_statements.go:41:76: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeSlice(values)
   type: im.FrozenSlice[int]
   fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
-explicit_statements.go:46:15: unsupported immutable operation: protected storage is unsupported in select communication clauses
-  source: im.FreezeSlice(values)
-  type: im.FrozenSlice[int]
-  fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
-explicit_statements.go:46:30: unsupported immutable operation: protected storage is unsupported in select communication clauses
+explicit_statements.go:41:91: unsupported immutable operation: Freeze requires a standalone single binding
   source: values
   type: []int
+  fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
+explicit_statements.go:46:15: unsupported immutable operation: Freeze requires a standalone single binding
+  source: im.FreezeSlice(values)
+  type: im.FrozenSlice[int]
+  fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
+explicit_statements.go:46:30: unsupported immutable operation: Freeze requires a standalone single binding
+  source: values
+  type: []int
+  fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
+explicit_statements.go:46:9: unsupported immutable operation: protected storage is unsupported in select communication clauses
+  source: watch
+  type: func(value im.FrozenSlice[int]) <-chan int
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
-explicit_statements.go:51:32: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: first, second := makePair()
+explicit_statements.go:51:49: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: makePair()
+  type: (explicit_statements.Good, explicit_statements.Good)
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 explicit_statements.go:55:16: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: value.X
   type: int
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
 explicit_statements.go:64:10: unsupported immutable operation: protected storage is unsupported in select communication clauses
-  source: values
-  type: map[string]bool
+  source: values["first"]
+  type: bool
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
 explicit_statements.go:64:10: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-explicit_statements.go:64:7: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: _, values["first"] = <-ready
+explicit_statements.go:66:9: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: frozen.Get
+  type: func(key string) (bool, bool)
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-explicit_statements.go:66:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: _, _ = frozen.Get("first")
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
+explicit_statements.go:70:22: unsupported immutable operation: Freeze requires a standalone single binding
+  source: values
+  type: map[string]int
+  fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
 explicit_statements.go:70:9: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeMap(values)
   type: im.FrozenMap[string, int]
   fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
+explicit_statements.go:74:51: unsupported immutable operation: protected storage requires synchronous calls
+  source: consume
+  type: func(value explicit_statements.Good)
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 explicit_statements.go:74:59: unsupported immutable operation: protected storage requires synchronous calls
   source: value
   type: explicit_statements.Good
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+explicit_statements.go:75:48: unsupported immutable operation: protected storage requires synchronous calls
+  source: consume
+  type: func(value explicit_statements.Good)
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 explicit_statements.go:75:56: unsupported immutable operation: protected storage requires synchronous calls
   source: value

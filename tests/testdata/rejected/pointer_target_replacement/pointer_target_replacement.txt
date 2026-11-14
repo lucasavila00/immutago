@@ -1,4 +1,12 @@
+pointer_target_replacement.go:20:13: unsupported immutable operation: writes to immutable objects are unsupported
+  source: Good{X: 2}
+  type: rejected.Good
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
 pointer_target_replacement.go:20:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: *pointer
   type: rejected.Good
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+pointer_target_replacement.go:20:3: unsupported immutable operation: writes to immutable objects are unsupported
+  source: pointer
+  type: *rejected.Good
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

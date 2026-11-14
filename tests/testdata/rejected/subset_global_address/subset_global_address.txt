@@ -2,3 +2,7 @@ subset_global_address.go:10:15: unsupported immutable operation: immutable refer
   source: &Global
   type: *rejected.Good
   fix: use &T{...}, new(T), or new(value); do not take the address of an existing variable, field, or element
+subset_global_address.go:10:16: unsupported immutable operation: immutable references require fresh allocation
+  source: Global
+  type: rejected.Good
+  fix: use &T{...}, new(T), or new(value); do not take the address of an existing variable, field, or element

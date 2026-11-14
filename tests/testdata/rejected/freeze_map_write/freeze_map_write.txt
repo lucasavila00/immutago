@@ -1,4 +1,5 @@
 freeze_map_write.go:8:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-freeze_map_write.go:9:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: _, _ = frozen.Get("x")
+freeze_map_write.go:9:9: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: frozen.Get
+  type: func(key string) (int, bool)
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

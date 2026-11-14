@@ -18,6 +18,10 @@ explicit_methods.go:19:56: unsupported immutable operation: user-defined methods
   source: (*Good).OwnRead
   type: func(*explicit_methods.Good) int
   fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+explicit_methods.go:19:72: unsupported immutable operation: user-defined methods with immutable storage are unsupported
+  source: new(value)
+  type: *explicit_methods.Good
+  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
 explicit_methods.go:28:6: unsupported immutable operation: user-defined methods with immutable storage are unsupported
   source: value.Len
   type: func() int
@@ -26,9 +30,6 @@ explicit_methods.go:29:6: unsupported immutable operation: user-defined methods 
   source: value.At
   type: func(index int) int
   fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
-explicit_methods.go:30:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: _, _ = value.Get(0)
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 explicit_methods.go:30:9: unsupported immutable operation: user-defined methods with immutable storage are unsupported
   source: value.Get
   type: func(index int) (int, bool)

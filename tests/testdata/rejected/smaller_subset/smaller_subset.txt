@@ -43,21 +43,17 @@ smaller_subset.go:22:2: immutable collection: type argument 1: type parameters a
 smaller_subset.go:23:9: immutable collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete type; user generic declarations cannot contain immutable storage
-smaller_subset.go:25:30: unsupported immutable operation: immutable references require a concrete marked struct target
-  source: p
-  type: *[2]smaller_subset.Node
-  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
 smaller_subset.go:25:35: unsupported immutable operation: immutable references require a concrete marked struct target
   source: &[2]Node{}
   type: *[2]smaller_subset.Node
   fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
+smaller_subset.go:25:36: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: [2]Node{}
+  type: [2]smaller_subset.Node
+  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
 smaller_subset.go:25:53: unsupported immutable operation: immutable references require a concrete marked struct target
   source: p
   type: *[2]smaller_subset.Node
-  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
-smaller_subset.go:26:30: unsupported immutable operation: immutable references require a concrete marked struct target
-  source: p
-  type: *im.FrozenSlice[int]
   fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
 smaller_subset.go:26:35: unsupported immutable operation: immutable references require a concrete marked struct target
   source: new(im.FrozenSlice[int])
@@ -83,9 +79,17 @@ smaller_subset.go:42:14: unsupported immutable operation: protected storage requ
   source: shared
   type: *smaller_subset.Node
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+smaller_subset.go:42:5: unsupported immutable operation: protected storage requires synchronous calls
+  source: readNode
+  type: func(node *smaller_subset.Node) int
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 smaller_subset.go:43:17: unsupported immutable operation: protected storage requires synchronous calls
   source: shared
   type: *smaller_subset.Node
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+smaller_subset.go:43:8: unsupported immutable operation: protected storage requires synchronous calls
+  source: readNode
+  type: func(node *smaller_subset.Node) int
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 smaller_subset.go:47:21: unsupported immutable operation: reference operation is outside the supported allowlist
   source: {Value: 1}
