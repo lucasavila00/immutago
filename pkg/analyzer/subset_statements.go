@@ -49,7 +49,8 @@ func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 	if genericSignature(signature) {
 		c.genericStorage(declaration, declaration.Name)
 	}
-	if signature.Recv() != nil && (c.queries.Contains(signature.Recv().Type()) || c.queries.Callable(signature)) {
+	if signature.Recv() != nil && !c.processSignature(signature) &&
+		(c.queries.Contains(signature.Recv().Type()) || c.queries.Callable(signature)) {
 		c.report(declaration.Name, "user-defined methods with immutable storage are unsupported")
 	}
 }

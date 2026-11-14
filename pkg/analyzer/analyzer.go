@@ -76,6 +76,9 @@ func run(pass *analysis.Pass) (any, error) {
 func checkLibraryArguments(pass *analysis.Pass, c *checks) {
 	for ident, instance := range pass.TypesInfo.Instances {
 		obj := pass.TypesInfo.Uses[ident]
+		if processTypeArgument(obj) && !processDeclaration(instance.TypeArgs.At(0)) {
+			c.report(ident.Pos(), "proc.Ref and proc.Start require a process type argument")
+		}
 		if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
 			continue
 		}
@@ -119,6 +122,7 @@ func (c *checks) visit(node ast.Node) bool {
 			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
 				"provide a Go implementation so writes and pointer transport can be checked")
 		}
+		c.checkProcessMethod(n)
 	case *ast.ImportSpec:
 		c.checkImport(n)
 
@@ -224,6 +228,9 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 					"\n  fix: "+structuralFix(ft, reason))
 				continue
 			}
+		} else if c.queries.Contains(ft) && checker.Process(t) {
+			c.report(fieldPos, "process field "+field.Name()+" contains immutable storage; publish it through an im.Owner field")
+			continue
 		} else if c.queries.Contains(ft) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+

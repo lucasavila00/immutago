@@ -21,6 +21,7 @@ type subsetChecks struct {
 	reported    map[token.Pos]bool
 	owners      map[*types.Var]bool
 	literals    map[*ast.CompositeLit]string
+	processes   map[types.Type]bool
 }
 
 // checkSubset checks the supported immutable forms with compiler-resolved types.
@@ -48,7 +49,7 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 	}
 	for id, instance := range pass.TypesInfo.Instances {
 		obj := pass.TypesInfo.Uses[id]
-		if libraryObject(obj) {
+		if libraryObject(obj) || obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == checker.RuntimePath {
 			continue
 		}
 		for i := 0; i < instance.TypeArgs.Len(); i++ {
@@ -72,6 +73,7 @@ func (c *subsetChecks) report(n ast.Node, message string) {
 // visit sends each protected operation through the complete source-form matcher.
 func (c *subsetChecks) visit(node ast.Node) bool {
 	c.checkOwnerNode(node)
+	c.checkProcessNode(node)
 	c.declarationNode(node)
 	expression, ok := node.(ast.Expr)
 	if !ok {

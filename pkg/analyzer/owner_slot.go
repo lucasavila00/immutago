@@ -318,7 +318,7 @@ func (c *subsetChecks) holderPointer(t types.Type) bool {
 		return false
 	}
 	pointer, ok := t.Underlying().(*types.Pointer)
-	if !ok || checker.IsLibraryType(pointer.Elem(), "Owner") {
+	if !ok || checker.IsLibraryType(pointer.Elem(), "Owner") || checker.Process(pointer.Elem()) {
 		return false
 	}
 	_, structure := pointer.Elem().Underlying().(*types.Struct)

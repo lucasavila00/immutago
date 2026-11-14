@@ -17,6 +17,7 @@ import (
 const testLibrary = `package im
  type Shared struct{}
  type Scoped struct{}
+ type Process struct{}
  type Owner[T any] struct{}
  func (o *Owner[T]) Load() *T { return nil }
  func (o *Owner[T]) Store(p *T) {}
@@ -33,8 +34,19 @@ const testLibrary = `package im
  func (values FrozenMap[K,V]) All()func(func(K,V)bool) {return nil}
 `
 
+const testRuntime = `package proc
+ import "context"
+ type Supervisor struct{}
+ type Ref[T any] struct { value *T }
+ func (r Ref[T]) Get() *T { return r.value }
+ func Start[T any, P interface{ *T; Run(context.Context) }](parent *Supervisor) Ref[T] { return Ref[T]{} }
+`
+
 // testImporter gives compiler tests the library's type identities without loading external packages.
-type testImporter struct{ library *types.Package }
+type testImporter struct {
+	library, runtime *types.Package
+	standard         types.Importer
+}
 
 // Import resolves the sealed library and standard packages used in test programs.
 func (i testImporter) Import(path string) (*types.Package, error) {
@@ -44,7 +56,10 @@ func (i testImporter) Import(path string) (*types.Package, error) {
 	if path == checker.LibraryPath {
 		return i.library, nil
 	}
-	return importer.Default().Import(path)
+	if path == checker.RuntimePath {
+		return i.runtime, nil
+	}
+	return i.standard.Import(path)
 }
 
 // checkSource type-checks a complete Go package, then runs the analyzer over its compiler data.
@@ -71,6 +86,16 @@ func sourcePass(t testing.TB, declarations string) *analysis.Pass {
 	if err != nil {
 		t.Fatal(err)
 	}
+	runtimeFile, err := parser.ParseFile(positions, "proc.go", testRuntime, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	standard := importer.Default()
+	runtimeConfig := types.Config{Importer: standard}
+	procPackage, err := runtimeConfig.Check(checker.RuntimePath, positions, []*ast.File{runtimeFile}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	source := "package sample\nimport \"" + checker.LibraryPath + "\"\n" + declarations
 	file, err := parser.ParseFile(positions, "sample.go", source, 0)
 	if err != nil {
@@ -85,7 +110,7 @@ func sourcePass(t testing.TB, declarations string) *analysis.Pass {
 		Scopes:     make(map[ast.Node]*types.Scope),
 		Implicits:  make(map[ast.Node]types.Object),
 	}
-	config := types.Config{Importer: testImporter{library}}
+	config := types.Config{Importer: testImporter{library, procPackage, standard}}
 	pkg, err := config.Check("sample", positions, []*ast.File{file}, info)
 	if err != nil {
 		t.Fatalf("test source does not compile: %v", err)

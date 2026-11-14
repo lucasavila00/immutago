@@ -59,7 +59,7 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	if genericSignature(origin) {
 		return "user generic instantiations with immutable types are unsupported"
 	}
-	if origin.Recv() != nil {
+	if origin.Recv() != nil && !c.processSignature(origin) {
 		return "user-defined methods with immutable storage are unsupported"
 	}
 	return ""

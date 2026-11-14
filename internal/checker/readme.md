@@ -10,6 +10,17 @@ Package checker proves structural immutability from Go compiler type information
 
 ## Constants
 
+Names of the process marker in LibraryPath and of the process runtime identities in RuntimePath.
+
+```go
+const (
+    ProcessMarker = "Process"
+    RefType       = "Ref"
+    StartFunction = "Start"
+    GetMethod     = "Get"
+)
+```
+
 LibraryPath is the package whose sealed collection implementations are trusted.
 
 ```go
