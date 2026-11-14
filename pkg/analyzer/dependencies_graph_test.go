@@ -5,7 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"math/rand/v2"
-	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -126,8 +126,15 @@ func roundTripFact(t *testing.T, fact *invalidPackage) *invalidPackage {
 	if err := gob.NewDecoder(bytes.NewReader(data)).Decode(&decoded); err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(*fact, decoded) {
-		t.Fatal("fact content changed during serialization")
+	if fact.Relevant != decoded.Relevant || len(fact.Packages) != len(decoded.Packages) {
+		t.Fatal("fact scope or record count changed during serialization")
+	}
+	for i, before := range fact.Packages {
+		after := decoded.Packages[i]
+		if before.Path != after.Path || !slices.Equal(before.Imports, after.Imports) ||
+			!slices.Equal(before.Failures, after.Failures) {
+			t.Fatalf("fact record %s changed during serialization", before.Path)
+		}
 	}
 	return &decoded
 }
