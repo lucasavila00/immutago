@@ -12,6 +12,10 @@ func TestClosureDeclarationScopes(t *testing.T) {
 		`var value=&Value{X:1};var read=func()int{return value.X}`,
 		`func f(){value:=&Value{};_=func()int{return value.X}}`,
 		`func f(){_=func(){value:=&Value{};_=func()int{return value.X}}}`,
+		`var value=&Value{};var read=func()int{return len([1]Value{*value})}`,
+		`func f(value *Value)func()int{return func()int{return len([1]Value{*value})}}`,
+		`type Local struct{im.Scoped};func f(local *Local)func()int{
+ return func()int{return len([1]*Local{local})}}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
@@ -27,10 +31,7 @@ func TestClosureDeclarationScopes(t *testing.T) {
 func TestClosureLocalConstruction(t *testing.T) {
 	cases := []string{
 		`var read=func()int{return count};var count=1`,
-		`var value=&Value{};var read=func()int{return len([1]Value{*value})}`,
-		`func f(value *Value)func()int{return func()int{return len([1]Value{*value})}}`,
-		`type Local struct{im.Scoped};func f(local *Local)func()int{
- return func()int{return len([1]*Local{local})}}`,
+		`func f()func()int{values:=[1]Value{};count:=len(values);return func()int{return count}}`,
 		`func f()int{return func()int{value:=&Value{X:1};return value.X}()}`,
 		`type Parent struct{im.Shared;Child Value};func f()int{
  return func()int{value:=Parent{Child:Value{X:1}};return value.Child.X}()}`,

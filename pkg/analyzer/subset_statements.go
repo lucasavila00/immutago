@@ -110,6 +110,12 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	if rule := c.matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
 		return rule
 	}
+	if name, ok := ast.Unparen(destination).(*ast.Ident); ok {
+		if variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var); ok &&
+			variable.Parent() == c.pass.Pkg.Scope() && dependencyArgument(source) {
+			return "process dependencies cannot enter package variables"
+		}
+	}
 	if !localReference(source) {
 		return ""
 	}
@@ -129,6 +135,9 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 
 // matchDeclaration accepts one binding or the exact two-result frozen map reader.
 func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
+	if group, ok := c.parents[declaration].(*ast.GenDecl); ok && group.Tok != token.VAR {
+		return "protected operation is outside the supported statement forms"
+	}
 	if len(declaration.Names) != 1 || len(declaration.Values) > 1 {
 		if !c.getDeclaration(declaration) {
 			return "multiple assignments involving protected storage are unsupported"
@@ -136,6 +145,9 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 	}
 	for _, name := range declaration.Names {
 		variable := c.pass.TypesInfo.Defs[name]
+		if variable != nil && variable.Parent() == c.pass.Pkg.Scope() && dependencyArgument(variable.Type()) {
+			return "process dependencies cannot enter package variables"
+		}
 		if variable != nil && localReference(variable.Type()) && variable.Parent() == c.pass.Pkg.Scope() {
 			return "global Scoped pointers are unsupported"
 		}
@@ -278,9 +290,6 @@ func (c *subsetChecks) matchClosure(literal *ast.FuncLit) {
 	ast.Inspect(literal.Body, func(node ast.Node) bool {
 		name, ok := node.(*ast.Ident)
 		if !ok {
-			return true
-		}
-		if checker.Unevaluated(c.pass.TypesInfo, c.parents, c.unevaluated, name) {
 			return true
 		}
 		variable, ok := c.pass.TypesInfo.Uses[name].(*types.Var)

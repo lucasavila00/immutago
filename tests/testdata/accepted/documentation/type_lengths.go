@@ -8,5 +8,8 @@ type ArrayLengthValue struct {
 
 type ArrayLengthHolder struct {
 	im.Shared
-	Values [len([1]ArrayLengthValue{})]int
+	Values [1]int
 }
+
+// OrdinaryLength keeps ordinary Go constant expressions in type syntax.
+type OrdinaryLength [len([2]int{})]int

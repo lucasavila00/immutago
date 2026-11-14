@@ -43,7 +43,25 @@ fields of a process are not protected storage. The
   and the type argument of `proc.Start`, `proc.StartReserved`, `proc.Reserve`, and `proc.PID`.
 - Each parameter and result of an exported method other than `Run` must pass the
   [type proof](../../internal/checker/proof.go). A PID is a leaf of that proof.
-- The type argument of `proc.Process` must pass the same proof.
+- The type argument of `proc.Process` must pass the same proof, with one
+  exception: `Prover.ArgumentReason` also accepts `proc.UncheckedDependency[T]` as the
+  argument type, and named `proc.UncheckedDependency[T]` fields of an argument struct
+  with exactly one marker.
+
+`proc.UncheckedDependency[T]` is an [unchecked dependency](../processes.md#unchecked-dependencies).
+The classifier treats the wrapper as protected storage and does not inspect `T`.
+The type proof rejects it, so it cannot be in an Owner value, a frozen
+collection, another marked struct, or an exported method signature. `checkStruct`
+rejects a `proc.UncheckedDependency` field in an unmarked struct, which includes a
+process. The source matcher rejects defined copies, pointers, arrays, native
+containers, interface boxing, and package variables. Type arguments are checked
+in the source walk so the explicit unchecked payload is skipped. `dependencyValue`
+accepts `Value` only as a direct synchronous call on
+`l.Args()` or on one field of it in a method of process `l`. The `T` value is
+not proved; `proc.Trust` is the promise.
+Before exempting an owned native handle, the source checker proves its protected
+key and element types with the same Prover. Ownership alone does not admit an
+argument-only type as a builder element.
 
 A process is not an Owner holder; the holder pointer rules do not apply to it.
 Methods with a process receiver are exempt from the rule against user-defined

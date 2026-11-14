@@ -1,6 +1,7 @@
 unsafe_consumer.go:3:8: unsupported dependency example.com/consumer/invalid_unsafe: immutability proof failed
-  representative failure: example.com/consumer/invalid_unsafe/invalid_unsafe.go:5:2: unsupported unsafe import; immutability cannot be proved
-    rule: reflection and unsafe operations can bypass typed ownership checks
-    fix: replace these operations with ordinary typed Go code
+  representative failure: example.com/consumer/invalid_unsafe/invalid_unsafe.go:13:32: unsupported immutable operation: protected operation is outside the supported expression forms
+    source: unsafe.Sizeof(Good{})
+    type: uintptr
+    fix: use a documented concrete value, pointer, reader, or builder operation
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/invalid_unsafe, correct its errors, then rerun immutago on this package

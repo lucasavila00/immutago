@@ -35,6 +35,9 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	if !ok {
 		return "protected operation is outside the supported expression forms"
 	}
+	if matched, rule := c.matchDependencyCall(call, object, signature); matched {
+		return rule
+	}
 	if rule := c.matchCallArguments(call, signature); rule != "" {
 		return rule
 	}

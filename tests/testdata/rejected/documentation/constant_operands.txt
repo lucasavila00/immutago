@@ -1,0 +1,29 @@
+constant_operands.go:10:33: unsupported immutable operation: containers of Scoped pointers are unsupported
+  source: [1]*ConstantLocal{local}
+  type: [1]*docrejected.ConstantLocal
+  fix: store Scoped value copies or im.Shared pointers
+constant_operands.go:10:51: unsupported immutable operation: closures cannot capture immutable storage
+  source: local
+  type: *docrejected.ConstantLocal
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+constant_operands.go:14:7: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: constantLength = len([1]Point{})
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
+constant_operands.go:17:30: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: [1]Point{}
+  type: [1]docrejected.Point
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
+constant_operands.go:20:37: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: values [len([1]Point{})]int
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
+constant_operands.go:20:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: constantGeneric
+  type: func[T any]()
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+constant_operands.go:25:25: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+constant_operands.go:25:8: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: n = len([1][]int{values})
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
+constant_operands.go:34:8: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: n = len([1]int{values[99]})
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
