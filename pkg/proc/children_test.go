@@ -15,7 +15,7 @@ import (
 // TestGoexitStopsWatcher checks completion when a child ends its goroutine.
 func TestGoexitStopsWatcher(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		root.add(func(context.Context) { runtime.Goexit() })
 		synctest.Wait()
 		done := root.Stop()
@@ -76,7 +76,7 @@ func (p *failingParent) Run(ctx context.Context) {
 // before the context of its run ends.
 func TestChildrenStopBeforeRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		Start[pool](root, None{})
 		synctest.Wait()
 		expectStarted(t, "start pool", "start first", "start second", "start third")
@@ -162,7 +162,7 @@ func (c *caller) Run(ctx context.Context) {
 // TestChildCallsParentDuringStop verifies that a child can call its parent until the child stops.
 func TestChildCallsParentDuringStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		pid := Reserve[asker]()
 		StartReserved(root, pid, askerArgs{Self: pid})
 		time.Sleep(time.Second)
@@ -176,7 +176,7 @@ func TestChildrenRestartWithRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		poolRuns.Store(0)
 		poolRelease = make(chan struct{})
-		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
 		Start[restartedPool](root, None{})
 		synctest.Wait()
 		expectStarted(t, "start first", "start second")
@@ -195,7 +195,7 @@ func TestChildrenRestartWithRun(t *testing.T) {
 func TestChildEscalationFailsRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
-		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
 		Start[failingParent](root, None{})
 		time.Sleep(31 * time.Second)
 		synctest.Wait()
@@ -206,6 +206,22 @@ func TestChildEscalationFailsRun(t *testing.T) {
 		expectEvents(t, "start parent", "00:00:32")
 		<-root.Stop()
 		expectEvents(t, "stop parent")
+	})
+}
+
+// TestChildPanicReport verifies that a child of a run reports its panics through the report of the root.
+func TestChildPanicReport(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		failures.Store(0)
+		reported := make(chan any, 1)
+		root := root(func(value any) { t.Errorf("escalated %v", value) }, func(value any, _ []byte) { reported <- value })
+		Start[failingParent](root, None{})
+		synctest.Wait()
+		if value := <-reported; value != int64(1) {
+			t.Fatalf("reported %v, want 1", value)
+		}
+		<-root.Stop()
+		takeEvents()
 	})
 }
 
@@ -264,7 +280,7 @@ func (r *router) entries() int {
 // synctest fails the test if a goroutine of the tree remains after the root stops.
 func TestChildrenChangeDuringRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		pid := Start[router](root, None{})
 		pid.Proc().Add("a")
 		synctest.Wait()
@@ -295,7 +311,7 @@ func TestChildrenChangeDuringRun(t *testing.T) {
 // TestChildrenOfProcessThatDoesNotRun verifies that children of a process that never runs do not run.
 func TestChildrenOfProcessThatDoesNotRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		<-root.Stop()
 		pid := Start[router](root, None{})
 		pid.Proc().Add("a")
@@ -313,7 +329,7 @@ func (*returning) Run(context.Context) {}
 // TestReturnedChildrenAreRemoved verifies that a supervisor removes children whose Run returned.
 func TestReturnedChildrenAreRemoved(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		Start[first](root, None{})
 		for range 1000 {
 			Start[returning](root, None{})
@@ -344,7 +360,7 @@ func (p *shortParent) Run(context.Context) {
 // TestChildrenStopWhenRunReturns verifies that the children stop when Run returns and the process ends.
 func TestChildrenStopWhenRunReturns(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
 		Start[shortParent](root, None{})
 		synctest.Wait()
 		expectStarted(t, "start first", "start second")
@@ -381,7 +397,7 @@ func (p *stoppingParent) Run(ctx context.Context) {
 func TestChildEscalatesDuringStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
-		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
 		Start[stoppingParent](root, None{})
 		time.Sleep(30 * time.Second)
 		synctest.Wait()
@@ -406,7 +422,7 @@ func (p *lateParent) Run(ctx context.Context) {
 func TestStartAfterEscalation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
-		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
 		Start[lateParent](root, None{})
 		time.Sleep(31 * time.Second)
 		synctest.Wait()
@@ -419,7 +435,7 @@ func TestStartAfterEscalation(t *testing.T) {
 // TestMethodsRaceStop verifies that children started by methods during Stop either stop or never run.
 func TestMethodsRaceStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot()
+		root := NewRoot(nil)
 		pid := Start[router](root, None{})
 		synctest.Wait()
 		var callers sync.WaitGroup
@@ -478,7 +494,7 @@ func (r *rebuilding) Run(ctx context.Context) {
 // starts the groups again.
 func TestGroupEscalation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := root(func(value any) { t.Errorf("escalated %v", value) })
+		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
 		Start[rebuilding](root, variantNames{Names: im.FreezeSlice([]string{"good", "bad"})})
 		time.Sleep(216 * time.Second)
 		synctest.Wait()

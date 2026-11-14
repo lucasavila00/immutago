@@ -74,6 +74,14 @@ func IsRuntimeType(t types.Type, name string) bool
 
 IsRuntimeType identifies a process runtime type by package identity and name, not spelling at its use site.
 
+## func IsUncheckedValue
+
+```go
+func IsUncheckedValue(t types.Type) bool
+```
+
+IsUncheckedValue reports whether t is the library's unchecked immutable value wrapper.
+
 ## func Marked
 
 ```go

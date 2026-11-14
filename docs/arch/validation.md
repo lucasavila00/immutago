@@ -15,9 +15,9 @@ Their unsafe, reflection, and cgo implementations are not proved.
 Application code must run through the analyzer for its selected build
 configuration. An ordinary Go build supplies no immutability checks. Checked
 code cannot use reflection, unsafe imports, or bodyless functions to bypass
-the proof. There are no suppression directives. The one user trust point is
-`proc.Trust`: a [process dependency](../processes.md#unchecked-dependencies) is a
-promise of safe concurrent use that the checker does not prove.
+the proof. There are no suppression directives. The two user trust points are
+`proc.Trust` for safe concurrent use and `im.Trust` for immutable data. The checker
+does not prove either [promise](../rules.md#trust-markers).
 Failures from checked dependencies reach consumers through package facts. Runtime Freeze has
 no fallback validation when the analyzer is omitted.
 
@@ -31,6 +31,7 @@ no fallback validation when the analyzer is omitted.
 | Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
 | Storage reuse, clone independence, identity, and allocation counts | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [iterator tests](../../pkg/im/iterator_test.go) |
 | Process declarations, PIDs, receiver uses, and start arguments | [Process tests](../../pkg/analyzer/process_test.go), [dependency tests](../../pkg/analyzer/process_dependency_test.go), [marker tests](../../internal/checker/markers_test.go), [CLI fixtures](../../tests/testdata/accepted/process) |
+| UncheckedValue handles: declaring-package wrap and read, and storage as an allowed type | [UncheckedValue tests](../../pkg/analyzer/unchecked_value_test.go), [CLI fixtures](../../tests/testdata/accepted/uncheckedvalue) |
 | Restart, backoff, escalation, stop order, reserved PIDs, and the test helper | [Runtime tests](../../pkg/proc/proc_test.go), [helper tests](../../pkg/proc/proctest/proctest_test.go) |
 | Consumer-only dependency failures | [Dependency tests](../../pkg/analyzer/dependencies_test.go), [graph and gob tests](../../pkg/analyzer/dependencies_graph_test.go), [CLI fixtures](../../tests/cli_test.go) |
 

@@ -16,7 +16,7 @@ type Tally struct {
 // Run starts an Auditor with the map, then writes the map.
 func (t *Tally) Run(ctx context.Context) {
 	t.seen = map[string]int{}
-	children := proc.NewRoot()
+	children := proc.NewRoot(nil)
 	defer func() { <-children.Stop() }()
 	proc.Start[Auditor](children, AuditorArgs{Seen: t.seen})
 	for i := 0; ctx.Err() == nil; i++ {

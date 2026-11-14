@@ -17,7 +17,7 @@
 // panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and
 // escalates the panic to the parent supervisor, which restarts the subtree with
 // the same rule. At the root supervisor, the escalation panics again with the
-// last panic value, and the program exits.
+// last panic value, and the program exits. NewRoot accepts a function to report recovered panics.
 //
 // A process can start children under the Supervisor of its current run. When
 // the process stops, the runtime stops these children in reverse start order
@@ -32,6 +32,7 @@ package proc
 
 import (
 	"context"
+	"runtime/debug"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -58,6 +59,7 @@ type Process[A any] struct {
 	ended    bool
 	failure  any
 	failed   bool
+	report   func(value any, stack []byte)
 }
 
 // Args returns the arguments that Start or StartReserved gave to the process.
@@ -73,7 +75,7 @@ func (p *Process[A]) Supervisor() *Supervisor {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.children == nil {
-		p.children = &Supervisor{stopped: make(chan struct{})}
+		p.children = &Supervisor{stopped: make(chan struct{}), report: p.report}
 		switch {
 		case p.ended:
 			p.children.Stop()
@@ -90,14 +92,16 @@ func (p *Process[A]) serve() {
 	p.done = make(chan struct{})
 	go func() {
 		defer close(p.done)
-		if p.failure, p.failed = attempt(context.Background(), p.children.serve); p.failed {
+		if p.failure, _, p.failed = attempt(context.Background(), p.children.serve, false); p.failed {
 			p.cancel()
 		}
 	}()
 }
 
-// bind sets the arguments of a new process value.
-func (p *Process[A]) bind(args A) { p.args = args }
+// bind sets the arguments of a new process value and the panic report of its run supervisors.
+func (p *Process[A]) bind(args A, report func(value any, stack []byte)) {
+	p.args, p.report = args, report
+}
 
 // begin returns the context of the run and runs the supervisor of the run if it exists.
 // When ctx ends, halt stops the children before the context of the run ends.
@@ -175,6 +179,7 @@ type Supervisor struct {
 	stopped  chan struct{}
 	parent   *Supervisor
 	entry    *child
+	report   func(value any, stack []byte)
 }
 
 // child is one process or nested supervisor and its current goroutine.
@@ -202,14 +207,19 @@ func (p PID[T]) Proc() *T {
 // Reserve returns a PID that is not started. Proc panics until StartReserved starts it.
 func Reserve[T any]() PID[T] { return PID[T]{value: new(atomic.Pointer[T])} }
 
-// NewRoot returns a root supervisor.
-func NewRoot() *Supervisor { return root(func(value any) { panic(value) }) }
+// NewRoot returns a root supervisor. Pass nil to disable panic reports.
+// Otherwise, report receives each recovered panic value and stack before the restart delay.
+// Nested supervisors inherit report. Calls can run concurrently, and the supervisor waits
+// for report to return. A panic in report is not recovered.
+func NewRoot(report func(value any, stack []byte)) *Supervisor {
+	return root(func(value any) { panic(value) }, report)
+}
 
 // root returns a root supervisor that calls exit with an escalated panic value.
-func root(exit func(any)) *Supervisor {
-	s := &Supervisor{stopped: make(chan struct{})}
+func root(exit func(any), report func(value any, stack []byte)) *Supervisor {
+	s := &Supervisor{stopped: make(chan struct{}), report: report}
 	go func() {
-		if value, failed := attempt(context.Background(), s.serve); failed {
+		if value, _, failed := attempt(context.Background(), s.serve, false); failed {
 			exit(value)
 		}
 	}()
@@ -219,7 +229,7 @@ func root(exit func(any)) *Supervisor {
 // StartSupervisor returns a new supervisor that parent runs as a child.
 // When the nested supervisor's Stop channel closes, its parent has removed its child entry.
 func StartSupervisor(parent *Supervisor) *Supervisor {
-	nested := &Supervisor{stopped: make(chan struct{}), parent: parent}
+	nested := &Supervisor{stopped: make(chan struct{}), parent: parent, report: parent.report}
 	nested.entry = parent.add(nested.serve)
 	return nested
 }
@@ -228,7 +238,7 @@ func StartSupervisor(parent *Supervisor) *Supervisor {
 func Start[T, A any, P interface {
 	*T
 	Run(context.Context)
-	bind(A)
+	bind(A, func(value any, stack []byte))
 	begin(context.Context) context.Context
 	end()
 }](parent *Supervisor, args A) PID[T] {
@@ -243,13 +253,13 @@ func Start[T, A any, P interface {
 func StartReserved[T, A any, P interface {
 	*T
 	Run(context.Context)
-	bind(A)
+	bind(A, func(value any, stack []byte))
 	begin(context.Context) context.Context
 	end()
 }](parent *Supervisor, pid PID[T], args A) {
 	create := func() *T {
 		value := new(T)
-		P(value).bind(args)
+		P(value).bind(args, parent.report)
 		return value
 	}
 	if !pid.value.CompareAndSwap(nil, create()) {
@@ -332,7 +342,7 @@ func (s *Supervisor) launch(c *child) {
 	run := c.run
 	go func() {
 		defer close(done)
-		if watch(ctx, run, s.failure) {
+		if watch(ctx, run, s.failure, s.report) {
 			s.forget(c)
 		}
 	}()
@@ -384,10 +394,15 @@ func (s *Supervisor) halt() {
 
 // watch runs run until it returns or ctx ends, and restarts it after a panic.
 // It reports whether run returned before ctx ended.
-func watch(ctx context.Context, run func(context.Context), failure chan<- any) bool {
+func watch(ctx context.Context, run func(context.Context), failure chan<- any,
+	report func(value any, stack []byte),
+) bool {
 	var restarts []time.Time
 	for {
-		value, failed := attempt(ctx, run)
+		value, stack, failed := attempt(ctx, run, report != nil)
+		if failed && report != nil {
+			report(value, stack)
+		}
 		if !failed || ctx.Err() != nil {
 			return !failed && ctx.Err() == nil
 		}
@@ -411,16 +426,20 @@ func watch(ctx context.Context, run func(context.Context), failure chan<- any) b
 	}
 }
 
-// attempt calls run with a context that ends with the attempt, and returns the panic value if run panics.
-func attempt(ctx context.Context, run func(context.Context)) (value any, failed bool) {
+// attempt calls run with a context that ends with the attempt, and returns the panic value and its stack if run
+// panics.
+func attempt(ctx context.Context, run func(context.Context), captureStack bool) (value any, stack []byte, failed bool) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer func() {
 		if failed {
 			value = recover()
+			if captureStack {
+				stack = debug.Stack()
+			}
 		}
 	}()
 	failed = true
 	run(ctx)
-	return nil, false
+	return nil, nil, false
 }

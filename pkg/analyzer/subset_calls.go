@@ -136,6 +136,8 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 			return ""
 		}
 		return "Freeze requires a standalone single binding"
+	case "Trust", "Unwrap":
+		return ""
 	case "Get", "At", "Len", "All", "Clone":
 		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 		if !ok || !c.exactCollectionMethod(selector) {
