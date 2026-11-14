@@ -51,7 +51,7 @@ func main() {
 | New struct pointer in a local variable | `state := &State{}` or `state := new(State)` |
 | Copy that pointer to a local variable | `other := state` |
 | Pass that pointer to a named, non-generic function with the exact fixed parameter type | `publish(state)` where `func publish(s *State)` |
-| Store with exactly `&T{...}` or `new(T)`, as a direct call statement | `current.Store(&Config{Limit: 1})`, `state.Current.Store(new(Config))` |
+| Store in a package variable or direct field, with exactly `&T{...}` or `new(T)`, as a direct call statement | `current.Store(&Config{Limit: 1})`, `state.Current.Store(new(Config))` |
 | Load from a package variable or direct field into one local pointer | `config := current.Load()`, `var config = state.Current.Load()`, `config = current.Load()` |
 | Package-qualified calls | `config := settings.Current.Load()` |
 | Parentheses around an allowed expression | `config := (current).Load()` |
@@ -78,7 +78,7 @@ func start() {
 | `im.Owner[SharedConfig]`, where SharedConfig embeds `im.Shared` | Use `im.Owner[Config]` with `im.Scoped`. |
 | `copy := state.Current` or `copy := *state` | Pass the struct pointer; do not copy the atomic pointer or its containing struct. |
 | `current.Store(config)` | `current.Store(&Config{Limit: config.Limit})` |
-| `return current.Load()` | Load locally and return a Config value copy: `return *config`. |
+| `return current.Load()` | `config := current.Load(); return *config` with a Config result. |
 | `retain(state)` where retain takes `...*State` | Use a fixed `*State` parameter. |
 | Store state in a field, slice, map, global, or closure; return state | Keep the pointer local or pass it to a named function. |
 | Pass `&state.Current` as `*im.Owner[Config]` | Pass `state` as `*State`. |
