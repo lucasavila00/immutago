@@ -44,7 +44,7 @@ var Analyzer = &analysis.Analyzer{
 
 // run checks compiler-resolved types and source operations in one package.
 func run(pass *analysis.Pass) (any, error) {
-	if pass.Pkg.Path() == checker.LibraryPath || standardLibrary(pass) {
+	if pass.Pkg.Path() == checker.LibraryPath || testMainPackage(pass.Pkg) || standardLibrary(pass) {
 		return nil, nil
 	}
 	relevant, imports := collectDependencyFacts(pass)

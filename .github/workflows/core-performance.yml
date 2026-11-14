@@ -28,6 +28,10 @@ jobs:
             package: ./pkg/analyzer
             benchmark: ^BenchmarkCoreOrdinary
             profile: BenchmarkCoreOrdinary/64$
+          - name: slot-queries
+            package: ./pkg/analyzer
+            benchmark: ^BenchmarkCoreSlotGraph
+            profile: BenchmarkCoreSlotGraph/checked/2048$
           - name: marked-proofs
             package: ./pkg/analyzer
             benchmark: ^BenchmarkCoreMarked
