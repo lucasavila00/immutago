@@ -1,5 +1,8 @@
 # Process reference
 
+For a complete example and the execution, restart, and stop rules, read
+[Supervised processes](processes.md).
+
 The [config loader](../tests/testdata/accepted/process/config_loader.go) and
 [limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
 and PIDs in start arguments. The tables use those example types.
@@ -15,7 +18,7 @@ process pointer from `Proc()` are rejected. Parentheses preserve these forms.
 | Process without arguments | `type Cache struct { proc.Process[proc.None]; hits int }` |
 | Declare the entry point on the process | `func (l *ConfigLoader) Run(ctx context.Context) { ... }` (no results) |
 | Method with a pointer receiver | `func (l *ConfigLoader) Version() int { return l.version }` |
-| Exported method other than `Run` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (c *Cache) Latest() Entry` |
+| Exported method other than `Run` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (l *Limiter) Usage() Usage` |
 
 ## Use fields and arguments inside methods
 

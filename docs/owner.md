@@ -1,8 +1,8 @@
 # Owner
 
 Use `im.Owner[T]` when readers need the current version of some data while a
-publisher replaces it. `T` must be a Scoped struct. Store creates no change in
-an object that a reader already loaded.
+publisher replaces it. `T` must be a Scoped struct. Store publishes a new object. It does not
+change an object that a reader already loaded.
 
 Here, each request reads one configuration version. A later Store affects later
 Loads, while an active reader can finish with its earlier version:
@@ -36,9 +36,11 @@ func allowed(service *Service, used int) bool {
 func main() {
     service := &Service{}
     configure(service, 100)
+    previous := service.Current.Load()
     println(allowed(service, 80)) // true
     configure(service, 50)
     println(allowed(service, 80)) // false
+    println(previous.Limit) // 100: this reader keeps its earlier version.
 }
 ```
 
@@ -46,46 +48,43 @@ Load and Store can run in different goroutines. Load returns nil before the
 first Store. Pass a newly created object to Store; a pointer from Load follows
 the [Scoped rules](scoped.md).
 
-The reference below uses `ScopedPoint` for a Scoped struct with `X int`, and
-`Loader` for a struct with `Current im.Owner[ScopedPoint]`.
-
 ## Allowed forms
 
 An Owner field or variable is a **slot**. A struct with a slot field, such as
-`Loader`, is a **holder**. These allowed forms are complete; other slot and
+`Service`, is a **holder**. These allowed forms are complete; other slot and
 holder operations are rejected.
 Parentheses are allowed. An exported Owner variable can also be used through
 its package name, such as `state.Current.Load()`.
 
 | Allowed form | Example |
 | --- | --- |
-| Named Owner field in a struct without an im marker | `type Loader struct { Current im.Owner[ScopedPoint] }` |
-| Declare a package Owner variable without an initializer | `var current im.Owner[ScopedPoint]` |
-| Declare a local or package holder variable without an initializer | `var loader Loader` |
-| Create a holder and keep its pointer in a local variable | `loader := &Loader{}` or `loader := new(Loader)` |
-| Copy a holder pointer to one local variable | `other := loader` |
-| Pass a holder pointer to a direct, concrete function | `publish(loader)` where `func publish(l *Loader)` |
-| Store a fresh object in a direct slot field or package slot | `loader.Current.Store(&ScopedPoint{X: 1})`, `current.Store(new(ScopedPoint))` |
-| Load into one local pointer | `point := loader.Current.Load()`, `var point = current.Load()`, `point = current.Load()` |
+| Named Owner field in a struct without an im marker | `type Service struct { Current im.Owner[Config] }` |
+| Declare a package Owner variable without an initializer | `var current im.Owner[Config]` |
+| Declare a local or package holder variable without an initializer | `var service Service` |
+| Create a holder and keep its pointer in a local variable | `service := &Service{}` or `service := new(Service)` |
+| Copy a holder pointer to one local variable | `other := service` |
+| Pass a holder pointer to a direct, concrete function | `publish(service)` where `func publish(l *Service)` |
+| Store a fresh object in a direct slot field or package slot | `service.Current.Store(&Config{Limit: 1})`, `current.Store(new(Config))` |
+| Load into one local pointer | `config := service.Current.Load()`, `var config = current.Load()`, `config = current.Load()` |
 
 A named function can publish in a background goroutine:
 
 ```go
-func publish(l *Loader) { l.Current.Store(&ScopedPoint{X: 1}) }
+func publish(l *Service) { l.Current.Store(&Config{Limit: 1}) }
 
 func start() {
-    loader := &Loader{}
-    go publish(loader)
+    service := &Service{}
+    go publish(service)
 }
 ```
 
 [Processes](processes.md) have separate rules for methods that use Owner fields.
 Do not copy an Owner or a struct that contains one; pass a pointer to the struct.
 
-Keep `*Loader` pointers in local variables. Pass them to named functions with
-a parameter such as `l *Loader`. Do not save them in fields, slices, maps,
+Keep `*Service` pointers in local variables. Pass them to named functions with
+a parameter such as `l *Service`. Do not save them in fields, slices, maps,
 package variables, or closures, and do not return them. Do not use generic or
-variadic functions for these calls. Pass `*Loader`, not `*im.Owner[T]`.
+variadic functions for these calls. Pass `*Service`, not `*im.Owner[T]`.
 
 A pointer returned by Load follows the [Scoped rules](scoped.md). Save the
 result in a local variable before use. For `im.Owner[T]`, call Store with
@@ -98,12 +97,12 @@ These examples are not exhaustive.
 
 | Rejected form | Allowed replacement |
 | --- | --- |
-| `im.Owner[SharedPoint]` | Use `im.Owner[ScopedPoint]`. |
-| `copy := loader.Current` or `copy := *loader` | Keep and pass `loader` as a pointer. |
-| `loader.Current.Store(point)` | `loader.Current.Store(&ScopedPoint{X: point.X})` |
-| `return loader.Current.Load()` | `point := loader.Current.Load(); return *point` with a value result. |
-| `retain(loader)` where `retain` takes `...*Loader` | Use a direct function with a fixed `*Loader` parameter. |
-| `var saved *Loader` at package scope | Keep the pointer in a local variable. |
-| `read := loader.Current.Load` | `point := loader.Current.Load()` |
-| `loader.Current.Load().X = 2` | `loader.Current.Store(&ScopedPoint{X: 2})` |
-| `type Outer struct { Value Loader }` | Keep the slot field in the unmarked holder. |
+| `im.Owner[SharedConfig]` | Use `im.Owner[Config]`. |
+| `copy := service.Current` or `copy := *service` | Keep and pass `service` as a pointer. |
+| `service.Current.Store(config)` | `service.Current.Store(&Config{Limit: config.Limit})` |
+| `return service.Current.Load()` | `config := service.Current.Load(); return *config` with a value result. |
+| `retain(service)` where `retain` takes `...*Service` | Use a direct function with a fixed `*Service` parameter. |
+| `var saved *Service` at package scope | Keep the pointer in a local variable. |
+| `read := service.Current.Load` | `config := service.Current.Load()` |
+| `service.Current.Load().Limit = 2` | `service.Current.Store(&Config{Limit: 2})` |
+| `type Outer struct { Value Service }` | Keep the slot field in the unmarked holder. |

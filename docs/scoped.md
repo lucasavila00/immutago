@@ -31,7 +31,6 @@ func main() {
 A copy of `Settings` can be stored or returned; its pointer cannot. Choose
 [Shared](shared.md) when callers need to keep the pointer. These rules limit
 where pointers can be saved; they do not set a deadline for garbage collection.
-The reference below uses `ScopedPoint` for a struct with `im.Scoped` and `X int`.
 
 ## Allowed forms
 
@@ -49,7 +48,7 @@ These examples are not exhaustive.
 
 | Rejected form | Allowed replacement |
 | --- | --- |
-| `return p` with `p *ScopedPoint` | `return *p` with a `ScopedPoint` result. |
-| `saved = p` with `p *ScopedPoint` | Store the value copy `*p`. |
-| `callback := func() int { return p.X }` | Read `x := p.X` before creating the callback. |
-| `slot.Store(p)` | `slot.Store(&ScopedPoint{X: p.X})` |
+| `return p` with `p *Settings` | `return *p` with a `Settings` result. |
+| `saved = p` with `p *Settings` | Store the value copy `*p`. |
+| `callback := func() int { return p.Limit }` | Read `x := p.Limit` before creating the callback. |
+| `slot.Store(p)` | `slot.Store(&Settings{Limit: p.Limit})` |

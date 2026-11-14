@@ -5,8 +5,8 @@
 // do not save it. Both markers require read-only fields, including nested data.
 // Owner lets readers load the current Scoped object while a publisher replaces it.
 //
-// Build slices and maps with normal Go operations, then call FreezeSlice or
-// FreezeMap. Freeze reuses their storage without copying entries. Read through
+// Prepare a Go slice or map in one local variable, then call FreezeSlice or
+// FreezeMap. Freeze reuses its storage without copying entries. Read through
 // the frozen value after that call. Clone returns a separate slice or map to edit.
 //
 // Run immutago on the packages that use these types. Go build alone does not

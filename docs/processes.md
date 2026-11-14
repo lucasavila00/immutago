@@ -77,6 +77,19 @@ builds and publishes versions on a timer. The
 [limiter example](../tests/testdata/accepted/process/limiter.go) receives that
 loader's PID in its start arguments and calls it from an exported method.
 
+With those example types, start the loader and limiter in one group:
+
+```go
+group := proc.StartSupervisor(root)
+loader := proc.Start[ConfigLoader](group, LoaderArgs{Path: "api", Every: time.Minute})
+limiter := proc.Start[Limiter](group, LimiterArgs{Loader: loader, Key: "api"})
+decision := limiter.Proc().Take()
+```
+
+The limiter calls the loader through its PID. Until the loader first publishes,
+its limit is zero and Take returns Limited. Both processes stop when you wait
+on `<-group.Stop()`.
+
 ## Start and readiness
 
 Start publishes the new struct before Run begins. A method can therefore run
@@ -97,8 +110,8 @@ arguments and replaces the value behind the PID. Mutable fields return to their
 zero values, including empty Owner fields.
 
 During the delay, PID calls still use the old struct. A call already in progress
-finishes on that old struct after the replacement. A panic in a directly called
-method is a panic in the caller; it does not trigger a supervised restart.
+finishes on that old struct after the replacement. A method panic propagates to its caller; the target process's supervisor does
+not catch it. If the panic reaches another process's Run, that caller can restart.
 
 A sixth panic from the same child in 5 minutes stops its siblings, last started
 first, and passes the failure to the parent supervisor. The parent restarts the
@@ -113,10 +126,9 @@ is cancelled; Stop cannot force it to exit. Stop does not wait for direct method
 calls. A PID can still call methods on its last struct after Run ends or Stop
 completes.
 
-Use `proc.StartSupervisor(parent)` to group processes under a nested supervisor.
-After that supervisor's own Stop channel closes, the parent no longer retains
-it as a child. In tests, `proctest.NewRoot(t)` stops the tree during cleanup and
-fails if it does not stop within 5 seconds.
+Use `proc.StartSupervisor(parent)` for processes that must stop or restart as
+a group. In tests, [proctest.NewRoot(t)](../pkg/proc/proctest/readme.md) stops the
+tree during cleanup and fails if it does not stop within 5 seconds.
 
 ## Not checked
 

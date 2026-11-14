@@ -36,23 +36,22 @@ func main() {
 ```
 
 Choose [Scoped](scoped.md) instead when a function must not keep a pointer after
-it returns. The reference below uses `SharedPoint` for a struct with `im.Shared`
-and `X int`, and `SharedLink` for a Shared struct with `P *SharedPoint`.
+it returns.
 
 ## Allowed forms
 
 The [common forms](common-forms.md) and the table below give the complete list
 of allowed operations. Other protected operations are rejected.
 
-`*SharedPoint` also permits these forms:
+`*Product` also permits these forms:
 
 | Allowed form | Example |
 | --- | --- |
-| Store in a marked field | `link := SharedLink{P: p}` |
-| Store in a local slice or map before Freeze | `values := []*SharedPoint{p}` |
+| Store in a marked field | `order := Order{Product: p}` |
+| Store in a local slice or map before Freeze | `values := []*Product{p}` |
 | Store in a package variable | `saved = p` |
-| Read a stored pointer | `p := link.P`, `p := values[i]` |
-| Return or receive a pointer from a named function | `return p`, `p := makeSharedPoint()` |
+| Read a stored pointer | `p := order.Product`, `p := values[i]` |
+| Return or receive a pointer from a named function | `return p`, `p := product()` |
 
 ## Rejected examples
 
@@ -60,6 +59,6 @@ These examples are not exhaustive.
 
 | Rejected form | Allowed replacement |
 | --- | --- |
-| `p.X = 2` | `p = &SharedPoint{X: 2}` |
+| `p.Price = 9` | `p = &Product{Price: 9}` |
 | `p := &point` | `p := new(point)` |
-| `var value any = p` | Keep a concrete `*SharedPoint` variable. |
+| `var value any = p` | Keep a concrete `*Product` variable. |

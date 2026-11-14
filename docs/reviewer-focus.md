@@ -50,3 +50,15 @@ alone is not sufficient.
 
 Check changed links and generated package references. Use hosted CI for full
 validation. For collection changes, also check the [cost contract](performance.md).
+
+## Public guide review
+
+Read each guide as a Go developer who has not worked on this checker. Can the
+reader tell what the feature provides, when to choose it, and how to use it?
+The example must show those answers, with enough explanation to connect the
+API calls to the task. Explain normal use before limits. Keep complete syntax
+lists in a clearly identified reference, and checker mechanics in maintainer docs.
+
+Passing examples and links does not establish that a guide teaches its reader.
+Check the reading order and undefined terms too. Remove repeated explanations;
+do not remove the explanation that makes an example useful.
