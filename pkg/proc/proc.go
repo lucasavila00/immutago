@@ -1,8 +1,8 @@
 // Package proc runs supervised processes.
 //
 // A process is a mutable struct that embeds Process[A] and has a Run(context.Context)
-// method with a pointer receiver. A is the immutable argument type of the process;
-// use None for a process without arguments. Start creates a new process value,
+// method with a pointer receiver. A holds immutable arguments or explicit unchecked
+// dependencies; use None for a process without arguments. Start creates a new process value,
 // gives it the arguments, runs Run in a new goroutine, and returns its PID. Callers
 // keep the PID and call exported methods directly on the process pointer from
 // PID.Proc. The immutago analyzer proves that these methods take and return only
@@ -149,6 +149,21 @@ func (p *Process[A]) end() {
 type None struct {
 	im.Shared
 }
+
+// UncheckedDependency holds a value that the caller trusts to be safe for concurrent use by several processes,
+// for example a logger, an HTTP client, a factory function, or a test fake. This does not make the value immutable.
+// The analyzer does not prove this trust. It permits UncheckedDependency only as a process argument type or as a
+// named field of a marked process argument struct.
+type UncheckedDependency[T any] struct {
+	value T
+}
+
+// Trust wraps v. The call is the caller's promise that several processes can use v at the same time.
+func Trust[T any](v T) UncheckedDependency[T] { return UncheckedDependency[T]{value: v} }
+
+// Value returns the trusted value, or the zero value of T for a zero dependency.
+// The analyzer permits only direct calls on the process receiver's Args() or one of its dependency fields.
+func (d UncheckedDependency[T]) Value() T { return d.value }
 
 // Supervisor runs processes and nested supervisors.
 type Supervisor struct {

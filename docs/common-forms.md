@@ -19,6 +19,8 @@ type SharedLink struct { im.Shared; P *SharedPoint }
 
 Use the types below for struct fields and frozen collection keys and elements.
 This list is complete. It also applies to each nested field, key, and element.
+Process start arguments have one separate [unchecked dependency form](process-forms.md#unchecked-dependencies).
+An argument struct with a dependency field is not an allowed stored type.
 
 | Allowed form | Example |
 | --- | --- |
@@ -87,8 +89,9 @@ After `x := point.X`, `x` is an ordinary Go integer. You can change it or use it
 in a callback. The statement that reads `point.X` must still use one of the
 listed statement forms. Copying a marked value, pointer, or frozen collection
 does not remove its rules.
-Go does not evaluate operands used only for a compiler constant, such as the
-array in `len([1]SharedPoint{})`; these forms are allowed.
+The same source rules apply when Go computes a constant. For example,
+`count := len(points)` is allowed, but a closure cannot read `points` through
+`len(points)`. Compute `count` before the closure and capture that integer.
 
 ## Common pointer forms
 
@@ -127,7 +130,7 @@ Use the operations above inside these statement forms:
 
 | Allowed form | Example |
 | --- | --- |
-| Declare or assign one destination | `value := SharedPoint{X: 1}`, `value = SharedPoint{X: 2}` |
+| Declare one variable or assign one destination | `var value SharedPoint`, `value := SharedPoint{X: 1}`, `value = SharedPoint{X: 2}` |
 | Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
 | Bind a map reader's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
@@ -164,4 +167,6 @@ Rejected statement and call examples (**not exhaustive**):
 | `var value any = p` | Use a concrete `*SharedPoint` variable. |
 | `callback(p)` through a function variable with protected arguments | Use a direct named function. |
 | `callback := func() int { return point.X }` | `x := point.X; callback := func() int { return x }` |
+| `func() int { return len([1]*ScopedPoint{p}) }` | Use `1`, or compute an ordinary length before the closure. |
+| `const n = len([1]SharedPoint{})`, `[len([1]SharedPoint{})]int` | Use `const n = 1`, `[1]int`, or `n := len(points)` outside type syntax. |
 | `go read(p)` or `defer read(p)` | Call `read(p)` synchronously. |

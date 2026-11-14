@@ -25,6 +25,8 @@
 // only as a method receiver or as a direct PID.Proc result that receives a direct
 // call of an exported method. Exported process methods take and return only
 // allowed stored types, and only proc.Start and proc.StartReserved create processes.
+// Process arguments can also carry proc.UncheckedDependency fields. The wrapper
+// has restricted source forms; its contents are trusted for concurrent use.
 package analyzer
 
 import (
@@ -79,31 +81,28 @@ func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
 		ast.Inspect(file, c.visit)
 	}
-	checkLibraryArguments(pass, c)
-	checkSubset(pass, freeze.Check(pass))
+	checkSubset(pass, freeze.Check(pass), &c.proofs)
 	return nil, nil
 }
 
-// checkLibraryArguments proves type arguments of the fixed library types.
-func checkLibraryArguments(pass *analysis.Pass, c *checks) {
-	for ident, instance := range pass.TypesInfo.Instances {
-		obj := pass.TypesInfo.Uses[ident]
-		c.checkRuntimeArguments(ident, obj, instance)
-		if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
-			continue
+// checkLibraryArguments proves type arguments outside unchecked dependency payloads.
+func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance) {
+	obj := c.pass.TypesInfo.Uses[ident]
+	c.checkRuntimeArguments(ident, obj, instance)
+	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
+		return
+	}
+	if obj.Name() == "Owner" {
+		arg := instance.TypeArgs.At(0)
+		if !checker.Scoped(arg) || checker.Shared(arg) || c.proofs.Reason(arg) != "" {
+			c.report(ident.Pos(), "Owner requires a concrete, valid Scoped struct")
 		}
-		if obj.Name() == "Owner" {
-			arg := instance.TypeArgs.At(0)
-			if !checker.Scoped(arg) || checker.Shared(arg) || c.proofs.Reason(arg) != "" {
-				c.report(ident.Pos(), "Owner requires a concrete, valid Scoped struct")
-			}
-			continue
-		}
-		for i := 0; i < instance.TypeArgs.Len(); i++ {
-			if reason := c.proofs.Reason(instance.TypeArgs.At(i)); reason != "" {
-				c.report(ident.Pos(), fmt.Sprintf("immutable type argument: %s\n  type: %s\n  fix: %s",
-					reason, diagnosticType(instance.TypeArgs.At(i)), structuralFix(instance.TypeArgs.At(i), reason)))
-			}
+		return
+	}
+	for i := 0; i < instance.TypeArgs.Len(); i++ {
+		if reason := c.proofs.Reason(instance.TypeArgs.At(i)); reason != "" {
+			c.report(ident.Pos(), fmt.Sprintf("immutable type argument: %s\n  type: %s\n  fix: %s",
+				reason, diagnosticType(instance.TypeArgs.At(i)), structuralFix(instance.TypeArgs.At(i), reason)))
 		}
 	}
 }
@@ -126,7 +125,14 @@ func (c *checks) report(pos token.Pos, message string) {
 
 // visit checks struct contracts, collection instantiations, and mutation sites.
 func (c *checks) visit(node ast.Node) bool {
+	if expression, ok := node.(ast.Expr); ok && uncheckedTypeArguments(c.pass.TypesInfo, expression) {
+		return false
+	}
 	switch n := node.(type) {
+	case *ast.Ident:
+		if instance, ok := c.pass.TypesInfo.Instances[n]; ok {
+			c.checkLibraryArguments(n, instance)
+		}
 	case *ast.FuncDecl:
 		if n.Body == nil {
 			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
@@ -137,6 +143,9 @@ func (c *checks) visit(node ast.Node) bool {
 		c.checkImport(n)
 
 	case *ast.TypeSpec:
+		if !n.Assign.IsValid() && checker.IsRuntimeType(c.pass.TypesInfo.TypeOf(n.Type), checker.UncheckedDependencyType) {
+			c.report(n.Pos(), "defined copies of proc.UncheckedDependency are unsupported; use a type alias")
+		}
 		if obj := c.pass.TypesInfo.Defs[n.Name]; obj != nil {
 			c.checkType(n.Pos(), obj.Type())
 		}
@@ -208,7 +217,7 @@ func reflectionValue(t types.Type) bool {
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") ||
-		checker.IsRuntimeType(t, checker.ProcessMarker) {
+		checker.IsRuntimeType(t, checker.ProcessMarker) || checker.IsRuntimeType(t, checker.UncheckedDependencyType) {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)
@@ -227,9 +236,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		if field.Pkg() == c.pass.Pkg && field.Pos().IsValid() {
 			fieldPos = field.Pos()
 		}
-		if invalidMarkerField(field) {
-			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
-				"\n  fix: embed im.Shared or im.Scoped; remove the marker field name or pointer")
+		if c.unprovedField(fieldPos, t, field, marked) {
 			continue
 		}
 		if marked {
@@ -250,6 +257,24 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			continue
 		}
 	}
+}
+
+// unprovedField reports a misplaced marker or proc.UncheckedDependency field.
+// It identifies a field without a type proof.
+func (c *checks) unprovedField(pos token.Pos, t types.Type, field *types.Var, marked bool) bool {
+	if invalidMarkerField(field) {
+		c.report(pos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
+			"\n  fix: embed im.Shared or im.Scoped; remove the marker field name or pointer")
+		return true
+	}
+	if !checker.TrustedField(field) {
+		return false
+	}
+	if !marked {
+		c.report(pos, "proc.UncheckedDependency field "+field.Name()+" is allowed only in a marked process argument struct"+
+			"\n  owner: "+diagnosticType(t)+"\n  fix: move the field into the argument struct of the process")
+	}
+	return true
 }
 
 // invalidMarkerField rejects named marker fields and pointers to either marker.

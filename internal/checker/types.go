@@ -26,6 +26,9 @@ const (
 	ArgsMethod              = "Args"
 	SupervisorMethod        = "Supervisor"
 	RunMethod               = "Run"
+	UncheckedDependencyType = "UncheckedDependency"
+	TrustFunction           = "Trust"
+	ValueMethod             = "Value"
 )
 
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
@@ -109,9 +112,15 @@ func embedsMarker(t types.Type, name string) bool {
 	return false
 }
 
-// Contains reports whether a type stores a marked value or sealed collection.
+// Contains reports whether a type stores a marked value, sealed collection, or process dependency.
 // It runs one query; use Classifier to reuse results across queries.
 func Contains(t types.Type) bool {
 	var classifier Classifier
 	return classifier.Contains(t)
+}
+
+// TrustedField identifies a named proc.UncheckedDependency field.
+// Only a marked process argument struct can store it.
+func TrustedField(field *types.Var) bool {
+	return !field.Embedded() && IsRuntimeType(field.Type(), UncheckedDependencyType)
 }

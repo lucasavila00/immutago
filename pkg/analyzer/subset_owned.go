@@ -37,6 +37,16 @@ func (c *subsetChecks) matchBuilderBinding(destination, source ast.Expr, declara
 	return "native builders require fresh local bindings or append to the same handle"
 }
 
+// checkBuilderTypes proves protected keys and elements once for each tracked owner.
+func (c *subsetChecks) checkBuilderTypes() {
+	for variable := range c.owners {
+		if reason := c.builderTypeReason(variable.Type()); reason != "" {
+			c.pass.Reportf(variable.Pos(), "unsupported native builder: %s\n  fix: "+
+				"use allowed stored types for builder keys and elements", reason)
+		}
+	}
+}
+
 // ownedInputs admits container syntax at checked local initialization and freeze boundaries.
 func (c *subsetChecks) ownedInputs() {
 	for node := range c.parents {
@@ -58,6 +68,23 @@ func (c *subsetChecks) ownedInputs() {
 			}
 		}
 	}
+}
+
+// builderTypeReason proves keys and elements before the owned native handle is exempted.
+func (c *subsetChecks) builderTypeReason(t types.Type) string {
+	if !c.queries.Contains(t) {
+		return ""
+	}
+	switch storage := t.Underlying().(type) {
+	case *types.Slice:
+		return c.proofs.Reason(storage.Elem())
+	case *types.Map:
+		if reason := c.proofs.Reason(storage.Key()); reason != "" {
+			return reason
+		}
+		return c.proofs.Reason(storage.Elem())
+	}
+	return ""
 }
 
 // ownedDeclaration admits the native type syntax and initializer of checked local builders.

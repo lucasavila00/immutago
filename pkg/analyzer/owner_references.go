@@ -28,7 +28,8 @@ func (c *subsetChecks) hasHolderReference(t types.Type) bool {
 
 // findHolderReference walks storage while keeping the sealed slot opaque.
 func (c *subsetChecks) findHolderReference(t types.Type, seen map[types.Type]bool) bool {
-	if t == nil || seen[t] || checker.IsLibraryType(t, "Owner") {
+	if t == nil || seen[t] || checker.IsLibraryType(t, "Owner") ||
+		checker.IsRuntimeType(t, checker.UncheckedDependencyType) {
 		return false
 	}
 	if result, ok := c.holderRefs[t]; ok {

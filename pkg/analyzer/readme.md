@@ -14,7 +14,7 @@ Whole variable bindings can be replaced. Field, element, and pointer\-target wri
 
 Struct and array copies copy their values; frozen fields share read\-only storage. Freeze calls consume exclusive native map and slice builders without copying. Builder aliases and later uses are rejected; Clone creates independent native storage. Direct im or proc imports, locally used im or proc type contracts, and failed checked dependencies select proof checking. Other packages use ordinary Go API trust, including string immutability. Checked failures propagate to consumers.
 
-A struct that embeds proc.Process\[A\] is a mutable process. Its pointer is valid only as a method receiver or as a direct PID.Proc result that receives a direct call of an exported method. Exported process methods take and return only allowed stored types, and only proc.Start and proc.StartReserved create processes.
+A struct that embeds proc.Process\[A\] is a mutable process. Its pointer is valid only as a method receiver or as a direct PID.Proc result that receives a direct call of an exported method. Exported process methods take and return only allowed stored types, and only proc.Start and proc.StartReserved create processes. Process arguments can also carry proc.UncheckedDependency fields. The wrapper has restricted source forms; its contents are trusted for concurrent use.
 
 ## Variables
 
