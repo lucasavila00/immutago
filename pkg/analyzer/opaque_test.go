@@ -23,6 +23,7 @@ func Read() int { value := rows{1}; return len(*im.Unseal(im.Seal(&value))) }`, 
 func Read() int { return im.Unseal(im.Seal(&box[int]{value: 1})).value }`, ""},
 		{"function values", `func Read(value *baked) *baked {
 	seal, unseal := im.Seal[baked], im.Unseal[baked]; return unseal(seal(value)) }`, ""},
+		{"inferred function value", `var read func(im.Opaque[baked]) *baked = im.Unseal`, ""},
 		{"generic wrap", `func Wrap[T any](v *T) im.Opaque[T] { return im.Seal(v) }`, "im.Seal requires a type"},
 		{"unnamed wrap", `func Wrap(v []int) im.Opaque[[]int] { return im.Seal(&v) }`, "im.Seal requires a type"},
 		{"generic read", `func Read[T any](u im.Opaque[T]) *T { return im.Unseal(u) }`, "im.Unseal requires a type"},

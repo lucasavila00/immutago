@@ -34,6 +34,10 @@ foreign.go:48:56: im.Unseal requires a type that this package declares
   type: api.Table
   rule: only the package that declares T can wrap or read an im.Opaque[T]
   fix: call a function of the package that declares the type
+foreign.go:51:63: im.Unseal requires a type that this package declares
+  type: api.Table
+  rule: only the package that declares T can wrap or read an im.Opaque[T]
+  fix: call a function of the package that declares the type
 foreign.go:9:64: im.Unseal requires a type that this package declares
   type: api.Table
   rule: only the package that declares T can wrap or read an im.Opaque[T]

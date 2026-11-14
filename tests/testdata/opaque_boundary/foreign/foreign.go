@@ -46,3 +46,6 @@ type Defined im.Opaque[api.Table]
 
 // ReadDefined restores the original handle type before attempting extraction.
 func ReadDefined(value Defined) *api.Table { return im.Unseal(im.Opaque[api.Table](value)) }
+
+// InferredReader infers the same foreign type argument from its declaration.
+var InferredReader func(im.Opaque[api.Table]) *api.Table = im.Unseal

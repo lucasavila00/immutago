@@ -17,7 +17,7 @@ func TestOpaque(t *testing.T) {
 
 // TestOpaqueHasNoReaderMethod prevents interface calls and promoted methods from exposing the pointer.
 func TestOpaqueHasNoReaderMethod(t *testing.T) {
-	type table struct{ rows []int }
+	type table struct{}
 	type wrapper struct{ Opaque[table] }
 	for _, value := range []any{Opaque[table]{}, new(Opaque[table]), wrapper{}, new(wrapper)} {
 		if _, ok := value.(interface{ Value() *table }); ok {
