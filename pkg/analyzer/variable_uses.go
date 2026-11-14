@@ -36,19 +36,9 @@ func (c *checks) variableUses() map[*types.Func]*variableUse {
 	var found []*types.Func
 	for _, file := range c.pass.Files {
 		for _, declaration := range file.Decls {
-			function, ok := declaration.(*ast.FuncDecl)
-			if !ok || function.Body == nil {
-				continue
-			}
-			caller := c.pass.TypesInfo.Defs[function.Name].(*types.Func)
-			ast.Inspect(function.Body, func(node ast.Node) bool {
-				if id, ok := node.(*ast.Ident); ok && c.uses[caller] == nil {
-					c.recordUse(caller, c.pass.TypesInfo.Uses[id], callers)
-				}
-				return true
-			})
-			if c.uses[caller] != nil {
-				found = append(found, caller)
+			if function, ok := declaration.(*ast.FuncDecl); ok && function.Body != nil &&
+				c.recordFunction(function, callers) {
+				found = append(found, c.pass.TypesInfo.Defs[function.Name].(*types.Func))
 			}
 		}
 	}
@@ -68,6 +58,18 @@ func (c *checks) variableUses() map[*types.Func]*variableUse {
 		}
 	}
 	return c.uses
+}
+
+// recordFunction walks one function body and reports whether it uses a rejected variable or a marked callee.
+func (c *checks) recordFunction(declaration *ast.FuncDecl, callers map[*types.Func][]*types.Func) bool {
+	caller := c.pass.TypesInfo.Defs[declaration.Name].(*types.Func)
+	ast.Inspect(declaration.Body, func(node ast.Node) bool {
+		if id, ok := node.(*ast.Ident); ok && c.uses[caller] == nil {
+			c.recordUse(caller, c.pass.TypesInfo.Uses[id], callers)
+		}
+		return true
+	})
+	return c.uses[caller] != nil
 }
 
 // recordUse records a rejected package variable, an imported callee fact, or a callee of this package.

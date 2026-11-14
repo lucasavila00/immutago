@@ -152,6 +152,12 @@ func (r *Reader) Run(ctx context.Context) { _ = seen["a"] }`},
 		{"holder variable", `type Holder struct { Current im.Owner[Config] }
 var holder Holder
 func (w *Worker) Value() { holder.Current.Store(&Config{}) }`},
+	})
+}
+
+// TestProcessCallsRejected covers functions that reach a rejected package variable from a process method.
+func TestProcessCallsRejected(t *testing.T) {
+	checkProcessVariableCases(t, true, [][2]string{
 		{"helper", `var seen = map[string]int{}
 func record(k string) { seen[k]++ }
 func (w *Worker) Run2(ctx context.Context) { for ctx.Err() == nil { record("hits") } }`},

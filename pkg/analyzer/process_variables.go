@@ -23,7 +23,6 @@ func (c *checks) checkProcessVariables(declaration *ast.FuncDecl) {
 	if !checker.Process(receiver) {
 		return
 	}
-	uses := c.variableUses()
 	called := make(map[*ast.Ident]bool)
 	ast.Inspect(declaration.Body, func(node ast.Node) bool {
 		switch n := node.(type) {
@@ -32,25 +31,33 @@ func (c *checks) checkProcessVariables(declaration *ast.FuncDecl) {
 				called[id] = true
 			}
 		case *ast.Ident:
-			object := c.pass.TypesInfo.Uses[n]
-			if variable := packageVariable(object); variable != nil {
-				if reason := c.processVariableReason(variable); reason != "" {
-					c.report(n.Pos(), "process method uses package variable "+c.variableName(variable)+reason+
-						processVariableFix)
-				}
-			} else if function := staticFunction(object); function != nil && !processMethod(function) {
-				if use := c.functionUse(uses, function); use != nil {
-					verb := "refers to "
-					if called[n] {
-						verb = "calls "
-					}
-					c.report(n.Pos(), "process method "+verb+c.functionName(function)+", which uses package variable "+
-						use.display(c.pass.Pkg)+processVariableFix)
-				}
-			}
+			c.checkProcessUse(n, called[n])
 		}
 		return true
 	})
+}
+
+// checkProcessUse rejects a rejected package variable and a function that reaches one.
+func (c *checks) checkProcessUse(id *ast.Ident, called bool) {
+	object := c.pass.TypesInfo.Uses[id]
+	if variable := packageVariable(object); variable != nil {
+		if reason := c.processVariableReason(variable); reason != "" {
+			c.report(id.Pos(), "process method uses package variable "+c.variableName(variable)+reason+processVariableFix)
+		}
+		return
+	}
+	function := staticFunction(object)
+	if function == nil || processMethod(function) {
+		return
+	}
+	if use := c.functionUse(c.variableUses(), function); use != nil {
+		verb := "refers to "
+		if called {
+			verb = "calls "
+		}
+		c.report(id.Pos(), "process method "+verb+c.functionName(function)+", which uses package variable "+
+			use.display(c.pass.Pkg)+processVariableFix)
+	}
 }
 
 // packageVariable returns the object when it is a variable at package scope.
