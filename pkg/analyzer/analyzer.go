@@ -42,7 +42,8 @@ var Analyzer = &analysis.Analyzer{
 
 // run checks compiler-resolved types and source operations in one package.
 func run(pass *analysis.Pass) (any, error) {
-	if pass.Pkg.Path() == checker.LibraryPath || testMainPackage(pass.Pkg) || standardLibrary(pass) {
+	path := pass.Pkg.Path()
+	if path == checker.LibraryPath || path == checker.RuntimePath || testMainPackage(pass.Pkg) || standardLibrary(pass) {
 		return nil, nil
 	}
 	if rejectCgo(pass) {

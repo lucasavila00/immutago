@@ -11,6 +11,9 @@ import (
 // LibraryPath is the package whose sealed collection implementations are trusted.
 const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 
+// RuntimePath is the package whose supervised process runtime is trusted.
+const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
+
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
 func IsLibraryType(t types.Type, name string) bool {
 	n, ok := types.Unalias(t).(*types.Named)

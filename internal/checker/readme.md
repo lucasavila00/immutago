@@ -16,6 +16,12 @@ LibraryPath is the package whose sealed collection implementations are trusted.
 const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 ```
 
+RuntimePath is the package whose supervised process runtime is trusted.
+
+```go
+const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
+```
+
 ## func Contains
 
 ```go
