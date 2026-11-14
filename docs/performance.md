@@ -55,30 +55,7 @@ measure repeated queries at 16, 64, and 256 types. The
 full analyzer pass on connected structs and interfaces without markers at 8,
 16, 32, and 64 types. These cases keep repeated graph traversal visible in CI.
 
-### Repeated type-query evidence
-
-The [baseline run](https://github.com/lucasavila00/immutago/actions/runs/43543423962)
-used commit `4653421`; the
-[cached run](https://github.com/lucasavila00/immutago/actions/runs/43543955011)
-used `8a8da5e`. Both used Go 1.27.1 on Linux/amd64. The table gives median
-allocation counts from three samples of `BenchmarkCoreOrdinary`; MB and GB are
-decimal units. Compiler setup is outside the measured pass.
-
-| Types | Before, allocated bytes/pass | After, allocated bytes/pass |
-| --- | ---: | ---: |
-| 8 | 172.36 MB | 2.42 MB |
-| 16 | 1.30 GB | 4.85 MB |
-| 32 | 9.82 GB | 9.72 MB |
-| 64 | 77.62 GB | 19.43 MB |
-
-At 64 types, allocation count fell from 37,440,151 to 15,776 per pass. The
-baseline allocation profile attributes 99.2% of allocated bytes to repeated
-`contains` walks. The cached profile no longer has that cost; parent indexing
-and constant-expression classification are its largest allocation sources.
-Profiles can include setup; use the benchmark samples for per-pass counts.
-
-The runners had different CPU models: AMD EPYC 9V74 before and AMD EPYC 7763
-after. The cached samples had median times of 7.37, 15.38, 31.23, and 72.76 ms
-at increasing sizes. These timings describe that run, not a fixed speedup ratio.
-The cache stores graph nodes and edges until its analysis pass ends. It does not
-skip ordinary packages or add state to immutable values.
+The pass-local type classifier expands each reachable type and classification
+mode once per cache. Reverse edges propagate positive results through cycles;
+completed queries reuse the stored result. The graph stays in memory until its
+pass ends. Ordinary packages still receive structural and source checks.
