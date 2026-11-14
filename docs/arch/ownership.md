@@ -1,7 +1,5 @@
 # Object and builder storage
 
-[Architecture](README.md) · [Collection costs](../performance.md)
-
 ## Immutable objects
 
 Both markers prohibit mutation from construction onward. The

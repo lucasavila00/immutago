@@ -1,7 +1,5 @@
 # Reviewer requirements
 
-[Documentation](README.md) · [Language rules](rules.md) · [Validation](arch/validation.md)
-
 Review every checker or supported-language change against these two requirements.
 
 ## 1. Complete allowed forms

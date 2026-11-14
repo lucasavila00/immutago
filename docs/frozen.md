@@ -1,18 +1,5 @@
 # Frozen collections
 
-[Language guide](rules.md) · [Common forms](common-forms.md) · [Performance](performance.md)
-
-Use `im.FrozenSlice` and `im.FrozenMap` to share a slice or map that cannot be
-changed. Keys and elements must match the complete
-[stored-type list](common-forms.md#markers-and-stored-types).
-Use the common [statement and call forms](common-forms.md#statements-and-calls).
-Those lists and the forms below are complete; other protected operations are
-rejected. Rejected examples are not exhaustive.
-
-Build the slice or map locally, then call Freeze. Freeze does not copy the
-entries. Read them through the frozen result after the call. Call Clone to get
-a separate slice or map that you can edit:
-
 ```go
 scores := map[string]int{"alice": 10}
 frozen := im.FreezeMap(scores)
@@ -21,23 +8,29 @@ next["alice"] = 20
 updated := im.FreezeMap(next) // frozen still contains 10.
 ```
 
+Freeze does not copy entries. Clone returns a separate slice or map.
+
+Keys and elements must use the [allowed types](common-forms.md#markers-and-stored-types).
+The tables below and the [common forms](common-forms.md) are the complete list
+of allowed operations. Rejected examples are not exhaustive.
+
 ## Build before freezing
 
 A **builder** is the Go slice or map that you prepare before Freeze. These rules
 also apply to Go containers whose keys or elements contain protected storage.
-Do not make another reference to a builder. Clone copies the container;
-immutable element pointers still refer to the same read-only objects.
+Keep the slice or map in one local variable until Freeze. Clone copies the
+slice or map; pointer elements still point to the same read-only objects.
 
 | Allowed form | Example |
 | --- | --- |
 | Declare from make, literal, zero, or Clone | `values := make([]int, 2)`, `values := []int{1}`, `var values []int`, `values := frozen.Clone()` |
 | Initialize with bare `nil` | `var values []int = nil`, `var scores map[string]int = nil` |
-| Read or replace a slot | `x := values[i]`, `values[i] = x`, `scores[key] = x` |
+| Read or replace an element | `x := values[i]`, `values[i] = x`, `scores[key] = x` |
 | Read length or slice capacity | `len(values)`, `cap(values)` |
 | Append individual elements to the same variable | `values = append(values, 1, 2)` |
 | Delete, clear, or copy | `delete(scores, key)`, `clear(values)`, `copy(destination, source)` |
 | Range over elements | `for i, value := range values { ... }` |
-| Consume with Freeze | `frozen := im.FreezeSlice(values)`, `frozen := im.FreezeMap(scores)` |
+| Freeze the slice or map | `frozen := im.FreezeSlice(values)`, `frozen := im.FreezeMap(scores)` |
 
 `var` declarations also work. `copy` operands must satisfy the builder rules.
 Bare `nil` means Go's predeclared `nil`; `(nil)` also works.
@@ -58,8 +51,9 @@ Each needs its own assignment/declaration; matching map forms work too.
 | Freeze inside an active range over the same builder | Finish the range, then freeze. |
 | Any use of `values` after Freeze | Use the frozen value, or Clone it. |
 
-A branch or loop cannot make a consumed handle usable again. Ordinary scalar
-clones that are never frozen follow ordinary Go container rules.
+Do not use the old slice or map after Freeze, including in another branch or
+loop iteration. A Clone of scalar elements, such as `int`, follows ordinary Go
+rules if you never freeze it.
 
 ## Reads and Clone
 
@@ -74,8 +68,9 @@ Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 | Iteration | `for key, value := range frozen.All() { ... }` |
 | Independent mutable copy | `next := frozen.Clone()` |
 
-Receivers can be frozen locals, fields, or named-call results. Pass wrappers
-by value. Parentheses preserve direct calls and ranges.
+Call these methods on a local variable, a struct field, or a result from a named
+function. Pass `im.FrozenSlice[T]` or `im.FrozenMap[K, V]` to functions by value.
+Parentheses around a call or range expression are allowed.
 
 Saving methods (`read := frozen.At`) or calling through the type
 (`im.FrozenSlice[int].At(frozen, 0)`) fails; use `frozen.At(0)`.
