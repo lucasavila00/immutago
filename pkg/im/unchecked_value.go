@@ -1,7 +1,7 @@
 package im
 
 // UncheckedValue holds a pointer to a value that the analyzer does not look inside.
-// It is one of the two trust markers of immutago, with proc.UncheckedDependency: the
+// It is one of the two trust markers of immutago, with proc.ConcurrentSafe: the
 // analyzer does not prove that the value is immutable. The package that
 // declares T trusts its own code to never change the value after Trust.
 //

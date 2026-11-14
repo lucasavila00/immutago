@@ -18,9 +18,9 @@ type Store interface {
 type FetcherArgs struct {
 	im.Shared
 	BaseURL  string
-	Log      proc.UncheckedDependency[*slog.Logger]
-	Client   proc.UncheckedDependency[*http.Client]
-	NewStore proc.UncheckedDependency[func(name string) Store]
+	Log      proc.ConcurrentSafe[*slog.Logger]
+	Client   proc.ConcurrentSafe[*http.Client]
+	NewStore proc.ConcurrentSafe[func(name string) Store]
 }
 
 // Fetcher uses a logger, an HTTP client, and a store from its factory.
@@ -47,15 +47,15 @@ func (fakeStore) Get(string) (string, bool) { return "", false }
 func StartFetcher(root *proc.Supervisor, log *slog.Logger) proc.PID[Fetcher] {
 	return proc.Start[Fetcher](root, FetcherArgs{
 		BaseURL:  "https://example.com",
-		Log:      proc.Trust(log),
-		Client:   proc.Trust(http.DefaultClient),
-		NewStore: proc.Trust(func(string) Store { return fakeStore{} }),
+		Log:      proc.AssumeConcurrentSafe(log),
+		Client:   proc.AssumeConcurrentSafe(http.DefaultClient),
+		NewStore: proc.AssumeConcurrentSafe(func(string) Store { return fakeStore{} }),
 	})
 }
 
 // Tracer is a process whose argument is one dependency.
 type Tracer struct {
-	proc.Process[proc.UncheckedDependency[*slog.Logger]]
+	proc.Process[proc.ConcurrentSafe[*slog.Logger]]
 }
 
 // Run logs once.
@@ -63,5 +63,5 @@ func (t *Tracer) Run(ctx context.Context) { t.Args().Value().Info("trace") }
 
 // StartTracer starts a Tracer.
 func StartTracer(root *proc.Supervisor, log *slog.Logger) proc.PID[Tracer] {
-	return proc.Start[Tracer](root, proc.Trust(log))
+	return proc.Start[Tracer](root, proc.AssumeConcurrentSafe(log))
 }

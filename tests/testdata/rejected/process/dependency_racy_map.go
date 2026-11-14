@@ -7,7 +7,7 @@ import (
 	"github.com/lucasavila00/immutago/pkg/proc"
 )
 
-// Tally gives its own map to an Auditor without proc.Trust.
+// Tally gives its own map to an Auditor without proc.AssumeConcurrentSafe.
 type Tally struct {
 	proc.Process[proc.None]
 	seen map[string]int

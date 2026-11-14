@@ -154,20 +154,20 @@ type None struct {
 	im.Shared
 }
 
-// UncheckedDependency holds a value that the caller trusts to be safe for concurrent use by several processes,
-// for example a logger, an HTTP client, a factory function, or a test fake. This does not make the value immutable.
-// The analyzer does not prove this trust. It permits UncheckedDependency only as a process argument type or as a
-// named field of a marked process argument struct.
-type UncheckedDependency[T any] struct {
+// ConcurrentSafe holds a value that the caller promises is safe for concurrent use.
+// The analyzer does not check this promise. It permits ConcurrentSafe only as a
+// process argument type or a named field of a marked process argument struct.
+type ConcurrentSafe[T any] struct {
 	value T
 }
 
-// Trust wraps v. The call is the caller's promise that several processes can use v at the same time.
-func Trust[T any](v T) UncheckedDependency[T] { return UncheckedDependency[T]{value: v} }
+// AssumeConcurrentSafe wraps v with the caller's promise that concurrent use is safe.
+// It does not check, copy, freeze, or synchronize v.
+func AssumeConcurrentSafe[T any](v T) ConcurrentSafe[T] { return ConcurrentSafe[T]{value: v} }
 
 // Value returns the trusted value, or the zero value of T for a zero dependency.
 // The analyzer permits only direct calls on the process receiver's Args() or one of its dependency fields.
-func (d UncheckedDependency[T]) Value() T { return d.value }
+func (d ConcurrentSafe[T]) Value() T { return d.value }
 
 // Supervisor runs processes and nested supervisors.
 type Supervisor struct {

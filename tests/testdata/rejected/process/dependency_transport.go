@@ -3,35 +3,37 @@ package process
 import "github.com/lucasavila00/immutago/pkg/proc"
 
 // HiddenDependency removes the wrapper's named type identity.
-type HiddenDependency proc.UncheckedDependency[*int]
+type HiddenDependency proc.ConcurrentSafe[*int]
 
 // HiddenHolder stores a converted dependency in an unmarked field.
 type HiddenHolder struct{ D HiddenDependency }
 
 // hideDependency converts and stores a trusted value.
-func hideDependency(p *int) HiddenHolder { return HiddenHolder{D: HiddenDependency(proc.Trust(p))} }
+func hideDependency(p *int) HiddenHolder {
+	return HiddenHolder{D: HiddenDependency(proc.AssumeConcurrentSafe(p))}
+}
 
 // EmbeddedDependency stores a dependency without a field name or marker.
-type EmbeddedDependency struct{ proc.UncheckedDependency[*int] }
+type EmbeddedDependency struct{ proc.ConcurrentSafe[*int] }
 
 // PointerDependency stores a pointer to a dependency.
 type PointerDependency struct {
-	D *proc.UncheckedDependency[*int]
+	D *proc.ConcurrentSafe[*int]
 }
 
 // ArrayDependency stores dependencies in an array.
 type ArrayDependency struct {
-	D [1]proc.UncheckedDependency[*int]
+	D [1]proc.ConcurrentSafe[*int]
 }
 
 // boxDependency calls Value through an interface outside a process.
-func boxDependency(d proc.UncheckedDependency[*int]) *int {
+func boxDependency(d proc.ConcurrentSafe[*int]) *int {
 	var value interface{ Value() *int } = d
 	return value.Value()
 }
 
 // variadicDependencies boxes a dependency in a variadic argument.
-func variadicDependencies(d proc.UncheckedDependency[*int]) { consumeDependencies(d) }
+func variadicDependencies(d proc.ConcurrentSafe[*int]) { consumeDependencies(d) }
 
 // consumeDependencies accepts ordinary interface values.
 func consumeDependencies(...any) {}
@@ -43,17 +45,17 @@ func pointerArguments() { var args *SenderArgs; _ = args }
 func arrayArguments() { var args [1]SenderArgs; _ = args }
 
 // sliceDependencies creates a native collection of dependencies.
-func sliceDependencies() { var deps []proc.UncheckedDependency[*int]; _ = deps }
+func sliceDependencies() { var deps []proc.ConcurrentSafe[*int]; _ = deps }
 
 // globalDependency stores a wrapper outside a local binding.
-var globalDependency proc.UncheckedDependency[*int]
+var globalDependency proc.ConcurrentSafe[*int]
 
 // globalArguments stores an argument-only struct in a package variable.
 var globalArguments SenderArgs
 
 // dependencyBuilder has valid ownership but an unsupported element type.
 func dependencyBuilder(p *int) {
-	values := []proc.UncheckedDependency[*int]{proc.Trust(p)}
+	values := []proc.ConcurrentSafe[*int]{proc.AssumeConcurrentSafe(p)}
 	_ = len(values)
 }
 
@@ -61,4 +63,4 @@ func dependencyBuilder(p *int) {
 func argumentBuilder() { values := make([]SenderArgs, 1); _ = len(values) }
 
 // dependencyKeyBuilder stores a dependency in a native map key.
-func dependencyKeyBuilder() { values := map[proc.UncheckedDependency[*int]]int{}; _ = len(values) }
+func dependencyKeyBuilder() { values := map[proc.ConcurrentSafe[*int]]int{}; _ = len(values) }

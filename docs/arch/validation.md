@@ -16,7 +16,7 @@ Application code must run through the analyzer for its selected build
 configuration. An ordinary Go build supplies no immutability checks. Checked
 code cannot use reflection, unsafe imports, or bodyless functions to bypass
 the proof. There are no suppression directives. The two user trust points are
-`proc.Trust` for safe concurrent use and `im.Trust` for immutable data. The checker
+`proc.AssumeConcurrentSafe` for safe concurrent use and `im.Trust` for immutable data. The checker
 does not prove either [promise](../rules.md#trust-markers).
 Failures from checked dependencies reach consumers through package facts. Runtime Freeze has
 no fallback validation when the analyzer is omitted.

@@ -98,7 +98,7 @@ func (c *Classifier) mark(node *classificationNode) {
 
 // expand matches the outgoing edges for one classification mode.
 func (c *Classifier) expand(node *classificationNode) {
-	if IsRuntimeType(node.key.typ, UncheckedDependencyType) {
+	if IsRuntimeType(node.key.typ, ConcurrentSafeType) {
 		if node.key.mode != callableMode {
 			c.mark(node)
 		}
