@@ -22,8 +22,8 @@ func TestScopeVariants(t *testing.T) {
 		if checked != (library != "") {
 			t.Fatalf("library=%q: checked=%t", library, checked)
 		}
-		if got := strings.Count(string(source), "_ = unsafe.Pointer(&n)"); got != 50 {
-			t.Fatalf("conversion count=%d, want 50", got)
+		if got := strings.Count(string(source), "Items []int"); got != 50 {
+			t.Fatalf("struct count=%d, want 50", got)
 		}
 		_, err = os.Stat(filepath.Join(dir, "consumer", "consumer.go"))
 		if library != "" && err != nil || library == "" && !os.IsNotExist(err) {

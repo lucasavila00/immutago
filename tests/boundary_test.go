@@ -81,8 +81,11 @@ func checkBoundaryFixtures(t *testing.T, root, binary, mode, fixture, target str
 				t.Fatal(err)
 			}
 			writeFile(t, filepath.Join(dir, target, entry.Name()), string(source))
+			if fixture == "boundary_contracts" {
+				writeFile(t, filepath.Join(dir, target, "opaque.s"), "// Permit bodyless Go declarations.\n")
+			}
 			output := runBoundary(t, dir, binary, mode, false, "./"+target)
-			if fixture == "boundary_contracts" && !strings.Contains(output, "unsupported unsafe import") {
+			if fixture == "boundary_contracts" && !strings.Contains(output, "unsupported function without a Go body") {
 				t.Fatalf("local contract did not activate checking: %s", output)
 			}
 			checkSnapshot(t, filepath.Join(fixtures, strings.TrimSuffix(entry.Name(), ".go")+".txt"), normalizeOutput(output))
@@ -90,18 +93,20 @@ func checkBoundaryFixtures(t *testing.T, root, binary, mode, fixture, target str
 	}
 }
 
-// checkCheckedBoundary keeps unsafe and reflection values forbidden in checked source.
+// checkCheckedBoundary permits ordinary unsafe and reflection values in checked source.
 func checkCheckedBoundary(t *testing.T, root, binary, mode string) {
 	t.Helper()
 	for _, name := range []string{"unsafe_import", "raw_unsafe_import", "indirect_unsafe", "indirect_reflection",
-		"unsafe_helper", "reflect_helper"} {
+		"unsafe_helper", "reflect_helper", "unsafe_reflect", "unsafe_reflect_consumer"} {
 		t.Run(name, func(t *testing.T) {
-			dir := consumerModule(t, root, "rejected")
-			ordinary := name == "unsafe_helper" || name == "reflect_helper"
-			output := runBoundary(t, dir, binary, mode, ordinary, "./"+name)
-			checkFixtureSnapshots(t, root, "rejected/"+name, output)
+			dir := consumerModule(t, root, "accepted")
+			output := runBoundary(t, dir, binary, mode, true, "./"+name)
+			checkFixtureSnapshots(t, root, "accepted/"+name, output)
 		})
 	}
+	dir := consumerModule(t, root, "rejected")
+	output := runBoundary(t, dir, binary, mode, false, "./unsafe_reflect")
+	checkFixtureSnapshots(t, root, "rejected/unsafe_reflect", output)
 }
 
 // runBoundary selects the command driver without changing the requested package set.

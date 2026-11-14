@@ -20,8 +20,11 @@
 Enforcement:
 
 - Run the analyzer for each build configuration; `go build` adds no checks.
-- Checked packages currently reject unsafe/reflect imports, cgo, and bodyless
-  functions with im or supervise signatures.
+- Unsafe and reflection operations use the normal source-form checks.
+- Scalar origins and arbitrary unsafe memory effects are not proved; ordinary
+  helpers must obey Go API contracts, including string immutability.
+- Checked packages reject cgo and bodyless functions with im or supervise
+  signatures.
 - There are no suppression directives. The two [trust markers](../rules.md#trust-markers)
   above are the explicit user promises.
 - Checked dependency failures reach consumers through package facts.

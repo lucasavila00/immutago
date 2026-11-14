@@ -56,11 +56,15 @@ It also checks your test files.
 - User code has no suppression comments. Its only trust markers are
   `im.UncheckedValue` and `supervise.ConcurrentSafe`.
 
+- Importing `unsafe` or `reflect` is allowed; ordinary values use ordinary Go rules.
+- Protected values still need a listed form: `reflect.ValueOf(1)` is allowed,
+  but `reflect.ValueOf(p)` with a marked pointer fails the interface-boxing rule.
+
 Checked packages reject these forms; this rejection list is not exhaustive:
 
 | Rejected form | Use instead |
 | --- | --- |
-| `unsafe`, `reflect`, or cgo | Ordinary typed Go code. Cgo produces one error at the source package line. |
+| Cgo | Ordinary typed Go code. Cgo produces one error at the source package line. |
 | A function without a body whose signature contains an im or supervise type | Supply a Go body to check its protected operations. |
 
 An imported package's error includes one cause and a command to see its other errors.

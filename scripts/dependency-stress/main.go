@@ -22,7 +22,7 @@ func main() {
 	}
 }
 
-// writeModule creates a dense graph with 50 unsafe pointer conversions per package.
+// writeModule creates a dense graph with 50 structs per package.
 func writeModule(out string, scale int, library string) error {
 	module := "module dependency-stress.example\n\ngo 1.27.1\n"
 	if library != "" {
@@ -47,22 +47,27 @@ func writeModule(out string, scale int, library string) error {
 	return nil
 }
 
-// packageSource imports every package in the previous layer and uses 50 unsafe pointers.
+// packageSource imports the previous layer and optionally marks 50 invalid structs.
 func packageSource(name string, layer, width int, checked bool) string {
 	var source strings.Builder
-	fmt.Fprintf(&source, "package %s\n\nimport (\n\t\"unsafe\"\n", name)
+	fmt.Fprintf(&source, "package %s\n\nimport (\n", name)
 	if checked {
-		source.WriteString("\t_ \"github.com/lucasavila00/immutago/pkg/im\"\n")
+		source.WriteString("\t\"github.com/lucasavila00/immutago/pkg/im\"\n")
 	}
 	if layer > 0 {
 		for column := range width {
 			fmt.Fprintf(&source, "\tp%d_%d \"dependency-stress.example/p%d_%d\"\n", layer-1, column, layer-1, column)
 		}
 	}
-	source.WriteString(")\n\nfunc Size() int {\n\tn := int(unsafe.Sizeof(0))\n")
-	for range 50 {
-		source.WriteString("\t_ = unsafe.Pointer(&n)\n")
+	source.WriteString(")\n\n")
+	for index := range 50 {
+		marker := ""
+		if checked {
+			marker = "im.Shared; "
+		}
+		fmt.Fprintf(&source, "type Value%d struct { %sItems []int }\n", index, marker)
 	}
+	source.WriteString("\nfunc Size() int {\n\tn := 0\n")
 	if layer > 0 {
 		for column := range width {
 			fmt.Fprintf(&source, "\tn += p%d_%d.Size()\n", layer-1, column)
