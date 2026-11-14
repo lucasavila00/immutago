@@ -14,12 +14,13 @@ const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 // RuntimePath is the package whose supervised process runtime is trusted.
 const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
 
-// Names of the process runtime identities in RuntimePath.
+// Names of the process runtime identities in RuntimePath and of the process method that only the runtime calls.
 const (
 	ProcessMarker = "Process"
 	PIDType       = "PID"
 	StartFunction = "Start"
 	ProcMethod    = "Proc"
+	RunMethod     = "Run"
 )
 
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.

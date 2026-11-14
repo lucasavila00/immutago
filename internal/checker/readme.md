@@ -10,7 +10,7 @@ Package checker proves structural immutability from Go compiler type information
 
 ## Constants
 
-Names of the process runtime identities in RuntimePath.
+Names of the process runtime identities in RuntimePath and of the process method that only the runtime calls.
 
 ```go
 const (
@@ -18,6 +18,7 @@ const (
     PIDType       = "PID"
     StartFunction = "Start"
     ProcMethod    = "Proc"
+    RunMethod     = "Run"
 )
 ```
 

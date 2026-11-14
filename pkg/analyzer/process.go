@@ -227,7 +227,8 @@ func (c *subsetChecks) allowedReceiverUse(receiver *ast.Ident) bool {
 	if selection.Kind() == types.FieldVal {
 		return true
 	}
-	return selection.Kind() == types.MethodVal && selection.Obj().Name() != "Run" && c.synchronousCall(selector)
+	return selection.Kind() == types.MethodVal && selection.Obj().Name() != checker.RunMethod &&
+		c.synchronousCall(selector)
 }
 
 // allowedProcUse permits a direct synchronous call of an exported method declared on the process.
@@ -238,7 +239,7 @@ func (c *subsetChecks) allowedProcUse(proc *ast.CallExpr) bool {
 	}
 	selection := c.pass.TypesInfo.Selections[selector]
 	return selection != nil && selection.Kind() == types.MethodVal && len(selection.Index()) == 1 &&
-		selection.Obj().Exported() && selection.Obj().Name() != "Run" && c.synchronousCall(selector)
+		selection.Obj().Exported() && selection.Obj().Name() != checker.RunMethod && c.synchronousCall(selector)
 }
 
 // synchronousCall requires a direct call that is not a go or defer statement.
@@ -262,7 +263,7 @@ func (c *subsetChecks) directProc(selector *ast.SelectorExpr) bool {
 
 // checkProcessMethod requires allowed stored types in each parameter and result of an exported process method.
 func (c *checks) checkProcessMethod(declaration *ast.FuncDecl) {
-	if declaration.Recv == nil || !declaration.Name.IsExported() || declaration.Name.Name == "Run" {
+	if declaration.Recv == nil || !declaration.Name.IsExported() || declaration.Name.Name == checker.RunMethod {
 		return
 	}
 	signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)
