@@ -35,18 +35,11 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	if !ok {
 		return "protected operation is outside the supported expression forms"
 	}
-	if runtimeObject(object, checker.TrustFunction) {
-		if source := c.pass.TypesInfo.TypeOf(call.Args[0]); c.queries.Callable(source) &&
-			types.Identical(source, signature.Params().At(0).Type()) {
-			return ""
-		}
-		return c.matchCallArguments(call, signature)
+	if matched, rule := c.matchDependencyCall(call, object, signature); matched {
+		return rule
 	}
 	if rule := c.matchCallArguments(call, signature); rule != "" {
 		return rule
-	}
-	if selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok && c.dependencyValue(selector) {
-		return ""
 	}
 	if libraryObject(object) {
 		return c.matchLibraryCall(call, object)

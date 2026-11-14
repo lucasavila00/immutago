@@ -8,6 +8,10 @@ smaller_subset.go:16:2: immutable field Value: type parameters are unsupported i
 smaller_subset.go:17:2: immutable field Next: Value: type parameters are unsupported in immutable storage
   owner: smaller_subset.Box[T ~int | ~string]; field type: *smaller_subset.Box[T]
   fix: use a concrete type; user generic declarations cannot contain immutable storage
+smaller_subset.go:17:8: unsupported immutable operation: Value: type parameters are unsupported in immutable storage
+  source: *Box[T]
+  type: *smaller_subset.Box[T]
+  fix: use the documented immutable value and reference forms
 smaller_subset.go:19:29: immutable collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete type; user generic declarations cannot contain immutable storage

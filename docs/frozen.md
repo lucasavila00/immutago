@@ -69,6 +69,7 @@ Each needs its own assignment/declaration; matching map forms work too.
 | `values = append(values, other...)` | Append individual elements. |
 | Freeze inside an active range over the same builder | Finish the range, then freeze. |
 | Any use of `values` after Freeze | Use the frozen value, or Clone it. |
+| `const n = len([1][]int{values})`, even though Go does not evaluate the array | Use `n := len(values)` before Freeze, or use the known constant `1`. |
 
 Do not use the old slice or map after Freeze, including in another branch or
 loop iteration. A Clone of scalar elements, such as `int`, follows ordinary Go
