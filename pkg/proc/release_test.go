@@ -13,11 +13,11 @@ func TestStopWaitsForParentEntry(t *testing.T) {
 		parent := NewRoot(nil)
 		nested := &Supervisor{parent: parent, stopped: make(chan struct{})}
 		returned, finish := make(chan struct{}), make(chan struct{})
-		nested.entry = parent.add(func(ctx context.Context) {
+		parent.add(func(ctx context.Context) {
 			nested.serve(ctx)
 			close(returned)
 			<-finish
-		})
+		}, nested.halt, nested)
 		synctest.Wait()
 		stopped := nested.Stop()
 		<-returned
@@ -48,7 +48,9 @@ func TestStopDuringRestartDelay(t *testing.T) {
 		parent := root(func(value any) { t.Errorf("root escalated: %v", value) }, nil)
 		nested := StartSupervisor(parent)
 		failures.Store(0)
-		Start[failing](nested, None{})
+		if _, err := Start[failing](nested, None{}); err != nil {
+			t.Fatal(err)
+		}
 		time.Sleep(31 * time.Second)
 		synctest.Wait()
 		before := time.Now()
@@ -85,7 +87,9 @@ func TestNestedSelfStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		parent := NewRoot(nil)
 		selfRoot = StartSupervisor(parent)
-		Start[stopper](selfRoot, None{})
+		if _, err := Start[stopper](selfRoot, None{}); err != nil {
+			t.Fatal(err)
+		}
 		synctest.Wait()
 		expectEvents(t, "stopped")
 		<-selfRoot.Stop()
@@ -100,7 +104,11 @@ func TestStartAfterStopDoesNotRetainChildren(t *testing.T) {
 		parent := NewRoot(nil)
 		<-parent.Stop()
 		for range 1000 {
-			if Start[first](parent, None{}).Proc() == nil {
+			pid, err := Start[first](parent, None{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if pid.Proc() == nil {
 				t.Fatal("Start returned an empty PID")
 			}
 		}
