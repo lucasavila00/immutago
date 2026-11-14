@@ -34,9 +34,40 @@ func main() {
 }
 ```
 
-Methods use ordinary Go. The checker restricts process pointers and method
-parameters/results; it does not prevent sharing mutable data through globals
-or helpers. Use locks where needed, as in `Add` above.
+Methods use ordinary Go. Use locks where needed, as in `Add` above.
+
+## Not checked
+
+The checker controls what goes into and out of a process: start arguments,
+method parameters and results, and process pointers. It does not check package
+variables or the functions that use them. Two processes can share a mutable
+global, and the checker accepts the program:
+
+```go
+var seen = map[string]int{}
+
+type Counter struct{ proc.Process[proc.None] }
+
+func (*Counter) Run(ctx context.Context) {
+    for ctx.Err() == nil {
+        seen["hits"]++ // Reader reads the same map: a data race
+    }
+}
+
+type Reader struct{ proc.Process[proc.None] }
+
+func (*Reader) Run(ctx context.Context) {
+    for ctx.Err() == nil {
+        _ = seen["hits"]
+    }
+}
+```
+
+`go test -race` finds this race; the checker does not. Keep shared state in one
+process and publish it through an `im.Owner` field, or protect the global with a
+lock.
+
+## Allowed forms
 
 The [config loader](../tests/testdata/accepted/process/config_loader.go) and
 [limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
