@@ -15,10 +15,11 @@ type Peers struct {
 
 // StartPeers starts the processes under root.
 func StartPeers(root *proc.Supervisor) Peers {
-	config := proc.Start[ConfigLoader](root)
-	cache := proc.Start[Cache](proc.StartSupervisor(root))
-	cache.Proc().SetConfig(config)
-	return Peers{Config: config, Cache: cache, Limiter: proc.Start[Limiter](root)}
+	return Peers{
+		Config:  proc.Start[ConfigLoader](root),
+		Cache:   proc.Start[Cache](proc.StartSupervisor(root)),
+		Limiter: proc.Start[Limiter](root),
+	}
 }
 
 // Serve handles one request with direct calls on Proc results.

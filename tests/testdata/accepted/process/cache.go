@@ -2,7 +2,6 @@ package process
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/lucasavila00/immutago/pkg/im"
@@ -16,47 +15,24 @@ type Entry struct {
 	Version int
 }
 
-// Cache refreshes its entry when the configuration changes.
+// Cache refreshes its entry each second.
 type Cache struct {
 	proc.Process
-	mu       sync.Mutex
-	config   proc.PID[ConfigLoader]
-	watching bool
-	seen     int
-	entry    im.Owner[Entry]
+	version int
+	entry   im.Owner[Entry]
 }
 
 // Run refreshes the entry each second until ctx ends.
 func (c *Cache) Run(ctx context.Context) {
 	for {
-		c.refresh()
+		c.version++
+		c.entry.Store(&Entry{Key: "config", Version: c.version})
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(time.Second):
 		}
 	}
-}
-
-// refresh replaces the entry when the configuration version changed.
-func (c *Cache) refresh() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if !c.watching {
-		return
-	}
-	if version := c.config.Proc().Version(); version != c.seen {
-		c.seen = version
-		c.entry.Store(&Entry{Key: "config", Version: version})
-	}
-}
-
-// SetConfig sets the configuration loader whose version the cache follows.
-func (c *Cache) SetConfig(config proc.PID[ConfigLoader]) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.config = config
-	c.watching = true
 }
 
 // Latest returns a copy of the current entry, or the zero Entry before the first refresh.
