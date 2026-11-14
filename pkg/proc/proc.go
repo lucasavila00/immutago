@@ -20,8 +20,10 @@
 // last panic value, and the program exits.
 //
 // A process can start children under the Supervisor of its current run. When
-// the run ends, the runtime stops these children in reverse start order before
-// the process restarts or stops. A child that escalates fails the run.
+// the process stops, the runtime stops these children in reverse start order
+// before the Run context ends, so children can still call the process. When
+// Run returns or panics, the runtime stops them before the process restarts or
+// ends. A child that escalates fails the run.
 //
 // Stop cancels each Run context and waits for Run to return. Cancellation is
 // cooperative; Run must observe its context. Stop does not wait for direct
@@ -50,6 +52,7 @@ type Process[A any] struct {
 	args     A
 	mu       sync.Mutex
 	cancel   context.CancelFunc
+	unwatch  func() bool
 	children *Supervisor
 	done     chan struct{}
 	ended    bool
@@ -61,8 +64,9 @@ type Process[A any] struct {
 func (p *Process[A]) Args() A { return p.args }
 
 // Supervisor returns the supervisor of the current run of the process. Each run has its own supervisor.
-// Processes started under it before Run begins start with the run. When Run returns or panics, the runtime
-// stops its children, last started first, and waits for them before the run ends. After the run ends,
+// Processes started under it before Run begins start with the run. When the process stops, the runtime
+// stops its children, last started first, and waits for them before the Run context ends. When Run returns
+// or panics, the runtime stops them and waits for them before the run ends. After the run ends,
 // Supervisor returns a stopped supervisor, and processes started under it do not run.
 // If a child escalates, the run context ends and the run fails with the panic value of the child.
 func (p *Process[A]) Supervisor() *Supervisor {
@@ -96,18 +100,33 @@ func (p *Process[A]) serve() {
 func (p *Process[A]) bind(args A) { p.args = args }
 
 // begin returns the context of the run and runs the supervisor of the run if it exists.
+// When ctx ends, halt stops the children before the context of the run ends.
 func (p *Process[A]) begin(ctx context.Context) context.Context {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	ctx, p.cancel = context.WithCancel(ctx)
+	run, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	p.cancel = cancel
+	p.unwatch = context.AfterFunc(ctx, p.halt)
 	if p.children != nil {
 		p.serve()
 	}
-	return ctx
+	return run
+}
+
+// halt stops the supervisor of the run and waits for it, then ends the context of the run.
+func (p *Process[A]) halt() {
+	p.mu.Lock()
+	children := p.children
+	p.mu.Unlock()
+	if children != nil {
+		<-children.Stop()
+	}
+	p.cancel()
 }
 
 // end stops the supervisor of the run and waits for it, and panics if a child escalated to it.
 func (p *Process[A]) end() {
+	p.unwatch()
 	p.mu.Lock()
 	p.ended = true
 	p.cancel()

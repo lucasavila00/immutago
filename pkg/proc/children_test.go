@@ -55,15 +55,74 @@ func (p *failingParent) Run(ctx context.Context) {
 	record("stop parent")
 }
 
-// TestChildrenStopAfterRun verifies that a stopped process stops its children last started first.
-func TestChildrenStopAfterRun(t *testing.T) {
+// TestChildrenStopBeforeRun verifies that a stopped process stops its children last started first
+// before the context of its run ends.
+func TestChildrenStopBeforeRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot()
 		Start[pool](root, None{})
 		synctest.Wait()
 		expectStarted(t, "start pool", "start first", "start second", "start third")
 		<-root.Stop()
-		expectEvents(t, "stop pool", "stop third", "stop second", "stop first")
+		expectEvents(t, "stop third", "stop second", "stop first", "stop pool")
+	})
+}
+
+// askerArgs is the argument of an asker.
+type askerArgs struct {
+	im.Shared
+	Self PID[asker]
+}
+
+// asker is a process whose Run answers the calls of its child.
+type asker struct {
+	Process[askerArgs]
+	requests chan chan int
+}
+
+// Run starts a child that calls Ask and answers each request until ctx ends.
+func (a *asker) Run(ctx context.Context) {
+	a.requests = make(chan chan int)
+	Start[caller](a.Supervisor(), a.Args().Self)
+	for {
+		select {
+		case <-ctx.Done():
+			record("stop asker")
+			return
+		case reply := <-a.requests:
+			reply <- 1
+		}
+	}
+}
+
+// Ask sends a request to Run and waits for the answer.
+func (a *asker) Ask() int {
+	reply := make(chan int)
+	a.requests <- reply
+	return <-reply
+}
+
+// caller is a process that calls its parent until ctx ends.
+type caller struct{ Process[PID[asker]] }
+
+// Run calls Ask on the parent until ctx ends.
+func (c *caller) Run(ctx context.Context) {
+	for ctx.Err() == nil {
+		c.Args().Proc().Ask()
+		time.Sleep(time.Millisecond)
+	}
+	record("stop caller")
+}
+
+// TestChildCallsParentDuringStop verifies that a child can call its parent until the child stops.
+func TestChildCallsParentDuringStop(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		root := NewRoot()
+		pid := Reserve[asker]()
+		StartReserved(root, pid, askerArgs{Self: pid})
+		time.Sleep(time.Second)
+		<-root.Stop()
+		expectEvents(t, "stop caller", "stop asker")
 	})
 }
 

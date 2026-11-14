@@ -12,7 +12,7 @@ A process is a mutable struct that embeds Process\[A\] and has a Run\(context.Co
 
 A supervisor runs its children until Stop. If Run returns, the process ends. If Run panics, the supervisor waits 1 s, doubling the delay for each restart in the last 5 minutes. It then creates a new process value from the same arguments, stores it in the same PID, and calls Run. Calls during the delay still use the old value; calls already in progress finish on that value. A sixth panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and escalates the panic to the parent supervisor, which restarts the subtree with the same rule. At the root supervisor, the escalation panics again with the last panic value, and the program exits.
 
-A process can start children under the Supervisor of its current run. When the run ends, the runtime stops these children in reverse start order before the process restarts or stops. A child that escalates fails the run.
+A process can start children under the Supervisor of its current run. When the process stops, the runtime stops these children in reverse start order before the Run context ends, so children can still call the process. When Run returns or panics, the runtime stops them before the process restarts or ends. A child that escalates fails the run.
 
 Stop cancels each Run context and waits for Run to return. Cancellation is cooperative; Run must observe its context. Stop does not wait for direct method calls. Process methods must synchronize their own shared state.
 
@@ -104,7 +104,7 @@ Args returns the arguments that Start or StartReserved gave to the process.
 func (p *Process[A]) Supervisor() *Supervisor
 ```
 
-Supervisor returns the supervisor of the current run of the process. Each run has its own supervisor. Processes started under it before Run begins start with the run. When Run returns or panics, the runtime stops its children, last started first, and waits for them before the run ends. After the run ends, Supervisor returns a stopped supervisor, and processes started under it do not run. If a child escalates, the run context ends and the run fails with the panic value of the child.
+Supervisor returns the supervisor of the current run of the process. Each run has its own supervisor. Processes started under it before Run begins start with the run. When the process stops, the runtime stops its children, last started first, and waits for them before the Run context ends. When Run returns or panics, the runtime stops them and waits for them before the run ends. After the run ends, Supervisor returns a stopped supervisor, and processes started under it do not run. If a child escalates, the run context ends and the run fails with the panic value of the child.
 
 ## type Supervisor
 
