@@ -43,13 +43,13 @@ var subsetFixes = map[string]string{
 		"keep frozen collections in their original im type",
 	"native builders require fresh local bindings or append to the same handle": "declare one fresh local builder; " +
 		"use values = append(values, element) to extend it",
-	"LocalRef pointers cannot enter aggregate storage": "store a LocalRef value copy or a Shared pointer",
+	"Scoped pointers cannot enter aggregate storage": "store a Scoped value copy or a Shared pointer",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
-		"im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses",
-	"returning LocalRef pointers is unsupported": "return a LocalRef value copy, or use im.Shared " +
+		"im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses",
+	"returning Scoped pointers is unsupported": "return a Scoped value copy, or use im.Shared " +
 		"for objects whose pointers must be shared",
-	"global LocalRef pointers are unsupported":        "keep the LocalRef pointer local, or store a value copy",
-	"containers of LocalRef pointers are unsupported": "store LocalRef value copies or im.Shared pointers",
+	"global Scoped pointers are unsupported":        "keep the Scoped pointer local, or store a value copy",
+	"containers of Scoped pointers are unsupported": "store Scoped value copies or im.Shared pointers",
 	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",
 	"user generic instantiations with immutable types are unsupported": "use a non-generic declaration " +
@@ -126,11 +126,11 @@ func subsetFix(rule string) string {
 func structuralFix(t types.Type, reason string) string {
 	switch {
 	case strings.Contains(reason, "named array"):
-		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Shared or im.LocalRef"
+		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Shared or im.Scoped"
 	case strings.Contains(reason, "type parameters"):
 		return "use a concrete type; user generic declarations cannot contain immutable storage"
 	case strings.Contains(reason, "does not embed"):
-		return "embed im.Shared or im.LocalRef in the struct and make each field immutable"
+		return "embed im.Shared or im.Scoped in the struct and make each field immutable"
 	}
 	switch t.Underlying().(type) {
 	case *types.Pointer:

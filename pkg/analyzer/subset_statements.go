@@ -104,7 +104,7 @@ func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) string {
 	return ""
 }
 
-// matchBinding permits LocalRef pointers only in local variable bindings.
+// matchBinding permits Scoped pointers only in local variable bindings.
 func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) string {
 	if rule := matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
 		return rule
@@ -114,7 +114,7 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	}
 	name, ok := ast.Unparen(destination).(*ast.Ident)
 	if !ok {
-		return "LocalRef pointers cannot enter aggregate storage"
+		return "Scoped pointers cannot enter aggregate storage"
 	}
 	if name.Name == "_" {
 		return ""
@@ -123,7 +123,7 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	if ok && variable.Parent() != c.pass.Pkg.Scope() {
 		return ""
 	}
-	return "global LocalRef pointers are unsupported"
+	return "global Scoped pointers are unsupported"
 }
 
 // matchDeclaration accepts one binding or the exact two-result frozen map reader.
@@ -136,7 +136,7 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 	for _, name := range declaration.Names {
 		variable := c.pass.TypesInfo.Defs[name]
 		if variable != nil && localReference(variable.Type()) && variable.Parent() == c.pass.Pkg.Scope() {
-			return "global LocalRef pointers are unsupported"
+			return "global Scoped pointers are unsupported"
 		}
 	}
 	if len(declaration.Values) == 0 {
@@ -185,7 +185,7 @@ func (c *subsetChecks) matchReturn(statement *ast.ReturnStmt) string {
 // matchReturnValue permits concrete values and Shared pointers at a return boundary.
 func matchReturnValue(source, destination types.Type) string {
 	if localReference(source) || localReference(destination) {
-		return "returning LocalRef pointers is unsupported"
+		return "returning Scoped pointers is unsupported"
 	}
 	return matchTransport(source, destination)
 }

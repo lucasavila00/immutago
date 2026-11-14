@@ -35,7 +35,7 @@ Each failed owner retains its first failure cause. The proof builds the
 diagnostic string once, from the requested root.
 
 Both marker modes use this proof. Stored pointers require a `Shared` struct
-target; `LocalRef` pointers fail the storage proof. Type parameters fail too.
+target; `Scoped` pointers fail the storage proof. Type parameters fail too.
 [Generic checks](../../pkg/analyzer/subset_generics.go) keep user protected
 generic code outside the source subset while retaining the fixed `im` APIs.
 

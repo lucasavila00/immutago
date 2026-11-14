@@ -1,18 +1,18 @@
-package owned
+package owner
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
-	im.LocalRef
+	im.Scoped
 	Version string
 	Weights im.FrozenSlice[float64]
 }
 
-type Loader struct{ Current im.Owned[Model] }
+type Loader struct{ Current im.Owner[Model] }
 
-var Current im.Owned[Model]
+var Current im.Owner[Model]
 
-var current im.Owned[Model]
+var current im.Owner[Model]
 
 func Publish(l *Loader, version string, weights []float64) {
 	w := make([]float64, len(weights))

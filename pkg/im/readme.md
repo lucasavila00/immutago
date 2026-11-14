@@ -8,9 +8,9 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 Package im provides markers and immutable value collections.
 
-Embed Shared or LocalRef in a struct to require immutable fields. Run the immutago analyzer on all consumer packages; Go's type checker alone does not enforce the field or collection element rules. Both markers make objects immutable from construction. Whole variables can be rebound to another value.
+Embed Shared or Scoped in a struct to require immutable fields. Run the immutago analyzer on all consumer packages; Go's type checker alone does not enforce the field or collection element rules. Both markers make objects immutable from construction. Whole variables can be rebound to another value.
 
-Pointers to Shared objects can be copied, stored, and returned. Pointers to LocalRef objects are restricted to local use and direct typed calls that do not let the pointer escape. Go manages object lifetimes. A value copy preserves pointers to the same immutable objects.
+Pointers to Shared objects can be copied, stored, and returned. Pointers to Scoped objects are restricted to local use and direct typed calls that do not let the pointer escape. Go manages object lifetimes. A value copy preserves pointers to the same immutable objects.
 
 FreezeSlice and FreezeMap share their input storage without copying. The analyzer requires exclusive ownership and rejects later source\-handle uses. Clone returns an independent copy. Their zero values are empty collections. Element and key types must themselves be immutable; the analyzer checks this requirement, including nested types.
 
@@ -114,39 +114,39 @@ func (s FrozenSlice[T]) Len() int
 
 Len returns the number of elements in O\(1\) time without allocations.
 
-## type LocalRef
+## type Owner
 
-LocalRef marks an immutable struct whose pointers must not escape. Embed it by value. A named field or pointer embedding does not mark the struct.
-
-```go
-type LocalRef struct{}
-```
-
-## type Owned
-
-Owned stores one pointer to an immutable LocalRef object. Its zero value is empty. An Owned value must not be copied.
+Owner stores one pointer to an immutable Scoped object. Its zero value is empty. An Owner value must not be copied.
 
 ```go
-type Owned[T any] struct {
+type Owner[T any] struct {
     // contains filtered or unexported fields
 }
 ```
 
-### func \(\*Owned\[T\]\) Load
+### func \(\*Owner\[T\]\) Load
 
 ```go
-func (o *Owned[T]) Load() *T
+func (o *Owner[T]) Load() *T
 ```
 
 Load returns the current pointer, or nil if the slot is empty.
 
-### func \(\*Owned\[T\]\) Store
+### func \(\*Owner\[T\]\) Store
 
 ```go
-func (o *Owned[T]) Store(value *T)
+func (o *Owner[T]) Store(value *T)
 ```
 
 Store publishes a freshly constructed object.
+
+## type Scoped
+
+Scoped marks an immutable struct whose pointers must not escape. Embed it by value. A named field or pointer embedding does not mark the struct.
+
+```go
+type Scoped struct{}
+```
 
 ## type Shared
 

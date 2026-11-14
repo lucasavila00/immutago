@@ -25,14 +25,14 @@ func IsCollection(t types.Type) bool {
 // Marked reports the presence of either embedded marker, including invalid combinations.
 // It does not prove immutability; Reason checks the complete type contract.
 func Marked(t types.Type) bool {
-	return Shared(t) || LocalRef(t)
+	return Shared(t) || Scoped(t)
 }
 
 // Shared reports the presence of an embedded im.Shared value, not type validity.
 func Shared(t types.Type) bool { return embedsMarker(t, "Shared") }
 
-// LocalRef reports the presence of an embedded im.LocalRef value, not type validity.
-func LocalRef(t types.Type) bool { return embedsMarker(t, "LocalRef") }
+// Scoped reports the presence of an embedded im.Scoped value, not type validity.
+func Scoped(t types.Type) bool { return embedsMarker(t, "Scoped") }
 
 // MarkerCount counts direct embedded marker identities, including aliases of the same marker.
 func MarkerCount(t types.Type) int {
@@ -45,7 +45,7 @@ func MarkerCount(t types.Type) int {
 	}
 	count := 0
 	for field := range structure.Fields() {
-		if field.Embedded() && (IsLibraryType(field.Type(), "Shared") || IsLibraryType(field.Type(), "LocalRef")) {
+		if field.Embedded() && (IsLibraryType(field.Type(), "Shared") || IsLibraryType(field.Type(), "Scoped")) {
 			count++
 		}
 	}
@@ -82,7 +82,7 @@ func contains(t types.Type, seen map[types.Type]bool) bool {
 	if parameter, ok := types.Unalias(t).(*types.TypeParam); ok {
 		return constraintContains(parameter.Constraint(), seen)
 	}
-	if IsLibraryType(t, "Owned") {
+	if IsLibraryType(t, "Owner") {
 		return false
 	}
 	if IsCollection(t) || Marked(t) {

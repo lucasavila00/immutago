@@ -1,19 +1,19 @@
-package owned
+package owner
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
-	im.LocalRef
+	im.Scoped
 	X int
 }
 type Shared struct{ im.Shared }
-type Loader struct{ Current im.Owned[Model] }
+type Loader struct{ Current im.Owner[Model] }
 type BadOwner struct {
 	im.Shared
-	Current im.Owned[Model]
+	Current im.Owner[Model]
 }
 
-var bad im.Owned[Shared]
+var bad im.Owner[Shared]
 var saved *Model
 
 func badUses(l *Loader) {

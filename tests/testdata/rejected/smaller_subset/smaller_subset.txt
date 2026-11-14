@@ -46,19 +46,19 @@ smaller_subset.go:23:9: immutable collection: type argument 1: type parameters a
 smaller_subset.go:25:35: unsupported immutable operation: immutable references require a concrete marked struct target
   source: &[2]Node{}
   type: *[2]smaller_subset.Node
-  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
 smaller_subset.go:25:53: unsupported immutable operation: immutable references require a concrete marked struct target
   source: p
   type: *[2]smaller_subset.Node
-  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
 smaller_subset.go:26:35: unsupported immutable operation: immutable references require a concrete marked struct target
   source: new(im.FrozenSlice[int])
   type: *im.FrozenSlice[int]
-  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
 smaller_subset.go:26:65: unsupported immutable operation: immutable references require a concrete marked struct target
   source: p
   type: *im.FrozenSlice[int]
-  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
 smaller_subset.go:29:29: unsupported immutable operation: closures cannot capture immutable storage
   source: shared
   type: *smaller_subset.Node

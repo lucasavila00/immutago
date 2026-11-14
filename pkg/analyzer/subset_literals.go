@@ -77,7 +77,7 @@ func matchStoredValue(source, destination types.Type) string {
 		return rule
 	}
 	if localReference(source) {
-		return "LocalRef pointers cannot enter aggregate storage"
+		return "Scoped pointers cannot enter aggregate storage"
 	}
 	return ""
 }

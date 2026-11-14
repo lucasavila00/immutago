@@ -19,7 +19,7 @@ func (c *subsetChecks) ownedSlotSelector(selector *ast.SelectorExpr) bool {
 	if pointer, ok := receiver.Underlying().(*types.Pointer); ok {
 		receiver = pointer.Elem()
 	}
-	return checker.IsLibraryType(receiver, "Owned")
+	return checker.IsLibraryType(receiver, "Owner")
 }
 
 // ownedSlotCall recognizes a direct call on the sealed slot type.
@@ -34,7 +34,7 @@ func containsSlotValue(t types.Type, seen map[types.Type]bool) bool {
 		return false
 	}
 	seen[t] = true
-	if checker.IsLibraryType(t, "Owned") {
+	if checker.IsLibraryType(t, "Owner") {
 		return true
 	}
 	switch typ := t.Underlying().(type) {
@@ -106,8 +106,8 @@ func (c *subsetChecks) slotRelevant(t types.Type) bool {
 	return false
 }
 
-// checkOwned rejects all slot and holder value operations except the listed forms.
-func checkOwned(pass *analysis.Pass) {
+// checkOwner rejects all slot and holder value operations except the listed forms.
+func checkOwner(pass *analysis.Pass) {
 	c := &subsetChecks{pass: pass, parents: make(map[ast.Node]ast.Node)}
 	for _, file := range pass.Files {
 		var stack []ast.Node
@@ -124,32 +124,32 @@ func checkOwned(pass *analysis.Pass) {
 		})
 	}
 	for _, file := range pass.Files {
-		ast.Inspect(file, func(n ast.Node) bool { c.checkOwnedNode(n); return true })
+		ast.Inspect(file, func(n ast.Node) bool { c.checkOwnerNode(n); return true })
 	}
 }
 
-// checkOwnedNode verifies slot placement and value uses.
-func (c *subsetChecks) checkOwnedNode(node ast.Node) {
+// checkOwnerNode verifies slot placement and value uses.
+func (c *subsetChecks) checkOwnerNode(node ast.Node) {
 	switch n := node.(type) {
 	case *ast.FuncLit:
 		c.checkSlotCapture(n)
 	case *ast.FuncType:
 		if c.hasSlotValue(c.pass.TypesInfo.TypeOf(n)) {
-			c.pass.Reportf(n.Pos(), "function types cannot pass or return Owned slots or holders by value")
+			c.pass.Reportf(n.Pos(), "function types cannot pass or return Owner slots or holders by value")
 		}
 	case *ast.FuncDecl:
 		c.checkSlotFunction(n)
 	case *ast.TypeSpec:
-		if !n.Assign.IsValid() && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(n.Type), "Owned") {
-			c.pass.Reportf(n.Pos(), "defined copies of Owned slots are unsupported")
+		if !n.Assign.IsValid() && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(n.Type), "Owner") {
+			c.pass.Reportf(n.Pos(), "defined copies of Owner slots are unsupported")
 		}
 	case *ast.ArrayType, *ast.MapType, *ast.ChanType:
 		if expression, ok := node.(ast.Expr); ok && c.hasSlotValue(c.pass.TypesInfo.TypeOf(expression)) {
-			c.pass.Reportf(node.Pos(), "containers of Owned slots or holders are unsupported")
+			c.pass.Reportf(node.Pos(), "containers of Owner slots or holders are unsupported")
 		}
 	case *ast.StarExpr:
-		if c.pass.TypesInfo.Types[n].IsType() && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(n.X), "Owned") {
-			c.pass.Reportf(n.Pos(), "pointers to Owned slots are unsupported")
+		if c.pass.TypesInfo.Types[n].IsType() && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(n.X), "Owner") {
+			c.pass.Reportf(n.Pos(), "pointers to Owner slots are unsupported")
 		}
 	case *ast.ValueSpec:
 		c.checkSlotDeclaration(n)
@@ -157,7 +157,7 @@ func (c *subsetChecks) checkOwnedNode(node ast.Node) {
 		c.checkSlotFields(n)
 	case *ast.CallExpr:
 		if c.ownedSlotCall(n) {
-			c.checkOwnedCall(n)
+			c.checkOwnerCall(n)
 		}
 	}
 	if expression, ok := node.(ast.Expr); ok {
@@ -173,7 +173,7 @@ func (c *subsetChecks) checkSlotFunction(n *ast.FuncDecl) {
 	}
 	if (sig.Recv() != nil && c.hasSlotValue(sig.Recv().Type())) ||
 		c.slotTuple(sig.Params()) || c.slotTuple(sig.Results()) {
-		c.pass.Reportf(n.Pos(), "Owned slots and their holders cannot be passed or returned by value")
+		c.pass.Reportf(n.Pos(), "Owner slots and their holders cannot be passed or returned by value")
 	}
 }
 
@@ -181,8 +181,8 @@ func (c *subsetChecks) checkSlotFunction(n *ast.FuncDecl) {
 func (c *subsetChecks) checkSlotDeclaration(n *ast.ValueSpec) {
 	for _, name := range n.Names {
 		variable, ok := c.pass.TypesInfo.Defs[name].(*types.Var)
-		if ok && checker.IsLibraryType(variable.Type(), "Owned") && variable.Parent() != c.pass.Pkg.Scope() {
-			c.pass.Reportf(name.Pos(), "Owned slots require a field or package variable")
+		if ok && checker.IsLibraryType(variable.Type(), "Owner") && variable.Parent() != c.pass.Pkg.Scope() {
+			c.pass.Reportf(name.Pos(), "Owner slots require a field or package variable")
 		}
 	}
 }
@@ -194,8 +194,8 @@ func (c *subsetChecks) checkSlotFields(n *ast.StructType) {
 		return
 	}
 	for field := range structure.Fields() {
-		if c.hasSlotValue(field.Type()) && (!checker.IsLibraryType(field.Type(), "Owned") || field.Embedded()) {
-			c.pass.Reportf(n.Pos(), "Owned slots require direct named fields; nested slot storage is unsupported")
+		if c.hasSlotValue(field.Type()) && (!checker.IsLibraryType(field.Type(), "Owner") || field.Embedded()) {
+			c.pass.Reportf(n.Pos(), "Owner slots require direct named fields; nested slot storage is unsupported")
 		}
 	}
 }
@@ -223,11 +223,11 @@ func (c *subsetChecks) checkSlotExpression(expression ast.Expr) {
 	}
 	typ := c.pass.TypesInfo.TypeOf(expression)
 	if c.holderPointer(typ) && !c.allowedHolderPointer(expression) {
-		c.pass.Reportf(expression.Pos(), "Owned holder pointers require local bindings or direct typed calls")
+		c.pass.Reportf(expression.Pos(), "Owner holder pointers require local bindings or direct typed calls")
 		return
 	}
 	if c.hasSlotValue(typ) && !c.allowedSlotValue(expression) {
-		c.pass.Reportf(expression.Pos(), "Owned slots and their holders cannot be copied or transported by value")
+		c.pass.Reportf(expression.Pos(), "Owner slots and their holders cannot be copied or transported by value")
 	}
 }
 
@@ -248,7 +248,7 @@ func (c *subsetChecks) checkSlotCapture(literal *ast.FuncLit) {
 				return true
 			}
 		}
-		c.pass.Reportf(name.Pos(), "closures cannot capture Owned slots or holders")
+		c.pass.Reportf(name.Pos(), "closures cannot capture Owner slots or holders")
 		return true
 	})
 }
@@ -269,7 +269,7 @@ func (c *subsetChecks) holderPointer(t types.Type) bool {
 		return false
 	}
 	pointer, ok := t.Underlying().(*types.Pointer)
-	if !ok || checker.IsLibraryType(pointer.Elem(), "Owned") {
+	if !ok || checker.IsLibraryType(pointer.Elem(), "Owner") {
 		return false
 	}
 	_, structure := pointer.Elem().Underlying().(*types.Struct)
@@ -284,10 +284,10 @@ func (c *subsetChecks) allowedHolderPointer(expression ast.Expr) bool {
 	}
 	switch node := parent.(type) {
 	case *ast.SelectorExpr:
-		return node.X == expression && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(node), "Owned")
+		return node.X == expression && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(node), "Owner")
 	case *ast.StarExpr:
 		selector, ok := c.parents[node].(*ast.SelectorExpr)
-		return ok && selector.X == node && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(selector), "Owned")
+		return ok && selector.X == node && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(selector), "Owner")
 	case *ast.AssignStmt:
 		if len(node.Lhs) != 1 || len(node.Rhs) != 1 || node.Rhs[0] != expression {
 			return false
@@ -337,12 +337,12 @@ func (c *subsetChecks) allowedSlotValue(expression ast.Expr) bool {
 	if paren, ok := parent.(*ast.ParenExpr); ok {
 		return c.allowedSlotValue(paren)
 	}
-	if checker.IsLibraryType(c.pass.TypesInfo.TypeOf(expression), "Owned") {
+	if checker.IsLibraryType(c.pass.TypesInfo.TypeOf(expression), "Owner") {
 		selector, ok := parent.(*ast.SelectorExpr)
 		return ok && selector.X == expression && c.ownedSlotSelector(selector) && c.directCall(selector) != nil
 	}
 	if selector, ok := parent.(*ast.SelectorExpr); ok && selector.X == expression &&
-		checker.IsLibraryType(c.pass.TypesInfo.TypeOf(selector), "Owned") {
+		checker.IsLibraryType(c.pass.TypesInfo.TypeOf(selector), "Owner") {
 		return true
 	}
 	if _, ok := ast.Unparen(expression).(*ast.CompositeLit); ok {
@@ -352,25 +352,25 @@ func (c *subsetChecks) allowedSlotValue(expression ast.Expr) bool {
 	return false
 }
 
-// checkOwnedCall proves the complete Store and Load statement forms.
-func (c *subsetChecks) checkOwnedCall(call *ast.CallExpr) {
+// checkOwnerCall proves the complete Store and Load statement forms.
+func (c *subsetChecks) checkOwnerCall(call *ast.CallExpr) {
 	selector := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 	if !c.validSlotReceiver(selector.X) {
-		c.pass.Reportf(call.Pos(), "Owned calls require a direct field or package slot")
+		c.pass.Reportf(call.Pos(), "Owner calls require a direct field or package slot")
 		return
 	}
 	switch selector.Sel.Name {
 	case "Store":
 		if len(call.Args) != 1 || !c.freshSlotArgument(call.Args[0]) {
-			c.pass.Reportf(call.Pos(), "Owned.Store requires a fresh LocalRef allocation")
+			c.pass.Reportf(call.Pos(), "Owner.Store requires a fresh Scoped allocation")
 			return
 		}
 		if _, ok := c.unparenthesizedParent(call).(*ast.ExprStmt); !ok {
-			c.pass.Reportf(call.Pos(), "Owned.Store requires a direct synchronous statement")
+			c.pass.Reportf(call.Pos(), "Owner.Store requires a direct synchronous statement")
 		}
 	case "Load":
 		if !c.localLoadBinding(call) {
-			c.pass.Reportf(call.Pos(), "Owned.Load requires a single local pointer binding")
+			c.pass.Reportf(call.Pos(), "Owner.Load requires a single local pointer binding")
 		}
 	}
 }
@@ -400,7 +400,7 @@ func (c *subsetChecks) localLoadBinding(call *ast.CallExpr) bool {
 // validSlotReceiver excludes slot pointers and temporary slots.
 func (c *subsetChecks) validSlotReceiver(receiver ast.Expr) bool {
 	receiver = ast.Unparen(receiver)
-	if !checker.IsLibraryType(c.pass.TypesInfo.TypeOf(receiver), "Owned") {
+	if !checker.IsLibraryType(c.pass.TypesInfo.TypeOf(receiver), "Owner") {
 		return false
 	}
 	switch value := receiver.(type) {

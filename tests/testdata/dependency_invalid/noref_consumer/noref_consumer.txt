@@ -1,10 +1,10 @@
 noref_consumer.go:3:8: unsupported dependency example.com/consumer/invalid_noref: immutability proof failed
   import chain: example.com/consumer/noref_consumer -> example.com/consumer/invalid_noref
-  original failure: example.com/consumer/invalid_noref/invalid_noref.go:10:5: unsupported immutable operation: global LocalRef pointers are unsupported
+  original failure: example.com/consumer/invalid_noref/invalid_noref.go:10:5: unsupported immutable operation: global Scoped pointers are unsupported
     source: retained *Local
-    fix: keep the LocalRef pointer local, or store a value copy
+    fix: keep the Scoped pointer local, or store a value copy
   import chain: example.com/consumer/noref_consumer -> example.com/consumer/invalid_noref
-  original failure: example.com/consumer/invalid_noref/invalid_noref.go:12:29: unsupported immutable operation: global LocalRef pointers are unsupported
+  original failure: example.com/consumer/invalid_noref/invalid_noref.go:12:29: unsupported immutable operation: global Scoped pointers are unsupported
     source: retained = value
-    fix: keep the LocalRef pointer local, or store a value copy
+    fix: keep the Scoped pointer local, or store a value copy
   fix: correct the original dependency error above, then rerun immutago on this package

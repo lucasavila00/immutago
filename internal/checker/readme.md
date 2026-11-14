@@ -40,14 +40,6 @@ func IsLibraryType(t types.Type, name string) bool
 
 IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
 
-## func LocalRef
-
-```go
-func LocalRef(t types.Type) bool
-```
-
-LocalRef reports the presence of an embedded im.LocalRef value, not type validity.
-
 ## func Marked
 
 ```go
@@ -71,6 +63,14 @@ func Reason(t types.Type) string
 ```
 
 Reason proves concrete immutable storage or returns the first failed component.
+
+## func Scoped
+
+```go
+func Scoped(t types.Type) bool
+```
+
+Scoped reports the presence of an embedded im.Scoped value, not type validity.
 
 ## func Shared
 

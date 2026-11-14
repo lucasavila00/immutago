@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-// TestOwned verifies zero, publication, and concurrent loads.
-func TestOwned(t *testing.T) {
+// TestOwner verifies zero, publication, and concurrent loads.
+func TestOwner(t *testing.T) {
 	type model struct{ value int }
-	var slot Owned[model]
+	var slot Owner[model]
 	if slot.Load() != nil {
 		t.Fatal("zero slot is not empty")
 	}
@@ -36,9 +36,9 @@ func TestOwned(t *testing.T) {
 	}
 }
 
-// BenchmarkOwnedLoad measures loading an existing pointer.
-func BenchmarkOwnedLoad(b *testing.B) {
-	var slot Owned[int]
+// BenchmarkOwnerLoad measures loading an existing pointer.
+func BenchmarkOwnerLoad(b *testing.B) {
+	var slot Owner[int]
 	slot.Store(new(int))
 	b.ReportAllocs()
 	for b.Loop() {

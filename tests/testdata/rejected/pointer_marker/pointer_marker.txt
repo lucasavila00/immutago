@@ -1,3 +1,3 @@
 pointer_marker.go:12:6: immutable markers must be embedded by value
   field: rejected.Bad.Shared
-  fix: embed im.Shared or im.LocalRef; remove the marker field name or pointer
+  fix: embed im.Shared or im.Scoped; remove the marker field name or pointer

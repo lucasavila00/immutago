@@ -3,7 +3,7 @@ package invalid_noref
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Local struct {
-	im.LocalRef
+	im.Scoped
 	Value int
 }
 

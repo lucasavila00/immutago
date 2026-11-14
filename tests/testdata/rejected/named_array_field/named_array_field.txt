@@ -1,3 +1,3 @@
 named_array_field.go:8:2: immutable field N: named array must be wrapped in a struct with an immutable marker
   owner: rejected.Value; field type: rejected.Count
-  fix: use an unnamed array type, or wrap the named array in a struct that embeds im.Shared or im.LocalRef
+  fix: use an unnamed array type, or wrap the named array in a struct that embeds im.Shared or im.Scoped

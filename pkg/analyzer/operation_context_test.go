@@ -29,7 +29,7 @@ func TestClosureLocalConstruction(t *testing.T) {
 		`var read=func()int{return count};var count=1`,
 		`var value=&Value{};var read=func()int{return len([1]Value{*value})}`,
 		`func f(value *Value)func()int{return func()int{return len([1]Value{*value})}}`,
-		`type Local struct{im.LocalRef};func f(local *Local)func()int{
+		`type Local struct{im.Scoped};func f(local *Local)func()int{
  return func()int{return len([1]*Local{local})}}`,
 		`func f()int{return func()int{value:=&Value{X:1};return value.X}()}`,
 		`type Parent struct{im.Shared;Child Value};func f()int{

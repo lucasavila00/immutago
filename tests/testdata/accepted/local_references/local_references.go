@@ -3,7 +3,7 @@ package local_references
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Local struct {
-	im.LocalRef
+	im.Scoped
 	Value int
 }
 type Snapshot struct {
@@ -49,7 +49,7 @@ func nilReference() bool {
 }
 
 type LocalSnapshot struct {
-	im.LocalRef
+	im.Scoped
 	Value Local
 }
 

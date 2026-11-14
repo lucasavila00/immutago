@@ -76,11 +76,11 @@ func (p *proof) depend(owner *obligation, t types.Type, label string) {
 
 // value matches the complete concrete immutable storage forms.
 func (p *proof) value(result *obligation, t types.Type) {
-	if IsLibraryType(t, "Owned") {
-		result.reason = "Owned slots are mutable"
+	if IsLibraryType(t, "Owner") {
+		result.reason = "Owner slots are mutable"
 		return
 	}
-	if IsLibraryType(t, "Shared") || IsLibraryType(t, "LocalRef") {
+	if IsLibraryType(t, "Shared") || IsLibraryType(t, "Scoped") {
 		return
 	}
 	if IsCollection(t) {
@@ -102,8 +102,8 @@ func (p *proof) value(result *obligation, t types.Type) {
 	}
 	switch underlying := t.Underlying().(type) {
 	case *types.Pointer:
-		if LocalRef(underlying.Elem()) {
-			result.reason = "LocalRef pointers cannot be stored"
+		if Scoped(underlying.Elem()) {
+			result.reason = "Scoped pointers cannot be stored"
 			return
 		}
 		if !Marked(underlying.Elem()) {
@@ -129,11 +129,11 @@ func (p *proof) value(result *obligation, t types.Type) {
 // structure requires one marker and checks every stored field.
 func (p *proof) structure(result *obligation, t types.Type, structure *types.Struct) {
 	if !Marked(t) {
-		result.reason = "struct does not embed im.Shared or im.LocalRef"
+		result.reason = "struct does not embed im.Shared or im.Scoped"
 		return
 	}
-	if Shared(t) && LocalRef(t) {
-		result.reason = "struct cannot embed both im.Shared and im.LocalRef"
+	if Shared(t) && Scoped(t) {
+		result.reason = "struct cannot embed both im.Shared and im.Scoped"
 		return
 	}
 	if MarkerCount(t) != 1 {

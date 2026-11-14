@@ -170,7 +170,7 @@ func subsetContainer(t types.Type) string {
 func subsetResults(results *types.Tuple) string {
 	for i := 0; i < results.Len(); i++ {
 		if localReference(results.At(i).Type()) {
-			return "returning LocalRef pointers is unsupported"
+			return "returning Scoped pointers is unsupported"
 		}
 	}
 	return ""
@@ -209,8 +209,8 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 			c.report(expression, "immutable callbacks are unsupported")
 		}
 	}
-	if storedLocalReference(t, make(map[types.Type]bool)) {
-		c.report(expression, "containers of LocalRef pointers are unsupported")
+	if storedScopederence(t, make(map[types.Type]bool)) {
+		c.report(expression, "containers of Scoped pointers are unsupported")
 	}
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return
@@ -236,8 +236,8 @@ func (c *subsetChecks) directSlotMethodExpression(expression ast.Expr) bool {
 	return c.ownedSlotSelector(selector) && c.directCall(selector) != nil
 }
 
-// storedLocalReference checks native container elements even when the handle has an ownership proof.
-func storedLocalReference(t types.Type, seen map[types.Type]bool) bool {
+// storedScopederence checks native container elements even when the handle has an ownership proof.
+func storedScopederence(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] {
 		return false
 	}
@@ -254,7 +254,7 @@ func storedLocalReference(t types.Type, seen map[types.Type]bool) bool {
 		elements = []types.Type{storage.Elem()}
 	}
 	for _, element := range elements {
-		if localReference(element) || storedLocalReference(element, seen) {
+		if localReference(element) || storedScopederence(element, seen) {
 			return true
 		}
 	}

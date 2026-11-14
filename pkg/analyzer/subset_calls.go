@@ -124,7 +124,7 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 		if c.ownedSlotCall(call) {
 			return ""
 		}
-		return "Owned requires a direct slot call"
+		return "Owner requires a direct slot call"
 	case "FreezeMap", "FreezeSlice":
 		if c.standaloneFreeze(call) {
 			return ""

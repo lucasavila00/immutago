@@ -1,7 +1,7 @@
 # Immutago
 
 A Go immutability analyzer and frozen maps and slices. Embed `im.Shared` for
-immutable objects with shareable pointers, or `im.LocalRef` when pointers
+immutable objects with shareable pointers, or `im.Scoped` when pointers
 must not escape. Both are immutable from construction. Variables can be
 reassigned; their objects cannot change. Freeze exclusive native storage without
 copying. Clone it when you need a mutable builder.
