@@ -2,21 +2,22 @@ package analyzer
 
 import "go/ast"
 
-// write permits variable replacement and native builder elements, but no immutable object mutation.
-func (c *subsetChecks) write(destination ast.Expr) {
+// matchWrite permits variable replacement and whole native builder slots.
+func (c *subsetChecks) matchWrite(destination ast.Expr) string {
 	switch target := ast.Unparen(destination).(type) {
 	case *ast.Ident:
-		return
+		return ""
 	case *ast.SelectorExpr:
 		if c.pass.TypesInfo.Selections[target] == nil {
-			return
+			return ""
 		}
 	case *ast.IndexExpr:
 		if c.ownedExpression(target.X) {
-			return
+			return ""
 		}
 	}
-	if c.protectedRoot(destination) {
-		c.report(destination, "writes to immutable objects are unsupported")
+	if !c.protectedRoot(destination) {
+		return ""
 	}
+	return "writes to immutable objects are unsupported"
 }

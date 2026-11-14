@@ -7,41 +7,57 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// compositeLiteral checks each implicit assignment against its resolved storage type.
-func (c *subsetChecks) compositeLiteral(literal *ast.CompositeLit) {
+// matchLiteral resolves every field, key, and element assignment in a concrete literal.
+func (c *subsetChecks) matchLiteral(literal *ast.CompositeLit) string {
 	storage := c.pass.TypesInfo.TypeOf(literal).Underlying()
+	if _, pointer := storage.(*types.Pointer); pointer {
+		return "reference operation is outside the supported allowlist"
+	}
 	for index, element := range literal.Elts {
 		value := element
 		pair, keyed := element.(*ast.KeyValueExpr)
 		if keyed {
 			value = pair.Value
 		}
+		var destination types.Type
 		switch storage := storage.(type) {
 		case *types.Array:
-			c.transport(value, storage.Elem())
+			destination = storage.Elem()
 		case *types.Slice:
-			c.transport(value, storage.Elem())
+			destination = storage.Elem()
 		case *types.Map:
-			c.transport(pair.Key, storage.Key())
-			c.transport(value, storage.Elem())
+			if rule := matchStoredValue(c.pass.TypesInfo.TypeOf(pair.Key), storage.Key()); rule != "" {
+				return rule
+			}
+			destination = storage.Elem()
 		case *types.Struct:
 			if keyed {
-				field := c.pass.TypesInfo.ObjectOf(pair.Key.(*ast.Ident))
-				c.transport(value, field.Type())
+				destination = c.pass.TypesInfo.ObjectOf(pair.Key.(*ast.Ident)).Type()
 			} else {
-				c.transport(value, storage.Field(index).Type())
+				destination = storage.Field(index).Type()
 			}
 		default:
-			operands := []ast.Expr{value}
-			if keyed {
-				operands = append(operands, pair.Key)
+			if checker.Contains(c.pass.TypesInfo.TypeOf(value)) || protectedCallable(c.pass.TypesInfo.TypeOf(value)) {
+				return "protected composite literals require a concrete storage type"
 			}
-			for _, operand := range operands {
-				typ := c.pass.TypesInfo.TypeOf(operand)
-				if checker.Contains(typ) || protectedCallable(typ) {
-					c.report(operand, "protected composite literals require a concrete storage type")
-				}
+			if keyed && checker.Contains(c.pass.TypesInfo.TypeOf(pair.Key)) {
+				return "protected composite literals require a concrete storage type"
 			}
 		}
+		if rule := matchStoredValue(c.pass.TypesInfo.TypeOf(value), destination); rule != "" {
+			return rule
+		}
 	}
+	return ""
+}
+
+// matchStoredValue permits immutable copies and Shared pointers in aggregate storage.
+func matchStoredValue(source, destination types.Type) string {
+	if rule := matchTransport(source, destination); rule != "" {
+		return rule
+	}
+	if localReference(source) {
+		return "LocalRef pointers cannot enter aggregate storage"
+	}
+	return ""
 }

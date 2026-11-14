@@ -57,7 +57,7 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"LocalRef global", `var p *Local`, "global LocalRef pointers"},
 		{"LocalRef stored field", `type Owner struct{im.Shared;P *Local}`, "LocalRef pointers cannot be stored"},
 		{"LocalRef stored array", `func f(){p:=&Local{};_=[1]*Local{p}}`, "LocalRef"},
-		{"LocalRef stored slice", `func f(){p:=&Local{};values:=[]*Local{p};_=len(values)}`, "reference operation"},
+		{"LocalRef stored slice", `func f(){p:=&Local{};values:=[]*Local{p};_=len(values)}`, "containers of LocalRef pointers"},
 		{"LocalRef capture", `func f(){p:=&Local{};_=func()int{return p.X}}`, "closures cannot capture"},
 		{"shared capture", `func f(){p:=&Shared{};_=func()int{return p.X}}`, "closures cannot capture"},
 		{"shared asynchronous", `func f(){p:=&Shared{};go readShared(p)}`, "synchronous"},
@@ -79,7 +79,7 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"LocalRef empty builder", `func f(){var values []*Local;_=len(values)}`, "LocalRef"},
 		{
 			"range interface",
-			`func f(){values:=im.FreezeSlice([]Shared{{}});var boxed any;for _,boxed=range values.All(){};_=boxed}`,
+			`func f(){values:=im.FreezeMap(map[Shared]int{{}:1});var boxed any;for boxed=range values.All(){};_=boxed}`,
 			"boxing immutable storage",
 		},
 		{

@@ -86,56 +86,6 @@ func (c *subsetChecks) exemptType(expression ast.Expr) {
 	})
 }
 
-// freezeFunctionUse prevents indirect calls from hiding the ownership transition.
-func (c *subsetChecks) freezeFunctionUse(expression ast.Expr) {
-	if parent, ok := c.parents[expression].(*ast.SelectorExpr); ok && parent.Sel == expression {
-		return
-	}
-	object := c.calledObject(expression)
-	if !libraryObject(object) || (object.Name() != "FreezeMap" && object.Name() != "FreezeSlice") {
-		return
-	}
-	call := c.directFreezeCall(expression)
-	if call == nil {
-		c.report(expression, "freeze functions must be called directly")
-		return
-	}
-	if !c.standaloneFreeze(call) {
-		c.report(call, "Freeze requires a standalone single binding")
-	}
-	switch c.parents[call].(type) {
-	case *ast.GoStmt, *ast.DeferStmt:
-		c.report(call, "freezing requires a synchronous call")
-	}
-}
-
-// directFreezeCall follows only parentheses and generic instantiation into a direct callee.
-func (c *subsetChecks) directFreezeCall(node ast.Node) *ast.CallExpr {
-	for {
-		switch parent := c.parents[node].(type) {
-		case *ast.ParenExpr:
-			node = parent
-		case *ast.IndexExpr:
-			if parent.X != node {
-				return nil
-			}
-			node = parent
-		case *ast.IndexListExpr:
-			if parent.X != node {
-				return nil
-			}
-			node = parent
-		case *ast.CallExpr:
-			if parent.Fun == node {
-				return parent
-			}
-			return nil
-		default:
-			return nil
-		}
-	}
-}
-
 // ownedBuiltin admits non-escaping native operations whose handle uses the ownership checker verifies.
 func (c *subsetChecks) ownedBuiltin(call *ast.CallExpr) bool {
 	builtin, ok := c.calledObject(call.Fun).(*types.Builtin)

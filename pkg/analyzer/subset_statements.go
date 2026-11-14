@@ -8,45 +8,245 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// statementBoundary rejects source forms whose ordering or alias transfer is outside the subset.
-func (c *subsetChecks) statementBoundary(node ast.Node) {
-	switch statement := node.(type) {
+// declarationNode checks contracts that have no runtime operand, plus closure scopes.
+func (c *subsetChecks) declarationNode(node ast.Node) {
+	switch declaration := node.(type) {
 	case *ast.FuncDecl:
-		signature := c.pass.TypesInfo.Defs[statement.Name].Type().(*types.Signature)
+		signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)
 		if genericSignature(signature) {
-			c.genericStorage(statement, statement.Name)
+			c.genericStorage(declaration, declaration.Name)
 		}
 		if signature.Recv() != nil && (checker.Contains(signature.Recv().Type()) || protectedCallable(signature)) {
-			c.report(statement.Name, "user-defined methods with immutable storage are unsupported")
+			c.report(declaration.Name, "user-defined methods with immutable storage are unsupported")
+		}
+	case *ast.TypeSpec:
+		if declaration.TypeParams != nil {
+			c.genericStorage(declaration, declaration.Name)
 		}
 	case *ast.ValueSpec:
-		c.declarationShape(statement)
-	case *ast.TypeSpec:
-		if statement.TypeParams != nil {
-			c.genericStorage(statement, statement.Name)
+		for _, name := range declaration.Names {
+			variable := c.pass.TypesInfo.Defs[name]
+			if variable != nil && (checker.Contains(variable.Type()) || c.ownedExpression(name)) {
+				if rule := c.matchDeclaration(declaration); rule != "" {
+					c.report(declaration, rule)
+				}
+				break
+			}
 		}
-	case *ast.RangeStmt:
-		c.rangeBoundary(statement)
 	case *ast.TypeSwitchStmt:
-		c.typeSwitch(statement)
-	case *ast.CommClause:
-		c.selectCommunication(statement)
+		for _, node := range declaration.Body.List {
+			for _, expression := range node.(*ast.CaseClause).List {
+				if checker.Contains(c.pass.TypesInfo.TypeOf(expression)) {
+					c.report(expression, "protected storage is unsupported in type switches")
+				}
+			}
+		}
+	case *ast.FuncLit:
+		c.matchClosure(declaration)
 	}
 }
 
-// declarationShape requires one protected binding, except for a direct frozen map lookup.
-func (c *subsetChecks) declarationShape(statement *ast.ValueSpec) {
-	protected := false
-	for _, name := range statement.Names {
-		object := c.pass.TypesInfo.Defs[name]
-		if object == nil {
+// matchAssignment resolves the whole binding form before checking each write and conversion.
+func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) string {
+	if len(statement.Lhs) != 1 || len(statement.Rhs) != 1 {
+		if !c.freshGetAssignment(statement) {
+			return "multiple assignments involving protected storage are unsupported"
+		}
+	}
+	for _, destination := range statement.Lhs {
+		if rule := c.matchWrite(destination); rule != "" {
+			return rule
+		}
+	}
+	for index, source := range statement.Rhs {
+		if tuple, ok := c.pass.TypesInfo.TypeOf(source).(*types.Tuple); ok {
+			for item := 0; item < tuple.Len(); item++ {
+				if rule := c.matchBinding(tuple.At(item).Type(), statement.Lhs[item]); rule != "" {
+					return rule
+				}
+			}
+		} else if rule := c.matchBinding(c.pass.TypesInfo.TypeOf(source), statement.Lhs[index]); rule != "" {
+			return rule
+		}
+	}
+	return ""
+}
+
+// matchBinding permits LocalRef pointers only in local variable bindings.
+func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) string {
+	if rule := matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
+		return rule
+	}
+	if !localReference(source) {
+		return ""
+	}
+	name, ok := ast.Unparen(destination).(*ast.Ident)
+	if !ok {
+		return "LocalRef pointers cannot enter aggregate storage"
+	}
+	if name.Name == "_" {
+		return ""
+	}
+	variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var)
+	if ok && variable.Parent() != c.pass.Pkg.Scope() {
+		return ""
+	}
+	return "global LocalRef pointers are unsupported"
+}
+
+// matchDeclaration accepts one binding or the exact two-result frozen map reader.
+func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
+	if len(declaration.Names) != 1 || len(declaration.Values) > 1 {
+		if !c.getDeclaration(declaration) {
+			return "multiple assignments involving protected storage are unsupported"
+		}
+	}
+	for _, name := range declaration.Names {
+		variable := c.pass.TypesInfo.Defs[name]
+		if variable != nil && localReference(variable.Type()) && variable.Parent() == c.pass.Pkg.Scope() {
+			return "global LocalRef pointers are unsupported"
+		}
+	}
+	for index, source := range declaration.Values {
+		if tuple, ok := c.pass.TypesInfo.TypeOf(source).(*types.Tuple); ok {
+			for item := 0; item < tuple.Len(); item++ {
+				if rule := c.matchBinding(tuple.At(item).Type(), declaration.Names[item]); rule != "" {
+					return rule
+				}
+			}
+		} else if rule := c.matchBinding(c.pass.TypesInfo.TypeOf(source), declaration.Names[index]); rule != "" {
+			return rule
+		}
+	}
+	return ""
+}
+
+// matchReturn maps each explicit result to its declared result type.
+func (c *subsetChecks) matchReturn(statement *ast.ReturnStmt) string {
+	for index, expression := range statement.Results {
+		source := c.pass.TypesInfo.TypeOf(expression)
+		if tuple, ok := source.(*types.Tuple); ok {
+			for item := 0; item < tuple.Len(); item++ {
+				if rule := matchReturnValue(tuple.At(item).Type(), c.returnType(statement, item)); rule != "" {
+					return rule
+				}
+			}
+		} else if rule := matchReturnValue(source, c.returnType(statement, index)); rule != "" {
+			return rule
+		}
+	}
+	return ""
+}
+
+// matchReturnValue permits concrete values and Shared pointers at a return boundary.
+func matchReturnValue(source, destination types.Type) string {
+	if localReference(source) || localReference(destination) {
+		return "returning LocalRef pointers is unsupported"
+	}
+	return matchTransport(source, destination)
+}
+
+// matchSwitch checks every case conversion and excludes undocumented pointer switch operands.
+func (c *subsetChecks) matchSwitch(statement *ast.SwitchStmt) string {
+	if statement.Tag == nil {
+		return ""
+	}
+	destination := c.pass.TypesInfo.TypeOf(statement.Tag)
+	if protectedReference(destination) {
+		return "reference operation is outside the supported allowlist"
+	}
+	for _, node := range statement.Body.List {
+		for _, value := range node.(*ast.CaseClause).List {
+			source := c.pass.TypesInfo.TypeOf(value)
+			if rule := matchTransport(source, destination); rule != "" {
+				return rule
+			}
+			if protectedReference(source) {
+				return "reference operation is outside the supported allowlist"
+			}
+		}
+	}
+	return ""
+}
+
+// matchRange matches zero targets, fresh targets, or one existing target, then resolves yielded types.
+func (c *subsetChecks) matchRange(statement *ast.RangeStmt) string {
+	if statement.Tok == token.ASSIGN && statement.Key != nil && statement.Value != nil {
+		return "multiple assignments involving protected storage are unsupported"
+	}
+	source := c.pass.TypesInfo.TypeOf(statement.X)
+	if protectedCallable(source) {
+		call, ok := ast.Unparen(statement.X).(*ast.CallExpr)
+		if !ok {
+			return "protected iteration requires a direct frozen All call"
+		}
+		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+		if !ok || selector.Sel.Name != "All" || !c.exactCollectionMethod(selector) {
+			return "protected iteration requires a direct frozen All call"
+		}
+	}
+	yielded := rangeTypes(source)
+	for index, target := range []ast.Expr{statement.Key, statement.Value} {
+		if target == nil {
 			continue
 		}
-		protected = protected || checker.Contains(object.Type())
+		if statement.Tok == token.ASSIGN {
+			if rule := c.matchWrite(target); rule != "" {
+				return rule
+			}
+		}
+		if rule := c.matchBinding(yielded[index], target); rule != "" {
+			return rule
+		}
 	}
-	if protected && len(statement.Names) > 1 && !c.getDeclaration(statement) {
-		c.report(statement, "multiple assignments involving protected storage are unsupported")
+	return ""
+}
+
+// rangeTypes reads the compiler-checked native or iterator element types.
+func rangeTypes(t types.Type) [2]types.Type {
+	switch source := t.Underlying().(type) {
+	case *types.Array:
+		return [2]types.Type{types.Typ[types.Int], source.Elem()}
+	case *types.Slice:
+		return [2]types.Type{types.Typ[types.Int], source.Elem()}
+	case *types.Map:
+		return [2]types.Type{source.Key(), source.Elem()}
+	case *types.Signature:
+		yield := source.Params().At(0).Type().Underlying().(*types.Signature)
+		var result [2]types.Type
+		for i := 0; i < yield.Params().Len(); i++ {
+			result[i] = yield.Params().At(i).Type()
+		}
+		return result
+	case *types.Basic:
+		if source.Info()&types.IsString != 0 {
+			return [2]types.Type{types.Typ[types.Int], types.Typ[types.Rune]}
+		}
+		return [2]types.Type{t, nil}
 	}
+	return [2]types.Type{}
+}
+
+// matchClosure identifies captures by declaration scope, including forward and imported globals.
+func (c *subsetChecks) matchClosure(literal *ast.FuncLit) {
+	functionScope := c.pass.TypesInfo.Scopes[literal.Type]
+	ast.Inspect(literal.Body, func(node ast.Node) bool {
+		name, ok := node.(*ast.Ident)
+		if !ok {
+			return true
+		}
+		variable, ok := c.pass.TypesInfo.Uses[name].(*types.Var)
+		if !ok || variable.IsField() || !checker.Contains(variable.Type()) {
+			return true
+		}
+		for scope := variable.Parent(); scope != nil; scope = scope.Parent() {
+			if scope == functionScope {
+				return true
+			}
+		}
+		c.report(name, "closures cannot capture immutable storage")
+		return true
+	})
 }
 
 // protectedResult inspects multi-result expressions without ignoring a protected tuple component.
@@ -125,100 +325,4 @@ func (c *subsetChecks) getDeclaration(statement *ast.ValueSpec) bool {
 		}
 	}
 	return true
-}
-
-// selectCommunication inspects only the channel operation, leaving case bodies to ordinary checking.
-func (c *subsetChecks) selectCommunication(clause *ast.CommClause) {
-	if clause.Comm == nil {
-		return
-	}
-	ast.Inspect(clause.Comm, func(node ast.Node) bool {
-		expression, ok := node.(ast.Expr)
-		if ok && (c.protectedRoot(expression) || c.ownedExpression(expression)) {
-			c.report(expression, "protected storage is unsupported in select communication clauses")
-		}
-		return true
-	})
-}
-
-// typeSwitch rejects recovering protected storage from an interface through case types.
-func (c *subsetChecks) typeSwitch(statement *ast.TypeSwitchStmt) {
-	for _, node := range statement.Body.List {
-		clause := node.(*ast.CaseClause)
-		for _, expression := range clause.List {
-			if checker.Contains(c.pass.TypesInfo.TypeOf(expression)) {
-				c.report(expression, "protected storage is unsupported in type switches")
-			}
-		}
-	}
-}
-
-// synchronousStorage keeps protected values and native builder handles out of go and defer calls.
-func (c *subsetChecks) synchronousStorage(expression ast.Expr) {
-	if c.pass.TypesInfo.Types[expression].IsType() ||
-		(!c.protectedRoot(expression) && !c.ownedExpression(expression)) {
-		return
-	}
-	for parent := c.parents[expression]; parent != nil; parent = c.parents[parent] {
-		switch parent.(type) {
-		case *ast.FuncDecl, *ast.FuncLit:
-			return
-		case *ast.GoStmt, *ast.DeferStmt:
-			c.report(expression, "protected storage requires synchronous calls")
-			return
-		}
-	}
-}
-
-// rangeBoundary rejects implicit reference creation and unknown protected callback iteration.
-func (c *subsetChecks) rangeBoundary(statement *ast.RangeStmt) {
-	c.rangeTransport(statement)
-	for _, target := range []ast.Expr{statement.Key, statement.Value} {
-		if target != nil && statement.Tok == token.ASSIGN {
-			c.write(target)
-		}
-	}
-	if !protectedCallable(c.pass.TypesInfo.TypeOf(statement.X)) {
-		return
-	}
-	call, ok := ast.Unparen(statement.X).(*ast.CallExpr)
-	if ok {
-		selector, selected := ast.Unparen(call.Fun).(*ast.SelectorExpr)
-		if selected && selector.Sel.Name == "All" && c.exactCollectionMethod(selector) {
-			return
-		}
-	}
-	c.report(statement.X, "protected iteration requires a direct frozen All call")
-}
-
-// rangeTransport checks implicit assignments from native storage and direct frozen iterators.
-func (c *subsetChecks) rangeTransport(statement *ast.RangeStmt) {
-	t := c.pass.TypesInfo.TypeOf(statement.X)
-	if !checker.Contains(t) && !protectedCallable(t) {
-		return
-	}
-	var key, value types.Type
-	switch source := t.Underlying().(type) {
-	case *types.Array:
-		key, value = types.Typ[types.Int], source.Elem()
-	case *types.Slice:
-		key, value = types.Typ[types.Int], source.Elem()
-	case *types.Map:
-		key, value = source.Key(), source.Elem()
-	case *types.Signature:
-		// The Go compiler has checked the range function's yield signature.
-		yield := source.Params().At(0).Type().Underlying().(*types.Signature)
-		if yield.Params().Len() > 0 {
-			key = yield.Params().At(0).Type()
-		}
-		if yield.Params().Len() > 1 {
-			value = yield.Params().At(1).Type()
-		}
-	}
-	if statement.Key != nil {
-		c.transportType(statement.Key, key, c.pass.TypesInfo.TypeOf(statement.Key))
-	}
-	if statement.Value != nil {
-		c.transportType(statement.Value, value, c.pass.TypesInfo.TypeOf(statement.Value))
-	}
 }

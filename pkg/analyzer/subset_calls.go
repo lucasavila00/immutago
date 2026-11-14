@@ -22,57 +22,169 @@ func (c *subsetChecks) calledObject(e ast.Expr) types.Object {
 	return nil
 }
 
-// call checks direct calls, conversions, and the types of transported arguments.
-func (c *subsetChecks) call(call *ast.CallExpr) {
-	obj := c.calledObject(call.Fun)
-	if builtin, ok := obj.(*types.Builtin); ok && (builtin.Name() == "make" || builtin.Name() == "new") {
-		return
-	}
-	if c.ownedBuiltin(call) {
-		return
+// matchCall accepts exact im APIs, concrete named calls, or calls with only ordinary scalar data.
+func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
+	object := c.calledObject(call.Fun)
+	if builtin, ok := object.(*types.Builtin); ok {
+		return c.matchBuiltin(call, builtin)
 	}
 	if c.pass.TypesInfo.Types[call.Fun].IsType() {
 		if protectedReference(c.pass.TypesInfo.TypeOf(call)) {
-			c.report(call, "shared pointer conversions are unsupported")
+			return "shared pointer conversions are unsupported"
 		}
 		if len(call.Args) == 1 {
-			c.transport(call.Args[0], c.pass.TypesInfo.TypeOf(call))
+			return matchTransport(c.pass.TypesInfo.TypeOf(call.Args[0]), c.pass.TypesInfo.TypeOf(call))
 		}
-		return
+		return "protected operation is outside the supported expression forms"
 	}
-
-	signature, _ := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
-	if signature == nil {
-		return
+	signature, ok := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
+	if !ok {
+		return "protected operation is outside the supported expression forms"
 	}
-	if len(call.Args) == 1 {
-		var destinations []types.Type
-		for i := 0; i < signature.Params().Len(); i++ {
-			destinations = append(destinations, signature.Params().At(i).Type())
+	if rule := c.matchCallArguments(call, signature); rule != "" {
+		return rule
+	}
+	if libraryObject(object) {
+		return c.matchLibraryCall(call, object)
+	}
+	if !protectedCallable(signature) && !c.protectedCallArguments(call) {
+		return ""
+	}
+	function, direct := object.(*types.Func)
+	if !direct {
+		return "dynamic calls with immutable storage are unsupported"
+	}
+	if selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok {
+		if selection := c.pass.TypesInfo.Selections[selector]; selection != nil {
+			if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
+				return "dynamic calls with immutable storage are unsupported"
+			}
 		}
-		c.tupleTransport(call.Args[0], destinations)
 	}
-	_, static := obj.(*types.Func)
-	static = c.methodCall(call, static)
-	if !static && protectedCallable(signature) {
-		c.report(call, "dynamic calls with immutable storage are unsupported")
+	origin := function.Origin().Type().(*types.Signature)
+	if genericSignature(origin) {
+		return "user generic instantiations with immutable types are unsupported"
 	}
-	c.callArguments(call, obj, signature, static)
-
-	c.iteratorResult(call, obj)
+	if origin.Recv() != nil {
+		return "user-defined methods with immutable storage are unsupported"
+	}
+	return ""
 }
 
-// iteratorResult permits protected iterators only as the source of direct range.
-func (c *subsetChecks) iteratorResult(call *ast.CallExpr, obj types.Object) {
-	if libraryObject(obj) && obj.Name() == "All" && protectedCallable(c.pass.TypesInfo.TypeOf(call)) {
-		r, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
-		if !ok || ast.Unparen(r.X) != call {
-			c.report(call, "immutable iterators must be consumed by direct range")
+// matchBuiltin lists the documented allocation and native builder operations.
+func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) string {
+	switch builtin.Name() {
+	case "new":
+		if pointer, ok := c.pass.TypesInfo.TypeOf(call).Underlying().(*types.Pointer); ok && checker.Marked(pointer.Elem()) {
+			return ""
+		}
+	case "make":
+		if c.exempt[call] {
+			return ""
+		}
+	case "len", "cap":
+		if c.ownedBuiltin(call) {
+			return ""
+		}
+		if _, array := c.pass.TypesInfo.TypeOf(call.Args[0]).Underlying().(*types.Array); array {
+			return ""
+		}
+		if !checker.Contains(c.pass.TypesInfo.TypeOf(call.Args[0])) {
+			return ""
+		}
+	case "append", "delete", "clear", "copy":
+		if c.ownedBuiltin(call) {
+			signature := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
+			return c.matchCallArguments(call, signature)
 		}
 	}
+	if !c.protectedCallArguments(call) && !protectedResult(c.pass.TypesInfo.TypeOf(call)) {
+		return ""
+	}
+	return "protected operation is outside the supported expression forms"
 }
 
-// unparenthesizedParent finds the context of an expression through parentheses.
+// matchLibraryCall matches fixed function identities, receivers, and result contexts.
+func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object) string {
+	switch object.Name() {
+	case "FreezeMap", "FreezeSlice":
+		if c.standaloneFreeze(call) {
+			return ""
+		}
+		return "Freeze requires a standalone single binding"
+	case "Get", "At", "Len", "All", "Clone":
+		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+		if !ok || !c.exactCollectionMethod(selector) {
+			return "immutable method expressions are unsupported"
+		}
+		if object.Name() == "All" && protectedCallable(c.pass.TypesInfo.TypeOf(call)) {
+			statement, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
+			if !ok || ast.Unparen(statement.X) != call {
+				return "immutable iterators must be consumed by direct range"
+			}
+		}
+		return ""
+	}
+	return "protected operation is outside the supported expression forms"
+}
+
+// matchCallArguments resolves every actual parameter, including forwarded tuples and variadic elements.
+func (c *subsetChecks) matchCallArguments(call *ast.CallExpr, signature *types.Signature) string {
+	for index, argument := range call.Args {
+		source := c.pass.TypesInfo.TypeOf(argument)
+		if tuple, ok := source.(*types.Tuple); ok {
+			for item := 0; item < tuple.Len(); item++ {
+				if rule := matchArgument(tuple.At(item).Type(), callParameter(signature, item, false)); rule != "" {
+					return rule
+				}
+			}
+		} else if rule := matchArgument(source, callParameter(signature, index, call.Ellipsis.IsValid())); rule != "" {
+			return rule
+		}
+	}
+	return ""
+}
+
+// matchArgument permits protected pointers only with the exact concrete parameter type.
+func matchArgument(source, destination types.Type) string {
+	if rule := matchTransport(source, destination); rule != "" {
+		return rule
+	}
+	if protectedReference(source) && !types.Identical(source, destination) {
+		return "reference operation is outside the supported allowlist"
+	}
+	return ""
+}
+
+// protectedCallArguments includes protected tuple components without treating scalar field reads as pointers.
+func (c *subsetChecks) protectedCallArguments(call *ast.CallExpr) bool {
+	for _, argument := range call.Args {
+		typ := c.pass.TypesInfo.TypeOf(argument)
+		if protectedResult(typ) || protectedCallable(typ) || c.ownedExpression(argument) {
+			return true
+		}
+	}
+	return false
+}
+
+// matchTransport permits concrete value copies and rejects implicit interface or callback storage.
+func matchTransport(source, destination types.Type) string {
+	if !checker.Contains(source) && !protectedCallable(source) {
+		return ""
+	}
+	if destination == nil {
+		return ""
+	}
+	if _, boxed := destination.Underlying().(*types.Interface); boxed {
+		return "boxing immutable storage in interfaces is unsupported"
+	}
+	if protectedCallable(source) {
+		return "immutable callbacks are unsupported"
+	}
+	return ""
+}
+
+// unparenthesizedParent finds the consuming operation through parentheses.
 func (c *subsetChecks) unparenthesizedParent(expression ast.Expr) ast.Node {
 	parent := c.parents[expression]
 	for {
@@ -84,25 +196,29 @@ func (c *subsetChecks) unparenthesizedParent(expression ast.Expr) ast.Node {
 	}
 }
 
-// transport rejects interface boxing and callback or container transport of immutable storage.
-func (c *subsetChecks) transport(value ast.Expr, destination types.Type) {
-	c.transportType(value, c.pass.TypesInfo.TypeOf(value), destination)
-}
-
-// transportType checks one result of a value or tuple expression.
-func (c *subsetChecks) transportType(value ast.Expr, source, destination types.Type) {
-	if !checker.Contains(source) && !protectedCallable(source) {
-		return
-	}
-	if destination == nil {
-		return
-	}
-	switch destination.Underlying().(type) {
-	case *types.Interface:
-		c.report(value, "boxing immutable storage in interfaces is unsupported")
-	case *types.Signature:
-		if protectedCallable(source) {
-			c.report(value, "immutable callbacks are unsupported")
+// directCall follows only parentheses and type arguments to a direct callee.
+func (c *subsetChecks) directCall(node ast.Node) *ast.CallExpr {
+	for {
+		switch parent := c.parents[node].(type) {
+		case *ast.ParenExpr:
+			node = parent
+		case *ast.IndexExpr:
+			if parent.X != node {
+				return nil
+			}
+			node = parent
+		case *ast.IndexListExpr:
+			if parent.X != node {
+				return nil
+			}
+			node = parent
+		case *ast.CallExpr:
+			if parent.Fun == node {
+				return parent
+			}
+			return nil
+		default:
+			return nil
 		}
 	}
 }
@@ -131,57 +247,6 @@ func callableContains(t types.Type, seen map[types.Type]bool) bool {
 	return false
 }
 
-// methodValue rejects bound method references that retain protected receivers.
-func (c *subsetChecks) methodValue(sel *ast.SelectorExpr) {
-	selection := c.pass.TypesInfo.Selections[sel]
-	if selection == nil || selection.Kind() == types.FieldVal || !c.protectedRoot(sel.X) {
-		return
-	}
-	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) {
-		c.report(sel, "immutable method expressions are unsupported")
-		return
-	}
-	if !c.exactCollectionMethod(sel) {
-		c.report(sel, "user-defined methods with immutable storage are unsupported")
-		return
-	}
-	if call, ok := c.unparenthesizedParent(sel).(*ast.CallExpr); ok && ast.Unparen(call.Fun) == sel {
-		return
-	}
-	c.report(sel, "bound immutable methods are unsupported")
-}
-
-// closure rejects implicit reference captures of protected local storage.
-func (c *subsetChecks) closure(literal *ast.FuncLit) {
-	ast.Inspect(literal.Body, func(n ast.Node) bool {
-		id, ok := n.(*ast.Ident)
-		if !ok {
-			return true
-		}
-		obj, ok := c.pass.TypesInfo.Uses[id].(*types.Var)
-		if ok && obj.Pos() < literal.Pos() && checker.Contains(obj.Type()) {
-			c.report(id, "closures cannot capture immutable storage")
-		}
-		return true
-	})
-}
-
-// globalStore prevents a local-only reference from entering package or aggregate storage.
-func (c *subsetChecks) globalStore(destination, value ast.Expr) {
-	if !localReference(c.pass.TypesInfo.TypeOf(value)) {
-		return
-	}
-	id, ok := ast.Unparen(destination).(*ast.Ident)
-	if !ok {
-		c.report(destination, "LocalRef pointers cannot enter aggregate storage")
-		return
-	}
-	obj := c.pass.TypesInfo.ObjectOf(id)
-	if obj != nil && obj.Parent() == c.pass.Pkg.Scope() {
-		c.report(destination, "global LocalRef pointers are unsupported")
-	}
-}
-
 // returnType finds the declared result type for implicit boxing checks.
 func (c *subsetChecks) returnType(statement *ast.ReturnStmt, index int) types.Type {
 	for parent := c.parents[statement]; parent != nil; parent = c.parents[parent] {
@@ -204,58 +269,23 @@ func (c *subsetChecks) returnType(statement *ast.ReturnStmt, index int) types.Ty
 	return nil
 }
 
-// tupleTransport checks implicit boxing when one expression supplies several results.
-func (c *subsetChecks) tupleTransport(value ast.Expr, destinations []types.Type) {
-	tuple, ok := c.pass.TypesInfo.TypeOf(value).(*types.Tuple)
-	if !ok {
-		return
-	}
-	for i := 0; i < tuple.Len() && i < len(destinations); i++ {
-		c.transportType(value, tuple.At(i).Type(), destinations[i])
-	}
-}
-
 // genericSignature includes receiver parameters, which method instantiation retains separately.
 func genericSignature(signature *types.Signature) bool {
 	return signature.TypeParams().Len() > 0 || signature.RecvTypeParams().Len() > 0
 }
 
-// callArguments checks typed parameters and the effects of transporting each argument.
-func (c *subsetChecks) callArguments(call *ast.CallExpr, obj types.Object, signature *types.Signature, static bool) {
-	for i, arg := range call.Args {
-
-		t := c.pass.TypesInfo.TypeOf(arg)
-		if !checker.Contains(t) && !protectedCallable(t) {
-			continue
+// callParameter resolves the destination of one argument, including a variadic element.
+func callParameter(signature *types.Signature, index int, expanded bool) types.Type {
+	parameters := signature.Params()
+	if signature.Variadic() && index >= parameters.Len()-1 {
+		parameter := parameters.At(parameters.Len() - 1).Type()
+		if !expanded {
+			return parameter.Underlying().(*types.Slice).Elem()
 		}
-		if !static && !libraryObject(obj) {
-			c.report(arg, "dynamic calls with immutable storage are unsupported")
-		}
-		parameter := i
-		if signature.Variadic() && parameter >= signature.Params().Len()-1 {
-			parameter = signature.Params().Len() - 1
-		}
-		if parameter >= 0 && parameter < signature.Params().Len() {
-			c.transport(arg, signature.Params().At(parameter).Type())
-		}
+		return parameter
 	}
-}
-
-// methodCall checks receiver transport and resolves whether dispatch is static.
-func (c *subsetChecks) methodCall(call *ast.CallExpr, static bool) bool {
-	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
-	if !ok {
-		return static
+	if index < parameters.Len() {
+		return parameters.At(index).Type()
 	}
-	selection := c.pass.TypesInfo.Selections[selector]
-	if selection == nil || selection.Kind() == types.FieldVal {
-		return static
-	}
-	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
-		return false
-	}
-	if !libraryObject(selection.Obj()) && protectedCallable(selection.Obj().Type()) {
-		c.report(selector, "user-defined methods with immutable storage are unsupported")
-	}
-	return static
+	return nil
 }
