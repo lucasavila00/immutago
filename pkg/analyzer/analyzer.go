@@ -227,16 +227,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		if field.Pkg() == c.pass.Pkg && field.Pos().IsValid() {
 			fieldPos = field.Pos()
 		}
-		if invalidMarkerField(field) {
-			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
-				"\n  fix: embed im.Shared or im.Scoped; remove the marker field name or pointer")
-			continue
-		}
-		if checker.TrustedField(field) {
-			if !marked {
-				c.report(fieldPos, "proc.Dependency field "+field.Name()+" is allowed only in a marked process argument struct"+
-					"\n  owner: "+diagnosticType(t)+"\n  fix: move the field into the argument struct of the process")
-			}
+		if c.uncheckedField(fieldPos, t, field, marked) {
 			continue
 		}
 		if marked {
@@ -257,6 +248,23 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			continue
 		}
 	}
+}
+
+// uncheckedField reports a misplaced marker or proc.Dependency field and identifies a field without a type proof.
+func (c *checks) uncheckedField(pos token.Pos, t types.Type, field *types.Var, marked bool) bool {
+	if invalidMarkerField(field) {
+		c.report(pos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
+			"\n  fix: embed im.Shared or im.Scoped; remove the marker field name or pointer")
+		return true
+	}
+	if !checker.TrustedField(field) {
+		return false
+	}
+	if !marked {
+		c.report(pos, "proc.Dependency field "+field.Name()+" is allowed only in a marked process argument struct"+
+			"\n  owner: "+diagnosticType(t)+"\n  fix: move the field into the argument struct of the process")
+	}
+	return true
 }
 
 // invalidMarkerField rejects named marker fields and pointers to either marker.

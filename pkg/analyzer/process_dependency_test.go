@@ -33,7 +33,8 @@ func f(s *proc.Supervisor, seen map[string]int) { proc.Start[Worker](s, proc.Tru
 		{"trust anywhere", `func f() { d := proc.Trust(map[string]int{}); _ = d }`},
 		{"ordinary function", dependencyDefinitions + `func args(log proc.Dependency[*Logger]) FetcherArgs {
 	return FetcherArgs{Log: log} }`},
-		{"local copy of value", dependencyDefinitions + `func (f *Fetcher) print() { log := f.Args().Log.Value(); log.Print("") }`},
+		{"local copy of value", dependencyDefinitions + `func (f *Fetcher) print() { log := f.Args().Log.Value()
+	log.Print("") }`},
 		{"scoped arguments", `type Args struct { im.Scoped; Log proc.Dependency[func()] }
 type Worker struct { proc.Process[Args] }
 func (w *Worker) Run(context.Context) { w.Args().Log.Value()() }`},
@@ -67,7 +68,8 @@ func (w *Worker) Run(context.Context) {}`},
 		{"protected value", `type Snapshot2 struct { im.Shared; N int }
 func f() { d := proc.Trust(&Snapshot2{}); _ = d }`},
 		{"value outside process", `func f(d proc.Dependency[*int]) *int { return d.Value() }`},
-		{"value from local args", dependencyDefinitions + `func (f *Fetcher) print() { args := f.Args(); args.Log.Value().Print("") }`},
+		{"value from local args", dependencyDefinitions + `func (f *Fetcher) print() { args := f.Args()
+	args.Log.Value().Print("") }`},
 		{"value of other args", dependencyDefinitions + `func (f *Fetcher) print(a FetcherArgs) { a.Log.Value().Print("") }`},
 		{"value method value", dependencyDefinitions + `func (f *Fetcher) print() { get := f.Args().Log.Value; _ = get }`},
 		{"value in go", dependencyDefinitions + `func (f *Fetcher) print() { go f.Args().Log.Value() }`},
