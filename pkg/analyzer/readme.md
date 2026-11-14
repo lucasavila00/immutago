@@ -16,7 +16,10 @@ The analyzer checks:
 - Exclusive native builders, Freeze consumption, and use after Freeze.
 - Service declarations, start arguments, receivers, and calls through Ref.Current.
 
-Direct im or supervise imports, used types, and failed checked dependencies select packages for analysis. Ordinary Go APIs remain trusted. im.UncheckedValue and supervise.ConcurrentSafe carry explicit caller promises.
+Direct im or supervise imports, used types, and failed checked dependencies select packages for analysis. Ordinary Go APIs remain trusted. The checker does not prove these promises:
+
+- im.UncheckedValue: the declaring package promises that the value never changes.
+- supervise.ConcurrentSafe: the caller promises that concurrent use is safe.
 
 The complete source forms and package rules are in https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
 

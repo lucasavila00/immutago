@@ -40,12 +40,9 @@ func main() {
 Choose [Scoped](scoped.md) instead when a function must not keep a pointer after
 it returns.
 
-## Allowed forms
+## Allowed forms — exhaustive
 
-The [common forms](common-forms.md) and the table below give the complete list
-of allowed operations. Other protected operations are rejected.
-
-`*Product` also permits these forms:
+In addition to the [common forms](common-forms.md), `*Product` permits these forms:
 
 | Allowed form | Example |
 | --- | --- |
@@ -55,9 +52,7 @@ of allowed operations. Other protected operations are rejected.
 | Read a stored pointer | `p := order.Product`, `p := values[i]` |
 | Return or receive a pointer from a named function or allowed method | `return p`, `p := product()`, `p := order.ProductPointer()` |
 
-## Rejected examples
-
-These examples are not exhaustive.
+## Rejected examples — non-exhaustive
 
 | Rejected form | Allowed replacement |
 | --- | --- |

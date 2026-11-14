@@ -122,7 +122,7 @@ its first read; an application keeps the root group until shutdown.
 | --- | --- |
 | Start arguments | Embed `supervise.Service[A]`; read `p.Args()` in a service method. |
 | No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
-| Arguments or method inputs/results | [Allowed stored types](common-forms.md#markers-and-stored-types), such as scalars, marked structs, frozen collections, and Refs. |
+| Start arguments or inputs/results of methods called through Current | [Allowed stored types](common-forms.md#markers-and-stored-types), such as scalars, marked structs, frozen collections, and Refs. |
 | Return a list | `im.FrozenSlice[string]`. |
 | Replace immutable configuration | An [im.Owner[Config]](owner.md) field. |
 
@@ -197,6 +197,7 @@ args := FetcherArgs{
 `AssumeConcurrentSafe` is a caller promise, not a proof, lock, or freeze.
 An incorrect promise can cause a data race. Use only the listed
 [dependency forms](service-forms.md#concurrent-dependencies).
+`supervise.ConcurrentSafe` is not an immutable stored type.
 The [complete example](../tests/testdata/accepted/service/dependencies.go)
 also shows a factory function and a test fake.
 

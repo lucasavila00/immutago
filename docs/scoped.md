@@ -29,10 +29,9 @@ func main() {
 }
 ```
 
-## Allowed forms
+## Allowed forms — exhaustive
 
-The [common forms](common-forms.md) are the complete list; unlisted operations
-are rejected.
+Use the [common forms](common-forms.md).
 
 | Need | Use |
 | --- | --- |
@@ -42,9 +41,7 @@ are rejected.
 
 Scoped limits where pointers can be stored. It does not set a garbage-collection deadline.
 
-## Rejected examples
-
-These examples are not exhaustive.
+## Rejected examples — non-exhaustive
 
 | Rejected form | Allowed replacement |
 | --- | --- |

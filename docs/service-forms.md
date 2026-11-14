@@ -6,8 +6,7 @@ These lists cover:
 - Pointers returned by `Ref.Current`.
 - `Service.Children` and `supervise.ConcurrentSafe`.
 
-The allowed lists are complete. Unlisted uses are rejected.
-Parentheses preserve an allowed form. The rejected examples are not exhaustive.
+Parentheses preserve an allowed form.
 
 Immutable arguments and results also follow the
 [common source forms](common-forms.md). Dependency values use the common
@@ -23,7 +22,7 @@ FileArgs types. Other examples come from the
 
 ## Service declarations
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | A defined, named, non-generic struct with exactly one `supervise.Service[A]` embedded by value and no im marker | `type Cache struct { supervise.Service[supervise.NoArgs]; mu sync.Mutex; hits int }` |
 | `A` is an [allowed stored type](common-forms.md#markers-and-stored-types) | `supervise.Service[int]`, `supervise.Service[FileArgs]` |
@@ -39,9 +38,7 @@ FileArgs types. Other examples come from the
 - Protected values inside any method keep their rules.
 - Aliases of `context.Context` and `error` retain the required Init or Run signature.
 
-Rejected examples and replacements:
-
-| Rejected form | Allowed replacement |
+| Rejected examples — non-exhaustive | Allowed replacement |
 | --- | --- |
 | `type Cache[T any] struct { supervise.Service[T] }`, `var c struct { supervise.Service[supervise.NoArgs] }` | Define a concrete named struct: `type Cache struct { supervise.Service[supervise.NoArgs] }`. |
 | `Marker supervise.Service[FileArgs]`, `*supervise.Service[FileArgs]`, or a second marker in the service | Embed one `supervise.Service[FileArgs]` by value. |
@@ -61,7 +58,7 @@ Rejected examples and replacements:
 - Construct a group before use; its zero value is not running.
 - `Children()` has the separate [child-group rules](#child-groups).
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | Create a root group with an optional failure report | `root := supervise.NewRoot(nil)`, `supervise.NewRoot(func(value any, stack []byte) { log.Printf("%v\n%s", value, stack) })` |
 | Start a nested group or request a group's stop | `group := supervise.StartGroup(root)`, `<-group.Stop()` |
@@ -82,7 +79,7 @@ Rejected examples and replacements:
 For Start with protected arguments, use these result forms in a common statement
 form, including an `if` initializer. Check the returned error in startup code.
 
-| Allowed result form | Example |
+| Allowed result forms — exhaustive | Example |
 | --- | --- |
 | Bind to two local names or blanks with `:=` | `cache, err := supervise.Start[FileCache](root, args)`, `_, err := supervise.Start[FileCache](root, args)` |
 | Assign two existing local names or blanks with `=` | `cache, err = supervise.Start[FileCache](root, args)` |
@@ -95,9 +92,7 @@ Start calls whose arguments are ordinary Go values, such as
 StartReserved returns one error and uses the common one-result forms when its
 arguments contain protected storage.
 
-Rejected examples and replacements:
-
-| Rejected form | Allowed replacement |
+| Rejected examples — non-exhaustive | Allowed replacement |
 | --- | --- |
 | `&FileCache{}`, `new(FileCache)`, `var cache FileCache` | `cache, err := supervise.Start[FileCache](root, args)` |
 | `p := ref.Current()`, `saved = ref.Current()`, `use(ref.Current())`, `*ref.Current()`, or `ref.Current() == nil` | Keep the reference; call `ref.Current().Text()` directly. |
@@ -111,7 +106,7 @@ Rejected examples and replacements:
 
 These uses apply to the method's receiver, outside function literals:
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | Select any receiver field other than the embedded Service | `c.text = text`, `c.mu.Lock()`, `defer c.mu.Unlock()`, `l.current.Store(&Config{})` |
 | Call a receiver method directly and synchronously, except Init and Run | `c.read()`, `c.Lock()` when the service embeds `sync.Mutex` |
@@ -120,7 +115,7 @@ These uses apply to the method's receiver, outside function literals:
 Selected ordinary fields use ordinary Go rules. Owner fields and any protected
 data read from the arguments retain their own source rules.
 
-| Rejected form | Allowed replacement |
+| Rejected examples — non-exhaustive | Allowed replacement |
 | --- | --- |
 | `other := c`, `use(c)`, `c == nil`, `*c = FileCache{}` | Select a field or call a method: `c.text`, `c.read()`. |
 | `go c.read()`, `defer c.read()`, `read := c.read` | Call `c.read()` directly. Field cleanup such as `defer c.mu.Unlock()` is allowed. |
@@ -134,7 +129,7 @@ Call Children directly on the receiver of a service method, outside function
 literals. Every call in the allowed list is synchronous. For the lifetime of
 these groups, see [Child services and groups](service-children.md).
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | Pass `p.Children()` directly as the first argument of Start, StartReserved, or StartGroup | `supervise.Start[Worker](p.Children(), WorkerArgs{ID: 1})`, `supervise.StartReserved(p.Children(), ref, args)`, `supervise.StartGroup(p.Children())` |
 | Bind Children to one new local with `:=`; use that local only as the first argument of those three functions in the same method | `children := p.Children(); supervise.Start[Worker](children, WorkerArgs{ID: 1})` |
@@ -145,7 +140,7 @@ these groups, see [Child services and groups](service-children.md).
 | Children | Runtime | Only the parent positions listed above. |
 | StartGroup | Runtime or caller | Ordinary Go uses, but not exported service method parameters or results. |
 
-| Rejected form | Allowed replacement |
+| Rejected examples — non-exhaustive | Allowed replacement |
 | --- | --- |
 | `p.group = p.Children()`, `saved = p.Children()`, `keep(p.Children())`, `_ = p.Children()` | `supervise.Start[Worker](p.Children(), args)` |
 | `p.Children().Stop()`, or `children := p.Children(); <-children.Stop()` | `group := supervise.StartGroup(p.Children())`, then `<-group.Stop()`. |
@@ -165,7 +160,7 @@ these groups, see [Child services and groups](service-children.md).
 
 FetcherArgs is defined in [Concurrent dependencies](services.md#concurrent-dependencies).
 
-| Allowed form | Example |
+| Allowed forms — exhaustive | Example |
 | --- | --- |
 | Wrap a value with a direct AssumeConcurrentSafe call in any function | `log := supervise.AssumeConcurrentSafe(logger)`, `FetcherArgs{Log: supervise.AssumeConcurrentSafe(logger)}` |
 | Declare a named ConcurrentSafe field in a struct with exactly one im marker | `type FetcherArgs struct { im.Shared; Log supervise.ConcurrentSafe[*slog.Logger] }` |
@@ -179,7 +174,7 @@ FetcherArgs is defined in [Concurrent dependencies](services.md#concurrent-depen
 - The returned value, such as `log`, follows ordinary Go rules for its type.
 - Binding Args to a local does not permit Value calls through that local.
 
-| Rejected form | Allowed replacement |
+| Rejected examples — non-exhaustive | Allowed replacement |
 | --- | --- |
 | A marked start-argument field `Log *slog.Logger` | `Log supervise.ConcurrentSafe[*slog.Logger]`, set with `supervise.AssumeConcurrentSafe(logger)`. |
 | A service field `log supervise.ConcurrentSafe[*slog.Logger]`, or that field in an unmarked struct | Keep the wrapper in the marked arguments. An ordinary service field `log *slog.Logger` can hold `f.Args().Log.Value()`. |

@@ -10,8 +10,10 @@
 //   - Keep the Ref and use ref.Current().Method().
 //   - Calls run in the caller's goroutine and can overlap with Run and other calls.
 //     Synchronize access to mutable fields.
-//   - Start arguments and method inputs/results use immutable values or service Refs.
-//     Start arguments can also use ConcurrentSafe for a caller's concurrency promise.
+//   - Start arguments and inputs/results of methods called through Current use
+//     immutable values or service Refs. The analyzer checks these types.
+//   - Start arguments can also use ConcurrentSafe. The caller promises safe
+//     concurrent use; the analyzer does not prove this promise.
 //
 // # Groups and shutdown
 //

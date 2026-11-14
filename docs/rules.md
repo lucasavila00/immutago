@@ -11,8 +11,8 @@
 | [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 
-The common lists and each type's lists define the complete supported forms.
-Other protected operations are rejected. Rejection examples are not exhaustive.
+Use the common forms with each type's forms. **Exhaustive** means all allowed
+forms are listed; unlisted protected operations are rejected.
 
 | Term | Meaning |
 | --- | --- |
@@ -38,10 +38,9 @@ Run `immutago ./...` or `go vet -vettool=/absolute/path/to/immutago ./...`.
 
 ## Package boundary
 
-The checker checks a package in any of the cases below. This list is complete.
-It also checks your test files.
+The checker checks a package in any of these cases, including its test files:
 
-| Check the package when it… | Example |
+| Package checks — exhaustive | Example |
 | --- | --- |
 | Imports `im` or `supervise`, including an alias or blank import | `import _ "github.com/lucasavila00/immutago/pkg/im"` |
 | Uses an im or supervise type, including inside another type | `var point api.Point`, where Point embeds `im.Shared` |
@@ -60,9 +59,7 @@ It also checks your test files.
 - Protected values still need a listed form: `reflect.ValueOf(1)` is allowed,
   but `reflect.ValueOf(p)` with a marked pointer fails the interface-boxing rule.
 
-Checked packages reject these forms; this rejection list is not exhaustive:
-
-| Rejected form | Use instead |
+| Rejected examples — non-exhaustive | Use instead |
 | --- | --- |
 | Cgo | Ordinary typed Go code. Cgo produces one error at the source package line. |
 | A function without a body whose signature contains an im or supervise type | Supply a Go body to check its protected operations. |

@@ -32,11 +32,10 @@ change the trusted object. `im.Trust` itself does not copy or freeze the data.
 The [engine](../tests/testdata/accepted/uncheckedvalue/engine.go) and
 [user](../tests/testdata/accepted/uncheckedvalueuse/use.go) examples show both sides.
 
-## Allowed forms
+## Allowed forms — exhaustive
 
-These allowed forms for `im.Trust` and `im.Unwrap` are complete. Other uses of
-these functions are rejected. The handle follows ordinary Go rules; a marked
-object that stores it still follows the [common forms](common-forms.md).
+The handle follows ordinary Go rules; a marked object that stores it still
+follows the [common forms](common-forms.md).
 
 | Allowed form | Example |
 | --- | --- |
@@ -58,9 +57,7 @@ a promoted method cannot expose its pointer.
 | Only the package that declares `T` can call Trust or Unwrap | Analyzer |
 | The data never changes after Trust, and no function exposes a way to change it | Declaring package; review its code |
 
-## Rejected examples
-
-These examples are not exhaustive.
+## Rejected examples — non-exhaustive
 
 | Rejected example | Allowed replacement |
 | --- | --- |
