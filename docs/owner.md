@@ -1,19 +1,53 @@
 # Owner
 
-```go
-type ScopedPoint struct { im.Scoped; X int }
-type Loader struct { Current im.Owner[ScopedPoint] }
+Use `im.Owner[T]` when readers need the current version of some data while a
+publisher replaces it. `T` must be a Scoped struct. Store creates no change in
+an object that a reader already loaded.
 
-func use() int {
-    loader := &Loader{}
-    loader.Current.Store(&ScopedPoint{X: 1})
-    point := loader.Current.Load()
-    return point.X
+Here, each request reads one configuration version. A later Store affects later
+Loads, while an active reader can finish with its earlier version:
+
+```go
+package main
+
+import "github.com/lucasavila00/immutago/pkg/im"
+
+type Config struct {
+    im.Scoped
+    Limit int
+}
+
+type Service struct {
+    Current im.Owner[Config]
+}
+
+func configure(service *Service, limit int) {
+    service.Current.Store(&Config{Limit: limit})
+}
+
+func allowed(service *Service, used int) bool {
+    config := service.Current.Load()
+    if config == nil {
+        return false
+    }
+    return used < config.Limit
+}
+
+func main() {
+    service := &Service{}
+    configure(service, 100)
+    println(allowed(service, 80)) // true
+    configure(service, 50)
+    println(allowed(service, 80)) // false
 }
 ```
 
-`Load` returns nil before the first `Store`. Readers and publishers can call
-these methods from different goroutines.
+Load and Store can run in different goroutines. Load returns nil before the
+first Store. Pass a newly created object to Store; a pointer from Load follows
+the [Scoped rules](scoped.md).
+
+The reference below uses `ScopedPoint` for a Scoped struct with `X int`, and
+`Loader` for a struct with `Current im.Owner[ScopedPoint]`.
 
 ## Allowed forms
 

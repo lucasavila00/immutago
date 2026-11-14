@@ -6,17 +6,17 @@
 import "github.com/lucasavila00/immutago/pkg/im"
 ```
 
-Package im provides markers and immutable value collections.
+Package im provides read\-only structs, slices, and maps checked by immutago.
 
-Embed Shared or Scoped in a struct to require immutable fields. Run the immutago analyzer on all consumer packages; Go's type checker alone does not enforce the field or collection element rules. Both markers make objects immutable from construction. Whole variables can be rebound to another value.
+Embed Shared in a struct when callers can save or return its pointer. Embed Scoped when callers must keep the pointer local or pass it to functions that do not save it. Both markers require read\-only fields, including nested data. Owner lets readers load the current Scoped object while a publisher replaces it.
 
-Pointers to Shared objects can be copied, stored, and returned. Pointers to Scoped objects stay in local bindings or direct typed calls that do not retain them. Owner publishes fresh Scoped objects; its loaded pointers follow the same local\-use rules. These mutation and retention restrictions add to Go's memory safety. Go's garbage collector manages object lifetimes. A value copy preserves pointers to the same immutable objects.
+Build slices and maps with normal Go operations, then call FreezeSlice or FreezeMap. Freeze reuses their storage without copying entries. Read through the frozen value after that call. Clone returns a separate slice or map to edit.
 
-FreezeSlice and FreezeMap share their input storage without copying. The analyzer requires exclusive ownership and rejects later source\-handle uses. Clone returns an independent copy. Their zero values are empty collections. Element and key types must themselves be immutable; the analyzer checks this requirement, including nested types. The language guide lists the complete supported forms: https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
+Run immutago on the packages that use these types. Go build alone does not enforce these rules. See the guides and complete supported operations at https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
 
 ## type FrozenMap
 
-FrozenMap is a read\-only view of frozen map storage. Its zero value is empty. K and V must be immutable. The analyzer requires exclusive native ownership before freezing and rejects later source\-handle uses. A FrozenMap copy shares storage.
+FrozenMap is a read\-only map. Its zero value is empty. K and V must be immutable. Copies share the same read\-only entries.
 
 ```go
 type FrozenMap[K comparable, V any] struct {
@@ -30,7 +30,7 @@ type FrozenMap[K comparable, V any] struct {
 func FreezeMap[K comparable, V any](values map[K]V) FrozenMap[K, V]
 ```
 
-FreezeMap freezes values without copying its entries or allocating. The analyzer verifies exclusive ownership and consumes the source handle: aliases are rejected, and the source handle cannot be used after this call. FreezeMap performs no runtime validation.
+FreezeMap makes values read\-only without copying entries or allocating. Keep values in one local variable before Freeze. Afterward, read through the returned FrozenMap. The checker rejects aliases and use of the old map. Run immutago to enforce these rules; Freeze performs no runtime validation.
 
 ### func \(FrozenMap\[K, V\]\) All
 
@@ -66,7 +66,7 @@ Len returns the number of entries in O\(1\) time without allocations.
 
 ## type FrozenSlice
 
-FrozenSlice is a read\-only view of frozen slice storage. Its zero value is empty. T must be immutable. The analyzer requires exclusive native ownership before freezing and rejects later source\-handle uses. A FrozenSlice copy shares storage.
+FrozenSlice is a read\-only slice. Its zero value is empty. T must be immutable. Copies share the same read\-only entries.
 
 ```go
 type FrozenSlice[T any] struct {
@@ -80,7 +80,7 @@ type FrozenSlice[T any] struct {
 func FreezeSlice[T any](values []T) FrozenSlice[T]
 ```
 
-FreezeSlice freezes values without copying its backing array or allocating. The analyzer verifies exclusive ownership and consumes the source handle: aliases are rejected, and the source handle cannot be used after this call. FreezeSlice performs no runtime validation.
+FreezeSlice makes values read\-only without copying entries or allocating. Keep values in one local variable before Freeze. Afterward, read through the returned FrozenSlice. The checker rejects aliases and use of the old slice. Run immutago to enforce these rules; Freeze performs no runtime validation.
 
 ### func \(FrozenSlice\[T\]\) All
 
@@ -130,7 +130,7 @@ type Owner[T any] struct {
 func (o *Owner[T]) Load() *T
 ```
 
-Load returns the current pointer, or nil if the slot is empty. The pointer follows Scoped retention rules and remains valid after a later Store. Go's garbage collector manages its lifetime.
+Load returns the current pointer, or nil if the slot is empty. Keep the pointer local or pass it to a function that does not save it. It remains valid after a later Store. Go's garbage collector manages its lifetime.
 
 ### func \(\*Owner\[T\]\) Store
 
@@ -142,7 +142,7 @@ Store publishes a freshly constructed object.
 
 ## type Scoped
 
-Scoped marks an immutable struct whose pointers have restricted retention. Owner is the supported publication slot for fresh Scoped objects. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/scoped.md for the complete forms.
+Scoped marks a struct with read\-only fields. Its pointers cannot be saved or returned. Use Owner to publish a new Scoped object for other code to read. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/scoped.md for the complete forms.
 
 ```go
 type Scoped struct{}
@@ -150,7 +150,7 @@ type Scoped struct{}
 
 ## type Shared
 
-Shared marks an immutable struct whose shared pointers may be stored or returned. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/shared.md for the complete forms.
+Shared marks a struct with read\-only fields. Its pointers can be saved or returned. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/shared.md for the complete forms.
 
 ```go
 type Shared struct{}

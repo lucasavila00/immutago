@@ -1,17 +1,43 @@
 # Shared objects
 
+Use `im.Shared` for data that several parts of a program need to keep and read,
+such as a product description. Functions can return pointers to it, and other
+Shared objects can store those pointers. The checker rejects changes to its fields.
+
+This order keeps a pointer to the product. Reading the order does not copy the
+product:
+
 ```go
-type SharedPoint struct { im.Shared; X int }
-type SharedLink struct { im.Shared; P *SharedPoint }
+package main
 
-func makeSharedPoint() *SharedPoint { return &SharedPoint{X: 1} }
+import "github.com/lucasavila00/immutago/pkg/im"
 
-func use() {
-    link := SharedLink{P: makeSharedPoint()}
-    println(link.P.X)
-    // link.P.X = 2 // Rejected. Create another SharedPoint instead.
+type Product struct {
+    im.Shared
+    Name string
+    Price int
+}
+
+type Order struct {
+    im.Shared
+    Product *Product
+    Quantity int
+}
+
+func product() *Product {
+    return &Product{Name: "coffee", Price: 8}
+}
+
+func main() {
+    order := Order{Product: product(), Quantity: 2}
+    println(order.Product.Price * order.Quantity) // 16
+    // order.Product.Price = 9 // Rejected: the product's fields are read-only.
 }
 ```
+
+Choose [Scoped](scoped.md) instead when a function must not keep a pointer after
+it returns. The reference below uses `SharedPoint` for a struct with `im.Shared`
+and `X int`, and `SharedLink` for a Shared struct with `P *SharedPoint`.
 
 ## Allowed forms
 
