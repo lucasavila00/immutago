@@ -1,5 +1,8 @@
 # Get started
 
+This program creates a user with a read-only score map. The checker will reject
+code that changes the user's fields or the frozen map.
+
 In a Go module, add the library and install the checker:
 
 ```sh
@@ -36,9 +39,16 @@ immutago ./...
 go run .
 ```
 
-The program prints `alice 10`. The checker makes `User` fields read-only.
-`FreezeMap` transfers the map's storage without a copy; use `user.Scores` to
-read it after Freeze.
+The program prints `alice 10`.
+
+- `im.Shared` makes the struct's fields read-only and permits sharing its pointer.
+- `FreezeMap` reuses the Go map without copying its entries. After this call,
+  read through the frozen map, not `scores`.
+- `Get` returns the score and whether the key exists.
+
+To see the checker reject a change, add `user.Name = "bob"` after the println
+and run `immutago ./...` again. It reports a write to an immutable object.
+Remove that line before continuing.
 
 Choose [Shared](shared.md) to save or return pointers. Choose [Scoped](scoped.md)
 to keep pointers local, or [Owner](owner.md) to publish new Scoped objects.

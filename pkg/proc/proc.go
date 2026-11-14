@@ -251,6 +251,7 @@ func StartReserved[T, A any, P interface {
 
 // Stop begins stopping; the channel closes when all children have stopped, last started first.
 // Stop does not wait, so a process can stop its own supervisor from Run.
+// For a nested supervisor, completion also means its parent has removed its child entry.
 func (s *Supervisor) Stop() <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
