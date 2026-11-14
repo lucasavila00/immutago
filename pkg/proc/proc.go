@@ -57,19 +57,19 @@ type None struct {
 	im.Shared
 }
 
-// Unchecked holds a value that the caller trusts to be safe for concurrent use by several processes,
+// Dependency holds a value that the caller trusts to be safe for concurrent use by several processes,
 // for example a logger, an HTTP client, a factory function, or a test fake. The value is not immutable.
-// The analyzer does not prove this trust. It permits Unchecked only as a process argument type or as a
+// The analyzer does not prove this trust. It permits Dependency only as a process argument type or as a
 // named field of a marked process argument struct.
-type Unchecked[T any] struct {
+type Dependency[T any] struct {
 	value T
 }
 
 // Trust wraps v. The call is the caller's promise that several processes can use v at the same time.
-func Trust[T any](v T) Unchecked[T] { return Unchecked[T]{value: v} }
+func Trust[T any](v T) Dependency[T] { return Dependency[T]{value: v} }
 
 // Value returns the trusted value.
-func (u Unchecked[T]) Value() T { return u.value }
+func (d Dependency[T]) Value() T { return d.value }
 
 // Supervisor runs processes and nested supervisors.
 type Supervisor struct {
