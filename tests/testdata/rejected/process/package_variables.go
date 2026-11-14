@@ -2,6 +2,8 @@ package process
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"sync"
@@ -118,3 +120,6 @@ func (*AtomicUser) Latest() bool { return latest.Load() == nil }
 
 // Total uses an atomic that resetTotal replaces.
 func (*AtomicUser) Total() int64 { return total.Add(1) }
+
+// EndOfInput returns an error variable of another package.
+func (*AtomicUser) EndOfInput() string { return fmt.Errorf("read: %w", io.EOF).Error() }

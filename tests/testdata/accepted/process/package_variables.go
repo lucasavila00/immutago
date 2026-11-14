@@ -2,6 +2,8 @@ package process
 
 import (
 	"context"
+	"errors"
+	"io"
 	"sync/atomic"
 
 	"github.com/lucasavila00/immutago/pkg/im"
@@ -69,4 +71,13 @@ func (r *RateKeeper) Base() int {
 		return 0
 	}
 	return current.Base
+}
+
+// done reports whether err marks the end of input.
+func (r *RateKeeper) done(err error) bool {
+	switch err {
+	case io.EOF, io.ErrUnexpectedEOF:
+		return true
+	}
+	return errors.Is(err, io.ErrClosedPipe)
 }

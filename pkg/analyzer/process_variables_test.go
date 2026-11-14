@@ -7,6 +7,8 @@ import (
 
 const processVariableDefinitions = `import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -20,6 +22,7 @@ type Worker struct { proc.Process[proc.None]; n int }
 func (w *Worker) Run(ctx context.Context) {}
 var _, _, _, _, _ = io.EOF, http.DefaultClient, os.Stdout, sync.Mutex{}, context.Background
 var _ atomic.Int64
+var _, _ = errors.Is, fmt.Errorf
 `
 
 // checkProcessVariableCases runs each source after the process variable definitions.
@@ -64,6 +67,21 @@ func (w *Worker) Swap() bool { _ = hits.CompareAndSwap(1, 2); return ready.Swap(
 var b atomic.Uint32
 var d atomic.Uint64
 func (w *Worker) Sum() uint64 { return uint64(a.Add(1)) + uint64(b.Add(1)) + d.Add(1) }`},
+		{"standard error compared", `func (w *Worker) eof(err error) bool { return err == io.EOF || io.EOF != err }`},
+		{"standard error in errors.Is", `func (w *Worker) eof(err error) bool { return errors.Is(err, io.EOF) }`},
+		{"standard error in switch", `func (w *Worker) eof(err error) int {
+	switch err { case io.EOF, io.ErrUnexpectedEOF: return 1 }; return 0 }`},
+		{"standard error in helper", `func isEOF(err error) bool { return errors.Is(err, io.EOF) }
+func (w *Worker) eof(err error) bool { return isEOF(err) }`},
+		{"exported error of this package compared", `type code string
+func (c code) Error() string { return string(c) }
+var ErrMissing error = code("missing")
+func (w *Worker) missing(err error) bool { return err == ErrMissing }`},
+		{"error set by init", `type code string
+func (c code) Error() string { return string(c) }
+var errMissing error
+func init() { errMissing = code("missing") }
+func (w *Worker) missing(err error) bool { return errors.Is(err, errMissing) }`},
 		{"constant", `const size = 4
 func (w *Worker) Size() int { return size }`},
 		{"function call", `func helper() int { return 1 }
@@ -117,6 +135,17 @@ func (w *Worker) Value() int { return state.N }`},
 func (w *Worker) Lock() { mu.Lock(); mu.Unlock() }`},
 		{"channel", `var events = make(chan int)
 func (w *Worker) Send() { events <- 1 }`},
+		{"standard error returned", `func (w *Worker) eof() error { return io.EOF }`},
+		{"standard error copied", `func (w *Worker) eof() { err := io.EOF; _ = err }`},
+		{"standard error message", `func (w *Worker) eof() string { return io.EOF.Error() }`},
+		{"standard error wrapped", `func (w *Worker) eof() error { return fmt.Errorf("read: %w", io.EOF) }`},
+		{"standard error in errors.As", `func (w *Worker) eof(err error) bool { return errors.As(err, &io.EOF) }`},
+		{"standard error first in errors.Is", `func (w *Worker) eof(err error) bool { return errors.Is(io.EOF, err) }`},
+		{"error changed elsewhere", `type code string
+func (c code) Error() string { return string(c) }
+var errMissing error = code("missing")
+func set() { errMissing = code("gone") }
+func (w *Worker) missing(err error) bool { return err == errMissing }`},
 		{"error", `type code string
 func (c code) Error() string { return string(c) }
 var errMissing error = code("missing")
@@ -191,6 +220,16 @@ func (w *Worker) Value() { holder.Current.Store(&Config{}) }`},
 	})
 }
 
+// TestForeignErrorChangeRejected covers checked code that changes an error variable of another package.
+func TestForeignErrorChangeRejected(t *testing.T) {
+	for _, source := range []string{`func f() { io.EOF = nil }`, `func f() *error { return &io.EOF }`,
+		`func f(errs []error) { for _, io.EOF = range errs {} }`} {
+		if got := checkSource(t, processVariableDefinitions+source); !strings.Contains(got, "error variable io.EOF") {
+			t.Fatalf("%s: diagnostics=%q", source, got)
+		}
+	}
+}
+
 // TestProcessCallsRejected covers functions that reach a rejected package variable from a process method.
 func TestProcessCallsRejected(t *testing.T) {
 	checkProcessVariableCases(t, true, [][2]string{
@@ -245,7 +284,6 @@ func (w *Worker) Count() { f := recorder(); f("a") }`},
 		{"helper in closure", `var seen = map[string]int{}
 func record(k string) { seen[k]++ }
 func (w *Worker) Count() { func() { record("a") }() }`},
-		{"standard error variable", `func (w *Worker) eof(err error) bool { return err == io.EOF }`},
 		{"standard client variable", `func (w *Worker) Client() { _ = http.DefaultClient.Timeout }`},
 		{"standard file variable", `func (w *Worker) Print() { _, _ = io.WriteString(os.Stdout, "x") }`},
 		{"standard slice variable", `func (w *Worker) Args() int { return len(os.Args) }`},

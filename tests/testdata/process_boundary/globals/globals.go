@@ -2,6 +2,8 @@ package globals
 
 import (
 	"context"
+	"errors"
+	"io"
 
 	"example.com/consumer/plain"
 	"example.com/consumer/relay"
@@ -50,3 +52,12 @@ func (*Tally) Forward() { plain.Forward("a") }
 
 // Visit calls a function that uses only a scalar atomic.
 func (*Tally) Visit() int64 { return state.Visit() }
+
+// full compares with an error that its package does not change.
+func (*Tally) full(err error) bool { return errors.Is(err, state.ErrFull) || err == io.EOF }
+
+// gone compares with an error that its package changes.
+func (*Tally) gone(err error) bool { return err == state.ErrGone }
+
+// clearFull changes an error variable of another package.
+func clearFull() { state.ErrFull = nil }

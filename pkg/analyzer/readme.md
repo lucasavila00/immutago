@@ -25,7 +25,7 @@ var Analyzer = &analysis.Analyzer{
     Name:      "immutago",
     Doc:       "prove immutability of marked structs and immutable collection elements",
     Run:       run,
-    FactTypes: []analysis.Fact{new(invalidPackage), new(variableUse)},
+    FactTypes: []analysis.Fact{new(invalidPackage), new(variableUse), new(changedError)},
 }
 ```
 

@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"go/ast"
+	"go/token"
 	"go/types"
 )
 
@@ -66,4 +67,131 @@ func (c *checks) methodReceivers() map[*ast.Ident]bool {
 		})
 	}
 	return receivers
+}
+
+// changedError marks an exported error variable that its own package changes after package initialization.
+type changedError struct{}
+
+// AFact identifies changedError as a variable-level analysis fact.
+func (*changedError) AFact() {}
+
+// errorVariable identifies a variable of the predeclared error type.
+func errorVariable(variable *types.Var) bool {
+	return types.Identical(variable.Type(), types.Universe.Lookup("error").Type())
+}
+
+// errorReason accepts an error variable of any package as a compared operand when no checked code changes it.
+func (c *checks) errorReason(id *ast.Ident, variable *types.Var) string {
+	switch {
+	case !c.comparedNames()[id]:
+		return ", which a process method can only compare with ==, !=, a switch case, or errors.Is"
+	case variable.Pkg() == c.pass.Pkg && c.changedVariables()[variable]:
+		return ", which is changed after package initialization"
+	case variable.Pkg() != c.pass.Pkg && c.pass.ImportObjectFact != nil &&
+		c.pass.ImportObjectFact(variable, new(changedError)):
+		return ", which its package changes after package initialization"
+	}
+	return ""
+}
+
+// comparedNames finds, once per package, the names that are an operand of == or !=, a value of a switch case
+// with a tag, or the second argument of errors.Is.
+func (c *checks) comparedNames() map[*ast.Ident]bool {
+	if c.compared != nil {
+		return c.compared
+	}
+	c.compared = make(map[*ast.Ident]bool)
+	for _, file := range c.pass.Files {
+		ast.Inspect(file, func(node ast.Node) bool {
+			switch n := node.(type) {
+			case *ast.BinaryExpr:
+				if n.Op == token.EQL || n.Op == token.NEQ {
+					c.markCompared(n.X)
+					c.markCompared(n.Y)
+				}
+			case *ast.SwitchStmt:
+				c.markCases(n)
+			case *ast.CallExpr:
+				if function, ok := c.pass.TypesInfo.Uses[calledName(n.Fun)].(*types.Func); ok && len(n.Args) == 2 &&
+					function.Pkg() != nil && function.Pkg().Path() == "errors" && function.Name() == "Is" {
+					c.markCompared(n.Args[1])
+				}
+			}
+			return true
+		})
+	}
+	return c.compared
+}
+
+// markCases marks the values of the case clauses of a switch with a tag.
+func (c *checks) markCases(statement *ast.SwitchStmt) {
+	if statement.Tag == nil {
+		return
+	}
+	for _, clause := range statement.Body.List {
+		for _, value := range clause.(*ast.CaseClause).List {
+			c.markCompared(value)
+		}
+	}
+}
+
+// markCompared marks a variable name or a qualified variable name.
+func (c *checks) markCompared(expression ast.Expr) {
+	switch e := ast.Unparen(expression).(type) {
+	case *ast.Ident:
+		c.compared[e] = true
+	case *ast.SelectorExpr:
+		if c.pass.TypesInfo.Selections[e] == nil {
+			c.compared[e.Sel] = true
+		}
+	}
+}
+
+// exportChangedErrors exports a fact for each exported error variable that this package changes after package
+// initialization, so that importers do not accept it as a compared operand.
+func (c *checks) exportChangedErrors() {
+	if c.pass.ExportObjectFact == nil {
+		return
+	}
+	scope := c.pass.Pkg.Scope()
+	for _, name := range scope.Names() {
+		variable, ok := scope.Lookup(name).(*types.Var)
+		if ok && variable.Exported() && errorVariable(variable) && c.changedVariables()[variable] {
+			c.pass.ExportObjectFact(variable, new(changedError))
+		}
+	}
+}
+
+// checkForeignErrorChange rejects an assignment to, or the address of, an error variable of another package.
+func (c *checks) checkForeignErrorChange(node ast.Node) {
+	var targets []ast.Expr
+	switch n := node.(type) {
+	case *ast.AssignStmt:
+		targets = n.Lhs
+	case *ast.RangeStmt:
+		if n.Tok == token.ASSIGN {
+			targets = []ast.Expr{n.Key, n.Value}
+		}
+	case *ast.UnaryExpr:
+		if n.Op == token.AND {
+			targets = []ast.Expr{n.X}
+		}
+	}
+	for _, target := range targets {
+		var id *ast.Ident
+		switch e := ast.Unparen(target).(type) {
+		case *ast.Ident:
+			id = e
+		case *ast.SelectorExpr:
+			id = e.Sel
+		}
+		if id == nil {
+			continue
+		}
+		if variable := packageVariable(c.pass.TypesInfo.Uses[id]); variable != nil && variable.Pkg() != c.pass.Pkg &&
+			errorVariable(variable) {
+			c.report(id.Pos(), "checked code cannot assign or take the address of error variable "+c.variableName(variable)+
+				" of another package; declare a variable in this package")
+		}
+	}
 }
