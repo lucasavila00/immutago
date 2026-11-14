@@ -114,6 +114,7 @@ type checks struct {
 	queries  checker.Classifier
 	pass     *analysis.Pass
 	reported map[token.Pos]bool
+	changed  map[*types.Var]bool
 }
 
 // report emits a diagnostic once for a source position.
@@ -133,6 +134,7 @@ func (c *checks) visit(node ast.Node) bool {
 				"provide a Go implementation so writes and pointer transport can be checked")
 		}
 		c.checkProcessMethod(n)
+		c.checkProcessVariables(n)
 	case *ast.ImportSpec:
 		c.checkImport(n)
 
