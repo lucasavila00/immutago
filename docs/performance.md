@@ -40,7 +40,8 @@ full package pass at increasing input sizes. Parsing and Go type checking are
 outside the timed loop. Stress tests compare recursive proofs and flow results
 with independent reachability calculations.
 
-[Core performance CI](../.github/workflows/core-performance.yml) saves repeated
+Run [Core performance](../.github/workflows/core-performance.yml) manually from
+GitHub Actions when changing checker costs. It saves repeated
 benchmark samples, CPU and allocation profiles, the test binary, and runner
 information as artifacts. Profile setup can appear in the profiles; benchmark
 allocation counts exclude setup. Compare the same cases and Go version before
@@ -53,7 +54,7 @@ and callback storage. [Classification benchmarks](../internal/checker/classifica
 measure repeated queries at 16, 64, and 256 types. The
 [ordinary type graph benchmark](../pkg/analyzer/type_scaling_test.go) measures the
 full analyzer pass on connected structs and interfaces without markers at 8,
-16, 32, and 64 types. These cases keep repeated graph traversal visible in CI.
+16, 32, and 64 types. These cases measure repeated graph traversal.
 
 The pass-local type classifier expands each reachable type and classification
 mode once per cache. Reverse edges propagate positive results through cycles;
