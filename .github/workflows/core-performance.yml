@@ -16,13 +16,20 @@ jobs:
         include:
           - name: checker
             package: ./internal/checker
+            benchmark: ^BenchmarkCore
             profile: BenchmarkCoreReason/Chain/1024/valid=false$
           - name: freeze
             package: ./internal/freeze
+            benchmark: ^BenchmarkCore
             profile: BenchmarkCoreConsumedFlow/owners=1024/linear$
           - name: analyzer
             package: ./pkg/analyzer
+            benchmark: ^BenchmarkCore(Matcher|Analyzer)$
             profile: BenchmarkCoreMatcher/wide/256$
+          - name: type-queries
+            package: ./pkg/analyzer
+            benchmark: ^BenchmarkCoreOrdinary
+            profile: BenchmarkCoreOrdinary/64$
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v6
@@ -34,7 +41,7 @@ jobs:
           mkdir -p bin/profiles
           go version > bin/profiles/environment.txt
           lscpu >> bin/profiles/environment.txt
-          go test '${{ matrix.package }}' -run '^$' -bench '^BenchmarkCore' \
+          go test '${{ matrix.package }}' -run '^$' -bench '${{ matrix.benchmark }}' \
             -benchmem -benchtime=200ms -count=3 | tee bin/profiles/benchmarks.txt
       - name: Profile the large case
         shell: bash
