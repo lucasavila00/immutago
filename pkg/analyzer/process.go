@@ -109,13 +109,45 @@ func (c *subsetChecks) checkProcessNode(node ast.Node) {
 	case *ast.Ident:
 		c.checkProcessName(n)
 	case *ast.SelectorExpr:
-		if procMethod(c.pass.TypesInfo.ObjectOf(n.Sel)) && !c.directProc(n) {
+		object := c.pass.TypesInfo.ObjectOf(n.Sel)
+		if procMethod(object) && !c.directProc(n) {
 			c.pass.Reportf(n.Pos(), processEscape)
+		}
+		if runtimeMethod(object, checker.DependencyType, checker.ValueMethod) && !c.dependencyValue(n) {
+			c.pass.Reportf(n.Pos(), "call Value only directly on l.Args() or on a field of l.Args() in a process method")
 		}
 	}
 	if expression, ok := node.(ast.Expr); ok {
 		c.checkProcessExpression(expression)
 	}
+}
+
+// dependencyValue permits a direct synchronous proc.Dependency.Value call on the arguments of the process receiver
+// or on one of their fields.
+func (c *subsetChecks) dependencyValue(selector *ast.SelectorExpr) bool {
+	if !runtimeMethod(c.pass.TypesInfo.ObjectOf(selector.Sel), checker.DependencyType, checker.ValueMethod) ||
+		!c.synchronousCall(selector) {
+		return false
+	}
+	source := ast.Unparen(selector.X)
+	if field, ok := source.(*ast.SelectorExpr); ok {
+		selection := c.pass.TypesInfo.Selections[field]
+		if selection == nil || selection.Kind() != types.FieldVal || len(selection.Index()) != 1 {
+			return false
+		}
+		source = ast.Unparen(field.X)
+	}
+	call, ok := source.(*ast.CallExpr)
+	if !ok || len(call.Args) != 0 {
+		return false
+	}
+	args, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+	if !ok || !runtimeMethod(c.pass.TypesInfo.ObjectOf(args.Sel), checker.ProcessMarker, checker.ArgsMethod) {
+		return false
+	}
+	receiver, ok := ast.Unparen(args.X).(*ast.Ident)
+	variable, _ := c.pass.TypesInfo.Uses[receiver].(*types.Var)
+	return ok && variable != nil && variable.Kind() == types.RecvVar && c.processValue(variable.Type())
 }
 
 // checkProcessStruct requires one embedded proc.Process in a defined, non-generic struct without a marker.
@@ -367,8 +399,8 @@ func (c *checks) checkRuntimeArguments(ident *ast.Ident, obj types.Object, insta
 	if processTypeArgument(obj) && !processDeclaration(argument) {
 		c.report(ident.Pos(), "proc.Start, proc.StartReserved, proc.Reserve, and proc.PID need a process type argument")
 	}
-	if runtimeObject(obj, checker.ProcessMarker) && (c.queries.Contains(argument) || c.queries.Callable(argument)) {
-		if reason := c.proofs.Reason(argument); reason != "" {
+	if runtimeObject(obj, checker.ProcessMarker) {
+		if reason := c.proofs.ArgumentReason(argument); reason != "" {
 			c.report(ident.Pos(), "process arguments "+diagnosticType(argument)+" are not an allowed stored type: "+reason)
 		}
 	}

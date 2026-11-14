@@ -43,7 +43,18 @@ fields of a process are not protected storage. The
   and the type argument of `proc.Start`, `proc.StartReserved`, `proc.Reserve`, and `proc.PID`.
 - Each parameter and result of an exported method other than `Run` must pass the
   [type proof](../../internal/checker/proof.go). A PID is a leaf of that proof.
-- The type argument of `proc.Process` must pass the same proof.
+- The type argument of `proc.Process` must pass the same proof, with one
+  exception: `Prover.ArgumentReason` also accepts `proc.Dependency[T]` as the
+  argument type, and named `proc.Dependency[T]` fields of an argument struct
+  with exactly one marker.
+
+`proc.Dependency[T]` is a [trusted dependency](../processes.md#trusted-dependencies).
+The type proof rejects it, so it cannot be in an Owner value, a frozen
+collection, another marked struct, or an exported method signature. `checkStruct`
+rejects a `proc.Dependency` field in an unmarked struct, which includes a
+process. `dependencyValue` accepts `Value` only as a direct synchronous call on
+`l.Args()` or on one field of it in a method of process `l`. The `T` value is
+not proved; `proc.Trust` is the promise.
 
 A process is not an Owner holder; the holder pointer rules do not apply to it.
 Methods with a process receiver are exempt from the rule against user-defined

@@ -51,6 +51,9 @@ const testRuntime = `package proc
  }
  func StartReserved[T, A any, P interface{ *T; Run(context.Context); bind(A) }](
   parent *Supervisor, pid PID[T], args A) {}
+ type Dependency[T any] struct { value T }
+ func Trust[T any](v T) Dependency[T] { return Dependency[T]{value: v} }
+ func (d Dependency[T]) Value() T { return d.value }
 `
 
 // testImporter gives compiler tests the library's type identities without loading external packages.

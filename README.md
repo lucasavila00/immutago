@@ -9,7 +9,9 @@ Go's garbage collector manages memory lifetime. Immutago adds rules for mutation
 and pointer use; it does not guarantee prompt collection or prevent all leaks.
 
 Run [supervised processes](docs/processes.md) with package `proc`; their exported
-methods take and return only immutable values and PIDs.
+methods take and return only immutable values and PIDs. Give a process a logger
+or a client with [`proc.Trust`](docs/processes.md#trusted-dependencies); the
+checker does not prove that trust.
 The checker does not check package variables, so processes can still share a
 mutable global. See [what is not checked](docs/processes.md#not-checked).
 
