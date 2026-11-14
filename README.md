@@ -8,6 +8,9 @@ maps let you build data locally, then share it without copying the entries.
 Go's garbage collector manages memory lifetime. Immutago adds rules for mutation
 and pointer use; it does not guarantee prompt collection or prevent all leaks.
 
+Run [supervised processes](docs/processes.md) with package `proc`; their exported
+methods take and return only immutable values and PIDs.
+
 The analyzer must run; `go build` alone does not enforce these rules.
 
 [Get started](docs/getting-started.md) · [Language guide](docs/rules.md) ·

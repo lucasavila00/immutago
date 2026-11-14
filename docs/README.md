@@ -9,6 +9,8 @@
 - [Frozen collections](frozen.md): builders, Freeze, reads, and Clone.
 - [Common forms](common-forms.md): stored types, value operations, pointers, and statements.
 - [Collection API](../pkg/im/readme.md): signatures, zero values, and iteration.
+- [Supervised processes](processes.md): typed start arguments and direct calls.
+- [Process API](../pkg/proc/readme.md): supervisors, PIDs, and restarts.
 - [Performance](performance.md): storage sharing, Clone, and cost checks.
 
 ## Maintainers

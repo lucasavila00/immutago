@@ -37,6 +37,7 @@ This list is complete. It also applies to each nested field, key, and element.
 | Recursive marked struct | `type SharedNode struct { im.Shared; Next *SharedNode }` |
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
+| Process PID | `proc.PID[ConfigLoader]`; see [Supervised processes](processes.md). |
 
 Rejected type examples (**not exhaustive**):
 
@@ -172,7 +173,7 @@ Rejected statement and call examples (**not exhaustive**):
 | `use(im.FreezeSlice(values))` | Bind Freeze to a local, then call `use`. |
 | `case _, values[0] = <-ready:` | Receive first; write in the case body. |
 | `case <-watch(im.FreezeSlice(values)):` | Freeze and compute the channel before the select; receive from the channel variable. |
-| `value.Read()` or `reader.Read(p)` with protected receiver/parameters/results | Use a named function: `Read(p)`. |
+| `value.Read()` or `reader.Read(p)` with protected receiver/parameters/results | Use a named function: `Read(p)`. [Process methods](processes.md) are the exception. |
 | `var value any = p` | Use a concrete `*SharedPoint` variable. |
 | `callback(p)` through a function variable with protected arguments | Use a direct named function. |
 | `callback := func() int { return point.X }` | `x := point.X; callback := func() int { return x }` |

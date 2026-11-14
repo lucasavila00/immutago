@@ -17,9 +17,14 @@
 // Struct and array copies copy their values; frozen fields share read-only storage.
 // Freeze calls consume exclusive native map and slice builders without copying.
 // Builder aliases and later uses are rejected; Clone creates independent native storage.
-// Direct im imports, locally used im type contracts, and failed checked dependencies
-// select proof checking. Other packages use ordinary Go API trust, including
-// string immutability. Checked failures propagate to importing consumers.
+// Direct im or proc imports, locally used im or proc type contracts, and failed
+// checked dependencies select proof checking. Other packages use ordinary Go API
+// trust, including string immutability. Checked failures propagate to consumers.
+//
+// A struct that embeds proc.Process[A] is a mutable process. Its pointer is valid
+// only as a method receiver or as a direct PID.Proc result that receives a direct
+// call of an exported method. Exported process methods take and return only
+// allowed stored types, and only proc.Start and proc.StartReserved create processes.
 package analyzer
 
 import (
@@ -44,7 +49,8 @@ var Analyzer = &analysis.Analyzer{
 
 // run checks compiler-resolved types and source operations in one package.
 func run(pass *analysis.Pass) (any, error) {
-	if pass.Pkg.Path() == checker.LibraryPath || testMainPackage(pass.Pkg) || standardLibrary(pass) {
+	path := pass.Pkg.Path()
+	if path == checker.LibraryPath || path == checker.RuntimePath || testMainPackage(pass.Pkg) || standardLibrary(pass) {
 		return nil, nil
 	}
 	relevant, imports := collectDependencyFacts(pass)
@@ -82,6 +88,7 @@ func run(pass *analysis.Pass) (any, error) {
 func checkLibraryArguments(pass *analysis.Pass, c *checks) {
 	for ident, instance := range pass.TypesInfo.Instances {
 		obj := pass.TypesInfo.Uses[ident]
+		c.checkRuntimeArguments(ident, obj, instance)
 		if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
 			continue
 		}
@@ -125,6 +132,7 @@ func (c *checks) visit(node ast.Node) bool {
 			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
 				"provide a Go implementation so writes and pointer transport can be checked")
 		}
+		c.checkProcessMethod(n)
 	case *ast.ImportSpec:
 		c.checkImport(n)
 
@@ -199,7 +207,8 @@ func reflectionValue(t types.Type) bool {
 
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
-	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") {
+	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") ||
+		checker.IsRuntimeType(t, checker.ProcessMarker) {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)
@@ -230,6 +239,9 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 					"\n  fix: "+structuralFix(ft, reason))
 				continue
 			}
+		} else if c.queries.Contains(ft) && checker.Process(t) {
+			c.report(fieldPos, "process field "+field.Name()+" contains immutable storage; publish it through an im.Owner field")
+			continue
 		} else if c.queries.Contains(ft) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+

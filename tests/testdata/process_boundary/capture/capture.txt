@@ -1,0 +1,1 @@
+capture.go:6:13: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call

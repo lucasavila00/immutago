@@ -16,6 +16,7 @@ check, or extra heap escape. Freeze copies only a native handle.
 | Direct range over `All()` | O(n); no container copy |
 | `Clone` | O(n); independent mutable container storage |
 | `Owner.Load`, `Owner.Store` | Atomic pointer operation; no object copy |
+| `PID.Proc` | One atomic load; no allocation |
 
 Clone is shallow. Pointer elements still refer to the same immutable objects;
 replacing a cloned slot does not change the frozen slot. There are no frozen
@@ -25,6 +26,7 @@ update methods. Edit a clone, then freeze it.
 
 [Benchmarks](../pkg/im/benchmark_test.go) compare collection operations.
 [Owner benchmarks](../pkg/im/owner_test.go) measure slot loads.
+[Process benchmarks](../pkg/proc/proc_test.go) measure `PID.Proc`.
 [Allocation tests](../pkg/im/iterator_test.go) separate native construction
 from Freeze, reads, and direct iteration. Slice and map tests check storage
 reuse and Clone independence. Run `make bench` for measurements.

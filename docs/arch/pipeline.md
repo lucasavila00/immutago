@@ -10,19 +10,20 @@ The same analyzer runs under `go vet -vettool`. Both provide compiler-resolved
 
 The [entry point](../../pkg/analyzer/analyzer.go) performs these stages:
 
-1. Skip the fixed `im` package and compiler-supplied standard library.
+1. Skip the fixed `im` and `proc` packages and compiler-supplied standard library.
 2. Collect dependency facts and determine the checked package boundary.
 3. Return for ordinary packages under normal Go API trust.
 4. Reject checked cgo packages and export their failure before checking wrappers.
 5. Report checked dependency failures and record local diagnostics.
-6. Check declarations, imports, field types, and fixed `im` type arguments.
+6. Check declarations, imports, field types, exported process methods, and fixed
+   `im` and `proc` type arguments.
 7. Run the native builder proof and match protected source forms.
 8. Export accumulated failures for importers.
 
 The builder set identifies separately checked storage. It does not exempt its
 operations. Type, source-form, and builder checks keep separate state.
 
-[Package scope](../../pkg/analyzer/package_scope.go) uses direct `im` imports,
+[Package scope](../../pkg/analyzer/package_scope.go) uses direct `im` or `proc` imports,
 locally used compiler type contracts, and failed checked dependency facts. One
 existential type walk shares a seen set across expression and object roots.
 It inspects alias and named generic metadata before underlying types, selected

@@ -7,6 +7,11 @@ import (
 	"testing"
 )
 
+// opaqueStorage identifies the library and runtime types whose fields are not walked.
+func opaqueStorage(t types.Type) bool {
+	return IsLibraryType(t, "Owner") || IsRuntimeType(t, ProcessMarker)
+}
+
 // classificationStorageOracle retains the original storage walk without shared query state.
 func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] {
@@ -16,7 +21,7 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 	if parameter, ok := types.Unalias(t).(*types.TypeParam); ok {
 		return classificationConstraintOracle(parameter.Constraint(), seen)
 	}
-	if IsLibraryType(t, "Owner") {
+	if opaqueStorage(t) {
 		return false
 	}
 	if IsCollection(t) || Marked(t) {
@@ -263,6 +268,22 @@ func TestClassifierOwnerIsOpaque(t *testing.T) {
 	for _, typ := range []types.Type{owner, types.NewPointer(owner), types.NewArray(owner, 1)} {
 		if queries.Contains(typ) || Contains(typ) {
 			t.Errorf("Owner implementation is not opaque for %s", typ)
+		}
+	}
+}
+
+// TestClassifierProcessIsOpaque checks that process arguments are not immutable storage of the process.
+func TestClassifierProcessIsOpaque(t *testing.T) {
+	marker, _ := testTypes()
+	value := markedType("Arguments", marker)
+	runtime := types.NewPackage(RuntimePath, "proc")
+	field := types.NewField(token.NoPos, runtime, "args", value, false)
+	process := types.NewNamed(types.NewTypeName(token.NoPos, runtime, ProcessMarker, nil),
+		types.NewStruct([]*types.Var{field}, nil), nil)
+	var queries Classifier
+	for _, typ := range []types.Type{process, types.NewPointer(process), types.NewArray(process, 1)} {
+		if queries.Contains(typ) || Contains(typ) {
+			t.Errorf("process marker is not opaque for %s", typ)
 		}
 	}
 }

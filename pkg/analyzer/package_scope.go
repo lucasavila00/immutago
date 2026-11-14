@@ -96,7 +96,7 @@ func libraryTypeComponents(t types.Type, seen map[types.Type]bool) bool {
 // libraryTypeMetadata retains alias and phantom generic contracts before their underlying types erase them.
 func libraryTypeMetadata(name *types.TypeName, parameters *types.TypeParamList,
 	arguments *types.TypeList, seen map[types.Type]bool) bool {
-	if pkg := name.Pkg(); pkg != nil && pkg.Path() == checker.LibraryPath {
+	if pkg := name.Pkg(); pkg != nil && (pkg.Path() == checker.LibraryPath || pkg.Path() == checker.RuntimePath) {
 		return true
 	}
 	if libraryTypeParameters(parameters, seen) {

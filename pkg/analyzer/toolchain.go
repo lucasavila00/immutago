@@ -51,10 +51,10 @@ func testMainPackage(pkg *types.Package) bool {
 	return false
 }
 
-// usesImmutable reports a direct import of the fixed immutable value package.
+// usesImmutable reports a direct import of the fixed immutable value or process package.
 func usesImmutable(pkg *types.Package) bool {
 	for _, imported := range pkg.Imports() {
-		if imported.Path() == checker.LibraryPath {
+		if imported.Path() == checker.LibraryPath || imported.Path() == checker.RuntimePath {
 			return true
 		}
 	}

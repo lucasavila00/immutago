@@ -10,10 +10,31 @@ Package checker proves structural immutability from Go compiler type information
 
 ## Constants
 
+Names of the process runtime identities in RuntimePath and of the process method that only the runtime calls.
+
+```go
+const (
+    ProcessMarker         = "Process"
+    PIDType               = "PID"
+    StartFunction         = "Start"
+    ReserveFunction       = "Reserve"
+    StartReservedFunction = "StartReserved"
+    ProcMethod            = "Proc"
+    ArgsMethod            = "Args"
+    RunMethod             = "Run"
+)
+```
+
 LibraryPath is the package whose sealed collection implementations are trusted.
 
 ```go
 const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
+```
+
+RuntimePath is the package whose supervised process runtime is trusted.
+
+```go
+const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
 ```
 
 ## func Contains
@@ -40,6 +61,14 @@ func IsLibraryType(t types.Type, name string) bool
 
 IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
 
+## func IsRuntimeType
+
+```go
+func IsRuntimeType(t types.Type, name string) bool
+```
+
+IsRuntimeType identifies a process runtime type by package identity and name, not spelling at its use site.
+
 ## func Marked
 
 ```go
@@ -55,6 +84,14 @@ func MarkerCount(t types.Type) int
 ```
 
 MarkerCount counts direct embedded marker identities, including aliases of the same marker.
+
+## func Process
+
+```go
+func Process(t types.Type) bool
+```
+
+Process reports the presence of an embedded proc.Process value. A process is not a marked struct.
 
 ## func Reason
 

@@ -14,6 +14,7 @@ Choose the page for the value you need:
 | [Scoped](scoped.md) | Keep pointers local; pass them to named functions that do not save them. |
 | [Owner](owner.md) | Publish a new Scoped object and read the current one. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
+| [Supervised processes](processes.md) | Run mutable services with typed start arguments and immutable method messages. |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 
 The common lists and each type's lists define the complete supported forms.
@@ -29,19 +30,19 @@ Run `immutago ./...` or `go vet -vettool=/absolute/path/to/immutago ./...`.
 ## Package boundary
 
 A package is checked when any selection form below applies. This list is complete.
-The fixed `im` implementation, compiler-supplied standard library, and generated
+The fixed `im` and `proc` implementations, compiler-supplied standard library, and generated
 Go test runners are trusted separately; user test packages still follow these rules.
 
 | Selection form | Example |
 | --- | --- |
-| Direct import, including an alias or blank import | `import _ "github.com/lucasavila00/immutago/pkg/im"` |
-| Used marked, frozen, or Owner value or pointer | `var point api.Point`, `var current api.Loader` |
-| Used callback, interface, or generic contract containing an im type | `callback := api.Publish`, `var value api.Alias[int]` when its constraint contains an Owner |
+| Direct `im` or `proc` import, including an alias or blank import | `import _ "github.com/lucasavila00/immutago/pkg/im"` |
+| Used marked, frozen, Owner, or process type | `var point api.Point`, `var current api.Loader` |
+| Used callback, interface, or generic contract containing an im or proc type | `callback := api.Publish`, `var value api.Alias[int]` when its constraint contains an Owner |
 | Failed checked dependency, including through wrappers | Import a package whose immutable field proof failed. |
 
 Aliases, generic arguments, and constraints remain part of the used type contract.
 An ordinary scalar API does not select checking merely because its implementation
-uses `im` privately. CLI and vet use the same boundary.
+uses `im` or `proc` privately. CLI and vet use the same boundary.
 
 Other packages are ordinary Go, including when selected by `immutago ./...`.
 They may use `unsafe`, `reflect`, cgo, or functions without Go bodies. Their API
