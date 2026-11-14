@@ -13,6 +13,9 @@ Consumer-only dependency tests require failures to propagate through imports,
 including wrappers. Runtime tests check storage transfer, Clone independence,
 and unchanged shared objects after pointer rebinding.
 
+[Test-main tests](testmain_test.go) check generated runners and real internal and
+external test files through the CLI and vet. A forged generated header is checked.
+
 [Cgo tests](cgo_test.go) check real compiler-generated wrappers through CLI and
 vet, including consumer-only reports for a cgo wrapper and its invalid dependency.
 They run when cgo is enabled.

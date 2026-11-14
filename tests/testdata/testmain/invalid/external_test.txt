@@ -1,0 +1,9 @@
+external_test.go:4:2: unsupported dependency example.com/consumer/invalid: immutability proof failed
+  representative failure: example.com/consumer/invalid/internal_test.go:10:50: unsupported immutable operation: writes to immutable objects are unsupported
+    source: p.X = 2
+    fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/invalid, correct its errors, then rerun immutago on this package
+external_test.go:8:58: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.X = 3
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

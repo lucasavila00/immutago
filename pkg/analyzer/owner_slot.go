@@ -28,9 +28,12 @@ func (c *subsetChecks) ownedSlotCall(call *ast.CallExpr) bool {
 }
 
 // containsSlotValue finds slots in value storage, without following pointers.
-func containsSlotValue(t types.Type, seen map[types.Type]bool) bool {
+func (c *subsetChecks) containsSlotValue(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] {
 		return false
+	}
+	if result, ok := c.slots[t]; ok {
+		return result
 	}
 	seen[t] = true
 	if checker.IsLibraryType(t, "Owner") {
@@ -38,27 +41,27 @@ func containsSlotValue(t types.Type, seen map[types.Type]bool) bool {
 	}
 	switch typ := t.Underlying().(type) {
 	case *types.Array:
-		return containsSlotValue(typ.Elem(), seen)
+		return c.containsSlotValue(typ.Elem(), seen)
 	case *types.Slice:
-		return containsSlotValue(typ.Elem(), seen)
+		return c.containsSlotValue(typ.Elem(), seen)
 	case *types.Map:
-		return containsSlotValue(typ.Key(), seen) || containsSlotValue(typ.Elem(), seen)
+		return c.containsSlotValue(typ.Key(), seen) || c.containsSlotValue(typ.Elem(), seen)
 	case *types.Chan:
-		return containsSlotValue(typ.Elem(), seen)
+		return c.containsSlotValue(typ.Elem(), seen)
 	case *types.Signature:
-		return containsSlotValue(typ.Params(), seen) || containsSlotValue(typ.Results(), seen)
+		return c.containsSlotValue(typ.Params(), seen) || c.containsSlotValue(typ.Results(), seen)
 	case *types.Tuple:
-		return tupleHasSlotValue(typ, seen)
+		return c.tupleHasSlotValue(typ, seen)
 	case *types.Struct:
-		return structHasSlotValue(typ, seen)
+		return c.structHasSlotValue(typ, seen)
 	}
 	return false
 }
 
 // tupleHasSlotValue checks each parameter or result type.
-func tupleHasSlotValue(tuple *types.Tuple, seen map[types.Type]bool) bool {
+func (c *subsetChecks) tupleHasSlotValue(tuple *types.Tuple, seen map[types.Type]bool) bool {
 	for i := 0; i < tuple.Len(); i++ {
-		if containsSlotValue(tuple.At(i).Type(), seen) {
+		if c.containsSlotValue(tuple.At(i).Type(), seen) {
 			return true
 		}
 	}
@@ -66,9 +69,9 @@ func tupleHasSlotValue(tuple *types.Tuple, seen map[types.Type]bool) bool {
 }
 
 // structHasSlotValue checks each field stored by value.
-func structHasSlotValue(structure *types.Struct, seen map[types.Type]bool) bool {
+func (c *subsetChecks) structHasSlotValue(structure *types.Struct, seen map[types.Type]bool) bool {
 	for field := range structure.Fields() {
-		if containsSlotValue(field.Type(), seen) {
+		if c.containsSlotValue(field.Type(), seen) {
 			return true
 		}
 	}
@@ -84,8 +87,9 @@ func (c *subsetChecks) hasSlotValue(t types.Type) bool {
 		return result
 	}
 	seen := make(map[types.Type]bool)
-	result := containsSlotValue(t, seen)
+	result := c.containsSlotValue(t, seen)
 	if !result {
+		// Cache negatives only after the complete query, not at a cycle's back edge.
 		for visited := range seen {
 			c.slots[visited] = false
 		}
