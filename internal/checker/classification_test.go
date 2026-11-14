@@ -81,16 +81,22 @@ func classificationCallableOracle(t types.Type, seen map[types.Type]bool) bool {
 	case *types.Chan:
 		return classificationCallableOracle(u.Elem(), seen)
 	case *types.Struct:
-		for field := range u.Fields() {
-			if classificationCallableOracle(field.Type(), seen) {
-				return true
-			}
-		}
+		return classificationCallableFieldsOracle(u, seen)
 	case *types.Interface:
 		for method := range u.Methods() {
 			if classificationCallableOracle(method.Type(), seen) {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+// classificationCallableFieldsOracle checks callbacks in every field with the same visited set.
+func classificationCallableFieldsOracle(storage *types.Struct, seen map[types.Type]bool) bool {
+	for field := range storage.Fields() {
+		if classificationCallableOracle(field.Type(), seen) {
+			return true
 		}
 	}
 	return false
