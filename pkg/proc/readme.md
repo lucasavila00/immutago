@@ -116,7 +116,7 @@ NewRoot returns a root supervisor.
 func StartSupervisor(parent *Supervisor) *Supervisor
 ```
 
-StartSupervisor returns a new supervisor that parent runs as a child.
+StartSupervisor returns a new supervisor that parent runs as a child. When the nested supervisor's Stop channel closes, its parent has removed its child entry.
 
 ### func \(\*Supervisor\) Stop
 
