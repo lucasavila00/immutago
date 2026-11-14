@@ -197,6 +197,13 @@ func TestProcessSupervisorAccepted(t *testing.T) {
 	sup := p.Supervisor()
 	for i := range p.Args() { proc.Start[Worker](sup, WorkerArgs{ID: i}) }
 	proc.StartSupervisor(sup) }`},
+		{"exported method", poolDefinitions + `func (p *Pool) Run(context.Context) {}
+func (p *Pool) Grow() { proc.Start[Worker](p.Supervisor(), WorkerArgs{}) }`},
+		{"kept group", poolDefinitions + `func (p *Pool) Run(context.Context) {}
+func (p *Pool) Add() { p.sup = proc.StartSupervisor(p.Supervisor()); proc.Start[Worker](p.sup, WorkerArgs{}) }
+func (p *Pool) Remove() { <-p.sup.Stop() }`},
+		{"method local", poolDefinitions + `func (p *Pool) Run(context.Context) {}
+func (p *Pool) grow(n int) { sup := p.Supervisor(); for i := range n { proc.Start[Worker](sup, WorkerArgs{ID: i}) } }`},
 		{"user method", poolDefinitions + `func (p *Pool) Run(context.Context) {}
 type Own struct { proc.Process[proc.None] }
 func (*Own) Run(context.Context) {}
@@ -222,8 +229,6 @@ func TestProcessSupervisorRejected(t *testing.T) {
 		{"go call", poolDefinitions + `func (p *Pool) Run(context.Context) { go p.Supervisor() }`},
 		{"closure", poolDefinitions + `func (p *Pool) Run(context.Context) {
 	func() { proc.Start[Worker](p.Supervisor(), WorkerArgs{}) }() }`},
-		{"outside run", poolDefinitions + `func (p *Pool) Run(context.Context) {}
-func (p *Pool) Grow() { proc.Start[Worker](p.Supervisor(), WorkerArgs{}) }`},
 		{"return", poolDefinitions + `func (p *Pool) Run(context.Context) {}
 func (p *Pool) owned() *proc.Supervisor { return p.Supervisor() }`},
 		{"proc", poolDefinitions + `func (p *Pool) Run(context.Context) {}

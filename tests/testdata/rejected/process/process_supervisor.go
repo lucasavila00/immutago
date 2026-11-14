@@ -42,9 +42,6 @@ func (f *FanOut) Run(ctx context.Context) {
 	<-ctx.Done()
 }
 
-// Grow starts a fetcher outside Run.
-func (f *FanOut) Grow() { proc.Start[Fetcher](f.Supervisor(), proc.None{}) }
-
 // owned returns the supervisor of the run.
 func (f *FanOut) owned() *proc.Supervisor { return f.Supervisor() }
 

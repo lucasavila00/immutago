@@ -102,7 +102,7 @@ func processMarker(t types.Type) bool { return checker.IsRuntimeType(t, checker.
 
 const processEscape = "process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call"
 
-const runSupervisorRule = "call l.Supervisor() directly on the receiver in Run, " +
+const runSupervisorRule = "call l.Supervisor() directly on the receiver in a process method, " +
 	"and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, " +
 	"directly or through one local variable"
 
@@ -319,11 +319,12 @@ func (c *subsetChecks) synchronousCall(selector *ast.SelectorExpr) bool {
 	return true
 }
 
-// runSupervisor permits a direct synchronous Supervisor call on the receiver of Run whose result is a parent
+// runSupervisor permits a direct synchronous Supervisor call on a process receiver whose result is a parent
 // argument, directly or through one local variable that has no other use.
 func (c *subsetChecks) runSupervisor(selector *ast.SelectorExpr) bool {
-	receiver, ok := ast.Unparen(selector.X).(*ast.Ident)
-	if !ok || !c.runReceiver(receiver) || c.insideClosure(selector) || !c.synchronousCall(selector) {
+	receiver, _ := ast.Unparen(selector.X).(*ast.Ident)
+	variable, ok := c.pass.TypesInfo.Uses[receiver].(*types.Var)
+	if !ok || variable.Kind() != types.RecvVar || c.insideClosure(selector) || !c.synchronousCall(selector) {
 		return false
 	}
 	call := c.directCall(selector)
@@ -335,30 +336,16 @@ func (c *subsetChecks) runSupervisor(selector *ast.SelectorExpr) bool {
 		return false
 	}
 	name, _ := assignment.Lhs[0].(*ast.Ident)
-	variable, ok := c.pass.TypesInfo.Defs[name].(*types.Var)
+	local, ok := c.pass.TypesInfo.Defs[name].(*types.Var)
 	if !ok {
 		return false
 	}
 	for use, object := range c.pass.TypesInfo.Uses {
-		if object == variable && (c.insideClosure(use) || !c.parentArgument(use)) {
+		if object == local && (c.insideClosure(use) || !c.parentArgument(use)) {
 			return false
 		}
 	}
 	return true
-}
-
-// runReceiver identifies the receiver of a Run method.
-func (c *subsetChecks) runReceiver(id *ast.Ident) bool {
-	variable, ok := c.pass.TypesInfo.Uses[id].(*types.Var)
-	if !ok || variable.Kind() != types.RecvVar {
-		return false
-	}
-	for node := c.parents[id]; node != nil; node = c.parents[node] {
-		if declaration, ok := node.(*ast.FuncDecl); ok {
-			return declaration.Name.Name == checker.RunMethod
-		}
-	}
-	return false
 }
 
 // parentArgument identifies the first argument of a direct synchronous proc.Start, proc.StartReserved, or
