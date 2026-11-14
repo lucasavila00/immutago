@@ -5,6 +5,7 @@ import (
 	"go/types"
 
 	"github.com/lucasavila00/immutago/internal/checker"
+	"github.com/lucasavila00/immutago/internal/freeze"
 )
 
 // calledObject resolves a direct function or method through generic syntax.
@@ -65,9 +66,11 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	return ""
 }
 
-// matchConversion permits ordinary scalar conversions and checks both protected endpoints.
+// matchConversion permits checked nil builders and scalar conversions, then checks protected endpoints.
 func (c *subsetChecks) matchConversion(call *ast.CallExpr) string {
-
+	if c.exempt[call] && freeze.Fresh(c.pass, call) {
+		return ""
+	}
 	if protectedReference(c.pass.TypesInfo.TypeOf(call)) {
 		return "shared pointer conversions are unsupported"
 	}

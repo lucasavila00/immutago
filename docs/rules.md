@@ -217,6 +217,7 @@ whose keys or elements contain protected storage.
 | Allowed form | Example |
 | --- | --- |
 | Declare from make, literal, zero, nil, or Clone | `values := make([]int, 2)`, `values := []int{1}`, `var values []int`, `values := frozen.Clone()` |
+| Convert built-in `nil` to a native slice or map type | `values := []int(nil)`, `scores := map[string]int(nil)` |
 | Read or replace a slot | `x := values[i]`, `values[i] = x`, `scores[key] = x` |
 | Read length or slice capacity | `len(values)`, `cap(values)` |
 | Append individual elements to the same variable | `values = append(values, 1, 2)` |
@@ -225,14 +226,17 @@ whose keys or elements contain protected storage.
 | Consume with Freeze | `frozen := im.FreezeSlice(values)`, `frozen := im.FreezeMap(scores)` |
 
 `var` declarations also work. `copy` operands must satisfy the builder rules.
-Direct fresh Freeze inputs can be `make`, a literal, nil, or a Clone result:
+Named native types and aliases without protected contents also permit `T(nil)`, such as
+`type Ints []int; values := Ints(nil)`. Parentheses preserve these forms.
+Direct fresh Freeze inputs can be `make`, a literal, nil, a typed nil, or a Clone result:
 `im.FreezeSlice(make([]int, 2))`, `im.FreezeSlice([]int{1})`,
-`im.FreezeSlice[int](nil)`, `im.FreezeSlice(frozen.Clone())`.
+`im.FreezeSlice[int](nil)`, `im.FreezeSlice([]int(nil))`, `im.FreezeSlice(frozen.Clone())`.
 Each needs its own assignment/declaration; matching map forms work too.
 
 | Rejected example | Replacement |
 | --- | --- |
 | `alias := values`, `values[1:]`, `&values[0]` | Read/copy elements; use Clone for independent mutable storage. |
+| `alias := []int(values)` or `im.FreezeSlice([]int(values))` | Use the original `values` handle. |
 | `update(values)`, `return values` | Edit locally, then freeze and pass/return the frozen value. |
 | `im.FreezeSlice(parameter)` | Construct a local builder first. |
 | `values = append(values, other...)` | Append individual elements. |
