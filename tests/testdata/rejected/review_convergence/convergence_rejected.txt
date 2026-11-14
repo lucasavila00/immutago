@@ -22,7 +22,7 @@ convergence_rejected.go:39:2: unsupported immutable operation: multiple assignme
 convergence_rejected.go:45:18: unsupported immutable operation: immutable method expressions are unsupported
   source: (im.FrozenMap[int, Value].Get)(frozen, 1)
   type: (review_convergence.Value, bool)
-  fix: call the method on the collection directly (value.Method(...)); do not call it through the collection type
+  fix: call the method on its receiver directly (value.Method(...)); do not call it through the type
 convergence_rejected.go:45:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: value, found := (im.FrozenMap[int, Value].Get)(frozen, 1)
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

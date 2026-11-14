@@ -38,14 +38,14 @@ restricted_boundaries.go:20:6: unsupported owned container emptyMap: copying, re
 restricted_boundaries.go:25:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for _, value = range frozen.All() { _ = value }
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-restricted_boundaries.go:32:15: unsupported immutable operation: user-defined methods with immutable storage are unsupported
+restricted_boundaries.go:32:15: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
   source: Read
   type: func(value *restricted_boundaries.Node) int
-  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
-restricted_boundaries.go:33:15: unsupported immutable operation: user-defined methods with immutable storage are unsupported
+  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
+restricted_boundaries.go:33:15: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
   source: Make
   type: func() *restricted_boundaries.Node
-  fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
+  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
 restricted_boundaries.go:37:17: unsupported immutable operation: user generic declarations with immutable storage are unsupported
   source: ProtectedBody
   type: func() int
