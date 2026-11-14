@@ -12,37 +12,69 @@ import (
 func (c *subsetChecks) declarationNode(node ast.Node) {
 	switch declaration := node.(type) {
 	case *ast.FuncDecl:
-		signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)
-		if genericSignature(signature) {
-			c.genericStorage(declaration, declaration.Name)
-		}
-		if signature.Recv() != nil && (checker.Contains(signature.Recv().Type()) || protectedCallable(signature)) {
-			c.report(declaration.Name, "user-defined methods with immutable storage are unsupported")
-		}
+		c.functionDeclaration(declaration)
 	case *ast.TypeSpec:
 		if declaration.TypeParams != nil {
 			c.genericStorage(declaration, declaration.Name)
 		}
 	case *ast.ValueSpec:
-		for _, name := range declaration.Names {
-			variable := c.pass.TypesInfo.Defs[name]
-			if variable != nil && (checker.Contains(variable.Type()) || c.ownedExpression(name)) {
-				if rule := c.matchDeclaration(declaration); rule != "" {
-					c.report(declaration, rule)
-				}
-				break
-			}
-		}
+		c.valueDeclaration(declaration)
+	case *ast.AssignStmt:
+		c.assignmentBinding(declaration)
 	case *ast.TypeSwitchStmt:
-		for _, node := range declaration.Body.List {
-			for _, expression := range node.(*ast.CaseClause).List {
-				if checker.Contains(c.pass.TypesInfo.TypeOf(expression)) {
-					c.report(expression, "protected storage is unsupported in type switches")
-				}
-			}
-		}
+		c.typeSwitchDeclaration(declaration)
 	case *ast.FuncLit:
 		c.matchClosure(declaration)
+	}
+}
+
+// assignmentBinding activates complete binding checks for tracked short-declaration destinations.
+func (c *subsetChecks) assignmentBinding(statement *ast.AssignStmt) {
+	for _, destination := range statement.Lhs {
+		if c.protectedStorage(destination) {
+			if rule := c.matchAssignment(statement); rule != "" {
+				c.report(statement, rule)
+			}
+			return
+		}
+	}
+}
+
+// functionDeclaration checks the exact named-function contract.
+func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
+	signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)
+	if rule := subsetResults(signature.Results()); rule != "" {
+		c.report(declaration.Name, rule)
+	}
+	if genericSignature(signature) {
+		c.genericStorage(declaration, declaration.Name)
+	}
+	if signature.Recv() != nil && (checker.Contains(signature.Recv().Type()) || protectedCallable(signature)) {
+		c.report(declaration.Name, "user-defined methods with immutable storage are unsupported")
+	}
+}
+
+// valueDeclaration activates binding checks even when the initializer is absent or nil.
+func (c *subsetChecks) valueDeclaration(declaration *ast.ValueSpec) {
+	for _, name := range declaration.Names {
+		variable := c.pass.TypesInfo.Defs[name]
+		if variable != nil && (checker.Contains(variable.Type()) || c.ownedExpression(name)) {
+			if rule := c.matchDeclaration(declaration); rule != "" {
+				c.report(declaration, rule)
+			}
+			break
+		}
+	}
+}
+
+// typeSwitchDeclaration rejects interface recovery through a protected case type.
+func (c *subsetChecks) typeSwitchDeclaration(declaration *ast.TypeSwitchStmt) {
+	for _, node := range declaration.Body.List {
+		for _, expression := range node.(*ast.CaseClause).List {
+			if checker.Contains(c.pass.TypesInfo.TypeOf(expression)) {
+				c.report(expression, "protected storage is unsupported in type switches")
+			}
+		}
 	}
 }
 
@@ -59,6 +91,11 @@ func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) string {
 		}
 	}
 	for index, source := range statement.Rhs {
+		if len(statement.Lhs) == 1 {
+			if rule := c.matchBuilderBinding(statement.Lhs[0], source, statement.Tok == token.DEFINE); rule != "" {
+				return rule
+			}
+		}
 		if tuple, ok := c.pass.TypesInfo.TypeOf(source).(*types.Tuple); ok {
 			for item := 0; item < tuple.Len(); item++ {
 				if rule := c.matchBinding(tuple.At(item).Type(), statement.Lhs[item]); rule != "" {
@@ -108,6 +145,11 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 		}
 	}
 	for index, source := range declaration.Values {
+		if len(declaration.Names) == 1 {
+			if rule := c.matchBuilderBinding(declaration.Names[0], source, true); rule != "" {
+				return rule
+			}
+		}
 		if tuple, ok := c.pass.TypesInfo.TypeOf(source).(*types.Tuple); ok {
 			for item := 0; item < tuple.Len(); item++ {
 				if rule := c.matchBinding(tuple.At(item).Type(), declaration.Names[item]); rule != "" {

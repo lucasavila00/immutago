@@ -71,8 +71,8 @@ func (c *subsetChecks) visit(node ast.Node) bool {
 	}
 	c.expressionType(expression)
 	if c.operationExpression(expression) {
-		if rule := c.matchOperation(expression); rule != "" {
-			c.report(expression, rule)
+		if operation, rule := c.matchOperation(expression); rule != "" {
+			c.report(operation, rule)
 		}
 	}
 	return true
@@ -88,6 +88,9 @@ func subsetType(t types.Type, seen map[types.Type]bool) string {
 	case *types.Pointer:
 		if _, ok := u.Elem().Underlying().(*types.Pointer); ok && checker.Contains(t) {
 			return "pointer indirection is unsupported"
+		}
+		if checker.Contains(t) && !checker.Marked(u.Elem()) {
+			return "immutable references require a concrete marked struct target"
 		}
 		return subsetType(u.Elem(), seen)
 	case *types.Array:
@@ -182,11 +185,19 @@ func subsetTuple(tuple *types.Tuple, seen map[types.Type]bool) string {
 func (c *subsetChecks) expressionType(expression ast.Expr) {
 	// A builtin signature describes this call, not a user function's return boundary.
 	if name, ok := expression.(*ast.Ident); ok {
+		if c.pass.TypesInfo.Defs[name] != nil {
+			return
+		}
 		if _, builtin := c.pass.TypesInfo.ObjectOf(name).(*types.Builtin); builtin {
 			return
 		}
 	}
 	t := c.pass.TypesInfo.TypeOf(expression)
+	if c.pass.TypesInfo.Types[expression].IsType() && protectedCallable(t) {
+		if _, declaration := c.parents[expression].(*ast.FuncDecl); !declaration {
+			c.report(expression, "immutable callbacks are unsupported")
+		}
+	}
 	if storedLocalReference(t, make(map[types.Type]bool)) {
 		c.report(expression, "containers of LocalRef pointers are unsupported")
 	}

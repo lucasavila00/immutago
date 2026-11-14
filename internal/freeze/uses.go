@@ -4,6 +4,8 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+
+	"github.com/lucasavila00/immutago/internal/checker"
 )
 
 // checkUses rejects every handle-aliasing operation, including aliases created before freezing.
@@ -12,6 +14,9 @@ func (p *proof) checkUses() {
 		ast.Inspect(file, func(node ast.Node) bool {
 			id, ok := node.(*ast.Ident)
 			if !ok {
+				return true
+			}
+			if checker.Unevaluated(p.pass.TypesInfo, p.parents, id) {
 				return true
 			}
 			variable, _ := p.pass.TypesInfo.Uses[id].(*types.Var)

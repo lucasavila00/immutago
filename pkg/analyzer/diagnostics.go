@@ -37,6 +37,12 @@ func diagnosticType(t types.Type) string {
 
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
+	"protected operation is outside the supported expression forms": "use a documented concrete value, pointer, " +
+		"reader, or builder operation",
+	"protected value conversions are unsupported": "construct the destination marked value from copied fields; " +
+		"keep frozen collections in their original im type",
+	"native builders require fresh local bindings or append to the same handle": "declare one fresh local builder; " +
+		"use values = append(values, element) to extend it",
 	"LocalRef pointers cannot enter aggregate storage": "store a LocalRef value copy or a Shared pointer",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
 		"im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses",

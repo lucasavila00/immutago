@@ -13,6 +13,9 @@ func (c *subsetChecks) genericStorage(declaration ast.Node, name *ast.Ident) {
 		if !ok {
 			return true
 		}
+		if checker.Unevaluated(c.pass.TypesInfo, c.parents, expression) {
+			return false
+		}
 		typ := c.pass.TypesInfo.TypeOf(expression)
 		if checker.Contains(typ) || protectedCallable(typ) {
 			c.report(name, "user generic declarations with immutable storage are unsupported")

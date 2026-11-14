@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"go/ast"
+	"go/token"
 	"go/types"
 
 	"github.com/lucasavila00/immutago/internal/checker"
@@ -15,6 +16,25 @@ func (c *subsetChecks) ownedExpression(expression ast.Expr) bool {
 		return c.owners[variable]
 	}
 	return false
+}
+
+// matchBuilderBinding accepts fresh local construction or append into the same existing handle.
+func (c *subsetChecks) matchBuilderBinding(destination, source ast.Expr, declaration bool) string {
+	if !c.ownedExpression(destination) {
+		return ""
+	}
+	if declaration && freeze.Fresh(c.pass, source) {
+		return ""
+	}
+	if !declaration {
+		if call, ok := ast.Unparen(source).(*ast.CallExpr); ok {
+			if builtin, ok := c.calledObject(call.Fun).(*types.Builtin); ok && builtin.Name() == "append" &&
+				c.matchBuilderBuiltin(call, "append") {
+				return ""
+			}
+		}
+	}
+	return "native builders require fresh local bindings or append to the same handle"
 }
 
 // ownedInputs admits container syntax at checked local initialization and freeze boundaries.
@@ -86,15 +106,30 @@ func (c *subsetChecks) exemptType(expression ast.Expr) {
 	})
 }
 
-// ownedBuiltin admits non-escaping native operations whose handle uses the ownership checker verifies.
-func (c *subsetChecks) ownedBuiltin(call *ast.CallExpr) bool {
-	builtin, ok := c.calledObject(call.Fun).(*types.Builtin)
-	if !ok || len(call.Args) == 0 {
+// matchBuilderBuiltin matches the complete native builtin form before the ownership proof applies.
+func (c *subsetChecks) matchBuilderBuiltin(call *ast.CallExpr, name string) bool {
+	if len(call.Args) == 0 {
 		return false
 	}
-	switch builtin.Name() {
-	case "len", "cap", "append", "clear", "delete", "copy":
-		return c.ownedExpression(call.Args[0])
+	switch name {
+	case "len", "cap", "clear":
+		return len(call.Args) == 1 && c.ownedExpression(call.Args[0])
+	case "delete":
+		return len(call.Args) == 2 && c.ownedExpression(call.Args[0])
+	case "copy":
+		return len(call.Args) == 2 && (c.ownedExpression(call.Args[0]) || c.ownedExpression(call.Args[1]))
+	case "append":
+		if call.Ellipsis.IsValid() || !c.ownedExpression(call.Args[0]) {
+			return false
+		}
+		statement, ok := c.unparenthesizedParent(call).(*ast.AssignStmt)
+		if !ok || statement.Tok != token.ASSIGN || len(statement.Lhs) != 1 || len(statement.Rhs) != 1 {
+			return false
+		}
+		target, ok := ast.Unparen(statement.Lhs[0]).(*ast.Ident)
+		source, sourceOK := ast.Unparen(call.Args[0]).(*ast.Ident)
+		return ok && sourceOK && ast.Unparen(statement.Rhs[0]) == call &&
+			c.pass.TypesInfo.ObjectOf(target) == c.pass.TypesInfo.ObjectOf(source)
 	}
 	return false
 }

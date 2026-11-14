@@ -29,13 +29,7 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 		return c.matchBuiltin(call, builtin)
 	}
 	if c.pass.TypesInfo.Types[call.Fun].IsType() {
-		if protectedReference(c.pass.TypesInfo.TypeOf(call)) {
-			return "shared pointer conversions are unsupported"
-		}
-		if len(call.Args) == 1 {
-			return matchTransport(c.pass.TypesInfo.TypeOf(call.Args[0]), c.pass.TypesInfo.TypeOf(call))
-		}
-		return "protected operation is outside the supported expression forms"
+		return c.matchConversion(call)
 	}
 	signature, ok := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
 	if !ok {
@@ -71,6 +65,25 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	return ""
 }
 
+// matchConversion permits ordinary scalar conversions and checks both protected endpoints.
+func (c *subsetChecks) matchConversion(call *ast.CallExpr) string {
+
+	if protectedReference(c.pass.TypesInfo.TypeOf(call)) {
+		return "shared pointer conversions are unsupported"
+	}
+	if len(call.Args) == 1 {
+		source, destination := c.pass.TypesInfo.TypeOf(call.Args[0]), c.pass.TypesInfo.TypeOf(call)
+		if rule := matchTransport(source, destination); rule != "" {
+			return rule
+		}
+		if checker.Contains(source) || checker.Contains(destination) {
+			return "protected value conversions are unsupported"
+		}
+		return ""
+	}
+	return "protected operation is outside the supported expression forms"
+}
+
 // matchBuiltin lists the documented allocation and native builder operations.
 func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) string {
 	switch builtin.Name() {
@@ -83,7 +96,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 			return ""
 		}
 	case "len", "cap":
-		if c.ownedBuiltin(call) {
+		if c.matchBuilderBuiltin(call, builtin.Name()) {
 			return ""
 		}
 		if _, array := c.pass.TypesInfo.TypeOf(call.Args[0]).Underlying().(*types.Array); array {
@@ -93,7 +106,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 			return ""
 		}
 	case "append", "delete", "clear", "copy":
-		if c.ownedBuiltin(call) {
+		if c.matchBuilderBuiltin(call, builtin.Name()) {
 			signature := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
 			return c.matchCallArguments(call, signature)
 		}
@@ -223,20 +236,47 @@ func (c *subsetChecks) directCall(node ast.Node) *ast.CallExpr {
 	}
 }
 
-// protectedCallable detects callbacks whose signature can carry immutable storage.
+// protectedCallable detects callback contracts through every Go storage type.
 func protectedCallable(t types.Type) bool { return callableContains(t, make(map[types.Type]bool)) }
 
-// callableContains walks recursive callback signatures once.
+// callableContains visits each component once, including nested callback parameters and results.
 func callableContains(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] {
 		return false
 	}
 	seen[t] = true
-	sig, ok := t.Underlying().(*types.Signature)
-	if !ok {
-		return false
+	switch storage := t.Underlying().(type) {
+	case *types.Signature:
+		return signatureContains(storage, seen)
+	case *types.Pointer:
+		return callableContains(storage.Elem(), seen)
+	case *types.Array:
+		return callableContains(storage.Elem(), seen)
+	case *types.Slice:
+		return callableContains(storage.Elem(), seen)
+	case *types.Map:
+		return callableContains(storage.Key(), seen) || callableContains(storage.Elem(), seen)
+	case *types.Chan:
+		return callableContains(storage.Elem(), seen)
+	case *types.Struct:
+		for field := range storage.Fields() {
+			if callableContains(field.Type(), seen) {
+				return true
+			}
+		}
+	case *types.Interface:
+		for method := range storage.Methods() {
+			if callableContains(method.Type(), seen) {
+				return true
+			}
+		}
 	}
-	for _, tuple := range []*types.Tuple{sig.Params(), sig.Results()} {
+	return false
+}
+
+// signatureContains checks every parameter and result, including nested callback storage.
+func signatureContains(storage *types.Signature, seen map[types.Type]bool) bool {
+	for _, tuple := range []*types.Tuple{storage.Params(), storage.Results()} {
 		for i := 0; i < tuple.Len(); i++ {
 			item := tuple.At(i).Type()
 			if checker.Contains(item) || callableContains(item, seen) {

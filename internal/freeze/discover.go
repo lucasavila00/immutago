@@ -73,6 +73,9 @@ func (p *proof) freezeInput(node ast.Node) bool {
 	if !ok || !freezing(p.pass, call) || len(call.Args) != 1 {
 		return true
 	}
+	if checker.Unevaluated(p.pass.TypesInfo, p.parents, call) {
+		return true
+	}
 	expression := ast.Unparen(call.Args[0])
 	if Fresh(p.pass, expression) {
 		return true

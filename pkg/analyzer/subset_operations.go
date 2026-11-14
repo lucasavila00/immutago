@@ -19,6 +19,9 @@ func localReference(t types.Type) bool {
 
 // operationExpression separates runtime operands from compiler type and field metadata.
 func (c *subsetChecks) operationExpression(expression ast.Expr) bool {
+	if checker.Unevaluated(c.pass.TypesInfo, c.parents, expression) {
+		return false
+	}
 	if selector, ok := c.parents[expression].(*ast.SelectorExpr); ok && selector.Sel == expression {
 		return false
 	}
@@ -42,14 +45,21 @@ func (c *subsetChecks) operationExpression(expression ast.Expr) bool {
 }
 
 // matchOperation requires a known producer, consuming operation, and complete statement.
-func (c *subsetChecks) matchOperation(expression ast.Expr) string {
+func (c *subsetChecks) matchOperation(expression ast.Expr) (ast.Node, string) {
 	if rule := c.matchSource(expression); rule != "" {
-		return rule
+		if call := c.directCall(expression); call != nil {
+			return call, rule
+		}
+		return expression, rule
 	}
 	if rule := c.matchUse(expression); rule != "" {
-		return rule
+		operation := c.parents[expression]
+		if _, pair := operation.(*ast.KeyValueExpr); pair {
+			operation = c.parents[operation]
+		}
+		return operation, rule
 	}
-	return c.matchStatement(expression)
+	return c.statementOperation(expression), c.matchStatement(expression)
 }
 
 // matchSource lists the complete producers of protected values and pointers.
@@ -60,15 +70,7 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	}
 	switch source := expression.(type) {
 	case *ast.Ident:
-		switch c.pass.TypesInfo.ObjectOf(source).(type) {
-		case *types.Var, *types.Nil:
-			if protectedCallable(c.pass.TypesInfo.TypeOf(source)) {
-				return c.matchFunctionValue(source)
-			}
-			return ""
-		case *types.Func, *types.Builtin:
-			return c.matchFunctionValue(source)
-		}
+		return c.matchIdentifier(source)
 	case *ast.ParenExpr:
 		return ""
 	case *ast.SelectorExpr:
@@ -99,6 +101,20 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 		return "immutable interface assertions are unsupported"
 	case *ast.FuncLit:
 		return "immutable callbacks are unsupported"
+	}
+	return "protected operation is outside the supported expression forms"
+}
+
+// matchIdentifier separates variable reads from direct function and builtin callees.
+func (c *subsetChecks) matchIdentifier(name *ast.Ident) string {
+	switch c.pass.TypesInfo.ObjectOf(name).(type) {
+	case *types.Var, *types.Nil:
+		if !protectedCallable(c.pass.TypesInfo.TypeOf(name)) {
+			return ""
+		}
+		return c.matchFunctionValue(name)
+	case *types.Func, *types.Builtin:
+		return c.matchFunctionValue(name)
 	}
 	return "protected operation is outside the supported expression forms"
 }

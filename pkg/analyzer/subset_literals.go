@@ -14,39 +14,48 @@ func (c *subsetChecks) matchLiteral(literal *ast.CompositeLit) string {
 		return "reference operation is outside the supported allowlist"
 	}
 	for index, element := range literal.Elts {
-		value := element
-		pair, keyed := element.(*ast.KeyValueExpr)
-		if keyed {
-			value = pair.Value
-		}
-		var destination types.Type
-		switch storage := storage.(type) {
-		case *types.Array:
-			destination = storage.Elem()
-		case *types.Slice:
-			destination = storage.Elem()
-		case *types.Map:
-			if rule := matchStoredValue(c.pass.TypesInfo.TypeOf(pair.Key), storage.Key()); rule != "" {
-				return rule
-			}
-			destination = storage.Elem()
-		case *types.Struct:
-			if keyed {
-				destination = c.pass.TypesInfo.ObjectOf(pair.Key.(*ast.Ident)).Type()
-			} else {
-				destination = storage.Field(index).Type()
-			}
-		default:
-			if checker.Contains(c.pass.TypesInfo.TypeOf(value)) || protectedCallable(c.pass.TypesInfo.TypeOf(value)) {
-				return "protected composite literals require a concrete storage type"
-			}
-			if keyed && checker.Contains(c.pass.TypesInfo.TypeOf(pair.Key)) {
-				return "protected composite literals require a concrete storage type"
-			}
-		}
-		if rule := matchStoredValue(c.pass.TypesInfo.TypeOf(value), destination); rule != "" {
+		if rule := c.matchLiteralElement(storage, index, element); rule != "" {
 			return rule
 		}
+	}
+	return ""
+}
+
+// matchLiteralElement resolves one concrete field, key, or element destination.
+func (c *subsetChecks) matchLiteralElement(storage types.Type, index int, element ast.Expr) string {
+
+	value := element
+	pair, keyed := element.(*ast.KeyValueExpr)
+	if keyed {
+		value = pair.Value
+	}
+	var destination types.Type
+	switch storage := storage.(type) {
+	case *types.Array:
+		destination = storage.Elem()
+	case *types.Slice:
+		destination = storage.Elem()
+	case *types.Map:
+		if rule := matchStoredValue(c.pass.TypesInfo.TypeOf(pair.Key), storage.Key()); rule != "" {
+			return rule
+		}
+		destination = storage.Elem()
+	case *types.Struct:
+		if keyed {
+			destination = c.pass.TypesInfo.ObjectOf(pair.Key.(*ast.Ident)).Type()
+		} else {
+			destination = storage.Field(index).Type()
+		}
+	default:
+		if checker.Contains(c.pass.TypesInfo.TypeOf(value)) || protectedCallable(c.pass.TypesInfo.TypeOf(value)) {
+			return "protected composite literals require a concrete storage type"
+		}
+		if keyed && checker.Contains(c.pass.TypesInfo.TypeOf(pair.Key)) {
+			return "protected composite literals require a concrete storage type"
+		}
+	}
+	if rule := matchStoredValue(c.pass.TypesInfo.TypeOf(value), destination); rule != "" {
+		return rule
 	}
 	return ""
 }
