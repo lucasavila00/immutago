@@ -77,7 +77,7 @@ fields of the old dispatcher do not survive its restart.
 | The parent is stopped | Children stop last started first. The runtime waits for them, then ends the parent's Run context. Children can call the parent while they stop. |
 | The parent's Run returns or panics | The runtime stops and waits for its children before the run ends or the restart delay begins. |
 | A child passes its restart limit | Its failure ends the parent run. A nested group first restarts by itself; repeated group failures reach the parent. The normal restart limits apply. |
-| A method starts a child after that parent run ends | Start returns a PID, but the child does not run. The same applies to a nested supervisor kept from that run. |
+| A method starts a child after that parent run ends | If Init succeeds, Start returns a PID, but the child does not run. The same applies to a nested supervisor kept from that run. |
 
 Only the runtime stops `p.Supervisor()`. To stop selected children from a
 method, use a nested supervisor as above. A child must not wait for a parent
