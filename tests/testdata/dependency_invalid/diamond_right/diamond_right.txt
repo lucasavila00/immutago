@@ -1,0 +1,6 @@
+diamond_right.go:3:8: unsupported dependency example.com/consumer/diamond_origin: immutability proof failed
+  representative failure: example.com/consumer/diamond_origin/diamond_origin.go:3:8: unsupported unsafe import; immutability cannot be proved
+    rule: reflection and unsafe operations can bypass typed ownership checks
+    fix: replace these operations with ordinary typed Go code
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/diamond_origin, correct its errors, then rerun immutago on this package

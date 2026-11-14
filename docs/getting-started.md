@@ -48,8 +48,10 @@ for pointer targets, calls, statements, and builder operations.
 
 ## Project checks
 
-Run `immutago ./...` in CI for each build configuration you ship. Dependencies
-are checked too. An ordinary Go build does not run the analyzer.
+Run `immutago ./...` in CI for each build configuration you ship. The
+[package boundary](rules.md#package-boundary) selects checked dependencies and
+ordinary APIs that use normal Go contracts. An ordinary Go build does not run
+the analyzer.
 
 For vet integration, use `go vet -vettool=/absolute/path/to/immutago ./...`.
 The normal CLI fails on diagnostics. Its standard `-json` mode can exit

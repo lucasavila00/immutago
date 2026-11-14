@@ -69,7 +69,7 @@ cache, so new wrapper types do not expand the same negative component again.
 The pass-local type classifier expands each reachable type and classification
 mode once per cache. Reverse edges propagate positive results through cycles;
 completed queries reuse the stored result. The graph stays in memory until its
-pass ends. Ordinary packages still receive structural and source checks.
+pass ends. Only packages inside the proof boundary receive structural and source checks.
 
 The [marked graph benchmarks](../pkg/analyzer/proof_scaling_test.go) measure the
 complete pass on connected marked types and frozen collections.
