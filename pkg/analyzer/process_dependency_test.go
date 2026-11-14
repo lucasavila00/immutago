@@ -16,7 +16,7 @@ func (f *Fetcher) Run(ctx context.Context) {
 	f.Args().Log.Value().Print(f.Args().BaseURL)
 	f.log = f.Args().Dial.Value()(f.Args().BaseURL)
 }
-func startFetcher(s *proc.Supervisor, log *Logger) proc.PID[Fetcher] {
+func startFetcher(s *proc.Supervisor, log *Logger) (proc.PID[Fetcher], error) {
 	return proc.Start[Fetcher](s, FetcherArgs{BaseURL: "x", Log: proc.AssumeConcurrentSafe(log),
 		Dial: proc.AssumeConcurrentSafe(func(string) *Logger { return log })})
 }

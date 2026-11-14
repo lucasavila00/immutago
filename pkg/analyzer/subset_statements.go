@@ -82,7 +82,7 @@ func (c *subsetChecks) typeSwitchDeclaration(declaration *ast.TypeSwitchStmt) {
 // matchAssignment resolves the whole binding form before checking each write and conversion.
 func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) string {
 	if len(statement.Lhs) != 1 || len(statement.Rhs) != 1 {
-		if !c.freshGetAssignment(statement) {
+		if !c.pairAssignment(statement) {
 			return "multiple assignments involving protected storage are unsupported"
 		}
 	}
@@ -133,13 +133,13 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	return "global Scoped pointers are unsupported"
 }
 
-// matchDeclaration accepts one binding or the exact two-result frozen map reader.
+// matchDeclaration accepts one binding or an exact two-result Get or Start call.
 func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 	if group, ok := c.parents[declaration].(*ast.GenDecl); ok && group.Tok != token.VAR {
 		return "protected operation is outside the supported statement forms"
 	}
 	if len(declaration.Names) != 1 || len(declaration.Values) > 1 {
-		if !c.getDeclaration(declaration) {
+		if !c.pairDeclaration(declaration) {
 			return "multiple assignments involving protected storage are unsupported"
 		}
 	}
@@ -356,23 +356,46 @@ func (c *subsetChecks) getCall(values []ast.Expr) bool {
 	return ok && selector.Sel.Name == "Get" && c.exactCollectionMethod(selector)
 }
 
-// freshGetAssignment accepts map results only into newly declared local names.
-func (c *subsetChecks) freshGetAssignment(statement *ast.AssignStmt) bool {
-	if statement.Tok != token.DEFINE || len(statement.Lhs) != 2 || !c.getCall(statement.Rhs) {
+// pairCall accepts only the two-result functions listed in the source contract.
+func (c *subsetChecks) pairCall(values []ast.Expr) bool {
+	if c.getCall(values) {
+		return true
+	}
+	if len(values) != 1 {
+		return false
+	}
+	call, ok := ast.Unparen(values[0]).(*ast.CallExpr)
+	return ok && runtimeObject(c.calledObject(call.Fun), checker.StartFunction)
+}
+
+// pairAssignment requires new locals for Get and permits reused locals for Start.
+func (c *subsetChecks) pairAssignment(statement *ast.AssignStmt) bool {
+	if len(statement.Lhs) != 2 || !c.pairCall(statement.Rhs) {
+		return false
+	}
+	fresh := c.getCall(statement.Rhs)
+	if statement.Tok != token.DEFINE && (fresh || statement.Tok != token.ASSIGN) {
 		return false
 	}
 	for _, left := range statement.Lhs {
 		name, ok := left.(*ast.Ident)
-		if !ok || (name.Name != "_" && c.pass.TypesInfo.Defs[name] == nil) {
+		if !ok {
+			return false
+		}
+		if name.Name == "_" {
+			continue
+		}
+		variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var)
+		if !ok || variable.Parent() == c.pass.Pkg.Scope() || fresh && c.pass.TypesInfo.Defs[name] == nil {
 			return false
 		}
 	}
 	return true
 }
 
-// getDeclaration accepts two new local variables for a direct map lookup.
-func (c *subsetChecks) getDeclaration(statement *ast.ValueSpec) bool {
-	if len(statement.Names) != 2 || !c.getCall(statement.Values) {
+// pairDeclaration accepts two new local variables for a direct Get or Start call.
+func (c *subsetChecks) pairDeclaration(statement *ast.ValueSpec) bool {
+	if len(statement.Names) != 2 || !c.pairCall(statement.Values) {
 		return false
 	}
 	for _, name := range statement.Names {

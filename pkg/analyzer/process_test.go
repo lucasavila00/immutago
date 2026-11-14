@@ -31,7 +31,7 @@ type LimiterArgs struct { im.Shared; Loader proc.PID[ConfigLoader]; Key string }
 type Limiter struct { proc.Process[LimiterArgs]; used int }
 func (l *Limiter) Run(ctx context.Context) { l.used = l.Args().Loader.Proc().Limit(l.Args().Key) }
 func start(parent *proc.Supervisor) int {
-	loader := proc.Start[ConfigLoader](parent, LoaderArgs{Path: "config.json"})
+	loader, _ := proc.Start[ConfigLoader](parent, LoaderArgs{Path: "config.json"})
 	proc.Start[Limiter](parent, LimiterArgs{Loader: loader, Key: "requests"})
 	return loader.Proc().Version()
 }
@@ -62,14 +62,14 @@ func (*Clock) Run(RunContext) {}`},
 		{"bound arguments", `func (l *ConfigLoader) Path() string { args := l.Args(); return args.Path }`},
 		{"no arguments", `type Cache struct { proc.Process[proc.None]; n int }
 func (c *Cache) Run(context.Context) { c.n++ }
-func f(s *proc.Supervisor) proc.PID[Cache] { return proc.Start[Cache](s, proc.None{}) }`},
+func f(s *proc.Supervisor) (proc.PID[Cache], error) { return proc.Start[Cache](s, proc.None{}) }`},
 		{"reserved cycle", `type Pong struct { proc.Process[proc.PID[Ping]] }
 func (p *Pong) Run(context.Context) { _ = p.Args().Proc().Name() }
 func (p *Pong) Name() string { return "pong" }
 type Ping struct { proc.Process[proc.PID[Pong]] }
 func (p *Ping) Run(context.Context) { _ = p.Args().Proc().Name() }
 func (p *Ping) Name() string { return "ping" }
-func f(s *proc.Supervisor) { pong := proc.Reserve[Pong](); ping := proc.Start[Ping](s, pong)
+func f(s *proc.Supervisor) { pong := proc.Reserve[Pong](); ping, _ := proc.Start[Ping](s, pong)
 	proc.StartReserved(s, pong, ping) }`},
 		{"parenthesized proc", `func f(pid proc.PID[ConfigLoader]) int { return (pid.Proc()).Version() }`},
 		{"marked PID field", `type Peers struct { im.Shared; ConfigLoader proc.PID[ConfigLoader] }
@@ -186,7 +186,8 @@ func use(*proc.Supervisor) {}
 func TestProcessSupervisorAccepted(t *testing.T) {
 	checkProcessCases(t, false, [][2]string{
 		{"direct start", poolDefinitions + `func (p *Pool) Run(ctx context.Context) {
-	for i := range p.Args() { p.workers = append(p.workers, proc.Start[Worker](p.Supervisor(), WorkerArgs{ID: i})) } }`},
+	for i := range p.Args() { worker, err := proc.Start[Worker](p.Supervisor(), WorkerArgs{ID: i})
+	if err != nil { return }; p.workers = append(p.workers, worker) } }`},
 		{"start reserved", poolDefinitions + `func (p *Pool) Run(ctx context.Context) {
 	pid := proc.Reserve[Worker](); proc.StartReserved(p.Supervisor(), pid, WorkerArgs{}) }`},
 		{"nested supervisor", poolDefinitions + `func (p *Pool) Run(ctx context.Context) {

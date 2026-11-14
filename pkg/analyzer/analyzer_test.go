@@ -39,6 +39,7 @@ const testLibrary = `package im
 const testRuntime = `package proc
  import ("context"; "github.com/lucasavila00/immutago/pkg/im")
  type Process[A any] struct { args A }
+ func (p *Process[A]) Init() error { return nil }
  func (p *Process[A]) Args() A { return p.args }
  func (p *Process[A]) bind(args A) { p.args = args }
  func (p *Process[A]) Supervisor() *Supervisor { return nil }
@@ -50,11 +51,12 @@ const testRuntime = `package proc
  type PID[T any] struct { value *T }
  func (p PID[T]) Proc() *T { return p.value }
  func Reserve[T any]() PID[T] { return PID[T]{} }
- func Start[T, A any, P interface{ *T; Run(context.Context); bind(A) }](parent *Supervisor, args A) PID[T] {
-  return PID[T]{}
+ func Start[T, A any, P interface{ *T; Run(context.Context); Init() error; bind(A) }](
+  parent *Supervisor, args A) (PID[T], error) {
+  return PID[T]{}, nil
  }
- func StartReserved[T, A any, P interface{ *T; Run(context.Context); bind(A) }](
-  parent *Supervisor, pid PID[T], args A) {}
+ func StartReserved[T, A any, P interface{ *T; Run(context.Context); Init() error; bind(A) }](
+  parent *Supervisor, pid PID[T], args A) error { return nil }
  type ConcurrentSafe[T any] struct { value T }
  func AssumeConcurrentSafe[T any](v T) ConcurrentSafe[T] { return ConcurrentSafe[T]{value: v} }
  func (d ConcurrentSafe[T]) Value() T { return d.value }
