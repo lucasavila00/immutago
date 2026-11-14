@@ -8,7 +8,7 @@ import (
 
 // Counter keeps a mutable count.
 type Counter struct {
-	proc.Process
+	proc.Process[proc.None]
 	count int
 }
 
@@ -39,5 +39,6 @@ func Transport(pid proc.PID[Counter]) {
 	defer pid.Proc().Count()
 	use(pid.Proc())
 	copied := *pid.Proc()
+	_ = pid.Proc().Args()
 	_, _, _, _ = process, count, get, copied
 }

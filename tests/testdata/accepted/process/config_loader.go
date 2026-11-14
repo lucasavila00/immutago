@@ -16,17 +16,24 @@ type Config struct {
 	Limits  im.FrozenMap[string, int]
 }
 
+// LoaderArgs are the arguments of a ConfigLoader.
+type LoaderArgs struct {
+	im.Shared
+	Path  string
+	Every time.Duration
+}
+
 // ConfigLoader polls for configuration and publishes each version.
 type ConfigLoader struct {
-	proc.Process
+	proc.Process[LoaderArgs]
 	mu      sync.Mutex
 	version int
 	current im.Owner[Config]
 }
 
-// Run publishes a new configuration each second until ctx ends.
+// Run publishes a new configuration at each interval until ctx ends.
 func (l *ConfigLoader) Run(ctx context.Context) {
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(l.Args().Every)
 	defer ticker.Stop()
 	for {
 		l.publish()
@@ -43,7 +50,7 @@ func (l *ConfigLoader) publish() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.version++
-	limits := map[string]int{"requests": 100 * l.version}
+	limits := map[string]int{l.Args().Path: 100 * l.version}
 	frozen := im.FreezeMap(limits)
 	l.current.Store(&Config{Version: l.version, Limits: frozen})
 }

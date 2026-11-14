@@ -12,7 +12,7 @@ type Status int
 
 // Refresher keeps mutable state.
 type Refresher struct {
-	proc.Process
+	proc.Process[proc.None]
 	mu    sync.Mutex
 	table map[string]int
 }

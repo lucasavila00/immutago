@@ -8,5 +8,15 @@ process_receivers.go:29:2: process receivers can only select a field or call a m
 process_receivers.go:30:2: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
 process_receivers.go:30:3: process receivers can only select a field or call a method directly
 process_receivers.go:30:7: process Buffer is created outside proc.Start; use proc.Start[Buffer](parent)
-process_receivers.go:30:7: process type Buffer can be named only in its declaration, a pointer receiver, proc.Start[Buffer], or proc.PID[Buffer]
-process_receivers.go:31:12: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_receivers.go:30:7: process type Buffer can be named only in its declaration, a pointer receiver, proc.Start[Buffer], proc.Reserve[Buffer], or proc.PID[Buffer]
+process_receivers.go:31:12: process receivers can only select a field or call a method directly
+process_receivers.go:32:2: process receivers can only select a field or call a method directly
+process_receivers.go:33:10: process receivers can only select a field or call a method directly
+process_receivers.go:33:2: unsupported immutable operation: immutable callbacks are unsupported
+  source: args := b.Args
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+process_receivers.go:34:18: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_receivers.go:34:46: unsupported immutable operation: immutable callbacks are unsupported
+  source: args
+  type: func() proc.None
+  fix: call a named, non-generic function directly with a concrete immutable parameter

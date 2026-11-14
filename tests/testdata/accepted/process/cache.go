@@ -17,7 +17,7 @@ type Entry struct {
 
 // Cache refreshes its entry each second.
 type Cache struct {
-	proc.Process
+	proc.Process[proc.None]
 	version int
 	entry   im.Owner[Entry]
 }

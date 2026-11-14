@@ -1,9 +1,12 @@
 process_declarations.go:12:21: processes cannot be generic
+process_declarations.go:12:34: process arguments T are not an allowed stored type: type parameters are unsupported in immutable storage
 process_declarations.go:15:18: proc.Process must be embedded by value
 process_declarations.go:18:20: processes embed proc.Process once and no immutable marker
 process_declarations.go:19:7: immutable field Process: struct does not embed im.Shared or im.Scoped
-  owner: process.MarkedProcess; field type: proc.Process
+  owner: process.MarkedProcess; field type: proc.Process[proc.None]
   fix: embed im.Shared or im.Scoped in the struct and make each field immutable
 process_declarations.go:26:2: process field limits contains immutable storage; publish it through an im.Owner field
-process_declarations.go:30:33: proc.Start and proc.PID need a process type argument
+process_declarations.go:30:33: proc.Start, proc.StartReserved, proc.Reserve, and proc.PID need a process type argument
+process_declarations.go:33:32: process arguments map[string]int are not an allowed stored type: map[string]int is not provably immutable
+process_declarations.go:36:34: process arguments error are not an allowed stored type: error is not provably immutable
 process_declarations.go:9:15: processes require a defined struct type

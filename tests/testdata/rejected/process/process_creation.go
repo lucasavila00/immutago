@@ -8,7 +8,7 @@ import (
 
 // Ticker is a process.
 type Ticker struct {
-	proc.Process
+	proc.Process[proc.None]
 	ticks int
 }
 
@@ -18,8 +18,8 @@ func (t *Ticker) Run(ctx context.Context) { <-ctx.Done() }
 // Ticks returns the tick count.
 func (t *Ticker) Ticks() int { return t.ticks }
 
-// Plain is not a process.
-type Plain struct{}
+// Plain is not a process: a pointer embedding does not mark it.
+type Plain struct{ *proc.Process[proc.None] }
 
 // Run returns at once.
 func (*Plain) Run(context.Context) {}
@@ -33,7 +33,8 @@ func Create(root *proc.Supervisor) {
 	var zero Ticker
 	allocated := new(Ticker)
 	ticks := (*Ticker).Ticks
-	proc.Start[Plain](root)
+	proc.Start[Plain](root, proc.None{})
 	var scalar proc.PID[int]
-	_, _, _, _, _ = literal, zero, allocated, ticks, scalar
+	reserved := proc.Reserve[int]()
+	_, _, _, _, _, _ = literal, zero, allocated, ticks, scalar, reserved
 }

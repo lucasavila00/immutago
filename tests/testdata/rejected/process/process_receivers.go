@@ -8,7 +8,7 @@ import (
 
 // Buffer is a process with rejected receiver uses.
 type Buffer struct {
-	proc.Process
+	proc.Process[proc.None]
 	size int
 }
 
@@ -28,5 +28,8 @@ func (b *Buffer) misuse(ctx context.Context) {
 	grow := b.grow
 	b.Run(ctx)
 	*b = Buffer{}
-	_, _, _ = other, later, grow
+	marker := b.Process
+	b.Process = proc.Process[proc.None]{}
+	args := b.Args
+	_, _, _, _, _ = other, later, grow, marker, args
 }

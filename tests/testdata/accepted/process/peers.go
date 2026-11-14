@@ -1,6 +1,8 @@
 package process
 
 import (
+	"time"
+
 	"github.com/lucasavila00/immutago/pkg/im"
 	"github.com/lucasavila00/immutago/pkg/proc"
 )
@@ -15,19 +17,20 @@ type Peers struct {
 
 // StartPeers starts the processes under root.
 func StartPeers(root *proc.Supervisor) Peers {
+	config := proc.Start[ConfigLoader](root, LoaderArgs{Path: "requests", Every: time.Second})
 	return Peers{
-		Config:  proc.Start[ConfigLoader](root),
-		Cache:   proc.Start[Cache](proc.StartSupervisor(root)),
-		Limiter: proc.Start[Limiter](root),
+		Config:  config,
+		Cache:   proc.Start[Cache](proc.StartSupervisor(root), proc.None{}),
+		Limiter: proc.Start[Limiter](root, LimiterArgs{Loader: config, Key: "requests"}),
 	}
 }
 
 // Serve handles one request with direct calls on Proc results.
 func Serve(peers Peers) (int, bool) {
-	if peers.Limiter.Proc().Take(peers.Config.Proc().Limit("requests")) == Limited {
+	if peers.Limiter.Proc().Take() == Limited {
 		return 0, false
 	}
-	usage := peers.Limiter.Proc().Usage(10)
+	usage := peers.Limiter.Proc().Usage()
 	entry := peers.Cache.Proc().Latest()
 	return entry.Version + usage.Used, true
 }

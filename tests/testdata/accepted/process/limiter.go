@@ -17,6 +17,13 @@ const (
 	Limited
 )
 
+// LimiterArgs are the arguments of a Limiter.
+type LimiterArgs struct {
+	im.Shared
+	Loader proc.PID[ConfigLoader]
+	Key    string
+}
+
 // Usage is a copy of the limiter counters.
 type Usage struct {
 	im.Scoped
@@ -24,9 +31,9 @@ type Usage struct {
 	Limit int
 }
 
-// Limiter counts requests against a fixed limit.
+// Limiter counts requests against the limit of the current configuration.
 type Limiter struct {
-	proc.Process
+	proc.Process[LimiterArgs]
 	mu   sync.Mutex
 	used int
 }
@@ -35,7 +42,8 @@ type Limiter struct {
 func (l *Limiter) Run(ctx context.Context) { <-ctx.Done() }
 
 // Take records one request and returns whether it is allowed.
-func (l *Limiter) Take(limit int) Decision {
+func (l *Limiter) Take() Decision {
+	limit := l.Args().Loader.Proc().Limit(l.Args().Key)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.used >= limit {
@@ -46,7 +54,9 @@ func (l *Limiter) Take(limit int) Decision {
 }
 
 // Usage returns a copy of the counters.
-func (l *Limiter) Usage(limit int) Usage {
+func (l *Limiter) Usage() Usage {
+	args := l.Args()
+	limit := args.Loader.Proc().Limit(args.Key)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return Usage{Used: l.used, Limit: limit}
