@@ -31,6 +31,8 @@ type. It records the node before visiting components, so recursive types
 terminate. Reverse edges connect fields and collection arguments to their
 owners. Invalid components enter a queue; their failures propagate to every
 owner. A recursive cycle passes only if all reachable components pass.
+Each failed owner retains its first failure cause. The proof builds the
+diagnostic string once, from the requested root.
 
 Both marker modes use this proof. Stored pointers require a `Shared` struct
 target; `LocalRef` pointers fail the storage proof. Type parameters fail too.
