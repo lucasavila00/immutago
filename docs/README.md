@@ -1,24 +1,34 @@
 # Documentation
 
-## Learn and use
+## Immutable data (`im`)
 
-- [Get started](getting-started.md): a complete example and check commands.
-- [Runnable projects](../examples/README.md): live configuration, worker groups, and HTTP models with their own tests.
-- [Shared](shared.md) and [Scoped](scoped.md): choose whether pointers can be saved or returned.
-- [Owner](owner.md): replace the current Scoped object while readers use the previous one.
-- [Frozen collections](frozen.md): builders, Freeze, reads, and Clone.
-- [Unchecked immutable values](unchecked-values.md): a trusted, unproven immutable value.
-- [Supervised services](services.md): typed start arguments and direct calls.
-- [Child services](service-children.md): start worker groups and change them while a service runs.
-- [Performance](performance.md): operation costs.
+| Need | Read |
+| --- | --- |
+| Install and run a working program | [Get started](getting-started.md) |
+| Store or return pointers to read-only objects | [Shared](shared.md) |
+| Prevent functions from keeping object pointers | [Scoped](scoped.md) |
+| Replace a pointer while readers use the previous object | [Owner](owner.md) |
+| Build read-only slices and maps | [Frozen collections](frozen.md) |
+| Wrap data whose immutability your package promises | [Unchecked immutable values](unchecked-values.md) |
+| Look up allowed Go forms | [Common source forms](common-forms.md) |
+| Look up signatures and zero values | [im API](../pkg/im/readme.md) |
 
-## Look up a rule or API
+## Supervised services (`supervise`)
 
-- [Language reference](rules.md): complete rules and which packages are checked.
-- [Common forms](common-forms.md): field types, construction, reads, pointers, and statements.
-- [Service forms](service-forms.md): declarations, calls, Ref use, and rejected examples.
-- [Collection API](../pkg/im/readme.md): signatures, zero values, and iteration.
-- [Service API](../pkg/supervise/readme.md): groups, Refs, and restarts.
+| Need | Read |
+| --- | --- |
+| Start a service and understand restarts | [Supervised services](services.md) |
+| Create and replace groups of workers | [Child services](service-children.md) |
+| Supply a logger, client, or other safe concurrent dependency | [Concurrent dependencies](services.md#concurrent-dependencies) |
+| Look up declarations and allowed calls | [Service source forms](service-forms.md) |
+| Look up signatures and lifecycle behavior | [supervise API](../pkg/supervise/readme.md) |
+
+## Checker, costs, and examples
+
+- [Install the checker](getting-started.md#install) and [run it in CI](getting-started.md#check-in-ci).
+- [Checker reference](rules.md): allowed source forms, trust promises, and which packages are checked.
+- [Operation costs](performance.md): im collections, `im.Owner`, and `supervise.Ref.Current`.
+- [Runnable projects](../examples/README.md): configuration, worker groups, and HTTP models using both packages.
 
 ## Maintainers
 

@@ -1,7 +1,6 @@
 # Get started
 
-This program creates a user with a read-only score map. The checker will reject
-code that changes the user's fields or the frozen map.
+## Install
 
 In a Go module, add the library and install the checker:
 
@@ -9,6 +8,11 @@ In a Go module, add the library and install the checker:
 go get github.com/lucasavila00/immutago@latest
 go install github.com/lucasavila00/immutago/cmd/immutago@latest
 ```
+
+## Run an immutable-data example
+
+This program creates a user with a read-only score map. The checker will reject
+code that changes the user's fields or the frozen map.
 
 Save this as `main.go`:
 

@@ -2,18 +2,13 @@
 
 A Go checker and library for immutable data and supervised services.
 
-| Task | Guide |
+| What do you need? | Start here |
 | --- | --- |
-| Install the checker and run a complete example | [Get started](docs/getting-started.md) |
-| Run tested programs that use the public APIs | [Example projects](examples/README.md) |
-| Share read-only objects | [Shared](docs/shared.md) |
-| Prevent functions from saving object pointers | [Scoped](docs/scoped.md) |
-| Replace data while readers finish with the previous version | [Owner](docs/owner.md) |
-| Build a slice or map, then make it read-only | [Frozen collections](docs/frozen.md) |
-| Run a service with supervised restarts | [Services](docs/services.md) |
-| Give a service a logger or a client that the checker does not check | [Unchecked dependencies](docs/services.md#concurrent-dependencies) |
+| Read-only objects, slices, and maps | [Immutable data with im](docs/README.md#immutable-data-im) |
+| Background services, restarts, and child groups | [Supervised services with supervise](docs/README.md#supervised-services-supervise) |
 
-Run `immutago ./...` to check your code. `go build` does not enforce these rules.
+[Install the checker](docs/getting-started.md#install), then run `immutago ./...`.
+`go build` does not enforce these rules.
 
-See the [documentation index](docs/README.md) for the complete language reference,
-API reference, and maintainer docs.
+[Example projects](examples/README.md) use both packages in tested programs.
+[Maintainer documentation](docs/README.md#maintainers) covers development and review.
