@@ -3,13 +3,13 @@
 [Language guide](rules.md) · [Stored types](common-forms.md#markers-and-stored-types) · [Process API](../pkg/proc/readme.md)
 
 Use `proc` for a service that runs in the background, such as a config loader,
-cache refresher, or rate limiter. Start it with immutable arguments, keep its
+cache refresher, or rate limiter. Start it with its arguments, keep its
 PID, and call its exported methods directly. Those methods take and return
 [allowed stored types](common-forms.md#markers-and-stored-types), including PIDs.
 
 The analyzer checks four rules: fields are selected through the receiver in its
-methods; start arguments and exported method parameters/results use allowed
-stored types; process pointers are used only for the listed direct calls; and
+methods; exported method parameters/results, and start arguments that contain
+protected storage, use allowed stored types; process pointers are used only for the listed direct calls; and
 only `Start` or `StartReserved` creates a process.
 
 The existing immutable-field and Owner rules still apply. In particular, mutable
@@ -17,7 +17,8 @@ process structs publish protected data through Owner fields.
 
 Method bodies are ordinary Go. These checks do not isolate mutable state:
 `shared = &p.count` or `p.table = globalMap` can share memory through globals or
-helpers. Methods must follow their API contracts and synchronize shared state.
+helpers, and ordinary start arguments, such as a logger or a client, share
+memory with the code that started the process. Methods must follow their API contracts and synchronize shared state.
 
 ```go
 package main
@@ -55,22 +56,25 @@ func main() {
 
 The [config loader](../tests/testdata/accepted/process/config_loader.go) and
 [limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
-and PIDs in start arguments. The tables use those example types.
+and PIDs in start arguments. The [fetcher](../tests/testdata/accepted/process/fetcher.go)
+example shows ordinary arguments and `Init`. The tables use those example types.
 
 These allowed forms are complete. Other uses of a process, its type name, or a
 process pointer from `Proc()` are rejected. Parentheses preserve these forms.
 
 | Allowed form | Example |
 | --- | --- |
-| Named, non-generic struct with one `proc.Process[A]` embedded by value; `A` is an allowed stored type; the other fields are ordinary Go without protected storage, or `im.Owner` fields | `type ConfigLoader struct { proc.Process[LoaderArgs]; mu sync.Mutex; current im.Owner[Config] }` |
+| Named, non-generic struct with one `proc.Process[A]` embedded by value; `A` is an allowed stored type, or ordinary Go without protected storage and without callbacks that carry it; the other fields are ordinary Go without protected storage, or `im.Owner` fields | `type ConfigLoader struct { proc.Process[LoaderArgs]; mu sync.Mutex; current im.Owner[Config] }` |
 | Process without arguments | `type Cache struct { proc.Process[proc.None]; hits int }` |
+| Ordinary arguments | `type FetcherArgs struct { Logger *slog.Logger; Client *http.Client; Loader proc.PID[ConfigLoader] }` |
 | Declare the entry point on the process | `func (l *ConfigLoader) Run(ctx context.Context) { ... }` (no results) |
+| Declare an initializer on the process; the runtime calls it before the value is reachable | `func (f *Fetcher) Init() { f.wake = make(chan struct{}, 1) }` (no parameters or results) |
 | Method with a pointer receiver | `func (l *ConfigLoader) Version() int { return l.version }` |
-| Exported method other than `Run` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (c *Cache) Latest() Entry` |
+| Exported method other than `Run` and `Init` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (c *Cache) Latest() Entry` |
 | In a method, select a field of the receiver other than the marker | `l.version++`, `l.mu.Lock()`, `defer l.mu.Unlock()`, `l.current.Store(&Config{})` |
-| In a method, call a method of the receiver directly and synchronously, other than `Run` | `l.publish()`, `l.Lock()` for an embedded `sync.Mutex` |
+| In a method, call a method of the receiver directly and synchronously, other than `Run` and `Init` | `l.publish()`, `l.Lock()` for an embedded `sync.Mutex` |
 | In a method, read the arguments with a direct call | `args := l.Args()`, `l.Args().Loader.Proc().Limit(l.Args().Key)` |
-| Call an exported method other than `Run`, declared on the process, directly and synchronously on `pid.Proc()` | `v := loader.Proc().Version()`, `(loader.Proc()).Version()` |
+| Call an exported method other than `Run` and `Init`, declared on the process, directly and synchronously on `pid.Proc()` | `v := loader.Proc().Version()`, `(loader.Proc()).Version()` |
 | Call through a PID in a field of a marked value | `peers.Loader.Proc().Version()` |
 | Keep, copy, store, pass, or return a PID | `type Peers struct { im.Shared; Loader proc.PID[ConfigLoader] }` |
 | Call through a PID in a function literal | `defer func() { limiter.Proc().Take() }()` |
@@ -91,6 +95,8 @@ Rejected examples are not exhaustive:
 | `p := loader.Proc()`, `saved = loader.Proc()`, `use(loader.Proc())`, `loader.Proc() == nil` | Keep the PID; call the method directly. |
 | `loader.Proc().version`, `loader.Proc().Args()` | Add an exported method. |
 | `loader.Proc().Run(ctx)`, `l.Run(ctx)` | Only the supervisor calls `Run`. |
+| `fetcher.Proc().Init()`, `f.Init()` | Only the runtime calls `Init`. |
+| `func (f *Fetcher) Init() error`, `func (f Fetcher) Init()`, a promoted `Init` | Declare `func (f *Fetcher) Init()`. |
 | `loader.Proc().publish()`, `loader.Proc().Lock()` for an embedded `sync.Mutex` | Declare an exported method on the process. |
 | `f := loader.Proc().Version`, `get := loader.Proc` | `v := loader.Proc().Version()` |
 | `go loader.Proc().Version()`, `defer loader.Proc().Version()` | `go func() { loader.Proc().Version() }()` |
@@ -102,22 +108,23 @@ Rejected examples are not exhaustive:
 | `func use(l *ConfigLoader)`, `type L = ConfigLoader`, `type Outer struct { ConfigLoader }`, `(*ConfigLoader).Version` | Pass a `proc.PID[ConfigLoader]`. |
 | `proc.Start[ConfigLoader, LoaderArgs](root, args)` | `proc.Start[ConfigLoader](root, args)` |
 | `proc.PID[int]`, `proc.Reserve[Plain]()`, `func f[T any](p proc.PID[T])` | Use a concrete process type. |
-| `type Bad struct { proc.Process[map[string]int] }`, `proc.Process[error]` | Use an allowed argument type, for example `proc.Process[LoaderArgs]`. |
+| `type Bad struct { proc.Process[*Config] }`, `proc.Process[func(*Config)]` | Use an allowed stored type for protected storage, for example `proc.Process[LoaderArgs]`. |
 | `type Bad[T any] struct { proc.Process[T] }`, `var x struct{ proc.Process[proc.None] }` | Declare a named, non-generic struct. |
 | `type Bad struct { proc.Process[proc.None]; im.Shared }`, `M proc.Process[proc.None]`, `*proc.Process[proc.None]` | Embed one `proc.Process[A]` by value and no `im` marker. |
 | `type Bad struct { proc.Process[proc.None]; limits im.FrozenMap[string, int] }` | Put immutable data in the arguments, or publish it through an `im.Owner` field. |
 
 The runtime behavior is not part of the proof:
 
-- `Start` creates a new process value, gives it the arguments, stores it in the
-  PID, and runs `Run` in a new goroutine. The PID is started when `Start` returns.
+- `Start` creates a new process value, gives it the arguments, calls `Init` if
+  the process declares it, stores the value in the PID, and runs `Run` in a new
+  goroutine. A panic in this first `Init` reaches the caller of `Start`. The PID is started when `Start` returns.
   `Proc` is one atomic load. It panics with `proc: PID not started` before
   `StartReserved` starts a reserved PID. `StartReserved` panics if the PID is
   already started.
 - Each run gets a context that ends with that run. If `Run` returns, the process
   ends. If `Run` panics, the supervisor waits 1 s, doubling the delay for each
   restart in the last 5 minutes. It then creates a fresh value from the same
-  arguments, publishes it through the PID, and calls `Run`. `im.Owner` fields
+  arguments, calls `Init`, publishes it through the PID, and calls `Run`. `im.Owner` fields
   start empty again. Calls during the delay use the old value; calls already
   in progress finish on that value. Reserving PIDs is not a group-start barrier:
   a call to a peer that has not started can panic and cause this retry.

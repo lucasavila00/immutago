@@ -29,8 +29,14 @@ type ProtectedField struct {
 // GenericPID takes a PID of a type parameter.
 func GenericPID[T any](pid proc.PID[T]) {}
 
-// MapArguments has a native map as its arguments.
-type MapArguments struct{ proc.Process[map[string]int] }
+// Config is an immutable value that stays local.
+type Config struct {
+	im.Scoped
+	Version int
+}
 
-// ErrorArguments has an interface as its arguments.
-type ErrorArguments struct{ proc.Process[error] }
+// ScopedArguments has a Scoped pointer as its arguments.
+type ScopedArguments struct{ proc.Process[*Config] }
+
+// CallbackArguments has a callback that carries protected storage as its arguments.
+type CallbackArguments struct{ proc.Process[func(*Config)] }

@@ -1,9 +1,11 @@
 // Package proc runs supervised processes.
 //
 // A process is a mutable struct that embeds Process[A] and has a Run(context.Context)
-// method with a pointer receiver. A is the immutable argument type of the process;
-// use None for a process without arguments. Start creates a new process value,
-// gives it the arguments, runs Run in a new goroutine, and returns its PID. Callers
+// method with a pointer receiver. A is the argument type of the process: an
+// immutable value, or ordinary Go such as a logger or a client. Use None for a
+// process without arguments. Start creates a new process value, gives it the
+// arguments, calls its Init method if it has one, runs Run in a new goroutine,
+// and returns its PID. Callers
 // keep the PID and call exported methods directly on the process pointer from
 // PID.Proc. The immutago analyzer proves that these methods take and return only
 // immutable values and PIDs. For processes that need each other's PIDs, Reserve
@@ -12,7 +14,7 @@
 // A supervisor runs its children until Stop. If Run returns, the process ends.
 // If Run panics, the supervisor waits 1 s, doubling the delay for each restart
 // in the last 5 minutes. It then creates a new process value from the same
-// arguments, stores it in the same PID, and calls Run. Calls during the delay
+// arguments, calls Init, stores the value in the same PID, and calls Run. Calls during the delay
 // still use the old value; calls already in progress finish on that value. A sixth
 // panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and
 // escalates the panic to the parent supervisor, which restarts the subtree with
@@ -124,7 +126,8 @@ func Start[T, A any, P interface {
 	return pid
 }
 
-// StartReserved creates a process value with args, stores it in pid, and runs its Run method under parent.
+// StartReserved creates a process value with args, calls its Init method if it has one, stores it in pid, and
+// runs its Run method under parent. A panic in the first Init reaches the caller.
 // The PID is started when StartReserved returns. Each restart creates a new value from the same args.
 // If parent is stopped, the process does not run. StartReserved panics if pid is already started.
 func StartReserved[T, A any, P interface {
@@ -135,6 +138,9 @@ func StartReserved[T, A any, P interface {
 	create := func() *T {
 		value := new(T)
 		P(value).bind(args)
+		if initializer, ok := any(value).(interface{ Init() }); ok {
+			initializer.Init()
+		}
 		return value
 	}
 	if !pid.value.CompareAndSwap(nil, create()) {
