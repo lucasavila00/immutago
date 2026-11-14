@@ -10,7 +10,7 @@ Package im provides markers and immutable value collections.
 
 Embed Shared or Scoped in a struct to require immutable fields. Run the immutago analyzer on all consumer packages; Go's type checker alone does not enforce the field or collection element rules. Both markers make objects immutable from construction. Whole variables can be rebound to another value.
 
-Pointers to Shared objects can be copied, stored, and returned. Pointers to Scoped objects are restricted to local use and direct typed calls that do not let the pointer escape. Go manages object lifetimes. A value copy preserves pointers to the same immutable objects.
+Pointers to Shared objects can be copied, stored, and returned. Pointers to Scoped objects stay in local bindings or direct typed calls that do not retain them. Owner publishes fresh Scoped objects; its loaded pointers follow the same local\-use rules. These mutation and retention restrictions add to Go's memory safety. Go's garbage collector manages object lifetimes. A value copy preserves pointers to the same immutable objects.
 
 FreezeSlice and FreezeMap share their input storage without copying. The analyzer requires exclusive ownership and rejects later source\-handle uses. Clone returns an independent copy. Their zero values are empty collections. Element and key types must themselves be immutable; the analyzer checks this requirement, including nested types.
 
@@ -116,7 +116,7 @@ Len returns the number of elements in O\(1\) time without allocations.
 
 ## type Owner
 
-Owner stores one pointer to an immutable Scoped object. Its zero value is empty. An Owner value must not be copied.
+Owner stores one pointer to an immutable Scoped object. Declare a slot as a package variable or a direct named field of an unmarked struct. Its zero value is empty. An Owner value must not be copied.
 
 ```go
 type Owner[T any] struct {
@@ -130,7 +130,7 @@ type Owner[T any] struct {
 func (o *Owner[T]) Load() *T
 ```
 
-Load returns the current pointer, or nil if the slot is empty.
+Load returns the current pointer, or nil if the slot is empty. The pointer follows Scoped retention rules and remains valid after a later Store. Go's garbage collector manages its lifetime.
 
 ### func \(\*Owner\[T\]\) Store
 
@@ -142,7 +142,7 @@ Store publishes a freshly constructed object.
 
 ## type Scoped
 
-Scoped marks an immutable struct whose pointers must not escape. Embed it by value. A named field or pointer embedding does not mark the struct.
+Scoped marks an immutable struct whose pointers have restricted retention. Owner is the supported publication slot for fresh Scoped objects. Embed it by value. A named field or pointer embedding does not mark the struct.
 
 ```go
 type Scoped struct{}
