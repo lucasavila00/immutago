@@ -112,7 +112,7 @@ func (p *proof) events(node ast.Node) []event {
 		if _, nested := node.(*ast.FuncLit); nested {
 			return false
 		}
-		if checker.Unevaluated(p.pass.TypesInfo, p.parents, node) {
+		if checker.Unevaluated(p.pass.TypesInfo, p.parents, p.unevaluated, node) {
 			return false
 		}
 		stack = append(stack, node)

@@ -279,7 +279,7 @@ func (c *subsetChecks) matchClosure(literal *ast.FuncLit) {
 		if !ok {
 			return true
 		}
-		if checker.Unevaluated(c.pass.TypesInfo, c.parents, name) {
+		if checker.Unevaluated(c.pass.TypesInfo, c.parents, c.unevaluated, name) {
 			return true
 		}
 		variable, ok := c.pass.TypesInfo.Uses[name].(*types.Var)

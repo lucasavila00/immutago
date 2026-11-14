@@ -13,7 +13,7 @@ func (c *subsetChecks) genericStorage(declaration ast.Node, name *ast.Ident) {
 		if !ok {
 			return true
 		}
-		if checker.Unevaluated(c.pass.TypesInfo, c.parents, expression) {
+		if checker.Unevaluated(c.pass.TypesInfo, c.parents, c.unevaluated, expression) {
 			return false
 		}
 		typ := c.pass.TypesInfo.TypeOf(expression)
