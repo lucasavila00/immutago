@@ -20,7 +20,8 @@
 Enforcement:
 
 - Run the analyzer for each build configuration; `go build` adds no checks.
-- Checked packages currently reject unsafe/reflect imports, cgo, and bodyless functions.
+- Checked packages currently reject unsafe/reflect imports, cgo, and bodyless
+  functions with im or supervise signatures.
 - There are no suppression directives. The two [trust markers](../rules.md#trust-markers)
   above are the explicit user promises.
 - Checked dependency failures reach consumers through package facts.

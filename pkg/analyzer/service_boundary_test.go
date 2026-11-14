@@ -1,7 +1,6 @@
 package analyzer
 
 import (
-	"strings"
 	"testing"
 
 	"golang.org/x/tools/go/analysis"
@@ -40,8 +39,11 @@ func Make() Phantom[Handle] {return Phantom[Handle]{}}`).Pkg
 			if _, err := run(pass); err != nil {
 				t.Fatal(err)
 			}
-			if !strings.Contains(strings.Join(reports, "\n"), "unsupported function without a Go body") {
-				t.Fatalf("service contract did not activate checking: %v", reports)
+			if !protectedPackage(pass) {
+				t.Fatal("service contract did not activate checking")
+			}
+			if len(reports) != 0 {
+				t.Fatalf("ordinary function rejected: %v", reports)
 			}
 		})
 	}

@@ -61,6 +61,12 @@ Checked packages reject these forms; this rejection list is not exhaustive:
 | Rejected form | Use instead |
 | --- | --- |
 | `unsafe`, `reflect`, or cgo | Ordinary typed Go code. Cgo produces one error at the source package line. |
-| `func readCount() int` without a body | `func readCount() int { return 1 }` |
+| A function without a body whose signature contains an im or supervise type | Supply a Go body to check its protected operations. |
 
 An imported package's error includes one cause and a command to see its other errors.
+
+Functions without a body use ordinary Go rules when their compiler-resolved
+receiver, parameters, results, and generic constraints contain no im or supervise
+type. For example, `func cpuID() uint64` and `func checksum(data []byte) uint64`
+can use assembly implementations in a checked package. A declaration such as
+`func read(value *Config) int`, where Config embeds im.Shared, needs a Go body.

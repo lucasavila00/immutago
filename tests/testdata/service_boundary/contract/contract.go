@@ -4,5 +4,5 @@ import "example.com/consumer/api"
 
 var value api.Contract[int]
 
-// missingBody is forbidden because the used alias contract includes a Ref.
-func missingBody()
+// missingBody has a Ref in its argument alias constraint.
+func missingBody(value api.Contract[int])
