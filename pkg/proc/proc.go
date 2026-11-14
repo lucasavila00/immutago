@@ -10,13 +10,18 @@
 // a PID first and start it later with StartReserved.
 //
 // A supervisor runs its children until Stop. If Run returns, the process ends.
-// If Run panics, the supervisor creates a new process value from the same
-// arguments, stores it in the same PID, and runs it after a delay of
-// 1 s that doubles for each restart in the last 5 minutes. A sixth panic in 5
+// If Run panics, the supervisor waits 1 s, doubling the delay for each restart
+// in the last 5 minutes. It then creates a new process value from the same
+// arguments, stores it in the same PID, and calls Run. Calls during the delay
+// still use the old value; calls already in progress finish on that value. A sixth panic in 5
 // minutes stops all children of the supervisor in reverse start order and
 // escalates the panic to the parent supervisor, which restarts the subtree with
 // the same rule. At the root supervisor, the escalation panics again with the
 // last panic value, and the program exits.
+//
+// Stop cancels each Run context and waits for Run to return. Cancellation is
+// cooperative; Run must observe its context. Stop does not wait for direct
+// method calls. Process methods must synchronize their own shared state.
 package proc
 
 import (

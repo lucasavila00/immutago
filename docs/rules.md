@@ -14,6 +14,7 @@ Choose the page for the value you need:
 | [Scoped](scoped.md) | Keep immutable object pointers local or in direct non-retaining calls. |
 | [Owner](owner.md) | Publish fresh Scoped objects through an atomic slot. |
 | [Frozen collections](frozen.md) | Freeze an exclusive native builder, read it, or Clone mutable storage. |
+| [Supervised processes](processes.md) | Run mutable services with typed start arguments and immutable method messages. |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 
 The common lists and each type's lists define the complete supported forms.
@@ -37,5 +38,3 @@ line. Replace `import "C"` and its C calls with checked Go code.
 A dependency diagnostic shows one representative original failure, its source
 location, and a command to check the original package. Other dependency errors
 may exist. Reports from direct package analysis do not change.
-
-[Supervised processes](processes.md) add mutable services with typed start arguments and immutable method parameters and results.

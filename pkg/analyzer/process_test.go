@@ -54,6 +54,9 @@ func checkProcessCases(t *testing.T, reject bool, cases [][2]string) {
 func TestProcessAccepted(t *testing.T) {
 	checkProcessCases(t, false, [][2]string{
 		{"definitions", ``},
+		{"entry point alias", `type RunContext = context.Context
+type Clock struct { proc.Process[proc.None] }
+func (*Clock) Run(RunContext) {}`},
 		{"protected arguments", `func f(s *proc.Supervisor) { limits := im.FreezeMap(map[string]int{"a": 1})
 	proc.Start[ConfigLoader](s, LoaderArgs{Limits: limits, Default: &Snapshot{Version: 1}}) }`},
 		{"bound arguments", `func (l *ConfigLoader) Path() string { args := l.Args(); return args.Path }`},
@@ -110,6 +113,16 @@ func TestProcessRejected(t *testing.T) {
 		{"marker assignment", `func (l *ConfigLoader) rebind() { l.Process = proc.Process[LoaderArgs]{} }`},
 		{"marker address", `func (l *ConfigLoader) marker() { _ = &l.Process }`},
 		{"args method value", `func (l *ConfigLoader) hook() { f := l.Args; _ = f }`},
+		{"missing entry point", `type Idle struct { proc.Process[proc.None] }`},
+		{"wrong entry point parameter", `type Wrong struct { proc.Process[proc.None] }
+func (*Wrong) Run(int) {}`},
+		{"entry point result", `type Wrong struct { proc.Process[proc.None] }
+func (*Wrong) Run(context.Context) int { return 0 }`},
+		{"entry point value receiver", `type Wrong struct { proc.Process[proc.None] }
+func (Wrong) Run(context.Context) {}`},
+		{"promoted entry point", `type Runner struct{}
+func (*Runner) Run(context.Context) {}
+type Wrong struct { proc.Process[proc.None]; Runner }`},
 		{"map arguments", `type P struct{ proc.Process[map[string]int] }`},
 		{"error arguments", `type P struct{ proc.Process[error] }`},
 		{"scoped pointer arguments", `type P struct{ proc.Process[*Config] }`},

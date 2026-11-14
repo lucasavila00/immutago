@@ -1,0 +1,4 @@
+process_entrypoints.go:10:17: a process must declare Run(context.Context) with a pointer receiver and no results
+process_entrypoints.go:13:15: a process must declare Run(context.Context) with a pointer receiver and no results
+process_entrypoints.go:19:16: a process must declare Run(context.Context) with a pointer receiver and no results
+process_entrypoints.go:31:18: a process must declare Run(context.Context) with a pointer receiver and no results

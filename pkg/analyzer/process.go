@@ -7,7 +7,7 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// processType identifies a named struct that embeds im.Process, with one result per type.
+// processType identifies a named struct that embeds proc.Process, with one result per type.
 func (c *subsetChecks) processType(t types.Type) bool {
 	if t == nil {
 		return false
@@ -23,7 +23,7 @@ func (c *subsetChecks) processType(t types.Type) bool {
 	return result
 }
 
-// processDeclaration identifies a named struct that embeds im.Process.
+// processDeclaration identifies a named struct that embeds proc.Process.
 func processDeclaration(t types.Type) bool {
 	_, named := types.Unalias(t).(*types.Named)
 	return named && checker.Process(t)
@@ -63,12 +63,38 @@ func processTypeArgument(object types.Object) bool {
 
 // trustedRuntimeCall identifies the proc calls that take or return process arguments.
 func trustedRuntimeCall(object types.Object) bool {
-	return runtimeObject(object, checker.StartFunction) || runtimeObject(object, checker.StartReservedFunction) ||
-		runtimeObject(object, checker.ArgsMethod)
+	function, ok := object.(*types.Func)
+	if !ok {
+		return false
+	}
+	signature := function.Type().(*types.Signature)
+	if signature.Recv() == nil {
+		return runtimeObject(object, checker.StartFunction) || runtimeObject(object, checker.StartReservedFunction)
+	}
+	return runtimeMethod(object, checker.ProcessMarker, checker.ArgsMethod)
 }
 
 // procMethod identifies the proc.PID.Proc method.
-func procMethod(object types.Object) bool { return runtimeObject(object, checker.ProcMethod) }
+func procMethod(object types.Object) bool {
+	return runtimeMethod(object, checker.PIDType, checker.ProcMethod)
+}
+
+// runtimeMethod checks the declared receiver identity before granting a runtime method its special use.
+func runtimeMethod(object types.Object, receiver, name string) bool {
+	function, ok := object.(*types.Func)
+	if !ok || !runtimeObject(function, name) {
+		return false
+	}
+	signature := function.Type().(*types.Signature)
+	if signature.Recv() == nil {
+		return false
+	}
+	t := signature.Recv().Type()
+	if pointer, ok := t.(*types.Pointer); ok {
+		t = pointer.Elem()
+	}
+	return checker.IsRuntimeType(t, receiver)
+}
 
 // processMarker identifies the exact proc.Process marker type.
 func processMarker(t types.Type) bool { return checker.IsRuntimeType(t, checker.ProcessMarker) }
@@ -121,7 +147,29 @@ func (c *subsetChecks) checkProcessStruct(n *ast.StructType) {
 		c.pass.Reportf(n.Pos(), "processes cannot be generic")
 	case count > 1 || checker.Marked(t):
 		c.pass.Reportf(n.Pos(), "processes embed proc.Process once and no immutable marker")
+	case !processRun(c.pass.TypesInfo.Defs[spec.Name].Type()):
+		c.pass.Reportf(n.Pos(), "a process must declare Run(context.Context) with a pointer receiver and no results")
 	}
+}
+
+// processRun checks the process entry point without accepting a promoted method or an unrelated Run signature.
+func processRun(t types.Type) bool {
+	object, index, _ := types.LookupFieldOrMethod(types.NewPointer(t), false, nil, checker.RunMethod)
+	method, ok := object.(*types.Func)
+	if !ok || len(index) != 1 {
+		return false
+	}
+	signature := method.Type().(*types.Signature)
+	if signature.Variadic() || signature.Params().Len() != 1 || signature.Results().Len() != 0 {
+		return false
+	}
+	pointer, ok := signature.Recv().Type().(*types.Pointer)
+	if !ok || !types.Identical(pointer.Elem(), t) {
+		return false
+	}
+	parameter, ok := types.Unalias(signature.Params().At(0).Type()).(*types.Named)
+	return ok && parameter.Obj().Pkg() != nil && parameter.Obj().Pkg().Path() == "context" &&
+		parameter.Obj().Name() == "Context"
 }
 
 // checkProcessName permits a process type name only as a pointer receiver or a proc type argument.

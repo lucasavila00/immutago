@@ -321,6 +321,10 @@ func TestRestartCreatesNewValue(t *testing.T) {
 		root := NewRoot()
 		pid := Start[restarted](root, label{Name: "cache"})
 		before := pid.Proc()
+		synctest.Wait()
+		if pid.Proc() != before || before.runs != 1 {
+			t.Fatal("PID changed before the restart delay ended")
+		}
 		time.Sleep(time.Second)
 		synctest.Wait()
 		if pid.Proc() == before || before.runs != 1 || pid.Proc().runs != 1 {

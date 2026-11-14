@@ -9,7 +9,16 @@ with a pointer receiver. `A` is the argument type of the process. It must be an
 allowed stored type; use `proc.None` for a process without arguments. Other code
 keeps a `proc.PID[T]` and calls exported methods on the process pointer from
 `pid.Proc()`. Exported methods take and return only allowed stored types, and a
-PID is one of them. Thus no mutable memory crosses a process boundary.
+PID is one of them.
+
+The analyzer checks four rules: fields are selected through the receiver in its
+methods; start arguments and exported method parameters/results use allowed
+stored types; process pointers are used only for the listed direct calls; and
+only `Start` or `StartReserved` creates a process.
+
+Method bodies are ordinary Go. These checks do not isolate mutable state:
+`shared = &p.count` or `p.table = globalMap` can share memory through globals or
+helpers. Methods must follow their API contracts and synchronize shared state.
 
 ```go
 import "github.com/lucasavila00/immutago/pkg/proc"
@@ -45,6 +54,7 @@ process pointer from `Proc()` are rejected. Parentheses preserve these forms.
 | --- | --- |
 | Named, non-generic struct with one `proc.Process[A]` embedded by value; `A` is an allowed stored type; the other fields are ordinary Go without protected storage, or `im.Owner` fields | `type ConfigLoader struct { proc.Process[LoaderArgs]; mu sync.Mutex; current im.Owner[Config] }` |
 | Process without arguments | `type Cache struct { proc.Process[proc.None]; hits int }` |
+| Declare the entry point on the process | `func (l *ConfigLoader) Run(ctx context.Context) { ... }` (no results) |
 | Method with a pointer receiver | `func (l *ConfigLoader) Version() int { return l.version }` |
 | Exported method other than `Run` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (c *Cache) Latest() Entry` |
 | In a method, select a field of the receiver other than the marker | `l.version++`, `l.mu.Lock()`, `defer l.mu.Unlock()`, `l.current.Store(&Config{})` |
@@ -56,7 +66,7 @@ process pointer from `Proc()` are rejected. Parentheses preserve these forms.
 | Call through a PID in a function literal | `defer func() { limiter.Proc().Take() }()` |
 | Start a process with its arguments | `loader := proc.Start[ConfigLoader](root, LoaderArgs{Path: "config.json"})` |
 | Reserve a PID and start it later, for processes that need each other's PID | `pong := proc.Reserve[Pong](); ping := proc.Start[Ping](root, pong); proc.StartReserved(root, pong, ping)` |
-| Name a process type in its declaration, a pointer receiver, or the single type argument of `proc.Start`, `proc.Reserve`, or `proc.PID` | `proc.PID[ConfigLoader]`, `proc.Reserve[Pong]()` |
+| Name a process type in its declaration, a pointer receiver, or the single type argument of `proc.Start`, `proc.StartReserved`, `proc.Reserve`, or `proc.PID` | `proc.PID[ConfigLoader]`, `proc.Reserve[Pong]()` |
 
 Rejected examples are not exhaustive:
 
@@ -66,6 +76,7 @@ Rejected examples are not exhaustive:
 | `func (l *ConfigLoader) Each(visit func(string))` | Return immutable data. |
 | `func (l *ConfigLoader) Load() error` | Return a defined scalar status; `error` is an interface. |
 | `func (l *ConfigLoader) Keys(keys ...string)` | Take an `im.FrozenSlice[string]`. |
+| Missing `Run`, a promoted `Run`, or `Run(int)` | Declare `func (l *ConfigLoader) Run(ctx context.Context)`. |
 | `func (l ConfigLoader) Version() int` | `func (l *ConfigLoader) Version() int` |
 | `p := loader.Proc()`, `saved = loader.Proc()`, `use(loader.Proc())`, `loader.Proc() == nil` | Keep the PID; call the method directly. |
 | `loader.Proc().version`, `loader.Proc().Args()` | Add an exported method. |
@@ -86,9 +97,6 @@ Rejected examples are not exhaustive:
 | `type Bad struct { proc.Process[proc.None]; im.Shared }`, `M proc.Process[proc.None]`, `*proc.Process[proc.None]` | Embed one `proc.Process[A]` by value and no `im` marker. |
 | `type Bad struct { proc.Process[proc.None]; limits im.FrozenMap[string, int] }` | Put immutable data in the arguments, or publish it through an `im.Owner` field. |
 
-These rules do not track field values. A method can still send a pointer to a
-field through a package variable or a channel; that is ordinary Go code.
-
 The runtime behavior is not part of the proof:
 
 - `Start` creates a new process value, gives it the arguments, stores it in the
@@ -97,16 +105,19 @@ The runtime behavior is not part of the proof:
   `StartReserved` starts a reserved PID. `StartReserved` panics if the PID is
   already started.
 - Each run gets a context that ends with that run. If `Run` returns, the process
-  ends. If `Run` panics, the supervisor creates a new value from the same
-  arguments, stores it in the same PID, and runs it after a delay of 1 s that
-  doubles for each restart in the last 5 minutes. `im.Owner` fields start empty
-  again. Calls in progress finish on the old value. A `Run` that panics because
-  a peer PID is not started yet runs again in this way.
+  ends. If `Run` panics, the supervisor waits 1 s, doubling the delay for each
+  restart in the last 5 minutes. It then creates a fresh value from the same
+  arguments, publishes it through the PID, and calls `Run`. `im.Owner` fields
+  start empty again. Calls during the delay use the old value; calls already
+  in progress finish on that value. Reserving PIDs is not a group-start barrier:
+  a call to a peer that has not started can panic and cause this retry.
 - A sixth panic in 5 minutes stops the other children of the supervisor in
   reverse start order and escalates to the parent supervisor, which restarts
   the subtree with the same rule. At the root, the last panic value panics
   again and the program exits.
 - `proc.StartSupervisor(parent)` nests a supervisor. `Stop` begins stopping;
   its channel closes when all children have stopped, last started first.
+  Cancellation is cooperative: `Run` must observe its context. Stop does not
+  wait for direct method calls, and methods must synchronize their shared state.
 - `proctest.NewRoot(t)` fails a test whose process tree does not stop in 5 s.
 
