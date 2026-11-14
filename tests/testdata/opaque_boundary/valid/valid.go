@@ -22,3 +22,17 @@ func Copy() (Model, any) {
 
 // Read reaches the payload through its declaring package.
 func Read(model *Model) int { return api.Read(model.Table) }
+
+// FreezeSlice stores an opaque handle without inspecting its payload.
+func FreezeSlice() im.FrozenSlice[im.Opaque[api.Table]] {
+	values := []im.Opaque[api.Table]{api.New()}
+	frozen := im.FreezeSlice(values)
+	return frozen
+}
+
+// FreezeMap permits the same handle as a frozen map element.
+func FreezeMap() im.FrozenMap[string, im.Opaque[api.Table]] {
+	values := map[string]im.Opaque[api.Table]{"table": api.New()}
+	frozen := im.FreezeMap(values)
+	return frozen
+}
