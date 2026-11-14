@@ -90,18 +90,6 @@ func (c *Cache) Run(ctx context.Context) { _ = c.loader.Proc().Version() }`},
 		{"deferred proc in closure", `func f(pid proc.PID[ConfigLoader]) { defer func() { pid.Proc().Version() }() }`},
 		{"promoted receiver call", `type Locked struct { proc.Process[proc.None]; sync.Mutex; n int }
 func (l *Locked) Run(context.Context) { l.Lock(); l.n++; l.Unlock() }`},
-		{"map arguments", `type P struct{ proc.Process[map[string]int] }
-func (*P) Run(context.Context) {}`},
-		{"error arguments", `type P struct{ proc.Process[error] }
-func (*P) Run(context.Context) {}`},
-		{"ordinary arguments", `type Journal struct { mu sync.Mutex; lines []int }
-type Args struct { Journal *Journal; Every func() int; Loader proc.PID[ConfigLoader] }
-type Fetcher struct { proc.Process[Args]; wake chan struct{} }
-func (f *Fetcher) Init() { f.wake = make(chan struct{}, 1) }
-func (f *Fetcher) Run(ctx context.Context) { j := f.Args().Journal; j.mu.Lock()
-	j.lines = append(j.lines, f.Args().Every()); j.mu.Unlock(); <-f.wake }
-func startFetcher(s *proc.Supervisor, loader proc.PID[ConfigLoader]) proc.PID[Fetcher] {
-	return proc.Start[Fetcher](s, Args{Journal: &Journal{}, Loader: loader}) }`},
 	})
 }
 
@@ -135,12 +123,9 @@ func (Wrong) Run(context.Context) {}`},
 		{"promoted entry point", `type Runner struct{}
 func (*Runner) Run(context.Context) {}
 type Wrong struct { proc.Process[proc.None]; Runner }`},
+		{"map arguments", `type P struct{ proc.Process[map[string]int] }`},
+		{"error arguments", `type P struct{ proc.Process[error] }`},
 		{"scoped pointer arguments", `type P struct{ proc.Process[*Config] }`},
-		{"protected native arguments", `type P struct{ proc.Process[map[string]*Snapshot] }`},
-		{"protected callback arguments", `type P struct{ proc.Process[func(*Config)] }`},
-		{"protected ordinary arguments", `type Journal struct { lines []string }
-type Args struct { Journal *Journal; Default *Snapshot }
-type P struct{ proc.Process[Args] }`},
 		{"two markers", `type Other = proc.Process[Status]; type P struct{ proc.Process[proc.None]; Other }`},
 		{"proc promoted", `type Locked struct { proc.Process[proc.None]; sync.Mutex }
 func (l *Locked) Run(context.Context) {}
@@ -186,34 +171,5 @@ func f(s *proc.Supervisor) { proc.Start[Plain](s, proc.None{}) }`},
 		{"pointer marker", `type P struct{ *proc.Process[proc.None] }`},
 		{"marked process", `type P struct{ proc.Process[proc.None]; im.Shared }`},
 		{"protected process field", `type P struct{ proc.Process[proc.None]; limits im.FrozenMap[string, int] }`},
-	})
-}
-
-// TestProcessInitRejected covers rejected Init declarations and calls.
-func TestProcessInitRejected(t *testing.T) {
-	checkProcessCases(t, true, [][2]string{
-		{"init result", `type P struct { proc.Process[proc.None] }
-func (*P) Run(context.Context) {}
-func (*P) Init() int { return 0 }`},
-		{"init parameter", `type P struct { proc.Process[proc.None] }
-func (*P) Run(context.Context) {}
-func (*P) Init(int) {}`},
-		{"init value receiver", `type P struct { proc.Process[proc.None] }
-func (*P) Run(context.Context) {}
-func (P) Init() {}`},
-		{"promoted init", `type Initializer struct{}
-func (*Initializer) Init() {}
-type P struct { proc.Process[proc.None]; Initializer }
-func (*P) Run(context.Context) {}`},
-		{"init field", `type P struct { proc.Process[proc.None]; Init func() }
-func (*P) Run(context.Context) {}`},
-		{"proc init", `type P struct { proc.Process[proc.None] }
-func (*P) Run(context.Context) {}
-func (*P) Init() {}
-func f(pid proc.PID[P]) { pid.Proc().Init() }`},
-		{"receiver init", `type P struct { proc.Process[proc.None] }
-func (*P) Run(context.Context) {}
-func (*P) Init() {}
-func (p *P) reset() { p.Init() }`},
 	})
 }
