@@ -11,25 +11,24 @@ import (
 
 // subsetChecks matches immutable operations and rejects unsupported transport.
 type subsetChecks struct {
-	slots       map[types.Type]bool
-	holderRefs  map[types.Type]bool
-	queries     checker.Classifier
-	proofs      *checker.Prover
-	pass        *analysis.Pass
-	parents     map[ast.Node]ast.Node
-	unevaluated map[ast.Node]bool
-	exempt      map[ast.Node]bool
-	reported    map[token.Pos]bool
-	owners      map[*types.Var]bool
-	literals    map[*ast.CompositeLit]string
-	processes   map[types.Type]bool
+	slots      map[types.Type]bool
+	holderRefs map[types.Type]bool
+	queries    checker.Classifier
+	proofs     *checker.Prover
+	pass       *analysis.Pass
+	parents    map[ast.Node]ast.Node
+	exempt     map[ast.Node]bool
+	reported   map[token.Pos]bool
+	owners     map[*types.Var]bool
+	literals   map[*ast.CompositeLit]string
+	processes  map[types.Type]bool
 }
 
 // checkSubset checks the supported immutable forms with compiler-resolved types.
 func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checker.Prover) {
 	c := &subsetChecks{pass: pass, proofs: proofs, parents: make(map[ast.Node]ast.Node),
 		owners: owners, exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool),
-		literals: make(map[*ast.CompositeLit]string), unevaluated: make(map[ast.Node]bool)}
+		literals: make(map[*ast.CompositeLit]string)}
 	for _, file := range pass.Files {
 		var stack []ast.Node
 		ast.Inspect(file, func(n ast.Node) bool {
@@ -199,9 +198,6 @@ func (c *subsetChecks) subsetTuple(tuple *types.Tuple, seen map[types.Type]bool)
 
 // expressionType checks resolved types while admitting native builders checked by ownership analysis.
 func (c *subsetChecks) expressionType(expression ast.Expr) {
-	if checker.Unevaluated(c.pass.TypesInfo, c.parents, c.unevaluated, expression) {
-		return
-	}
 	// A builtin signature describes this call, not a user function's return boundary.
 	if name, ok := expression.(*ast.Ident); ok {
 		if c.pass.TypesInfo.Defs[name] != nil {

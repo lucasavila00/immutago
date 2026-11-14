@@ -81,8 +81,8 @@ its enclosing statement. Each step must match an allowed form. Unmatched forms
 fail. [Call matches](../../pkg/analyzer/subset_calls.go) resolve function identity
 and actual parameter types, including tuple results and variadic elements.
 
-Per-pass caches reuse literal type matches and compiler-constant operand
-classification. Each operand still passes its use and statement checks. Storage
+Per-pass caches reuse literal type matches. Each operand still passes its use
+and statement checks, including operands that Go does not evaluate. Storage
 classification follows one selector, index, dereference, or parenthesis chain,
 checking resolved types and tracked builder identities at each step.
 

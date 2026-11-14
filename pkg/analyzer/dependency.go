@@ -60,3 +60,18 @@ func (c *subsetChecks) trustedFunctionType(expression ast.Expr) bool {
 	literal, ok := c.parents[expression].(*ast.FuncLit)
 	return ok && literal.Type == expression && c.trustedValue(literal)
 }
+
+// matchDependencyCall checks the two fixed dependency calls before ordinary transport matching.
+func (c *subsetChecks) matchDependencyCall(
+	call *ast.CallExpr, object types.Object, signature *types.Signature,
+) (bool, string) {
+	if runtimeObject(object, checker.TrustFunction) {
+		if source := c.pass.TypesInfo.TypeOf(call.Args[0]); c.queries.Callable(source) &&
+			types.Identical(source, signature.Params().At(0).Type()) {
+			return true, ""
+		}
+		return true, c.matchCallArguments(call, signature)
+	}
+	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+	return ok && c.dependencyValue(selector), ""
+}

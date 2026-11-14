@@ -4,8 +4,6 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-
-	"github.com/lucasavila00/immutago/internal/checker"
 )
 
 // discover indexes parents and all local definitions before selecting ownership participants.
@@ -71,9 +69,6 @@ func (p *proof) body(node ast.Node) *ast.BlockStmt {
 func (p *proof) freezeInput(node ast.Node) bool {
 	call, ok := node.(*ast.CallExpr)
 	if !ok || !freezing(p.pass, call) || len(call.Args) != 1 {
-		return true
-	}
-	if checker.Unevaluated(p.pass.TypesInfo, p.parents, p.unevaluated, call) {
 		return true
 	}
 	expression := ast.Unparen(call.Args[0])

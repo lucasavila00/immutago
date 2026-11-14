@@ -19,9 +19,6 @@ func localReference(t types.Type) bool {
 
 // operationExpression separates runtime operands from compiler type and field metadata.
 func (c *subsetChecks) operationExpression(expression ast.Expr) bool {
-	if checker.Unevaluated(c.pass.TypesInfo, c.parents, c.unevaluated, expression) {
-		return false
-	}
 	if selector, ok := c.parents[expression].(*ast.SelectorExpr); ok && selector.Sel == expression {
 		return false
 	}

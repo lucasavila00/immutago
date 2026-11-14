@@ -136,14 +136,6 @@ func TrustedField(field *types.Var) bool
 
 TrustedField identifies a named proc.UncheckedDependency field. Only a marked process argument struct can store it.
 
-## func Unevaluated
-
-```go
-func Unevaluated(info *types.Info, parents map[ast.Node]ast.Node, cache map[ast.Node]bool, node ast.Node) bool
-```
-
-Unevaluated identifies operands of compiler\-proved constant expressions. The cache belongs to one pass with fixed type information and parent links. Runtime operation and ownership checks use the same evaluation boundary.
-
 ## type Classifier
 
 Classifier caches protected storage and callback queries for one analysis pass. Its zero value is ready for use. Types must not change after their first query. A Classifier must not be used by concurrent passes.
