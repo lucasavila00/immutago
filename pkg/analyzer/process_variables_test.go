@@ -82,6 +82,13 @@ func (c code) Error() string { return string(c) }
 var errMissing error
 func init() { errMissing = code("missing") }
 func (w *Worker) missing(err error) bool { return errors.Is(err, errMissing) }`},
+		{"empty struct of another package", `func (w *Worker) Body() bool { return http.NoBody == http.NoBody }`},
+		{"empty struct", `type marker struct{}
+type nested struct{ marker; other struct{} }
+func (marker) name() string { return "m" }
+var m marker
+var n nested
+func (w *Worker) Name() string { _ = n; return m.name() }`},
 		{"constant", `const size = 4
 func (w *Worker) Size() int { return size }`},
 		{"function call", `func helper() int { return 1 }
@@ -150,31 +157,6 @@ func (w *Worker) missing(err error) bool { return err == errMissing }`},
 func (c code) Error() string { return string(c) }
 var errMissing error = code("missing")
 func (w *Worker) check() error { return errMissing }`},
-		{"atomic value", `var current atomic.Value
-func (w *Worker) Load() { _ = current.Load() }`},
-		{"atomic pointer", `type Plain struct{ N int }
-var current atomic.Pointer[Plain]
-func (w *Worker) Load() int { return current.Load().N }`},
-		{"atomic uintptr", `var hits atomic.Uintptr
-func (w *Worker) Count() uintptr { return hits.Add(1) }`},
-		{"exported atomic", `var Hits atomic.Int64
-func (w *Worker) Count() int64 { return Hits.Add(1) }`},
-		{"atomic address elsewhere", `var hits atomic.Int64
-func pointer() *atomic.Int64 { return &hits }
-func (w *Worker) Count() int64 { return hits.Add(1) }`},
-		{"atomic method value elsewhere", `var hits atomic.Int64
-var add = hits.Add
-func (w *Worker) Count() int64 { return hits.Load() }`},
-		{"atomic assignment elsewhere", `var hits atomic.Int64
-func reset() { hits = atomic.Int64{} }
-func (w *Worker) Count() int64 { return hits.Load() }`},
-		{"atomic copy in method", `var hits atomic.Int64
-func (w *Worker) Count() int64 { p := &hits; return p.Load() }`},
-		{"atomic in struct", `type counters struct{ hits atomic.Int64 }
-var all counters
-func (w *Worker) Count() int64 { return all.hits.Add(1) }`},
-		{"atomic array", `var hits [2]atomic.Int64
-func (w *Worker) Count() int64 { return hits[0].Add(1) }`},
 		{"address", `var limit = 10
 func (w *Worker) Pointer() { p := &limit; _ = p }`},
 		{"scalar assignment in method", `var limit = 10
@@ -217,6 +199,41 @@ func (r *Reader) Run(ctx context.Context) { _ = seen["a"] }`},
 		{"holder variable", `type Holder struct { Current im.Owner[Config] }
 var holder Holder
 func (w *Worker) Value() { holder.Current.Store(&Config{}) }`},
+	})
+}
+
+// TestProcessAtomicsRejected covers atomics that a process method cannot use.
+func TestProcessAtomicsRejected(t *testing.T) {
+	checkProcessVariableCases(t, true, [][2]string{
+		{"atomic value", `var current atomic.Value
+func (w *Worker) Load() { _ = current.Load() }`},
+		{"atomic pointer", `type Plain struct{ N int }
+var current atomic.Pointer[Plain]
+func (w *Worker) Load() int { return current.Load().N }`},
+		{"atomic uintptr", `var hits atomic.Uintptr
+func (w *Worker) Count() uintptr { return hits.Add(1) }`},
+		{"exported atomic", `var Hits atomic.Int64
+func (w *Worker) Count() int64 { return Hits.Add(1) }`},
+		{"atomic address elsewhere", `var hits atomic.Int64
+func pointer() *atomic.Int64 { return &hits }
+func (w *Worker) Count() int64 { return hits.Add(1) }`},
+		{"atomic method value elsewhere", `var hits atomic.Int64
+var add = hits.Add
+func (w *Worker) Count() int64 { return hits.Load() }`},
+		{"atomic assignment elsewhere", `var hits atomic.Int64
+func reset() { hits = atomic.Int64{} }
+func (w *Worker) Count() int64 { return hits.Load() }`},
+		{"atomic copy in method", `var hits atomic.Int64
+func (w *Worker) Count() int64 { p := &hits; return p.Load() }`},
+		{"atomic in struct", `type counters struct{ hits atomic.Int64 }
+var all counters
+func (w *Worker) Count() int64 { return all.hits.Add(1) }`},
+		{"atomic array", `var hits [2]atomic.Int64
+func (w *Worker) Count() int64 { return hits[0].Add(1) }`},
+		{"struct with one scalar beside empty fields", `type marker struct{}
+type mixed struct{ marker; n int }
+var x mixed
+func (w *Worker) Value() int { return x.n }`},
 	})
 }
 

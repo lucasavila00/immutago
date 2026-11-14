@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"io"
 	"sync/atomic"
@@ -80,4 +81,11 @@ func (r *RateKeeper) done(err error) bool {
 		return true
 	}
 	return errors.Is(err, io.ErrClosedPipe)
+}
+
+// Encode writes the base in little-endian byte order.
+func (r *RateKeeper) Encode() [8]byte {
+	var out [8]byte
+	binary.LittleEndian.PutUint64(out[:], uint64(r.base))
+	return out
 }

@@ -4,6 +4,8 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+
+	"github.com/lucasavila00/immutago/internal/checker"
 )
 
 var scalarAtomics = map[string]bool{"Bool": true, "Int32": true, "Int64": true, "Uint32": true, "Uint64": true}
@@ -194,4 +196,27 @@ func (c *checks) checkForeignErrorChange(node ast.Node) {
 				" of another package; declare a variable in this package")
 		}
 	}
+}
+
+// emptyStruct identifies a struct type whose fields are all empty structs, so a variable of it holds no state.
+// It does not look inside im and proc types, whose layout is the library's own.
+func emptyStruct(t types.Type) bool {
+	if named, ok := types.Unalias(t).(*types.Named); ok && (libraryObject(named.Obj()) || runtimeType(named.Obj())) {
+		return false
+	}
+	structure, ok := t.Underlying().(*types.Struct)
+	if !ok {
+		return false
+	}
+	for field := range structure.Fields() {
+		if !emptyStruct(field.Type()) {
+			return false
+		}
+	}
+	return true
+}
+
+// runtimeType identifies a type of package proc.
+func runtimeType(name *types.TypeName) bool {
+	return name.Pkg() != nil && name.Pkg().Path() == checker.RuntimePath
 }

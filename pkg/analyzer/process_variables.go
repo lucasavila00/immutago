@@ -78,12 +78,14 @@ func (c *checks) variableName(variable *types.Var) string {
 }
 
 // processVariableReason returns why a function of this package cannot use a package variable in a process.
-// It accepts an Owner slot, a scalar atomic counter of this package, a compared error variable, and an
+// It accepts an Owner slot, an empty struct, a scalar atomic counter of this package, a compared error variable, and an
 // unexported variable of this package whose type is an allowed stored type and that only package
 // initialization changes.
 func (c *checks) processVariableReason(id *ast.Ident, variable *types.Var) string {
 	switch {
 	case checker.IsLibraryType(variable.Type(), "Owner"):
+		return ""
+	case emptyStruct(variable.Type()):
 		return ""
 	case atomicType(variable.Type()):
 		return c.atomicReason(variable)
