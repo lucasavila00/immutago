@@ -139,18 +139,18 @@ type Dispatcher struct {
 
 // Run starts the groups of the current variants, because a restart starts with no groups, and waits until ctx ends.
 func (d *Dispatcher) Run(ctx context.Context) {
-	d.Apply(d.Args().Config.Proc().Names())
+	d.Refresh()
 	<-ctx.Done()
 }
 
-// Apply starts the groups of new variants, stops the groups of removed variants, and returns the group count.
-func (d *Dispatcher) Apply(variants im.FrozenSlice[string]) int {
+// Refresh reads the current configuration, starts new groups, stops removed groups, and returns the group count.
+func (d *Dispatcher) Refresh() int {
+	d.mu.Lock()
 	wanted := make(map[string]bool)
-	for _, name := range variants.All() {
+	for _, name := range d.Args().Config.Proc().Names().All() {
 		wanted[name] = true
 	}
 	var removed []*proc.Supervisor
-	d.mu.Lock()
 	if d.groups == nil {
 		d.groups = make(map[string]group)
 	}
@@ -195,4 +195,18 @@ func (d *Dispatcher) Load(variant string, version int) bool {
 	}
 	g.loader.Proc().Load(version)
 	return true
+}
+
+// useDispatcher starts two variant groups, requests one version, then removes one group.
+func useDispatcher(root *proc.Supervisor) {
+	config := proc.Start[VariantConfig](root, proc.None{})
+	initial := im.FreezeSlice([]string{"blue", "green"})
+	config.Proc().Set(initial)
+	dispatcher := proc.Start[Dispatcher](root, DispatcherArgs{Config: config})
+	dispatcher.Proc().Refresh()
+	dispatcher.Proc().Load("blue", 1)
+
+	next := im.FreezeSlice([]string{"green"})
+	config.Proc().Set(next)
+	dispatcher.Proc().Refresh()
 }

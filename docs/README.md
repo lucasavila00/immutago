@@ -7,6 +7,7 @@
 - [Owner](owner.md): replace the current Scoped object while readers use the previous one.
 - [Frozen collections](frozen.md): builders, Freeze, reads, and Clone.
 - [Supervised processes](processes.md): typed start arguments and direct calls.
+- [Child processes](process-children.md): start worker groups and change them while a process runs.
 - [Performance](performance.md): operation costs.
 
 ## Look up a rule or API
