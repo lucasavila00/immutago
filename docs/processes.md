@@ -92,11 +92,11 @@ proc.Start[Fetcher](root, FetcherArgs{
 })
 ```
 
-`proc.Trust(v)` is a promise from the caller: several processes can use `v` at
-the same time. The value is not immutable. The checker does not prove the
-promise. It only makes sure that the promise is written in the code, so that
-reviewers can find each `proc.Trust` call. `proc.UncheckedDependency` is the only way to
-give a process mutable data that the checker does not prove.
+The dependency is unchecked: the checker does not look inside; the caller's
+promise that the value is safe for concurrent use. `proc.Trust(v)` writes that
+promise in the code, so that reviewers can find each one. The value is not
+immutable. `proc.UncheckedDependency` is the only way to give a process mutable
+data that the checker does not prove.
 
 A false promise is a data race that the checker cannot find. Without
 `proc.Trust`, the checker rejects a map in the start arguments. With it, the
