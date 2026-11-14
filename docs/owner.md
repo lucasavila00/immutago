@@ -1,10 +1,4 @@
-# Owner publication slots
-
-[Language guide](rules.md) · [Scoped](scoped.md) · [Common forms](common-forms.md)
-
-Use `im.Owner[T]` to publish a new Scoped object and read the current one.
-`Store` replaces the current pointer. It does not change an object that a reader
-already loaded.
+# Owner
 
 ```go
 type ScopedPoint struct { im.Scoped; X int }
@@ -26,8 +20,8 @@ these methods from different goroutines.
 An Owner field or variable is a **slot**. A struct with a slot field, such as
 `Loader`, is a **holder**. These allowed forms are complete; other slot and
 holder operations are rejected.
-Parentheses preserve these forms. Exported package slots can also use a
-package qualifier.
+Parentheses are allowed. An exported Owner variable can also be used through
+its package name, such as `state.Current.Load()`.
 
 | Allowed form | Example |
 | --- | --- |
@@ -51,19 +45,18 @@ func start() {
 }
 ```
 
-A holder is an unmarked struct with a direct named slot field.
-[Processes](processes.md) follow their own receiver rules instead. The slot fields
-and zero holder variables in the table are allowed. Slot and holder values
-cannot be copied.
+[Processes](processes.md) have separate rules for methods that use Owner fields.
+Do not copy an Owner or a struct that contains one; pass a pointer to the struct.
 
-Holder pointers such as `*Loader` cannot be stored in fields, containers, or
-package variables, returned, or captured. Calls with them require direct named
-non-generic functions and fixed, concrete parameters. Explicit `*im.Owner[T]`
-values and direct `go` or `defer` slot calls are unsupported.
+Keep `*Loader` pointers in local variables. Pass them to named functions with
+a parameter such as `l *Loader`. Do not save them in fields, slices, maps,
+package variables, or closures, and do not return them. Do not use generic or
+variadic functions for these calls. Pass `*Loader`, not `*im.Owner[T]`.
 
-A loaded pointer follows all [Scoped pointer rules](scoped.md). Load it into a
-local before use. A Store argument must be the direct `&T{...}` or `new(T)`
-construction for the slot's exact `T`.
+A pointer returned by Load follows the [Scoped rules](scoped.md). Save the
+result in a local variable before use. For `im.Owner[T]`, call Store with
+`&T{...}` or `new(T)`, not an existing pointer. Call Load and Store normally,
+without `go` or `defer`.
 
 ## Rejected examples
 

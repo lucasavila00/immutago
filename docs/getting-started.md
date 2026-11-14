@@ -1,7 +1,5 @@
 # Get started
 
-[Documentation](README.md) · [Language guide](rules.md) · [API](../pkg/im/readme.md)
-
 In a Go module, add the library and install the checker:
 
 ```sh
@@ -46,13 +44,19 @@ Choose [Shared](shared.md) to save or return pointers. Choose [Scoped](scoped.md
 to keep pointers local, or [Owner](owner.md) to publish new Scoped objects.
 The [language guide](rules.md) lists the complete allowed forms.
 
-## Project checks
+## Check in CI
 
-Run `immutago ./...` in CI for each build configuration you ship. The
-[package boundary](rules.md#package-boundary) selects checked dependencies and
-ordinary APIs that use normal Go contracts. An ordinary Go build does not run
-the analyzer.
+```sh
+immutago ./...
+```
 
-For vet integration, use `go vet -vettool=/absolute/path/to/immutago ./...`.
-The normal CLI fails on diagnostics. Its standard `-json` mode can exit
-successfully with findings; do not use that exit status alone as a check.
+The command fails if it finds errors. `go build` does not run the checker.
+Run it for each platform and set of build tags you use.
+
+Or use `go vet`:
+
+```sh
+go vet -vettool=/absolute/path/to/immutago ./...
+```
+
+Do not use `-json` as a CI pass/fail check: it can return exit code 0 with errors.
