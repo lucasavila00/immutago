@@ -22,6 +22,8 @@ const (
     ProcMethod            = "Proc"
     ArgsMethod            = "Args"
     RunMethod             = "Run"
+    DependencyType        = "Dependency"
+    ValueMethod           = "Value"
 )
 ```
 
@@ -117,6 +119,14 @@ func Shared(t types.Type) bool
 
 Shared reports the presence of an embedded im.Shared value, not type validity.
 
+## func TrustedField
+
+```go
+func TrustedField(field *types.Var) bool
+```
+
+TrustedField identifies a named proc.Dependency field, which only a marked process argument struct can store.
+
 ## func Unevaluated
 
 ```go
@@ -160,6 +170,14 @@ type Prover struct {
     // contains filtered or unexported fields
 }
 ```
+
+### func \(\*Prover\) ArgumentReason
+
+```go
+func (p *Prover) ArgumentReason(t types.Type) string
+```
+
+ArgumentReason proves a process argument type. It accepts proc.Dependency as the type, or as a TrustedField of a struct with exactly one marker. Every other component must be an allowed stored type.
 
 ### func \(\*Prover\) Reason
 

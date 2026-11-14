@@ -26,6 +26,32 @@ func StartReserved[T, A any, P interface {
 
 StartReserved creates a process value with args, stores it in pid, and runs its Run method under parent. The PID is started when StartReserved returns. Each restart creates a new value from the same args. If parent is stopped, the process does not run. StartReserved panics if pid is already started.
 
+## type Dependency
+
+Dependency holds a value that the caller trusts to be safe for concurrent use by several processes, for example a logger, an HTTP client, a factory function, or a test fake. The value is not immutable. The analyzer does not prove this trust. It permits Dependency only as a process argument type or as a named field of a marked process argument struct.
+
+```go
+type Dependency[T any] struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func Trust
+
+```go
+func Trust[T any](v T) Dependency[T]
+```
+
+Trust wraps v. The call is the caller's promise that several processes can use v at the same time.
+
+### func \(Dependency\[T\]\) Value
+
+```go
+func (d Dependency[T]) Value() T
+```
+
+Value returns the trusted value.
+
 ## type None
 
 None is the argument type of a process without arguments.

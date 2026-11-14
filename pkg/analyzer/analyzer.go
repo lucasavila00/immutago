@@ -232,6 +232,13 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 				"\n  fix: embed im.Shared or im.Scoped; remove the marker field name or pointer")
 			continue
 		}
+		if checker.TrustedField(field) {
+			if !marked {
+				c.report(fieldPos, "proc.Dependency field "+field.Name()+" is allowed only in a marked process argument struct"+
+					"\n  owner: "+diagnosticType(t)+"\n  fix: move the field into the argument struct of the process")
+			}
+			continue
+		}
 		if marked {
 			if reason := c.proofs.Reason(ft); reason != "" {
 				c.report(fieldPos, "immutable field "+field.Name()+": "+reason+

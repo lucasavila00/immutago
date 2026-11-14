@@ -199,6 +199,9 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 	if selection.Kind() == types.MethodVal && (c.processValue(selection.Recv()) || procMethod(selection.Obj())) {
 		return ""
 	}
+	if c.dependencyValue(selector) {
+		return ""
+	}
 	if !c.exactCollectionMethod(selector) {
 		return "user-defined methods with immutable storage are unsupported"
 	}
