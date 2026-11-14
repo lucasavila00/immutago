@@ -45,13 +45,27 @@ func f(p *V, a [1][1]int) {
  _ = ((builder))[0]
  _ = ((a))[0][0]
 }`)
+	owner, expressions := projectionTestInputs(pass.Files[0], pass.TypesInfo)
+	if owner == nil || len(expressions) != 4 {
+		t.Fatalf("missing builder or projection expressions: %v, %d", owner, len(expressions))
+	}
+	checks := &subsetChecks{pass: pass, owners: map[*types.Var]bool{owner: true}}
+	for i, expression := range expressions {
+		if got, want := checks.protectedStorage(expression), i != 3; got != want {
+			t.Errorf("projection %d: got %t, want %t", i, got, want)
+		}
+	}
+}
+
+// projectionTestInputs finds the builder definition and the four discarded reads.
+func projectionTestInputs(file *ast.File, info *types.Info) (*types.Var, []ast.Expr) {
 	var owner *types.Var
 	var expressions []ast.Expr
-	ast.Inspect(pass.Files[0], func(node ast.Node) bool {
+	ast.Inspect(file, func(node ast.Node) bool {
 		switch node := node.(type) {
 		case *ast.Ident:
 			if node.Name == "builder" {
-				if variable, ok := pass.TypesInfo.Defs[node].(*types.Var); ok {
+				if variable, ok := info.Defs[node].(*types.Var); ok {
 					owner = variable
 				}
 			}
@@ -64,13 +78,5 @@ func f(p *V, a [1][1]int) {
 		}
 		return true
 	})
-	if owner == nil || len(expressions) != 4 {
-		t.Fatalf("missing builder or projection expressions: %v, %d", owner, len(expressions))
-	}
-	checks := &subsetChecks{pass: pass, owners: map[*types.Var]bool{owner: true}}
-	for i, expression := range expressions {
-		if got, want := checks.protectedStorage(expression), i != 3; got != want {
-			t.Errorf("projection %d: got %t, want %t", i, got, want)
-		}
-	}
+	return owner, expressions
 }
