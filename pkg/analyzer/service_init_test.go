@@ -91,7 +91,8 @@ func TestServiceStartBindings(t *testing.T) {
 		`_, err := supervise.Start[Initializer](s, supervise.NoArgs{}); _ = err`,
 		`ref, _ := (supervise.Start[Initializer](s, supervise.NoArgs{})); _ = ref`,
 		`var ref, err = supervise.Start[Initializer](s, supervise.NoArgs{}); _ = ref; _ = err`,
-		`ref, err := supervise.Start[Initializer](s, supervise.NoArgs{}); other, err := supervise.Start[Initializer](s, supervise.NoArgs{})
+		`ref, err := supervise.Start[Initializer](s, supervise.NoArgs{})
+other, err := supervise.Start[Initializer](s, supervise.NoArgs{})
 		_ = ref; _ = other; _ = err`,
 		`ref := supervise.Reserve[Initializer](); err := supervise.StartReserved(s, ref, supervise.NoArgs{}); _ = err`,
 		`var ref supervise.Ref[Initializer]; var err error

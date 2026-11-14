@@ -76,18 +76,22 @@ func f(s *supervise.Group) { pong := supervise.Reserve[Pong](); ping, _ := super
 func f(p Peers) int { return p.ConfigLoader.Current().Version() }`},
 		{"bound marked Ref", `type Peers struct { im.Shared; ConfigLoader supervise.Ref[ConfigLoader] }
 func f(p Peers) int { loader := p.ConfigLoader; return loader.Current().Version() }`},
-		{"Ref containers", `var refs []supervise.Ref[ConfigLoader]; type Plain struct { ConfigLoader supervise.Ref[ConfigLoader] }`},
+		{"Ref containers", `var refs []supervise.Ref[ConfigLoader]
+type Plain struct { ConfigLoader supervise.Ref[ConfigLoader] }`},
 		{"shared result", `func (l *ConfigLoader) Latest() *Snapshot { return &Snapshot{Version: l.version} }
 func f(ref supervise.Ref[ConfigLoader]) int { s := ref.Current().Latest(); return s.Version }`},
-		{"immutable parameters", `func (l *ConfigLoader) Merge(limits im.FrozenMap[string, int], peer supervise.Ref[ConfigLoader],
+		{"immutable parameters", `func (l *ConfigLoader) Merge(
+	limits im.FrozenMap[string, int], peer supervise.Ref[ConfigLoader],
 	value Config, status Status) [2]Status { return [2]Status{status} }`},
-		{"service with Ref field", `type Cache struct { supervise.Service[supervise.NoArgs]; loader supervise.Ref[ConfigLoader] }
+		{"service with Ref field", `type Cache struct {
+	supervise.Service[supervise.NoArgs]; loader supervise.Ref[ConfigLoader] }
 func (c *Cache) Run(ctx context.Context) { _ = c.loader.Current().Version() }`},
 		{"unexported receiver call", `func (l *ConfigLoader) Bump() { l.bump() }`},
 		{"unexported native result", `func (l *ConfigLoader) table() map[string]int { return map[string]int{} }`},
 		{"slot load", `func (l *ConfigLoader) Level() int { c := l.current.Load(); if c == nil { return 0 }
 	return c.Version }`},
-		{"deferred Current in closure", `func f(ref supervise.Ref[ConfigLoader]) { defer func() { ref.Current().Version() }() }`},
+		{"deferred Current in closure", `func f(ref supervise.Ref[ConfigLoader]) {
+	defer func() { ref.Current().Version() }() }`},
 		{"promoted receiver call", `type Locked struct { supervise.Service[supervise.NoArgs]; sync.Mutex; n int }
 func (l *Locked) Run(context.Context) { l.Lock(); l.n++; l.Unlock() }`},
 	})
@@ -126,7 +130,8 @@ type Wrong struct { supervise.Service[supervise.NoArgs]; Runner }`},
 		{"map arguments", `type P struct{ supervise.Service[map[string]int] }`},
 		{"error arguments", `type P struct{ supervise.Service[error] }`},
 		{"scoped pointer arguments", `type P struct{ supervise.Service[*Config] }`},
-		{"two markers", `type Other = supervise.Service[Status]; type P struct{ supervise.Service[supervise.NoArgs]; Other }`},
+		{"two markers", `type Other = supervise.Service[Status]
+type P struct{ supervise.Service[supervise.NoArgs]; Other }`},
 		{"Current promoted", `type Locked struct { supervise.Service[supervise.NoArgs]; sync.Mutex }
 func (l *Locked) Run(context.Context) {}
 func f(ref supervise.Ref[Locked]) { ref.Current().Lock() }`},
@@ -149,7 +154,8 @@ func f(ref supervise.Ref[Locked]) { ref.Current().Lock() }`},
 		{"user generic argument", `func id[T any]() {}; func f() { id[ConfigLoader]() }`},
 		{"method expression", `var m = (*ConfigLoader).Version`},
 		{"type assertion", `func f(x any) { _, _ = x.(*ConfigLoader) }`},
-		{"explicit start arguments", `func f(s *supervise.Group) { supervise.Start[ConfigLoader, LoaderArgs](s, LoaderArgs{}) }`},
+		{"explicit start arguments", `func f(s *supervise.Group) {
+	supervise.Start[ConfigLoader, LoaderArgs](s, LoaderArgs{}) }`},
 		{"receiver copy", `func (l *ConfigLoader) copy() { other := l; _ = other }`},
 		{"receiver argument", `func use(any) {}; func (l *ConfigLoader) send() { use(l) }`},
 		{"receiver comparison", `func (l *ConfigLoader) empty() bool { return l == nil }`},
@@ -162,7 +168,8 @@ func f(ref supervise.Ref[Locked]) { ref.Current().Lock() }`},
 		{"other service unexported", `func (l *ConfigLoader) poke(ref supervise.Ref[ConfigLoader]) { ref.Current().bump() }`},
 		{"Ref of scalar", `var r supervise.Ref[int]`},
 		{"reserve of scalar", `var r = supervise.Reserve[int]()`},
-		{"start of plain struct", `type Plain struct{ *supervise.Service[supervise.NoArgs] }; func (*Plain) Run(context.Context) {}
+		{"start of plain struct", `type Plain struct{ *supervise.Service[supervise.NoArgs] }
+func (*Plain) Run(context.Context) {}
 func f(s *supervise.Group) { supervise.Start[Plain](s, supervise.NoArgs{}) }`},
 		{"generic Ref", `func f[T any](ref supervise.Ref[T]) {}`},
 		{"anonymous service", `var x struct{ supervise.Service[supervise.NoArgs] }`},
@@ -204,7 +211,8 @@ func (p *Pool) Grow() { supervise.Start[Worker](p.Children(), WorkerArgs{}) }`},
 func (p *Pool) Add() { p.sup = supervise.StartGroup(p.Children()); supervise.Start[Worker](p.sup, WorkerArgs{}) }
 func (p *Pool) Remove() { <-p.sup.Stop() }`},
 		{"method local", poolDefinitions + `func (p *Pool) Run(context.Context) {}
-func (p *Pool) grow(n int) { sup := p.Children(); for i := range n { supervise.Start[Worker](sup, WorkerArgs{ID: i}) } }`},
+func (p *Pool) grow(n int) { children := p.Children()
+	for i := range n { supervise.Start[Worker](children, WorkerArgs{ID: i}) } }`},
 		{"user method", poolDefinitions + `func (p *Pool) Run(context.Context) {}
 type Own struct { supervise.Service[supervise.NoArgs] }
 func (*Own) Run(context.Context) {}
@@ -237,7 +245,8 @@ func f(ref supervise.Ref[Pool]) { supervise.Start[Worker](ref.Current().Children
 		{"marker", poolDefinitions + `func (p *Pool) Run(context.Context) {
 	supervise.Start[Worker](p.Service.Children(), WorkerArgs{}) }`},
 		{"plain marker", poolDefinitions + `func (p *Pool) Run(context.Context) {}
-func f(s *supervise.Group) { var m supervise.Service[supervise.NoArgs]; supervise.Start[Worker](m.Children(), WorkerArgs{}) }`},
+func f(s *supervise.Group) { var m supervise.Service[supervise.NoArgs]
+	supervise.Start[Worker](m.Children(), WorkerArgs{}) }`},
 		{"method expression", poolDefinitions + `func (p *Pool) Run(context.Context) {}
 var get = (*supervise.Service[int]).Children`},
 		{"var local", poolDefinitions + `func (p *Pool) Run(context.Context) {

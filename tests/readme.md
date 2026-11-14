@@ -13,6 +13,12 @@ Consumer-only dependency tests require failures to propagate through imports,
 including wrappers. Runtime tests check storage transfer, Clone independence,
 and unchanged shared objects after pointer rebinding.
 
+The [service guide program](testdata/accepted/servicedoc/main.go) runs through
+the CLI and vet in `TestCLI/service_guide`. That test also checks its output
+and runs the [background refresh test](testdata/accepted/servicedoc/main_test.go)
+with the race detector. The [pool fixture](testdata/accepted/service/pool_init.go)
+checks the child guide's initialization example through the CLI.
+
 [Test-main tests](testmain_test.go) check generated runners and real internal and
 external test files through the CLI and vet. A forged generated header is checked.
 

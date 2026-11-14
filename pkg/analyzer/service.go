@@ -314,7 +314,8 @@ func (c *subsetChecks) checkServiceExpression(expression ast.Expr) {
 		return
 	}
 	if c.serviceCreation(expression) {
-		c.pass.Reportf(expression.Pos(), "service %[1]s is created outside supervise.Start; use supervise.Start[%[1]s](parent, args)",
+		c.pass.Reportf(expression.Pos(), "service %[1]s is created outside supervise.Start; "+
+			"use supervise.Start[%[1]s](parent, args)",
 			serviceName(t))
 		return
 	}
@@ -469,7 +470,8 @@ func (c *checks) checkServiceMethod(declaration *ast.FuncDecl) {
 func (c *checks) checkRuntimeArguments(ident *ast.Ident, obj types.Object, instance types.Instance) {
 	argument := instance.TypeArgs.At(0)
 	if serviceTypeArgument(obj) && !serviceDeclaration(argument) {
-		c.report(ident.Pos(), "supervise.Start, supervise.StartReserved, supervise.Reserve, and supervise.Ref need a service type argument")
+		c.report(ident.Pos(), "supervise.Start, supervise.StartReserved, supervise.Reserve, "+
+			"and supervise.Ref need a service type argument")
 	}
 	if runtimeObject(obj, checker.ServiceMarker) {
 		if reason := c.proofs.ArgumentReason(argument); reason != "" {

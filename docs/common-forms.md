@@ -183,7 +183,7 @@ Use the operations above inside these statement forms:
 | --- | --- |
 | Declare one variable or assign one destination | `var value SharedPoint`, `value := SharedPoint{X: 1}`, `value = SharedPoint{X: 2}` |
 | Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
-| Bind Start results to two local names or blanks with `:=` or `=` | `ref, err := supervise.Start[Worker](root, args)`; see [service forms](service-forms.md#start-services). |
+| Bind Start results to two local names or blanks with `:=` or `=` | `ref, err := supervise.Start[Worker](root, args)`; see [service forms](service-forms.md#startup-and-references). |
 | Bind a map reader's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |

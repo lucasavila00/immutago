@@ -72,6 +72,16 @@ func TestCLI(t *testing.T) {
 		output = runCommand(t, dir, true, "go", "run", "./serviceinit")
 		checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/serviceinit/stdout.txt"), output)
 	})
+	t.Run("service_guide", func(t *testing.T) {
+		dir := consumerModule(t, root, "accepted")
+		output := runCommand(t, dir, true, binary, "./servicedoc")
+		checkFixtureSnapshots(t, root, "accepted/servicedoc", output)
+		output = runCommand(t, dir, true, "go", "vet", "-vettool="+binary, "./servicedoc")
+		checkFixtureSnapshots(t, root, "accepted/servicedoc", output)
+		output = runCommand(t, filepath.Join(dir, "servicedoc"), true, "go", "run", ".")
+		checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/servicedoc/stdout.txt"), output)
+		runCommand(t, filepath.Join(dir, "servicedoc"), true, "go", "test", "-race", "-count=1", ".")
+	})
 	t.Run("invalid_dependencies", func(t *testing.T) {
 		checkInvalidDependencies(t, root, binary)
 	})

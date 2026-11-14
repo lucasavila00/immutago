@@ -62,7 +62,8 @@ func f() Args { return Args{} }`},
 func f() Args { return Args{} }`},
 		{"explicit callback type", `func source() *Snapshot { return &Snapshot{} }
 func f() { d := supervise.AssumeConcurrentSafe[func() *Snapshot](source); _ = d }`},
-		{"callback literal", `func f() { d := supervise.AssumeConcurrentSafe(func() *Snapshot { return &Snapshot{} }); _ = d }`},
+		{"callback literal", `func f() {
+d := supervise.AssumeConcurrentSafe(func() *Snapshot { return &Snapshot{} }); _ = d }`},
 		{"protected result", `type Worker struct { supervise.Service[supervise.ConcurrentSafe[*Snapshot]] }
 func (w *Worker) Run(context.Context) { point := w.Args().Value(); _ = point.Version }`},
 		{"generic metadata", `type Box[T any] struct { Value T }
