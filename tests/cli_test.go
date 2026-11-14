@@ -73,14 +73,7 @@ func TestCLI(t *testing.T) {
 		checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/serviceinit/stdout.txt"), output)
 	})
 	t.Run("service_guide", func(t *testing.T) {
-		dir := consumerModule(t, root, "accepted")
-		output := runCommand(t, dir, true, binary, "./servicedoc")
-		checkFixtureSnapshots(t, root, "accepted/servicedoc", output)
-		output = runCommand(t, dir, true, "go", "vet", "-vettool="+binary, "./servicedoc")
-		checkFixtureSnapshots(t, root, "accepted/servicedoc", output)
-		output = runCommand(t, filepath.Join(dir, "servicedoc"), true, "go", "run", ".")
-		checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/servicedoc/stdout.txt"), output)
-		runCommand(t, filepath.Join(dir, "servicedoc"), true, "go", "test", "-race", "-count=1", ".")
+		checkServiceGuide(t, root, binary)
 	})
 	t.Run("invalid_dependencies", func(t *testing.T) {
 		checkInvalidDependencies(t, root, binary)
@@ -125,6 +118,19 @@ func TestCLI(t *testing.T) {
 		output := runCommand(t, dir, false, binary, "./...")
 		checkSnapshot(t, filepath.Join(root, "tests/testdata/compiler_error/broken.txt"), normalizeOutput(output))
 	})
+}
+
+// checkServiceGuide checks the guide source, program output, and background refresh under the race detector.
+func checkServiceGuide(t *testing.T, root, binary string) {
+	t.Helper()
+	dir := consumerModule(t, root, "accepted")
+	output := runCommand(t, dir, true, binary, "./servicedoc")
+	checkFixtureSnapshots(t, root, "accepted/servicedoc", output)
+	output = runCommand(t, dir, true, "go", "vet", "-vettool="+binary, "./servicedoc")
+	checkFixtureSnapshots(t, root, "accepted/servicedoc", output)
+	output = runCommand(t, filepath.Join(dir, "servicedoc"), true, "go", "run", ".")
+	checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/servicedoc/stdout.txt"), output)
+	runCommand(t, filepath.Join(dir, "servicedoc"), true, "go", "test", "-race", "-count=1", ".")
 }
 
 // consumerModule copies fixtures into an independent module that resolves the library to this checkout.
