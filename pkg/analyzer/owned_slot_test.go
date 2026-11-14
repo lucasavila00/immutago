@@ -11,7 +11,8 @@ func TestOwnedSlotChecks(t *testing.T) {
 		name, source string
 		reject       bool
 	}{
-		{"fresh store and local load", `func f(l *Loader) { l.Current.Store(&Model{X:1}); m:=l.Current.Load(); read(m) };func read(*Model){}`, false},
+		{"fresh store and local load", `func f(l *Loader) { l.Current.Store(&Model{X:1}); m:=l.Current.Load(); read(m) }
+func read(*Model){}`, false},
 		{"new store", `func f(l *Loader) { l.Current.Store(new(Model)); m:=l.Current.Load(); _=m }`, false},
 		{"package slot", `var slot im.Owned[Model]; func f() { slot.Store(&Model{}); m:=slot.Load(); _=m }`, false},
 		{"shared argument", `type S struct{im.Shared}; var slot im.Owned[S]`, true},
@@ -19,6 +20,11 @@ func TestOwnedSlotChecks(t *testing.T) {
 		{"marked owner", `type Bad struct{im.Shared; Slot im.Owned[Model]}`, true},
 		{"slot copy", `func f(l *Loader) { other:=l.Current; _=other }`, true},
 		{"slot address", `func f(l *Loader) { other:=&l.Current; _=other }`, true},
+		{"zero holder assignment", `func f(l *Loader) { *l=Loader{} }`, true},
+		{"zero slot assignment", `func f(l *Loader) { l.Current=im.Owned[Model]{} }`, true},
+		{"range callback holder", `func seq(func(Loader) bool){};func f(){for range seq{}}`, true},
+		{"tuple holder result", `func f()(int,Loader){return 0,Loader{}};func g(){_,_=f()}`, true},
+		{"defined slot", `type Hidden im.Owned[Model]`, true},
 		{"holder copy", `func f(l *Loader) { other:=*l; _=other }`, true},
 		{"holder value parameter", `func f(Loader){}`, true},
 		{"holder value result", `func f(l *Loader) Loader { return *l }`, true},
@@ -37,6 +43,8 @@ func TestOwnedSlotChecks(t *testing.T) {
 		{"holder closure", `func f(l *Loader){ g:=func(){l.Current.Store(&Model{})}; g() }`, true},
 		{"holder boxing", `func f(l *Loader){ var x any=l; _=x }`, true},
 		{"holder pointer capture", `var saved *Loader; func f(l *Loader){ saved=l }`, true},
+		{"background publisher", `func publish(l *Loader){l.Current.Store(&Model{})}
+func f(l *Loader){go publish(l)}`, false},
 		{"holder construction", `func f(){ l:=&Loader{}; l.Current.Store(&Model{}) }`, false},
 		{"generic holder", `func f[T any](*T){}; func g(l *Loader){ f(l) }`, true},
 	}

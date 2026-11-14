@@ -173,6 +173,13 @@ Parentheses preserve these forms.
 | Store a fresh object in a direct slot field or package slot | `loader.Current.Store(&LocalRefPoint{X: 1})`, `current.Store(new(LocalRefPoint))` |
 | Load into one local pointer | `point := loader.Current.Load()`, `var point = current.Load()`, `point = current.Load()` |
 
+A named function can publish in a background goroutine:
+
+```go
+func publish(l *Loader) { l.Current.Store(&LocalRefPoint{X: 1}) }
+go publish(loader)
+```
+
 A holder is a struct with a direct named slot field. Use holder pointers for
 calls; do not copy a holder or slot value. Slot and holder pointer captures,
 interfaces, indirect calls, user generic arguments, and `go` or `defer` slot

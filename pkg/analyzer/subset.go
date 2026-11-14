@@ -11,6 +11,7 @@ import (
 
 // subsetChecks matches immutable operations and rejects unsupported transport.
 type subsetChecks struct {
+	slots       map[types.Type]bool
 	pass        *analysis.Pass
 	parents     map[ast.Node]ast.Node
 	unevaluated map[ast.Node]bool
@@ -49,7 +50,8 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 			continue
 		}
 		for i := 0; i < instance.TypeArgs.Len(); i++ {
-			if checker.Contains(instance.TypeArgs.At(i)) || slotRelevant(instance.TypeArgs.At(i)) || protectedCallable(instance.TypeArgs.At(i)) {
+			arg := instance.TypeArgs.At(i)
+			if checker.Contains(arg) || c.slotRelevant(arg) || protectedCallable(arg) {
 				c.report(id, "user generic instantiations with immutable types are unsupported")
 			}
 		}
@@ -198,13 +200,8 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 			return
 		}
 	}
-	if selector, ok := expression.(*ast.SelectorExpr); ok && c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
+	if c.directSlotMethodExpression(expression) {
 		return
-	}
-	if id, ok := expression.(*ast.Ident); ok {
-		if selector, ok := c.parents[id].(*ast.SelectorExpr); ok && selector.Sel == id && c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
-			return
-		}
 	}
 	t := c.pass.TypesInfo.TypeOf(expression)
 	if c.pass.TypesInfo.Types[expression].IsType() && protectedCallable(t) {
@@ -221,6 +218,22 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 	if reason := subsetType(t, make(map[types.Type]bool)); reason != "" {
 		c.report(expression, reason)
 	}
+}
+
+// directSlotMethodExpression identifies method syntax in a checked slot call.
+func (c *subsetChecks) directSlotMethodExpression(expression ast.Expr) bool {
+	selector, ok := expression.(*ast.SelectorExpr)
+	if !ok {
+		id, isName := expression.(*ast.Ident)
+		if !isName {
+			return false
+		}
+		selector, ok = c.parents[id].(*ast.SelectorExpr)
+		if !ok || selector.Sel != id {
+			return false
+		}
+	}
+	return c.ownedSlotSelector(selector) && c.directCall(selector) != nil
 }
 
 // storedLocalReference checks native container elements even when the handle has an ownership proof.

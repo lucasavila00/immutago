@@ -62,6 +62,14 @@ func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
 		ast.Inspect(file, c.visit)
 	}
+	checkLibraryArguments(pass, c)
+	checkOwned(pass)
+	checkSubset(pass, freeze.Check(pass))
+	return nil, nil
+}
+
+// checkLibraryArguments proves type arguments of the fixed library types.
+func checkLibraryArguments(pass *analysis.Pass, c *checks) {
 	for ident, instance := range pass.TypesInfo.Instances {
 		obj := pass.TypesInfo.Uses[ident]
 		if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
@@ -81,9 +89,6 @@ func run(pass *analysis.Pass) (any, error) {
 			}
 		}
 	}
-	checkOwned(pass)
-	checkSubset(pass, freeze.Check(pass))
-	return nil, nil
 }
 
 // checks carries one package's state and suppresses duplicate reports at the same position.
