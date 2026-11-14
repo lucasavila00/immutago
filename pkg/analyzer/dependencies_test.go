@@ -57,15 +57,7 @@ func checkInvalidDependencyPropagation(t *testing.T, serialized bool) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		available := make(map[*types.Package]invalidPackage)
-		for _, imported := range pkg.Imports() {
-			if fact, ok := invalid[imported]; ok {
-				if serialized {
-					fact = *roundTripFact(t, &fact)
-				}
-				available[imported] = fact
-			}
-		}
+		available := directDependencyFacts(t, pkg, invalid, serialized)
 		var reports []string
 		pass := &analysis.Pass{Analyzer: Analyzer, Fset: positions, Pkg: pkg, Files: []*ast.File{file}, TypesInfo: info,
 			Report: func(d analysis.Diagnostic) { reports = append(reports, d.Message) },
@@ -91,6 +83,22 @@ func checkInvalidDependencyPropagation(t *testing.T, serialized bool) {
 
 		packages[tc.path] = pkg
 	}
+}
+
+// directDependencyFacts copies only the imported facts, with an optional serialization boundary.
+func directDependencyFacts(t *testing.T, pkg *types.Package, facts map[*types.Package]invalidPackage,
+	serialized bool) map[*types.Package]invalidPackage {
+	t.Helper()
+	available := make(map[*types.Package]invalidPackage)
+	for _, imported := range pkg.Imports() {
+		if fact, ok := facts[imported]; ok {
+			if serialized {
+				fact = *roundTripFact(t, &fact)
+			}
+			available[imported] = fact
+		}
+	}
+	return available
 }
 
 // TestInvalidProofKeepsRelevanceWhenVetPrunesImports checks the scope bit carried by package facts.
