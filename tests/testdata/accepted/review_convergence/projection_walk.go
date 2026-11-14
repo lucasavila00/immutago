@@ -7,12 +7,17 @@ type ProjectionValue struct {
 	Values [1][1]int
 }
 
-func projectionReads(p *ProjectionValue, ordinary [1][1][1]int) int {
+type PlainProjection struct {
+	Inner struct{ Value int }
+}
+
+func projectionReads(p *ProjectionValue, ordinary [1][1][1]int, plainFields PlainProjection) int {
 	builder := []int{1}
 	x := (p).Values[0][0]
 	y := (*p).Values[0][0]
 	z := (builder)[0]
 	plain := (ordinary)[0][0][0]
+	field := (plainFields).Inner.Value
 	_ = im.FreezeSlice(builder)
-	return x + y + z + plain
+	return x + y + z + plain + field
 }

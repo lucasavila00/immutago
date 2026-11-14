@@ -38,26 +38,28 @@ func BenchmarkCoreStorageProjection(b *testing.B) {
 // TestStorageProjection checks ordinary, marked, and exclusive builder roots.
 func TestStorageProjection(t *testing.T) {
 	pass := sourcePass(t, `type V struct { im.Shared; A [1][1]int }
-func f(p *V, a [1][1]int) {
+type Plain struct { Inner struct { X int } }
+func f(p *V, a [1][1]int, v Plain) {
  builder := []int{1}
  _ = ((p)).A[0][0]
  _ = ((*p)).A[0][0]
  _ = ((builder))[0]
  _ = ((a))[0][0]
+ _ = ((v)).Inner.X
 }`)
 	owner, expressions := projectionTestInputs(pass.Files[0], pass.TypesInfo)
-	if owner == nil || len(expressions) != 4 {
+	if owner == nil || len(expressions) != 5 {
 		t.Fatalf("missing builder or projection expressions: %v, %d", owner, len(expressions))
 	}
 	checks := &subsetChecks{pass: pass, owners: map[*types.Var]bool{owner: true}}
 	for i, expression := range expressions {
-		if got, want := checks.protectedStorage(expression), i != 3; got != want {
+		if got, want := checks.protectedStorage(expression), i < 3; got != want {
 			t.Errorf("projection %d: got %t, want %t", i, got, want)
 		}
 	}
 }
 
-// projectionTestInputs finds the builder definition and the four discarded reads.
+// projectionTestInputs finds the builder definition and the discarded reads.
 func projectionTestInputs(file *ast.File, info *types.Info) (*types.Var, []ast.Expr) {
 	var owner *types.Var
 	var expressions []ast.Expr
