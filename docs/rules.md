@@ -13,9 +13,13 @@
 
 The common lists and each type's lists define the complete supported forms.
 Other protected operations are rejected. Rejection examples are not exhaustive.
-**Protected storage** means marked values, their fields, frozen collections,
-and arrays containing them. Service dependencies use the same transport checks;
-their contents are unchecked. Owner slots and holders have their own listed forms.
+
+| Term | Meaning |
+| --- | --- |
+| Marked struct | A struct that embeds `im.Shared` or `im.Scoped`. |
+| Protected storage | Marked values, their fields, frozen collections, and arrays containing them. |
+| Service dependency | A `supervise.ConcurrentSafe[T]` value. Its uses are checked; its contents are trusted. |
+| Owner slot and holder | An `im.Owner[T]` field or variable, and a struct that contains one. See [Owner](owner.md). |
 
 ## Trust markers
 
@@ -44,18 +48,19 @@ It also checks your test files.
 | Uses a function, interface, or generic type that mentions an im or supervise type | `callback := api.Publish`, where Publish takes `*api.Point`; `api.Alias[int]`, where Alias has an Owner type in its constraint |
 | Imports a package that failed its checks, directly or through another package | Import a package with an invalid immutable field. |
 
-Aliases, type arguments, and generic constraints also count. The CLI and
-`go vet` use the same rules. Other packages are trusted to follow Go rules,
-including not changing string bytes through `unsafe`.
+- Aliases, type arguments, and generic constraints also count.
+- The CLI and `go vet` use the same rules.
+- Other packages are trusted to obey Go contracts, including immutable strings.
+- The `im`, `supervise`, and standard-library implementations are trusted.
+- The generated Go test runner is skipped; user tests are checked.
+- User code has no suppression comments. Its only trust markers are
+  `im.UncheckedValue` and `supervise.ConcurrentSafe`.
 
-The checker trusts the implementations of `im`, `supervise`, and the Go standard
-library. It also skips the test runner that Go generates. There is no comment
-or annotation that lets user code bypass checks. The only trusted values in user
-code are the two [trust markers](#trust-markers).
+Checked packages reject these forms; this rejection list is not exhaustive:
 
-In a checked package, `unsafe`, `reflect`, cgo, and functions without Go bodies
-are rejected. For example, write `func readCount() int { return 1 }` instead of
-`func readCount() int`. A cgo package gets one package-level error.
+| Rejected form | Use instead |
+| --- | --- |
+| `unsafe`, `reflect`, or cgo | Ordinary typed Go code. Cgo produces one error at the source package line. |
+| `func readCount() int` without a body | `func readCount() int { return 1 }` |
 
-If an imported package fails, the error shows one cause and a command to check
-that package. Run that command to see its other errors.
+An imported package's error includes one cause and a command to see its other errors.

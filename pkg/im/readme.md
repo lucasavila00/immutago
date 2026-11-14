@@ -8,11 +8,14 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 Package im provides read\-only structs, slices, and maps checked by immutago.
 
-Embed Shared in a struct when callers can save or return its pointer. Embed Scoped when callers must keep the pointer local or pass it to functions that do not save it. Both markers require read\-only fields, including nested data. Owner lets readers load the current Scoped object while a publisher replaces it.
+Choose the API for the data:
 
-Prepare a Go slice or map in one local variable, then call FreezeSlice or FreezeMap. Freeze reuses its storage without copying entries. Read through the frozen value after that call. Clone returns a separate slice or map to edit.
+- Shared: read\-only fields; callers can store or return pointers.
+- Scoped: read\-only fields; pointers stay local or pass to checked readers.
+- Owner: publish a new Scoped object while readers finish with the previous one.
+- FrozenSlice and FrozenMap: freeze a native collection without copying entries. Use Clone for an independent mutable copy.
 
-Run immutago on the packages that use these types. Go build alone does not enforce these rules. See the guides and complete supported operations at https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
+Prepare a native collection in one local variable. After Freeze, use only the frozen value. Run immutago to enforce these rules; go build alone does not.
 
 ## func Unwrap
 

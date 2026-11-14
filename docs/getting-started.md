@@ -46,13 +46,8 @@ The program prints `alice 10`.
   read through the frozen map, not `scores`.
 - `Get` returns the score and whether the key exists.
 
-To see the checker reject a change, add `user.Name = "bob"` after the println
-and run `immutago ./...` again. It reports a write to an immutable object.
-Remove that line before continuing.
-
-Choose [Shared](shared.md) to save or return pointers. Choose [Scoped](scoped.md)
-to keep pointers local, or [Owner](owner.md) to publish new Scoped objects.
-The [language guide](rules.md) lists the complete allowed forms.
+For example, adding `user.Name = "bob"` makes `immutago ./...` report a write
+to an immutable object. See the [language guide](rules.md) for the complete forms.
 
 ## Check in CI
 
@@ -60,8 +55,9 @@ The [language guide](rules.md) lists the complete allowed forms.
 immutago ./...
 ```
 
-The command fails if it finds errors. `go build` does not run the checker.
-Run it for each platform and set of build tags you use.
+- Errors make the command fail.
+- Run it for each platform and set of build tags you use.
+- `go build` does not run the checker.
 
 Or use `go vet`:
 
