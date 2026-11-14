@@ -93,6 +93,7 @@ func checkLibraryArguments(pass *analysis.Pass, c *checks) {
 
 // checks carries one package's state and suppresses duplicate reports at the same position.
 type checks struct {
+	queries  checker.Classifier
 	pass     *analysis.Pass
 	reported map[token.Pos]bool
 }
@@ -218,7 +219,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 					"\n  fix: "+structuralFix(ft, reason))
 				continue
 			}
-		} else if checker.Contains(ft) {
+		} else if c.queries.Contains(ft) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+

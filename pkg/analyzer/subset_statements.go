@@ -49,7 +49,7 @@ func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 	if genericSignature(signature) {
 		c.genericStorage(declaration, declaration.Name)
 	}
-	if signature.Recv() != nil && (checker.Contains(signature.Recv().Type()) || protectedCallable(signature)) {
+	if signature.Recv() != nil && (c.queries.Contains(signature.Recv().Type()) || c.queries.Callable(signature)) {
 		c.report(declaration.Name, "user-defined methods with immutable storage are unsupported")
 	}
 }
@@ -58,7 +58,7 @@ func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 func (c *subsetChecks) valueDeclaration(declaration *ast.ValueSpec) {
 	for _, name := range declaration.Names {
 		variable := c.pass.TypesInfo.Defs[name]
-		if variable != nil && (checker.Contains(variable.Type()) || c.ownedExpression(name)) {
+		if variable != nil && (c.queries.Contains(variable.Type()) || c.ownedExpression(name)) {
 			if rule := c.matchDeclaration(declaration); rule != "" {
 				c.report(declaration, rule)
 			}
@@ -71,7 +71,7 @@ func (c *subsetChecks) valueDeclaration(declaration *ast.ValueSpec) {
 func (c *subsetChecks) typeSwitchDeclaration(declaration *ast.TypeSwitchStmt) {
 	for _, node := range declaration.Body.List {
 		for _, expression := range node.(*ast.CaseClause).List {
-			if checker.Contains(c.pass.TypesInfo.TypeOf(expression)) {
+			if c.queries.Contains(c.pass.TypesInfo.TypeOf(expression)) {
 				c.report(expression, "protected storage is unsupported in type switches")
 			}
 		}
@@ -106,7 +106,7 @@ func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) string {
 
 // matchBinding permits Scoped pointers only in local variable bindings.
 func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) string {
-	if rule := matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
+	if rule := c.matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
 		return rule
 	}
 	if !localReference(source) {
@@ -171,11 +171,11 @@ func (c *subsetChecks) matchReturn(statement *ast.ReturnStmt) string {
 		source := c.pass.TypesInfo.TypeOf(expression)
 		if tuple, ok := source.(*types.Tuple); ok {
 			for item := 0; item < tuple.Len(); item++ {
-				if rule := matchReturnValue(tuple.At(item).Type(), c.returnType(statement, item)); rule != "" {
+				if rule := c.matchReturnValue(tuple.At(item).Type(), c.returnType(statement, item)); rule != "" {
 					return rule
 				}
 			}
-		} else if rule := matchReturnValue(source, c.returnType(statement, index)); rule != "" {
+		} else if rule := c.matchReturnValue(source, c.returnType(statement, index)); rule != "" {
 			return rule
 		}
 	}
@@ -183,11 +183,11 @@ func (c *subsetChecks) matchReturn(statement *ast.ReturnStmt) string {
 }
 
 // matchReturnValue permits concrete values and Shared pointers at a return boundary.
-func matchReturnValue(source, destination types.Type) string {
+func (c *subsetChecks) matchReturnValue(source, destination types.Type) string {
 	if localReference(source) || localReference(destination) {
 		return "returning Scoped pointers is unsupported"
 	}
-	return matchTransport(source, destination)
+	return c.matchTransport(source, destination)
 }
 
 // matchSwitch checks every case conversion and excludes undocumented pointer switch operands.
@@ -196,16 +196,16 @@ func (c *subsetChecks) matchSwitch(statement *ast.SwitchStmt) string {
 		return ""
 	}
 	destination := c.pass.TypesInfo.TypeOf(statement.Tag)
-	if protectedReference(destination) {
+	if c.protectedReference(destination) {
 		return "reference operation is outside the supported allowlist"
 	}
 	for _, node := range statement.Body.List {
 		for _, value := range node.(*ast.CaseClause).List {
 			source := c.pass.TypesInfo.TypeOf(value)
-			if rule := matchTransport(source, destination); rule != "" {
+			if rule := c.matchTransport(source, destination); rule != "" {
 				return rule
 			}
-			if protectedReference(source) {
+			if c.protectedReference(source) {
 				return "reference operation is outside the supported allowlist"
 			}
 		}
@@ -219,7 +219,7 @@ func (c *subsetChecks) matchRange(statement *ast.RangeStmt) string {
 		return "multiple assignments involving protected storage are unsupported"
 	}
 	source := c.pass.TypesInfo.TypeOf(statement.X)
-	if protectedCallable(source) {
+	if c.queries.Callable(source) {
 		call, ok := ast.Unparen(statement.X).(*ast.CallExpr)
 		if !ok {
 			return "protected iteration requires a direct frozen All call"
@@ -283,7 +283,7 @@ func (c *subsetChecks) matchClosure(literal *ast.FuncLit) {
 			return true
 		}
 		variable, ok := c.pass.TypesInfo.Uses[name].(*types.Var)
-		if !ok || variable.IsField() || !checker.Contains(variable.Type()) {
+		if !ok || variable.IsField() || !c.queries.Contains(variable.Type()) {
 			return true
 		}
 		for scope := variable.Parent(); scope != nil; scope = scope.Parent() {
@@ -297,8 +297,8 @@ func (c *subsetChecks) matchClosure(literal *ast.FuncLit) {
 }
 
 // protectedResult inspects multi-result expressions without ignoring a protected tuple component.
-func protectedResult(t types.Type) bool {
-	if checker.Contains(t) {
+func (c *subsetChecks) protectedResult(t types.Type) bool {
+	if c.queries.Contains(t) {
 		return true
 	}
 	tuple, ok := t.(*types.Tuple)
@@ -306,7 +306,7 @@ func protectedResult(t types.Type) bool {
 		return false
 	}
 	for i := 0; i < tuple.Len(); i++ {
-		if checker.Contains(tuple.At(i).Type()) {
+		if c.queries.Contains(tuple.At(i).Type()) {
 			return true
 		}
 	}

@@ -51,6 +51,12 @@ func (c *subsetChecks) findHolderReference(t types.Type, seen map[types.Type]boo
 		return c.structHolderReference(value, seen)
 	case *types.Interface:
 		return c.interfaceHolderReference(value, seen)
+	case *types.Union:
+		for i := 0; i < value.Len(); i++ {
+			if c.findHolderReference(value.Term(i).Type(), seen) {
+				return true
+			}
+		}
 	case *types.Signature:
 		return c.findHolderReference(value.Params(), seen) || c.findHolderReference(value.Results(), seen)
 	case *types.Tuple:
@@ -83,6 +89,11 @@ func (c *subsetChecks) tupleHolderReference(value *types.Tuple, seen map[types.T
 func (c *subsetChecks) interfaceHolderReference(value *types.Interface, seen map[types.Type]bool) bool {
 	for i := 0; i < value.NumMethods(); i++ {
 		if c.findHolderReference(value.Method(i).Type(), seen) {
+			return true
+		}
+	}
+	for i := 0; i < value.NumEmbeddeds(); i++ {
+		if c.findHolderReference(value.EmbeddedType(i), seen) {
 			return true
 		}
 	}

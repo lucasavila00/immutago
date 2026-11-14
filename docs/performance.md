@@ -47,3 +47,17 @@ benchmark samples, CPU and allocation profiles, the test binary, and runner
 information as artifacts. Profile setup can appear in the profiles; benchmark
 allocation counts exclude setup. Compare the same cases and Go version before
 and after a change. Timing alone is not a pass/fail gate.
+
+[Classification stress tests](../internal/checker/classification_test.go) compare
+cached results with independent storage and callback walks and a reachability
+oracle. They check cycles, query order, aliases, marker identity, constraints,
+and callback storage. [Classification benchmarks](../internal/checker/classification_benchmark_test.go)
+measure repeated queries at 16, 64, and 256 types. The
+[ordinary type graph benchmark](../pkg/analyzer/type_scaling_test.go) measures the
+full analyzer pass on connected structs and interfaces without markers at 8,
+16, 32, and 64 types. These cases keep repeated graph traversal visible in CI.
+
+The pass-local type classifier expands each reachable type and classification
+mode once per cache. Reverse edges propagate positive results through cycles;
+completed queries reuse the stored result. The graph stays in memory until its
+pass ends. Ordinary packages still receive structural and source checks.

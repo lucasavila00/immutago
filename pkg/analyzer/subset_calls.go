@@ -41,7 +41,7 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	if libraryObject(object) {
 		return c.matchLibraryCall(call, object)
 	}
-	if !protectedCallable(signature) && !c.protectedCallArguments(call) {
+	if !c.queries.Callable(signature) && !c.protectedCallArguments(call) {
 		return ""
 	}
 	function, direct := object.(*types.Func)
@@ -68,15 +68,15 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 // matchConversion permits ordinary scalar conversions and checks both protected endpoints.
 func (c *subsetChecks) matchConversion(call *ast.CallExpr) string {
 
-	if protectedReference(c.pass.TypesInfo.TypeOf(call)) {
+	if c.protectedReference(c.pass.TypesInfo.TypeOf(call)) {
 		return "shared pointer conversions are unsupported"
 	}
 	if len(call.Args) == 1 {
 		source, destination := c.pass.TypesInfo.TypeOf(call.Args[0]), c.pass.TypesInfo.TypeOf(call)
-		if rule := matchTransport(source, destination); rule != "" {
+		if rule := c.matchTransport(source, destination); rule != "" {
 			return rule
 		}
-		if checker.Contains(source) || checker.Contains(destination) {
+		if c.queries.Contains(source) || c.queries.Contains(destination) {
 			return "protected value conversions are unsupported"
 		}
 		return ""
@@ -102,7 +102,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 		if _, array := c.pass.TypesInfo.TypeOf(call.Args[0]).Underlying().(*types.Array); array {
 			return ""
 		}
-		if !checker.Contains(c.pass.TypesInfo.TypeOf(call.Args[0])) {
+		if !c.queries.Contains(c.pass.TypesInfo.TypeOf(call.Args[0])) {
 			return ""
 		}
 	case "append", "delete", "clear", "copy":
@@ -111,7 +111,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 			return c.matchCallArguments(call, signature)
 		}
 	}
-	if !c.protectedCallArguments(call) && !protectedResult(c.pass.TypesInfo.TypeOf(call)) {
+	if !c.protectedCallArguments(call) && !c.protectedResult(c.pass.TypesInfo.TypeOf(call)) {
 		return ""
 	}
 	return "protected operation is outside the supported expression forms"
@@ -135,7 +135,7 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 		if !ok || !c.exactCollectionMethod(selector) {
 			return "immutable method expressions are unsupported"
 		}
-		if object.Name() == "All" && protectedCallable(c.pass.TypesInfo.TypeOf(call)) {
+		if object.Name() == "All" && c.queries.Callable(c.pass.TypesInfo.TypeOf(call)) {
 			statement, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
 			if !ok || ast.Unparen(statement.X) != call {
 				return "immutable iterators must be consumed by direct range"
@@ -152,11 +152,11 @@ func (c *subsetChecks) matchCallArguments(call *ast.CallExpr, signature *types.S
 		source := c.pass.TypesInfo.TypeOf(argument)
 		if tuple, ok := source.(*types.Tuple); ok {
 			for item := 0; item < tuple.Len(); item++ {
-				if rule := matchArgument(tuple.At(item).Type(), callParameter(signature, item, false)); rule != "" {
+				if rule := c.matchArgument(tuple.At(item).Type(), callParameter(signature, item, false)); rule != "" {
 					return rule
 				}
 			}
-		} else if rule := matchArgument(source, callParameter(signature, index, call.Ellipsis.IsValid())); rule != "" {
+		} else if rule := c.matchArgument(source, callParameter(signature, index, call.Ellipsis.IsValid())); rule != "" {
 			return rule
 		}
 	}
@@ -164,11 +164,11 @@ func (c *subsetChecks) matchCallArguments(call *ast.CallExpr, signature *types.S
 }
 
 // matchArgument permits protected pointers only with the exact concrete parameter type.
-func matchArgument(source, destination types.Type) string {
-	if rule := matchTransport(source, destination); rule != "" {
+func (c *subsetChecks) matchArgument(source, destination types.Type) string {
+	if rule := c.matchTransport(source, destination); rule != "" {
 		return rule
 	}
-	if protectedReference(source) && !types.Identical(source, destination) {
+	if c.protectedReference(source) && !types.Identical(source, destination) {
 		return "reference operation is outside the supported allowlist"
 	}
 	return ""
@@ -178,7 +178,7 @@ func matchArgument(source, destination types.Type) string {
 func (c *subsetChecks) protectedCallArguments(call *ast.CallExpr) bool {
 	for _, argument := range call.Args {
 		typ := c.pass.TypesInfo.TypeOf(argument)
-		if protectedResult(typ) || protectedCallable(typ) || c.ownedExpression(argument) {
+		if c.protectedResult(typ) || c.queries.Callable(typ) || c.ownedExpression(argument) {
 			return true
 		}
 	}
@@ -186,8 +186,8 @@ func (c *subsetChecks) protectedCallArguments(call *ast.CallExpr) bool {
 }
 
 // matchTransport permits concrete value copies and rejects implicit interface or callback storage.
-func matchTransport(source, destination types.Type) string {
-	if !checker.Contains(source) && !protectedCallable(source) {
+func (c *subsetChecks) matchTransport(source, destination types.Type) string {
+	if !c.queries.Contains(source) && !c.queries.Callable(source) {
 		return ""
 	}
 	if destination == nil {
@@ -196,7 +196,7 @@ func matchTransport(source, destination types.Type) string {
 	if _, boxed := destination.Underlying().(*types.Interface); boxed {
 		return "boxing immutable storage in interfaces is unsupported"
 	}
-	if protectedCallable(source) {
+	if c.queries.Callable(source) {
 		return "immutable callbacks are unsupported"
 	}
 	return ""
@@ -239,63 +239,6 @@ func (c *subsetChecks) directCall(node ast.Node) *ast.CallExpr {
 			return nil
 		}
 	}
-}
-
-// protectedCallable detects callback contracts through every Go storage type.
-func protectedCallable(t types.Type) bool { return callableContains(t, make(map[types.Type]bool)) }
-
-// callableContains visits each component once, including nested callback parameters and results.
-func callableContains(t types.Type, seen map[types.Type]bool) bool {
-	if t == nil || seen[t] {
-		return false
-	}
-	seen[t] = true
-	switch storage := t.Underlying().(type) {
-	case *types.Signature:
-		return signatureContains(storage, seen)
-	case *types.Pointer:
-		return callableContains(storage.Elem(), seen)
-	case *types.Array:
-		return callableContains(storage.Elem(), seen)
-	case *types.Slice:
-		return callableContains(storage.Elem(), seen)
-	case *types.Map:
-		return callableContains(storage.Key(), seen) || callableContains(storage.Elem(), seen)
-	case *types.Chan:
-		return callableContains(storage.Elem(), seen)
-	case *types.Struct:
-		return fieldsContainCallable(storage, seen)
-	case *types.Interface:
-		for method := range storage.Methods() {
-			if callableContains(method.Type(), seen) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// fieldsContainCallable includes callback contracts inside named and recursive fields.
-func fieldsContainCallable(storage *types.Struct, seen map[types.Type]bool) bool {
-	for field := range storage.Fields() {
-		if callableContains(field.Type(), seen) {
-			return true
-		}
-	}
-	return false
-}
-
-// signatureContains checks every parameter and result, including nested callback storage.
-func signatureContains(storage *types.Signature, seen map[types.Type]bool) bool {
-	for _, tuple := range []*types.Tuple{storage.Params(), storage.Results()} {
-		for i := 0; i < tuple.Len(); i++ {
-			item := tuple.At(i).Type()
-			if checker.Contains(item) || callableContains(item, seen) {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 // returnType finds the declared result type for implicit boxing checks.

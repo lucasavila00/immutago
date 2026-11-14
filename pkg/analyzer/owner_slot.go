@@ -139,6 +139,10 @@ func (c *subsetChecks) checkOwnerNode(node ast.Node) {
 	switch n := node.(type) {
 	case *ast.FuncLit:
 		c.checkSlotCapture(n)
+	case *ast.InterfaceType:
+		if c.hasHolderReference(c.pass.TypesInfo.TypeOf(n)) {
+			c.pass.Reportf(n.Pos(), "interfaces cannot contain Owner holder pointers")
+		}
 	case *ast.FuncType:
 		if _, direct := c.parents[n].(*ast.FuncDecl); !direct {
 			if signature, ok := c.pass.TypesInfo.TypeOf(n).(*types.Signature); ok {
