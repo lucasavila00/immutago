@@ -32,7 +32,7 @@ earlier loaded objects remain immutable. Go's garbage collector manages lifetime
 A [process](../../pkg/proc/proc.go) is mutable and is not a marked struct. The
 classifier treats `proc.Process[A]` as opaque, as it treats `im.Owner`, so the
 fields of a process are not protected storage. The
-[process matcher](../../pkg/analyzer/process.go) applies four rules:
+[process matcher](../../pkg/analyzer/process.go) applies five rules:
 
 - A process value or pointer is valid only as the receiver variable in a method
   of that process or as a direct `PID.Proc()` result. The receiver can select
@@ -55,10 +55,17 @@ rejects a `proc.Dependency` field in an unmarked struct, which includes a
 process. `dependencyValue` accepts `Value` only as a direct synchronous call on
 `l.Args()` or on one field of it in a method of process `l`. The `T` value is
 not proved; `proc.Trust` is the promise.
+- `Process.Supervisor` is valid only as a direct synchronous call on the
+  receiver of a process method, outside function literals. Its result must be
+  the first argument of a direct synchronous `proc.Start`, `proc.StartReserved`,
+  or `proc.StartSupervisor` call, directly or through one local variable from
+  `:=` that has no other use. The supervisor of a run therefore does not escape
+  the process, and only the runtime stops it. A nested supervisor from
+  `proc.StartSupervisor` is an ordinary value; it stops with the run.
 
 A process is not an Owner holder; the holder pointer rules do not apply to it.
 Methods with a process receiver are exempt from the rule against user-defined
-methods with protected storage, because the four rules leave a direct static
+methods with protected storage, because the five rules leave a direct static
 call as the only use of such a method. The runtime creates a new value from the
 same arguments after each restart delay and stores it in the same PID.
 These rules do not check the origin or destination of mutable field handles

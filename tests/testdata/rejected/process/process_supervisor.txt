@@ -1,0 +1,18 @@
+process_supervisor.go:28:10: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:29:20: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:30:7: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:31:2: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:32:9: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:32:9: process receivers can only select a field or call a method directly
+process_supervisor.go:33:25: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:33:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go proc.Start[Fetcher](f.Supervisor(), proc.None{})
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+process_supervisor.go:34:31: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:34:31: closures cannot capture a process receiver
+process_supervisor.go:35:9: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:37:11: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:39:13: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:46:52: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:49:61: call l.Supervisor() directly on the receiver in a process method, and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, directly or through one local variable
+process_supervisor.go:49:61: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call

@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"go/ast"
+	"go/token"
 	"go/types"
 
 	"github.com/lucasavila00/immutago/internal/checker"
@@ -101,6 +102,10 @@ func processMarker(t types.Type) bool { return checker.IsRuntimeType(t, checker.
 
 const processEscape = "process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call"
 
+const runSupervisorRule = "call l.Supervisor() directly on the receiver in a process method, " +
+	"and pass the result only as the parent of proc.Start, proc.StartReserved, or proc.StartSupervisor, " +
+	"directly or through one local variable"
+
 // checkProcessNode checks process declarations, process type names, and process values.
 func (c *subsetChecks) checkProcessNode(node ast.Node) {
 	switch n := node.(type) {
@@ -115,6 +120,9 @@ func (c *subsetChecks) checkProcessNode(node ast.Node) {
 		}
 		if runtimeMethod(object, checker.DependencyType, checker.ValueMethod) && !c.dependencyValue(n) {
 			c.pass.Reportf(n.Pos(), "call Value only directly on l.Args() or on a field of l.Args() in a process method")
+		}
+		if runtimeMethod(object, checker.ProcessMarker, checker.SupervisorMethod) && !c.runSupervisor(n) {
+			c.pass.Reportf(n.Pos(), runSupervisorRule)
 		}
 	}
 	if expression, ok := node.(ast.Expr); ok {
@@ -354,6 +362,54 @@ func (c *subsetChecks) allowedProcUse(proc *ast.CallExpr) bool {
 func (c *subsetChecks) synchronousCall(selector *ast.SelectorExpr) bool {
 	call := c.directCall(selector)
 	if call == nil {
+		return false
+	}
+	switch c.parents[call].(type) {
+	case *ast.GoStmt, *ast.DeferStmt:
+		return false
+	}
+	return true
+}
+
+// runSupervisor permits a direct synchronous Supervisor call on a process receiver whose result is a parent
+// argument, directly or through one local variable that has no other use.
+func (c *subsetChecks) runSupervisor(selector *ast.SelectorExpr) bool {
+	receiver, _ := ast.Unparen(selector.X).(*ast.Ident)
+	variable, ok := c.pass.TypesInfo.Uses[receiver].(*types.Var)
+	if !ok || variable.Kind() != types.RecvVar || c.insideClosure(selector) || !c.synchronousCall(selector) {
+		return false
+	}
+	call := c.directCall(selector)
+	if c.parentArgument(call) {
+		return true
+	}
+	assignment, ok := c.unparenthesizedParent(call).(*ast.AssignStmt)
+	if !ok || assignment.Tok != token.DEFINE || len(assignment.Lhs) != 1 || len(assignment.Rhs) != 1 {
+		return false
+	}
+	name, _ := assignment.Lhs[0].(*ast.Ident)
+	local, ok := c.pass.TypesInfo.Defs[name].(*types.Var)
+	if !ok {
+		return false
+	}
+	for use, object := range c.pass.TypesInfo.Uses {
+		if object == local && (c.insideClosure(use) || !c.parentArgument(use)) {
+			return false
+		}
+	}
+	return true
+}
+
+// parentArgument identifies the first argument of a direct synchronous proc.Start, proc.StartReserved, or
+// proc.StartSupervisor call.
+func (c *subsetChecks) parentArgument(expression ast.Expr) bool {
+	call, ok := c.unparenthesizedParent(expression).(*ast.CallExpr)
+	if !ok || len(call.Args) == 0 || ast.Unparen(call.Args[0]) != expression {
+		return false
+	}
+	object := c.calledObject(call.Fun)
+	if !runtimeObject(object, checker.StartFunction) && !runtimeObject(object, checker.StartReservedFunction) &&
+		!runtimeObject(object, checker.StartSupervisorFunction) {
 		return false
 	}
 	switch c.parents[call].(type) {

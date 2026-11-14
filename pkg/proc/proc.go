@@ -20,6 +20,10 @@
 // the same rule. At the root supervisor, the escalation panics again with the
 // last panic value, and the program exits. OnPanic reports each recovered panic.
 //
+// A process can start children under the Supervisor of its current run. When
+// the run ends, the runtime stops these children in reverse start order before
+// the process restarts or stops. A child that escalates fails the run.
+//
 // Stop cancels each Run context and waits for Run to return. Cancellation is
 // cooperative; Run must observe its context. Stop does not wait for direct
 // method calls. Process methods must synchronize their own shared state.
@@ -45,14 +49,82 @@ const (
 // Only Start and StartReserved create it, and other code calls its exported methods through a PID.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
 type Process[A any] struct {
-	args A
+	args     A
+	mu       sync.Mutex
+	cancel   context.CancelFunc
+	children *Supervisor
+	done     chan struct{}
+	ended    bool
+	failure  any
+	failed   bool
+	report   func(value any, stack []byte)
 }
 
 // Args returns the arguments that Start or StartReserved gave to the process.
 func (p *Process[A]) Args() A { return p.args }
 
-// bind sets the arguments of a new process value.
-func (p *Process[A]) bind(args A) { p.args = args }
+// Supervisor returns the supervisor of the current run of the process. Each run has its own supervisor.
+// Processes started under it before Run begins start with the run. When Run returns or panics, the runtime
+// stops its children, last started first, and waits for them before the run ends. After the run ends,
+// Supervisor returns a stopped supervisor, and processes started under it do not run.
+// If a child escalates, the run context ends and the run fails with the panic value of the child.
+func (p *Process[A]) Supervisor() *Supervisor {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.children == nil {
+		p.children = &Supervisor{stopped: make(chan struct{}), report: p.report}
+		switch {
+		case p.ended:
+			p.children.Stop()
+		case p.cancel != nil:
+			p.serve()
+		}
+	}
+	return p.children
+}
+
+// serve runs the supervisor of the run until it stops, and ends the run if a child escalates.
+// The caller holds p.mu.
+func (p *Process[A]) serve() {
+	p.done = make(chan struct{})
+	go func() {
+		defer close(p.done)
+		if p.failure, _, p.failed = attempt(context.Background(), p.children.serve); p.failed {
+			p.cancel()
+		}
+	}()
+}
+
+// bind sets the arguments of a new process value and the panic report of its run supervisors.
+func (p *Process[A]) bind(args A, report func(value any, stack []byte)) { p.args, p.report = args, report }
+
+// begin returns the context of the run and runs the supervisor of the run if it exists.
+func (p *Process[A]) begin(ctx context.Context) context.Context {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	ctx, p.cancel = context.WithCancel(ctx)
+	if p.children != nil {
+		p.serve()
+	}
+	return ctx
+}
+
+// end stops the supervisor of the run and waits for it, and panics if a child escalated to it.
+func (p *Process[A]) end() {
+	p.mu.Lock()
+	p.ended = true
+	p.cancel()
+	children, done := p.children, p.done
+	p.mu.Unlock()
+	if children == nil {
+		return
+	}
+	<-children.Stop()
+	<-done
+	if p.failed {
+		panic(p.failure)
+	}
+}
 
 // None is the argument type of a process without arguments.
 type None struct {
@@ -152,7 +224,9 @@ func StartSupervisor(parent *Supervisor) *Supervisor {
 func Start[T, A any, P interface {
 	*T
 	Run(context.Context)
-	bind(A)
+	bind(A, func(value any, stack []byte))
+	begin(context.Context) context.Context
+	end()
 }](parent *Supervisor, args A) PID[T] {
 	pid := Reserve[T]()
 	StartReserved[T, A, P](parent, pid, args)
@@ -166,11 +240,13 @@ func Start[T, A any, P interface {
 func StartReserved[T, A any, P interface {
 	*T
 	Run(context.Context)
-	bind(A)
+	bind(A, func(value any, stack []byte))
+	begin(context.Context) context.Context
+	end()
 }](parent *Supervisor, pid PID[T], args A) {
 	create := func() *T {
 		value := new(T)
-		P(value).bind(args)
+		P(value).bind(args, parent.report)
 		if initializer, ok := any(value).(interface{ Init() }); ok {
 			initializer.Init()
 		}
@@ -185,7 +261,9 @@ func StartReserved[T, A any, P interface {
 			pid.value.Store(create())
 		}
 		started = true
-		P(pid.value.Load()).Run(ctx)
+		value := P(pid.value.Load())
+		defer value.end()
+		value.Run(value.begin(ctx))
 	})
 }
 

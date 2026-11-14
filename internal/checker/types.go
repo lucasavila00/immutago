@@ -16,17 +16,19 @@ const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
 
 // Names of the process runtime identities in RuntimePath and of the process methods that only the runtime calls.
 const (
-	ProcessMarker         = "Process"
-	PIDType               = "PID"
-	StartFunction         = "Start"
-	ReserveFunction       = "Reserve"
-	StartReservedFunction = "StartReserved"
-	ProcMethod            = "Proc"
-	ArgsMethod            = "Args"
-	RunMethod             = "Run"
-	DependencyType        = "Dependency"
-	ValueMethod           = "Value"
-	InitMethod            = "Init"
+	ProcessMarker           = "Process"
+	PIDType                 = "PID"
+	StartFunction           = "Start"
+	ReserveFunction         = "Reserve"
+	StartReservedFunction   = "StartReserved"
+	StartSupervisorFunction = "StartSupervisor"
+	ProcMethod              = "Proc"
+	ArgsMethod              = "Args"
+	SupervisorMethod        = "Supervisor"
+	RunMethod               = "Run"
+	DependencyType          = "Dependency"
+	ValueMethod             = "Value"
+	InitMethod              = "Init"
 )
 
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
