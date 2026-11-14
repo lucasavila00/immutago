@@ -23,14 +23,8 @@ func (r *Refresher) Run(ctx context.Context) { <-ctx.Done() }
 // Table returns mutable storage.
 func (r *Refresher) Table() map[string]int { return r.table }
 
-// Each passes a callback.
-func (r *Refresher) Each(visit func(string)) {}
-
 // Load returns an interface.
 func (r *Refresher) Load() error { return nil }
-
-// Keys takes a variadic slice.
-func (r *Refresher) Keys(keys ...string) Status { return Status(len(keys)) }
 
 // Self returns the service pointer.
 func (r *Refresher) Self() *Refresher { return r }

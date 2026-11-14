@@ -443,8 +443,8 @@ func (c *subsetChecks) directCurrent(selector *ast.SelectorExpr) bool {
 	return selection != nil && selection.Kind() == types.MethodVal && c.directCall(selector) != nil
 }
 
-// checkServiceMethod requires allowed stored types in each parameter and result of an exported service method.
-func (c *checks) checkServiceMethod(declaration *ast.FuncDecl) {
+// checkServiceResults requires allowed stored types in each result of an exported service method.
+func (c *checks) checkServiceResults(declaration *ast.FuncDecl) {
 	if declaration.Recv == nil || !declaration.Name.IsExported() || serviceEntryPoint(declaration.Name.Name) {
 		return
 	}
@@ -456,12 +456,10 @@ func (c *checks) checkServiceMethod(declaration *ast.FuncDecl) {
 	if !checker.Service(receiver) {
 		return
 	}
-	for _, tuple := range []*types.Tuple{signature.Params(), signature.Results()} {
-		for variable := range tuple.Variables() {
-			if reason := c.proofs.Reason(variable.Type()); reason != "" {
-				c.report(declaration.Name.Pos(), "exported service method "+declaration.Name.Name+" carries "+
-					diagnosticType(variable.Type())+", which is not an allowed stored type: "+reason)
-			}
+	for variable := range signature.Results().Variables() {
+		if reason := c.proofs.Reason(variable.Type()); reason != "" {
+			c.report(declaration.Name.Pos(), "exported service method "+declaration.Name.Name+" returns "+
+				diagnosticType(variable.Type())+", which is not an allowed stored type: "+reason)
 		}
 	}
 }

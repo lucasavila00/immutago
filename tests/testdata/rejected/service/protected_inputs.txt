@@ -1,0 +1,12 @@
+protected_inputs.go:15:39: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.Rate = 1
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+protected_inputs.go:18:69: unsupported immutable operation: closures cannot capture immutable storage
+  source: p
+  type: *service.Sample
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+protected_inputs.go:24:49: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: ref.Current().Accept(&Sample{})
+  type: ()
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+protected_inputs.go:27:19: exported service method Echo returns any, which is not an allowed stored type: interface{} is not provably immutable

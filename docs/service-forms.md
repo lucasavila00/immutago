@@ -30,11 +30,12 @@ FileArgs types. Other examples come from the
 | Other service fields use ordinary Go types without protected storage, or the listed [Owner fields](owner.md) | `mu sync.Mutex`, `groups map[string]*supervise.Group`, `loader supervise.Ref[ConfigLoader]`, `current im.Owner[Config]` |
 | Declare Run directly on the service with a pointer receiver, one `context.Context` parameter, and no result | `func (c *FileCache) Run(ctx context.Context) { ... }` |
 | Declare Init directly with a pointer receiver, no parameters, and exactly one `error` result; or use the embedded default | `func (c *FileCache) Init() error { return c.read() }` |
+| Method inputs use ordinary Go types; protected values keep the common source rules | `Decide(g Generator) bool`, `Update(m map[string]int)`, `Each(visit func(string))`, `Count(values ...int) int` |
 | Declare other methods with a pointer receiver | `func (c *FileCache) read() error { ... }` |
-| Exported methods other than Init and Run take and return only allowed stored types | `func (c *FileCache) Text() string`, `func (l *Limiter) Usage() Usage` |
+| Exported methods other than Init and Run return only allowed stored types | `func (c *FileCache) Text() string`, `func (l *Limiter) Usage() Usage` |
 | Name the concrete service type in its declaration, a pointer receiver, or the single type argument of Start, StartReserved, Reserve, or Ref | `supervise.Start[FileCache](root, args)`, `supervise.Ref[FileCache]` |
 
-- Unexported methods can use ordinary Go parameter and result types.
+- Unexported methods can also return ordinary Go types.
 - Protected values inside any method keep their rules.
 - Aliases of `context.Context` and `error` retain the required Init or Run signature.
 
@@ -47,7 +48,7 @@ FileArgs types. Other examples come from the
 | Missing Run, promoted Run, `Run(int)`, or `Run(context.Context) error` | Declare `func (c *FileCache) Run(ctx context.Context)`. |
 | `Init(int) error`, `Init()`, `Init() *MyError`, or Init promoted from a user embedded struct | Declare `func (c *FileCache) Init() error`, or use the default from Service. |
 | `func (c FileCache) Text() string` | `func (c *FileCache) Text() string` |
-| An exported `Table() map[string]int`, `Each(func(string))`, `Load() error`, or `Keys(...string)` | Return `im.FrozenMap[string, int]`, return immutable data for iteration, return a defined scalar status, or take `im.FrozenSlice[string]`, respectively. |
+| An exported `Table() map[string]int` or `Load() error` | Return `im.FrozenMap[string, int]` or a defined scalar status, respectively. |
 | `type Copy = FileCache`, `type Copy FileCache`, `type Outer struct { FileCache }`, or `func use(c *FileCache)` | Use `supervise.Ref[FileCache]` as the field or parameter type. |
 | `supervise.Ref[int]`, `supervise.Reserve[Plain]()`, or `func use[T any](r supervise.Ref[T])` | Use a concrete declared service, such as `supervise.Ref[FileCache]`. |
 | `supervise.Start[FileCache, FileArgs](root, args)` | Write only the service type argument: `supervise.Start[FileCache](root, args)`. |
@@ -138,7 +139,7 @@ these groups, see [Child services and groups](service-children.md).
 | Group source | Who stops it | Where it can be used |
 | --- | --- | --- |
 | Children | Runtime | Only the parent positions listed above. |
-| StartGroup | Runtime or caller | Ordinary Go uses, but not exported service method parameters or results. |
+| StartGroup | Runtime or caller | Ordinary Go uses, but not exported service method results. |
 
 | Rejected examples — non-exhaustive | Allowed replacement |
 | --- | --- |

@@ -101,9 +101,7 @@ func (l *Locked) Run(context.Context) { l.Lock(); l.n++; l.Unlock() }`},
 func TestServiceRejected(t *testing.T) {
 	checkServiceCases(t, true, [][2]string{
 		{"native result", `func (l *ConfigLoader) Table() map[string]int { return nil }`},
-		{"callback parameter", `func (l *ConfigLoader) Each(visit func(string)) {}`},
 		{"error result", `func (l *ConfigLoader) Load() error { return nil }`},
-		{"variadic parameter", `func (l *ConfigLoader) Values(v ...int) {}`},
 		{"service result", `func (l *ConfigLoader) self() *ConfigLoader { return l }`},
 		{"scoped pointer result", `func (l *ConfigLoader) Current() *Config { return nil }`},
 		{"value receiver", `func (l ConfigLoader) Value() int { return 0 }`},

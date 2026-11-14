@@ -52,9 +52,23 @@ The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and
 | --- | --- |
 | Start arguments | Embed `supervise.Service[A]`; read `p.Args()` in a service method. |
 | No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
-| Start arguments or inputs/results of methods called through Current | [Allowed stored types](common-forms.md#markers-and-stored-types), such as scalars, marked structs, frozen collections, and Refs. |
+| Start arguments and results of methods called through Current | [Allowed stored types](common-forms.md#markers-and-stored-types), such as scalars, marked structs, frozen collections, and Refs. |
+| Method inputs | Ordinary Go types, including interfaces, callbacks, pointers, slices, maps, and channels. Protected values follow their own rules. |
 | Return a list | `im.FrozenSlice[string]`. |
 | Replace immutable configuration | An [im.Owner[Config]](owner.md) field. |
+
+A method can receive a generator on each call:
+
+```go
+type Generator interface { Float64() float64 }
+
+func (l *Limiter) Sample(random Generator) bool {
+    return random.Float64() < 0.1
+}
+```
+
+Ordinary inputs can be changed or saved by the method. Use ordinary Go
+synchronization when callers share mutable inputs.
 
 A reference can be a field of another service's arguments. The
 [limiter](../examples/configuration/limiter.go) takes a reference to a

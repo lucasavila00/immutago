@@ -132,7 +132,7 @@ func (c *checks) visit(node ast.Node) bool {
 			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
 				"provide a Go implementation so writes and pointer transport can be checked")
 		}
-		c.checkServiceMethod(n)
+		c.checkServiceResults(n)
 
 	case *ast.TypeSpec:
 		if !n.Assign.IsValid() && checker.IsRuntimeType(c.pass.TypesInfo.TypeOf(n.Type), checker.ConcurrentSafeType) {
