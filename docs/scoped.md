@@ -2,9 +2,9 @@
 
 [Language guide](rules.md) · [Common forms](common-forms.md) · [Owner](owner.md)
 
-Use `im.Scoped` to restrict where pointers to immutable objects can be retained.
-Keep them in local bindings or pass them to direct typed functions that do not
-retain them. Go's garbage collector manages their lifetime.
+Use `im.Scoped` when a pointer must stay local. You can pass it to a named
+function with the exact pointer parameter type. That function must not save
+or return the pointer:
 
 ```go
 type ScopedPoint struct { im.Scoped; X int }
@@ -19,12 +19,9 @@ func use() int {
 
 ## Allowed forms
 
-The common lists for [stored types](common-forms.md#markers-and-stored-types),
-[construction and reads](common-forms.md#construction-and-scalar-reads),
-[pointers](common-forms.md#common-pointer-forms), and
-[statements and calls](common-forms.md#statements-and-calls) apply.
-These lists are complete. Scoped does not add pointer storage or return forms.
-Other protected operations are rejected.
+The [common forms](common-forms.md) give the complete list of allowed operations.
+Scoped does not add pointer storage or return forms. Other protected operations
+are rejected.
 
 A value copy can be stored or returned: `value := *p`, then `return value`.
 To publish a fresh Scoped object, use the explicit [Owner forms](owner.md).

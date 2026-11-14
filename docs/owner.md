@@ -2,16 +2,24 @@
 
 [Language guide](rules.md) · [Scoped](scoped.md) · [Common forms](common-forms.md)
 
-Use `im.Owner[T]` to publish one current object. It holds a pointer to a concrete,
-valid `im.Scoped` struct. The slot is mutable; the object is immutable. `Load` returns nil
-before the first `Store`. `Store` and `Load` use atomic pointer operations.
-An earlier loaded pointer remains valid after a later `Store`. Go does not
-specify when an unused object is collected.
+Use `im.Owner[T]` to publish a new Scoped object and read the current one.
+`Store` replaces the current pointer. It does not change an object that a reader
+already loaded.
 
 ```go
 type ScopedPoint struct { im.Scoped; X int }
 type Loader struct { Current im.Owner[ScopedPoint] }
+
+func use() int {
+    loader := &Loader{}
+    loader.Current.Store(&ScopedPoint{X: 1})
+    point := loader.Current.Load()
+    return point.X
+}
 ```
+
+`Load` returns nil before the first `Store`. Both calls use atomic pointer
+operations. An earlier loaded pointer remains valid after a later `Store`.
 
 ## Allowed forms
 

@@ -42,10 +42,9 @@ The program prints `alice 10`. The checker makes `User` fields read-only.
 `FreezeMap` transfers the map's storage without a copy; use `user.Scores` to
 read it after Freeze.
 
-Use [Scoped](scoped.md) to restrict reference retention. Existing Scoped pointers
-cannot be stored or returned; [Owner](owner.md) publishes fresh Scoped objects.
-Both markers prohibit field writes from construction. The [language guide](rules.md)
-links the complete object, collection, and common source forms.
+Choose [Shared](shared.md) to save or return pointers. Choose [Scoped](scoped.md)
+to keep pointers local, or [Owner](owner.md) to publish new Scoped objects.
+The [language guide](rules.md) lists the complete allowed forms.
 
 ## Project checks
 

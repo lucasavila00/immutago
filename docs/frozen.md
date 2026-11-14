@@ -2,16 +2,16 @@
 
 [Language guide](rules.md) · [Common forms](common-forms.md) · [Performance](performance.md)
 
-Use `im.FrozenSlice` and `im.FrozenMap` to share collection storage without
-writable handles. Keys and elements must match the complete
+Use `im.FrozenSlice` and `im.FrozenMap` to share a slice or map that cannot be
+changed. Keys and elements must match the complete
 [stored-type list](common-forms.md#markers-and-stored-types).
 Use the common [statement and call forms](common-forms.md#statements-and-calls).
 Those lists and the forms below are complete; other protected operations are
 rejected. Rejected examples are not exhaustive.
 
-Freeze consumes an exclusive native builder without copying. The old handle
-cannot be used again. Frozen copies share storage; Clone creates an independent
-native container for edits, sharing only immutable element pointers.
+Build the slice or map locally, then call Freeze. Freeze does not copy the
+entries. Do not use the original variable again. Call Clone to get a separate
+slice or map that you can edit:
 
 ```go
 scores := map[string]int{"alice": 10}
@@ -21,10 +21,12 @@ next["alice"] = 20
 updated := im.FreezeMap(next) // frozen still contains 10.
 ```
 
-## Builders
+## Build before freezing
 
-These rules apply to any native map/slice you freeze, and to native containers
-whose keys or elements contain protected storage.
+A **builder** is the Go slice or map that you prepare before Freeze. These rules
+also apply to Go containers whose keys or elements contain protected storage.
+Do not make another reference to a builder. Clone copies the container;
+immutable element pointers still refer to the same read-only objects.
 
 | Allowed form | Example |
 | --- | --- |
