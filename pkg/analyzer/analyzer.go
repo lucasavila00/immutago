@@ -126,7 +126,7 @@ func (c *checks) visit(node ast.Node) bool {
 			c.checkLibraryArguments(n, instance)
 		}
 	case *ast.FuncDecl:
-		if n.Body == nil {
+		if n.Body == nil && usesLibraryType(c.pass.TypesInfo.Defs[n.Name].Type(), make(map[types.Type]bool)) {
 			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
 				"provide a Go implementation so writes and pointer transport can be checked")
 		}

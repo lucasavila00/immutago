@@ -24,6 +24,29 @@ func TestDependencyBoundary(t *testing.T) {
 	}
 }
 
+// TestBodylessBoundary checks ordinary and protected native signatures in both drivers.
+func TestBodylessBoundary(t *testing.T) {
+	root, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	binary := filepath.Join(t.TempDir(), "immutago")
+	if runtime.GOOS == "windows" {
+		binary += ".exe"
+	}
+	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
+	for _, mode := range []string{"cli", "vet"} {
+		t.Run(mode, func(t *testing.T) {
+			for _, fixture := range []string{"accepted/bodyless", "rejected/bodyless_function"} {
+				parts := strings.Split(fixture, "/")
+				dir := consumerModule(t, root, parts[0])
+				output := runBoundary(t, dir, binary, mode, parts[0] == "accepted", "./"+parts[1])
+				checkFixtureSnapshots(t, root, fixture, output)
+			}
+		})
+	}
+}
+
 // checkDependencyBoundary uses independent modules so vet must obtain fresh dependency facts.
 func checkDependencyBoundary(t *testing.T, root, binary, mode string) {
 	t.Helper()

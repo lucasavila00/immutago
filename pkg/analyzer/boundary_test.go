@@ -6,7 +6,6 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"strings"
 	"testing"
 
 	"golang.org/x/tools/go/analysis"
@@ -96,19 +95,16 @@ func TestPrunedProofBoundary(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			pass := boundaryPass(t, importer,
-				`package boundary; import api "sample"; func missing(); `+tc.declarations)
+				`package boundary; import api "sample"; `+tc.declarations)
 			if usesImmutable(pass.Pkg) {
 				t.Fatal("fixture did not prune the im import graph")
 			}
-			var reports []string
-			pass.Report = func(d analysis.Diagnostic) { reports = append(reports, d.Message) }
-			exported := false
-			pass.ExportPackageFact = func(f analysis.Fact) { exported = f.(*invalidPackage).Relevant }
+			pass.Report = func(analysis.Diagnostic) {}
 			if _, err := run(pass); err != nil {
 				t.Fatal(err)
 			}
-			if !exported || !strings.Contains(strings.Join(reports, "\n"), "unsupported function without a Go body") {
-				t.Fatalf("pruned package escaped checking: fact=%t, reports=%v", exported, reports)
+			if !protectedPackage(pass) {
+				t.Fatal("pruned package escaped checking")
 			}
 			pass.TypesInfo.Types = nil
 			if !protectedPackage(pass) {
