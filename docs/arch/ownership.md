@@ -45,11 +45,11 @@ fields of a process are not protected storage. The
 - A process value or pointer is valid only as the receiver variable in a method
   of that process or as a direct `PID.Proc()` result. The receiver can select
   fields other than the marker and call methods directly. A `Proc()` result can
-  only receive a direct synchronous call of an exported method other than `Run`
+  only receive a direct synchronous call of an exported method other than `Init` and `Run`
   that is declared on the process.
 - The process type name can appear only in its declaration, pointer receivers,
   and the type argument of `proc.Start`, `proc.StartReserved`, `proc.Reserve`, and `proc.PID`.
-- Each parameter and result of an exported method other than `Run` must pass the
+- Each parameter and result of an exported method other than `Init` and `Run` must pass the
   [type proof](../../internal/checker/proof.go). A PID is a leaf of that proof.
 - The type argument of `proc.Process` must pass the same proof, with one
   exception: `Prover.ArgumentReason` also accepts `proc.ConcurrentSafe[T]` as the
@@ -87,7 +87,12 @@ argument-only type as a builder element.
 A process is not an Owner holder; the holder pointer rules do not apply to it.
 Methods with a process receiver use the separate process rules above, not the
 marked-struct receiver rules. The runtime creates a new value from the
-same arguments after each restart delay and stores it in the same PID.
+same arguments after each restart delay, calls Init, and stores it in the same PID
+only after Init succeeds. The checker accepts the exact `Init() error` signature
+or the default from `proc.Process`; user calls to either runtime entry point fail.
+Exact Start calls with protected arguments gain the two-local-result binding
+form (`:=` or `=`). Scalar-only calls keep ordinary Go binding rules. Other tuple rules stay
+unchanged. Failed setup stops staged children before the candidate is discarded.
 These rules do not check the origin or destination of mutable field handles
 in ordinary method bodies; they do not prove memory isolation.
 

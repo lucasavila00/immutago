@@ -44,7 +44,7 @@ type fakeStore struct{}
 func (fakeStore) Get(string) (string, bool) { return "", false }
 
 // StartFetcher starts a Fetcher with trusted dependencies.
-func StartFetcher(root *proc.Supervisor, log *slog.Logger) proc.PID[Fetcher] {
+func StartFetcher(root *proc.Supervisor, log *slog.Logger) (proc.PID[Fetcher], error) {
 	return proc.Start[Fetcher](root, FetcherArgs{
 		BaseURL:  "https://example.com",
 		Log:      proc.AssumeConcurrentSafe(log),
@@ -62,6 +62,6 @@ type Tracer struct {
 func (t *Tracer) Run(ctx context.Context) { t.Args().Value().Info("trace") }
 
 // StartTracer starts a Tracer.
-func StartTracer(root *proc.Supervisor, log *slog.Logger) proc.PID[Tracer] {
+func StartTracer(root *proc.Supervisor, log *slog.Logger) (proc.PID[Tracer], error) {
 	return proc.Start[Tracer](root, proc.AssumeConcurrentSafe(log))
 }

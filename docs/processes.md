@@ -9,7 +9,7 @@ restart replaces the struct.
 Method calls are ordinary Go calls in the caller's goroutine. There is no
 mailbox and calls are not serialized. Use a mutex when methods and `Run` access
 the same mutable fields. The checker requires immutable start arguments and
-exported method parameters/results. The one exception is an
+parameters/results for methods called through a PID. The one exception is an
 [unchecked dependency](#concurrent-dependencies) in the start arguments.
 
 ## Start and call a process
@@ -46,7 +46,8 @@ func (c *Counter) Add() int {
 
 func main() {
     root := proc.NewRoot(nil)
-    counter := proc.Start[Counter](root, 1)
+    counter, err := proc.Start[Counter](root, 1)
+    if err != nil { panic(err) }
     fmt.Println(counter.Proc().Add()) // 1
     <-root.Stop()
 }
@@ -54,7 +55,7 @@ func main() {
 
 - `Process[int]` declares the start argument type. `Args()` reads the value `1`
   supplied to Start.
-- `Start[Counter]` creates a Counter and starts Run. Keep the returned PID.
+- `Start[Counter]` initializes a Counter and starts Run. Check the error, then keep the PID.
 - `counter.Proc().Add()` calls Add on the current Counter. It prints `1`.
 - `<-root.Stop()` cancels Run's context and waits for it to return.
 
@@ -82,8 +83,10 @@ With those example types, start the loader and limiter in one group:
 
 ```go
 group := proc.StartSupervisor(root)
-loader := proc.Start[ConfigLoader](group, LoaderArgs{Path: "api", Every: time.Minute})
-limiter := proc.Start[Limiter](group, LimiterArgs{Loader: loader, Key: "api"})
+loader, err := proc.Start[ConfigLoader](group, LoaderArgs{Path: "api", Every: time.Minute})
+if err != nil { panic(err) }
+limiter, err := proc.Start[Limiter](group, LimiterArgs{Loader: loader, Key: "api"})
+if err != nil { panic(err) }
 decision := limiter.Proc().Take()
 ```
 
@@ -138,48 +141,63 @@ shows a logger, a client, a factory function, and a test fake. Read the value
 only with `l.Args().Log.Value()` in a process method. The
 [process reference](process-forms.md#concurrent-dependencies) lists every form.
 
-## Start and readiness
+## Set up state before calls
 
-A caller can call a process method before Run starts. Keep required data in
-the start arguments. If Run and another method both need a private field,
-initialize it under a mutex:
+Declare `Init() error` when methods need state built from the start arguments:
 
 ```go
-func (w *Waker) wakeChannel() chan struct{} {
-    w.mu.Lock()
-    defer w.mu.Unlock()
-    if w.wake == nil {
-        w.wake = make(chan struct{}, 1)
-    }
-    return w.wake
+type Table struct {
+    proc.Process[int]
+    slots []int
 }
+
+func (t *Table) Init() error {
+    if t.Args() < 1 { return fmt.Errorf("slot count must be positive") }
+    t.slots = make([]int, t.Args())
+    t.slots[0] = 42
+    return nil
+}
+
+func (*Table) Run(ctx context.Context) { <-ctx.Done() }
+func (t *Table) First() int { return t.slots[0] }
+
+table, err := proc.Start[Table](root, 3)
+if err != nil { return err }
+value := table.Proc().First() // 42, even before Run starts.
 ```
 
-Both `Run` and `Wake` call this method in the
-[waker example](../tests/testdata/accepted/process/waker.go). A caller can request
-work before Run begins; the channel holds that request.
-Loading a file or waiting for a server is a separate readiness condition. Expose
-that condition through a process method, such as `Ready() bool`.
+Start sets the arguments and calls Init before callers can reach the object.
+If Init returns an error, Start returns that error and no usable PID. If Init
+panics, the panic reaches the caller. A process without its own Init uses the
+empty implementation in `Process`. Only the runtime calls Init and Run.
+The [complete example](../tests/testdata/accepted/processinit/main.go) also
+shows a failed start and a retry with a reserved PID.
 
-For two processes that need each other's PID, Reserve one PID, start the first
-process, then call StartReserved for the reserved PID. Reserve does not wait
-for startup. Calling Proc before StartReserved panics; coordinate the first
-calls so that both processes have started.
+Use Init to create a channel too: the
+[waker example](../tests/testdata/accepted/process/waker.go) needs no setup flag
+or setup lock. Run and Wake receive the initialized channel.
+If background work must finish later, expose that separate state through a
+method such as `Ready() bool`.
+
+For two processes that need each other's PID, Reserve one PID, start the first,
+then call StartReserved for the reserved PID. Check its returned error.
+Proc panics until initialization succeeds. A failed StartReserved leaves the
+PID available for another attempt. Init must not call an unstarted peer.
 
 ## Restart and failure
 
 If Run returns, it is not restarted, and its supervisor removes it. If Run
 panics, the supervisor waits before restarting it: 1 second after the first
 panic, then twice as long for each restart in the last 5 minutes. It creates a new struct from the same start
-arguments and replaces the value behind the PID. Mutable fields return to their
-zero values, including empty Owner fields.
+arguments, calls Init, and replaces the value behind the PID only when Init succeeds.
+An Init error or panic counts as a failed attempt under the same restart limit.
 
-During the delay, PID calls still use the old struct. A call already in progress
+During the delay and initialization, PID calls still use the old struct. A call already in progress
 finishes on that old struct after the replacement. A method panic propagates
 in the caller's goroutine. The supervisor handles it only if it leaves a
 supervised Run. The restart rules apply to the process whose Run failed.
 
-A sixth panic from the same child in 5 minutes stops its siblings, last started
+A sixth failure from the same child in 5 minutes stops its siblings, last started
 first, and passes the failure to the parent supervisor. The parent restarts the
 subtree with the same retry rule. If the failure reaches the root, the program
 panics with the last panic value.
@@ -203,7 +221,8 @@ root := proc.NewRoot(func(value any, stack []byte) {
 `root.Stop()` returns a channel. Wait on it to wait for the supervised work to
 stop. Children stop in reverse start order. Run must return when its context
 is cancelled; Stop cannot force it to exit. Stop does not wait for direct method
-calls. A PID can still call methods on its last struct after Run ends or Stop
+calls. Init has no cancellation context and must return for a restarting process
+to stop. A PID can still call methods on its last struct after Run ends or Stop
 completes.
 
 Use `proc.StartSupervisor(parent)` to stop a group together and restart that
@@ -216,7 +235,10 @@ cleanup and fails if it does not stop within 5 seconds.
 Use `p.Supervisor()` when a process decides which workers to run. For example,
 a dispatcher can add one group for each configuration entry and remove a group
 when that entry is deleted. These children stop with the process. A restart
-starts a new process with no children; its Run builds the groups again.
+starts a new process; Init or Run builds its groups again. Children created in
+Init wait until Run starts. If initialization fails, the runtime stops those
+children. Init must close any files or other resources it opened before returning
+an error; the runtime does not close application resources.
 
 ```go
 proc.Start[Worker](p.Supervisor(), WorkerArgs{ID: 1})

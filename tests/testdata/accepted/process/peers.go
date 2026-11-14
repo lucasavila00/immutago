@@ -17,12 +17,19 @@ type Peers struct {
 
 // StartPeers starts the processes under root.
 func StartPeers(root *proc.Supervisor) Peers {
-	config := proc.Start[ConfigLoader](root, LoaderArgs{Path: "requests", Every: time.Second})
-	return Peers{
-		Config:  config,
-		Cache:   proc.Start[Cache](proc.StartSupervisor(root), proc.None{}),
-		Limiter: proc.Start[Limiter](root, LimiterArgs{Loader: config, Key: "requests"}),
+	config, err := proc.Start[ConfigLoader](root, LoaderArgs{Path: "requests", Every: time.Second})
+	if err != nil {
+		panic(err)
 	}
+	cache, err := proc.Start[Cache](proc.StartSupervisor(root), proc.None{})
+	if err != nil {
+		panic(err)
+	}
+	limiter, err := proc.Start[Limiter](root, LimiterArgs{Loader: config, Key: "requests"})
+	if err != nil {
+		panic(err)
+	}
+	return Peers{Config: config, Cache: cache, Limiter: limiter}
 }
 
 // Serve handles one request with direct calls on Proc results.

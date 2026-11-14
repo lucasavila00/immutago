@@ -40,7 +40,9 @@ func TestNewRoot(t *testing.T) {
 		release = make(chan struct{})
 		failing := &recorder{TB: t}
 		root := NewRoot(failing)
-		proc.Start[stuck](root, proc.None{})
+		if _, err := proc.Start[stuck](root, proc.None{}); err != nil {
+			t.Fatal(err)
+		}
 		synctest.Wait()
 		failing.cleanups[0]()
 		if passing.errors != 0 || failing.errors != 1 {

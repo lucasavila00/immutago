@@ -63,6 +63,15 @@ func TestCLI(t *testing.T) {
 		output := runCommand(t, dir, true, "go", "run", "./freezeruntime")
 		checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/freezeruntime/stdout.txt"), output)
 	})
+	t.Run("process_init", func(t *testing.T) {
+		dir := consumerModule(t, root, "accepted")
+		output := runCommand(t, dir, true, binary, "./processinit")
+		checkFixtureSnapshots(t, root, "accepted/processinit", output)
+		output = runCommand(t, dir, true, "go", "vet", "-vettool="+binary, "./processinit")
+		checkFixtureSnapshots(t, root, "accepted/processinit", output)
+		output = runCommand(t, dir, true, "go", "run", "./processinit")
+		checkSnapshot(t, filepath.Join(root, "tests/testdata/accepted/processinit/stdout.txt"), output)
+	})
 	t.Run("invalid_dependencies", func(t *testing.T) {
 		checkInvalidDependencies(t, root, binary)
 	})

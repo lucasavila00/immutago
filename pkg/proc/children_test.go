@@ -16,7 +16,7 @@ import (
 func TestGoexitStopsWatcher(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		root.add(func(context.Context) { runtime.Goexit() })
+		root.add(func(context.Context) { runtime.Goexit() }, func() {}, nil)
 		synctest.Wait()
 		done := root.Stop()
 		synctest.Wait()
@@ -35,9 +35,15 @@ type pool struct{ Process[None] }
 func (p *pool) Run(ctx context.Context) {
 	record("start pool")
 	sup := p.Supervisor()
-	Start[first](sup, None{})
-	Start[second](StartSupervisor(sup), None{})
-	Start[third](sup, None{})
+	if _, err := Start[first](sup, None{}); err != nil {
+		panic(err)
+	}
+	if _, err := Start[second](StartSupervisor(sup), None{}); err != nil {
+		panic(err)
+	}
+	if _, err := Start[third](sup, None{}); err != nil {
+		panic(err)
+	}
 	<-ctx.Done()
 	record("stop pool")
 }
@@ -52,8 +58,12 @@ type restartedPool struct{ Process[None] }
 
 // Run starts the children, panics on the first run when released, and otherwise waits until ctx ends.
 func (p *restartedPool) Run(ctx context.Context) {
-	Start[first](p.Supervisor(), None{})
-	Start[second](p.Supervisor(), None{})
+	if _, err := Start[first](p.Supervisor(), None{}); err != nil {
+		panic(err)
+	}
+	if _, err := Start[second](p.Supervisor(), None{}); err != nil {
+		panic(err)
+	}
 	if poolRuns.Add(1) == 1 {
 		<-poolRelease
 		panic("pool")
@@ -67,7 +77,9 @@ type failingParent struct{ Process[None] }
 // Run starts the failing child and waits until ctx ends.
 func (p *failingParent) Run(ctx context.Context) {
 	record("start parent")
-	Start[failing](p.Supervisor(), None{})
+	if _, err := Start[failing](p.Supervisor(), None{}); err != nil {
+		panic(err)
+	}
 	<-ctx.Done()
 	record("stop parent")
 }
@@ -77,7 +89,9 @@ func (p *failingParent) Run(ctx context.Context) {
 func TestChildrenStopBeforeRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		Start[pool](root, None{})
+		if _, err := Start[pool](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		synctest.Wait()
 		expectStarted(t, "start pool", "start first", "start second", "start third")
 		<-root.Stop()
@@ -100,7 +114,7 @@ func TestSupervisorDuringHalt(t *testing.T) {
 		<-entered
 		s := p.Supervisor()
 		ran := make(chan struct{})
-		s.add(func(context.Context) { close(ran) })
+		s.add(func(context.Context) { close(ran) }, func() {}, nil)
 		synctest.Wait()
 		close(resume)
 		<-halted
@@ -128,7 +142,9 @@ type asker struct {
 // Run starts a child that calls Ask and answers each request until ctx ends.
 func (a *asker) Run(ctx context.Context) {
 	a.requests = make(chan chan int)
-	Start[caller](a.Supervisor(), a.Args().Self)
+	if _, err := Start[caller](a.Supervisor(), a.Args().Self); err != nil {
+		panic(err)
+	}
 	for {
 		select {
 		case <-ctx.Done():
@@ -164,7 +180,9 @@ func TestChildCallsParentDuringStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
 		pid := Reserve[asker]()
-		StartReserved(root, pid, askerArgs{Self: pid})
+		if err := StartReserved(root, pid, askerArgs{Self: pid}); err != nil {
+			t.Fatal(err)
+		}
 		time.Sleep(time.Second)
 		<-root.Stop()
 		expectEvents(t, "stop caller", "stop asker")
@@ -177,7 +195,9 @@ func TestChildrenRestartWithRun(t *testing.T) {
 		poolRuns.Store(0)
 		poolRelease = make(chan struct{})
 		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		Start[restartedPool](root, None{})
+		if _, err := Start[restartedPool](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		synctest.Wait()
 		expectStarted(t, "start first", "start second")
 		close(poolRelease)
@@ -196,7 +216,9 @@ func TestChildEscalationFailsRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
 		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		Start[failingParent](root, None{})
+		if _, err := Start[failingParent](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		time.Sleep(31 * time.Second)
 		synctest.Wait()
 		expectEvents(t, "start parent", "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31",
@@ -234,7 +256,9 @@ func (*router) Run(ctx context.Context) { <-ctx.Done() }
 // Add starts a variant under its own nested supervisor in the supervisor of the run.
 func (r *router) Add(name string) {
 	sub := StartSupervisor(r.Supervisor())
-	Start[variant](sub, variantArgs{Name: name})
+	if _, err := Start[variant](sub, variantArgs{Name: name}); err != nil {
+		panic(err)
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.variants == nil {
@@ -265,7 +289,7 @@ func (r *router) entries() int {
 func TestChildrenChangeDuringRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		pid := Start[router](root, None{})
+		pid, _ := Start[router](root, None{})
 		pid.Proc().Add("a")
 		synctest.Wait()
 		expectEvents(t, "start a")
@@ -297,7 +321,7 @@ func TestChildrenOfProcessThatDoesNotRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
 		<-root.Stop()
-		pid := Start[router](root, None{})
+		pid, _ := Start[router](root, None{})
 		pid.Proc().Add("a")
 		synctest.Wait()
 		expectEvents(t)
@@ -314,9 +338,13 @@ func (*returning) Run(context.Context) {}
 func TestReturnedChildrenAreRemoved(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		Start[first](root, None{})
+		if _, err := Start[first](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		for range 1000 {
-			Start[returning](root, None{})
+			if _, err := Start[returning](root, None{}); err != nil {
+				t.Fatal(err)
+			}
 		}
 		synctest.Wait()
 		root.mu.Lock()
@@ -336,8 +364,12 @@ type shortParent struct{ Process[None] }
 
 // Run starts the children and returns after 1 s.
 func (p *shortParent) Run(context.Context) {
-	Start[first](p.Supervisor(), None{})
-	Start[second](p.Supervisor(), None{})
+	if _, err := Start[first](p.Supervisor(), None{}); err != nil {
+		panic(err)
+	}
+	if _, err := Start[second](p.Supervisor(), None{}); err != nil {
+		panic(err)
+	}
 	time.Sleep(time.Second)
 }
 
@@ -345,7 +377,9 @@ func (p *shortParent) Run(context.Context) {
 func TestChildrenStopWhenRunReturns(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		Start[shortParent](root, None{})
+		if _, err := Start[shortParent](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		synctest.Wait()
 		expectStarted(t, "start first", "start second")
 		time.Sleep(time.Minute)
@@ -371,8 +405,12 @@ type stoppingParent struct{ Process[None] }
 
 // Run starts the failing child, then the slow child, and waits until ctx ends.
 func (p *stoppingParent) Run(ctx context.Context) {
-	Start[failing](p.Supervisor(), None{})
-	Start[slowStop](p.Supervisor(), None{})
+	if _, err := Start[failing](p.Supervisor(), None{}); err != nil {
+		panic(err)
+	}
+	if _, err := Start[slowStop](p.Supervisor(), None{}); err != nil {
+		panic(err)
+	}
 	<-ctx.Done()
 	record("stop parent")
 }
@@ -382,7 +420,9 @@ func TestChildEscalatesDuringStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
 		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		Start[stoppingParent](root, None{})
+		if _, err := Start[stoppingParent](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		time.Sleep(30 * time.Second)
 		synctest.Wait()
 		takeEvents()
@@ -396,9 +436,13 @@ type lateParent struct{ Process[None] }
 
 // Run starts a failing child, waits until ctx ends, and then starts another child.
 func (p *lateParent) Run(ctx context.Context) {
-	Start[failing](p.Supervisor(), None{})
+	if _, err := Start[failing](p.Supervisor(), None{}); err != nil {
+		panic(err)
+	}
 	<-ctx.Done()
-	Start[first](p.Supervisor(), None{})
+	if _, err := Start[first](p.Supervisor(), None{}); err != nil {
+		panic(err)
+	}
 	record("late start")
 }
 
@@ -407,7 +451,9 @@ func TestStartAfterEscalation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
 		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		Start[lateParent](root, None{})
+		if _, err := Start[lateParent](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		time.Sleep(31 * time.Second)
 		synctest.Wait()
 		expectEvents(t, "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31", "late start")
@@ -420,7 +466,7 @@ func TestStartAfterEscalation(t *testing.T) {
 func TestMethodsRaceStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		pid := Start[router](root, None{})
+		pid, _ := Start[router](root, None{})
 		synctest.Wait()
 		var callers sync.WaitGroup
 		callers.Go(func() {
@@ -469,7 +515,9 @@ type rebuilding struct{ Process[variantNames] }
 // Run starts one nested group for each variant and waits until ctx ends.
 func (r *rebuilding) Run(ctx context.Context) {
 	for _, name := range r.Args().Names.All() {
-		Start[namedVariant](StartSupervisor(r.Supervisor()), variantArgs{Name: name})
+		if _, err := Start[namedVariant](StartSupervisor(r.Supervisor()), variantArgs{Name: name}); err != nil {
+			panic(err)
+		}
 	}
 	<-ctx.Done()
 }
@@ -479,7 +527,9 @@ func (r *rebuilding) Run(ctx context.Context) {
 func TestGroupEscalation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		Start[rebuilding](root, variantNames{Names: im.FreezeSlice([]string{"good", "bad"})})
+		if _, err := Start[rebuilding](root, variantNames{Names: im.FreezeSlice([]string{"good", "bad"})}); err != nil {
+			t.Fatal(err)
+		}
 		time.Sleep(216 * time.Second)
 		synctest.Wait()
 		expectEvents(t, "start good")

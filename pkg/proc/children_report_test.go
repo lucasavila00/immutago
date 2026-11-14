@@ -16,10 +16,14 @@ func (*reportingParent) Run(ctx context.Context) { <-ctx.Done() }
 // StartChild starts one child that panics.
 func (p *reportingParent) StartChild(nested bool) {
 	if nested {
-		Start[reportingChild](StartSupervisor(p.Supervisor()), None{})
+		if _, err := Start[reportingChild](StartSupervisor(p.Supervisor()), None{}); err != nil {
+			panic(err)
+		}
 		return
 	}
-	Start[reportingChild](p.Supervisor(), None{})
+	if _, err := Start[reportingChild](p.Supervisor(), None{}); err != nil {
+		panic(err)
+	}
 }
 
 // reportingChild panics when it runs.
@@ -40,7 +44,7 @@ func TestProcessChildrenInheritReporter(t *testing.T) {
 						reports <- value == "child report" && bytes.Contains(stack, []byte("reportingChild"))
 					},
 				}
-				pid := Start[reportingParent](parent, None{})
+				pid, _ := Start[reportingParent](parent, None{})
 				if before {
 					pid.Proc().StartChild(nested)
 				}

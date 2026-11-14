@@ -203,7 +203,10 @@ func expectStarted(t *testing.T, want ...string) {
 func TestStart(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		pid := Start[counter](root, None{})
+		pid, err := Start[counter](root, None{})
+		if err != nil {
+			t.Fatal(err)
+		}
 		process := pid.Proc()
 		if pid.Proc() != process || process.count != 0 {
 			t.Fatal("Proc did not return one new process")
@@ -228,10 +231,16 @@ func TestStart(t *testing.T) {
 func TestStopOrder(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		Start[first](root, None{})
+		if _, err := Start[first](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		nested := StartSupervisor(root)
-		Start[second](nested, None{})
-		Start[third](root, None{})
+		if _, err := Start[second](nested, None{}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Start[third](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		synctest.Wait()
 		expectStarted(t, "start first", "start second", "start third")
 		<-root.Stop()
@@ -244,14 +253,20 @@ func TestStopOrder(t *testing.T) {
 func TestStopNested(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		Start[first](root, None{})
+		if _, err := Start[first](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		nested := StartSupervisor(root)
-		Start[second](nested, None{})
+		if _, err := Start[second](nested, None{}); err != nil {
+			t.Fatal(err)
+		}
 		synctest.Wait()
 		expectStarted(t, "start first", "start second")
 		<-nested.Stop()
 		expectEvents(t, "stop second")
-		Start[third](nested, None{})
+		if _, err := Start[third](nested, None{}); err != nil {
+			t.Fatal(err)
+		}
 		<-root.Stop()
 		expectEvents(t, "stop first")
 	})
@@ -261,10 +276,14 @@ func TestStopNested(t *testing.T) {
 func TestStopNestedReleases(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		Start[first](root, None{})
+		if _, err := Start[first](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		for range 3 {
 			nested := StartSupervisor(root)
-			Start[second](nested, None{})
+			if _, err := Start[second](nested, None{}); err != nil {
+				t.Fatal(err)
+			}
 			synctest.Wait()
 			entry := nested.entry
 			<-nested.Stop()
@@ -288,7 +307,9 @@ func TestStopNestedReleases(t *testing.T) {
 func TestSelfStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		selfRoot = NewRoot(nil)
-		Start[stopper](selfRoot, None{})
+		if _, err := Start[stopper](selfRoot, None{}); err != nil {
+			t.Fatal(err)
+		}
 		synctest.Wait()
 		expectEvents(t, "stopped")
 		<-selfRoot.Stop()
@@ -300,7 +321,9 @@ func TestRestartAndEscalate(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
 		escalated := make(chan any, 1)
-		Start[failing](root(func(value any) { escalated <- value }, nil), None{})
+		if _, err := Start[failing](root(func(value any) { escalated <- value }, nil), None{}); err != nil {
+			t.Fatal(err)
+		}
 		if value := <-escalated; value != int64(6) {
 			t.Fatalf("escalated %v, want 6", value)
 		}
@@ -323,7 +346,9 @@ func TestPanicReport(t *testing.T) {
 			defer mu.Unlock()
 			reported = append(reported, value)
 		}
-		Start[failing](root(func(value any) { escalated <- value }, report), None{})
+		if _, err := Start[failing](root(func(value any) { escalated <- value }, report), None{}); err != nil {
+			t.Fatal(err)
+		}
 		<-escalated
 		takeEvents()
 		mu.Lock()
@@ -353,7 +378,9 @@ func TestNestedPanicReport(t *testing.T) {
 		reported := make(chan any, 1)
 		root := NewRoot(func(value any, _ []byte) { reported <- value })
 		nested := StartSupervisor(root)
-		Start[failing](nested, None{})
+		if _, err := Start[failing](nested, None{}); err != nil {
+			t.Fatal(err)
+		}
 		if value := <-reported; value != int64(1) {
 			t.Fatalf("reported %v, want 1", value)
 		}
@@ -366,7 +393,9 @@ func TestNestedPanicReport(t *testing.T) {
 func TestRestartWindow(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		Start[slowFailing](root, None{})
+		if _, err := Start[slowFailing](root, None{}); err != nil {
+			t.Fatal(err)
+		}
 		time.Sleep(time.Hour)
 		<-root.Stop()
 		expectEvents(t, "00:06:00", "00:12:01", "00:18:02", "00:24:03", "00:30:04", "00:36:05",
@@ -379,10 +408,16 @@ func TestEscalateToParent(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
 		nested := StartSupervisor(root)
-		Start[first](nested, None{})
-		Start[second](nested, None{})
+		if _, err := Start[first](nested, None{}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Start[second](nested, None{}); err != nil {
+			t.Fatal(err)
+		}
 		failures.Store(0)
-		Start[failing](nested, None{})
+		if _, err := Start[failing](nested, None{}); err != nil {
+			t.Fatal(err)
+		}
 		synctest.Wait()
 		expectStarted(t, "start first", "start second", "00:00:00")
 		time.Sleep(31 * time.Second)
@@ -401,7 +436,7 @@ func TestRestartCreatesNewValue(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
 		root := NewRoot(nil)
-		pid := Start[restarted](root, label{Name: "cache"})
+		pid, _ := Start[restarted](root, label{Name: "cache"})
 		before := pid.Proc()
 		synctest.Wait()
 		if pid.Proc() != before || before.runs != 1 {
@@ -423,9 +458,15 @@ func TestReserve(t *testing.T) {
 		root := NewRoot(nil)
 		pongPID := Reserve[pong]()
 		expectPanic(t, "proc: PID not started", func() { pongPID.Proc() })
-		pingPID := Start[ping](root, pingArgs{Pong: pongPID})
-		StartReserved(root, pongPID, pongArgs{Ping: pingPID})
-		expectPanic(t, "proc: PID already started", func() { StartReserved(root, pongPID, pongArgs{Ping: pingPID}) })
+		pingPID, _ := Start[ping](root, pingArgs{Pong: pongPID})
+		if err := StartReserved(root, pongPID, pongArgs{Ping: pingPID}); err != nil {
+			t.Fatal(err)
+		}
+		expectPanic(t, "proc: PID already started", func() {
+			if err := StartReserved(root, pongPID, pongArgs{Ping: pingPID}); err != nil {
+				panic(err)
+			}
+		})
 		time.Sleep(time.Second)
 		synctest.Wait()
 		expectStarted(t, "ping sees pong", "pong sees ping")
@@ -449,7 +490,11 @@ func TestStartAfterStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
 		<-root.Stop()
-		if Start[first](root, None{}).Proc() == nil {
+		pid, err := Start[first](root, None{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if pid.Proc() == nil {
 			t.Fatal("Start returned an empty PID")
 		}
 		synctest.Wait()
@@ -460,7 +505,7 @@ func TestStartAfterStop(t *testing.T) {
 // BenchmarkPIDProc measures one PID.Proc call.
 func BenchmarkPIDProc(b *testing.B) {
 	root := NewRoot(nil)
-	pid := Start[counter](root, None{})
+	pid, _ := Start[counter](root, None{})
 	b.ReportAllocs()
 	for b.Loop() {
 		_ = pid.Proc()
@@ -506,7 +551,10 @@ func (r *reporter) Run(context.Context) { r.Args().Report.Value()("run") }
 func TestTrustedArgument(t *testing.T) {
 	reported := make(chan string, 1)
 	root := NewRoot(nil)
-	Start[reporter](root, reporterArgs{Report: AssumeConcurrentSafe(func(event string) { reported <- event })})
+	args := reporterArgs{Report: AssumeConcurrentSafe(func(event string) { reported <- event })}
+	if _, err := Start[reporter](root, args); err != nil {
+		t.Fatal(err)
+	}
 	if got := <-reported; got != "run" {
 		t.Fatalf("reported %q", got)
 	}

@@ -31,6 +31,7 @@ no fallback validation when the analyzer is omitted.
 | Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
 | Storage reuse, clone independence, identity, and allocation counts | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [iterator tests](../../pkg/im/iterator_test.go) |
 | Process declarations, PIDs, receiver uses, and start arguments | [Process tests](../../pkg/analyzer/process_test.go), [dependency tests](../../pkg/analyzer/process_dependency_test.go), [marker tests](../../internal/checker/markers_test.go), [CLI fixtures](../../tests/testdata/accepted/process) |
+| Init signatures, startup errors, publication, and failed setup cleanup | [Checker tests](../../pkg/analyzer/process_init_test.go), [runtime tests](../../pkg/proc/init_test.go), [CLI example](../../tests/testdata/accepted/processinit/main.go) |
 | UncheckedValue handles: declaring-package wrap and read, and storage as an allowed type | [UncheckedValue tests](../../pkg/analyzer/unchecked_value_test.go), [CLI fixtures](../../tests/testdata/accepted/uncheckedvalue) |
 | Restart, backoff, escalation, stop order, reserved PIDs, and the test helper | [Runtime tests](../../pkg/proc/proc_test.go), [helper tests](../../pkg/proc/proctest/proctest_test.go) |
 | Consumer-only dependency failures | [Dependency tests](../../pkg/analyzer/dependencies_test.go), [graph and gob tests](../../pkg/analyzer/dependencies_graph_test.go), [CLI fixtures](../../tests/cli_test.go) |

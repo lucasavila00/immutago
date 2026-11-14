@@ -115,6 +115,9 @@ func (c *subsetChecks) checkProcessNode(node ast.Node) {
 		c.checkProcessName(n)
 	case *ast.SelectorExpr:
 		object := c.pass.TypesInfo.ObjectOf(n.Sel)
+		if c.runtimeEntryPoint(object) {
+			c.pass.Reportf(n.Pos(), "only the runtime can call a process %s method", object.Name())
+		}
 		if procMethod(object) && !c.directProc(n) {
 			c.pass.Reportf(n.Pos(), processEscape)
 		}
@@ -189,6 +192,8 @@ func (c *subsetChecks) checkProcessStruct(n *ast.StructType) {
 		c.pass.Reportf(n.Pos(), "processes embed proc.Process once and no immutable marker")
 	case !processRun(c.pass.TypesInfo.Defs[spec.Name].Type()):
 		c.pass.Reportf(n.Pos(), "a process must declare Run(context.Context) with a pointer receiver and no results")
+	case !processInit(c.pass.TypesInfo.Defs[spec.Name].Type()):
+		c.pass.Reportf(n.Pos(), "a process must use the default Init or declare Init() error with a pointer receiver")
 	}
 }
 
@@ -210,6 +215,39 @@ func processRun(t types.Type) bool {
 	parameter, ok := types.Unalias(signature.Params().At(0).Type()).(*types.Named)
 	return ok && parameter.Obj().Pkg() != nil && parameter.Obj().Pkg().Path() == "context" &&
 		parameter.Obj().Name() == "Context"
+}
+
+// processInit accepts the exact default method or a directly declared Init() error.
+func processInit(t types.Type) bool {
+	object, index, _ := types.LookupFieldOrMethod(types.NewPointer(t), false, nil, checker.InitMethod)
+	method, ok := object.(*types.Func)
+	if !ok {
+		return false
+	}
+	if len(index) == 2 && runtimeMethod(method, checker.ProcessMarker, checker.InitMethod) {
+		return true
+	}
+	if len(index) != 1 {
+		return false
+	}
+	signature := method.Type().(*types.Signature)
+	pointer, ok := signature.Recv().Type().(*types.Pointer)
+	return ok && types.Identical(pointer.Elem(), t) && !genericSignature(signature) &&
+		!signature.Variadic() && signature.Params().Len() == 0 && signature.Results().Len() == 1 &&
+		types.Identical(signature.Results().At(0).Type(), types.Universe.Lookup("error").Type())
+}
+
+// processEntryPoint identifies methods called only by the runtime.
+func processEntryPoint(name string) bool {
+	return name == checker.RunMethod || name == checker.InitMethod
+}
+
+// runtimeEntryPoint identifies Run on a process and explicit or default Init methods.
+func (c *subsetChecks) runtimeEntryPoint(object types.Object) bool {
+	method, ok := object.(*types.Func)
+	return ok && processEntryPoint(method.Name()) &&
+		(c.processSignature(method.Type().(*types.Signature)) ||
+			runtimeMethod(method, checker.ProcessMarker, checker.InitMethod))
 }
 
 // checkProcessName permits a process type name only as a pointer receiver or a proc type argument.
@@ -309,7 +347,7 @@ func (c *subsetChecks) insideClosure(node ast.Node) bool {
 	return false
 }
 
-// allowedReceiverUse permits selection of a field other than the marker and a direct synchronous call other than Run.
+// allowedReceiverUse permits fields other than the marker and direct synchronous calls other than Run or Init.
 func (c *subsetChecks) allowedReceiverUse(receiver *ast.Ident) bool {
 	selector, ok := c.unparenthesizedParent(receiver).(*ast.SelectorExpr)
 	if !ok || ast.Unparen(selector.X) != receiver {
@@ -322,7 +360,7 @@ func (c *subsetChecks) allowedReceiverUse(receiver *ast.Ident) bool {
 	if selection.Kind() == types.FieldVal {
 		return !processMarker(selection.Type())
 	}
-	return selection.Kind() == types.MethodVal && selection.Obj().Name() != checker.RunMethod &&
+	return selection.Kind() == types.MethodVal && !processEntryPoint(selection.Obj().Name()) &&
 		c.synchronousCall(selector)
 }
 
@@ -334,7 +372,7 @@ func (c *subsetChecks) allowedProcUse(proc *ast.CallExpr) bool {
 	}
 	selection := c.pass.TypesInfo.Selections[selector]
 	return selection != nil && selection.Kind() == types.MethodVal && len(selection.Index()) == 1 &&
-		selection.Obj().Exported() && selection.Obj().Name() != checker.RunMethod && c.synchronousCall(selector)
+		selection.Obj().Exported() && !processEntryPoint(selection.Obj().Name()) && c.synchronousCall(selector)
 }
 
 // synchronousCall requires a direct call that is not a go or defer statement.
@@ -406,7 +444,7 @@ func (c *subsetChecks) directProc(selector *ast.SelectorExpr) bool {
 
 // checkProcessMethod requires allowed stored types in each parameter and result of an exported process method.
 func (c *checks) checkProcessMethod(declaration *ast.FuncDecl) {
-	if declaration.Recv == nil || !declaration.Name.IsExported() || declaration.Name.Name == checker.RunMethod {
+	if declaration.Recv == nil || !declaration.Name.IsExported() || processEntryPoint(declaration.Name.Name) {
 		return
 	}
 	signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)

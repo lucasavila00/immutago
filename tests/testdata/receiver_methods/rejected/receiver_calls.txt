@@ -49,4 +49,4 @@ receiver_calls.go:45:26: unsupported immutable operation: closures cannot captur
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
 receiver_calls.go:46:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: got, found := value.Get()
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start

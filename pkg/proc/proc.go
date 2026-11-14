@@ -3,7 +3,8 @@
 // A process is a mutable struct that embeds Process[A] and has a Run(context.Context)
 // method with a pointer receiver. A holds immutable arguments or explicit unchecked
 // dependencies; use None for a process without arguments. Start creates a new process value,
-// gives it the arguments, runs Run in a new goroutine, and returns its PID. Callers
+// gives it the arguments, calls Init, and returns an error if Init fails. After Init succeeds,
+// Start publishes the value, runs Run in a new goroutine, and returns its PID. Callers
 // keep the PID and call exported methods directly on the process pointer from
 // PID.Proc. The immutago analyzer proves that these methods take and return only
 // immutable values and PIDs. For processes that need each other's PIDs, Reserve
@@ -12,10 +13,11 @@
 // A supervisor runs its children until Stop. If Run returns, the process ends, and the supervisor removes it.
 // If Run panics, the supervisor waits 1 s, doubling the delay for each restart
 // in the last 5 minutes. It then creates a new process value from the same
-// arguments, stores it in the same PID, and calls Run. Calls during the delay
+// arguments, calls Init, stores it in the same PID, and calls Run. An Init error or panic
+// fails that restart attempt and keeps the old value in the PID. Calls during the delay
 // still use the old value; calls already in progress finish on that value. A sixth
-// panic from the same child in 5 minutes stops all children of the supervisor in reverse start order and
-// escalates the panic to the parent supervisor, which restarts the subtree with
+// failed run or initialization from the same child in 5 minutes stops all children of the supervisor in reverse
+// start order and escalates the failure to the parent supervisor, which restarts the subtree with
 // the same rule. At the root supervisor, the escalation panics again with the
 // last panic value, and the program exits. NewRoot accepts a function to report recovered panics.
 //
@@ -64,6 +66,10 @@ type Process[A any] struct {
 
 // Args returns the arguments that Start or StartReserved gave to the process.
 func (p *Process[A]) Args() A { return p.args }
+
+// Init is the default initialization method. It succeeds without further setup.
+// The runtime calls Init before publication and before each restart; user code must not call it.
+func (*Process[A]) Init() error { return nil }
 
 // Supervisor returns the supervisor of the current run of the process. Each run has its own supervisor.
 // Processes started under it before Run begins start with the run. When the process stops, the runtime
@@ -131,10 +137,14 @@ func (p *Process[A]) halt() {
 
 // end stops the supervisor of the run and waits for it, and panics if a child escalated to it.
 func (p *Process[A]) end() {
-	p.unwatch()
+	if p.unwatch != nil {
+		p.unwatch()
+	}
 	p.mu.Lock()
 	p.ended = true
-	p.cancel()
+	if p.cancel != nil {
+		p.cancel()
+	}
 	children, done := p.children, p.done
 	p.mu.Unlock()
 	if children == nil {
@@ -184,12 +194,13 @@ type Supervisor struct {
 
 // child is one process or nested supervisor and its current goroutine.
 type child struct {
-	run  func(context.Context) // nil while a permanent stop waits for the current watcher
-	stop context.CancelFunc
-	done chan struct{}
+	run   func(context.Context) // nil while a permanent stop waits for the current watcher
+	stop  context.CancelFunc
+	done  chan struct{}
+	group *Supervisor
 }
 
-// PID identifies a process. Start returns a started PID; Reserve returns a PID to start later.
+// PID identifies a process. A successful Start returns a started PID; Reserve returns a PID to start later.
 type PID[T any] struct {
 	value *atomic.Pointer[T]
 }
@@ -208,7 +219,7 @@ func (p PID[T]) Proc() *T {
 func Reserve[T any]() PID[T] { return PID[T]{value: new(atomic.Pointer[T])} }
 
 // NewRoot returns a root supervisor. Pass nil to disable panic reports.
-// Otherwise, report receives each recovered panic value and stack before the restart delay.
+// Otherwise, report receives each recovered panic or restart Init error with a stack before the restart delay.
 // Nested supervisors inherit report. Calls can run concurrently, and the supervisor waits
 // for report to return. A panic in report is not recovered.
 func NewRoot(report func(value any, stack []byte)) *Supervisor {
@@ -230,51 +241,93 @@ func root(exit func(any), report func(value any, stack []byte)) *Supervisor {
 // When the nested supervisor's Stop channel closes, its parent has removed its child entry.
 func StartSupervisor(parent *Supervisor) *Supervisor {
 	nested := &Supervisor{stopped: make(chan struct{}), parent: parent, report: parent.report}
-	nested.entry = parent.add(nested.serve)
+	parent.add(nested.serve, nested.halt, nested)
 	return nested
 }
 
 // Start reserves a PID and starts it with args under parent, as StartReserved does.
+// If Init returns an error, Start returns an empty PID and that error. An Init panic propagates to the caller.
 func Start[T, A any, P interface {
 	*T
+	Init() error
 	Run(context.Context)
 	bind(A, func(any, []byte))
 	begin(context.Context) context.Context
 	end()
-}](parent *Supervisor, args A) PID[T] {
+}](parent *Supervisor, args A) (PID[T], error) {
 	pid := Reserve[T]()
-	StartReserved[T, A, P](parent, pid, args)
-	return pid
+	if err := StartReserved[T, A, P](parent, pid, args); err != nil {
+		return PID[T]{}, err
+	}
+	return pid, nil
 }
 
-// StartReserved creates a process value with args, stores it in pid, and runs its Run method under parent.
-// The PID is started when StartReserved returns. Each restart creates a new value from the same args.
-// If parent is stopped, the process does not run. StartReserved panics if pid is already started.
+// StartReserved creates a process value with args and calls Init before it publishes the value or starts Run.
+// If Init returns an error, the PID stays unstarted and can be retried. An Init panic propagates to the caller.
+// Each restart calls Init on a new value with the same args. A failed Init keeps the previous value in the PID.
+// If parent is stopped, Init still runs but Run does not. Staged children are stopped if the value will not run.
+// StartReserved panics if pid is already started; a losing concurrent start stops its staged children.
 func StartReserved[T, A any, P interface {
 	*T
+	Init() error
 	Run(context.Context)
 	bind(A, func(any, []byte))
 	begin(context.Context) context.Context
 	end()
-}](parent *Supervisor, pid PID[T], args A) {
-	create := func() *T {
-		value := new(T)
-		P(value).bind(args, parent.report)
-		return value
-	}
-	if !pid.value.CompareAndSwap(nil, create()) {
+}](parent *Supervisor, pid PID[T], args A) error {
+	if pid.value.Load() != nil {
 		panic("proc: PID already started")
 	}
-	started := false
-	parent.add(func(ctx context.Context) {
-		if started {
-			pid.value.Store(create())
+	create := func() (*T, error) {
+		value := new(T)
+		P(value).bind(args, parent.report)
+		ready := false
+		defer func() {
+			if !ready {
+				P(value).end()
+			}
+		}()
+		if err := P(value).Init(); err != nil {
+			return nil, err
 		}
-		started = true
-		value := P(pid.value.Load())
-		defer value.end()
-		value.Run(value.begin(ctx))
-	})
+		ready = true
+		return value, nil
+	}
+	value, err := create()
+	if err != nil {
+		return err
+	}
+	if !pid.value.CompareAndSwap(nil, value) {
+		P(value).end()
+		panic("proc: PID already started")
+	}
+	var first atomic.Pointer[T]
+	first.Store(value)
+	parent.add(func(ctx context.Context) {
+		value := first.Swap(nil)
+		if value == nil {
+			if ctx.Err() != nil {
+				return
+			}
+			var err error
+			value, err = create()
+			if err != nil {
+				panic(err)
+			}
+		}
+		process := P(value)
+		defer process.end()
+		if ctx.Err() != nil {
+			return
+		}
+		pid.value.Store(value)
+		process.Run(process.begin(ctx))
+	}, func() {
+		if value := first.Swap(nil); value != nil {
+			P(value).end()
+		}
+	}, nil)
+	return nil
 }
 
 // Stop begins stopping; the channel closes when all children have stopped, last started first.
@@ -297,21 +350,30 @@ func (s *Supervisor) Stop() <-chan struct{} {
 	return s.stopped
 }
 
-// add records a child unless s is stopping, runs it if s is running, and returns its entry.
-func (s *Supervisor) add(run func(context.Context)) *child {
+// add records a child unless s is stopping and runs it if s is running.
+// stop cleans up a child that has not run; launch replaces it with context cancellation.
+func (s *Supervisor) add(run func(context.Context), stop func(), group *Supervisor) {
 	done := make(chan struct{})
 	close(done)
-	c := &child{run: run, stop: func() {}, done: done}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.stopping {
-		return c
+	c := &child{run: run, stop: stop, done: done, group: group}
+	if group != nil {
+		group.entry = c
 	}
+	s.mu.Lock()
+	if s.stopping {
+		s.mu.Unlock()
+		if group != nil {
+			<-group.Stop()
+		} else {
+			stop()
+		}
+		return
+	}
+	defer s.mu.Unlock()
 	s.children = append(s.children, c)
 	if s.ctx != nil {
 		s.launch(c)
 	}
-	return c
 }
 
 // release cancels a child, prevents another launch, and removes it after its watcher returns.
@@ -389,9 +451,14 @@ func (s *Supervisor) halt() {
 	for _, c := range slices.Backward(children) {
 		s.mu.Lock()
 		stop, done := c.stop, c.done
+		permanent := s.stopping
 		s.mu.Unlock()
-		stop()
-		<-done
+		if permanent && c.group != nil {
+			<-c.group.Stop()
+		} else {
+			stop()
+			<-done
+		}
 	}
 }
 
