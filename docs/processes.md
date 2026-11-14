@@ -1,5 +1,22 @@
 # Supervised processes
 
+Use `proc` for a long-running service that should restart after a panic in its
+background work, such as a configuration loader or cache refresher.
+A process is a mutable Go struct. Its `Run` method runs in a goroutine managed
+by a supervisor. Keep a `PID` to call the process; the PID still works after a
+restart replaces the struct.
+
+Method calls are ordinary Go calls in the caller's goroutine. There is no
+mailbox and calls are not serialized. Use a mutex when methods and `Run` access
+the same mutable fields. The checker requires immutable start arguments and
+exported method parameters/results.
+
+## Start and call a process
+
+This counter adds its start argument on each call. `Run` has no background work
+in this example; it waits for shutdown. The mutex lets several callers use Add
+at the same time.
+
 ```go
 package main
 
@@ -34,118 +51,95 @@ func main() {
 }
 ```
 
-Methods use ordinary Go. Use locks where needed, as in `Add` above.
+- `Process[int]` declares the start argument type. `Args()` reads the value `1`
+  supplied to Start.
+- `Start[Counter]` creates a Counter and starts Run. Keep the returned PID.
+- `counter.Proc().Add()` calls Add on the current Counter. It prints `1`.
+- `<-root.Stop()` cancels Run's context and waits for it to return.
+
+Check this program with `immutago ./...`, then run it with `go run .`.
+See [Get started](getting-started.md) for installation and CI commands.
+
+## Pass data to readers
+
+Start arguments and exported method parameters/results use the
+[allowed types](common-forms.md#markers-and-stored-types): numbers, strings,
+marked structs, frozen collections, and PIDs. For example, return a count as
+`int`; return a list as `im.FrozenSlice[T]`, not `[]T`.
+
+To replace a configuration while readers use the previous version, put an
+`im.Owner[Config]` field in the process. Construct each Config as a Scoped
+object and store it in the Owner. A method loads it, reads the needed fields,
+and returns the result. The [Owner guide](owner.md) shows this sequence.
+
+The [config loader example](../tests/testdata/accepted/process/config_loader.go)
+builds and publishes versions on a timer. The
+[limiter example](../tests/testdata/accepted/process/limiter.go) receives that
+loader's PID in its start arguments and calls it from an exported method.
+
+With those example types, start the loader and limiter in one group:
+
+```go
+group := proc.StartSupervisor(root)
+loader := proc.Start[ConfigLoader](group, LoaderArgs{Path: "api", Every: time.Minute})
+limiter := proc.Start[Limiter](group, LimiterArgs{Loader: loader, Key: "api"})
+decision := limiter.Proc().Take()
+```
+
+The limiter calls the loader through its PID. Until the loader first publishes,
+its limit is zero and Take returns Limited. Both processes stop when you wait
+on `<-group.Stop()`.
+
+## Start and readiness
+
+Start publishes the new struct before Run begins. A method can therefore run
+before Run initializes any fields. Put required initial data in the start
+arguments, and make methods handle the zero values of other fields.
+
+For two processes that need each other's PID, Reserve one PID, start the first
+process, then call StartReserved for the reserved PID. Reserve does not wait
+for startup. Calling Proc before StartReserved panics; coordinate the first
+calls so that both processes have started.
+
+## Restart and failure
+
+If Run returns, it is not restarted. If Run panics, the supervisor waits before
+restarting it: 1 second after the first panic, then twice as long for each
+restart in the last 5 minutes. It creates a new struct from the same start
+arguments and replaces the value behind the PID. Mutable fields return to their
+zero values, including empty Owner fields.
+
+During the delay, PID calls still use the old struct. A call already in progress
+finishes on that old struct after the replacement. A method panic propagates in the caller's goroutine. The supervisor handles
+it only if it leaves a supervised Run. The restart rules apply to the process
+whose Run failed.
+
+A sixth panic from the same child in 5 minutes stops its siblings, last started
+first, and passes the failure to the parent supervisor. The parent restarts the
+subtree with the same retry rule. If the failure reaches the root, the program
+panics with the last panic value.
+
+## Stop
+
+`root.Stop()` returns a channel. Wait on it to wait for the supervised work to
+stop. Children stop in reverse start order. Run must return when its context
+is cancelled; Stop cannot force it to exit. Stop does not wait for direct method
+calls. A PID can still call methods on its last struct after Run ends or Stop
+completes.
+
+Use `proc.StartSupervisor(parent)` to stop a group together and restart that
+group after a child exceeds the restart limit. In tests, [proctest.NewRoot(t)](../pkg/proc/proctest/readme.md) stops the
+tree during cleanup and fails if it does not stop within 5 seconds.
 
 ## Not checked
 
-The checker controls what goes into and out of a process: start arguments,
-method parameters and results, and process pointers. It does not check package
-variables or the functions that use them. Two processes can share a mutable
-global, and the checker accepts the program:
+These checks do not isolate ordinary mutable state. Two processes can still
+access the same global map or share data through ordinary helper functions.
+Use locks for that data, and run tests with `go test -race`. The race detector
+can find a race only when the test executes the conflicting accesses.
 
-```go
-var seen = map[string]int{}
+## Reference
 
-type Counter struct{ proc.Process[proc.None] }
-
-func (*Counter) Run(ctx context.Context) {
-    for ctx.Err() == nil {
-        seen["hits"]++ // Reader reads the same map: a data race
-    }
-}
-
-type Reader struct{ proc.Process[proc.None] }
-
-func (*Reader) Run(ctx context.Context) {
-    for ctx.Err() == nil {
-        _ = seen["hits"]
-    }
-}
-```
-
-`go test -race` finds this race; the checker does not. Keep shared state in one
-process and publish it through an `im.Owner` field, or protect the global with a
-lock.
-
-## Allowed forms
-
-The [config loader](../tests/testdata/accepted/process/config_loader.go) and
-[limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
-and PIDs in start arguments. The tables use those example types.
-
-These allowed forms are complete. Other uses of a process, its type name, or a
-process pointer from `Proc()` are rejected. Parentheses preserve these forms.
-
-| Allowed form | Example |
-| --- | --- |
-| Named, non-generic struct with one `proc.Process[A]` embedded by value; `A` is an allowed stored type; the other fields are ordinary Go without protected storage, or `im.Owner` fields | `type ConfigLoader struct { proc.Process[LoaderArgs]; mu sync.Mutex; current im.Owner[Config] }` |
-| Process without arguments | `type Cache struct { proc.Process[proc.None]; hits int }` |
-| Declare the entry point on the process | `func (l *ConfigLoader) Run(ctx context.Context) { ... }` (no results) |
-| Method with a pointer receiver | `func (l *ConfigLoader) Version() int { return l.version }` |
-| Exported method other than `Run` whose parameters and results are allowed stored types | `func (l *ConfigLoader) Limit(key string) int`, `func (c *Cache) Latest() Entry` |
-| In a method, select a field of the receiver other than the marker | `l.version++`, `l.mu.Lock()`, `defer l.mu.Unlock()`, `l.current.Store(&Config{})` |
-| In a method, call a method of the receiver directly and synchronously, other than `Run` | `l.publish()`, `l.Lock()` for an embedded `sync.Mutex` |
-| In a method, read the arguments with a direct call | `args := l.Args()`, `l.Args().Loader.Proc().Limit(l.Args().Key)` |
-| Call an exported method other than `Run`, declared on the process, directly and synchronously on `pid.Proc()` | `v := loader.Proc().Version()`, `(loader.Proc()).Version()` |
-| Call through a PID in a field of a marked value | `peers.Loader.Proc().Version()` |
-| Keep, copy, store, pass, or return a PID | `type Peers struct { im.Shared; Loader proc.PID[ConfigLoader] }` |
-| Call through a PID in a function literal | `defer func() { limiter.Proc().Take() }()` |
-| Start a process with its arguments | `loader := proc.Start[ConfigLoader](root, LoaderArgs{Path: "config.json"})` |
-| Reserve a PID and start it later, for processes that need each other's PID | `pong := proc.Reserve[Pong](); ping := proc.Start[Ping](root, pong); proc.StartReserved(root, pong, ping)` |
-| Name a process type in its declaration, a pointer receiver, or the single type argument of `proc.Start`, `proc.StartReserved`, `proc.Reserve`, or `proc.PID` | `proc.PID[ConfigLoader]`, `proc.Reserve[Pong]()` |
-
-Rejected examples are not exhaustive:
-
-| Rejected example | Allowed replacement |
-| --- | --- |
-| `func (l *ConfigLoader) Table() map[string]int` | Publish an object with an `im.FrozenMap`. |
-| `func (l *ConfigLoader) Each(visit func(string))` | Return immutable data. |
-| `func (l *ConfigLoader) Load() error` | Return a defined scalar status; `error` is an interface. |
-| `func (l *ConfigLoader) Keys(keys ...string)` | Take an `im.FrozenSlice[string]`. |
-| Missing `Run`, a promoted `Run`, or `Run(int)` | Declare `func (l *ConfigLoader) Run(ctx context.Context)`. |
-| `func (l ConfigLoader) Version() int` | `func (l *ConfigLoader) Version() int` |
-| `p := loader.Proc()`, `saved = loader.Proc()`, `use(loader.Proc())`, `loader.Proc() == nil` | Keep the PID; call the method directly. |
-| `loader.Proc().version`, `loader.Proc().Args()` | Add an exported method. |
-| `loader.Proc().Run(ctx)`, `l.Run(ctx)` | Only the supervisor calls `Run`. |
-| `loader.Proc().publish()`, `loader.Proc().Lock()` for an embedded `sync.Mutex` | Declare an exported method on the process. |
-| `f := loader.Proc().Version`, `get := loader.Proc` | `v := loader.Proc().Version()` |
-| `go loader.Proc().Version()`, `defer loader.Proc().Version()` | `go func() { loader.Proc().Version() }()` |
-| In a method: `other := l`, `use(l)`, `l == nil`, `*l = ConfigLoader{}` | Select a field or call a method. |
-| In a method: `go l.publish()`, `defer l.publish()`, `f := l.publish` | Call `l.publish()` directly; use `defer l.mu.Unlock()` for field cleanup. |
-| In a method: `func() { l.version++ }` | Move the work into a method. |
-| In a method: `l.Process`, `&l.Process`, `f := l.Args` | `args := l.Args()` |
-| `&ConfigLoader{}`, `var l ConfigLoader`, `new(ConfigLoader)` | `proc.Start[ConfigLoader](root, args)` |
-| `func use(l *ConfigLoader)`, `type L = ConfigLoader`, `type Outer struct { ConfigLoader }`, `(*ConfigLoader).Version` | Pass a `proc.PID[ConfigLoader]`. |
-| `proc.Start[ConfigLoader, LoaderArgs](root, args)` | `proc.Start[ConfigLoader](root, args)` |
-| `proc.PID[int]`, `proc.Reserve[Plain]()`, `func f[T any](p proc.PID[T])` | Use a concrete process type. |
-| `type Bad struct { proc.Process[map[string]int] }`, `proc.Process[error]` | Use an allowed argument type, for example `proc.Process[LoaderArgs]`. |
-| `type Bad[T any] struct { proc.Process[T] }`, `var x struct{ proc.Process[proc.None] }` | Declare a named, non-generic struct. |
-| `type Bad struct { proc.Process[proc.None]; im.Shared }`, `M proc.Process[proc.None]`, `*proc.Process[proc.None]` | Embed one `proc.Process[A]` by value and no `im` marker. |
-| `type Bad struct { proc.Process[proc.None]; limits im.FrozenMap[string, int] }` | Put immutable data in the arguments, or publish it through an `im.Owner` field. |
-
-## Start, restart, and stop
-
-- `Start` creates a new process value, gives it the arguments, stores it in the
-  PID, and runs `Run` in a new goroutine. The PID is started when `Start` returns.
-  `Proc` is one atomic load. It panics with `proc: PID not started` before
-  `StartReserved` starts a reserved PID. `StartReserved` panics if the PID is
-  already started.
-- Each run gets a context that ends with that run. If `Run` returns, the process
-  ends. If `Run` panics, the supervisor waits 1 s, doubling the delay for each
-  restart in the last 5 minutes. It then creates a fresh value from the same
-  arguments, publishes it through the PID, and calls `Run`. `im.Owner` fields
-  start empty again. Calls during the delay use the old value; calls already
-  in progress finish on that value. Reserve does not wait for
-  other processes to start. Calling a reserved PID before StartReserved can
-  panic and cause a retry.
-- A sixth panic from the same child in 5 minutes stops the other children of the supervisor in
-  reverse start order and escalates to the parent supervisor, which restarts
-  the subtree with the same rule. At the root, the last panic value panics
-  again and the program exits.
-- `proc.StartSupervisor(parent)` nests a supervisor. `Stop` begins stopping;
-  its channel closes when all children have stopped, last started first.
-  When a nested supervisor's own Stop channel closes, its parent has removed
-  its child entry.
-  Cancellation is cooperative: `Run` must observe its context. Stop does not
-  wait for direct method calls, and methods must synchronize their shared state.
-- `proctest.NewRoot(t)` fails a test whose process tree does not stop in 5 s.
+The [process reference](process-forms.md) lists every supported declaration and
+operation, followed by rejected examples. The [API reference](../pkg/proc/readme.md)
+contains function signatures. See [performance](performance.md) for operation costs.

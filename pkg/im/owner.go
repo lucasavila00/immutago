@@ -11,7 +11,8 @@ type Owner[T any] struct {
 }
 
 // Load returns the current pointer, or nil if the slot is empty.
-// The pointer follows Scoped retention rules and remains valid after a later Store.
+// Keep the pointer local or pass it to a function that does not save it.
+// It remains valid after a later Store.
 // Go's garbage collector manages its lifetime.
 func (o *Owner[T]) Load() *T { return o.value.Load() }
 

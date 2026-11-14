@@ -1,4 +1,4 @@
-# Language guide
+# Language reference
 
 | Guide | Use it to |
 | --- | --- |
@@ -6,7 +6,8 @@
 | [Scoped](scoped.md) | Keep pointers local; pass them to named functions that do not save them. |
 | [Owner](owner.md) | Publish a new Scoped object and read the current one. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
-| [Supervised processes](processes.md) | Run mutable services with typed start arguments and immutable method messages. |
+| [Supervised processes](processes.md) | Learn the execution and restart model. |
+| [Process forms](process-forms.md) | Look up supported process declarations and calls. |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 
 The common lists and each type's lists define the complete supported forms.
