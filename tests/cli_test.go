@@ -30,7 +30,7 @@ func TestCLI(t *testing.T) {
 		binary += ".exe"
 	}
 	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
-	for _, group := range []string{"review_convergence", "documentation", "owner", "process"} {
+	for _, group := range []string{"review_convergence", "documentation", "owner", "process", "opaque", "opaqueuse"} {
 		t.Run(group, func(t *testing.T) {
 			for _, fixture := range []string{"accepted", "rejected"} {
 				t.Run(fixture, func(t *testing.T) {

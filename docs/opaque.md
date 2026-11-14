@@ -1,7 +1,5 @@
 # Opaque values
 
-[Language guide](rules.md) · [Common forms](common-forms.md) · [API](../pkg/im/readme.md)
-
 `im.Opaque[T]` is one of the two [trust markers](rules.md#trust-markers) of
 immutago; the other is `proc.UncheckedDependency[T]`, with a different promise. It holds
 a pointer to a value that the analyzer does not check. The analyzer does not
@@ -23,30 +21,40 @@ type Model struct {
 }
 
 func Load(name string, weights []float64) *Model {
-    return &Model{Name: name, engine: im.Seal(&baked{weights: weights})}
+    return &Model{Name: name, engine: im.Seal(&baked{weights: slices.Clone(weights)})}
 }
 
 func Predict(m *Model, row int) float64 {
-    b := m.engine.Value()
+    b := im.Unseal(m.engine)
     return b.weights[row]
 }
 ```
+
+Load copies the input with `slices.Clone`, so later changes by the caller do not
+change the sealed object. Seal itself does not copy the data.
 
 The [engine](../tests/testdata/accepted/opaque/engine.go) and
 [user](../tests/testdata/accepted/opaqueuse/use.go) examples show both sides.
 
 ## Allowed forms
 
-These allowed forms are complete. Other uses of `im.Seal` and `Value` are
-rejected. Other operations on an `im.Opaque` value follow the
-[common forms](common-forms.md) of a stored type.
+These allowed forms for `im.Seal` and `im.Unseal` are complete. Other uses of
+these functions are rejected. The handle follows ordinary Go rules; a marked
+object that stores it still follows the [common forms](common-forms.md).
 
 | Allowed form | Example |
 | --- | --- |
 | Use as an allowed stored type in a marked struct, a frozen collection, or ordinary Go | `type Model struct { im.Shared; engine im.Opaque[baked] }` |
 | Copy, store, pass, or return the handle in any package | `other := m.engine` |
+| Declare a zero handle; Unseal returns nil | `var engine im.Opaque[baked]` |
 | In the package that declares the named type `T`, wrap a pointer | `engine := im.Seal(&baked{})` |
-| In the package that declares the named type `T`, read the pointer with a direct call | `b := m.engine.Value()` |
+| In the package that declares the named type `T`, read the pointer | `b := im.Unseal(m.engine)` |
+| In that package, use either function as a function value | `read := im.Unseal[baked]`; `b := read(engine)` |
+
+Aliases resolve to the original type and package. An instance of a named type,
+such as `baked[int]`, belongs to the package that declares `baked`. Parentheses
+preserve the forms above. `Opaque` has no methods; an interface call or a promoted
+method cannot expose its pointer.
 
 What the analyzer proves:
 
@@ -68,7 +76,7 @@ These examples are not exhaustive.
 | Rejected example | Allowed replacement |
 | --- | --- |
 | `im.Seal(&engine.Table{})` in a package that does not declare `Table` | Call a function of the package that declares `Table`. |
-| `table.Value()` in a package that does not declare the type argument | Call a function of the declaring package. |
+| `im.Unseal(table)` or `read := im.Unseal[engine.Table]` in another package | Call a function of the declaring package. |
 | `func Wrap[T any](v *T) im.Opaque[T] { return im.Seal(v) }` | Wrap a concrete named type that this package declares. |
 | `im.Seal(&rows)` with `rows []int` | Declare a named type, such as `type rows []int`. |
 | `m.engine = im.Seal(&baked{})` on a marked value | Construct a new marked value. |

@@ -11,8 +11,8 @@ func Wrap() im.Opaque[opaque.Table] { return im.Seal(&opaque.Table{}) }
 // Read reads a value of another package.
 func Read(b *opaque.Box) int {
 	table := b.Table
-	return len(table.Value().Rows)
+	return len(im.Unseal(table).Rows)
 }
 
-// Expression names the method of another package's value.
-var Expression = im.Opaque[opaque.Table].Value
+// Reader names the read function for another package's value.
+var Reader = im.Unseal[opaque.Table]

@@ -15,9 +15,9 @@ Their unsafe, reflection, and cgo implementations are not proved.
 Application code must run through the analyzer for its selected build
 configuration. An ordinary Go build supplies no immutability checks. Checked
 code cannot use reflection, unsafe imports, or bodyless functions to bypass
-the proof. There are no suppression directives. The one user trust point is
-`proc.Trust`: a [process dependency](../processes.md#unchecked-dependencies) is a
-promise of safe concurrent use that the checker does not prove.
+the proof. There are no suppression directives. The two user trust points are
+`proc.Trust` for safe concurrent use and `im.Seal` for immutable data. The checker
+does not prove either [promise](../rules.md#trust-markers).
 Failures from checked dependencies reach consumers through package facts. Runtime Freeze has
 no fallback validation when the analyzer is omitted.
 

@@ -14,6 +14,14 @@ Prepare a Go slice or map in one local variable, then call FreezeSlice or Freeze
 
 Run immutago on the packages that use these types. Go build alone does not enforce these rules. See the guides and complete supported operations at https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
 
+## func Unseal
+
+```go
+func Unseal[T any](value Opaque[T]) *T
+```
+
+Unseal returns the wrapped pointer, or nil for the zero Opaque. Only the package that declares T can use Unseal.
+
 ## type FrozenMap
 
 FrozenMap is a read\-only map. Its zero value is empty. K and V must be immutable. Copies share the same read\-only entries.
@@ -118,7 +126,7 @@ Len returns the number of elements in O\(1\) time without allocations.
 
 Opaque holds a pointer to a value that the analyzer does not look inside. It is one of the two trust markers of immutago, with proc.UncheckedDependency: the analyzer does not prove that the value is immutable. The package that declares T trusts its own code to never change the value after Seal.
 
-Opaque is an allowed stored type. Any package can store, copy, and pass it. Only the package that declares T can call Seal and Value, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/opaque.md for the complete forms.
+Opaque is an allowed stored type. Any package can store, copy, and pass it. Only the package that declares T can use Seal and Unseal, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/opaque.md for the complete forms.
 
 ```go
 type Opaque[T any] struct {
@@ -133,14 +141,6 @@ func Seal[T any](value *T) Opaque[T]
 ```
 
 Seal wraps value. The package that declares T must not change the value after this call.
-
-### func \(Opaque\[T\]\) Value
-
-```go
-func (o Opaque[T]) Value() *T
-```
-
-Value returns the wrapped pointer, or nil for the zero Opaque.
 
 ## type Owner
 

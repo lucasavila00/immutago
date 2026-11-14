@@ -6,7 +6,7 @@ package im
 // declares T trusts its own code to never change the value after Seal.
 //
 // Opaque is an allowed stored type. Any package can store, copy, and pass it.
-// Only the package that declares T can call Seal and Value, so other packages
+// Only the package that declares T can use Seal and Unseal, so other packages
 // reach the value only through the API of that package.
 // See https://github.com/lucasavila00/immutago/blob/main/docs/opaque.md for the complete forms.
 type Opaque[T any] struct {
@@ -17,5 +17,6 @@ type Opaque[T any] struct {
 // after this call.
 func Seal[T any](value *T) Opaque[T] { return Opaque[T]{value: value} }
 
-// Value returns the wrapped pointer, or nil for the zero Opaque.
-func (o Opaque[T]) Value() *T { return o.value }
+// Unseal returns the wrapped pointer, or nil for the zero Opaque.
+// Only the package that declares T can use Unseal.
+func Unseal[T any](value Opaque[T]) *T { return value.value }

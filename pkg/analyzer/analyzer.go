@@ -93,8 +93,8 @@ func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance
 	if obj.Name() == "Opaque" {
 		return
 	}
-	if obj.Name() == "Seal" {
-		c.checkTrustedPackage(ident.Pos(), instance.TypeArgs.At(0), "im.Seal")
+	if obj.Name() == "Seal" || obj.Name() == "Unseal" {
+		c.checkTrustedPackage(ident.Pos(), instance.TypeArgs.At(0), "im."+obj.Name())
 		return
 	}
 	if obj.Name() == "Owner" {
@@ -156,8 +156,6 @@ func (c *checks) visit(node ast.Node) bool {
 		}
 	case *ast.StructType:
 		c.checkStruct(n.Pos(), c.pass.TypesInfo.TypeOf(n))
-	case *ast.SelectorExpr:
-		c.checkOpaqueValue(n)
 	}
 	if expr, ok := node.(ast.Expr); ok {
 		t := c.pass.TypesInfo.TypeOf(expr)

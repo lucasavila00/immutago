@@ -1,6 +1,7 @@
 package opaque
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/lucasavila00/immutago/pkg/im"
@@ -21,11 +22,11 @@ type Model struct {
 
 // Load builds a model and trusts its internal part.
 func Load(name string, weights []float64) *Model {
-	return &Model{Name: name, engine: im.Seal(&baked{weights: weights})}
+	return &Model{Name: name, engine: im.Seal(&baked{weights: slices.Clone(weights)})}
 }
 
 // Predict reads the internal part through the API of the declaring package.
 func Predict(m *Model, row int) float64 {
-	b := m.engine.Value()
+	b := im.Unseal(m.engine)
 	return b.weights[row]
 }
