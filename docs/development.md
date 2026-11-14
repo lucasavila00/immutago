@@ -19,6 +19,7 @@ Use local runs for focused debugging. Push the branch and use
 | `make docs` | Generate package references from Go comments. |
 | `make docs-check` | Check generated references. |
 | `make bench` | Measure collection costs. |
+| `make bench-core` | Measure core scaling; CI also saves profiles. |
 
 CI runs the broad test, lint, build, generated-doc, and self-analysis checks.
 Race-enabled tests run on Linux, macOS, and Windows.

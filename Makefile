@@ -2,7 +2,7 @@ GOMARKDOC = go run github.com/princjef/gomarkdoc/cmd/gomarkdoc@v1.1.0
 GOLANGCI = go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
 DOC_PACKAGES = ./cmd/immutago ./pkg/analyzer ./pkg/im ./internal/checker ./internal/freeze ./internal/freeze/flow
 
-.PHONY: build test test-unit test-e2e docs docs-check lint bench
+.PHONY: build test test-unit test-e2e docs docs-check lint bench bench-core
 
 build:
 	go build -o bin/immutago ./cmd/immutago
@@ -31,3 +31,6 @@ lint:
 
 bench:
 	go test -run '^$$' -bench . -benchmem ./pkg/im
+
+bench-core:
+	go test -run '^$$' -bench '^BenchmarkCore' -benchmem ./internal/checker ./internal/freeze ./pkg/analyzer

@@ -1,0 +1,54 @@
+name: Core performance
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: checker
+            package: ./internal/checker
+            profile: BenchmarkCoreReason/Chain/1024/valid=false$
+          - name: freeze
+            package: ./internal/freeze
+            profile: BenchmarkCoreConsumedFlow/owners=1024/linear$
+          - name: analyzer
+            package: ./pkg/analyzer
+            profile: BenchmarkCoreMatcher/wide/256$
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Measure core benchmarks
+        shell: bash
+        run: |
+          mkdir -p bin/profiles
+          go version > bin/profiles/environment.txt
+          lscpu >> bin/profiles/environment.txt
+          go test '${{ matrix.package }}' -run '^$' -bench '^BenchmarkCore' \
+            -benchmem -benchtime=200ms -count=3 | tee bin/profiles/benchmarks.txt
+      - name: Profile the large case
+        shell: bash
+        run: |
+          go test '${{ matrix.package }}' -run '^$' -bench '${{ matrix.profile }}' \
+            -benchmem -benchtime=1s -count=1 -o bin/profiles/core.test \
+            -cpuprofile=bin/profiles/cpu.pprof -memprofile=bin/profiles/heap.pprof \
+            | tee bin/profiles/profile-benchmark.txt
+          go tool pprof -top -nodecount=30 bin/profiles/core.test bin/profiles/cpu.pprof \
+            > bin/profiles/cpu-top.txt
+          go tool pprof -top -sample_index=alloc_space -nodecount=30 \
+            bin/profiles/core.test bin/profiles/heap.pprof > bin/profiles/alloc-top.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-profile-${{ matrix.name }}
+          path: bin/profiles/
+          retention-days: 14
