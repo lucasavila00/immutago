@@ -41,7 +41,7 @@ const testRuntime = `package proc
  func (p *Process[A]) Supervisor() *Supervisor { return nil }
  type None struct { im.Shared }
  type Supervisor struct{}
- func NewRoot() *Supervisor { return nil }
+ func NewRoot(func(any, []byte)) *Supervisor { return nil }
  func StartSupervisor(parent *Supervisor) *Supervisor { return nil }
  func (s *Supervisor) Stop() <-chan struct{} { return nil }
  type PID[T any] struct { value *T }

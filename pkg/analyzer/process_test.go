@@ -251,7 +251,7 @@ var get = (*proc.Process[int]).Supervisor`},
 	sup := p.Supervisor(); other := sup; proc.StartSupervisor(other) }`},
 		{"local address", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Supervisor(); _ = &sup }`},
 		{"local overwrite", poolDefinitions + `func (p *Pool) Run(context.Context) {
-	sup := p.Supervisor(); sup = proc.NewRoot(); proc.StartSupervisor(sup) }`},
+	sup := p.Supervisor(); sup = proc.NewRoot(nil); proc.StartSupervisor(sup) }`},
 		{"local stop", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Supervisor(); <-sup.Stop() }`},
 		{"local closure", poolDefinitions + `func (p *Pool) Run(context.Context) {
 	sup := p.Supervisor(); go func() { proc.Start[Worker](sup, WorkerArgs{}) }() }`},
@@ -266,6 +266,6 @@ var get = (*proc.Process[int]).Supervisor`},
 		{"start argument", poolDefinitions + `type Hold struct { proc.Process[proc.None] }
 func (*Hold) Run(context.Context) {}
 func (p *Pool) Run(context.Context) {
-	proc.Start[Worker](proc.NewRoot(), WorkerArgs{ID: len([]*proc.Supervisor{p.Supervisor()})}) }`},
+	proc.Start[Worker](proc.NewRoot(nil), WorkerArgs{ID: len([]*proc.Supervisor{p.Supervisor()})}) }`},
 	})
 }

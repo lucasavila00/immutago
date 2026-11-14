@@ -10,7 +10,7 @@ import (
 // TestStopWaitsForParentEntry keeps both Stop channels open until the child watcher finishes.
 func TestStopWaitsForParentEntry(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		parent := NewRoot()
+		parent := NewRoot(nil)
 		nested := &Supervisor{parent: parent, stopped: make(chan struct{})}
 		returned, finish := make(chan struct{}), make(chan struct{})
 		nested.entry = parent.add(func(ctx context.Context) {
@@ -45,7 +45,7 @@ func TestStopWaitsForParentEntry(t *testing.T) {
 // TestStopDuringRestartDelay releases a nested supervisor without waiting for the next restart.
 func TestStopDuringRestartDelay(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		parent := root(func(value any) { t.Errorf("root escalated: %v", value) })
+		parent := root(func(value any) { t.Errorf("root escalated: %v", value) }, nil)
 		nested := StartSupervisor(parent)
 		failures.Store(0)
 		Start[failing](nested, None{})
@@ -83,7 +83,7 @@ func TestStopBeforeParentStart(t *testing.T) {
 // TestNestedSelfStop checks that a process can stop its own nested supervisor without a wait cycle.
 func TestNestedSelfStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		parent := NewRoot()
+		parent := NewRoot(nil)
 		selfRoot = StartSupervisor(parent)
 		Start[stopper](selfRoot, None{})
 		synctest.Wait()
