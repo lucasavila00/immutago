@@ -92,7 +92,7 @@ func (p *proof) freezeInput(node ast.Node) bool {
 		}
 	}
 	p.report(expression.Pos(), "cannot freeze this expression: pass an exclusively owned local builder "+
-		"or a fresh make, literal, nil, or Clone result")
+		"or a fresh make, literal, bare nil, or Clone result")
 	return true
 }
 

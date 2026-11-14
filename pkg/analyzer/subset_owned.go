@@ -85,9 +85,6 @@ func (c *subsetChecks) ownedInput(expression ast.Expr) {
 		if !freeze.Fresh(c.pass, expression) {
 			return
 		}
-		if c.pass.TypesInfo.Types[expression.Fun].IsType() {
-			c.exemptType(expression.Fun)
-		}
 		if id, ok := ast.Unparen(expression.Fun).(*ast.Ident); ok {
 			if object, ok := c.pass.TypesInfo.ObjectOf(id).(*types.Builtin); ok && object.Name() == "make" {
 				c.exemptType(expression.Args[0])

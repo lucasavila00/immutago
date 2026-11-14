@@ -46,7 +46,7 @@ func Check(pass *analysis.Pass) map[*types.Var]bool {
 		result[variable] = true
 		if item.body == nil || !item.fresh {
 			p.report(variable.Pos(), "cannot freeze "+variable.Name()+
-				": ownership requires a fresh local make, literal, nil, or Clone result; create a local builder first")
+				": ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first")
 		}
 	}
 	p.checkUses()
@@ -54,13 +54,13 @@ func Check(pass *analysis.Pass) map[*types.Var]bool {
 	return result
 }
 
-// Fresh recognizes compiler-resolved allocation, nil construction, and copying operations.
+// Fresh recognizes only compiler-resolved allocation and copying operations.
 func Fresh(pass *analysis.Pass, expression ast.Expr) bool {
 	if expression == nil {
 		return false
 	}
 	expression = ast.Unparen(expression)
-	if nilIdentifier(pass, expression) {
+	if id, ok := expression.(*ast.Ident); ok && pass.TypesInfo.ObjectOf(id) == types.Universe.Lookup("nil") {
 		return true
 	}
 	if !native(pass.TypesInfo.TypeOf(expression)) {
@@ -72,9 +72,6 @@ func Fresh(pass *analysis.Pass, expression ast.Expr) bool {
 	call, ok := expression.(*ast.CallExpr)
 	if !ok {
 		return false
-	}
-	if pass.TypesInfo.Types[call.Fun].IsType() {
-		return len(call.Args) == 1 && nilIdentifier(pass, call.Args[0])
 	}
 	object := calledObject(pass, call.Fun)
 	if builtin, ok := object.(*types.Builtin); ok {
@@ -96,12 +93,6 @@ func Fresh(pass *analysis.Pass, expression ast.Expr) bool {
 		receiver = pointer.Elem()
 	}
 	return checker.IsCollection(receiver)
-}
-
-// nilIdentifier rejects shadowed names and converted existing handles.
-func nilIdentifier(pass *analysis.Pass, expression ast.Expr) bool {
-	id, ok := ast.Unparen(expression).(*ast.Ident)
-	return ok && pass.TypesInfo.ObjectOf(id) == types.Universe.Lookup("nil")
 }
 
 // native identifies mutable native handles rather than value arrays or frozen wrappers.

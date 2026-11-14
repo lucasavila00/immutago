@@ -2,10 +2,11 @@ package analyzer
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
-// TestNilBuilderForms applies the nil source rule across types, syntax, and binding sites.
+// TestNilBuilderForms accepts bare nil declarations and rejects conversion sources at each binding site.
 func TestNilBuilderForms(t *testing.T) {
 	cases := []struct {
 		name, declarations, target, freeze string
@@ -24,15 +25,22 @@ func TestNilBuilderForms(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			for _, initializer := range []string{"", " = nil"} {
+				program := tc.declarations + "\nfunc f(){var values " + tc.target + initializer +
+					"; _ = im." + tc.freeze + "(values)}"
+				if got := checkSource(t, program); got != "" {
+					t.Fatalf("allowed nil declaration rejected:\n%s\n%s", program, got)
+				}
+			}
 			for _, syntax := range []string{"%s(nil)", "(%s)((nil))"} {
-				checkNilBuilderSites(t, tc.declarations, tc.target, fmt.Sprintf(syntax, tc.target), tc.freeze)
+				rejectNilConversionSites(t, tc.declarations, tc.target, fmt.Sprintf(syntax, tc.target), tc.freeze)
 			}
 		})
 	}
 }
 
-// checkNilBuilderSites checks the same source at each documented construction boundary.
-func checkNilBuilderSites(t *testing.T, declarations, target, source, freeze string) {
+// rejectNilConversionSites rejects conversion syntax at every checked construction boundary.
+func rejectNilConversionSites(t *testing.T, declarations, target, source, freeze string) {
 	t.Helper()
 	for _, body := range []string{
 		"values := %s; _ = im.%s(values)",
@@ -41,8 +49,8 @@ func checkNilBuilderSites(t *testing.T, declarations, target, source, freeze str
 		"_ = im.%[2]s(%[1]s)",
 	} {
 		program := declarations + "\nfunc f(){" + fmt.Sprintf(body, source, freeze) + "}"
-		if got := checkSource(t, program); got != "" {
-			t.Fatalf("allowed nil construction rejected:\n%s\n%s", program, got)
+		if got := checkSource(t, program); !strings.Contains(got, "cannot freeze") {
+			t.Fatalf("missing conversion-source rejection:\n%s\n%s", program, got)
 		}
 	}
 }
