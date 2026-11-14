@@ -22,7 +22,7 @@ const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 func Contains(t types.Type) bool
 ```
 
-Contains reports whether a type stores a marked value or sealed collection. It traverses containers so an unmarked wrapper cannot hide a marked field.
+Contains reports whether a type stores a marked value or sealed collection. It runs one query; use Classifier to reuse results across queries.
 
 ## func IsCollection
 
