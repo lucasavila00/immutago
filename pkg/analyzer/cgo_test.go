@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lucasavila00/immutago/internal/checker"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -44,7 +45,9 @@ func checkCgoReport(t *testing.T, positions *token.FileSet, files []*ast.File, s
 	t.Helper()
 	var reports []analysis.Diagnostic
 	var fact *invalidPackage
-	pass := &analysis.Pass{Pkg: types.NewPackage("sample", "sample"), Fset: positions, Files: files,
+	pkg := types.NewPackage("sample", "sample")
+	pkg.SetImports([]*types.Package{types.NewPackage(checker.LibraryPath, "im")})
+	pass := &analysis.Pass{Pkg: pkg, Fset: positions, Files: files,
 		TypesInfo: &types.Info{}, Report: func(d analysis.Diagnostic) { reports = append(reports, d) },
 		ExportPackageFact: func(f analysis.Fact) { fact = f.(*invalidPackage) }}
 	if _, err := run(pass); err != nil {
