@@ -159,7 +159,8 @@ Rejected examples are not exhaustive:
   and waits for them. Then the run ends: the restart delay starts, or `Stop`
   continues. A new run starts with no children, and its `Run` starts them
   again. A PID of an old child keeps its last value, but that child does not
-  run again. If a child passes its restart limit, the run context ends and the
+  run again. `StartReserved` panics on a PID from an earlier run, so reserve
+  the PIDs of children in the same run. If a child passes its restart limit, the run context ends and the
   run fails with the panic value of the child. The supervisor of the process
   counts this failure as a panic of the process.
 - `proc.StartSupervisor(parent)` nests a supervisor. `Stop` begins stopping;
