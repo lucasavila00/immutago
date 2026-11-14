@@ -46,3 +46,6 @@ func bindPair() {
 	point, found := makePair()
 	println(point.X, found)
 }
+
+var pairMap im.FrozenMap[int, int]
+var _, _ = pairMap.Get(0)

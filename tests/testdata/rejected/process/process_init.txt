@@ -1,0 +1,28 @@
+process_init.go:15:2: only the runtime can call a process Init method
+process_init.go:15:2: process receivers can only select a field or call a method directly
+process_init.go:16:14: only the runtime can call a process Init method
+process_init.go:16:14: process receivers can only select a field or call a method directly
+process_init.go:21:2: only the runtime can call a process Init method
+process_init.go:21:2: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_init.go:24:16: a process must use the default Init or declare Init() error with a pointer receiver
+process_init.go:29:16: a process must use the default Init or declare Init() error with a pointer receiver
+process_init.go:31:7: process type ValueInit can be named only in its declaration, a pointer receiver, proc.Start[ValueInit], proc.StartReserved[ValueInit], proc.Reserve[ValueInit], or proc.PID[ValueInit]
+process_init.go:37:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: holder.PID, err = proc.Start[DefaultInit](root, proc.None{})
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+process_init.go:47:2: only the runtime can call a process Init method
+process_init.go:47:2: process receivers can only select a field or call a method directly
+process_init.go:48:14: only the runtime can call a process Init method
+process_init.go:48:14: process receivers can only select a field or call a method directly
+process_init.go:50:2: only the runtime can call a process Init method
+process_init.go:50:2: process receivers can only select a field or call a method directly
+process_init.go:53:25: only the runtime can call a process Init method
+process_init.go:53:27: process type ReadyProcess can be named only in its declaration, a pointer receiver, proc.Start[ReadyProcess], proc.StartReserved[ReadyProcess], proc.Reserve[ReadyProcess], or proc.PID[ReadyProcess]
+process_init.go:54:26: only the runtime can call a process Init method
+process_init.go:57:17: a process must use the default Init or declare Init() error with a pointer receiver
+process_init.go:62:21: a process must use the default Init or declare Init() error with a pointer receiver
+process_init.go:71:19: a process must use the default Init or declare Init() error with a pointer receiver
+process_init.go:78:16: a process must use the default Init or declare Init() error with a pointer receiver
+process_init.go:85:5: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: _, _ = proc.Start[DefaultInit](proc.NewRoot(nil), proc.None{})
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start

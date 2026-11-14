@@ -1,0 +1,4 @@
+42
+slot count must be positive
+slot count must be positive
+42

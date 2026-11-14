@@ -115,8 +115,8 @@ func (c *subsetChecks) checkProcessNode(node ast.Node) {
 		c.checkProcessName(n)
 	case *ast.SelectorExpr:
 		object := c.pass.TypesInfo.ObjectOf(n.Sel)
-		if runtimeMethod(object, checker.ProcessMarker, checker.InitMethod) {
-			c.pass.Reportf(n.Pos(), "only the runtime can call a process Init method")
+		if c.runtimeEntryPoint(object) {
+			c.pass.Reportf(n.Pos(), "only the runtime can call a process %s method", object.Name())
 		}
 		if procMethod(object) && !c.directProc(n) {
 			c.pass.Reportf(n.Pos(), processEscape)
@@ -240,6 +240,14 @@ func processInit(t types.Type) bool {
 // processEntryPoint identifies methods called only by the runtime.
 func processEntryPoint(name string) bool {
 	return name == checker.RunMethod || name == checker.InitMethod
+}
+
+// runtimeEntryPoint identifies Run on a process and explicit or default Init methods.
+func (c *subsetChecks) runtimeEntryPoint(object types.Object) bool {
+	method, ok := object.(*types.Func)
+	return ok && processEntryPoint(method.Name()) &&
+		(c.processSignature(method.Type().(*types.Signature)) ||
+			runtimeMethod(method, checker.ProcessMarker, checker.InitMethod))
 }
 
 // checkProcessName permits a process type name only as a pointer receiver or a proc type argument.

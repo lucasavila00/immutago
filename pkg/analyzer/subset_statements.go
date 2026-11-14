@@ -378,7 +378,7 @@ func (c *subsetChecks) pairAssignment(statement *ast.AssignStmt) bool {
 		return false
 	}
 	for _, left := range statement.Lhs {
-		name, ok := left.(*ast.Ident)
+		name, ok := ast.Unparen(left).(*ast.Ident)
 		if !ok {
 			return false
 		}
@@ -398,11 +398,6 @@ func (c *subsetChecks) pairDeclaration(statement *ast.ValueSpec) bool {
 	if len(statement.Names) != 2 || !c.pairCall(statement.Values) {
 		return false
 	}
-	for _, name := range statement.Names {
-		object := c.pass.TypesInfo.Defs[name]
-		if object != nil && object.Parent() == c.pass.Pkg.Scope() {
-			return false
-		}
-	}
-	return true
+	_, local := c.parents[c.parents[statement]].(*ast.DeclStmt)
+	return local
 }

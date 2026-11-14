@@ -75,8 +75,9 @@ func TestProcessInitUseRejected(t *testing.T) {
 			`var f = (*proc.Process[proc.None]).Init`,
 		} {
 			t.Run(hook+body, func(t *testing.T) {
-				if got := checkSource(t, initDefinitions+hook+"\n"+body); got == "" {
-					t.Fatal("runtime-only Init use passed")
+				got := checkSource(t, initDefinitions+hook+"\n"+body)
+				if !strings.Contains(got, "only the runtime can call a process Init method") {
+					t.Fatalf("missing runtime-only Init diagnostic: %s", got)
 				}
 			})
 		}
@@ -94,7 +95,7 @@ func TestProcessStartBindings(t *testing.T) {
 		_ = pid; _ = other; _ = err`,
 		`pid := proc.Reserve[Initializer](); err := proc.StartReserved(s, pid, proc.None{}); _ = err`,
 		`var pid proc.PID[Initializer]; var err error
-		pid, err = proc.Start[Initializer](s, proc.None{}); _ = pid; _ = err`,
+		(pid), (err) = (proc.Start[Initializer](s, proc.None{})); _ = pid; _ = err`,
 	} {
 		t.Run(body, func(t *testing.T) {
 			if got := checkSource(t, initDefinitions+`func f(s *proc.Supervisor) {`+body+`}`); got != "" {
@@ -134,5 +135,28 @@ func TestProcessScalarStartBindings(t *testing.T) {
 	}`
 	if got := checkSource(t, source); got != "" {
 		t.Fatal(got)
+	}
+}
+
+// TestPairDeclarationsRequireLocalScope checks blank names as well as named tuple destinations.
+func TestPairDeclarationsRequireLocalScope(t *testing.T) {
+	for _, call := range []string{
+		`proc.Start[Initializer](proc.NewRoot(nil), proc.None{})`,
+		`frozen.Get(1)`,
+	} {
+		for _, names := range []string{"_, _", "value, _", "_, value"} {
+			declaration := "var " + names + " = " + call
+			t.Run(declaration, func(t *testing.T) {
+				prefix := initDefinitions + `var frozen im.FrozenMap[int, int]; `
+				if got := checkSource(t, prefix+declaration); got == "" {
+					t.Fatal("package tuple declaration passed")
+				}
+				if names == "_, _" {
+					if got := checkSource(t, prefix+`func f() { `+declaration+` }`); got != "" {
+						t.Fatal(got)
+					}
+				}
+			})
+		}
 	}
 }

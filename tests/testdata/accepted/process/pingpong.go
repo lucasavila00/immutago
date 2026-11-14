@@ -39,7 +39,12 @@ func (p *Pong) Answer() int { return 2 }
 // StartPingPong starts two processes that know each other's PID.
 func StartPingPong(root *proc.Supervisor) proc.PID[Ping] {
 	pong := proc.Reserve[Pong]()
-	ping := proc.Start[Ping](root, pong)
-	proc.StartReserved(root, pong, ping)
+	ping, err := proc.Start[Ping](root, pong)
+	if err != nil {
+		panic(err)
+	}
+	if err := proc.StartReserved(root, pong, ping); err != nil {
+		panic(err)
+	}
 	return ping
 }

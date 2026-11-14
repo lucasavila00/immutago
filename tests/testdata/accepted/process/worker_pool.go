@@ -47,10 +47,16 @@ type WorkerPool struct {
 func (p *WorkerPool) Run(ctx context.Context) {
 	sup := p.Supervisor()
 	for i := range p.Args().Workers {
-		proc.Start[Worker](sup, WorkerArgs{ID: i})
+		if _, err := proc.Start[Worker](sup, WorkerArgs{ID: i}); err != nil {
+			panic(err)
+		}
 	}
 	spare := proc.Reserve[Worker]()
-	proc.StartReserved(p.Supervisor(), spare, WorkerArgs{ID: -1})
-	proc.Start[Worker](proc.StartSupervisor((p.Supervisor())), WorkerArgs{ID: -2})
+	if err := proc.StartReserved(p.Supervisor(), spare, WorkerArgs{ID: -1}); err != nil {
+		panic(err)
+	}
+	if _, err := proc.Start[Worker](proc.StartSupervisor((p.Supervisor())), WorkerArgs{ID: -2}); err != nil {
+		panic(err)
+	}
 	<-ctx.Done()
 }

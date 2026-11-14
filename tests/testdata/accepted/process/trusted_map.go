@@ -19,7 +19,9 @@ func (c *Counter) Run(ctx context.Context) {
 	c.seen = map[string]int{}
 	children := proc.NewRoot(nil)
 	defer func() { <-children.Stop() }()
-	proc.Start[Reporter](children, ReporterArgs{Seen: proc.AssumeConcurrentSafe(c.seen)})
+	if _, err := proc.Start[Reporter](children, ReporterArgs{Seen: proc.AssumeConcurrentSafe(c.seen)}); err != nil {
+		panic(err)
+	}
 	for i := 0; ctx.Err() == nil; i++ {
 		c.seen["k"] = i
 	}

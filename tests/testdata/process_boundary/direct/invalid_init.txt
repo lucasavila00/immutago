@@ -1,0 +1,4 @@
+invalid_init.go:6:33: only the runtime can call a process Init method
+invalid_init.go:6:33: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+invalid_init.go:9:44: only the runtime can call a process Init method
+invalid_init.go:9:44: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call

@@ -99,7 +99,9 @@ func (l *VersionLoader) Load(version int) {
 	}
 	l.pending[version] = next
 	l.mu.Unlock()
-	proc.Start[VersionServer](next, VersionArgs{Version: version, Loader: l.Args().Self})
+	if _, err := proc.Start[VersionServer](next, VersionArgs{Version: version, Loader: l.Args().Self}); err != nil {
+		panic(err)
+	}
 }
 
 // Ready makes a running version current and stops the server of the previous version.
@@ -163,9 +165,13 @@ func (d *Dispatcher) Refresh() int {
 	for name := range wanted {
 		if _, ok := d.groups[name]; !ok {
 			sub := proc.StartSupervisor(d.Supervisor())
-			proc.Start[Throttle](sub, GroupArgs{Variant: name, Rate: 10})
+			if _, err := proc.Start[Throttle](sub, GroupArgs{Variant: name, Rate: 10}); err != nil {
+				panic(err)
+			}
 			loader := proc.Reserve[VersionLoader]()
-			proc.StartReserved(sub, loader, VersionLoaderArgs{Variant: name, Self: loader})
+			if err := proc.StartReserved(sub, loader, VersionLoaderArgs{Variant: name, Self: loader}); err != nil {
+				panic(err)
+			}
 			d.groups[name] = group{sub: sub, loader: loader}
 		}
 	}
@@ -205,10 +211,16 @@ func (d *Dispatcher) Load(variant string, version int) bool {
 
 // useDispatcher starts two variant groups, requests one version, then removes one group.
 func useDispatcher(root *proc.Supervisor) {
-	config := proc.Start[VariantConfig](root, proc.None{})
+	config, err := proc.Start[VariantConfig](root, proc.None{})
+	if err != nil {
+		panic(err)
+	}
 	initial := im.FreezeSlice([]string{"blue", "green"})
 	config.Proc().Set(initial)
-	dispatcher := proc.Start[Dispatcher](root, DispatcherArgs{Config: config})
+	dispatcher, err := proc.Start[Dispatcher](root, DispatcherArgs{Config: config})
+	if err != nil {
+		panic(err)
+	}
 	dispatcher.Proc().Refresh()
 	dispatcher.Proc().Load("blue", 1)
 
