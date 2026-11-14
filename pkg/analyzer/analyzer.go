@@ -45,6 +45,9 @@ func run(pass *analysis.Pass) (any, error) {
 	if pass.Pkg.Path() == checker.LibraryPath || standardLibrary(pass) {
 		return nil, nil
 	}
+	if rejectCgo(pass) {
+		return nil, nil
+	}
 	invalid, relevant, failures := invalidDependencies(pass)
 	report := pass.Report
 	pass.Report = func(d analysis.Diagnostic) {

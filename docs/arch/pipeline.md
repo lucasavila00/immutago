@@ -11,14 +11,20 @@ The same analyzer runs under `go vet -vettool`. Both provide compiler-resolved
 The [entry point](../../pkg/analyzer/analyzer.go) performs these stages:
 
 1. Skip the fixed `im` package and compiler-supplied standard library.
-2. Collect dependency failure facts and start recording local diagnostics.
-3. Check declarations, imports, field types, and fixed `im` type arguments.
-4. Run the native builder proof and obtain its set of tracked variables.
-5. Match protected operations and their enclosing statements.
-6. Export accumulated failures for importers.
+2. Reject cgo packages and export their failure before checking generated wrappers.
+3. Collect dependency failure facts and start recording local diagnostics.
+4. Check declarations, imports, field types, and fixed `im` type arguments.
+5. Run the native builder proof and obtain its set of tracked variables.
+6. Match protected operations and their enclosing statements.
+7. Export accumulated failures for importers.
 
 The builder set identifies separately checked storage. It does not exempt its
 operations. Type, source-form, and builder checks keep separate state.
+
+[Cgo detection](../../pkg/analyzer/cgo.go) uses the compiler's exact generated
+header as a rejection trigger. It never grants trust to generated code. Cgo's
+line directives retain the source package line in both drivers; the original
+`import "C"` is no longer available reliably after rewriting.
 
 ## Type proof
 

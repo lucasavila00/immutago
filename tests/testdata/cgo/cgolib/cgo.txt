@@ -1,0 +1,2 @@
+cgo.go:1:1: cgo is not supported; immutability cannot be proved
+  fix: replace cgo with checked Go code
