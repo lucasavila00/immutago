@@ -37,14 +37,18 @@ func (c *subsetChecks) matchBuilderBinding(destination, source ast.Expr, declara
 	return "native builders require fresh local bindings or append to the same handle"
 }
 
-// ownedInputs admits container syntax at checked local initialization and freeze boundaries.
-func (c *subsetChecks) ownedInputs() {
+// checkBuilderTypes proves protected keys and elements once for each tracked owner.
+func (c *subsetChecks) checkBuilderTypes() {
 	for variable := range c.owners {
 		if reason := c.builderTypeReason(variable.Type()); reason != "" {
 			c.pass.Reportf(variable.Pos(), "unsupported native builder: %s\n  fix: "+
 				"use allowed stored types for builder keys and elements", reason)
 		}
 	}
+}
+
+// ownedInputs admits container syntax at checked local initialization and freeze boundaries.
+func (c *subsetChecks) ownedInputs() {
 	for node := range c.parents {
 		switch node := node.(type) {
 		case *ast.AssignStmt:
