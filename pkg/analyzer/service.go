@@ -300,9 +300,7 @@ func (c *subsetChecks) checkServiceExpression(expression ast.Expr) {
 		return
 	}
 	if variable, ok := c.pass.TypesInfo.Uses[id].(*types.Var); name && ok && variable.Kind() == types.RecvVar {
-		if c.insideClosure(id) {
-			c.pass.Reportf(id.Pos(), "closures cannot capture a service receiver")
-		} else if !c.allowedReceiverUse(id) {
+		if !c.allowedReceiverUse(id) {
 			c.pass.Reportf(id.Pos(), "service receivers can only select a field or call a method directly")
 		}
 		return
@@ -330,20 +328,6 @@ func (c *subsetChecks) serviceCreation(expression ast.Expr) bool {
 	case *ast.CallExpr:
 		builtin, ok := c.calledObject(creation.Fun).(*types.Builtin)
 		return ok && builtin.Name() == "new"
-	}
-	return false
-}
-
-// insideClosure reports a use in a function literal within the method.
-func (c *subsetChecks) insideClosure(node ast.Node) bool {
-	for node != nil {
-		switch node.(type) {
-		case *ast.FuncLit:
-			return true
-		case *ast.FuncDecl:
-			return false
-		}
-		node = c.parents[node]
 	}
 	return false
 }
@@ -394,7 +378,7 @@ func (c *subsetChecks) synchronousCall(selector *ast.SelectorExpr) bool {
 func (c *subsetChecks) runChildren(selector *ast.SelectorExpr) bool {
 	receiver, _ := ast.Unparen(selector.X).(*ast.Ident)
 	variable, ok := c.pass.TypesInfo.Uses[receiver].(*types.Var)
-	if !ok || variable.Kind() != types.RecvVar || c.insideClosure(selector) || !c.synchronousCall(selector) {
+	if !ok || variable.Kind() != types.RecvVar || !c.synchronousCall(selector) {
 		return false
 	}
 	call := c.directCall(selector)
@@ -411,7 +395,7 @@ func (c *subsetChecks) runChildren(selector *ast.SelectorExpr) bool {
 		return false
 	}
 	for use, object := range c.pass.TypesInfo.Uses {
-		if object == local && (c.insideClosure(use) || !c.parentArgument(use)) {
+		if object == local && !c.parentArgument(use) {
 			return false
 		}
 	}

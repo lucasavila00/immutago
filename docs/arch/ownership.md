@@ -95,7 +95,7 @@ listed in the [service reference](../service-forms.md):
    single type argument of `Start`, `StartReserved`, `Reserve`, or `Ref`.
    Construction outside the runtime therefore fails. A service receiver can
    select fields other than `Service` and make direct synchronous method calls
-   other than `Init` and `Run`. Captures and other receiver uses fail.
+   other than `Init` and `Run`, including inside closures. Other receiver uses fail.
 3. A `Ref.Current()` result must receive a direct synchronous call of an exported
    method declared on that service, other than `Init` and `Run`. The matcher
    checks the resolved method selection and statement context. It rejects
@@ -104,7 +104,7 @@ listed in the [service reference](../service-forms.md):
    method. Inputs use ordinary Go types; protected input operations still pass
    through the common shape checks.
 4. `Children()` must be a direct synchronous call on the service receiver,
-   outside a function literal. Its result must be the parent argument of
+   including inside a function literal. Its result must be the parent argument of
    `Start`, `StartReserved`, or `StartGroup`, directly or through one new local
    from `:=`. Every use of that local must match the same parent position in
    the same method. A nested group returned by `StartGroup` is ordinary mutable

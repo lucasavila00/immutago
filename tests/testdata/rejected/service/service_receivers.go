@@ -22,7 +22,6 @@ func (b *Buffer) grow() { b.size++ }
 func (b *Buffer) misuse(ctx context.Context) {
 	other := b
 	use(b)
-	later := func() { b.size++ }
 	go b.grow()
 	defer b.grow()
 	grow := b.grow
@@ -31,5 +30,5 @@ func (b *Buffer) misuse(ctx context.Context) {
 	marker := b.Service
 	b.Service = supervise.Service[supervise.NoArgs]{}
 	args := b.Args
-	_, _, _, _, _ = other, later, grow, marker, args
+	_, _, _, _ = other, grow, marker, args
 }

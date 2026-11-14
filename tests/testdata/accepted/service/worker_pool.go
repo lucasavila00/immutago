@@ -60,3 +60,17 @@ func (p *WorkerPool) Run(ctx context.Context) {
 	}
 	<-ctx.Done()
 }
+
+// Count records entries through an ordinary synchronous callback.
+func (w *Worker) Count(entries *sync.Map) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	entries.Range(func(_, _ any) bool { w.done++; return true })
+}
+
+// add starts a child from a closure that keeps the parent group local.
+func (p *WorkerPool) add() {
+	children := p.Children()
+	start := func() { supervise.Start[Worker](children, WorkerArgs{}) }
+	start()
+}

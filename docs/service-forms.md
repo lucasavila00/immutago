@@ -105,12 +105,13 @@ arguments contain protected storage.
 
 ## Inside a service method
 
-These uses apply to the method's receiver, outside function literals:
+These uses apply to the method's receiver, including inside function literals:
 
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Select any receiver field other than the embedded Service | `c.text = text`, `c.mu.Lock()`, `defer c.mu.Unlock()`, `l.current.Store(&Config{})` |
 | Call a receiver method directly and synchronously, except Init and Run | `c.read()`, `c.Lock()` when the service embeds `sync.Mutex` |
+| Use the same receiver forms inside closures | `func() { c.text = "ready"; c.read() }` |
 | Read the start arguments with a direct Args call | `args := c.Args()`, `path := c.Args().Path`, `l.Args().Loader.Current().Limit(l.Args().Key)` |
 
 Selected ordinary fields use ordinary Go rules. Owner fields and any protected
@@ -120,14 +121,13 @@ data read from the arguments retain their own source rules.
 | --- | --- |
 | `other := c`, `use(c)`, `c == nil`, `*c = FileCache{}` | Select a field or call a method: `c.text`, `c.read()`. |
 | `go c.read()`, `defer c.read()`, `read := c.read` | Call `c.read()` directly. Field cleanup such as `defer c.mu.Unlock()` is allowed. |
-| `func() { c.text = "ready" }` | Put the operation in a named receiver method and call it directly. |
 | `c.Service`, `&c.Service`, `get := c.Args` | Read arguments with `args := c.Args()`. |
 | `c.Init()`, `c.Run(ctx)` | Put reusable work in another method, such as `c.read()`. The runtime calls Init and Run. |
 
 ## Child groups
 
-Call Children directly on the receiver of a service method, outside function
-literals. Every call in the allowed list is synchronous. For the lifetime of
+Call Children directly on the receiver of a service method, including inside
+function literals. Every call in the allowed list is synchronous. For the lifetime of
 these groups, see [Child services and groups](service-children.md).
 
 | Allowed forms — exhaustive | Example |
@@ -146,7 +146,6 @@ these groups, see [Child services and groups](service-children.md).
 | `p.group = p.Children()`, `saved = p.Children()`, `keep(p.Children())`, `_ = p.Children()` | `supervise.Start[Worker](p.Children(), args)` |
 | `p.Children().Stop()`, or `children := p.Children(); <-children.Stop()` | `group := supervise.StartGroup(p.Children())`, then `<-group.Stop()`. |
 | `get := p.Children`, `go p.Children()`, `go supervise.Start[Worker](p.Children(), args)`, `defer supervise.StartGroup(children)` | Start the child directly in the method: `supervise.Start[Worker](p.Children(), args)`. |
-| `func() { supervise.Start[Worker](p.Children(), args) }()` or a closure that captures a Children local | Move the Start call into the service method, outside the function literal. |
 | `var children = p.Children()`, `children = p.Children()`, `children, n := p.Children(), 1` | `children := p.Children()` |
 | After that binding: `other := children`, `keep(children)`, `&children`, `children = root` | Use `children` only as the first argument of Start, StartReserved, or StartGroup. For example, `supervise.StartGroup(children)`. |
 | `func (p *Pool) group() *supervise.Group { return p.Children() }` | `return supervise.StartGroup(p.Children())` |

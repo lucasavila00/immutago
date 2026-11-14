@@ -86,6 +86,7 @@ func f(ref supervise.Ref[ConfigLoader]) int { s := ref.Current().Latest(); retur
 		{"service with Ref field", `type Cache struct {
 	supervise.Service[supervise.NoArgs]; loader supervise.Ref[ConfigLoader] }
 func (c *Cache) Run(ctx context.Context) { _ = c.loader.Current().Version() }`},
+		{"receiver closure", `func (l *Limiter) later() { f := func() { l.used++ }; f() }`},
 		{"unexported receiver call", `func (l *ConfigLoader) Bump() { l.bump() }`},
 		{"ordinary inputs", `func (l *ConfigLoader) Update(ctx context.Context, values map[string]int) {
 if ctx.Err() == nil { values["key"]++ } }`},
@@ -162,7 +163,7 @@ func f(ref supervise.Ref[Locked]) { ref.Current().Lock() }`},
 		{"receiver copy", `func (l *ConfigLoader) copy() { other := l; _ = other }`},
 		{"receiver argument", `func use(any) {}; func (l *ConfigLoader) send() { use(l) }`},
 		{"receiver comparison", `func (l *ConfigLoader) empty() bool { return l == nil }`},
-		{"receiver closure", `func (l *ConfigLoader) later() { f := func() { l.version++ }; f() }`},
+		{"Owner holder closure", `func (l *ConfigLoader) later() { f := func() { l.version++ }; f() }`},
 		{"receiver go", `func (l *ConfigLoader) spawn() { go l.bump() }`},
 		{"receiver defer", `func (l *ConfigLoader) flush() { defer l.bump() }`},
 		{"receiver method value", `func (l *ConfigLoader) hook() { f := l.bump; f() }`},
@@ -195,6 +196,10 @@ func use(*supervise.Group) {}
 // TestServiceChildrenAccepted covers each allowed use of the group of a run.
 func TestServiceChildrenAccepted(t *testing.T) {
 	checkServiceCases(t, false, [][2]string{
+		{"closure", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	func() { supervise.Start[Worker](p.Children(), WorkerArgs{}) }() }`},
+		{"local closure", poolDefinitions + `func (p *Pool) Run(context.Context) {
+	sup := p.Children(); go func() { supervise.Start[Worker](sup, WorkerArgs{}) }() }`},
 		{"direct start", poolDefinitions + `func (p *Pool) Run(ctx context.Context) {
 	for i := range p.Args() { worker, err := supervise.Start[Worker](p.Children(), WorkerArgs{ID: i})
 	if err != nil { return }; p.workers = append(p.workers, worker) } }`},
@@ -239,8 +244,6 @@ func TestServiceChildrenRejected(t *testing.T) {
 		{"defer start", poolDefinitions + `func (p *Pool) Run(context.Context) {
 	defer supervise.Start[Worker](p.Children(), WorkerArgs{}) }`},
 		{"go call", poolDefinitions + `func (p *Pool) Run(context.Context) { go p.Children() }`},
-		{"closure", poolDefinitions + `func (p *Pool) Run(context.Context) {
-	func() { supervise.Start[Worker](p.Children(), WorkerArgs{}) }() }`},
 		{"return", poolDefinitions + `func (p *Pool) Run(context.Context) {}
 func (p *Pool) owned() *supervise.Group { return p.Children() }`},
 		{"Current", poolDefinitions + `func (p *Pool) Run(context.Context) {}
@@ -266,8 +269,6 @@ var get = (*supervise.Service[int]).Children`},
 		{"local overwrite", poolDefinitions + `func (p *Pool) Run(context.Context) {
 	sup := p.Children(); sup = supervise.NewRoot(nil); supervise.StartGroup(sup) }`},
 		{"local stop", poolDefinitions + `func (p *Pool) Run(context.Context) { sup := p.Children(); <-sup.Stop() }`},
-		{"local closure", poolDefinitions + `func (p *Pool) Run(context.Context) {
-	sup := p.Children(); go func() { supervise.Start[Worker](sup, WorkerArgs{}) }() }`},
 		{"local go", poolDefinitions + `func (p *Pool) Run(context.Context) {
 	sup := p.Children(); go supervise.StartGroup(sup) }`},
 		{"local defer", poolDefinitions + `func (p *Pool) Run(context.Context) {
