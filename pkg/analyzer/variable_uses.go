@@ -65,7 +65,7 @@ func (c *checks) recordFunction(declaration *ast.FuncDecl, callers map[*types.Fu
 	caller := c.pass.TypesInfo.Defs[declaration.Name].(*types.Func)
 	ast.Inspect(declaration.Body, func(node ast.Node) bool {
 		if id, ok := node.(*ast.Ident); ok && c.uses[caller] == nil {
-			c.recordUse(caller, c.pass.TypesInfo.Uses[id], callers)
+			c.recordUse(caller, id, callers)
 		}
 		return true
 	})
@@ -73,9 +73,10 @@ func (c *checks) recordFunction(declaration *ast.FuncDecl, callers map[*types.Fu
 }
 
 // recordUse records a rejected package variable, an imported callee fact, or a callee of this package.
-func (c *checks) recordUse(caller *types.Func, object types.Object, callers map[*types.Func][]*types.Func) {
+func (c *checks) recordUse(caller *types.Func, id *ast.Ident, callers map[*types.Func][]*types.Func) {
+	object := c.pass.TypesInfo.Uses[id]
 	if variable := packageVariable(object); variable != nil {
-		if c.processVariableReason(variable) != "" {
+		if c.processVariableReason(id, variable) != "" {
 			c.uses[caller] = &variableUse{Package: variable.Pkg().Path(), Name: variable.Pkg().Name(), Var: variable.Name()}
 		}
 		return

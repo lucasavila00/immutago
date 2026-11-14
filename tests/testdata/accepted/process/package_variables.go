@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/lucasavila00/immutago/pkg/im"
 	"github.com/lucasavila00/immutago/pkg/proc"
@@ -28,6 +29,9 @@ func init() {
 	}
 }
 
+// lookups counts Step calls.
+var lookups atomic.Int64
+
 const maxStep = 3
 
 // clampStep keeps a step index in range.
@@ -50,7 +54,13 @@ func (r *RateKeeper) Run(ctx context.Context) {
 }
 
 // Step returns a step from the table that init fills.
-func (r *RateKeeper) Step(i int) int { return steps[clampStep(i)] }
+func (r *RateKeeper) Step(i int) int {
+	lookups.Add(1)
+	return steps[clampStep(i)]
+}
+
+// Lookups returns the number of Step calls.
+func (r *RateKeeper) Lookups() int64 { return lookups.Load() }
 
 // Base returns the published base, or zero before the first table.
 func (r *RateKeeper) Base() int {

@@ -41,7 +41,7 @@ func (c *checks) checkProcessVariables(declaration *ast.FuncDecl) {
 func (c *checks) checkProcessUse(id *ast.Ident, called bool) {
 	object := c.pass.TypesInfo.Uses[id]
 	if variable := packageVariable(object); variable != nil {
-		if reason := c.processVariableReason(variable); reason != "" {
+		if reason := c.processVariableReason(id, variable); reason != "" {
 			c.report(id.Pos(), "process method uses package variable "+c.variableName(variable)+reason+processVariableFix)
 		}
 		return
@@ -78,12 +78,14 @@ func (c *checks) variableName(variable *types.Var) string {
 }
 
 // processVariableReason returns why a function of this package cannot use a package variable in a process.
-// It accepts an Owner slot and an unexported variable of this package whose type is an
-// allowed stored type and that only package initialization changes.
-func (c *checks) processVariableReason(variable *types.Var) string {
+// It accepts an Owner slot, a scalar atomic counter of this package, and an unexported variable of this
+// package whose type is an allowed stored type and that only package initialization changes.
+func (c *checks) processVariableReason(id *ast.Ident, variable *types.Var) string {
 	switch {
 	case checker.IsLibraryType(variable.Type(), "Owner"):
 		return ""
+	case atomicType(variable.Type()):
+		return c.atomicReason(variable)
 	case variable.Pkg() != c.pass.Pkg:
 		return " of another package, which any importer can change"
 	case variable.Exported():

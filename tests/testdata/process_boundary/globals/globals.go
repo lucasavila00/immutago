@@ -47,3 +47,6 @@ func (*Tally) Remember() { plain.Remember("a") }
 
 // Forward reaches a checked map through a package that the checker does not check.
 func (*Tally) Forward() { plain.Forward("a") }
+
+// Visit calls a function that uses only a scalar atomic.
+func (*Tally) Visit() int64 { return state.Visit() }

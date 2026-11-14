@@ -118,6 +118,7 @@ type checks struct {
 	pass     *analysis.Pass
 	reported map[token.Pos]bool
 	changed  map[*types.Var]bool
+	counters map[*types.Var]bool
 	uses     map[*types.Func]*variableUse
 }
 

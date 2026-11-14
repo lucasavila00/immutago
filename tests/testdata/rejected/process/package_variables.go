@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"sync/atomic"
 
 	"github.com/lucasavila00/immutago/pkg/proc"
 )
@@ -97,3 +98,23 @@ func (*HelperCounter) Run(ctx context.Context) {
 		countAll("hits")
 	}
 }
+
+var (
+	latest atomic.Value
+	total  atomic.Int64
+)
+
+// resetTotal replaces the atomic, so its readers can race.
+func resetTotal() { total = atomic.Int64{} }
+
+// AtomicUser uses atomics that the process rules reject.
+type AtomicUser struct{ proc.Process[proc.None] }
+
+// Run waits until ctx ends.
+func (*AtomicUser) Run(ctx context.Context) { <-ctx.Done() }
+
+// Latest uses an atomic.Value.
+func (*AtomicUser) Latest() bool { return latest.Load() == nil }
+
+// Total uses an atomic that resetTotal replaces.
+func (*AtomicUser) Total() int64 { return total.Add(1) }

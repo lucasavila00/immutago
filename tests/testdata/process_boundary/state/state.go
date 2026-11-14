@@ -1,6 +1,10 @@
 package state
 
-import "github.com/lucasavila00/immutago/pkg/im"
+import (
+	"sync/atomic"
+
+	"github.com/lucasavila00/immutago/pkg/im"
+)
 
 // Totals is one published total.
 type Totals struct {
@@ -22,3 +26,8 @@ func Record(key string) { Hits[key]++ }
 
 // Publish uses only the Owner slot.
 func Publish(count int) { Current.Store(&Totals{Count: count}) }
+
+var visits atomic.Int64
+
+// Visit counts calls in a scalar atomic.
+func Visit() int64 { return visits.Add(1) }

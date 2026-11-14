@@ -11,6 +11,7 @@ const processVariableDefinitions = `import (
 	"net/http"
 	"os"
 	"sync"
+	"sync/atomic"
 	"github.com/lucasavila00/immutago/pkg/proc"
 )
 type Config struct { im.Scoped; Version int }
@@ -18,6 +19,7 @@ type Snapshot struct { im.Shared; Version int }
 type Worker struct { proc.Process[proc.None]; n int }
 func (w *Worker) Run(ctx context.Context) {}
 var _, _, _, _, _ = io.EOF, http.DefaultClient, os.Stdout, sync.Mutex{}, context.Background
+var _ atomic.Int64
 `
 
 // checkProcessVariableCases runs each source after the process variable definitions.
@@ -53,6 +55,15 @@ func (w *Worker) Last() int { return table[3] }`},
 		{"value copy in other code", `var limit = 10
 func read() int { other := limit; return other }
 func (w *Worker) Limit() int { return limit }`},
+		{"atomic counter", `var hits atomic.Int64
+var ready atomic.Bool
+func record() { hits.Add(1) }
+func (w *Worker) Count() int64 { record(); ready.Store(true); go hits.Add(1); return hits.Load() }
+func (w *Worker) Swap() bool { _ = hits.CompareAndSwap(1, 2); return ready.Swap(false) }`},
+		{"atomic counters of each scalar type", `var a atomic.Int32
+var b atomic.Uint32
+var d atomic.Uint64
+func (w *Worker) Sum() uint64 { return uint64(a.Add(1)) + uint64(b.Add(1)) + d.Add(1) }`},
 		{"constant", `const size = 4
 func (w *Worker) Size() int { return size }`},
 		{"function call", `func helper() int { return 1 }
@@ -110,6 +121,31 @@ func (w *Worker) Send() { events <- 1 }`},
 func (c code) Error() string { return string(c) }
 var errMissing error = code("missing")
 func (w *Worker) check() error { return errMissing }`},
+		{"atomic value", `var current atomic.Value
+func (w *Worker) Load() { _ = current.Load() }`},
+		{"atomic pointer", `type Plain struct{ N int }
+var current atomic.Pointer[Plain]
+func (w *Worker) Load() int { return current.Load().N }`},
+		{"atomic uintptr", `var hits atomic.Uintptr
+func (w *Worker) Count() uintptr { return hits.Add(1) }`},
+		{"exported atomic", `var Hits atomic.Int64
+func (w *Worker) Count() int64 { return Hits.Add(1) }`},
+		{"atomic address elsewhere", `var hits atomic.Int64
+func pointer() *atomic.Int64 { return &hits }
+func (w *Worker) Count() int64 { return hits.Add(1) }`},
+		{"atomic method value elsewhere", `var hits atomic.Int64
+var add = hits.Add
+func (w *Worker) Count() int64 { return hits.Load() }`},
+		{"atomic assignment elsewhere", `var hits atomic.Int64
+func reset() { hits = atomic.Int64{} }
+func (w *Worker) Count() int64 { return hits.Load() }`},
+		{"atomic copy in method", `var hits atomic.Int64
+func (w *Worker) Count() int64 { p := &hits; return p.Load() }`},
+		{"atomic in struct", `type counters struct{ hits atomic.Int64 }
+var all counters
+func (w *Worker) Count() int64 { return all.hits.Add(1) }`},
+		{"atomic array", `var hits [2]atomic.Int64
+func (w *Worker) Count() int64 { return hits[0].Add(1) }`},
 		{"address", `var limit = 10
 func (w *Worker) Pointer() { p := &limit; _ = p }`},
 		{"scalar assignment in method", `var limit = 10
