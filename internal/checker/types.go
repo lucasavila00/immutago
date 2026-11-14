@@ -43,6 +43,9 @@ func IsRuntimeType(t types.Type, name string) bool {
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == RuntimePath && n.Obj().Name() == name
 }
 
+// IsUncheckedValue reports whether t is the library's unchecked immutable value wrapper.
+func IsUncheckedValue(t types.Type) bool { return IsLibraryType(t, "UncheckedValue") }
+
 // IsCollection reports whether t is one of the library's sealed collection types.
 func IsCollection(t types.Type) bool {
 	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap")

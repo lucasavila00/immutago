@@ -35,6 +35,7 @@ An argument struct with a dependency field is not an allowed stored type.
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
 | Process PID | `proc.PID[ConfigLoader]`; see [Supervised processes](processes.md). |
+| Trusted handle | `im.UncheckedValue[baked]`; see [Unchecked immutable values](unchecked-values.md). |
 
 Rejected type examples (**not exhaustive**):
 
