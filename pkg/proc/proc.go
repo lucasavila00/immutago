@@ -19,6 +19,10 @@
 // the same rule. At the root supervisor, the escalation panics again with the
 // last panic value, and the program exits.
 //
+// In Run, a process can start children under its own Supervisor. When the run
+// ends, the runtime stops these children in reverse start order before the
+// process restarts or stops. A child that escalates fails the run.
+//
 // Stop cancels each Run context and waits for Run to return. Cancellation is
 // cooperative; Run must observe its context. Stop does not wait for direct
 // method calls. Process methods must synchronize their own shared state.
@@ -43,14 +47,56 @@ const (
 // Only Start and StartReserved create it, and other code calls its exported methods through a PID.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
 type Process[A any] struct {
-	args A
+	args     A
+	cancel   context.CancelFunc
+	children *Supervisor
+	done     chan struct{}
+	failure  any
+	failed   bool
 }
 
 // Args returns the arguments that Start or StartReserved gave to the process.
 func (p *Process[A]) Args() A { return p.args }
 
+// Supervisor returns the supervisor of the current run. Call it only from Run.
+// After Run returns or panics, the runtime stops the children of this supervisor, last started first,
+// and waits for them before the run ends. If a child escalates, the run context ends and the run fails
+// with the panic value of the child.
+func (p *Process[A]) Supervisor() *Supervisor {
+	if p.children == nil {
+		p.children = &Supervisor{stopped: make(chan struct{})}
+		p.done = make(chan struct{})
+		go func() {
+			defer close(p.done)
+			if p.failure, p.failed = attempt(context.Background(), p.children.serve); p.failed {
+				p.cancel()
+			}
+		}()
+	}
+	return p.children
+}
+
 // bind sets the arguments of a new process value.
 func (p *Process[A]) bind(args A) { p.args = args }
+
+// begin returns the context of the run.
+func (p *Process[A]) begin(ctx context.Context) context.Context {
+	ctx, p.cancel = context.WithCancel(ctx)
+	return ctx
+}
+
+// end stops the supervisor of the run and waits for it, and panics if a child escalated to it.
+func (p *Process[A]) end() {
+	p.cancel()
+	if p.children == nil {
+		return
+	}
+	<-p.children.Stop()
+	<-p.done
+	if p.failed {
+		panic(p.failure)
+	}
+}
 
 // None is the argument type of a process without arguments.
 type None struct {
@@ -118,6 +164,8 @@ func Start[T, A any, P interface {
 	*T
 	Run(context.Context)
 	bind(A)
+	begin(context.Context) context.Context
+	end()
 }](parent *Supervisor, args A) PID[T] {
 	pid := Reserve[T]()
 	StartReserved[T, A, P](parent, pid, args)
@@ -131,6 +179,8 @@ func StartReserved[T, A any, P interface {
 	*T
 	Run(context.Context)
 	bind(A)
+	begin(context.Context) context.Context
+	end()
 }](parent *Supervisor, pid PID[T], args A) {
 	create := func() *T {
 		value := new(T)
@@ -146,7 +196,9 @@ func StartReserved[T, A any, P interface {
 			pid.value.Store(create())
 		}
 		started = true
-		P(pid.value.Load()).Run(ctx)
+		value := P(pid.value.Load())
+		defer value.end()
+		value.Run(value.begin(ctx))
 	})
 }
 
