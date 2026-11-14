@@ -193,14 +193,28 @@ func classificationShapes(t *testing.T) []types.Type {
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "T", nil), constraint)
 	ordinary := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "U", nil),
 		types.NewInterfaceType(nil, nil).Complete())
+	localName := types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "LocalRef", nil)
+	localMarker := types.NewNamed(localName, types.NewStruct(nil, nil), nil)
+	local := markedType("Local", localMarker)
+	results := types.NewTuple(types.NewParam(token.NoPos, nil, "value", value))
+	resultCall := types.NewSignatureType(nil, nil, nil, nil, results, false)
+	variadicParams := types.NewTuple(types.NewParam(token.NoPos, nil, "values", types.NewSlice(value)))
+	variadic := types.NewSignatureType(nil, nil, nil, variadicParams, nil, true)
+	receiver := types.NewParam(token.NoPos, nil, "receiver", types.NewPointer(value))
+	receiverOnly := types.NewSignatureType(receiver, nil, nil, nil, nil, false)
+	frozen := sliceType(t, slice, value)
+	frozenAlias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "FrozenAlias", nil), frozen)
+	fakeName := types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Shared", nil)
+	fakeMarker := types.NewNamed(fakeName, types.NewStruct(nil, nil), nil)
 	return []types.Type{
-		nil, value, alias, types.NewPointer(alias), types.NewArray(alias, 0),
+		nil, value, alias, types.NewPointer(alias), types.NewArray(alias, 0), local, types.NewPointer(local),
 		callback, types.NewPointer(callback), types.NewArray(callback, 0), types.NewSlice(callback),
 		types.NewChan(types.SendRecv, callback), types.NewMap(types.Typ[types.String], callback),
 		types.NewMap(types.NewPointer(alias), types.Typ[types.Int]), service,
 		constraint, parameter, ordinary, classificationSignature(parameter),
 		types.NewTuple(types.NewParam(token.NoPos, nil, "value", value)),
-		sliceType(t, slice, value),
+		frozen, frozenAlias, classificationSignature(frozen), resultCall, variadic, receiverOnly,
+		classificationSignature(callback), markedType("Pretender", fakeMarker),
 		types.NewStruct([]*types.Var{types.NewField(token.NoPos, nil, "Call", callback, false)}, nil),
 	}
 }

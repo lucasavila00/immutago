@@ -68,11 +68,13 @@ func TestClassificationInterfaceCycles(t *testing.T) {
 		nodes := classificationQueryGraph(8, mode)
 		var classifier Classifier
 		for _, node := range nodes {
-			if got, want := classifier.Contains(node), classificationStorageOracle(node, make(map[types.Type]bool)); got != want {
-				t.Fatalf("mode=%s: Contains=%t, want %t", mode, got, want)
+			wantStored := classificationStorageOracle(node, make(map[types.Type]bool))
+			if got := classifier.Contains(node); got != wantStored {
+				t.Fatalf("mode=%s: Contains=%t, want %t", mode, got, wantStored)
 			}
-			if got, want := classifier.Callable(node), classificationCallableOracle(node, make(map[types.Type]bool)); got != want {
-				t.Fatalf("mode=%s: Callable=%t, want %t", mode, got, want)
+			wantCallable := classificationCallableOracle(node, make(map[types.Type]bool))
+			if got := classifier.Callable(node); got != wantCallable {
+				t.Fatalf("mode=%s: Callable=%t, want %t", mode, got, wantCallable)
 			}
 		}
 	}
