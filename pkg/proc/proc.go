@@ -311,8 +311,9 @@ func (s *Supervisor) launch(c *child) {
 	ctx, cancel := context.WithCancel(s.ctx)
 	done := make(chan struct{})
 	c.stop, c.done = cancel, done
+	run := c.run
 	go func() {
-		if watch(ctx, c.run, s.failure) {
+		if watch(ctx, run, s.failure) {
 			s.forget(c)
 		}
 		close(done)

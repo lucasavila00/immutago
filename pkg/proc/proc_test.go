@@ -412,3 +412,12 @@ func BenchmarkPIDProc(b *testing.B) {
 	}
 	<-root.Stop()
 }
+
+// TestStopNestedRightAfterStart verifies that a nested supervisor can stop while its parent launches it.
+func TestStopNestedRightAfterStart(t *testing.T) {
+	root := NewRoot()
+	for range 100 {
+		<-StartSupervisor(root).Stop()
+	}
+	<-root.Stop()
+}
