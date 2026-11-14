@@ -37,7 +37,8 @@ func checkInvalidDependencyPropagation(t *testing.T, serialized bool) {
 	packages := dependencyImporter{checker.LibraryPath: library}
 	invalid := make(map[*types.Package]invalidPackage)
 	cases := []struct{ path, source, diagnostic string }{
-		{"example/bad", `package bad; import im "` + checker.LibraryPath + `"; func missing(im.Shared); func other(im.Shared)`,
+		{"example/bad", `package bad; import im "` + checker.LibraryPath +
+			`"; func missing(im.Shared); func other(im.Shared)`,
 			"unsupported function without a Go body"},
 		{"example/wrapper", `package wrapper; import _ "example/bad"`, "unsupported dependency example/bad"},
 		{"example/consumer", `package consumer; import (_ "example/wrapper"; _ "` + checker.LibraryPath + `")`,
