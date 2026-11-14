@@ -166,7 +166,7 @@ type Shared struct{}
 
 ## type UncheckedValue
 
-UncheckedValue holds a pointer to a value that the analyzer does not look inside. It is one of the two trust markers of immutago, with proc.UncheckedDependency: the analyzer does not prove that the value is immutable. The package that declares T trusts its own code to never change the value after Trust.
+UncheckedValue holds a pointer to a value that the analyzer does not look inside. It is one of the two trust markers of immutago, with proc.ConcurrentSafe: the analyzer does not prove that the value is immutable. The package that declares T trusts its own code to never change the value after Trust.
 
 UncheckedValue is an allowed stored type. Any package can store, copy, and pass it. Only the package that declares T can use Trust and Unwrap, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/unchecked-values.md for the complete forms.
 

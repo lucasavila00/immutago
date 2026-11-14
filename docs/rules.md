@@ -25,7 +25,7 @@ promise:
 | Marker | Promise | Where |
 | --- | --- | --- |
 | [`im.UncheckedValue[T]`](unchecked-values.md), from `im.Trust` | The value never changes after `im.Trust`. Only the package that declares `T` can wrap or read it. | Anywhere a stored type is allowed. |
-| [`proc.UncheckedDependency[T]`](processes.md#unchecked-dependencies), from `proc.Trust` | The value is safe for concurrent use by several processes. | Only in process start arguments. |
+| [`proc.ConcurrentSafe[T]`](processes.md#concurrent-dependencies), from `proc.AssumeConcurrentSafe` | The value is safe for concurrent use by several processes. | Only in process start arguments. |
 
 ## Check the program
 

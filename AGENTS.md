@@ -123,7 +123,7 @@ request body when the user requests that issue or pull request.
 Check every field and collection type argument. Use resolved Go type identity,
 not source spelling. Do not accept unknown cases or add escape hatches. There
 are exactly two trust markers, each with its own promise, and the checker proves
-neither: `proc.UncheckedDependency[T]` from `proc.Trust` in process start
+neither: `proc.ConcurrentSafe[T]` from `proc.AssumeConcurrentSafe` in process start
 arguments, whose caller promises that the value is safe for concurrent use (the
 user decided this in issue #52), and `im.UncheckedValue[T]` from `im.Trust`, whose
 declaring package promises that the value never changes; only the package that

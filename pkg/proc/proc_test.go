@@ -477,23 +477,23 @@ func TestStopNestedRightAfterStart(t *testing.T) {
 	<-root.Stop()
 }
 
-// TestTrustValue checks that Value returns the value that Trust wraps.
-func TestTrustValue(t *testing.T) {
+// TestAssumeConcurrentSafeValue checks that Value returns the value that AssumeConcurrentSafe wraps.
+func TestAssumeConcurrentSafeValue(t *testing.T) {
 	counts := map[string]int{"a": 1}
-	Trust(counts).Value()["b"] = 2
+	AssumeConcurrentSafe(counts).Value()["b"] = 2
 	if counts["b"] != 2 {
 		t.Fatalf("Value() is not the trusted map: %v", counts)
 	}
-	var zero UncheckedDependency[func() int]
+	var zero ConcurrentSafe[func() int]
 	if zero.Value() != nil {
-		t.Fatal("zero UncheckedDependency has a value")
+		t.Fatal("zero ConcurrentSafe has a value")
 	}
 }
 
 // reporterArgs gives a process a trusted function.
 type reporterArgs struct {
 	im.Shared
-	Report UncheckedDependency[func(string)]
+	Report ConcurrentSafe[func(string)]
 }
 
 // reporter calls its trusted function once.
@@ -506,7 +506,7 @@ func (r *reporter) Run(context.Context) { r.Args().Report.Value()("run") }
 func TestTrustedArgument(t *testing.T) {
 	reported := make(chan string, 1)
 	root := NewRoot(nil)
-	Start[reporter](root, reporterArgs{Report: Trust(func(event string) { reported <- event })})
+	Start[reporter](root, reporterArgs{Report: AssumeConcurrentSafe(func(event string) { reported <- event })})
 	if got := <-reported; got != "run" {
 		t.Fatalf("reported %q", got)
 	}

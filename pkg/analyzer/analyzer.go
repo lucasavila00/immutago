@@ -25,7 +25,7 @@
 // only as a method receiver or as a direct PID.Proc result that receives a direct
 // call of an exported method. Exported process methods take and return only
 // allowed stored types, and only proc.Start and proc.StartReserved create processes.
-// Process arguments can also carry proc.UncheckedDependency fields. The wrapper
+// Process arguments can also carry proc.ConcurrentSafe fields. The wrapper
 // has restricted source forms; its contents are trusted for concurrent use.
 package analyzer
 
@@ -150,8 +150,8 @@ func (c *checks) visit(node ast.Node) bool {
 		c.checkImport(n)
 
 	case *ast.TypeSpec:
-		if !n.Assign.IsValid() && checker.IsRuntimeType(c.pass.TypesInfo.TypeOf(n.Type), checker.UncheckedDependencyType) {
-			c.report(n.Pos(), "defined copies of proc.UncheckedDependency are unsupported; use a type alias")
+		if !n.Assign.IsValid() && checker.IsRuntimeType(c.pass.TypesInfo.TypeOf(n.Type), checker.ConcurrentSafeType) {
+			c.report(n.Pos(), "defined copies of proc.ConcurrentSafe are unsupported; use a type alias")
 		}
 		if obj := c.pass.TypesInfo.Defs[n.Name]; obj != nil {
 			c.checkType(n.Pos(), obj.Type())
@@ -224,7 +224,7 @@ func reflectionValue(t types.Type) bool {
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") || checker.IsUncheckedValue(t) ||
-		checker.IsRuntimeType(t, checker.ProcessMarker) || checker.IsRuntimeType(t, checker.UncheckedDependencyType) {
+		checker.IsRuntimeType(t, checker.ProcessMarker) || checker.IsRuntimeType(t, checker.ConcurrentSafeType) {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)
@@ -266,7 +266,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	}
 }
 
-// unprovedField reports a misplaced marker or proc.UncheckedDependency field.
+// unprovedField reports a misplaced marker or proc.ConcurrentSafe field.
 // It identifies a field without a type proof.
 func (c *checks) unprovedField(pos token.Pos, t types.Type, field *types.Var, marked bool) bool {
 	if invalidMarkerField(field) {
@@ -278,7 +278,7 @@ func (c *checks) unprovedField(pos token.Pos, t types.Type, field *types.Var, ma
 		return false
 	}
 	if !marked {
-		c.report(pos, "proc.UncheckedDependency field "+field.Name()+" is allowed only in a marked process argument struct"+
+		c.report(pos, "proc.ConcurrentSafe field "+field.Name()+" is allowed only in a marked process argument struct"+
 			"\n  owner: "+diagnosticType(t)+"\n  fix: move the field into the argument struct of the process")
 	}
 	return true

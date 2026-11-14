@@ -6,7 +6,7 @@ import (
 )
 
 // IntDependency is an exact alias for a dependency.
-type IntDependency = proc.UncheckedDependency[*int]
+type IntDependency = proc.ConcurrentSafe[*int]
 
 // AliasedArgs uses an alias in a named dependency field.
 type AliasedArgs struct {
@@ -33,8 +33,8 @@ type TrustedPoint struct {
 // OpaqueArgs stores a trusted callback without inspecting its signature.
 type OpaqueArgs struct {
 	im.Shared
-	Point proc.UncheckedDependency[*TrustedPoint]
-	Make  proc.UncheckedDependency[func() *TrustedPoint]
+	Point proc.ConcurrentSafe[*TrustedPoint]
+	Make  proc.ConcurrentSafe[func() *TrustedPoint]
 }
 
 // makeTrustedPoint returns a fresh immutable point.
@@ -42,5 +42,7 @@ func makeTrustedPoint() *TrustedPoint { return &TrustedPoint{X: 1} }
 
 // MakeOpaqueArgs wraps values whose types mention immutable storage.
 func MakeOpaqueArgs() OpaqueArgs {
-	return OpaqueArgs{Point: proc.Trust(makeTrustedPoint()), Make: proc.Trust(makeTrustedPoint)}
+	return OpaqueArgs{
+		Point: proc.AssumeConcurrentSafe(makeTrustedPoint()), Make: proc.AssumeConcurrentSafe(makeTrustedPoint),
+	}
 }
