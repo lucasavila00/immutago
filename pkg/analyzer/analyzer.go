@@ -1,32 +1,18 @@
 // Package analyzer exposes the immutago go/analysis analyzer.
 //
-// Structs that embed im.Shared or im.Scoped are immutable from construction.
-// Their fields must be scalars, unnamed arrays, other marked structs, pointers
-// to concrete Shared structs, or frozen collections of allowed types. Each
-// component is checked recursively. Unmarked structs cannot store protected
-// values. Interfaces, callbacks, and user generics with protected storage are
-// unsupported. Ordinary unsafe and reflection operations follow Go API contracts.
+// The analyzer checks:
+//   - Recursive field and collection types for structs with im.Shared or im.Scoped.
+//   - Allowed construction, reads, calls, and assignments; no protected field writes.
+//   - Shared pointer storage and Scoped pointer retention.
+//   - Exclusive native builders, Freeze consumption, and use after Freeze.
+//   - Service declarations, start arguments, receivers, and calls through Ref.Current.
 //
-// Whole variable bindings can be replaced. Field, element, and pointer-target
-// writes to protected objects are rejected. Protected pointers start with
-// fresh construction and target concrete marked structs. Shared pointers can
-// be copied, stored, and returned. Scoped pointers stay local or pass to
-// direct typed calls that do not retain them. Neither mode permits protected
-// closure captures or protected operations in go or defer.
+// Direct im or supervise imports, used types, and failed checked dependencies
+// select packages for analysis. Ordinary Go APIs remain trusted.
+// im.UncheckedValue and supervise.ConcurrentSafe carry explicit caller promises.
 //
-// Struct and array copies copy their values; frozen fields share read-only storage.
-// Freeze calls consume exclusive native map and slice builders without copying.
-// Builder aliases and later uses are rejected; Clone creates independent native storage.
-// Direct im or supervise imports, locally used im or supervise type contracts, and failed
-// checked dependencies select proof checking. Other packages use ordinary Go API
-// trust, including string immutability. Checked failures propagate to consumers.
-//
-// Supervised services have a separate source boundary. The analyzer matches the
-// exact Service, Ref, and startup identities from package supervise. Callers keep
-// a Ref and use Current only for a direct exported method call. Exported method
-// inputs and outputs must be allowed stored types. Service receivers can access
-// their mutable fields, but cannot escape their methods. Start arguments may
-// contain explicit ConcurrentSafe values whose concurrency promise is not proved.
+// The complete source forms and package rules are in
+// https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
 package analyzer
 
 import (

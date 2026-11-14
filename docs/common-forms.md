@@ -1,9 +1,12 @@
 # Common source forms
 
-These forms apply to structs that embed Shared or Scoped, and to frozen slices
-and maps. Combine them with the forms on the type's page. The lists are complete;
-other operations on these values are rejected. Rejected examples are not exhaustive.
-[Owner](owner.md) has its own forms.
+These forms apply to:
+
+- Structs that embed `im.Shared` or `im.Scoped`.
+- `im.FrozenSlice` and `im.FrozenMap` values.
+
+Combine them with each type's forms. The lists are complete; unlisted operations
+are rejected. Rejected examples are not exhaustive. [Owner](owner.md) has its own forms.
 
 ## Markers and stored types
 
@@ -86,13 +89,11 @@ p = &SharedPoint{X: 2} // q still observes X == 1.
 | Use scalar reads in literals or indices; index or slice strings | `[]int{point.X}`, `a[point.X]`, `user.Name[1:]` |
 | Pass scalar reads to ordinary calls, including builtins, function variables, interface methods, and generics | `callback(point.X)`, `identity(point.X)` |
 
-After `x := point.X`, `x` is an ordinary Go integer. You can change it or use it
-in a callback. The statement that reads `point.X` must still use one of the
-listed statement forms. Copying a marked value, pointer, or frozen collection
-does not remove its rules.
-The same source rules apply when Go computes a constant. For example,
-`count := len(points)` is allowed, but a closure cannot read `points` through
-`len(points)`. Compute `count` before the closure and capture that integer.
+- After `x := point.X`, `x` is an ordinary integer; you can change it or capture it.
+- The read of `point.X` still needs a listed statement form.
+- Copies of marked values, pointers, and frozen collections keep their rules.
+- Constant expressions follow the same rules. Use `count := len(points)` before
+  a closure, then capture `count`; do not read `points` inside the closure.
 
 ## Common pointer forms
 
@@ -110,9 +111,9 @@ These forms apply to both `*SharedPoint` (`im.Shared`) and
 | Pass to a direct function with an exact concrete parameter type | `read(p)`; `func read(p *SharedPoint) int { return p.X }` |
 | Call a method with the exact receiver type | `p.Read()`; `func (p *SharedPoint) Read() int { return p.X }` |
 
-Type aliases and parentheses are allowed in these forms. A pointer must point
-to a struct with an im marker. Create it with one of the `new` or `&T{...}`
-forms above; do not take the address of an existing variable.
+- Type aliases and parentheses preserve these forms.
+- Pointer targets must be structs with `im.Shared` or `im.Scoped`.
+- Construct pointers with the listed `new` or `&T{...}` forms.
 
 Rejected pointer examples (**not exhaustive**):
 
@@ -158,10 +159,12 @@ result, and statement forms on this page.
 | Constructed value, new pointer, or direct call result as receiver | `SharedPoint{X: 3}.XValue()`, `(&SharedPoint{X: 3}).ReadX()`, `makePoint().XValue()` |
 | Alias or parentheses in these forms | `type Position = SharedPoint`, `(p).ReadX()` |
 
-Method bodies follow the same rules as named functions. A Shared method can
-return its pointer. A Scoped method cannot save or return its pointer; it can
-return a value copy. Neither can change protected fields. Methods cannot have
-generic receivers. Service and fixed library methods use their own listed forms.
+| Method receiver | Body rules |
+| --- | --- |
+| Struct with `im.Shared` | Same checks as named functions; can return its pointer. |
+| Struct with `im.Scoped` | Same checks as named functions; can return a value copy, but cannot store or return its pointer. |
+| Either marked struct | Cannot change protected fields or have generic receivers. |
+| Service or fixed library type | Separate listed API forms. |
 
 Rejected examples (**not exhaustive**):
 
@@ -196,14 +199,13 @@ Use the operations above inside these statement forms:
 | Assign one existing writable loop target, using the assignment rules above | `for i = range count { ... }`, `for a[point.X] = range a { ... }` |
 | Use checked operations in a select case body | `case <-ready: values[0] = value` |
 
-The one-destination rule applies to assignments and declarations, not returns.
-FrozenMap's `Get` and `supervise.Start` are the two-destination exceptions. Get requires
-new local names or blanks; Start permits existing local names, `=`, and local
-`var` declarations too. Blocks, `break`, and `continue` follow ordinary Go rules.
-Assignments to package variables follow the same one-destination rule.
-Pass these values and pointers to named functions with the exact parameter
-type, such as `func read(p *SharedPoint) int`. Call the function normally,
-without `go` or `defer`.
+- Assignments and declarations have one destination, including package variables.
+  Returns can have several results.
+- `FrozenMap.Get` permits two new local names or blanks.
+- `supervise.Start` also permits existing local names, `=`, and local `var` declarations.
+- Blocks, `break`, and `continue` follow ordinary Go rules.
+- Named functions need the exact parameter type, such as `func read(p *SharedPoint) int`.
+  Call directly, without `go` or `defer`.
 
 Rejected statement and call examples (**not exhaustive**):
 

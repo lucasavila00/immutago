@@ -2,27 +2,32 @@
 
 ## Trust boundary
 
-The checker trusts the Go compiler, runtime, standard library, and fixed `im`
-and `supervise` implementations. [Toolchain detection](../../pkg/analyzer/toolchain.go) identifies
-standard library source under the active `go env GOROOT`. It identifies generated
-Go test runners by their `.test` main package and compiler-checked standard
-internal test dependency. It still checks user test packages. The analyzer does
-not prove those toolchain implementations. Ordinary packages outside the
-[package boundary](../rules.md#package-boundary) are also trusted to obey Go API
-contracts, including immutable strings and no hidden writes to protected memory.
-Their unsafe, reflection, and cgo implementations are not proved.
+| Trusted source | Scope |
+| --- | --- |
+| Go compiler, runtime, and standard library | Compiler types, runtime behavior, and standard APIs. |
+| Fixed im and supervise implementations | Collection storage, Owner, and service runtime. |
+| Ordinary packages outside the [package boundary](../rules.md#package-boundary) | Go API contracts, including immutable strings and no hidden writes to protected memory. |
+| `im.Trust` | The declaring package's immutability promise. |
+| `supervise.AssumeConcurrentSafe` | The caller's concurrency promise. |
 
-Application code must run through the analyzer for its selected build
-configuration. An ordinary Go build supplies no immutability checks. Unsafe and
-reflection operations use the ordinary source-form checks. The analyzer does
-not trace scalar origins or prove the memory effects of ordinary unsafe code;
-ordinary helpers must obey Go API contracts, including string immutability.
-Checked code still rejects cgo and bodyless functions. There are no suppression
-directives. The two user trust points are
-`supervise.AssumeConcurrentSafe` for safe concurrent use and `im.Trust` for immutable data. The checker
-does not prove either [promise](../rules.md#trust-markers).
-Failures from checked dependencies reach consumers through package facts. Runtime Freeze has
-no fallback validation when the analyzer is omitted.
+[Toolchain detection](../../pkg/analyzer/toolchain.go):
+
+- Recognizes standard-library source under the active `go env GOROOT`.
+- Skips generated `.test` main packages with the compiler-checked standard
+  internal test dependency.
+- Still checks user test packages.
+
+Enforcement:
+
+- Run the analyzer for each build configuration; `go build` adds no checks.
+- Unsafe and reflection operations use the normal source-form checks.
+- Scalar origins and arbitrary unsafe memory effects are not proved; ordinary
+  helpers must obey Go API contracts, including string immutability.
+- Checked packages reject cgo and bodyless functions.
+- There are no suppression directives. The two [trust markers](../rules.md#trust-markers)
+  above are the explicit user promises.
+- Checked dependency failures reach consumers through package facts.
+- Freeze has no runtime fallback when the analyzer is omitted.
 
 ## Test map
 

@@ -2,26 +2,20 @@
 
 ## Immutable objects
 
-Both markers prohibit mutation from construction onward. The
-[write matcher](../../pkg/analyzer/subset_writes.go) permits complete variable
-replacement and complete tracked native-builder element replacement. It rejects
-writes to protected fields, array elements, and dereferenced objects.
+| Rule | Implementation |
+| --- | --- |
+| `im.Shared` and `im.Scoped` fields cannot change after construction | [Write matcher](../../pkg/analyzer/subset_writes.go): allow whole-variable and tracked builder-element replacement; reject protected field, array-element, and dereference writes. |
+| Protected pointers start at fresh allocations | [Source matcher](../../pkg/analyzer/subset_operations.go): reject `&variable`, which could expose storage that is later replaced. |
+| Shared pointers can be stored; Scoped pointers cannot | Source matcher checks uses; [type proof](../../internal/checker/proof.go) checks stored pointer targets. |
 
-Pointers start at fresh allocations of concrete marked structs. Taking a
-named variable's address would expose a slot that can later be rebound, so that
-form is rejected. `Shared` pointers may be copied, stored, and returned.
-`Scoped` pointers remain local or pass through direct typed calls that do not
-retain them. The [source matcher](../../pkg/analyzer/subset_operations.go) checks
-these uses; the [type proof](../../internal/checker/proof.go) rejects stored
-`Scoped` pointers.
+For [im.UncheckedValue](../../pkg/im/unchecked_value.go):
 
-The type proof accepts [UncheckedValue](../../pkg/im/unchecked_value.go) without
-inspecting its payload. The handle is ordinary storage, but its field in a marked
-object cannot be replaced. [Trust and Unwrap checks](../../pkg/analyzer/unchecked_value.go) use the
-resolved type argument's declaring package, including through aliases and
-function values. The handle has no methods, so interface calls and promoted
-methods cannot expose its pointer. The declaring package's promise of immutable
-data remains unproved.
+- The type proof accepts the handle without inspecting its payload.
+- A handle field in a marked object is still read-only.
+- [Trust and Unwrap](../../pkg/analyzer/unchecked_value.go) require the package
+  that declares T, resolved through aliases and function values.
+- The handle has no methods that could expose its pointer.
+- The declaring package supplies the immutability promise.
 
 ## Why the rules belong to the type
 
@@ -37,9 +31,8 @@ type Config struct {
 func limit(config *Config) int { return config.Limit }
 ```
 
-The checker knows that `limit` cannot save or return `config` because Config is
-Scoped. Another function that receives `*Config` gets the same rule. Renaming
-the parameter does not change it.
+Every function that receives `*Config` gets the Scoped rule, regardless of the
+parameter's name.
 
 The marker selects the pointer rule:
 
@@ -54,40 +47,33 @@ For either marker, the checker requires:
 - Allowed key and element types in frozen collections.
 - No writes to those fields through another pointer or a receiver method.
 
-This choice gives us one rule to declare, read, and check. The checker uses Go
-type identity instead of a separate pointer policy for each variable and
-parameter. It still checks each operation; the marker is not a trusted promise.
+| Choice | Benefit | Cost |
+| --- | --- | --- |
+| Type marker | Declare once; match uses with Go type identity. | One type has one pointer policy. A Shared type cannot be used in Owner. Use separate types or value copies when needed. |
+| Per-parameter rule | One type could serve both pointer policies. | Repeated annotations and separate policy checks for copies and calls; no stronger immutable-field rule. |
 
-The cost is less flexibility: one type cannot have both Shared and Scoped
-pointer rules. For example, a Shared type cannot also be used in `Owner[T]`.
-Code that needs both roles must use separate types or pass value copies.
-
-Parameter rules could let one type serve both roles. They would require more
-annotations and checks for pointer copies and calls. Both designs enforce the
-same immutable-field rule. We keep type markers unless a concrete use case shows a large
-correctness or simplicity gain from that extra work.
+Keep type markers unless a concrete use case shows a large correctness or
+simplicity gain. The checker still checks each operation; markers are not promises.
 
 See [Shared](../shared.md), [Scoped](../scoped.md), and [Owner](../owner.md) for
 the supported forms.
 
 ## Atomic Scoped slots
 
-[Owner](../../pkg/im/owner.go) stores a pointer with `atomic.Pointer`. The slot
-is mutable and is not an immutable type. It can be a package variable or a direct
-named field of an unmarked struct. The
-[slot matcher](../../pkg/analyzer/owner_slot.go) checks its type argument,
-receiver, direct call, fresh Store input, and local Load binding. A separate
-slot-bearing value check rejects copies of slots and holders. It also checks
-holder pointer transport and closure captures. The ordinary Scoped checks
-apply to each loaded pointer. A later Store replaces the slot's reference;
-earlier loaded objects remain immutable. Go's garbage collector manages lifetime.
+- [im.Owner](../../pkg/im/owner.go) is a mutable `atomic.Pointer` slot, allowed
+  as a package variable or a direct named field of an unmarked struct.
+- The [slot matcher](../../pkg/analyzer/owner_slot.go) checks the type argument,
+  receiver, direct call, fresh Store input, and local Load binding.
+- The holder check rejects copies of slots and their containing structs. It
+  also checks holder pointer uses and captures.
+- Loaded pointers follow Scoped rules. Store replaces the slot's pointer;
+  previous objects stay immutable. Go's GC manages their lifetime.
 
 ## Services and groups
 
-The service boundary has two parts: the analyzer checks source forms, and the
-trusted [runtime](../../pkg/supervise/supervise.go) manages service values and
-groups. These checks do not prove that ordinary method bodies isolate mutable
-memory. A service can still reach a shared map through ordinary Go code.
+- The analyzer matches the [service source forms](../service-forms.md).
+- The trusted [runtime](../../pkg/supervise/supervise.go) manages service values and groups.
+- Ordinary method bodies can still share mutable data, such as a global map.
 
 ### Compiler identities and source forms
 
@@ -144,21 +130,18 @@ Unmatched uses fail instead of falling back to ordinary protected calls.
 
 ### Publication and child lifetimes
 
-A reference contains a pointer to an atomic pointer, so copied references select
-the same current value. `StartReserved` creates a fresh service, binds its
-arguments, and calls `Init`. Successful initial setup publishes with
-compare-and-swap. A losing concurrent start cleans up its staged children before
-it panics. Later successful restart attempts replace the current pointer with
-an atomic store; failed setup leaves the previous value available to callers.
-`Current` needs one atomic load and no allocation.
+| Operation | Runtime action |
+| --- | --- |
+| Copy Ref | Copy a pointer to an atomic pointer; all copies select the same current value. |
+| StartReserved | Create a fresh service, set arguments, call Init, then publish with compare-and-swap. A losing concurrent start stops its staged children before panicking. |
+| Restart | Repeat setup; publish with an atomic store only after success. Failure leaves the previous value available. |
+| Current | One atomic load, no allocation. |
+| Children created during Init | Register in that run's child group; wait until Run begins. Failed setup stops them. |
+| Shutdown | Stop the child group before cancelling the parent's Run context. |
+| Run returns or panics | Finish child cleanup before ending or waiting to restart. |
+| Start a child after the run ends | Init can run, but child Run cannot: the child group is stopped. |
 
-A run owns a distinct child group. Children created during `Init` are registered
-but wait until the run begins. Failed setup stops those children. During shutdown,
-the child group stops before the runtime cancels the parent's Run context. On a
-normal return or panic, child cleanup finishes before the run ends or waits to
-restart. A completed run keeps a stopped child group, so later method calls can
-initialize children but cannot run them. The checker does not prove whether a
-saved child reference belongs to the current parent run.
+The checker does not establish whether a saved child Ref belongs to the current parent run.
 
 The source matcher accepts the fixed Start result forms when arguments contain
 protected storage, including two local result bindings and a matching named
@@ -169,16 +152,14 @@ and [runtime tests](../../pkg/supervise/init_test.go) check these separate rules
 
 ## Native builders
 
-[Discovery](../../internal/freeze/discover.go) indexes local declarations by
-compiler variable identity. It tracks fresh native containers with protected
-contents and native inputs to Freeze. Valid initial sources are allocation,
-literal, bare nil, zero declaration, or an exact collection `Clone` call.
+| Stage | Work |
+| --- | --- |
+| [Discovery](../../internal/freeze/discover.go) | Index local declarations by compiler variable identity. Track containers with protected contents and native Freeze inputs. |
+| Initial source | Match allocation, literal, bare nil, zero declaration, or exact collection Clone. |
+| [Use checks](../../internal/freeze/uses.go) | Reject handle copies, subslices, slot addresses, escapes, and unmatched calls. |
 
-[Use checks](../../internal/freeze/uses.go) match the builder operations before
-and after Freeze. They reject handle copies, subslices, slot addresses, escape,
-and unsupported calls. A copied immutable element pointer does not alias a
-builder slot. An address of that slot does. Storage projections are followed
-only until an expression produces a separate value.
+Copying an immutable element pointer does not alias a builder slot; taking the
+slot's address does. Follow selectors and indices only until they produce a separate value.
 
 [Flow analysis](../../internal/freeze/flow.go) expands each participating
 function's Go control-flow graph into ordered use, consume, and reset events.
@@ -199,9 +180,7 @@ graph traversal.
 
 ## Runtime representation
 
-[FrozenSlice](../../pkg/im/slice.go) and [FrozenMap](../../pkg/im/map.go) hold
-private native handles. Freeze copies only the handle; it has no runtime alias
-or consumed-state checks. Reads and [iteration](../../pkg/im/iterator.go) use
-that storage directly. Clone copies the native slots, not referenced objects.
-Recursive immutability makes shared object identity safe after this shallow
-copy. The analyzer, not the wrappers, enforces the transfer.
+- [FrozenSlice](../../pkg/im/slice.go) and [FrozenMap](../../pkg/im/map.go) hold private native handles.
+- Freeze copies the handle; the analyzer enforces exclusive use and consumption.
+- Reads and [iteration](../../pkg/im/iterator.go) use the native storage directly.
+- Clone copies slots, not referenced objects. Those objects remain safe to share because they are immutable.

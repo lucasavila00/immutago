@@ -1,14 +1,12 @@
 # Scoped objects
 
-Use `im.Scoped` when a function needs to read an object but must not save its
-pointer for later. This is useful for a configuration version loaded from an
-[Owner](owner.md): each reader uses it for one call.
+Use `im.Scoped` for objects that functions can read without keeping their pointers:
 
-The function below can read the settings and return a number. It cannot save
-`settings` in a field, package variable, or closure, or return that pointer.
-The checker enforces these restrictions in the called function too.
+- Fields are read-only.
+- Functions and [methods](common-forms.md#methods) can read fields and return values.
+- They cannot store the pointer in a field or global, capture it, or return it.
 
-An [allowed method](common-forms.md#methods) follows the same rules.
+For example, read settings and return the remaining limit:
 
 ```go
 package main
@@ -30,19 +28,18 @@ func main() {
 }
 ```
 
-A copy of `Settings` can be stored or returned; its pointer cannot. Choose
-[Shared](shared.md) when callers need to keep the pointer. These rules limit
-where pointers can be saved; they do not set a deadline for garbage collection.
-
 ## Allowed forms
 
-The [common forms](common-forms.md) give the complete list of allowed operations.
-A Scoped pointer cannot be saved in a field or package variable, or returned
-from a function. Operations not listed in the common forms are rejected.
+The [common forms](common-forms.md) are the complete list; unlisted operations
+are rejected.
 
-A value copy can be stored or returned: `value := *p`, then `return value`.
-To let other code read the current Scoped object, use [Owner](owner.md).
-An existing pointer cannot be passed to `Owner.Store`.
+| Need | Use |
+| --- | --- |
+| Store or return the data | A value copy: `value := *p`, then `return value`. |
+| Keep the pointer | A type with [im.Shared](shared.md). |
+| Publish a new version for readers | [im.Owner](owner.md). |
+
+Scoped limits where pointers can be stored. It does not set a garbage-collection deadline.
 
 ## Rejected examples
 

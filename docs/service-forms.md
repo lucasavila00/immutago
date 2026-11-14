@@ -1,8 +1,12 @@
 # Service source forms
 
-This reference defines the supported uses of `supervise.Service`, service type
-names and receivers, pointers returned by `Ref.Current`, `Children`, and
-`ConcurrentSafe`. The allowed lists are complete. Unlisted uses are rejected.
+These lists cover:
+
+- `supervise.Service` declarations, type names, and receivers.
+- Pointers returned by `Ref.Current`.
+- `Service.Children` and `supervise.ConcurrentSafe`.
+
+The allowed lists are complete. Unlisted uses are rejected.
 Parentheses preserve an allowed form. The rejected examples are not exhaustive.
 
 Immutable arguments and results also follow the
@@ -31,9 +35,9 @@ FileArgs types. Other examples come from the
 | Exported methods other than Init and Run take and return only allowed stored types | `func (c *FileCache) Text() string`, `func (l *Limiter) Usage() Usage` |
 | Name the concrete service type in its declaration, a pointer receiver, or the single type argument of Start, StartReserved, Reserve, or Ref | `supervise.Start[FileCache](root, args)`, `supervise.Ref[FileCache]` |
 
-Unexported methods can use ordinary Go parameter and result types. Protected
-values inside any method still follow their own rules. A type alias for
-`context.Context` or `error` retains that exact Init or Run signature.
+- Unexported methods can use ordinary Go parameter and result types.
+- Protected values inside any method keep their rules.
+- Aliases of `context.Context` and `error` retain the required Init or Run signature.
 
 Rejected examples and replacements:
 
@@ -53,10 +57,9 @@ Rejected examples and replacements:
 
 ## Startup and references
 
-NewRoot creates an application group. StartGroup creates a nested group. Their
-results are ordinary `*supervise.Group` values. The `Children()` result has the
-separate restrictions below. A group must be constructed before use; its zero
-value is not a running group.
+- NewRoot and StartGroup return ordinary `*supervise.Group` values.
+- Construct a group before use; its zero value is not running.
+- `Children()` has the separate [child-group rules](#child-groups).
 
 | Allowed form | Example |
 | --- | --- |
@@ -72,15 +75,12 @@ value is not a running group.
 | Use a reference selected from a marked field | `text := peers.Cache.Current().Text()` |
 | Call through a reference inside a function literal | `go func() { ref.Current().Text() }()`, `defer func() { ref.Current().Text() }()` |
 
-References can also be held in ordinary Go fields and containers. A reference
-can be zero, but Current cannot use it. Reserve creates the separate storage
-needed by StartReserved. Current becomes usable only after initialization
-succeeds; it does not report whether Run is still active.
+- Refs can also be stored in ordinary Go fields and containers.
+- Current needs successful initialization; it does not report whether Run is active.
+- A zero Ref is empty. Reserve creates storage for StartReserved.
 
-When a Start call has protected arguments, its two results have these complete
-binding forms. Use them within the common statement forms, including an `if`
-initializer. A call statement can also discard the results; normal startup code
-should check the returned error.
+For Start with protected arguments, use these result forms in a common statement
+form, including an `if` initializer. Check the returned error in startup code.
 
 | Allowed result form | Example |
 | --- | --- |
@@ -140,10 +140,10 @@ these groups, see [Child services and groups](service-children.md).
 | Bind Children to one new local with `:=`; use that local only as the first argument of those three functions in the same method | `children := p.Children(); supervise.Start[Worker](children, WorkerArgs{ID: 1})` |
 | Keep, store, start under, or stop the result of StartGroup; pass or return it through ordinary functions or unexported methods | `group := supervise.StartGroup(p.Children()); p.groups[name] = group`, later `<-group.Stop()` |
 
-The runtime stops the group returned by Children. A nested group returned by
-StartGroup is an ordinary `*supervise.Group`; the Children restrictions do not
-apply to that nested group. An exported service method still cannot take or
-return `*supervise.Group`.
+| Group source | Who stops it | Where it can be used |
+| --- | --- | --- |
+| Children | Runtime | Only the parent positions listed above. |
+| StartGroup | Runtime or caller | Ordinary Go uses, but not exported service method parameters or results. |
 
 | Rejected form | Allowed replacement |
 | --- | --- |
@@ -158,11 +158,12 @@ return `*supervise.Group`.
 
 ## Concurrent dependencies
 
-Use ConcurrentSafe only for the caller's explicit promise that a value is safe
-for concurrent use. The checker does not prove that promise or inspect the type
-inside the wrapper. It still checks the code that creates the wrapped value and
-the code that uses Value's result. FetcherArgs is defined in
-[Concurrent dependencies](services.md#concurrent-dependencies).
+`supervise.ConcurrentSafe[T]` records a caller's promise:
+
+- The value is safe for concurrent use; the checker does not prove this or inspect T.
+- Code that creates the value and uses Value's result is still checked.
+
+FetcherArgs is defined in [Concurrent dependencies](services.md#concurrent-dependencies).
 
 | Allowed form | Example |
 | --- | --- |
@@ -174,9 +175,9 @@ the code that uses Value's result. FetcherArgs is defined in
 | Use a wrapper or a marked argument struct with dependency fields as a local value, an ordinary function parameter/result, or a start argument | `args := FetcherArgs{Log: log}`, `func makeArgs(log Log) FetcherArgs`, `supervise.Start[Fetcher](root, args)` |
 | Call Value directly and synchronously on the method receiver's Args result, or one directly selected field of that result | `f.Args().Log.Value().Info("start")`, `log := f.Args().Log.Value()`, `t.Args().Value()` |
 
-Value returns the zero value of T for a zero wrapper. After Value returns, an
-ordinary local such as `log` above uses normal Go rules for its type. Binding
-Args to a local does not permit Value calls through that local.
+- A zero wrapper's Value returns the zero value of T.
+- The returned value, such as `log`, follows ordinary Go rules for its type.
+- Binding Args to a local does not permit Value calls through that local.
 
 | Rejected form | Allowed replacement |
 | --- | --- |

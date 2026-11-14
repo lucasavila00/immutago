@@ -1,116 +1,116 @@
 # Analysis pipeline
 
-The [command](../../cmd/immutago/main.go) uses Go's `singlechecker` driver.
-The same analyzer runs under `go vet -vettool`. Both provide compiler-resolved
-`go/types` identities and `TypesInfo` for each package.
+The [CLI](../../cmd/immutago/main.go) uses Go's `singlechecker` driver.
+`go vet -vettool` runs the same analyzer. Both supply resolved `go/types`
+identities and `TypesInfo` for each package.
 
 ## Package pass
 
-The [entry point](../../pkg/analyzer/analyzer.go) performs these stages:
+The [entry point](../../pkg/analyzer/analyzer.go) runs these stages:
 
-1. Skip the fixed `im` and `supervise` packages and compiler-supplied standard library.
-2. Collect dependency facts and determine the checked package boundary.
-3. Return for ordinary packages under normal Go API trust.
+1. Skip the fixed im and supervise implementations and the standard library.
+2. Collect dependency facts and select checked packages.
+3. Return for ordinary packages.
 4. Reject checked cgo packages and export their failure before checking wrappers.
 5. Report checked dependency failures and record local diagnostics.
 6. Check declarations, imports, field types, exported service methods, and fixed
-   `im` and `supervise` type arguments.
-7. Run the native builder proof and match protected source forms.
-8. Export accumulated failures for importers.
+   im and supervise type arguments.
+7. Prove native builder ownership and match protected source forms.
+8. Export failures for importers.
 
-The builder set identifies separately checked storage. It does not exempt its
-operations. Type, source-form, and builder checks keep separate state.
+Package selection and state:
 
-[Package scope](../../pkg/analyzer/package_scope.go) uses direct `im` or `supervise` imports,
-locally used compiler type contracts, and failed checked dependency facts. One
-existential type walk shares a seen set across expression and object roots.
-It inspects alias and named generic metadata before underlying types, selected
-signature receivers and constraints, and explicit interface methods and embedded
-terms. It does not walk all imports or unselected concrete method sets. This
-keeps scalar APIs ordinary even when their implementation uses marked types,
-and preserves the boundary when vet prunes imported type data.
-
-Ordinary code is trusted to respect Go API contracts, including immutable
-strings and no hidden writes to protected memory. This is a conditional proof
-boundary, not a string dataflow or memory-corruption proof. The
-[language contract](../rules.md#package-boundary) owns the exact selection rule.
-
-[Cgo detection](../../pkg/analyzer/cgo.go) uses the compiler's exact generated
-header as a rejection trigger within checked packages. It never grants trust to generated code. Cgo's
-line directives retain the source package line in both drivers; the original
-`import "C"` is no longer available reliably after rewriting.
+- Type, source-form, and builder checks keep separate state. Tracking a builder
+  does not exempt its operations from matching.
+- [Package scope](../../pkg/analyzer/package_scope.go) implements the
+  [package selection rules](../rules.md#package-boundary).
+- One type walk shares a seen set across expression and object roots. It visits
+  aliases and generic metadata before underlying types, selected receivers,
+  constraints, interface methods, and embedded terms.
+- It does not walk all imports or unselected concrete methods. Scalar APIs stay
+  ordinary even when their implementation uses marked types. Vet's pruned type
+  data does not change package selection.
+- Ordinary code is trusted to obey Go contracts. The checker does not track
+  string origins or defend against arbitrary memory writes.
+- [Cgo detection](../../pkg/analyzer/cgo.go) rejects the compiler's exact generated
+  header in checked packages. It reports the original package line, retained by
+  line directives; `import "C"` is no longer reliably available after rewriting.
 
 ## Type proof
 
 [Type predicates](../../internal/checker/types.go) resolve aliases and identify
-both markers and frozen collections by package path and named type.
-The pass-local [classifier](../../internal/checker/classification.go) caches
-storage and callback results in separate type graphs. Storage edges follow
-fields and containers; callback edges also follow interface methods and function
-parameters and results. Type-parameter constraints use a separate traversal mode.
-The classifier builds every reachable edge before it propagates positive results
-through reverse edges. Thus cycles cannot leave a cached false result before a
-reachable protected type is found. Queries do not change source-form checks or
-skip packages without markers.
+`im.Shared`, `im.Scoped`, and frozen collections by package path and named type.
 
-A pass-local [Prover](../../internal/checker/prover.go) reuses one
-[obligation graph](../../internal/checker/proof.go) across field, collection,
-and type-argument queries. It records each node before visiting its components.
-Reverse edges carry failures to owners after graph expansion. New edges to
-already failed children are retained as pending seeds. Direct terminal failures
-are applied before paths through earlier failed children. A recursive cycle
-passes only if all reachable components pass.
+The per-pass [classifier](../../internal/checker/classification.go) answers
+whether a type contains protected storage or callbacks:
 
-Each failed owner keeps one component label and an earlier failure cause. Only
-an unfailed owner can receive a cause, so cause links cannot form a cycle.
-Empty-label pointer and array steps are collapsed when a cause is assigned.
-The prover renders and caches each requested root message from these witnesses.
-The selected failure can depend on earlier queries; rejection does not.
-`Reason` remains the one-query convenience function.
+| Query | Edges followed |
+| --- | --- |
+| Storage | Fields and containers. |
+| Callback | Storage edges, interface methods, function parameters and results. |
+| Type-parameter constraint | Separate traversal mode. |
 
-Both marker modes use this proof. Stored pointers require a `Shared` struct
-target; `Scoped` pointers fail the storage proof. Type parameters fail too.
-[Generic checks](../../pkg/analyzer/subset_generics.go) keep user protected
-generic code outside the source subset while retaining the fixed `im` APIs.
+It expands all reachable edges before propagating positive results backwards.
+This prevents a cycle from caching false before reaching a protected type.
+Cached queries do not bypass source checks or package selection.
+
+The per-pass [Prover](../../internal/checker/prover.go) checks field, collection,
+and type arguments in one [graph](../../internal/checker/proof.go):
+
+1. Record a type node before visiting its components.
+2. Expand the graph; retain edges to already failed children as pending seeds.
+3. Apply direct failures before paths through previously failed children.
+4. Propagate failures through reverse edges. A cycle passes only if every
+   reachable component passes.
+
+Failure messages:
+
+- Each failed node keeps one component label and an earlier cause.
+- Only an unfailed node can receive a cause, so cause links cannot cycle.
+- Collapse empty pointer/array labels; render and cache each requested message.
+- Earlier queries can affect the selected cause, but not acceptance or rejection.
+- `Reason` is the single-query convenience function.
+
+The proof applies to Shared and Scoped structs. Stored pointers require a
+Shared target. Type parameters fail; [generic checks](../../pkg/analyzer/subset_generics.go)
+retain the fixed im APIs and reject user generics with protected storage.
 
 ## Source forms and dependency failures
 
-The [operation dispatcher](../../pkg/analyzer/subset_operations.go) checks each
-protected expression in three steps: its producer, its consuming operation, and
-its enclosing statement. Each step must match an allowed form. Unmatched forms
-fail. [Call matches](../../pkg/analyzer/subset_calls.go) resolve function identity
-and actual parameter types, including tuple results and variadic elements.
+The [operation dispatcher](../../pkg/analyzer/subset_operations.go) requires
+three allowed-form matches for each protected expression:
 
-[Marked methods](../../pkg/analyzer/subset_methods.go) use one predicate for
-selector and call checks. It requires a direct method call, one selection index
-(no embedding path), a proved nongeneric marked receiver, and exact type identity
-between the written receiver and the method's declared receiver. Use the function
-object's signature; a selector signature can include Go's receiver adjustments.
-Check the receiver before the ordinary-call fast path: a method on a scalar
-field can take an implicit address even when its arguments and result are scalar.
-Method bodies use the existing write, transport, and statement checks.
+1. How the value is produced.
+2. How it is used.
+3. The enclosing statement.
 
-Per-pass caches reuse literal type matches. Each operand still passes its use
-and statement checks, including operands that Go does not evaluate. Storage
-classification follows one selector, index, dereference, or parenthesis chain,
-checking resolved types and tracked builder identities at each step.
+Unmatched forms fail. [Calls](../../pkg/analyzer/subset_calls.go) resolve function
+identity and actual parameter types, including tuples and variadic elements.
 
-[Dependency facts](../../pkg/analyzer/dependencies.go) contain one original
-failure: its package path, portable source location, and exact message. Each
-package selects the first cause by source location, message, and origin package.
-The minimum of the imported witnesses and local errors is also the first cause
-in the full failing dependency graph. Shared paths and import order do not change
-the choice. The relevance bit is collected separately from this choice.
+[Marked method](../../pkg/analyzer/subset_methods.go) matching requires:
 
-A failed fact still crosses silent wrappers. Relevant consumers report one
-representative cause for each failed direct import. The report names the
-original package to check, because running a silent wrapper can print no errors.
-Reports from direct package analysis do not change. No original message is shortened,
-but downstream reports do not enumerate all causes or show full import routes.
-These facts carry errors, not inferred function effects.
+- A direct call and one selection index: no promoted method path.
+- A proved, non-generic marked receiver.
+- Exact identity between written and declared receiver types. Read the function
+  object's signature; a selector signature can include Go adjustments.
+- Receiver checks before the ordinary-call fast path. Even a scalar method can
+  implicitly take a protected field's address.
 
-The vet driver does not re-export imported package facts. `AllPackageFacts`
-cannot supply all indirect origins, so each exported witness is self-contained.
-Carrying the full error graph in each fact would repeat its payload at every
-importer. One witness keeps each fact independent of the number of upstream
-packages and errors. See the [cost checks](performance.md#dependency-fact-costs).
+Method bodies still pass write, pointer-use, and statement checks. Literal type
+matches are cached, but every operand is checked, even when Go does not evaluate
+it. Storage classification walks each selector/index/dereference/parenthesis
+chain once, checking types and builder identities along the way.
+
+[Dependency facts](../../pkg/analyzer/dependencies.go) carry errors, not function effects:
+
+- One original failure: package path, portable location, and exact message.
+- Select the minimum by location, message, then origin package across local and
+  imported errors. Import order and shared paths do not change the choice.
+- Record package relevance separately.
+- Forward failures through wrappers, even when those wrappers print no local error.
+- Report one cause per failed direct import and name the original package to check.
+  Keep original messages intact; omit other causes and full import routes.
+
+Each fact must be self-contained: vet does not re-export imported facts, so
+`AllPackageFacts` cannot supply every indirect origin. One cause avoids copying
+all failures at each importer. See [dependency costs](performance.md#dependency-fact-costs).
