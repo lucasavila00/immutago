@@ -30,7 +30,7 @@ func TestCLI(t *testing.T) {
 		binary += ".exe"
 	}
 	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
-	for _, group := range []string{"review_convergence", "documentation", "owner"} {
+	for _, group := range []string{"review_convergence", "documentation", "owner", "process"} {
 		t.Run(group, func(t *testing.T) {
 			for _, fixture := range []string{"accepted", "rejected"} {
 				t.Run(fixture, func(t *testing.T) {
@@ -45,6 +45,11 @@ func TestCLI(t *testing.T) {
 		dir := consumerModule(t, root, "accepted")
 		output := runCommand(t, dir, true, binary, "./ownercross")
 		checkFixtureSnapshots(t, root, "accepted/ownercross", output)
+	})
+	t.Run("process_cross_package", func(t *testing.T) {
+		dir := consumerModule(t, root, "accepted")
+		output := runCommand(t, dir, true, binary, "./processcross")
+		checkFixtureSnapshots(t, root, "accepted/processcross", output)
 	})
 	t.Run("accepted", func(t *testing.T) {
 		dir := consumerModule(t, root, "accepted")

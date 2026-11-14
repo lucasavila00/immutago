@@ -1,0 +1,16 @@
+process_transport.go:24:12: process type Counter can be named only in its declaration, a pointer receiver, proc.Start[Counter], or proc.PID[Counter]
+process_transport.go:31:13: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:32:10: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:32:2: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:33:6: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:34:2: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:35:2: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:36:11: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:37:9: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:38:5: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:39:8: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:40:6: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:41:12: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:41:13: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:42:15: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_transport.go:42:36: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call

@@ -1,0 +1,12 @@
+process_receivers.go:23:11: process receivers can only select a field or call a method directly
+process_receivers.go:24:6: process receivers can only select a field or call a method directly
+process_receivers.go:25:20: closures cannot capture a process receiver
+process_receivers.go:26:5: process receivers can only select a field or call a method directly
+process_receivers.go:27:8: process receivers can only select a field or call a method directly
+process_receivers.go:28:10: process receivers can only select a field or call a method directly
+process_receivers.go:29:2: process receivers can only select a field or call a method directly
+process_receivers.go:30:2: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call
+process_receivers.go:30:3: process receivers can only select a field or call a method directly
+process_receivers.go:30:7: process Buffer is created outside proc.Start; use proc.Start[Buffer](parent)
+process_receivers.go:30:7: process type Buffer can be named only in its declaration, a pointer receiver, proc.Start[Buffer], or proc.PID[Buffer]
+process_receivers.go:31:12: process pointer escapes; use pid.Proc() only as the receiver of a direct exported method call

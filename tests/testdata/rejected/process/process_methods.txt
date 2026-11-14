@@ -1,0 +1,8 @@
+process_methods.go:24:21: exported process method Table carries map[string]int, which is not an allowed stored type: map[string]int is not provably immutable
+process_methods.go:27:21: exported process method Each carries func(string), which is not an allowed stored type: func(string) is not provably immutable
+process_methods.go:30:21: exported process method Load carries error, which is not an allowed stored type: error is not provably immutable
+process_methods.go:33:21: exported process method Keys carries []string, which is not an allowed stored type: []string is not provably immutable
+process_methods.go:36:21: exported process method Self carries *process.Refresher, which is not an allowed stored type: stored pointers require a concrete marked struct target
+process_methods.go:36:29: process type Refresher can be named only in its declaration, a pointer receiver, proc.Start[Refresher], or proc.PID[Refresher]
+process_methods.go:36:48: process receivers can only select a field or call a method directly
+process_methods.go:39:9: process type Refresher can be named only in its declaration, a pointer receiver, proc.Start[Refresher], or proc.PID[Refresher]
