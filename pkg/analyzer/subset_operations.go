@@ -40,8 +40,8 @@ func (c *subsetChecks) operationExpression(expression ast.Expr) bool {
 			return false
 		}
 	}
-	return c.protectedStorage(expression) || protectedResult(c.pass.TypesInfo.TypeOf(expression)) ||
-		protectedCallable(c.pass.TypesInfo.TypeOf(expression))
+	return c.protectedStorage(expression) || c.protectedResult(c.pass.TypesInfo.TypeOf(expression)) ||
+		c.queries.Callable(c.pass.TypesInfo.TypeOf(expression))
 }
 
 // matchOperation requires a known producer, consuming operation, and complete statement.
@@ -65,7 +65,7 @@ func (c *subsetChecks) matchOperation(expression ast.Expr) (ast.Node, string) {
 // matchSource lists the complete producers of protected values and pointers.
 func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	if pointer, ok := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Pointer); ok &&
-		protectedReference(pointer) && !checker.Marked(pointer.Elem()) {
+		c.protectedReference(pointer) && !checker.Marked(pointer.Elem()) {
 		return "immutable references require a concrete marked struct target"
 	}
 	switch source := expression.(type) {
@@ -87,7 +87,7 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	case *ast.CallExpr:
 		return c.matchCall(source)
 	case *ast.StarExpr:
-		if protectedReference(c.pass.TypesInfo.TypeOf(source.X)) {
+		if c.protectedReference(c.pass.TypesInfo.TypeOf(source.X)) {
 			return ""
 		}
 	case *ast.UnaryExpr:
@@ -109,7 +109,7 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 func (c *subsetChecks) matchIdentifier(name *ast.Ident) string {
 	switch c.pass.TypesInfo.ObjectOf(name).(type) {
 	case *types.Var, *types.Nil:
-		if !protectedCallable(c.pass.TypesInfo.TypeOf(name)) {
+		if !c.queries.Callable(c.pass.TypesInfo.TypeOf(name)) {
 			return ""
 		}
 		return c.matchFunctionValue(name)
@@ -137,7 +137,7 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 	case *ast.IndexListExpr:
 		return c.matchFunctionValue(parent)
 	case *ast.StarExpr:
-		if parent.X == expression && protectedReference(c.pass.TypesInfo.TypeOf(expression)) {
+		if parent.X == expression && c.protectedReference(c.pass.TypesInfo.TypeOf(expression)) {
 			return ""
 		}
 	case *ast.UnaryExpr:
@@ -185,7 +185,7 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 		return c.matchFunctionValue(selector)
 	}
 	if selection.Kind() == types.FieldVal {
-		if protectedCallable(c.pass.TypesInfo.TypeOf(selector)) {
+		if c.queries.Callable(c.pass.TypesInfo.TypeOf(selector)) {
 			return c.matchFunctionValue(selector)
 		}
 		return ""
@@ -205,7 +205,7 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 // matchUnary permits fresh marked allocations and ordinary scalar operations.
 func (c *subsetChecks) matchUnary(expression *ast.UnaryExpr) string {
 	if expression.Op == token.AND {
-		if !checker.Contains(c.pass.TypesInfo.TypeOf(expression.X)) {
+		if !c.queries.Contains(c.pass.TypesInfo.TypeOf(expression.X)) {
 			return "scalar interior addresses are unsupported"
 		}
 		if _, fresh := ast.Unparen(expression.X).(*ast.CompositeLit); !fresh {
@@ -229,13 +229,13 @@ func (c *subsetChecks) matchUnary(expression *ast.UnaryExpr) string {
 // matchBinary checks implicit comparisons before permitting compiler-checked scalar operators.
 func (c *subsetChecks) matchBinary(expression *ast.BinaryExpr) string {
 	left, right := c.pass.TypesInfo.TypeOf(expression.X), c.pass.TypesInfo.TypeOf(expression.Y)
-	if rule := matchTransport(left, right); rule != "" {
+	if rule := c.matchTransport(left, right); rule != "" {
 		return rule
 	}
-	if rule := matchTransport(right, left); rule != "" {
+	if rule := c.matchTransport(right, left); rule != "" {
 		return rule
 	}
-	if checker.Contains(left) || checker.Contains(right) {
+	if c.queries.Contains(left) || c.queries.Contains(right) {
 		if expression.Op != token.EQL && expression.Op != token.NEQ {
 			return "protected operation is outside the supported expression forms"
 		}
@@ -249,7 +249,7 @@ func (c *subsetChecks) matchIndex(expression *ast.IndexExpr) string {
 	case *types.Array:
 		return ""
 	case *types.Map:
-		return matchTransport(c.pass.TypesInfo.TypeOf(expression.Index), source.Key())
+		return c.matchTransport(c.pass.TypesInfo.TypeOf(expression.Index), source.Key())
 	case *types.Slice, *types.Basic:
 		return ""
 	}

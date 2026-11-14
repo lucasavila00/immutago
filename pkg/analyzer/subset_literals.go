@@ -3,8 +3,6 @@ package analyzer
 import (
 	"go/ast"
 	"go/types"
-
-	"github.com/lucasavila00/immutago/internal/checker"
 )
 
 // matchLiteral reuses the complete type match when several operands share one literal.
@@ -47,7 +45,7 @@ func (c *subsetChecks) matchLiteralElement(storage types.Type, index int, elemen
 	case *types.Slice:
 		destination = storage.Elem()
 	case *types.Map:
-		if rule := matchStoredValue(c.pass.TypesInfo.TypeOf(pair.Key), storage.Key()); rule != "" {
+		if rule := c.matchStoredValue(c.pass.TypesInfo.TypeOf(pair.Key), storage.Key()); rule != "" {
 			return rule
 		}
 		destination = storage.Elem()
@@ -58,22 +56,22 @@ func (c *subsetChecks) matchLiteralElement(storage types.Type, index int, elemen
 			destination = storage.Field(index).Type()
 		}
 	default:
-		if checker.Contains(c.pass.TypesInfo.TypeOf(value)) || protectedCallable(c.pass.TypesInfo.TypeOf(value)) {
+		if c.queries.Contains(c.pass.TypesInfo.TypeOf(value)) || c.queries.Callable(c.pass.TypesInfo.TypeOf(value)) {
 			return "protected composite literals require a concrete storage type"
 		}
-		if keyed && checker.Contains(c.pass.TypesInfo.TypeOf(pair.Key)) {
+		if keyed && c.queries.Contains(c.pass.TypesInfo.TypeOf(pair.Key)) {
 			return "protected composite literals require a concrete storage type"
 		}
 	}
-	if rule := matchStoredValue(c.pass.TypesInfo.TypeOf(value), destination); rule != "" {
+	if rule := c.matchStoredValue(c.pass.TypesInfo.TypeOf(value), destination); rule != "" {
 		return rule
 	}
 	return ""
 }
 
 // matchStoredValue permits immutable copies and Shared pointers in aggregate storage.
-func matchStoredValue(source, destination types.Type) string {
-	if rule := matchTransport(source, destination); rule != "" {
+func (c *subsetChecks) matchStoredValue(source, destination types.Type) string {
+	if rule := c.matchTransport(source, destination); rule != "" {
 		return rule
 	}
 	if localReference(source) {

@@ -21,6 +21,7 @@ type owner struct {
 
 // proof keeps ownership discovery separate from alias restrictions and consumed-state flow.
 type proof struct {
+	queries      checker.Classifier
 	pass         *analysis.Pass
 	parents      map[ast.Node]ast.Node
 	unevaluated  map[ast.Node]bool
