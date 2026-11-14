@@ -1,0 +1,110 @@
+name: Dependency performance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Measure fact operations
+        run: |
+          mkdir -p bin/dependency-profiles
+          go version > bin/dependency-profiles/environment.txt
+          lscpu >> bin/dependency-profiles/environment.txt
+          go test ./pkg/analyzer -run '^$' -bench '^BenchmarkCoreDependencyFacts$' \
+            -benchmem -benchtime=200ms -count=3 | tee bin/dependency-profiles/benchmarks.txt
+          go test ./pkg/analyzer -run '^$' -bench '^BenchmarkCoreDependencyFacts/merge/layers=20$' \
+            -benchtime=1s -o bin/dependency-profiles/core.test \
+            -cpuprofile=bin/dependency-profiles/cpu.pprof -memprofile=bin/dependency-profiles/heap.pprof
+          go tool pprof -top bin/dependency-profiles/core.test bin/dependency-profiles/cpu.pprof \
+            > bin/dependency-profiles/cpu-top.txt
+          go tool pprof -top -sample_index=alloc_space bin/dependency-profiles/core.test \
+            bin/dependency-profiles/heap.pprof > bin/dependency-profiles/alloc-top.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dependency-fact-profiles
+          path: bin/dependency-profiles/
+          retention-days: 14
+  modules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
+          path: .baseline
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Build both revisions
+        run: |
+          mkdir -p bin/dependency-modules
+          go version > bin/dependency-modules/environment.txt
+          lscpu >> bin/dependency-modules/environment.txt
+          git rev-parse HEAD > bin/dependency-modules/current-revision.txt
+          git -C .baseline rev-parse HEAD > bin/dependency-modules/baseline-revision.txt
+          go build -o "$PWD/bin/dependency-modules/current" ./cmd/immutago
+          cd .baseline
+          go build -o "$GITHUB_WORKSPACE/bin/dependency-modules/baseline" ./cmd/immutago
+      - name: Measure complete modules and consumer reporting
+        shell: bash
+        run: |
+          set -euo pipefail
+          results="$GITHUB_WORKSPACE/bin/dependency-modules"
+          measure() {
+            local label="$1" expected="$2" pattern="$3"
+            shift 3
+            local dep_exit=0
+            /usr/bin/time -v -o "$results/$label.time.txt" "$@" > "$results/$label.output.txt" 2>&1 || dep_exit=$?
+            case "$dep_exit" in 1|3) ;; *) cat "$results/$label.output.txt"; exit 1;; esac
+            local actual
+            actual=$(grep -c "$pattern" "$results/$label.output.txt")
+            test "$actual" -eq "$expected"
+            printf '%s: %s expected failures\n' "$label" "$actual" | tee -a "$results/counts.txt"
+          }
+          for scale in 1 2 3 4 5; do
+            module="$RUNNER_TEMP/dependency-scale-$scale"
+            go run ./scripts/dependency-stress -scale "$scale" -out "$module"
+            (cd "$module" && go build ./...)
+            expected=$((16 * scale * scale * 101))
+            revisions=current
+            if [ "$scale" -le 2 ]; then revisions="baseline current"; fi
+            for revision in $revisions; do
+              binary="$results/$revision"
+              (
+                cd "$module"
+                measure "$revision-cli-$scale" "$expected" ': unsupported unsafe' "$binary" ./...
+                if [ "$scale" -eq 2 ]; then
+                  measure "$revision-cli-profile" "$expected" ': unsupported unsafe' "$binary" \
+                    -cpuprofile="$results/$revision.cpu.pprof" -memprofile="$results/$revision.heap.pprof" ./...
+                  go tool pprof -top "$binary" "$results/$revision.cpu.pprof" > "$results/$revision.cpu-top.txt"
+                  go tool pprof -top -sample_index=alloc_space "$binary" "$results/$revision.heap.pprof" \
+                    > "$results/$revision.alloc-top.txt"
+                fi
+                measure "$revision-vet-$scale" "$expected" ': unsupported unsafe' go vet -vettool="$binary" ./...
+              )
+            done
+          done
+          module="$RUNNER_TEMP/dependency-consumer"
+          go run ./scripts/dependency-stress -scale 5 -out "$module" -library "$GITHUB_WORKSPACE"
+          (
+            cd "$module"
+            go build ./consumer
+            measure current-consumer-cli 40400 '^  original failure:.*: unsupported unsafe' "$results/current" ./consumer
+            measure current-consumer-vet 40400 '^  original failure:.*: unsupported unsafe' \
+              go vet -vettool="$results/current" ./consumer
+          )
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-module-measurements
+          path: bin/dependency-modules/
+          retention-days: 14

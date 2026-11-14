@@ -35,16 +35,16 @@ func TestStructuralDiagnosticContext(t *testing.T) {
 	}
 }
 
-// TestDependencyFailureDeduplication keeps every original cause without expanding diamond import routes.
+// TestDependencyFailureDeduplication retains distinct local errors and removes repeated reports.
 func TestDependencyFailureDeduplication(t *testing.T) {
 	failures := []proofFailure{
-		{Location: "origin/a.go:1:1", Message: "rule A", Chain: []string{"consumer", "z", "origin"}},
-		{Location: "origin/b.go:2:1", Message: "rule B", Chain: []string{"consumer", "origin"}},
-		{Location: "origin/a.go:1:1", Message: "rule A", Chain: []string{"consumer", "a", "origin"}},
+		{Location: "origin/a.go:1:1", Message: "rule A"},
+		{Location: "origin/b.go:2:1", Message: "rule B"},
+		{Location: "origin/a.go:1:1", Message: "rule A"},
 	}
 	got := uniqueFailures(failures)
-	if len(got) != 2 || got[0].Chain[1] != "a" || got[1].Message != "rule B" {
-		t.Fatalf("failure causes or deterministic routes changed: %+v", got)
+	if len(got) != 2 || got[0].Message != "rule A" || got[1].Message != "rule B" {
+		t.Fatalf("local failure causes changed: %+v", got)
 	}
 }
 

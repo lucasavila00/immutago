@@ -25,7 +25,7 @@ no fallback validation when the analyzer is omitted.
 | Complete allowed shapes and nearby rejections | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go) |
 | Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
 | Storage reuse, clone independence, identity, and allocation counts | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [iterator tests](../../pkg/im/iterator_test.go) |
-| Consumer-only dependency failures | [Dependency tests](../../pkg/analyzer/dependencies_test.go), [CLI fixtures](../../tests/cli_test.go) |
+| Consumer-only dependency failures | [Dependency tests](../../pkg/analyzer/dependencies_test.go), [graph and gob tests](../../pkg/analyzer/dependencies_graph_test.go), [CLI fixtures](../../tests/cli_test.go) |
 
 The CLI harness builds the shipped command and loads independent consumer
 modules. It checks diagnostics, source positions, JSON output, compiler errors,
