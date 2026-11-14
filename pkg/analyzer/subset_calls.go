@@ -120,6 +120,11 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 // matchLibraryCall matches fixed function identities, receivers, and result contexts.
 func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object) string {
 	switch object.Name() {
+	case "Load", "Store":
+		if c.ownedSlotCall(call) {
+			return ""
+		}
+		return "Owned requires a direct slot call"
 	case "FreezeMap", "FreezeSlice":
 		if c.standaloneFreeze(call) {
 			return ""

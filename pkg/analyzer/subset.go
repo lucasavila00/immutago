@@ -49,7 +49,7 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool) {
 			continue
 		}
 		for i := 0; i < instance.TypeArgs.Len(); i++ {
-			if checker.Contains(instance.TypeArgs.At(i)) || protectedCallable(instance.TypeArgs.At(i)) {
+			if checker.Contains(instance.TypeArgs.At(i)) || slotRelevant(instance.TypeArgs.At(i)) || protectedCallable(instance.TypeArgs.At(i)) {
 				c.report(id, "user generic instantiations with immutable types are unsupported")
 			}
 		}
@@ -195,6 +195,14 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 			return
 		}
 		if _, builtin := c.pass.TypesInfo.ObjectOf(name).(*types.Builtin); builtin {
+			return
+		}
+	}
+	if selector, ok := expression.(*ast.SelectorExpr); ok && c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
+		return
+	}
+	if id, ok := expression.(*ast.Ident); ok {
+		if selector, ok := c.parents[id].(*ast.SelectorExpr); ok && selector.Sel == id && c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
 			return
 		}
 	}

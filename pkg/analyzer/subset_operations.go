@@ -193,6 +193,9 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) {
 		return "immutable method expressions are unsupported"
 	}
+	if c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
+		return ""
+	}
 	if !c.exactCollectionMethod(selector) {
 		return "user-defined methods with immutable storage are unsupported"
 	}

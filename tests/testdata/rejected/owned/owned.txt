@@ -1,0 +1,21 @@
+owned.go:13:2: immutable field Current: Owned slots are mutable
+  owner: owned.BadOwner; field type: im.Owned[owned.Model]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+owned.go:16:12: Owned requires a concrete, valid LocalRef struct
+owned.go:17:5: unsupported immutable operation: global LocalRef pointers are unsupported
+  source: saved *Model
+  fix: keep the LocalRef pointer local, or store a value copy
+owned.go:20:11: Owned slots and their holders cannot be copied or transported by value
+owned.go:21:6: Owned slots and their holders cannot be copied or transported by value
+owned.go:22:10: Owned slots and their holders cannot be copied or transported by value
+owned.go:22:11: Owned holder pointers require local bindings or direct typed calls
+owned.go:23:6: Owned slots and their holders cannot be copied or transported by value
+owned.go:25:2: Owned.Store requires a fresh LocalRef allocation
+owned.go:26:10: Owned.Load requires a single local pointer binding
+owned.go:26:2: unsupported immutable operation: global LocalRef pointers are unsupported
+  source: saved = l.Current.Load()
+  fix: keep the LocalRef pointer local, or store a value copy
+owned.go:27:2: Owned.Load requires a single local pointer binding
+owned.go:27:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: l.Current.Load().X = 2
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

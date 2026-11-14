@@ -67,6 +67,13 @@ func run(pass *analysis.Pass) (any, error) {
 		if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
 			continue
 		}
+		if obj.Name() == "Owned" {
+			arg := instance.TypeArgs.At(0)
+			if !checker.LocalRef(arg) || checker.Shared(arg) || checker.Reason(arg) != "" {
+				c.report(ident.Pos(), "Owned requires a concrete, valid LocalRef struct")
+			}
+			continue
+		}
 		for i := 0; i < instance.TypeArgs.Len(); i++ {
 			if reason := checker.Reason(instance.TypeArgs.At(i)); reason != "" {
 				c.report(ident.Pos(), fmt.Sprintf("immutable type argument: %s\n  type: %s\n  fix: %s",
@@ -74,6 +81,7 @@ func run(pass *analysis.Pass) (any, error) {
 			}
 		}
 	}
+	checkOwned(pass)
 	checkSubset(pass, freeze.Check(pass))
 	return nil, nil
 }
@@ -174,7 +182,7 @@ func reflectionValue(t types.Type) bool {
 
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
-	if t == nil || checker.IsCollection(t) {
+	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owned") {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)

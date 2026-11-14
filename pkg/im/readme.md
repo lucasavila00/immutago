@@ -122,6 +122,32 @@ LocalRef marks an immutable struct whose pointers must not escape. Embed it by v
 type LocalRef struct{}
 ```
 
+## type Owned
+
+Owned stores one pointer to an immutable LocalRef object. Its zero value is empty. An Owned value must not be copied.
+
+```go
+type Owned[T any] struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func \(\*Owned\[T\]\) Load
+
+```go
+func (o *Owned[T]) Load() *T
+```
+
+Load returns the current pointer, or nil if the slot is empty.
+
+### func \(\*Owned\[T\]\) Store
+
+```go
+func (o *Owned[T]) Store(value *T)
+```
+
+Store publishes a freshly constructed object.
+
 ## type Shared
 
 Shared marks an immutable struct whose shared pointers may be stored or returned. Embed it by value. A named field or pointer embedding does not mark the struct.

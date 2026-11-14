@@ -151,6 +151,47 @@ Rejected pointer examples (**not exhaustive**):
 | `return p` with `p *LocalRefPoint` | `return *p` with a `LocalRefPoint` result. |
 | `saved = p` with `p *LocalRefPoint` | Store the value copy `*p`. |
 
+## Atomic LocalRef slots
+
+`im.Owned[T]` holds the current pointer to a concrete, valid `im.LocalRef`
+struct. The slot is mutable; the object is immutable. `Load` returns nil
+before the first `Store`. `Store` and `Load` use atomic pointer operations.
+An earlier loaded pointer remains valid after a later `Store`. Go does not
+specify when an unused object is collected.
+
+These allowed forms are complete. Other slot and holder operations are rejected.
+Parentheses preserve these forms.
+
+| Allowed form | Example |
+| --- | --- |
+| Named slot field in an unmarked struct | `type Loader struct { Current im.Owned[LocalRefPoint] }` |
+| Zero package slot | `var current im.Owned[LocalRefPoint]` |
+| Zero holder local or package variable | `var loader Loader` |
+| Fresh holder pointer in a local | `loader := &Loader{}` or `loader := new(Loader)` |
+| Copy a holder pointer to one local | `other := loader` |
+| Pass a holder pointer to a direct, concrete function | `publish(loader)` where `func publish(l *Loader)` |
+| Store a fresh object in a direct slot field or package slot | `loader.Current.Store(&LocalRefPoint{X: 1})`, `current.Store(new(LocalRefPoint))` |
+| Load into one local pointer | `point := loader.Current.Load()`, `var point = current.Load()`, `point = current.Load()` |
+
+A holder is a struct with a direct named slot field. Use holder pointers for
+calls; do not copy a holder or slot value. Slot and holder pointer captures,
+interfaces, indirect calls, user generic arguments, and `go` or `defer` slot
+operations are unsupported. A loaded pointer follows all LocalRef pointer
+rules. Load it into a local before use. A Store argument must be the direct
+`&T{...}` or `new(T)` construction for the slot's exact `T`.
+
+Rejected examples are not exhaustive:
+
+| Rejected form | Allowed replacement |
+| --- | --- |
+| `im.Owned[SharedPoint]` | Use `im.Owned[LocalRefPoint]`. |
+| `copy := loader.Current` or `copy := *loader` | Keep and pass `loader` as a pointer. |
+| `loader.Current.Store(point)` | `loader.Current.Store(&LocalRefPoint{X: point.X})` |
+| `return loader.Current.Load()` | `point := loader.Current.Load(); return *point` with a value result. |
+| `read := loader.Current.Load` | `point := loader.Current.Load()` |
+| `loader.Current.Load().X = 2` | `loader.Current.Store(&LocalRefPoint{X: 2})` |
+| `type Outer struct { Value Loader }` | Keep the slot field in the unmarked holder. |
+
 ## Statements and calls
 
 Use the operations above inside these statement forms:

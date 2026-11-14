@@ -97,7 +97,7 @@ func protectedPackage(pass *analysis.Pass) bool {
 		return true
 	}
 	for _, value := range pass.TypesInfo.Types {
-		if value.Type != nil && checker.Contains(value.Type) {
+		if value.Type != nil && (checker.Contains(value.Type) || slotRelevant(value.Type)) {
 			return true
 		}
 	}

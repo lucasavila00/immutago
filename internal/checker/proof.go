@@ -76,6 +76,10 @@ func (p *proof) depend(owner *obligation, t types.Type, label string) {
 
 // value matches the complete concrete immutable storage forms.
 func (p *proof) value(result *obligation, t types.Type) {
+	if IsLibraryType(t, "Owned") {
+		result.reason = "Owned slots are mutable"
+		return
+	}
 	if IsLibraryType(t, "Shared") || IsLibraryType(t, "LocalRef") {
 		return
 	}

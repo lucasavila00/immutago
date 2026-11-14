@@ -82,6 +82,9 @@ func contains(t types.Type, seen map[types.Type]bool) bool {
 	if parameter, ok := types.Unalias(t).(*types.TypeParam); ok {
 		return constraintContains(parameter.Constraint(), seen)
 	}
+	if IsLibraryType(t, "Owned") {
+		return false
+	}
 	if IsCollection(t) || Marked(t) {
 		return true
 	}

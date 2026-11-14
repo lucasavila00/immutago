@@ -17,6 +17,9 @@ import (
 const testLibrary = `package im
  type Shared struct{}
  type LocalRef struct{}
+ type Owned[T any] struct{}
+ func (o *Owned[T]) Load() *T { return nil }
+ func (o *Owned[T]) Store(p *T) {}
  type FrozenSlice[T any] struct { values []T }
  type FrozenMap[K comparable, V any] struct { values map[K]V }
  func FreezeSlice[T any](values []T) FrozenSlice[T] { return FrozenSlice[T]{} }

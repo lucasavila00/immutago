@@ -17,6 +17,16 @@ escaping. The [source matcher](../../pkg/analyzer/subset_operations.go) checks
 these uses; the [type proof](../../internal/checker/proof.go) rejects stored
 `LocalRef` pointers.
 
+## Atomic LocalRef slots
+
+[Owned](../../pkg/im/owned.go) stores a pointer with `atomic.Pointer`. The slot
+is mutable and is not an immutable type. The
+[slot matcher](../../pkg/analyzer/owned_slot.go) checks its type argument,
+receiver, direct call, fresh Store input, and local Load binding. A separate
+slot-bearing value check rejects copies of slots and holders. It also checks
+holder pointer transport and closure captures. The ordinary LocalRef checks
+apply to each loaded pointer.
+
 ## Native builders
 
 [Discovery](../../internal/freeze/discover.go) indexes local declarations by
