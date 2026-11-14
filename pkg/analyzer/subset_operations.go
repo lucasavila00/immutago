@@ -178,7 +178,7 @@ func (c *subsetChecks) matchFunctionValue(expression ast.Expr) string {
 	return "immutable callbacks are unsupported"
 }
 
-// matchSelector distinguishes fields, package variables, and the fixed collection calls.
+// matchSelector distinguishes fields, package variables, and the supported method calls.
 func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection == nil {
@@ -205,13 +205,13 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 	if c.dependencyValue(selector) {
 		return ""
 	}
-	if !c.exactCollectionMethod(selector) {
-		return "user-defined methods with immutable storage are unsupported"
+	if c.exactCollectionMethod(selector) {
+		if c.directCall(selector) == nil {
+			return "bound immutable methods are unsupported"
+		}
+		return ""
 	}
-	if c.directCall(selector) == nil {
-		return "bound immutable methods are unsupported"
-	}
-	return ""
+	return c.matchMarkedMethod(selector)
 }
 
 // matchUnary permits fresh marked allocations and ordinary scalar operations.

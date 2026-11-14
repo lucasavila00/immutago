@@ -44,29 +44,28 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	if libraryObject(object) {
 		return c.matchLibraryCall(call, object)
 	}
-	if trustedRuntimeCall(object) {
+	if trustedRuntimeCall(object) || procMethod(object) {
 		return ""
 	}
-	if !c.queries.Callable(signature) && !c.protectedCallArguments(call) {
+	protected := c.queries.Callable(signature) || c.protectedCallArguments(call)
+	if selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok {
+		if selection := c.pass.TypesInfo.Selections[selector]; selection != nil && selection.Kind() != types.FieldVal &&
+			(protected || c.protectedStorage(selector.X)) {
+			if !c.processSignature(selection.Obj().Type().(*types.Signature)) {
+				return c.matchMarkedMethod(selector)
+			}
+		}
+	}
+	if !protected {
 		return ""
 	}
 	function, direct := object.(*types.Func)
 	if !direct {
 		return "dynamic calls with immutable storage are unsupported"
 	}
-	if selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok {
-		if selection := c.pass.TypesInfo.Selections[selector]; selection != nil {
-			if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
-				return "dynamic calls with immutable storage are unsupported"
-			}
-		}
-	}
 	origin := function.Origin().Type().(*types.Signature)
 	if genericSignature(origin) {
 		return "user generic instantiations with immutable types are unsupported"
-	}
-	if origin.Recv() != nil && !c.processSignature(origin) {
-		return "user-defined methods with immutable storage are unsupported"
 	}
 	return ""
 }

@@ -1,0 +1,46 @@
+package analyzer
+
+import (
+	"go/ast"
+	"go/types"
+
+	"github.com/lucasavila00/immutago/internal/checker"
+)
+
+// markedMethodReceiver proves the complete concrete receiver type of a user method.
+func (c *subsetChecks) markedMethodReceiver(signature *types.Signature) bool {
+	if signature.Recv() == nil || genericSignature(signature) {
+		return false
+	}
+	receiver := types.Unalias(signature.Recv().Type())
+	if pointer, ok := receiver.(*types.Pointer); ok {
+		receiver = types.Unalias(pointer.Elem())
+	}
+	named, ok := receiver.(*types.Named)
+	return ok && named.TypeParams().Len() == 0 && checker.Marked(named) && c.proofs.Reason(named) == ""
+}
+
+// matchMarkedMethod permits direct calls without promotion or implicit receiver changes.
+func (c *subsetChecks) matchMarkedMethod(selector *ast.SelectorExpr) string {
+	selection := c.pass.TypesInfo.Selections[selector]
+	if selection.Kind() != types.MethodVal {
+		return "immutable method expressions are unsupported"
+	}
+	if c.directCall(selector) == nil {
+		return "bound immutable methods are unsupported"
+	}
+	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
+		return "dynamic calls with immutable storage are unsupported"
+	}
+	if len(selection.Index()) != 1 {
+		return "promoted immutable methods are unsupported"
+	}
+	signature := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
+	if !c.markedMethodReceiver(signature) {
+		return "immutable methods require a concrete non-generic marked receiver"
+	}
+	if !types.Identical(c.pass.TypesInfo.TypeOf(selector.X), signature.Recv().Type()) {
+		return "immutable method receivers must match their declared type exactly"
+	}
+	return ""
+}

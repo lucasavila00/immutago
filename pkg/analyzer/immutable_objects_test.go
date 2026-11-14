@@ -86,12 +86,12 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{
 			"method parameter",
 			`type Reader int;func(Reader)Read(p *Shared)int{return p.X};func f(){p:=&Shared{};_=Reader(0).Read(p)}`,
-			"user-defined methods with immutable storage",
+			"immutable methods require a concrete non-generic marked receiver",
 		},
 		{
 			"method result",
 			`type Reader int;func(Reader)Make()*Shared{return &Shared{}};func f(){_=Reader(0).Make()}`,
-			"user-defined methods with immutable storage",
+			"immutable methods require a concrete non-generic marked receiver",
 		},
 		{"reference comparison box", `func f(p *Shared,boxed any)bool{return p==boxed}`, "boxing immutable storage"},
 		{"value comparison box", `func f(v Shared,boxed any)bool{return boxed!=v}`, "boxing immutable storage"},

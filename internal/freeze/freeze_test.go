@@ -95,6 +95,35 @@ func TestFreezeOwnership(t *testing.T) {
 	}
 }
 
+// TestFreezePointerMethodReceivers distinguishes stored pointer reads from addresses into builder slots.
+func TestFreezePointerMethodReceivers(t *testing.T) {
+	cases := []struct {
+		name, body string
+		reject     bool
+	}{
+		{"stored pointer", `s:=[]*V{&V{}};_=s[0].ReadPointer();_=im.FreezeSlice(s)`, false},
+		{"stored map pointer", `m:=map[int]*V{0:&V{}};_=m[0].ReadPointer();_=im.FreezeMap(m)`, false},
+		{"pointer field", `s:=[]Ref{{V:&V{}}};_=s[0].V.ReadPointer();_=im.FreezeSlice(s)`, false},
+		{"parentheses", `s:=[]*V{&V{}};_=((s[0]).ReadPointer)();_=im.FreezeSlice(s)`, false},
+		{"pointer alias", `type Alias=V;s:=[]*Alias{&Alias{}};_=s[0].ReadPointer();_=im.FreezeSlice(s)`, false},
+		{"value receiver", `s:=[]V{{}};_=s[0].Read();_=im.FreezeSlice(s)`, false},
+		{"implicit address", `s:=[]V{{}};_=s[0].ReadPointer();_=im.FreezeSlice(s)`, true},
+		{"promoted pointer", `s:=[]Ref{{V:&V{}}};_=s[0].ReadPointer();_=im.FreezeSlice(s)`, true},
+		{"scalar address", `s:=[]Scalar{1};s[0].Inc();_=im.FreezeSlice(s)`, true},
+		{"ordinary pointer", `s:=[]*Scalar{new(Scalar)};s[0].Inc();_=im.FreezeSlice(s)`, true},
+		{"generic pointer", `s:=[]*Box[int]{&Box[int]{}};_=s[0].Read();_=im.FreezeSlice(s)`, true},
+		{"bound pointer", `s:=[]*V{&V{}};read:=s[0].ReadPointer;_=read;_=im.FreezeSlice(s)`, true},
+		{"read after freeze", `s:=[]*V{&V{}};_=im.FreezeSlice(s);_=s[0].ReadPointer()`, true},
+	}
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			if got := diagnostics(t, test.body); (got != "") != test.reject {
+				t.Fatalf("diagnostics = %q; rejected = %v", got, test.reject)
+			}
+		})
+	}
+}
+
 // diagnostics type-checks independent source and runs the ownership proof directly.
 func diagnostics(t *testing.T, body string) string {
 	t.Helper()
@@ -108,6 +137,9 @@ func diagnostics(t *testing.T, body string) string {
 		t.Fatal(err)
 	}
 	source := `package sample;import "` + checker.LibraryPath + `";type V struct{im.Shared;X int};
+	 func(v V)Read()int{return v.X};func(v *V)ReadPointer()int{return v.X};
+	 type Ref struct{im.Shared;*V};type Scalar int;func(s *Scalar)Inc(){*s++};
+	 type Box[T any]struct{im.Shared;X int};func(b *Box[T])Read()int{return b.X};
 	 type Fake struct{};func(Fake)Clone()[]int{return nil};
  func take([]int){};func both(im.FrozenSlice[int],int){};
  func index(im.FrozenSlice[int])int{return 0};func key(im.FrozenMap[string,int])string{return "x"};
