@@ -8,6 +8,11 @@ before the first `Store`. `Store` and `Load` use atomic pointer operations.
 An earlier loaded pointer remains valid after a later `Store`. Go does not
 specify when an unused object is collected.
 
+```go
+type ScopedPoint struct { im.Scoped; X int }
+type Loader struct { Current im.Owner[ScopedPoint] }
+```
+
 ## Allowed forms
 
 These allowed forms are complete. Other slot and holder operations are rejected.
@@ -29,7 +34,11 @@ A named function can publish in a background goroutine:
 
 ```go
 func publish(l *Loader) { l.Current.Store(&ScopedPoint{X: 1}) }
-go publish(loader)
+
+func start() {
+    loader := &Loader{}
+    go publish(loader)
+}
 ```
 
 A holder is an unmarked struct with a direct named slot field. The slot fields
@@ -41,9 +50,9 @@ package variables, returned, or captured. Calls with them require direct named
 non-generic functions and fixed, concrete parameters. Explicit `*im.Owner[T]`
 values and direct `go` or `defer` slot calls are unsupported.
 
-A loaded pointer follows all Scoped pointer rules. Load it into a local before
-use. A Store argument must be the direct
-`&T{...}` or `new(T)` construction for the slot's exact `T`.
+A loaded pointer follows all [Scoped pointer rules](scoped.md). Load it into a
+local before use. A Store argument must be the direct `&T{...}` or `new(T)`
+construction for the slot's exact `T`.
 
 ## Rejected examples
 

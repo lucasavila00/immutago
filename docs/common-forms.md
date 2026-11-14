@@ -7,6 +7,9 @@ the forms on the relevant type's page. The lists are complete; other protected
 operations are rejected. Rejected examples are not exhaustive.
 [Owner slots and holders](owner.md) have their own forms.
 
+[Types](#markers-and-stored-types) · [Values](#construction-and-scalar-reads) ·
+[Pointers](#common-pointer-forms) · [Statements](#statements-and-calls)
+
 ## Markers and stored types
 
 Embed exactly one marker by value:

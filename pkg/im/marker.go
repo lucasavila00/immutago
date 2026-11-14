@@ -17,13 +17,17 @@
 // an independent copy.
 // Their zero values are empty collections. Element and key types must themselves
 // be immutable; the analyzer checks this requirement, including nested types.
+// The language guide lists the complete supported forms:
+// https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
 package im
 
 // Shared marks an immutable struct whose shared pointers may be stored or returned.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/shared.md for the complete forms.
 type Shared struct{}
 
 // Scoped marks an immutable struct whose pointers have restricted retention.
 // Owner is the supported publication slot for fresh Scoped objects.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/scoped.md for the complete forms.
 type Scoped struct{}
