@@ -23,6 +23,44 @@ function values. The handle has no methods, so interface calls and promoted
 methods cannot expose its pointer. The declaring package's promise of immutable
 data remains unproved.
 
+## Why the rules belong to the type
+
+One marker sets the rule for every use of a type. Callers do not repeat it on
+fields, parameters, receivers, or local names:
+
+```go
+type Config struct {
+    im.Scoped
+    Limit int
+}
+
+func limit(config *Config) int { return config.Limit }
+```
+
+The checker knows that `limit` cannot save or return `config` because Config is
+Scoped. Another function that receives `*Config` gets the same rule. Renaming
+the parameter does not change it.
+
+Both markers also require immutable fields. A read-only field alone would not
+be enough: another pointer could still change its target. The checker proves
+the target type and rejects writes through every checked use.
+
+This choice gives us one rule to declare, read, and check. The checker uses Go
+type identity instead of a separate pointer policy for each variable and
+parameter. It still checks each operation; the marker is not a trusted promise.
+
+The cost is less flexibility: one type cannot have both Shared and Scoped
+pointer rules. For example, a Shared type cannot also be used in `Owner[T]`.
+Code that needs both roles must use separate types or pass value copies.
+
+Parameter rules could let one type serve both roles. They would require more
+annotations and checks for pointer copies and calls. Both designs enforce the
+same immutable-field rule. We keep type markers unless a concrete use case shows a large
+correctness or simplicity gain from that extra work.
+
+See [Shared](../shared.md), [Scoped](../scoped.md), and [Owner](../owner.md) for
+the supported forms.
+
 ## Atomic Scoped slots
 
 [Owner](../../pkg/im/owner.go) stores a pointer with `atomic.Pointer`. The slot
