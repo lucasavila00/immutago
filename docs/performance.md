@@ -61,6 +61,11 @@ measure repeated queries at 16, 64, and 256 types. The
 full analyzer pass on connected structs and interfaces without markers at 8,
 16, 32, and 64 types. These cases measure repeated graph traversal.
 
+The [slot-query benchmark](../pkg/analyzer/slot_scaling_test.go) uses value-linked
+cycles at 512, 1024, and 2048 types in ordinary and checked packages. Completed
+negative slot queries cache every visited type. Recursive queries read that
+cache, so new wrapper types do not expand the same negative component again.
+
 The pass-local type classifier expands each reachable type and classification
 mode once per cache. Reverse edges propagate positive results through cycles;
 completed queries reuse the stored result. The graph stays in memory until its
