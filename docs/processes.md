@@ -127,6 +127,7 @@ The runtime behavior is not part of the proof:
   again and the program exits.
 - `proc.StartSupervisor(parent)` nests a supervisor. `Stop` begins stopping;
   its channel closes when all children have stopped, last started first.
+  After a nested supervisor stops, its parent keeps no reference to it.
   Cancellation is cooperative: `Run` must observe its context. Stop does not
   wait for direct method calls, and methods must synchronize their shared state.
 - `proctest.NewRoot(t)` fails a test whose process tree does not stop in 5 s.
