@@ -32,3 +32,16 @@ observable result. Check inlining, bounds checks, and heap escapes; inspect
 machine code if results differ. Test local use and values returned by helpers.
 Allocation counts alone do not prove zero overhead. Compare Clone with a native
 container copy, not an in-place edit.
+
+## Checker costs
+
+`make bench-core` measures type proofs, builder flow, source matching, and the
+full package pass at increasing input sizes. Parsing and Go type checking are
+outside the timed loop. Stress tests compare recursive proofs and flow results
+with independent reachability calculations.
+
+[Core performance CI](../.github/workflows/core-performance.yml) saves repeated
+benchmark samples, CPU and allocation profiles, the test binary, and runner
+information as artifacts. Profile setup can appear in the profiles; benchmark
+allocation counts exclude setup. Compare the same cases and Go version before
+and after a change. Timing alone is not a pass/fail gate.

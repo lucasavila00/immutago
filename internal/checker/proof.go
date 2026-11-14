@@ -3,12 +3,16 @@ package checker
 import (
 	"fmt"
 	"go/types"
+	"strings"
 )
 
-// obligation records one immutable type and the owners that depend on it.
+// obligation records a terminal reason or an edge label with its first failure cause.
+// Each cause points to an already failed node; only unfailed owners get causes.
+// Thus cause links cannot form a cycle.
 type obligation struct {
 	users  []proofUse
 	reason string
+	cause  *obligation
 }
 
 // proofUse identifies an owner and its diagnostic path from a component obligation.
@@ -30,13 +34,23 @@ func Reason(t types.Type) string {
 	for index := 0; index < len(p.failures); index++ {
 		child := p.failures[index]
 		for _, use := range child.users {
-			if use.owner.reason == "" {
-				use.owner.reason = use.label + child.reason
+			if use.owner.reason == "" && use.owner.cause == nil {
+				use.owner.reason = use.label
+				use.owner.cause = child
 				p.failures = append(p.failures, use.owner)
 			}
 		}
 	}
-	return root.reason
+	if root.cause == nil {
+		return root.reason
+	}
+	var message strings.Builder
+	for root.cause != nil {
+		message.WriteString(root.reason)
+		root = root.cause
+	}
+	message.WriteString(root.reason)
+	return message.String()
 }
 
 // node records an obligation before descending, so recursive references terminate.

@@ -7,8 +7,19 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// matchLiteral resolves every field, key, and element assignment in a concrete literal.
+// matchLiteral reuses the complete type match when several operands share one literal.
+// Statement and expression-use checks still run for every protected operand.
 func (c *subsetChecks) matchLiteral(literal *ast.CompositeLit) string {
+	if rule, checked := c.literals[literal]; checked {
+		return rule
+	}
+	rule := c.matchLiteralFields(literal)
+	c.literals[literal] = rule
+	return rule
+}
+
+// matchLiteralFields resolves every field, key, and element assignment in a concrete literal.
+func (c *subsetChecks) matchLiteralFields(literal *ast.CompositeLit) string {
 	storage := c.pass.TypesInfo.TypeOf(literal).Underlying()
 	if _, pointer := storage.(*types.Pointer); pointer {
 		return "reference operation is outside the supported allowlist"

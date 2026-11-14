@@ -16,7 +16,7 @@ func (p *proof) checkUses() {
 			if !ok {
 				return true
 			}
-			if checker.Unevaluated(p.pass.TypesInfo, p.parents, id) {
+			if checker.Unevaluated(p.pass.TypesInfo, p.parents, p.unevaluated, id) {
 				return true
 			}
 			variable, _ := p.pass.TypesInfo.Uses[id].(*types.Var)

@@ -23,6 +23,7 @@ type owner struct {
 type proof struct {
 	pass         *analysis.Pass
 	parents      map[ast.Node]ast.Node
+	unevaluated  map[ast.Node]bool
 	declarations map[*types.Var]owner
 	owners       map[*types.Var]owner
 	reported     map[token.Pos]bool
@@ -32,7 +33,7 @@ type proof struct {
 // The returned set lets the analyzer admit these native containers without exempting their operations.
 func Check(pass *analysis.Pass) map[*types.Var]bool {
 	p := &proof{pass: pass, parents: make(map[ast.Node]ast.Node), declarations: make(map[*types.Var]owner),
-		owners: make(map[*types.Var]owner), reported: make(map[token.Pos]bool)}
+		owners: make(map[*types.Var]owner), reported: make(map[token.Pos]bool), unevaluated: make(map[ast.Node]bool)}
 	p.discover()
 	result := make(map[*types.Var]bool)
 	variables := make([]*types.Var, 0, len(p.owners))

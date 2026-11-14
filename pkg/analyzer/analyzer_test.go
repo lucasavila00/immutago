@@ -47,6 +47,18 @@ func (i testImporter) Import(path string) (*types.Package, error) {
 // checkSource type-checks a complete Go package, then runs the analyzer over its compiler data.
 func checkSource(t *testing.T, declarations string) string {
 	t.Helper()
+	pass := sourcePass(t, declarations)
+	var reports []string
+	pass.Report = func(d analysis.Diagnostic) { reports = append(reports, d.Message) }
+	if _, err := run(pass); err != nil {
+		t.Fatal(err)
+	}
+	return strings.Join(reports, "\n")
+}
+
+// sourcePass prepares compiler data without including setup in analyzer benchmarks.
+func sourcePass(t testing.TB, declarations string) *analysis.Pass {
+	t.Helper()
 	positions := token.NewFileSet()
 	libraryFile, err := parser.ParseFile(positions, "im.go", testLibrary, 0)
 	if err != nil {
@@ -75,16 +87,10 @@ func checkSource(t *testing.T, declarations string) string {
 	if err != nil {
 		t.Fatalf("test source does not compile: %v", err)
 	}
-	var reports []string
-	pass := &analysis.Pass{
+	return &analysis.Pass{
 		TypesSizes: types.SizesFor("gc", runtime.GOARCH),
 		Analyzer:   Analyzer, Fset: positions, Files: []*ast.File{file}, Pkg: pkg, TypesInfo: info,
-		Report: func(d analysis.Diagnostic) { reports = append(reports, d.Message) },
 	}
-	if _, err := run(pass); err != nil {
-		t.Fatal(err)
-	}
-	return strings.Join(reports, "\n")
 }
 
 // TestValidTypes covers recursive proofs, aliases, and ordinary mutable scalar locals.

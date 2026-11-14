@@ -32,7 +32,9 @@ only until an expression produces a separate value.
 
 [Flow analysis](../../internal/freeze/flow.go) expands each participating
 function's Go control-flow graph into ordered use, consume, and reset events.
-A forward solver tracks sets of consumed builder identities:
+A forward solver tracks sets of consumed builder identities in bitsets. Each
+function assigns dense IDs to its builders and retains one input and output
+bitset per event:
 
 - A join takes the union of predecessor states.
 - Freeze adds the input identity after argument evaluation.
