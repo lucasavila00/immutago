@@ -30,6 +30,14 @@ func f(d proc.UncheckedDependency[*int]) { consume(pair(d)) }`},
 		{"global initializer", `var saved = proc.Trust(new(int))`},
 		{"boxed wrapper in trust", `func f(d proc.UncheckedDependency[*int]) { _ = proc.Trust[any](d) }`},
 		{"raw value still checked", `func f() { p := Snapshot{}; _ = proc.Trust(&p) }`},
+		{"slice builder", `func f(p *int) { values := []proc.UncheckedDependency[*int]{proc.Trust(p)}; _ = len(values) }`},
+		{"nil slice builder", `func f() { var values []proc.UncheckedDependency[*int]; _ = len(values) }`},
+		{"argument builder", dependencyDefinitions + `func f() { values := make([]FetcherArgs, 1); _ = len(values) }`},
+		{"argument pointer builder", dependencyDefinitions + `func f() { values := []*FetcherArgs{nil}; _ = len(values) }`},
+		{"map builder", `func f() { values := map[int]proc.UncheckedDependency[*int]{}; _ = len(values) }`},
+		{"map key builder", `func f() { values := map[proc.UncheckedDependency[*int]]int{}; _ = len(values) }`},
+		{"alias builder", `type Dep = proc.UncheckedDependency[*int]
+func f() { values := make([]Dep, 1); _ = len(values) }`},
 	})
 }
 
@@ -59,5 +67,6 @@ func (w *Worker) Run(context.Context) { point := w.Args().Value(); _ = point.Ver
 		{"generic metadata", `type Box[T any] struct { Value T }
 type Args struct { im.Shared; D proc.UncheckedDependency[Box[*Snapshot]] }
 func f() Args { return Args{} }`},
+		{"ordinary native payload", `func f() { values := []map[string]int{{}}; d := proc.Trust(values); _ = d }`},
 	})
 }

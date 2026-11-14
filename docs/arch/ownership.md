@@ -59,6 +59,9 @@ in the source walk so the explicit unchecked payload is skipped. `dependencyValu
 accepts `Value` only as a direct synchronous call on
 `l.Args()` or on one field of it in a method of process `l`. The `T` value is
 not proved; `proc.Trust` is the promise.
+Before exempting an owned native handle, the source checker proves its protected
+key and element types with the same Prover. Ownership alone does not admit an
+argument-only type as a builder element.
 
 A process is not an Owner holder; the holder pointer rules do not apply to it.
 Methods with a process receiver are exempt from the rule against user-defined

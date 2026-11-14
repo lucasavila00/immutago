@@ -1,4 +1,5 @@
-dependency.go:12:49: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+dependency.go:12:20: unsupported native builder: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+  fix: use allowed stored types for builder keys and elements
 dependency.go:16:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
   source: getter interface{ Value() *int } = value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
