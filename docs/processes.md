@@ -237,13 +237,23 @@ func (p *WorkerPool) Run(ctx context.Context) {
   `Stop` waits for the child, and the child waits for the call.
 
 The [process reference](process-forms.md#start-children-under-the-supervisor-of-the-run)
+## Package variables
+
+A process method, including `Run`, cannot use a package variable that another
+goroutine can change. The checker also follows static calls to functions and
+methods of checked packages, so a helper such as
+`func record(k string) { seen[k]++ }` is rejected when `Run` calls it. Keep
+shared state in one process, and publish it through an `im.Owner` field or an
+exported method. The [process reference](process-forms.md#package-variables)
 lists the allowed forms.
 
 ## Not checked
 
-These checks do not isolate ordinary mutable state. Two processes can still
-access the same global map or share data through ordinary helper functions.
-Use locks for that data, and run tests with `go test -race`. The race detector
+The checker does not follow calls into packages that it does not check, such as
+the standard library, or calls through interface methods. See
+[calls that are not followed](process-forms.md#calls-that-are-not-followed).
+These checks also do not isolate mutable process fields. Use locks for data that
+methods and `Run` share, and run tests with `go test -race`. The race detector
 can find a race only when the test executes the conflicting accesses.
 
 The checker also does not check the lifetime of PIDs. A process can reserve a

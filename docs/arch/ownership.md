@@ -71,10 +71,24 @@ not proved; `proc.Trust` is the promise.
 A process is not an Owner holder; the holder pointer rules do not apply to it.
 Methods with a process receiver are exempt from the rule against user-defined
 methods with protected storage, because the five rules leave a direct static
+- The type argument of `proc.Process` must pass the same proof.
+- A process method cannot use a rejected package variable or name a function
+  that carries a [variable use fact](../../pkg/analyzer/variable_uses.go). The
+  [variable check](../../pkg/analyzer/process_variables.go) accepts `im.Owner`
+  variables, unexported variables of allowed stored types that only package
+  initialization changes, and the [narrow forms](../../pkg/analyzer/process_variable_forms.go):
+  scalar atomics used only as direct method receivers, compared `error`
+  variables, and empty structs. It finds changed variables, method receivers,
+  and compared names with at most one walk each per package.
+
+A process is not an Owner holder; the holder pointer rules do not apply to it.
+Methods with a process receiver are exempt from the rule against user-defined
+methods with protected storage, because the rules leave a direct static
 call as the only use of such a method. The runtime creates a new value from the
 same arguments after each restart delay and stores it in the same PID.
 These rules do not check the origin or destination of mutable field handles
-in ordinary method bodies; they do not prove memory isolation.
+in ordinary method bodies, calls into unchecked packages, or interface method
+calls; they do not prove memory isolation.
 
 ## Native builders
 

@@ -13,8 +13,9 @@ The [entry point](../../pkg/analyzer/analyzer.go) performs these stages:
 3. Return for ordinary packages under normal Go API trust.
 4. Reject checked cgo packages and export their failure before checking wrappers.
 5. Report checked dependency failures and record local diagnostics.
-6. Check declarations, imports, field types, exported process methods, and fixed
-   `im` and `proc` type arguments.
+6. Check declarations, imports, field types, exported process methods, package
+   variables in process methods, and fixed `im` and `proc` type arguments.
+   Export one fact for each function that uses a rejected package variable.
 7. Run the native builder proof and match protected source forms.
 8. Export accumulated failures for importers.
 
@@ -99,6 +100,18 @@ original package to check, because running a silent wrapper can print no errors.
 Reports from direct package analysis do not change. No original message is shortened,
 but downstream reports do not enumerate all causes or show full import routes.
 These facts carry errors, not inferred function effects.
+
+[Variable use facts](../../pkg/analyzer/variable_uses.go) are object facts on
+functions and concrete methods of checked packages. One walk over each function
+body records rejected package variables, imported callee facts, and callees in
+the same package. A worklist then marks the callers of each marked function, so
+each function enters it once and recursion ends. A fact holds the first variable
+found, not the call path. Process methods read these facts for direct calls and
+function names. Facts exist only for marked functions; vet carries them to direct
+importers, and the fact of a callee already includes the facts of its own callees.
+A second object fact marks an exported `error` variable that its own package
+changes outside `init`. Checked importers read it before they accept a
+comparison with the variable, and cannot change the variable themselves.
 
 The vet driver does not re-export imported package facts. `AllPackageFacts`
 cannot supply all indirect origins, so each exported witness is self-contained.

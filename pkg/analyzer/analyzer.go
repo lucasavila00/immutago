@@ -25,6 +25,8 @@
 // only as a method receiver or as a direct PID.Proc result that receives a direct
 // call of an exported method. Exported process methods take and return only
 // allowed stored types, and only proc.Start and proc.StartReserved create processes.
+// Process methods cannot use mutable package variables or name functions of checked
+// packages that reach them through static calls.
 package analyzer
 
 import (
@@ -44,7 +46,7 @@ var Analyzer = &analysis.Analyzer{
 	Name:      "immutago",
 	Doc:       "prove immutability of marked structs and immutable collection elements",
 	Run:       run,
-	FactTypes: []analysis.Fact{new(invalidPackage)},
+	FactTypes: []analysis.Fact{new(invalidPackage), new(variableUse), new(changedError)},
 }
 
 // run checks compiler-resolved types and source operations in one package.
@@ -79,6 +81,8 @@ func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
 		ast.Inspect(file, c.visit)
 	}
+	c.variableUses()
+	c.exportChangedErrors()
 	checkLibraryArguments(pass, c)
 	checkSubset(pass, freeze.Check(pass))
 	return nil, nil
@@ -121,6 +125,10 @@ type checks struct {
 	queries  checker.Classifier
 	pass     *analysis.Pass
 	reported map[token.Pos]bool
+	changed  map[*types.Var]bool
+	counters map[*types.Var]bool
+	compared map[*ast.Ident]bool
+	uses     map[*types.Func]*variableUse
 }
 
 // report emits a diagnostic once for a source position.
@@ -140,6 +148,7 @@ func (c *checks) visit(node ast.Node) bool {
 				"provide a Go implementation so writes and pointer transport can be checked")
 		}
 		c.checkProcessMethod(n)
+		c.checkProcessVariables(n)
 	case *ast.ImportSpec:
 		c.checkImport(n)
 
@@ -152,6 +161,7 @@ func (c *checks) visit(node ast.Node) bool {
 	case *ast.SelectorExpr:
 		c.checkOpaqueValue(n)
 	}
+	c.checkForeignErrorChange(node)
 	if expr, ok := node.(ast.Expr); ok {
 		t := c.pass.TypesInfo.TypeOf(expr)
 		if t != nil {
