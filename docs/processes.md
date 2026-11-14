@@ -71,7 +71,9 @@ lock.
 
 The [config loader](../tests/testdata/accepted/process/config_loader.go) and
 [limiter](../tests/testdata/accepted/process/limiter.go) examples show Owner fields
-and PIDs in start arguments. The tables use those example types.
+and PIDs in start arguments. The
+[worker pool](../tests/testdata/accepted/process/worker_pool.go) example starts
+children under the supervisor of its run. The tables use those example types.
 
 These allowed forms are complete. Other uses of a process, its type name, or a
 process pointer from `Proc()` are rejected. Parentheses preserve these forms.
@@ -86,6 +88,8 @@ process pointer from `Proc()` are rejected. Parentheses preserve these forms.
 | In a method, select a field of the receiver other than the marker | `l.version++`, `l.mu.Lock()`, `defer l.mu.Unlock()`, `l.current.Store(&Config{})` |
 | In a method, call a method of the receiver directly and synchronously, other than `Run` | `l.publish()`, `l.Lock()` for an embedded `sync.Mutex` |
 | In a method, read the arguments with a direct call | `args := l.Args()`, `l.Args().Loader.Proc().Limit(l.Args().Key)` |
+| In `Run`, call `Supervisor()` directly and synchronously on the receiver, and pass the result directly as the first argument of a direct, synchronous `proc.Start`, `proc.StartReserved`, or `proc.StartSupervisor` call | `proc.Start[Worker](p.Supervisor(), WorkerArgs{ID: i})`, `proc.StartReserved(p.Supervisor(), spare, args)`, `proc.StartSupervisor(p.Supervisor())` |
+| In `Run`, bind `Supervisor()` to one new local variable with `:=`, and use that variable only as the first argument of a direct, synchronous `proc.Start`, `proc.StartReserved`, or `proc.StartSupervisor` call in `Run`, not in a function literal | `sup := p.Supervisor(); for i := range p.Args().Workers { proc.Start[Worker](sup, WorkerArgs{ID: i}) }` |
 | Call an exported method other than `Run`, declared on the process, directly and synchronously on `pid.Proc()` | `v := loader.Proc().Version()`, `(loader.Proc()).Version()` |
 | Call through a PID in a field of a marked value | `peers.Loader.Proc().Version()` |
 | Keep, copy, store, pass, or return a PID | `type Peers struct { im.Shared; Loader proc.PID[ConfigLoader] }` |
@@ -114,6 +118,13 @@ Rejected examples are not exhaustive:
 | In a method: `go l.publish()`, `defer l.publish()`, `f := l.publish` | Call `l.publish()` directly; use `defer l.mu.Unlock()` for field cleanup. |
 | In a method: `func() { l.version++ }` | Move the work into a method. |
 | In a method: `l.Process`, `&l.Process`, `f := l.Args` | `args := l.Args()` |
+| In `Run`: `p.sup = p.Supervisor()`, `saved = p.Supervisor()`, `keep(p.Supervisor())`, `_ = p.Supervisor()` | `proc.Start[Worker](p.Supervisor(), args)` |
+| In `Run`: `p.Supervisor().Stop()`, `sup := p.Supervisor(); <-sup.Stop()` | Return from `Run`; the runtime stops the supervisor of the run. |
+| In `Run`: `get := p.Supervisor`, `go p.Supervisor()`, `go proc.Start[Worker](p.Supervisor(), args)`, `defer proc.StartSupervisor(sup)` | Call `proc.Start[Worker](p.Supervisor(), args)` directly. |
+| In `Run`: `func() { proc.Start[Worker](p.Supervisor(), args) }()`, `sup := p.Supervisor(); go func() { proc.Start[Worker](sup, args) }()` | Start the child in `Run`, outside the function literal. |
+| In `Run`: `var sup = p.Supervisor()`, `sup = p.Supervisor()`, `sup, n := p.Supervisor(), 1`, `other := sup`, `keep(sup)` | `sup := p.Supervisor()`, then `proc.Start[Worker](sup, args)` |
+| `func (p *WorkerPool) Grow() { proc.Start[Worker](p.Supervisor(), args) }`, `func (p *WorkerPool) owned() *proc.Supervisor { return p.Supervisor() }` | Start the children in `Run`. |
+| `pool.Proc().Supervisor()`, `p.Process.Supervisor()`, `(*proc.Process[PoolArgs]).Supervisor` | A process starts children only under its own run, in `Run`. |
 | `&ConfigLoader{}`, `var l ConfigLoader`, `new(ConfigLoader)` | `proc.Start[ConfigLoader](root, args)` |
 | `func use(l *ConfigLoader)`, `type L = ConfigLoader`, `type Outer struct { ConfigLoader }`, `(*ConfigLoader).Version` | Pass a `proc.PID[ConfigLoader]`. |
 | `proc.Start[ConfigLoader, LoaderArgs](root, args)` | `proc.Start[ConfigLoader](root, args)` |
@@ -142,6 +153,15 @@ Rejected examples are not exhaustive:
   reverse start order and escalates to the parent supervisor, which restarts
   the subtree with the same rule. At the root, the last panic value panics
   again and the program exits.
+- In `Run`, `p.Supervisor()` returns the supervisor of the current run. The
+  first call in a run creates it. When `Run` returns or panics, also after
+  `Stop`, the runtime stops the children of this supervisor, last started first,
+  and waits for them. Then the run ends: the restart delay starts, or `Stop`
+  continues. A new run starts with no children, and its `Run` starts them
+  again. A PID of an old child keeps its last value, but that child does not
+  run again. If a child passes its restart limit, the run context ends and the
+  run fails with the panic value of the child. The supervisor of the process
+  counts this failure as a panic of the process.
 - `proc.StartSupervisor(parent)` nests a supervisor. `Stop` begins stopping;
   its channel closes when all children have stopped, last started first.
   Cancellation is cooperative: `Run` must observe its context. Stop does not

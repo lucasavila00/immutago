@@ -14,14 +14,16 @@ Names of the process runtime identities in RuntimePath and of the process method
 
 ```go
 const (
-    ProcessMarker         = "Process"
-    PIDType               = "PID"
-    StartFunction         = "Start"
-    ReserveFunction       = "Reserve"
-    StartReservedFunction = "StartReserved"
-    ProcMethod            = "Proc"
-    ArgsMethod            = "Args"
-    RunMethod             = "Run"
+    ProcessMarker           = "Process"
+    PIDType                 = "PID"
+    StartFunction           = "Start"
+    ReserveFunction         = "Reserve"
+    StartReservedFunction   = "StartReserved"
+    StartSupervisorFunction = "StartSupervisor"
+    ProcMethod              = "Proc"
+    ArgsMethod              = "Args"
+    SupervisorMethod        = "Supervisor"
+    RunMethod               = "Run"
 )
 ```
 
