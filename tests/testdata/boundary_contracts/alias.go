@@ -6,4 +6,4 @@ import (
 
 var _ model.Scalar[int]
 
-func missing()
+func missing(model.Scalar[int])
