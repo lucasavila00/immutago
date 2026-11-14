@@ -124,7 +124,7 @@ StartSupervisor returns a new supervisor that parent runs as a child. When the n
 func (s *Supervisor) Stop() <-chan struct{}
 ```
 
-Stop begins stopping; the channel closes when all children have stopped, last started first. Stop does not wait, so a process can stop its own supervisor from Run.
+Stop begins stopping; the channel closes when all children have stopped, last started first. Stop does not wait, so a process can stop its own supervisor from Run. For a nested supervisor, completion also means its parent has removed its child entry.
 
 ## type UncheckedDependency
 

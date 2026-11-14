@@ -48,7 +48,7 @@ fields of a process are not protected storage. The
   argument type, and named `proc.UncheckedDependency[T]` fields of an argument struct
   with exactly one marker.
 
-`proc.UncheckedDependency[T]` is a [trusted dependency](../processes.md#trusted-dependencies).
+`proc.UncheckedDependency[T]` is an [unchecked dependency](../processes.md#unchecked-dependencies).
 The type proof rejects it, so it cannot be in an Owner value, a frozen
 collection, another marked struct, or an exported method signature. `checkStruct`
 rejects a `proc.UncheckedDependency` field in an unmarked struct, which includes a

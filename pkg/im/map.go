@@ -2,17 +2,16 @@ package im
 
 import "maps"
 
-// FrozenMap is a read-only view of frozen map storage. Its zero value is empty.
-// K and V must be immutable. The analyzer requires exclusive native ownership before
-// freezing and rejects later source-handle uses. A FrozenMap copy shares storage.
+// FrozenMap is a read-only map. Its zero value is empty.
+// K and V must be immutable. Copies share the same read-only entries.
 type FrozenMap[K comparable, V any] struct {
 	values map[K]V
 }
 
-// FreezeMap freezes values without copying its entries or allocating.
-// The analyzer verifies exclusive ownership and consumes the source handle:
-// aliases are rejected, and the source handle cannot be used after this call.
-// FreezeMap performs no runtime validation.
+// FreezeMap makes values read-only without copying entries or allocating.
+// Keep values in one local variable before Freeze. Afterward, read through the
+// returned FrozenMap. The checker rejects aliases and use of the old map.
+// Run immutago to enforce these rules; Freeze performs no runtime validation.
 func FreezeMap[K comparable, V any](values map[K]V) FrozenMap[K, V] {
 	return FrozenMap[K, V]{values: values}
 }
