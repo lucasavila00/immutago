@@ -2,6 +2,7 @@
 // Uses the reverse-postorder traversal used by rustc_mir_dataflow.
 // Source revision and license: third_party/rustc.
 
+// Package flow supplies control-flow graphs for builder consumption checks.
 package flow
 
 import "slices"

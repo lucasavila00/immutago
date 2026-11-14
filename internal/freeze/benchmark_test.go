@@ -13,11 +13,11 @@ func BenchmarkCoreConsumedFlow(b *testing.B) {
 		for _, topology := range []string{"linear", "branches", "cycle"} {
 			name := fmt.Sprintf("owners=%d/%s", count, topology)
 			b.Run(name, func(b *testing.B) {
-				graph, gen, kill := benchmarkFlow(count, topology)
+				graph, effects := benchmarkFlow(count, topology)
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					consumedFlow(graph, gen, kill, count)
+					consumedFlow(graph, effects, count)
 				}
 			})
 		}
@@ -25,13 +25,12 @@ func BenchmarkCoreConsumedFlow(b *testing.B) {
 }
 
 // benchmarkFlow creates a graph that retains each consumed owner at later points.
-func benchmarkFlow(count int, topology string) (flow.Graph, []flow.Set, []flow.Set) {
+func benchmarkFlow(count int, topology string) (flow.Graph, []ownerEffect) {
 	successors := make([][]int, count+1)
-	gen, kill := make([]flow.Set, count+1), make([]flow.Set, count+1)
+	effects := make([]ownerEffect, count+1)
 	for point := range count + 1 {
-		gen[point], kill[point] = flow.NewSet(), flow.NewSet()
 		if point < count {
-			gen[point].Add(point)
+			effects[point] = ownerEffect{owner: point, consume: true}
 			successors[point] = append(successors[point], point+1)
 		}
 	}
@@ -43,5 +42,5 @@ func benchmarkFlow(count int, topology string) (flow.Graph, []flow.Set, []flow.S
 	if topology == "cycle" {
 		successors[count] = append(successors[count], count/2)
 	}
-	return flow.NewGraph(successors), gen, kill
+	return flow.NewGraph(successors), effects
 }
