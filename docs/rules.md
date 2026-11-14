@@ -74,7 +74,8 @@ Rejected generic examples (**not exhaustive**):
 
 ## Construction and pointers
 
-Prepare ordinary locals, then construct the object. Copies are also immutable.
+Prepare ordinary locals, then construct the object. Copies of marked values and
+frozen collections stay immutable.
 Struct/array copies copy their fields; frozen wrappers and shared pointers keep
 referring to the same read-only storage.
 
@@ -87,6 +88,24 @@ p := &SharedPoint{X: 1}
 q := p
 p = &SharedPoint{X: 2} // q still observes X == 1.
 ```
+
+### Values and scalar reads
+
+| Allowed form | Example |
+| --- | --- |
+| Zero value or literal | `var point SharedPoint`, `SharedPoint{X: 1}`, `[2]SharedPoint{}` |
+| Copy a value, field, or array element | `other := point`, `x := point.X`, `child := points[i]` |
+| Compare comparable values or arrays with `==` or `!=` | `same := point == other`, `same := points == otherPoints` |
+| Array length and capacity | `len(points)`, `cap(points)` |
+| Scalar unary `+`, `-`, `!`, `^`; scalar binary operators and conversions | `-point.X`, `point.X + 1`, `int64(point.X)` |
+| Use scalar reads in literals or indices; index or slice strings | `[]int{point.X}`, `a[point.X]`, `user.Name[1:]` |
+| Pass scalar reads to ordinary calls, including builtins, function variables, interface methods, and generics | `callback(point.X)`, `identity(point.X)` |
+
+A scalar read produces ordinary Go data. The statement that reads protected
+storage must still match the statement list below. After `x := point.X`, uses
+of `x` follow ordinary Go rules. Copies that contain marked values, pointers, or frozen collections remain protected.
+Compiler-constant operands, such as the array in `len([1]SharedPoint{})`, do
+not perform runtime reads or create storage.
 
 ### Pointers: both markers
 
@@ -155,7 +174,8 @@ The one-destination rule applies to assignments and declarations, not returns.
 `Get` is the only two-destination exception; both destinations must be new local
 names or blanks. Blocks, `break`, and `continue` follow ordinary Go rules.
 Whole package variables can also be reassigned; their objects remain immutable.
-Calls are direct, synchronous, and concretely typed; dependencies are checked.
+Calls carrying protected values or pointers must be direct, synchronous, and
+concretely typed; dependencies are checked.
 
 Rejected statement and call examples (**not exhaustive**):
 
@@ -223,6 +243,9 @@ A branch or loop cannot make a consumed handle usable again. Ordinary scalar
 clones that are never frozen follow ordinary Go container rules.
 
 ### Reads and Clone
+
+Zero frozen values are empty: `var values im.FrozenSlice[int]` or
+`values := im.FrozenSlice[int]{}`; the same forms work for `im.FrozenMap`.
 
 | Allowed method | Example |
 | --- | --- |

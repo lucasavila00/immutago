@@ -259,16 +259,22 @@ func callableContains(t types.Type, seen map[types.Type]bool) bool {
 	case *types.Chan:
 		return callableContains(storage.Elem(), seen)
 	case *types.Struct:
-		for field := range storage.Fields() {
-			if callableContains(field.Type(), seen) {
-				return true
-			}
-		}
+		return fieldsContainCallable(storage, seen)
 	case *types.Interface:
 		for method := range storage.Methods() {
 			if callableContains(method.Type(), seen) {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+// fieldsContainCallable includes callback contracts inside named and recursive fields.
+func fieldsContainCallable(storage *types.Struct, seen map[types.Type]bool) bool {
+	for field := range storage.Fields() {
+		if callableContains(field.Type(), seen) {
+			return true
 		}
 	}
 	return false

@@ -90,19 +90,14 @@ func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) string {
 			return rule
 		}
 	}
-	for index, source := range statement.Rhs {
-		if len(statement.Lhs) == 1 {
-			if rule := c.matchBuilderBinding(statement.Lhs[0], source, statement.Tok == token.DEFINE); rule != "" {
-				return rule
-			}
+	source := statement.Rhs[0]
+	if len(statement.Lhs) == 1 {
+		if rule := c.matchBuilderBinding(statement.Lhs[0], source, statement.Tok == token.DEFINE); rule != "" {
+			return rule
 		}
-		if tuple, ok := c.pass.TypesInfo.TypeOf(source).(*types.Tuple); ok {
-			for item := 0; item < tuple.Len(); item++ {
-				if rule := c.matchBinding(tuple.At(item).Type(), statement.Lhs[item]); rule != "" {
-					return rule
-				}
-			}
-		} else if rule := c.matchBinding(c.pass.TypesInfo.TypeOf(source), statement.Lhs[index]); rule != "" {
+	}
+	for index, destination := range statement.Lhs {
+		if rule := c.matchBinding(c.bindingSource(source, index), destination); rule != "" {
 			return rule
 		}
 	}
@@ -144,23 +139,30 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 			return "global LocalRef pointers are unsupported"
 		}
 	}
-	for index, source := range declaration.Values {
-		if len(declaration.Names) == 1 {
-			if rule := c.matchBuilderBinding(declaration.Names[0], source, true); rule != "" {
-				return rule
-			}
+	if len(declaration.Values) == 0 {
+		return ""
+	}
+	source := declaration.Values[0]
+	if len(declaration.Names) == 1 {
+		if rule := c.matchBuilderBinding(declaration.Names[0], source, true); rule != "" {
+			return rule
 		}
-		if tuple, ok := c.pass.TypesInfo.TypeOf(source).(*types.Tuple); ok {
-			for item := 0; item < tuple.Len(); item++ {
-				if rule := c.matchBinding(tuple.At(item).Type(), declaration.Names[item]); rule != "" {
-					return rule
-				}
-			}
-		} else if rule := c.matchBinding(c.pass.TypesInfo.TypeOf(source), declaration.Names[index]); rule != "" {
+	}
+	for index, destination := range declaration.Names {
+		if rule := c.matchBinding(c.bindingSource(source, index), destination); rule != "" {
 			return rule
 		}
 	}
 	return ""
+}
+
+// bindingSource resolves a whole value or one component of a compiler-checked tuple.
+func (c *subsetChecks) bindingSource(source ast.Expr, index int) types.Type {
+	t := c.pass.TypesInfo.TypeOf(source)
+	if tuple, ok := t.(*types.Tuple); ok {
+		return tuple.At(index).Type()
+	}
+	return t
 }
 
 // matchReturn maps each explicit result to its declared result type.
@@ -275,6 +277,9 @@ func (c *subsetChecks) matchClosure(literal *ast.FuncLit) {
 	ast.Inspect(literal.Body, func(node ast.Node) bool {
 		name, ok := node.(*ast.Ident)
 		if !ok {
+			return true
+		}
+		if checker.Unevaluated(c.pass.TypesInfo, c.parents, name) {
 			return true
 		}
 		variable, ok := c.pass.TypesInfo.Uses[name].(*types.Var)

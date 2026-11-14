@@ -118,6 +118,10 @@ func (p *proof) structure(result *obligation, t types.Type, structure *types.Str
 		result.reason = "struct cannot embed both im.Shared and im.LocalRef"
 		return
 	}
+	if MarkerCount(t) != 1 {
+		result.reason = "struct must embed exactly one immutable marker"
+		return
+	}
 	for field := range structure.Fields() {
 		p.depend(result, field.Type(), field.Name()+": ")
 	}

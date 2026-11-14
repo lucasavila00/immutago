@@ -11,3 +11,16 @@ func constantBuilderOperands() {
 	const index = len([1]int{values[100]})
 	println(before, after, address, index)
 }
+
+type ConstantLocal struct {
+	im.LocalRef
+}
+
+func constantClosureOperands() {
+	shared := ArrayLengthValue{}
+	local := &ConstantLocal{}
+	read := func() int {
+		return len([1]ArrayLengthValue{shared}) + len([1]*ConstantLocal{local})
+	}
+	println(read())
+}

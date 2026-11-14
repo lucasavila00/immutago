@@ -46,7 +46,7 @@ IsLibraryType identifies a library type by package identity and name, not spelli
 func LocalRef(t types.Type) bool
 ```
 
-LocalRef reports whether a struct directly embeds im.LocalRef by value.
+LocalRef reports the presence of an embedded im.LocalRef value, not type validity.
 
 ## func Marked
 
@@ -54,7 +54,15 @@ LocalRef reports whether a struct directly embeds im.LocalRef by value.
 func Marked(t types.Type) bool
 ```
 
-Marked reports whether a struct directly embeds either immutable marker by value.
+Marked reports the presence of either embedded marker, including invalid combinations. It does not prove immutability; Reason checks the complete type contract.
+
+## func MarkerCount
+
+```go
+func MarkerCount(t types.Type) int
+```
+
+MarkerCount counts direct embedded marker identities, including aliases of the same marker.
 
 ## func Reason
 
@@ -70,7 +78,7 @@ Reason proves concrete immutable storage or returns the first failed component.
 func Shared(t types.Type) bool
 ```
 
-Shared reports whether a struct directly embeds im.Shared by value.
+Shared reports the presence of an embedded im.Shared value, not type validity.
 
 ## func Unevaluated
 

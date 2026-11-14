@@ -7,6 +7,10 @@ local_reference_escape.go:14:5: unsupported immutable operation: global LocalRef
 local_reference_escape.go:16:31: unsupported immutable operation: returning LocalRef pointers is unsupported
   source: return &Local{Value: 1}
   fix: return a LocalRef value copy, or use im.Shared for objects whose pointers must be shared
+local_reference_escape.go:16:6: unsupported immutable operation: returning LocalRef pointers is unsupported
+  source: returned
+  type: func() *local_reference_escape.Local
+  fix: return a LocalRef value copy, or use im.Shared for objects whose pointers must be shared
 local_reference_escape.go:17:31: unsupported immutable operation: global LocalRef pointers are unsupported
   source: global = value
   fix: keep the LocalRef pointer local, or store a value copy

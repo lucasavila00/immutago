@@ -184,6 +184,8 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	marked := checker.Marked(t)
 	if checker.Shared(t) && checker.LocalRef(t) {
 		c.report(pos, "struct cannot embed both im.Shared and im.LocalRef")
+	} else if checker.MarkerCount(t) > 1 {
+		c.report(pos, "struct must embed exactly one immutable marker; aliases count as the same marker")
 	}
 	for field := range s.Fields() {
 		ft := field.Type()

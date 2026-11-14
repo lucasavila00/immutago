@@ -183,6 +183,9 @@ func subsetTuple(tuple *types.Tuple, seen map[types.Type]bool) string {
 
 // expressionType checks resolved types while admitting native builders checked by ownership analysis.
 func (c *subsetChecks) expressionType(expression ast.Expr) {
+	if checker.Unevaluated(c.pass.TypesInfo, c.parents, expression) {
+		return
+	}
 	// A builtin signature describes this call, not a user function's return boundary.
 	if name, ok := expression.(*ast.Ident); ok {
 		if c.pass.TypesInfo.Defs[name] != nil {

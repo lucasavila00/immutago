@@ -36,6 +36,10 @@ func TestMarkerIdentities(t *testing.T) {
 					t.Fatal("non-marker type established a marker policy")
 				}
 			}
+			duplicate := markedType("Duplicate", marker, types.NewField(token.NoPos, nil, "Alias", alias, true))
+			if MarkerCount(duplicate) != 2 || !strings.Contains(Reason(duplicate), "exactly one immutable marker") {
+				t.Fatal("duplicate aliases passed the structural proof")
+			}
 		})
 	}
 }
