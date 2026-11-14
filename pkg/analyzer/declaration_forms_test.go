@@ -36,17 +36,32 @@ func TestDeclaredStorageForms(t *testing.T) {
 	}
 }
 
-// TestConstantMetadataHasNoRuntimeStorage uses the compiler's constant proof, not a type-subtree exemption.
-func TestConstantMetadataHasNoRuntimeStorage(t *testing.T) {
+// TestConstantOperandsUseSourceRules checks protected operands even when Go computes a constant.
+func TestConstantOperandsUseSourceRules(t *testing.T) {
 	cases := []string{
 		`type Holder struct{im.Shared;Values [len([1]Value{})]int}`,
 		`var first,second [len([1]Value{})]int`,
+		`var value [len([1]Value{})]int`,
+		`func f(value [len([1]Value{})]int){}`,
+		`func f(){const count=len([1]Value{});_=count}`,
 		`func f(){first,second:=len([1]Value{}),2;_,_=first,second}`,
 		`func f[T any](){var values [len([1]Value{})]int;_=values}`,
+		`func f(){values:=[]int{1};_=im.FreezeSlice(values);const n=len([1]int{values[99]});_=n}`,
 	}
 	for _, source := range cases {
+		if got := checkSource(t, `type Value struct{im.Shared;X int};`+source); got == "" {
+			t.Fatalf("protected constant operand accepted: %s", source)
+		}
+	}
+	for _, source := range []string{
+		`func f(){values:=[1]Value{};n:=len(values);_=n}`,
+		`func f(){values:=[1]Value{};n:=cap(values);_=n}`,
+		`type Holder struct{im.Shared;Values [len([1]int{})]int}`,
+		`func f[T any](){var values [len([1]int{})]int;_=values}`,
+		`func f(){values:=[]int{1};const n=len([1]int{values[99]});_=n}`,
+	} {
 		if got := checkSource(t, `type Value struct{im.Shared;X int};`+source); got != "" {
-			t.Fatalf("constant metadata rejected: %s", got)
+			t.Fatalf("ordinary constant or direct array length rejected: %s", got)
 		}
 	}
 	got := checkSource(t, `type Value struct{im.Shared;X int};func makeValue()Value{return Value{}};

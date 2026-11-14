@@ -1,0 +1,63 @@
+dependency_transport.go:12:67: unsupported immutable operation: protected value conversions are unsupported
+  source: HiddenDependency(proc.Trust(p))
+  type: process.HiddenDependency
+  fix: construct the destination marked value from copied fields; keep frozen collections in their original im type
+dependency_transport.go:15:38: unmarked struct contains immutable field UncheckedDependency; embed an immutable marker
+  owner: process.EmbeddedDependency; field type: proc.UncheckedDependency[*int]
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Shared or im.Scoped and make all fields immutable, or remove the immutable field
+dependency_transport.go:19:2: unmarked struct contains immutable field D; embed an immutable marker
+  owner: process.PointerDependency; field type: *proc.UncheckedDependency[*int]
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Shared or im.Scoped and make all fields immutable, or remove the immutable field
+dependency_transport.go:19:4: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: *proc.UncheckedDependency[*int]
+  type: *proc.UncheckedDependency[*int]
+  fix: allocate a concrete struct that embeds im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses
+dependency_transport.go:24:2: unmarked struct contains immutable field D; embed an immutable marker
+  owner: process.ArrayDependency; field type: [1]proc.UncheckedDependency[*int]
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Shared or im.Scoped and make all fields immutable, or remove the immutable field
+dependency_transport.go:24:4: unsupported immutable operation: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+  source: [1]proc.UncheckedDependency[*int]
+  type: [1]proc.UncheckedDependency[*int]
+  fix: use the documented immutable value and reference forms
+dependency_transport.go:29:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: value interface{ Value() *int } = d
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+dependency_transport.go:34:63: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: consumeDependencies(d)
+  type: ()
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+dependency_transport.go:40:36: unsupported immutable operation: Log: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+  source: *SenderArgs
+  type: *process.SenderArgs
+  fix: use the documented immutable value and reference forms
+dependency_transport.go:40:53: unsupported immutable operation: Log: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+  source: args
+  type: *process.SenderArgs
+  fix: use the documented immutable value and reference forms
+dependency_transport.go:43:34: unsupported immutable operation: Log: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+  source: [1]SenderArgs
+  type: [1]process.SenderArgs
+  fix: use the documented immutable value and reference forms
+dependency_transport.go:43:53: unsupported immutable operation: Log: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+  source: args
+  type: [1]process.SenderArgs
+  fix: use the documented immutable value and reference forms
+dependency_transport.go:46:32: unsupported native builder: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+  fix: use allowed stored types for builder keys and elements
+dependency_transport.go:46:75: unsupported owned container deps: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+dependency_transport.go:49:5: unsupported immutable operation: process dependencies cannot enter package variables
+  source: globalDependency proc.UncheckedDependency[*int]
+  fix: build the process arguments in a local variable and pass them to proc.Start or proc.StartReserved
+dependency_transport.go:52:5: unsupported immutable operation: process dependencies cannot enter package variables
+  source: globalArguments SenderArgs
+  fix: build the process arguments in a local variable and pass them to proc.Start or proc.StartReserved
+dependency_transport.go:56:2: unsupported native builder: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+  fix: use allowed stored types for builder keys and elements
+dependency_transport.go:61:26: unsupported native builder: Log: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+  fix: use allowed stored types for builder keys and elements
+dependency_transport.go:64:31: unsupported native builder: proc.UncheckedDependency is allowed only as a process argument type or a field of one
+  fix: use allowed stored types for builder keys and elements
+dependency_transport.go:6:6: defined copies of proc.UncheckedDependency are unsupported; use a type alias

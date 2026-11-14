@@ -9,7 +9,8 @@ restart replaces the struct.
 Method calls are ordinary Go calls in the caller's goroutine. There is no
 mailbox and calls are not serialized. Use a mutex when methods and `Run` access
 the same mutable fields. The checker requires immutable start arguments and
-exported method parameters/results.
+exported method parameters/results. The one exception is an
+[unchecked dependency](#unchecked-dependencies) in the start arguments.
 
 ## Start and call a process
 
@@ -89,6 +90,53 @@ decision := limiter.Proc().Take()
 The limiter calls the loader through its PID. Until the loader first publishes,
 its limit is zero and Take returns Limited. Both processes stop when you wait
 on `<-group.Stop()`.
+
+## Unchecked dependencies
+
+A process can need a logger, an HTTP client, a factory function, or a test
+fake. These values are mutable, so they are not allowed types. Wrap each one in
+`proc.UncheckedDependency[T]` with `proc.Trust`:
+
+```go
+type FetcherArgs struct {
+    im.Shared
+    BaseURL string
+    Log     proc.UncheckedDependency[*slog.Logger]
+    Client  proc.UncheckedDependency[*http.Client]
+}
+
+func (f *Fetcher) Run(ctx context.Context) {
+    f.Args().Log.Value().Info("start", "url", f.Args().BaseURL)
+}
+
+proc.Start[Fetcher](root, FetcherArgs{
+    BaseURL: "https://example.com",
+    Log:     proc.Trust(logger),
+    Client:  proc.Trust(http.DefaultClient),
+})
+```
+
+The checker does not look inside the dependency. With `proc.Trust(v)`, you
+promise that concurrent use of `v` is safe. The call makes that promise visible
+to reviewers; it does not make `v` immutable. `proc.UncheckedDependency` is the
+only exception to the immutable start-argument rules. Code that creates `v`
+and uses the result of `Value()` still follows the normal source rules.
+
+A false promise is a data race that the checker cannot find. Without
+`proc.Trust`, the checker rejects a map in the start arguments. With it, the
+checker accepts the map, as in the
+[trusted map](../tests/testdata/accepted/process/trusted_map.go) example:
+
+```go
+proc.Start[Reporter](children, ReporterArgs{Seen: proc.Trust(c.seen)}) // accepted; c.seen is still written: a data race
+```
+
+Wrap only values that are safe for concurrent use, for example `*slog.Logger`,
+`*http.Client`, or a function that does not change shared memory. The
+[dependencies](../tests/testdata/accepted/process/dependencies.go) example
+shows a logger, a client, a factory function, and a test fake. Read the value
+only with `l.Args().Log.Value()` in a process method. The
+[process reference](process-forms.md#unchecked-dependencies) lists every form.
 
 ## Start and readiness
 

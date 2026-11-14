@@ -19,9 +19,6 @@ func localReference(t types.Type) bool {
 
 // operationExpression separates runtime operands from compiler type and field metadata.
 func (c *subsetChecks) operationExpression(expression ast.Expr) bool {
-	if checker.Unevaluated(c.pass.TypesInfo, c.parents, c.unevaluated, expression) {
-		return false
-	}
 	if selector, ok := c.parents[expression].(*ast.SelectorExpr); ok && selector.Sel == expression {
 		return false
 	}
@@ -100,6 +97,9 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	case *ast.TypeAssertExpr:
 		return "immutable interface assertions are unsupported"
 	case *ast.FuncLit:
+		if c.trustedValue(source) {
+			return ""
+		}
 		return "immutable callbacks are unsupported"
 	}
 	return "protected operation is outside the supported expression forms"
@@ -165,6 +165,9 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 
 // matchFunctionValue permits protected functions only as direct callees.
 func (c *subsetChecks) matchFunctionValue(expression ast.Expr) string {
+	if c.trustedValue(expression) {
+		return ""
+	}
 	if call := c.directCall(expression); call != nil {
 		return c.matchCall(call)
 	}
@@ -197,6 +200,9 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 		return ""
 	}
 	if selection.Kind() == types.MethodVal && (c.processValue(selection.Recv()) || procMethod(selection.Obj())) {
+		return ""
+	}
+	if c.dependencyValue(selector) {
 		return ""
 	}
 	if !c.exactCollectionMethod(selector) {
