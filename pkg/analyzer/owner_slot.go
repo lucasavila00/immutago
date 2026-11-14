@@ -84,7 +84,13 @@ func (c *subsetChecks) hasSlotValue(t types.Type) bool {
 	if result, ok := c.slots[t]; ok {
 		return result
 	}
-	result := containsSlotValue(t, make(map[types.Type]bool))
+	seen := make(map[types.Type]bool)
+	result := containsSlotValue(t, seen)
+	if !result {
+		for visited := range seen {
+			c.slots[visited] = false
+		}
+	}
 	c.slots[t] = result
 	return result
 }
@@ -134,22 +140,36 @@ func (c *subsetChecks) checkOwnerNode(node ast.Node) {
 	case *ast.FuncLit:
 		c.checkSlotCapture(n)
 	case *ast.FuncType:
+		if _, direct := c.parents[n].(*ast.FuncDecl); !direct {
+			if signature, ok := c.pass.TypesInfo.TypeOf(n).(*types.Signature); ok {
+				c.checkHolderSignature(signature, false, n)
+			}
+		}
 		if c.hasSlotValue(c.pass.TypesInfo.TypeOf(n)) {
 			c.pass.Reportf(n.Pos(), "function types cannot pass or return Owner slots or holders by value")
 		}
 	case *ast.FuncDecl:
 		c.checkSlotFunction(n)
 	case *ast.TypeSpec:
+		if !n.Assign.IsValid() && c.holderPointer(c.pass.TypesInfo.TypeOf(n.Type)) {
+			c.pass.Reportf(n.Pos(), "defined holder pointer types are unsupported")
+		}
 		if !n.Assign.IsValid() && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(n.Type), "Owner") {
 			c.pass.Reportf(n.Pos(), "defined copies of Owner slots are unsupported")
 		}
 	case *ast.ArrayType, *ast.MapType, *ast.ChanType:
-		if expression, ok := node.(ast.Expr); ok && c.hasSlotValue(c.pass.TypesInfo.TypeOf(expression)) {
-			c.pass.Reportf(node.Pos(), "containers of Owner slots or holders are unsupported")
+		if expression, ok := node.(ast.Expr); ok {
+			typ := c.pass.TypesInfo.TypeOf(expression)
+			if c.hasSlotValue(typ) || c.hasHolderReference(typ) {
+				c.pass.Reportf(node.Pos(), "containers of Owner slots or holders are unsupported")
+			}
 		}
 	case *ast.StarExpr:
-		if c.pass.TypesInfo.Types[n].IsType() && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(n.X), "Owner") {
-			c.pass.Reportf(n.Pos(), "pointers to Owner slots are unsupported")
+		if c.pass.TypesInfo.Types[n].IsType() {
+			element := c.pass.TypesInfo.TypeOf(n.X)
+			if checker.IsLibraryType(element, "Owner") || c.hasHolderReference(element) {
+				c.pass.Reportf(n.Pos(), "pointers to Owner slots or holder references are unsupported")
+			}
 		}
 	case *ast.ValueSpec:
 		c.checkSlotDeclaration(n)
@@ -171,6 +191,7 @@ func (c *subsetChecks) checkSlotFunction(n *ast.FuncDecl) {
 	if sig == nil {
 		return
 	}
+	c.checkHolderSignature(sig, true, n)
 	if (sig.Recv() != nil && c.hasSlotValue(sig.Recv().Type())) ||
 		c.slotTuple(sig.Params()) || c.slotTuple(sig.Results()) {
 		c.pass.Reportf(n.Pos(), "Owner slots and their holders cannot be passed or returned by value")
@@ -181,8 +202,14 @@ func (c *subsetChecks) checkSlotFunction(n *ast.FuncDecl) {
 func (c *subsetChecks) checkSlotDeclaration(n *ast.ValueSpec) {
 	for _, name := range n.Names {
 		variable, ok := c.pass.TypesInfo.Defs[name].(*types.Var)
-		if ok && checker.IsLibraryType(variable.Type(), "Owner") && variable.Parent() != c.pass.Pkg.Scope() {
+		if !ok {
+			continue
+		}
+		if checker.IsLibraryType(variable.Type(), "Owner") && variable.Parent() != c.pass.Pkg.Scope() {
 			c.pass.Reportf(name.Pos(), "Owner slots require a field or package variable")
+		}
+		if variable.Parent() == c.pass.Pkg.Scope() && c.hasHolderReference(variable.Type()) {
+			c.pass.Reportf(name.Pos(), "Owner holder pointers cannot be stored in package variables")
 		}
 	}
 }
@@ -194,6 +221,9 @@ func (c *subsetChecks) checkSlotFields(n *ast.StructType) {
 		return
 	}
 	for field := range structure.Fields() {
+		if c.hasHolderReference(field.Type()) {
+			c.pass.Reportf(n.Pos(), "Owner holder pointers cannot be stored in fields")
+		}
 		if c.hasSlotValue(field.Type()) && (!checker.IsLibraryType(field.Type(), "Owner") || field.Embedded()) {
 			c.pass.Reportf(n.Pos(), "Owner slots require direct named fields; nested slot storage is unsupported")
 		}
@@ -222,7 +252,7 @@ func (c *subsetChecks) checkSlotExpression(expression ast.Expr) {
 		}
 	}
 	typ := c.pass.TypesInfo.TypeOf(expression)
-	if c.holderPointer(typ) && !c.allowedHolderPointer(expression) {
+	if c.holderPointer(typ) && (!c.validHolderSource(expression) || !c.allowedHolderPointer(expression)) {
 		c.pass.Reportf(expression.Pos(), "Owner holder pointers require local bindings or direct typed calls")
 		return
 	}
@@ -276,6 +306,25 @@ func (c *subsetChecks) holderPointer(t types.Type) bool {
 	return structure && c.hasSlotValue(pointer.Elem())
 }
 
+// validHolderSource permits local bindings and fresh holder allocation.
+func (c *subsetChecks) validHolderSource(expression ast.Expr) bool {
+	switch source := expression.(type) {
+	case *ast.ParenExpr:
+		return true
+	case *ast.Ident:
+		variable, ok := c.pass.TypesInfo.ObjectOf(source).(*types.Var)
+		return ok && variable.Parent() != variable.Pkg().Scope()
+	case *ast.UnaryExpr:
+		_, literal := ast.Unparen(source.X).(*ast.CompositeLit)
+		return source.Op == token.AND && literal
+	case *ast.CallExpr:
+		builtin, ok := c.calledObject(source.Fun).(*types.Builtin)
+		return ok && builtin.Name() == "new" && len(source.Args) == 1 &&
+			c.pass.TypesInfo.Types[source.Args[0]].IsType()
+	}
+	return false
+}
+
 // allowedHolderPointer permits local pointers, field selection, and checked direct calls.
 func (c *subsetChecks) allowedHolderPointer(expression ast.Expr) bool {
 	parent := c.parents[expression]
@@ -300,6 +349,9 @@ func (c *subsetChecks) allowedHolderPointer(expression ast.Expr) bool {
 		}
 		return c.localHolderBinding(node.Names[0], expression)
 	case *ast.CallExpr:
+		if _, deferred := c.parents[node].(*ast.DeferStmt); deferred {
+			return false
+		}
 		return c.directHolderArgument(node, expression)
 	}
 	return false
@@ -324,6 +376,9 @@ func (c *subsetChecks) directHolderArgument(call *ast.CallExpr, expression ast.E
 	}
 	for index, argument := range call.Args {
 		if argument == expression {
+			if signature.Variadic() && index >= signature.Params().Len()-1 {
+				return false
+			}
 			parameter := callParameter(signature, index, call.Ellipsis.IsValid())
 			return types.Identical(c.pass.TypesInfo.TypeOf(expression), parameter)
 		}

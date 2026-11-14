@@ -182,9 +182,11 @@ go publish(loader)
 ```
 
 A holder is a struct with a direct named slot field. Use holder pointers for
-calls; do not copy a holder or slot value. Slot and holder pointer captures,
-interfaces, indirect calls, user generic arguments, and `go` or `defer` slot
-operations are unsupported. A loaded pointer follows all Scoped pointer
+calls; do not copy a holder or slot value. Slot and holder pointer captures, storage in fields, containers or package
+variables, pointer results, variadic pointer arguments, interfaces, indirect calls,
+user generic arguments, and `go` or `defer` slot operations are unsupported.
+Holder pointers can pass to fixed concrete parameters of direct named functions.
+A direct named publisher can run in a goroutine, as shown above. A loaded pointer follows all Scoped pointer
 rules. Load it into a local before use. A Store argument must be the direct
 `&T{...}` or `new(T)` construction for the slot's exact `T`.
 
@@ -196,6 +198,8 @@ Rejected examples are not exhaustive:
 | `copy := loader.Current` or `copy := *loader` | Keep and pass `loader` as a pointer. |
 | `loader.Current.Store(point)` | `loader.Current.Store(&ScopedPoint{X: point.X})` |
 | `return loader.Current.Load()` | `point := loader.Current.Load(); return *point` with a value result. |
+| `retain(loader)` where `retain` takes `...*Loader` | Use a direct function with a fixed `*Loader` parameter. |
+| `var saved *Loader` at package scope | Keep the pointer in a local variable. |
 | `read := loader.Current.Load` | `point := loader.Current.Load()` |
 | `loader.Current.Load().X = 2` | `loader.Current.Store(&ScopedPoint{X: 2})` |
 | `type Outer struct { Value Loader }` | Keep the slot field in the unmarked holder. |

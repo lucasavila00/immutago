@@ -12,6 +12,7 @@ import (
 // subsetChecks matches immutable operations and rejects unsupported transport.
 type subsetChecks struct {
 	slots       map[types.Type]bool
+	holderRefs  map[types.Type]bool
 	pass        *analysis.Pass
 	parents     map[ast.Node]ast.Node
 	unevaluated map[ast.Node]bool
@@ -209,7 +210,7 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 			c.report(expression, "immutable callbacks are unsupported")
 		}
 	}
-	if storedScopederence(t, make(map[types.Type]bool)) {
+	if storedScopedReference(t, make(map[types.Type]bool)) {
 		c.report(expression, "containers of Scoped pointers are unsupported")
 	}
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
@@ -236,8 +237,8 @@ func (c *subsetChecks) directSlotMethodExpression(expression ast.Expr) bool {
 	return c.ownedSlotSelector(selector) && c.directCall(selector) != nil
 }
 
-// storedScopederence checks native container elements even when the handle has an ownership proof.
-func storedScopederence(t types.Type, seen map[types.Type]bool) bool {
+// storedScopedReference checks native container elements even when the handle has an ownership proof.
+func storedScopedReference(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] {
 		return false
 	}
@@ -254,7 +255,7 @@ func storedScopederence(t types.Type, seen map[types.Type]bool) bool {
 		elements = []types.Type{storage.Elem()}
 	}
 	for _, element := range elements {
-		if localReference(element) || storedScopederence(element, seen) {
+		if localReference(element) || storedScopedReference(element, seen) {
 			return true
 		}
 	}

@@ -39,3 +39,6 @@ func Global() {
 	m := current.Load()
 	_ = m
 }
+
+// Background starts a checked publisher with a direct holder argument.
+func Background(l *Loader) { go Publish(l, "next", nil) }
