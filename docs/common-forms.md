@@ -19,6 +19,8 @@ type SharedLink struct { im.Shared; P *SharedPoint }
 
 Use the types below for struct fields and frozen collection keys and elements.
 This list is complete. It also applies to each nested field, key, and element.
+Process start arguments have one separate [unchecked dependency form](process-forms.md#unchecked-dependencies).
+An argument struct with a dependency field is not an allowed stored type.
 
 | Allowed form | Example |
 | --- | --- |

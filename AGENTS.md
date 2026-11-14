@@ -271,7 +271,7 @@ Require a reproduction and a relevant before/after measurement for a performance
 claim. Keep measurements in the PR, not in user guides. A smaller diff alone does
 not prove a better algorithm.
 
-### Current example: compiler-constant operands
+### Compiler-constant operands
 
 During PR #60 review, a new array proof rejected this previously accepted form:
 
@@ -280,16 +280,11 @@ During PR #60 review, a new array proof rejected this previously accepted form:
 f := func() int { return len([1]*Local{p}) }
 ```
 
-Go does not evaluate that array operand. Preserving the acceptance involved the
-checker's unevaluated-expression exception and caches. The initial response was
-to restore acceptance because the tests expected it. The user asked whether the
-feature was needed at all. A replacement can compute an ordinary length before
-the closure, or use the known array length.
+Go does not evaluate that array operand, but the source still mentions a
+protected reference in a closure. The user chose to remove the exception.
+Use the known length `1`, or compute an ordinary length before the closure.
 
-At the time of this entry, removing that exception is a proposal, not an
-implemented rule. The current reference still allows compiler-constant operands.
-Before adding another exception, compare rejecting protected references in those
-operands with removing the shared evaluation helper and its caches. Check type
-lengths, generic constants, closure captures, and Freeze together. If the rule
-changes, update the docs and tests as one change; do not quietly change snapshots
-or claim the proposal is already supported.
+Apply the same source rules to all operands. Direct array `len` and `cap` still
+work in allowed statements. Constant operands do not bypass capture, type
+placement, generic, or Freeze checks. The shared evaluation helper and both
+caches are removed. The guide and accepted/rejected fixtures record this rule.

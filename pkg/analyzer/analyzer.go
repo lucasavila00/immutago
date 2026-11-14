@@ -25,6 +25,8 @@
 // only as a method receiver or as a direct PID.Proc result that receives a direct
 // call of an exported method. Exported process methods take and return only
 // allowed stored types, and only proc.Start and proc.StartReserved create processes.
+// Process arguments can also carry proc.UncheckedDependency fields. The wrapper
+// has restricted source forms; its contents are trusted for concurrent use.
 package analyzer
 
 import (
