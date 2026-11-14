@@ -8,7 +8,6 @@ import (
 // TestExplicitSubsetRejects checks every excluded statement and reference form.
 func TestExplicitSubsetRejects(t *testing.T) {
 	cases := []struct{ name, source string }{
-		{"method", `func(v V)Read()int{return v.X}`},
 		{"promoted method", `type Count int;func(c Count)Read()int{return int(c)}
    type W struct{im.Shared;Count};func f(){var w W;_=w.Read()}`},
 		{"range protected value", `func empty(yield func(V)bool){};func f(){for v:=range empty{_=v.X}}`},
@@ -40,6 +39,7 @@ func TestExplicitSubsetRejects(t *testing.T) {
 // TestExplicitSubsetAccepts checks reference bindings, fresh map results, and explicit Freeze statements.
 func TestExplicitSubsetAccepts(t *testing.T) {
 	cases := []string{
+		`func(v V)Read()int{return v.X};func f(){v:=V{};_=v.Read()}`,
 		`func f(){p:=&V{};q:=p;p=&V{X:2};_=q;_=p}`,
 		`func f(){var p *V=nil;_=p}`,
 		`func f(){var p *V;_=p}`,

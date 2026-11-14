@@ -51,7 +51,7 @@ of allowed operations. Other protected operations are rejected.
 | Store in a local slice or map before Freeze | `values := []*Product{p}` |
 | Store in a package variable | `saved = p` |
 | Read a stored pointer | `p := order.Product`, `p := values[i]` |
-| Return or receive a pointer from a named function | `return p`, `p := product()` |
+| Return or receive a pointer from a named function or allowed method | `return p`, `p := product()`, `p := order.ProductPointer()` |
 
 ## Rejected examples
 

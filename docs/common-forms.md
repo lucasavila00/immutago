@@ -108,6 +108,7 @@ These forms apply to both `*SharedPoint` (`im.Shared`) and
 | Read a field or copy the whole value | `x := p.X`, `value := *p` |
 | Compare pointers or nil | `same := p == q`, `if p != nil { ... }` |
 | Pass to a direct function with an exact concrete parameter type | `read(p)`; `func read(p *SharedPoint) int { return p.X }` |
+| Call a method with the exact receiver type | `p.Read()`; `func (p *SharedPoint) Read() int { return p.X }` |
 
 Type aliases and parentheses are allowed in these forms. A pointer must point
 to a struct with an im marker. Create it with one of the `new` or `&T{...}`
@@ -125,6 +126,55 @@ Rejected pointer examples (**not exhaustive**):
 | `[]*SharedPoint{{X: 1}}` | Use explicit allocation: `[]*SharedPoint{&SharedPoint{X: 1}}`. |
 | `(*SharedPoint)(nil)` | `var p *SharedPoint = nil` |
 
+## Methods
+
+Declare methods on a concrete marked struct or its pointer. For example:
+
+```go
+func (p SharedPoint) XValue() int { return p.X }
+func (p *SharedPoint) ReadX() int { return p.X }
+
+type PointGroup struct { im.Shared; SharedPoint }
+
+point := SharedPoint{X: 3}
+p := &SharedPoint{X: 3}
+group := PointGroup{SharedPoint: point}
+point.XValue()
+p.ReadX()
+(*p).XValue()
+group.SharedPoint.XValue()
+```
+
+The receiver expression must have exactly the type in the method declaration.
+These forms are complete. Combine them with the construction, read, argument,
+result, and statement forms on this page.
+
+| Allowed form | Example |
+| --- | --- |
+| Value receiver on a marked struct | `func (p SharedPoint) XValue() int { return p.X }` |
+| Pointer receiver on a marked struct | `func (p *ScopedPoint) ReadX() int { return p.X }` |
+| Direct call on a value or pointer of the declared receiver type | `point.XValue()`, `p.ReadX()`, `(*p).XValue()` |
+| Explicit field or element as receiver | `group.SharedPoint.XValue()`, `points[i].XValue()` |
+| Constructed value, new pointer, or direct call result as receiver | `SharedPoint{X: 3}.XValue()`, `(&SharedPoint{X: 3}).ReadX()`, `makePoint().XValue()` |
+| Alias or parentheses in these forms | `type Position = SharedPoint`, `(p).ReadX()` |
+
+Method bodies follow the same rules as named functions. A Shared method can
+return its pointer. A Scoped method cannot save or return its pointer; it can
+return a value copy. Neither can change protected fields. Methods cannot have
+generic receivers. Process and fixed library methods use their own listed forms.
+
+Rejected examples (**not exhaustive**):
+
+| Rejected form | Replacement |
+| --- | --- |
+| `point.ReadX()` adds an implicit address | Construct `p := &SharedPoint{X: 3}`, then call `p.ReadX()`. |
+| `p.XValue()` adds an implicit dereference | `(*p).XValue()` |
+| `group.XValue()` selects a method from an embedded SharedPoint | `group.SharedPoint.XValue()` |
+| `p.Counter.Inc()` calls a method on a protected scalar field | Copy the scalar first: `count := p.Counter; count.Inc()`. |
+| `read := p.ReadX` or `(*SharedPoint).ReadX(p)` | `p.ReadX()` |
+| `reader.Read(p)` where reader has an unmarked type | Use a named function: `Read(p)`. |
+| `go p.ReadX()` or `defer p.ReadX()` | `p.ReadX()` |
+
 ## Statements and calls
 
 Use the operations above inside these statement forms:
@@ -136,6 +186,7 @@ Use the operations above inside these statement forms:
 | Bind a map reader's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |
+| Call a method in the list above | `n := p.ReadX()` |
 | Return values or `Shared` pointers, including multiple results | `return point`, `return p, true` |
 | Forward named results directly | `return makePair()`, `takePair(makePair())` |
 | Conditional or value switch | `if ready { p = makeSharedPoint() }`, `switch p.X { ... }` |
@@ -145,7 +196,7 @@ Use the operations above inside these statement forms:
 | Use checked operations in a select case body | `case <-ready: values[0] = value` |
 
 The one-destination rule applies to assignments and declarations, not returns.
-`Get` is the only two-destination exception; both destinations must be new local
+FrozenMap's `Get` is the only two-destination exception; both destinations must be new local
 names or blanks. Blocks, `break`, and `continue` follow ordinary Go rules.
 Assignments to package variables follow the same one-destination rule.
 Pass these values and pointers to named functions with the exact parameter
@@ -164,7 +215,6 @@ Rejected statement and call examples (**not exhaustive**):
 | `use(im.FreezeSlice(values))` | Bind Freeze to a local, then call `use`. |
 | `case _, values[0] = <-ready:` | Receive first; write in the case body. |
 | `case <-watch(im.FreezeSlice(values)):` | Freeze and compute the channel before the select; receive from the channel variable. |
-| `value.Read()` or `reader.Read(p)` with protected receiver/parameters/results | Use a named function: `Read(p)`. [Process methods](processes.md) are the exception. |
 | `var value any = p` | Use a concrete `*SharedPoint` variable. |
 | `callback(p)` through a function variable with protected arguments | Use a direct named function. |
 | `callback := func() int { return point.X }` | `x := point.X; callback := func() int { return x }` |

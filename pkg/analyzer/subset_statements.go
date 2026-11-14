@@ -40,7 +40,7 @@ func (c *subsetChecks) assignmentBinding(statement *ast.AssignStmt) {
 	}
 }
 
-// functionDeclaration checks the exact named-function contract.
+// functionDeclaration checks the exact contract for named functions and methods.
 func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 	signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)
 	if rule := subsetResults(signature.Results()); rule != "" {
@@ -50,8 +50,8 @@ func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 		c.genericStorage(declaration, declaration.Name)
 	}
 	if signature.Recv() != nil && !c.processSignature(signature) &&
-		(c.queries.Contains(signature.Recv().Type()) || c.queries.Callable(signature)) {
-		c.report(declaration.Name, "user-defined methods with immutable storage are unsupported")
+		(c.queries.Contains(signature.Recv().Type()) || c.queries.Callable(signature)) && !c.markedMethodReceiver(signature) {
+		c.report(declaration.Name, "immutable methods require a concrete non-generic marked receiver")
 	}
 }
 

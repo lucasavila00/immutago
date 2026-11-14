@@ -8,6 +8,8 @@ The function below can read the settings and return a number. It cannot save
 `settings` in a field, package variable, or closure, or return that pointer.
 The checker enforces these restrictions in the called function too.
 
+An [allowed method](common-forms.md#methods) follows the same rules.
+
 ```go
 package main
 

@@ -81,6 +81,15 @@ its enclosing statement. Each step must match an allowed form. Unmatched forms
 fail. [Call matches](../../pkg/analyzer/subset_calls.go) resolve function identity
 and actual parameter types, including tuple results and variadic elements.
 
+[Marked methods](../../pkg/analyzer/subset_methods.go) use one predicate for
+selector and call checks. It requires a direct method call, one selection index
+(no embedding path), a proved nongeneric marked receiver, and exact type identity
+between the written receiver and the method's declared receiver. Use the function
+object's signature; a selector signature can include Go's receiver adjustments.
+Check the receiver before the ordinary-call fast path: a method on a scalar
+field can take an implicit address even when its arguments and result are scalar.
+Method bodies use the existing write, transport, and statement checks.
+
 Per-pass caches reuse literal type matches. Each operand still passes its use
 and statement checks, including operands that Go does not evaluate. Storage
 classification follows one selector, index, dereference, or parenthesis chain,

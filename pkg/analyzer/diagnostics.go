@@ -70,9 +70,12 @@ var subsetFixes = map[string]string{
 		"continuing; do not pass protected values, references, or builders to go or defer",
 	"protected storage is unsupported in type switches": "keep concrete protected " +
 		"types in named function parameters instead of recovering values or references from interfaces",
-	"user-defined methods with immutable storage are unsupported": "use a named non-generic " +
-		"reader function with a concrete parameter; only direct Get, At, Len, All, and Clone " +
-		"calls on im collections are allowed",
+	"immutable methods require a concrete non-generic marked receiver": "declare the method on a proved " +
+		"marked struct or its pointer, or use a named function with concrete parameters",
+	"promoted immutable methods are unsupported": "name the embedded field explicitly and call a method " +
+		"declared on its marked type; copy scalar fields to ordinary locals before calling their methods",
+	"immutable method receivers must match their declared type exactly": "use an existing pointer for a pointer " +
+		"receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage",
 	"multiple assignments involving protected storage are unsupported": "write one protected " +
 		"destination per statement; bind a direct frozen.Get result only to two new local variables",
 	"protected storage is unsupported in select communication clauses": "keep protected " +
@@ -106,8 +109,8 @@ var subsetFixes = map[string]string{
 		"function directly with a concrete immutable parameter",
 	"immutable callbacks are unsupported": "call a named, non-generic " +
 		"function directly with a concrete immutable parameter",
-	"immutable method expressions are unsupported": "call the method on the collection directly " +
-		"(value.Method(...)); do not call it through the collection type",
+	"immutable method expressions are unsupported": "call the method on its receiver directly " +
+		"(value.Method(...)); do not call it through the type",
 	"bound immutable methods are unsupported": "call the method directly " +
 		"(value.Method(...)); do not save or pass its method value",
 	"closures cannot capture immutable storage": "copy scalar data before the closure, or use a named " +

@@ -4,6 +4,8 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+
+	"github.com/lucasavila00/immutago/internal/checker"
 )
 
 // checkUses rejects every handle-aliasing operation, including aliases created before freezing.
@@ -168,7 +170,7 @@ func (p *proof) activeRange(node ast.Node, variable *types.Var) bool {
 	return false
 }
 
-// pointerMethod identifies implicit addresses taken by pointer-receiver method selections.
+// pointerMethod rejects pointer methods except direct calls on stored marked pointers.
 func (p *proof) pointerMethod(node ast.Node) bool {
 	selector, ok := node.(*ast.SelectorExpr)
 	if !ok {
@@ -182,6 +184,14 @@ func (p *proof) pointerMethod(node ast.Node) bool {
 	if signature == nil || signature.Recv() == nil {
 		return false
 	}
-	_, pointer := signature.Recv().Type().Underlying().(*types.Pointer)
-	return pointer
+	signature = selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
+	pointer, ok := signature.Recv().Type().Underlying().(*types.Pointer)
+	if !ok {
+		return false
+	}
+	expression, parent := p.unparenParent(selector)
+	call, direct := parent.(*ast.CallExpr)
+	return !direct || call.Fun != expression || selection.Kind() != types.MethodVal || len(selection.Index()) != 1 ||
+		signature.RecvTypeParams().Len() != 0 || !checker.Marked(pointer.Elem()) ||
+		!types.Identical(p.pass.TypesInfo.TypeOf(selector.X), signature.Recv().Type())
 }
