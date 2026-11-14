@@ -412,3 +412,39 @@ func BenchmarkPIDProc(b *testing.B) {
 	}
 	<-root.Stop()
 }
+
+// TestTrustValue checks that Value returns the value that Trust wraps.
+func TestTrustValue(t *testing.T) {
+	counts := map[string]int{"a": 1}
+	Trust(counts).Value()["b"] = 2
+	if counts["b"] != 2 {
+		t.Fatalf("Value() is not the trusted map: %v", counts)
+	}
+	var zero Unchecked[func() int]
+	if zero.Value() != nil {
+		t.Fatal("zero Unchecked has a value")
+	}
+}
+
+// reporterArgs gives a process a trusted function.
+type reporterArgs struct {
+	im.Shared
+	Report Unchecked[func(string)]
+}
+
+// reporter calls its trusted function once.
+type reporter struct{ Process[reporterArgs] }
+
+// Run calls the trusted function.
+func (r *reporter) Run(context.Context) { r.Args().Report.Value()("run") }
+
+// TestTrustedArgument checks that a process receives the trusted value from its arguments.
+func TestTrustedArgument(t *testing.T) {
+	reported := make(chan string, 1)
+	root := NewRoot()
+	Start[reporter](root, reporterArgs{Report: Trust(func(event string) { reported <- event })})
+	if got := <-reported; got != "run" {
+		t.Fatalf("reported %q", got)
+	}
+	<-root.Stop()
+}
