@@ -46,7 +46,7 @@ type ConcurrentSafe[T any] struct {
 func AssumeConcurrentSafe[T any](v T) ConcurrentSafe[T]
 ```
 
-AssumeConcurrentSafe wraps v with the caller's promise that concurrent use is safe. It does not check, copy, freeze, or synchronize v.
+AssumeConcurrentSafe wraps v with the caller's promise that concurrent use is safe. It does not check, freeze, or synchronize v.
 
 ### func \(ConcurrentSafe\[T\]\) Value
 

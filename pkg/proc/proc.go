@@ -162,7 +162,7 @@ type ConcurrentSafe[T any] struct {
 }
 
 // AssumeConcurrentSafe wraps v with the caller's promise that concurrent use is safe.
-// It does not check, copy, freeze, or synchronize v.
+// It does not check, freeze, or synchronize v.
 func AssumeConcurrentSafe[T any](v T) ConcurrentSafe[T] { return ConcurrentSafe[T]{value: v} }
 
 // Value returns the trusted value, or the zero value of T for a zero dependency.
