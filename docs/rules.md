@@ -15,11 +15,15 @@ Other protected operations are rejected. Rejection examples are not exhaustive.
 **Protected storage** means marked values, their fields, frozen collections,
 and arrays containing them. Owner slots and holders have their own listed forms.
 
-## Trust boundary
+## Trust markers
 
-`im.Opaque[T]` is the only trusted part of a checked package. The analyzer
-does not prove that the value it holds is immutable; the package that declares
-`T` is trusted. See [Opaque values](opaque.md).
+User code has exactly two trust markers. The checker does not prove either
+promise:
+
+| Marker | Promise | Where |
+| --- | --- | --- |
+| [`im.Opaque[T]`](opaque.md), from `im.Seal` | The value never changes after `im.Seal`. Only the package that declares `T` can seal or read it. | Anywhere a stored type is allowed. |
+| [`proc.UncheckedDependency[T]`](processes.md#trusted-dependencies), from `proc.Trust` | The value is safe for concurrent use by several processes. | Only in process start arguments. |
 
 ## Check the program
 
@@ -44,9 +48,8 @@ including not changing string bytes through `unsafe`.
 
 The checker trusts the implementations of `im`, `proc`, and the Go standard
 library. It also skips the test runner that Go generates. There is no comment
-or annotation that lets user code bypass checks. The only trusted value in user
-code is a [process dependency](processes.md#trusted-dependencies) from
-`proc.Trust`; the checker does not prove that it is safe to share.
+or annotation that lets user code bypass checks. The only trusted values in user
+code are the two [trust markers](#trust-markers).
 
 In a checked package, `unsafe`, `reflect`, cgo, and functions without Go bodies
 are rejected. For example, write `func readCount() int { return 1 }` instead of
