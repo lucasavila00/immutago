@@ -63,6 +63,20 @@ mode once per cache. Reverse edges propagate positive results through cycles;
 completed queries reuse the stored result. The graph stays in memory until its
 pass ends. Ordinary packages still receive structural and source checks.
 
+The [marked graph benchmarks](../pkg/analyzer/proof_scaling_test.go) measure the
+complete pass on connected marked types and frozen collections.
+`BenchmarkCoreMarked` has no errors; `BenchmarkCoreMarkedInvalid` measures many
+invalid roots. [Proof-query tests](../internal/checker/prover_test.go) check
+reused validity against independent reachability and check cause paths against
+compiler type components.
+
+Each concrete proof obligation is expanded once, and each failure edge is
+processed a bounded number of times per cache. Empty pointer and array labels
+do not add a chain of render work. Rendering is proportional to the retained
+message text, and repeated queries reuse that message. The graph and cached
+messages stay in memory until the pass ends. These bounds do not include all
+compiler-type inspection or the complete analyzer pass.
+
 ## Dependency fact costs
 
 Dependency facts share local failure records and retain direct import edges.

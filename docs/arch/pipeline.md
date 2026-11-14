@@ -39,13 +39,20 @@ through reverse edges. Thus cycles cannot leave a cached false result before a
 reachable protected type is found. Queries do not change source-form checks or
 skip packages without markers.
 
-[Reason](../../internal/checker/proof.go) builds one obligation per concrete
-type. It records the node before visiting components, so recursive types
-terminate. Reverse edges connect fields and collection arguments to their
-owners. Invalid components enter a queue; their failures propagate to every
-owner. A recursive cycle passes only if all reachable components pass.
-Each failed owner retains its first failure cause. The proof builds the
-diagnostic string once, from the requested root.
+A pass-local [Prover](../../internal/checker/prover.go) reuses one
+[obligation graph](../../internal/checker/proof.go) across field, collection,
+and type-argument queries. It records each node before visiting its components.
+Reverse edges carry failures to owners after graph expansion. New edges to
+already failed children are retained as pending seeds. Direct terminal failures
+are applied before paths through earlier failed children. A recursive cycle
+passes only if all reachable components pass.
+
+Each failed owner keeps one component label and an earlier failure cause. Only
+an unfailed owner can receive a cause, so cause links cannot form a cycle.
+Empty-label pointer and array steps are collapsed when a cause is assigned.
+The prover renders and caches each requested root message from these witnesses.
+The selected failure can depend on earlier queries; rejection does not.
+`Reason` remains the one-query convenience function.
 
 Both marker modes use this proof. Stored pointers require a `Shared` struct
 target; `Scoped` pointers fail the storage proof. Type parameters fail too.

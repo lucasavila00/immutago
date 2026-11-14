@@ -81,13 +81,13 @@ func checkLibraryArguments(pass *analysis.Pass, c *checks) {
 		}
 		if obj.Name() == "Owner" {
 			arg := instance.TypeArgs.At(0)
-			if !checker.Scoped(arg) || checker.Shared(arg) || checker.Reason(arg) != "" {
+			if !checker.Scoped(arg) || checker.Shared(arg) || c.proofs.Reason(arg) != "" {
 				c.report(ident.Pos(), "Owner requires a concrete, valid Scoped struct")
 			}
 			continue
 		}
 		for i := 0; i < instance.TypeArgs.Len(); i++ {
-			if reason := checker.Reason(instance.TypeArgs.At(i)); reason != "" {
+			if reason := c.proofs.Reason(instance.TypeArgs.At(i)); reason != "" {
 				c.report(ident.Pos(), fmt.Sprintf("immutable type argument: %s\n  type: %s\n  fix: %s",
 					reason, diagnosticType(instance.TypeArgs.At(i)), structuralFix(instance.TypeArgs.At(i), reason)))
 			}
@@ -97,6 +97,7 @@ func checkLibraryArguments(pass *analysis.Pass, c *checks) {
 
 // checks carries one package's state and suppresses duplicate reports at the same position.
 type checks struct {
+	proofs   checker.Prover
 	queries  checker.Classifier
 	pass     *analysis.Pass
 	reported map[token.Pos]bool
@@ -158,7 +159,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 			"storage")
 	}
 	if checker.IsCollection(t) {
-		if reason := checker.Reason(t); reason != "" {
+		if reason := c.proofs.Reason(t); reason != "" {
 			c.report(pos, "immutable collection: "+reason+"\n  type: "+diagnosticType(t)+
 				"\n  fix: "+structuralFix(t, reason))
 		}
@@ -217,7 +218,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			continue
 		}
 		if marked {
-			if reason := checker.Reason(ft); reason != "" {
+			if reason := c.proofs.Reason(ft); reason != "" {
 				c.report(fieldPos, "immutable field "+field.Name()+": "+reason+
 					"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 					"\n  fix: "+structuralFix(ft, reason))

@@ -3,54 +3,43 @@ package checker
 import (
 	"fmt"
 	"go/types"
-	"strings"
 )
 
-// obligation records a terminal reason or an edge label with its first failure cause.
-// Each cause points to an already failed node; only unfailed owners get causes.
-// Thus cause links cannot form a cycle.
+// obligation retains a terminal reason or a label with an earlier failure cause.
+// Only an unfailed owner can get a cause, so cause links cannot form a cycle.
 type obligation struct {
 	users  []proofUse
 	reason string
 	cause  *obligation
 }
 
-// proofUse identifies an owner and its diagnostic path from a component obligation.
+// proofUse identifies an owner and the component label on its reverse edge.
 type proofUse struct {
 	owner *obligation
 	label string
 }
 
+// proofSeed retains a new edge to a child whose failure was already known.
+type proofSeed struct {
+	owner *obligation
+	child *obligation
+	label string
+}
+
+// failed includes empty-label pointer failures as well as terminal errors.
+func (n *obligation) failed() bool { return n.reason != "" || n.cause != nil }
+
 // proof visits each concrete type once and propagates failures through recursive owners.
 type proof struct {
 	nodes    map[types.Type]*obligation
 	failures []*obligation
+	pending  []proofSeed
 }
 
-// Reason proves concrete immutable storage or returns the first failed component.
+// Reason proves concrete immutable storage or returns a failed component.
 func Reason(t types.Type) string {
-	p := &proof{nodes: make(map[types.Type]*obligation)}
-	root := p.node(t)
-	for index := 0; index < len(p.failures); index++ {
-		child := p.failures[index]
-		for _, use := range child.users {
-			if use.owner.reason == "" && use.owner.cause == nil {
-				use.owner.reason = use.label
-				use.owner.cause = child
-				p.failures = append(p.failures, use.owner)
-			}
-		}
-	}
-	if root.cause == nil {
-		return root.reason
-	}
-	var message strings.Builder
-	for root.cause != nil {
-		message.WriteString(root.reason)
-		root = root.cause
-	}
-	message.WriteString(root.reason)
-	return message.String()
+	var prover Prover
+	return prover.Reason(t)
 }
 
 // node records an obligation before descending, so recursive references terminate.
@@ -62,16 +51,57 @@ func (p *proof) node(t types.Type) *obligation {
 	result := &obligation{}
 	p.nodes[t] = result
 	p.value(result, t)
-	if result.reason != "" {
+	if result.reason != "" && result.cause == nil {
 		p.failures = append(p.failures, result)
 	}
 	return result
 }
 
-// depend adds a component and its reverse failure-propagation edge.
+// depend records an owner and handles children that failed in an earlier query.
 func (p *proof) depend(owner *obligation, t types.Type, label string) {
 	child := p.node(t)
 	child.users = append(child.users, proofUse{owner: owner, label: label})
+	if child.failed() {
+		p.pending = append(p.pending, proofSeed{owner: owner, child: child, label: label})
+	}
+}
+
+// fail links an unfailed owner to an earlier failure with nonempty text.
+// Skipping an empty-label child bounds rendering work by the message length.
+func (p *proof) fail(owner, child *obligation, label string) {
+	if !owner.failed() {
+		if child.reason == "" {
+			child = child.cause
+		}
+		owner.reason, owner.cause = label, child
+		p.failures = append(p.failures, owner)
+	}
+}
+
+// propagate prefers terminal failures before it seeds paths through earlier failed children.
+func (p *proof) propagate() {
+	for _, seed := range p.pending {
+		if seed.child.cause == nil {
+			p.fail(seed.owner, seed.child, seed.label)
+		}
+	}
+	p.drainFailures()
+	for _, seed := range p.pending {
+		p.fail(seed.owner, seed.child, seed.label)
+	}
+	p.drainFailures()
+	p.pending = p.pending[:0]
+}
+
+// drainFailures visits each newly failed owner once after graph expansion is complete.
+func (p *proof) drainFailures() {
+	for index := 0; index < len(p.failures); index++ {
+		child := p.failures[index]
+		for _, use := range child.users {
+			p.fail(use.owner, child, use.label)
+		}
+	}
+	p.failures = p.failures[:0]
 }
 
 // value matches the complete concrete immutable storage forms.

@@ -28,6 +28,10 @@ jobs:
             package: ./pkg/analyzer
             benchmark: ^BenchmarkCoreOrdinary
             profile: BenchmarkCoreOrdinary/64$
+          - name: marked-proofs
+            package: ./pkg/analyzer
+            benchmark: ^BenchmarkCoreMarked
+            profile: BenchmarkCoreMarked/128$
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v6
