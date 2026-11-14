@@ -7,7 +7,7 @@
 - [Shared](shared.md) and [Scoped](scoped.md): choose whether pointers can be saved or returned.
 - [Owner](owner.md): replace the current Scoped object while readers use the previous one.
 - [Frozen collections](frozen.md): builders, Freeze, reads, and Clone.
-- [Opaque values](opaque.md): the one trusted, unproven value.
+- [Opaque values](opaque.md): a trusted, unproven immutable value.
 - [Common forms](common-forms.md): stored types, value operations, pointers, and statements.
 - [Collection API](../pkg/im/readme.md): signatures, zero values, and iteration.
 - [Supervised processes](processes.md): typed start arguments and direct calls.

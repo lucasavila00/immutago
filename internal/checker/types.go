@@ -24,6 +24,8 @@ const (
 	ProcMethod            = "Proc"
 	ArgsMethod            = "Args"
 	RunMethod             = "Run"
+	DependencyType        = "Dependency"
+	ValueMethod           = "Value"
 )
 
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
@@ -115,4 +117,9 @@ func embedsMarker(t types.Type, name string) bool {
 func Contains(t types.Type) bool {
 	var classifier Classifier
 	return classifier.Contains(t)
+}
+
+// TrustedField identifies a named proc.Dependency field, which only a marked process argument struct can store.
+func TrustedField(field *types.Var) bool {
+	return !field.Embedded() && IsRuntimeType(field.Type(), DependencyType)
 }

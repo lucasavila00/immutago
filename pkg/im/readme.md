@@ -116,7 +116,7 @@ Len returns the number of elements in O\(1\) time without allocations.
 
 ## type Opaque
 
-Opaque holds a pointer to a value that the analyzer does not look inside. It is the one trust boundary of immutago: the analyzer does not prove that the value is immutable. The package that declares T trusts its own code to never change the value after Seal.
+Opaque holds a pointer to a value that the analyzer does not look inside. It is one of the two trust markers of immutago, with proc.Dependency: the analyzer does not prove that the value is immutable. The package that declares T trusts its own code to never change the value after Seal.
 
 Opaque is an allowed stored type. Any package can store, copy, and pass it. Only the package that declares T can call Seal and Value, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/opaque.md for the complete forms.
 

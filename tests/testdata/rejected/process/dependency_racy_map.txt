@@ -1,0 +1,4 @@
+dependency_racy_map.go:30:2: immutable field Seen: map[string]int is not provably immutable
+  owner: process.AuditorArgs; field type: map[string]int
+  fix: replace the native map with im.FrozenMap[K, V], where K and V are immutable
+dependency_racy_map.go:35:7: process arguments process.AuditorArgs are not an allowed stored type: Seen: map[string]int is not provably immutable

@@ -121,7 +121,12 @@ request body when the user requests that issue or pull request.
 ## 11. Prove Immutability Before Accepting It
 
 Check every field and collection type argument. Use resolved Go type identity,
-not source spelling. Do not accept unknown cases or add escape hatches.
+not source spelling. Do not accept unknown cases or add escape hatches. There
+are exactly two trust markers, each with its own promise, and neither is proved:
+`proc.Dependency[T]` from `proc.Trust` is a concurrency-safe dependency in
+process start arguments (the user decided this in issue #52), and `im.Opaque[T]`
+from `im.Seal` is an immutable value that only the package that declares `T`
+can seal or read. Do not add other escape hatches.
 Support cases that can be proved. Report unsupported cases explicitly.
 Unmarked structs cannot own marked values or immutable collections.
 Both `im.Shared` and `im.Scoped` require immutable objects from construction.

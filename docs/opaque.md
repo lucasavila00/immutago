@@ -2,10 +2,11 @@
 
 [Language guide](rules.md) · [Common forms](common-forms.md) · [API](../pkg/im/readme.md)
 
-`im.Opaque[T]` is the one trust boundary of immutago. It holds a pointer to
-a value that the analyzer does not check. The analyzer does not prove that the
-value is immutable: the package that declares `T` is trusted to never change it
-after `im.Seal`.
+`im.Opaque[T]` is one of the two [trust markers](rules.md#trust-markers) of
+immutago; the other is `proc.Dependency[T]`, with a different promise. It holds
+a pointer to a value that the analyzer does not check. The analyzer does not
+prove that the value is immutable: the package that declares `T` is trusted to
+never change it after `im.Seal`.
 
 Use it for an internal structure that a package builds once and only reads
 afterwards, but that is not written in the checked forms, such as an engine
