@@ -1,14 +1,9 @@
 # Common source forms
 
-[Language guide](rules.md) · [Shared](shared.md) · [Scoped](scoped.md) · [Frozen collections](frozen.md)
-
 These forms apply to structs that embed Shared or Scoped, and to frozen slices
 and maps. Combine them with the forms on the type's page. The lists are complete;
 other operations on these values are rejected. Rejected examples are not exhaustive.
 [Owner](owner.md) has its own forms.
-
-[Types](#markers-and-stored-types) · [Values](#construction-and-scalar-reads) ·
-[Pointers](#common-pointer-forms) · [Statements](#statements-and-calls)
 
 ## Markers and stored types
 

@@ -1,7 +1,5 @@
 # Get started
 
-[Documentation](README.md) · [Language guide](rules.md) · [API](../pkg/im/readme.md)
-
 In a Go module, add the library and install the checker:
 
 ```sh

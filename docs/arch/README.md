@@ -1,7 +1,5 @@
 # Architecture
 
-[Documentation](../README.md) · [Language contract](../rules.md)
-
 Immutago combines compiler type proofs, source-form checks, and native builder
 consumption checks. The analyzer adds no runtime state.
 

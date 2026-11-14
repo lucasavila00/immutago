@@ -1,7 +1,5 @@
 # Analysis pipeline
 
-[Architecture](README.md)
-
 The [command](../../cmd/immutago/main.go) uses Go's `singlechecker` driver.
 The same analyzer runs under `go vet -vettool`. Both provide compiler-resolved
 `go/types` identities and `TypesInfo` for each package.

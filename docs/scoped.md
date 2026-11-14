@@ -1,7 +1,5 @@
 # Scoped objects
 
-[Language guide](rules.md) · [Common forms](common-forms.md) · [Owner](owner.md)
-
 Use `im.Scoped` when a pointer must stay local. You can pass it to a named
 function with the exact pointer parameter type. That function must not save
 or return the pointer:

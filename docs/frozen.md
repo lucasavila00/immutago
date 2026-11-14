@@ -1,7 +1,5 @@
 # Frozen collections
 
-[Language guide](rules.md) · [Common forms](common-forms.md) · [Performance](performance.md)
-
 Use `im.FrozenSlice` and `im.FrozenMap` to share a slice or map that cannot be
 changed. Keys and elements must match the complete
 [stored-type list](common-forms.md#markers-and-stored-types).

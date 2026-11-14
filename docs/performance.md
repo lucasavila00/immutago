@@ -1,7 +1,5 @@
 # Performance
 
-[Documentation](README.md) · [Collection API](../pkg/im/readme.md)
-
 ## Zero abstraction overhead
 
 Equivalent native Go is the performance baseline. After inlining, the wrapper

@@ -1,7 +1,5 @@
 # Owner publication slots
 
-[Language guide](rules.md) · [Scoped](scoped.md) · [Common forms](common-forms.md)
-
 Use `im.Owner[T]` to publish a new Scoped object and read the current one.
 `Store` replaces the current pointer. It does not change an object that a reader
 already loaded.

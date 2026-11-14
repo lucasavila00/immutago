@@ -1,7 +1,5 @@
 # Supervised processes
 
-[Language guide](rules.md) · [Stored types](common-forms.md#markers-and-stored-types) · [Process API](../pkg/proc/readme.md)
-
 Use `proc` for a service that runs in the background, such as a config loader,
 cache refresher, or rate limiter. Start it with immutable arguments, keep its
 PID, and call its exported methods directly. Those methods take and return

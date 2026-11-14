@@ -1,7 +1,5 @@
 # Shared objects
 
-[Language guide](rules.md) · [Common forms](common-forms.md) · [Scoped](scoped.md)
-
 Use `im.Shared` when you need to save or return a pointer. Set the fields when
 you create the object. To change data, replace the pointer with a new object:
 

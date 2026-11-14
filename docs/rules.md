@@ -1,7 +1,5 @@
 # Language guide
 
-[Documentation](README.md) · [Get started](getting-started.md) · [API](../pkg/im/readme.md)
-
 Use immutago to keep object fields read-only and control where pointers can be
 saved. Set the fields when you create an object. To change data, create another
 object.
