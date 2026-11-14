@@ -80,16 +80,11 @@ func (p *proof) consumption(graph flow.Graph, events []event) {
 			}
 		}
 	}
-	gen, kill := make([]flow.Set, len(events)), make([]flow.Set, len(events))
+	effects := make([]ownerEffect, len(events))
 	for point, e := range events {
-		if e.consume {
-			gen[point] = flow.NewSet(ids[e.variable])
-		}
-		if e.reset {
-			kill[point] = flow.NewSet(ids[e.variable])
-		}
+		effects[point] = ownerEffect{owner: ids[e.variable], consume: e.consume, reset: e.reset}
 	}
-	incoming := consumedFlow(graph, gen, kill, len(ids))
+	incoming := consumedFlow(graph, effects, len(ids))
 	for point, e := range events {
 		if e.variable != nil && !e.consume && !e.reset && incoming.has(point, ids[e.variable]) {
 			p.report(e.pos, "use of consumed owned container "+e.variable.Name()+
@@ -178,11 +173,17 @@ func (facts consumedFacts) has(point, owner int) bool {
 	return facts.bits[point*facts.words+owner/64]&(uint64(1)<<uint(owner%64)) != 0
 }
 
+// ownerEffect changes one dense owner ID at an event; a zero effect changes no state.
+type ownerEffect struct {
+	owner          int
+	consume, reset bool
+}
+
 // consumedFlow solves the finite forward may-consumed equations in reverse postorder.
-func consumedFlow(graph flow.Graph, gen, kill []flow.Set, owners int) consumedFacts {
+func consumedFlow(graph flow.Graph, effects []ownerEffect, owners int) consumedFacts {
 	words := (owners + 63) / 64
-	inputs := consumedFacts{words: words, bits: make([]uint64, len(gen)*words)}
-	outputs := make([]uint64, len(gen)*words)
+	inputs := consumedFacts{words: words, bits: make([]uint64, len(effects)*words)}
+	outputs := make([]uint64, len(effects)*words)
 	scratch := make([]uint64, words)
 	order := graph.ReversePostorder()
 	for changed := true; changed; {
@@ -191,11 +192,12 @@ func consumedFlow(graph flow.Graph, gen, kill []flow.Set, owners int) consumedFa
 			input := inputs.bits[point*words : (point+1)*words]
 			mergePredecessors(input, outputs, graph.Pred[point], words)
 			copy(scratch, input)
-			for id := range kill[point] {
-				scratch[id/64] &^= uint64(1) << uint(id%64)
+			effect := effects[point]
+			if effect.reset {
+				scratch[effect.owner/64] &^= uint64(1) << uint(effect.owner%64)
 			}
-			for id := range gen[point] {
-				scratch[id/64] |= uint64(1) << uint(id%64)
+			if effect.consume {
+				scratch[effect.owner/64] |= uint64(1) << uint(effect.owner%64)
 			}
 			output := outputs[point*words : (point+1)*words]
 			if !slices.Equal(output, scratch) {
