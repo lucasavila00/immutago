@@ -67,6 +67,8 @@ type Supervisor struct {
 	failure  chan any
 	stopping bool
 	stopped  chan struct{}
+	parent   *Supervisor
+	entry    *child
 }
 
 // child is one process or nested supervisor and its current goroutine.
@@ -108,10 +110,10 @@ func root(exit func(any)) *Supervisor {
 	return s
 }
 
-// StartSupervisor returns a new supervisor that parent runs as a child.
+// StartSupervisor returns a new supervisor that parent runs as a child. After Stop, parent releases it.
 func StartSupervisor(parent *Supervisor) *Supervisor {
-	nested := &Supervisor{stopped: make(chan struct{})}
-	parent.add(nested.serve)
+	nested := &Supervisor{stopped: make(chan struct{}), parent: parent}
+	nested.entry = parent.add(nested.serve)
 	return nested
 }
 
@@ -166,13 +168,16 @@ func (s *Supervisor) Stop() <-chan struct{} {
 		go func() {
 			s.halt()
 			close(s.stopped)
+			if s.parent != nil {
+				s.parent.release(s.entry)
+			}
 		}()
 	}
 	return s.stopped
 }
 
-// add records a child and runs it if s is running.
-func (s *Supervisor) add(run func(context.Context)) {
+// add records a child, runs it if s is running, and returns it.
+func (s *Supervisor) add(run func(context.Context)) *child {
 	done := make(chan struct{})
 	close(done)
 	c := &child{run: run, stop: func() {}, done: done}
@@ -182,6 +187,18 @@ func (s *Supervisor) add(run func(context.Context)) {
 	if s.ctx != nil && !s.stopping {
 		s.launch(c)
 	}
+	return c
+}
+
+// release waits for a stopped child to return and removes it, so s keeps no reference to it.
+func (s *Supervisor) release(c *child) {
+	s.mu.Lock()
+	done := c.done
+	s.mu.Unlock()
+	<-done
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.children = slices.DeleteFunc(slices.Clone(s.children), func(other *child) bool { return other == c })
 }
 
 // launch runs c in a new goroutine. The caller holds s.mu.
