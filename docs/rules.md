@@ -1,15 +1,22 @@
-# Language reference
+# Checker reference
 
-| Guide | Use it to |
+## Immutable data forms (`im`)
+
+| Reference | Use it to |
 | --- | --- |
+| [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 | [Shared](shared.md) | Store or return pointers to immutable objects. |
 | [Scoped](scoped.md) | Keep pointers local; use functions and methods that do not save them. |
 | [Owner](owner.md) | Publish a new Scoped object and read the current one. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
-| [Supervised services](services.md) | Learn the execution and restart model. |
-| [Service forms](service-forms.md) | Look up supported service declarations and calls. |
 | [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
-| [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
+
+## Service forms (`supervise`)
+
+- [Service source forms](service-forms.md): declarations, start arguments, calls, and child groups.
+- [Supervised services](services.md): execution and restart behavior.
+
+## Rules for im and supervise
 
 Use the common forms with each type's forms. **Exhaustive** means all allowed
 forms are listed; unlisted protected operations are rejected.
@@ -21,7 +28,7 @@ forms are listed; unlisted protected operations are rejected.
 | Service dependency | A `supervise.ConcurrentSafe[T]` value. Its uses are checked; its contents are trusted. |
 | Owner slot and holder | An `im.Owner[T]` field or variable, and a struct that contains one. See [Owner](owner.md). |
 
-## Trust markers
+### Trust markers
 
 User code has exactly two trust markers. The checker does not prove either
 promise:
@@ -31,12 +38,12 @@ promise:
 | [`im.UncheckedValue[T]`](unchecked-values.md), from `im.Trust` | The value never changes after `im.Trust`. Only the package that declares `T` can wrap or read it. | Anywhere a stored type is allowed. |
 | [`supervise.ConcurrentSafe[T]`](services.md#concurrent-dependencies), from `supervise.AssumeConcurrentSafe` | The value is safe for concurrent use by several services. | Only in service start arguments. |
 
-## Check the program
+### Check the program
 
 Run `immutago ./...` or `go vet -vettool=/absolute/path/to/immutago ./...`.
 `go build` alone does not enforce these rules.
 
-## Package boundary
+### Package boundary
 
 The checker checks a package in any of these cases, including its test files:
 
