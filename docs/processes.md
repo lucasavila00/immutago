@@ -119,6 +119,17 @@ first, and passes the failure to the parent supervisor. The parent restarts the
 subtree with the same retry rule. If the failure reaches the root, the program
 panics with the last panic value.
 
+A supervisor recovers these panics, so nothing logs them by default. To see
+them, pass `proc.OnPanic` to `NewRoot`. Its function gets the value and the
+stack of each panic that a supervisor of the tree recovers, before the restart
+delay. A nested supervisor that escalates is such a panic of its parent.
+
+```go
+root := proc.NewRoot(proc.OnPanic(func(value any, stack []byte) {
+    log.Printf("process panicked: %v\n%s", value, stack)
+}))
+```
+
 ## Stop
 
 `root.Stop()` returns a channel. Wait on it to wait for the supervised work to
