@@ -1,4 +1,4 @@
-package opaque
+package uncheckedvalue
 
 import (
 	"slices"
@@ -17,16 +17,16 @@ type baked struct {
 type Model struct {
 	im.Shared
 	Name   string
-	engine im.Opaque[baked]
+	engine im.UncheckedValue[baked]
 }
 
 // Load builds a model and trusts its internal part.
 func Load(name string, weights []float64) *Model {
-	return &Model{Name: name, engine: im.Seal(&baked{weights: slices.Clone(weights)})}
+	return &Model{Name: name, engine: im.Trust(&baked{weights: slices.Clone(weights)})}
 }
 
 // Predict reads the internal part through the API of the declaring package.
 func Predict(m *Model, row int) float64 {
-	b := im.Unseal(m.engine)
+	b := im.Unwrap(m.engine)
 	return b.weights[row]
 }

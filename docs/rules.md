@@ -8,7 +8,7 @@
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
 | [Supervised processes](processes.md) | Learn the execution and restart model. |
 | [Process forms](process-forms.md) | Look up supported process declarations and calls. |
-| [Opaque values](opaque.md) | Hold a value that the analyzer trusts and does not prove. |
+| [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 
 The common lists and each type's lists define the complete supported forms.
@@ -24,7 +24,7 @@ promise:
 
 | Marker | Promise | Where |
 | --- | --- | --- |
-| [`im.Opaque[T]`](opaque.md), from `im.Seal` | The value never changes after `im.Seal`. Only the package that declares `T` can seal or read it. | Anywhere a stored type is allowed. |
+| [`im.UncheckedValue[T]`](unchecked-values.md), from `im.Trust` | The value never changes after `im.Trust`. Only the package that declares `T` can wrap or read it. | Anywhere a stored type is allowed. |
 | [`proc.UncheckedDependency[T]`](processes.md#unchecked-dependencies), from `proc.Trust` | The value is safe for concurrent use by several processes. | Only in process start arguments. |
 
 ## Check the program

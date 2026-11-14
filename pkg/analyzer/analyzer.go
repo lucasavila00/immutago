@@ -92,10 +92,10 @@ func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance
 	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
 		return
 	}
-	if obj.Name() == "Opaque" {
+	if obj.Name() == "UncheckedValue" {
 		return
 	}
-	if obj.Name() == "Seal" || obj.Name() == "Unseal" {
+	if obj.Name() == "Trust" || obj.Name() == "Unwrap" {
 		c.checkTrustedPackage(ident.Pos(), instance.TypeArgs.At(0), "im."+obj.Name())
 		return
 	}
@@ -223,7 +223,7 @@ func reflectionValue(t types.Type) bool {
 
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
-	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") || checker.IsOpaque(t) ||
+	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") || checker.IsUncheckedValue(t) ||
 		checker.IsRuntimeType(t, checker.ProcessMarker) || checker.IsRuntimeType(t, checker.UncheckedDependencyType) {
 		return
 	}

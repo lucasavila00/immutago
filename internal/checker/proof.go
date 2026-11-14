@@ -114,7 +114,7 @@ func (p *proof) value(result *obligation, t types.Type) {
 		result.reason = "proc.UncheckedDependency is allowed only as a process argument type or a field of one"
 		return
 	}
-	if IsLibraryType(t, "Shared") || IsLibraryType(t, "Scoped") || IsRuntimeType(t, PIDType) || IsOpaque(t) {
+	if IsLibraryType(t, "Shared") || IsLibraryType(t, "Scoped") || IsRuntimeType(t, PIDType) || IsUncheckedValue(t) {
 		return
 	}
 	if IsCollection(t) {

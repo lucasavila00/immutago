@@ -15,9 +15,9 @@ retain them. The [source matcher](../../pkg/analyzer/subset_operations.go) check
 these uses; the [type proof](../../internal/checker/proof.go) rejects stored
 `Scoped` pointers.
 
-The type proof accepts [Opaque](../../pkg/im/opaque.go) without inspecting its
-payload. The handle is ordinary storage, but its field in a marked object cannot
-be replaced. [Seal and Unseal checks](../../pkg/analyzer/opaque.go) use the
+The type proof accepts [UncheckedValue](../../pkg/im/unchecked_value.go) without
+inspecting its payload. The handle is ordinary storage, but its field in a marked
+object cannot be replaced. [Trust and Unwrap checks](../../pkg/analyzer/unchecked_value.go) use the
 resolved type argument's declaring package, including through aliases and
 function values. The handle has no methods, so interface calls and promoted
 methods cannot expose its pointer. The declaring package's promise of immutable

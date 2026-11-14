@@ -125,9 +125,9 @@ not source spelling. Do not accept unknown cases or add escape hatches. There
 are exactly two trust markers, each with its own promise, and the checker proves
 neither: `proc.UncheckedDependency[T]` from `proc.Trust` in process start
 arguments, whose caller promises that the value is safe for concurrent use (the
-user decided this in issue #52), and `im.Opaque[T]` from `im.Seal`, whose
+user decided this in issue #52), and `im.UncheckedValue[T]` from `im.Trust`, whose
 declaring package promises that the value never changes; only the package that
-declares `T` can seal or read it. Do not add other escape hatches.
+declares `T` can wrap or read it. Do not add other escape hatches.
 Support cases that can be proved. Report unsupported cases explicitly.
 Unmarked structs cannot own marked values or immutable collections.
 Both `im.Shared` and `im.Scoped` require immutable objects from construction.

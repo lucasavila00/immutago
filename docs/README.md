@@ -6,7 +6,7 @@
 - [Shared](shared.md) and [Scoped](scoped.md): choose whether pointers can be saved or returned.
 - [Owner](owner.md): replace the current Scoped object while readers use the previous one.
 - [Frozen collections](frozen.md): builders, Freeze, reads, and Clone.
-- [Opaque values](opaque.md): a trusted, unproven immutable value.
+- [Unchecked immutable values](unchecked-values.md): a trusted, unproven immutable value.
 - [Supervised processes](processes.md): typed start arguments and direct calls.
 - [Performance](performance.md): operation costs.
 

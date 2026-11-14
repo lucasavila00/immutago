@@ -12,19 +12,19 @@ type Alias = Table
 type Box[T any] struct{ Value T }
 
 // New constructs a trusted table.
-func New() im.Opaque[Table] { return im.Seal(&Table{Rows: []int{1}}) }
+func New() im.UncheckedValue[Table] { return im.Trust(&Table{Rows: []int{1}}) }
 
 // Read uses a function value with the local type alias.
-func Read(value im.Opaque[Alias]) int {
-	read := im.Unseal[Alias]
+func Read(value im.UncheckedValue[Alias]) int {
+	read := im.Unwrap[Alias]
 	return read(value).Rows[0]
 }
 
 // Boxed wraps and reads a concrete instance declared in this package.
-func Boxed() int { return im.Unseal(im.Seal(&Box[int]{Value: 1})).Value }
+func Boxed() int { return im.Unwrap(im.Trust(&Box[int]{Value: 1})).Value }
 
 // Zero reads an empty handle.
 func Zero() bool {
-	var value im.Opaque[Table]
-	return im.Unseal(value) == nil
+	var value im.UncheckedValue[Table]
+	return im.Unwrap(value) == nil
 }

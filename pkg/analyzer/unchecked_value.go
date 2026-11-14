@@ -12,6 +12,6 @@ func (c *checks) checkTrustedPackage(pos token.Pos, argument types.Type, use str
 		return
 	}
 	c.report(pos, use+" requires a type that this package declares\n  type: "+diagnosticType(argument)+
-		"\n  rule: only the package that declares T can wrap or read an im.Opaque[T]"+
+		"\n  rule: only the package that declares T can wrap or read an im.UncheckedValue[T]"+
 		"\n  fix: call a function of the package that declares the type")
 }

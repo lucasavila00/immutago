@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-// TestOpaqueBoundary checks the declaring-package rule through the CLI and vet.
-func TestOpaqueBoundary(t *testing.T) {
+// TestUncheckedValueBoundary checks the declaring-package rule through the CLI and vet.
+func TestUncheckedValueBoundary(t *testing.T) {
 	root, err := filepath.Abs("..")
 	if err != nil {
 		t.Fatal(err)
@@ -20,9 +20,9 @@ func TestOpaqueBoundary(t *testing.T) {
 	for _, mode := range []string{"cli", "vet"} {
 		for _, target := range []string{"api", "valid", "foreign"} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
-				dir := consumerModule(t, root, "opaque_boundary")
+				dir := consumerModule(t, root, "unchecked_value_boundary")
 				output := runBoundary(t, dir, binary, mode, target != "foreign", "./"+target)
-				checkFixtureSnapshots(t, root, "opaque_boundary/"+target, output)
+				checkFixtureSnapshots(t, root, "unchecked_value_boundary/"+target, output)
 			})
 		}
 	}

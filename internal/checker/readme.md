@@ -64,14 +64,6 @@ func IsLibraryType(t types.Type, name string) bool
 
 IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
 
-## func IsOpaque
-
-```go
-func IsOpaque(t types.Type) bool
-```
-
-IsOpaque reports whether t is the library's trusted opaque wrapper.
-
 ## func IsRuntimeType
 
 ```go
@@ -79,6 +71,14 @@ func IsRuntimeType(t types.Type, name string) bool
 ```
 
 IsRuntimeType identifies a process runtime type by package identity and name, not spelling at its use site.
+
+## func IsUncheckedValue
+
+```go
+func IsUncheckedValue(t types.Type) bool
+```
+
+IsUncheckedValue reports whether t is the library's unchecked immutable value wrapper.
 
 ## func Marked
 

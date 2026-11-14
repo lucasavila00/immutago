@@ -104,7 +104,7 @@ func (c *Classifier) expand(node *classificationNode) {
 		}
 		return
 	}
-	if IsLibraryType(node.key.typ, "Owner") || IsRuntimeType(node.key.typ, ProcessMarker) || IsOpaque(node.key.typ) {
+	if IsLibraryType(node.key.typ, "Owner") || IsRuntimeType(node.key.typ, ProcessMarker) || IsUncheckedValue(node.key.typ) {
 		return
 	}
 	switch node.key.mode {
