@@ -50,3 +50,15 @@ var globalDependency proc.UncheckedDependency[*int]
 
 // globalArguments stores an argument-only struct in a package variable.
 var globalArguments SenderArgs
+
+// dependencyBuilder has valid ownership but an unsupported element type.
+func dependencyBuilder(p *int) {
+	values := []proc.UncheckedDependency[*int]{proc.Trust(p)}
+	_ = len(values)
+}
+
+// argumentBuilder allocates native storage for an argument-only struct.
+func argumentBuilder() { values := make([]SenderArgs, 1); _ = len(values) }
+
+// dependencyKeyBuilder stores a dependency in a native map key.
+func dependencyKeyBuilder() { values := map[proc.UncheckedDependency[*int]]int{}; _ = len(values) }

@@ -9,7 +9,7 @@ type Hidden api.Dependency
 type Holder struct{ Value api.Dependency }
 
 // Slice stores imported dependency aliases in a native container.
-func Slice() { var values []api.Dependency; _ = values }
+func Slice() { var values []api.Dependency; _ = len(values) }
 
 // Unwrap calls Value through an interface outside a process.
 func Unwrap(value api.Dependency) *int {
