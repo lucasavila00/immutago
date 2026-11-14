@@ -10,9 +10,9 @@ import (
 
 const cgoDiagnostic = "cgo is not supported; immutability cannot be proved\n  fix: replace cgo with checked Go code"
 
-// rejectCgo rejects the whole package before checking compiler-generated wrappers.
+// rejectCgo rejects a checked package before checking compiler-generated wrappers.
 // The header is a rejection trigger, never an exemption from the proof.
-func rejectCgo(pass *analysis.Pass) bool {
+func rejectCgo(pass *analysis.Pass, imports map[string]invalidPackage) bool {
 	position := cgoPosition(pass)
 	if !position.IsValid() {
 		return false
@@ -20,8 +20,7 @@ func rejectCgo(pass *analysis.Pass) bool {
 	diagnostic := analysis.Diagnostic{Pos: position, Message: cgoDiagnostic}
 	pass.Report(diagnostic)
 	if pass.ExportPackageFact != nil {
-		relevant, imports := collectDependencyFacts(pass)
-		pass.ExportPackageFact(packageFailureFact(pass.Pkg.Path(), relevant, imports,
+		pass.ExportPackageFact(packageFailureFact(pass.Pkg.Path(), true, imports,
 			[]proofFailure{localFailure(pass, diagnostic)}))
 	}
 	return true

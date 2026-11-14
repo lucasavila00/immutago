@@ -15,7 +15,7 @@ import (
 func main() {
 	scale := flag.Int("scale", 1, "layers and width are each four times this value")
 	out := flag.String("out", "dependency-stress", "output module directory")
-	library := flag.String("library", "", "immutago checkout; add a relevant consumer when set")
+	library := flag.String("library", "", "immutago checkout; check generated packages and add a consumer when set")
 	flag.Parse()
 	if err := writeModule(*out, *scale, *library); err != nil {
 		log.Fatal(err)
@@ -36,7 +36,7 @@ func writeModule(out string, scale int, library string) error {
 	for layer := range size {
 		for column := range size {
 			name := fmt.Sprintf("p%d_%d", layer, column)
-			if err := writeFile(out, name+"/p.go", packageSource(name, layer, size)); err != nil {
+			if err := writeFile(out, name+"/p.go", packageSource(name, layer, size, library != "")); err != nil {
 				return err
 			}
 		}
@@ -48,9 +48,12 @@ func writeModule(out string, scale int, library string) error {
 }
 
 // packageSource imports every package in the previous layer and uses 50 unsafe pointers.
-func packageSource(name string, layer, width int) string {
+func packageSource(name string, layer, width int, checked bool) string {
 	var source strings.Builder
 	fmt.Fprintf(&source, "package %s\n\nimport (\n\t\"unsafe\"\n", name)
+	if checked {
+		source.WriteString("\t_ \"github.com/lucasavila00/immutago/pkg/im\"\n")
+	}
 	if layer > 0 {
 		for column := range width {
 			fmt.Fprintf(&source, "\tp%d_%d \"dependency-stress.example/p%d_%d\"\n", layer-1, column, layer-1, column)

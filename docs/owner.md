@@ -3,8 +3,8 @@
 [Language guide](rules.md) · [Scoped](scoped.md) · [Common forms](common-forms.md)
 
 Use `im.Owner[T]` to publish one current object. It holds a pointer to a concrete,
-valid `im.Scoped` struct. The slot is mutable; the object is immutable. `Load` returns nil
-before the first `Store`. `Store` and `Load` use atomic pointer operations.
+valid `im.Scoped` struct. The slot is mutable; the object is immutable.
+`Load` returns nil before the first `Store`. `Store` and `Load` use atomic pointer operations.
 An earlier loaded pointer remains valid after a later `Store`. Go does not
 specify when an unused object is collected.
 

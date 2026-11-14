@@ -1,0 +1,8 @@
+generic.go:7:2: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: logx.Identity(current)
+  type: *model.Model
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+generic.go:7:7: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: Identity
+  type: func[T any](value T) T
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported

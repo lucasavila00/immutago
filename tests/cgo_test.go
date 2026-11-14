@@ -30,7 +30,7 @@ func TestCgoDiagnostics(t *testing.T) {
 	runCommand(t, dir, true, "go", "build", "./...")
 	for _, mode := range []string{"cli", "vet"} {
 		t.Run(mode, func(t *testing.T) {
-			for _, pkg := range []string{"cgolib", "consumer"} {
+			for _, pkg := range []string{"cgolib", "consumer", "ordinary"} {
 				t.Run(pkg, func(t *testing.T) {
 					// A prior root vet run can cache diagnostics that it later replays for dependencies.
 					// Use a new module path on disk so this run checks consumer-only fact propagation.
@@ -39,7 +39,7 @@ func TestCgoDiagnostics(t *testing.T) {
 					if mode == "vet" {
 						command, arguments = "go", []string{"vet", "-vettool=" + binary, "./" + pkg}
 					}
-					output := runCommand(t, dir, false, command, arguments...)
+					output := runCommand(t, dir, pkg == "ordinary", command, arguments...)
 					checkFixtureSnapshots(t, root, "cgo/"+pkg, output)
 				})
 			}

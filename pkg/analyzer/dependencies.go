@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lucasavila00/immutago/internal/checker"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -43,12 +42,8 @@ func localFailure(pass *analysis.Pass, diagnostic analysis.Diagnostic) proofFail
 	}
 }
 
-// invalidDependencies reports one original cause for each failed direct import when relevant.
-func invalidDependencies(pass *analysis.Pass) (bool, bool, map[string]invalidPackage) {
-	relevant, invalid := collectDependencyFacts(pass)
-	if len(invalid) == 0 || !relevant {
-		return len(invalid) > 0, relevant, invalid
-	}
+// reportDependencyFailures reports one original cause for each failed direct import of a checked package.
+func reportDependencyFailures(pass *analysis.Pass, invalid map[string]invalidPackage) {
 	for _, file := range pass.Files {
 		for _, spec := range file.Imports {
 			path, err := strconv.Unquote(spec.Path.Value)
@@ -60,7 +55,6 @@ func invalidDependencies(pass *analysis.Pass) (bool, bool, map[string]invalidPac
 			}
 		}
 	}
-	return true, relevant, invalid
 }
 
 // collectDependencyFacts reads direct failures without emitting dependency diagnostics.
@@ -111,21 +105,6 @@ func dependencyMessage(path string, fact invalidPackage) string {
 	message.WriteString("\n  fix: run immutago " + fact.Origin +
 		", correct its errors, then rerun immutago on this package")
 	return message.String()
-}
-
-// protectedPackage also checks source types because vet can prune transitive package imports.
-func protectedPackage(pass *analysis.Pass) bool {
-	var queries checker.Classifier
-	if usesImmutable(pass.Pkg) {
-		return true
-	}
-	c := &subsetChecks{}
-	for _, value := range pass.TypesInfo.Types {
-		if value.Type != nil && (queries.Contains(value.Type) || c.slotRelevant(value.Type)) {
-			return true
-		}
-	}
-	return false
 }
 
 // compareFailures preserves diagnostic order by portable source location and message.

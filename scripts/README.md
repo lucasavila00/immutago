@@ -14,7 +14,10 @@ Go comments. [.gomarkdoc.yml](../.gomarkdoc.yml) selects the templates;
 
 [dependency-stress](dependency-stress/main.go) writes the dense package graph
 from issue 20. Use `go run ./scripts/dependency-stress -scale 5 -out /tmp/deps`
-for 400 packages. Add `-library /absolute/path/to/immutago` to create a relevant
-consumer that must report all original errors. The
+for 400 ordinary packages, which should pass under ordinary Go API trust. Add
+`-library /absolute/path/to/immutago` to give every generated package a direct
+`im` import and add a consumer. Those packages remain checked: local unsafe
+errors must be reported, and the consumer receives one representative original
+failure. The
 [dependency workflow](../.github/workflows/dependency-performance.yml) runs it
 through both analysis drivers and saves measurements.
