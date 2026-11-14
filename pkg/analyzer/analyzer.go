@@ -76,9 +76,7 @@ func run(pass *analysis.Pass) (any, error) {
 func checkLibraryArguments(pass *analysis.Pass, c *checks) {
 	for ident, instance := range pass.TypesInfo.Instances {
 		obj := pass.TypesInfo.Uses[ident]
-		if processTypeArgument(obj) && !processDeclaration(instance.TypeArgs.At(0)) {
-			c.report(ident.Pos(), "proc.Start and proc.PID need a process type argument")
-		}
+		c.checkRuntimeArguments(ident, obj, instance)
 		if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
 			continue
 		}
@@ -197,7 +195,8 @@ func reflectionValue(t types.Type) bool {
 
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
-	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") {
+	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") ||
+		checker.IsRuntimeType(t, checker.ProcessMarker) {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)

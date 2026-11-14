@@ -12,7 +12,7 @@ var release chan struct{}
 
 // stuck is a process that does not stop when its context ends.
 type stuck struct {
-	proc.Process
+	proc.Process[proc.None]
 }
 
 // Run waits for release and ignores its context.
@@ -40,7 +40,7 @@ func TestNewRoot(t *testing.T) {
 		release = make(chan struct{})
 		failing := &recorder{TB: t}
 		root := NewRoot(failing)
-		proc.Start[stuck](root)
+		proc.Start[stuck](root, proc.None{})
 		synctest.Wait()
 		failing.cleanups[0]()
 		if passing.errors != 0 || failing.errors != 1 {

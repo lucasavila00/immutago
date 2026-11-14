@@ -34,12 +34,20 @@ const testLibrary = `package im
 `
 
 const testRuntime = `package proc
- import "context"
- type Process struct{}
+ import ("context"; "github.com/lucasavila00/immutago/pkg/im")
+ type Process[A any] struct { args A }
+ func (p *Process[A]) Args() A { return p.args }
+ func (p *Process[A]) bind(args A) { p.args = args }
+ type None struct { im.Shared }
  type Supervisor struct{}
  type PID[T any] struct { value *T }
  func (p PID[T]) Proc() *T { return p.value }
- func Start[T any, P interface{ *T; Run(context.Context) }](parent *Supervisor) PID[T] { return PID[T]{} }
+ func Reserve[T any]() PID[T] { return PID[T]{} }
+ func Start[T, A any, P interface{ *T; Run(context.Context); bind(A) }](parent *Supervisor, args A) PID[T] {
+  return PID[T]{}
+ }
+ func StartReserved[T, A any, P interface{ *T; Run(context.Context); bind(A) }](
+  parent *Supervisor, pid PID[T], args A) {}
 `
 
 // testImporter gives compiler tests the library's type identities without loading external packages.
@@ -91,7 +99,7 @@ func sourcePass(t testing.TB, declarations string) *analysis.Pass {
 		t.Fatal(err)
 	}
 	standard := importer.Default()
-	runtimeConfig := types.Config{Importer: standard}
+	runtimeConfig := types.Config{Importer: testImporter{library, nil, standard}}
 	procPackage, err := runtimeConfig.Check(checker.RuntimePath, positions, []*ast.File{runtimeFile}, nil)
 	if err != nil {
 		t.Fatal(err)

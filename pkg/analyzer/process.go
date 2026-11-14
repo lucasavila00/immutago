@@ -55,9 +55,16 @@ func runtimeObject(object types.Object, name string) bool {
 	return object != nil && object.Pkg() != nil && object.Pkg().Path() == checker.RuntimePath && object.Name() == name
 }
 
-// processTypeArgument identifies proc.PID and proc.Start, which take a process type argument.
+// processTypeArgument identifies the proc identities whose first type argument is a process.
 func processTypeArgument(object types.Object) bool {
-	return runtimeObject(object, checker.PIDType) || runtimeObject(object, checker.StartFunction)
+	return runtimeObject(object, checker.PIDType) || runtimeObject(object, checker.StartFunction) ||
+		runtimeObject(object, checker.ReserveFunction) || runtimeObject(object, checker.StartReservedFunction)
+}
+
+// trustedRuntimeCall identifies the proc calls that take or return process arguments.
+func trustedRuntimeCall(object types.Object) bool {
+	return runtimeObject(object, checker.StartFunction) || runtimeObject(object, checker.StartReservedFunction) ||
+		runtimeObject(object, checker.ArgsMethod)
 }
 
 // procMethod identifies the proc.PID.Proc method.
@@ -139,7 +146,7 @@ func (c *subsetChecks) checkProcessName(id *ast.Ident) {
 		}
 	}
 	c.pass.Reportf(id.Pos(), "process type %[1]s can be named only in its declaration, a pointer receiver, "+
-		"proc.Start[%[1]s], or proc.PID[%[1]s]", id.Name)
+		"proc.Start[%[1]s], proc.Reserve[%[1]s], or proc.PID[%[1]s]", id.Name)
 }
 
 // processReceiver identifies the type of a method receiver.
@@ -214,7 +221,7 @@ func (c *subsetChecks) insideClosure(node ast.Node) bool {
 	return false
 }
 
-// allowedReceiverUse permits field selection and a direct synchronous method call other than Run.
+// allowedReceiverUse permits selection of a field other than the marker and a direct synchronous call other than Run.
 func (c *subsetChecks) allowedReceiverUse(receiver *ast.Ident) bool {
 	selector, ok := c.unparenthesizedParent(receiver).(*ast.SelectorExpr)
 	if !ok || ast.Unparen(selector.X) != receiver {
@@ -225,7 +232,7 @@ func (c *subsetChecks) allowedReceiverUse(receiver *ast.Ident) bool {
 		return false
 	}
 	if selection.Kind() == types.FieldVal {
-		return true
+		return !processMarker(selection.Type())
 	}
 	return selection.Kind() == types.MethodVal && selection.Obj().Name() != checker.RunMethod &&
 		c.synchronousCall(selector)
@@ -280,6 +287,19 @@ func (c *checks) checkProcessMethod(declaration *ast.FuncDecl) {
 				c.report(declaration.Name.Pos(), "exported process method "+declaration.Name.Name+" carries "+
 					diagnosticType(variable.Type())+", which is not an allowed stored type: "+reason)
 			}
+		}
+	}
+}
+
+// checkRuntimeArguments requires a process type argument for proc identities and allowed process arguments.
+func (c *checks) checkRuntimeArguments(ident *ast.Ident, obj types.Object, instance types.Instance) {
+	argument := instance.TypeArgs.At(0)
+	if processTypeArgument(obj) && !processDeclaration(argument) {
+		c.report(ident.Pos(), "proc.Start, proc.StartReserved, proc.Reserve, and proc.PID need a process type argument")
+	}
+	if runtimeObject(obj, checker.ProcessMarker) {
+		if reason := c.proofs.Reason(argument); reason != "" {
+			c.report(ident.Pos(), "process arguments "+diagnosticType(argument)+" are not an allowed stored type: "+reason)
 		}
 	}
 }

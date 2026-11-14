@@ -8,13 +8,35 @@ import "github.com/lucasavila00/immutago/pkg/proc"
 
 Package proc runs supervised processes.
 
-A process is a mutable struct that embeds Process and has a Run\(context.Context\) method with a pointer receiver. Start creates the process from its zero value, runs Run in a new goroutine, and returns its PID. Callers keep the PID and call exported methods directly on the process pointer from PID.Proc. The immutago analyzer proves that these methods take and return only immutable values and PIDs.
+A process is a mutable struct that embeds Process\[A\] and has a Run\(context.Context\) method with a pointer receiver. A is the immutable argument type of the process; use None for a process without arguments. Start creates a new process value, gives it the arguments, runs Run in a new goroutine, and returns its PID. Callers keep the PID and call exported methods directly on the process pointer from PID.Proc. The immutago analyzer proves that these methods take and return only immutable values and PIDs. For processes that need each other's PIDs, Reserve a PID first and start it later with StartReserved.
 
-A supervisor runs its children until Stop. If Run returns, the process ends. If Run panics, the supervisor runs it again on the same value after a delay of 1 s that doubles for each restart in the last 5 minutes. A sixth panic in 5 minutes stops all children of the supervisor in reverse start order and escalates the panic to the parent supervisor, which restarts the subtree with the same rule. At the root supervisor, the escalation panics again with the last panic value, and the program exits.
+A supervisor runs its children until Stop. If Run returns, the process ends. If Run panics, the supervisor creates a new process value from the same arguments, stores it in the same PID, and runs it after a delay of 1 s that doubles for each restart in the last 5 minutes. A sixth panic in 5 minutes stops all children of the supervisor in reverse start order and escalates the panic to the parent supervisor, which restarts the subtree with the same rule. At the root supervisor, the escalation panics again with the last panic value, and the program exits.
+
+## func StartReserved
+
+```go
+func StartReserved[T, A any, P interface {
+    *T
+    Run(context.Context)
+    bind(A)
+}](parent *Supervisor, pid PID[T], args A)
+```
+
+StartReserved creates a process value with args, stores it in pid, and runs its Run method under parent. The PID is started when StartReserved returns. Each restart creates a new value from the same args. If parent is stopped, the process does not run. StartReserved panics if pid is already started.
+
+## type None
+
+None is the argument type of a process without arguments.
+
+```go
+type None struct {
+    im.Shared
+}
+```
 
 ## type PID
 
-PID identifies a process that Start created.
+PID identifies a process. Start returns a started PID; Reserve returns a PID to start later.
 
 ```go
 type PID[T any] struct {
@@ -22,16 +44,25 @@ type PID[T any] struct {
 }
 ```
 
+### func Reserve
+
+```go
+func Reserve[T any]() PID[T]
+```
+
+Reserve returns a PID that is not started. Proc panics until StartReserved starts it.
+
 ### func Start
 
 ```go
-func Start[T any, P interface {
+func Start[T, A any, P interface {
     *T
     Run(context.Context)
-}](parent *Supervisor) PID[T]
+    bind(A)
+}](parent *Supervisor, args A) PID[T]
 ```
 
-Start creates a T from its zero value and runs its Run method under parent. If parent is stopped, Start returns the PID and does not run the process.
+Start reserves a PID and starts it with args under parent, as StartReserved does.
 
 ### func \(PID\[T\]\) Proc
 
@@ -39,15 +70,25 @@ Start creates a T from its zero value and runs its Run method under parent. If p
 func (p PID[T]) Proc() *T
 ```
 
-Proc returns the process pointer with one atomic load.
+Proc returns the current process value with one atomic load. It panics if the PID is not started.
 
 ## type Process
 
-Process marks a mutable struct that runs as a supervised process. Only Start creates it, and other code calls its exported methods through a PID. Embed it by value. A named field or pointer embedding does not mark the struct.
+Process marks a mutable struct that runs as a supervised process with arguments of type A. Only Start and StartReserved create it, and other code calls its exported methods through a PID. Embed it by value. A named field or pointer embedding does not mark the struct.
 
 ```go
-type Process struct{}
+type Process[A any] struct {
+    // contains filtered or unexported fields
+}
 ```
+
+### func \(\*Process\[A\]\) Args
+
+```go
+func (p *Process[A]) Args() A
+```
+
+Args returns the arguments that Start or StartReserved gave to the process.
 
 ## type Supervisor
 

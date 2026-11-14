@@ -41,6 +41,9 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	if libraryObject(object) {
 		return c.matchLibraryCall(call, object)
 	}
+	if trustedRuntimeCall(object) {
+		return ""
+	}
 	if !c.queries.Callable(signature) && !c.protectedCallArguments(call) {
 		return ""
 	}

@@ -1,13 +1,17 @@
 // Package proc runs supervised processes.
 //
-// A process is a mutable struct that embeds Process and has a Run(context.Context)
-// method with a pointer receiver. Start creates the process from its zero value,
-// runs Run in a new goroutine, and returns its PID. Callers keep the PID and call
-// exported methods directly on the process pointer from PID.Proc. The immutago
-// analyzer proves that these methods take and return only immutable values and PIDs.
+// A process is a mutable struct that embeds Process[A] and has a Run(context.Context)
+// method with a pointer receiver. A is the immutable argument type of the process;
+// use None for a process without arguments. Start creates a new process value,
+// gives it the arguments, runs Run in a new goroutine, and returns its PID. Callers
+// keep the PID and call exported methods directly on the process pointer from
+// PID.Proc. The immutago analyzer proves that these methods take and return only
+// immutable values and PIDs. For processes that need each other's PIDs, Reserve
+// a PID first and start it later with StartReserved.
 //
 // A supervisor runs its children until Stop. If Run returns, the process ends.
-// If Run panics, the supervisor runs it again on the same value after a delay of
+// If Run panics, the supervisor creates a new process value from the same
+// arguments, stores it in the same PID, and runs it after a delay of
 // 1 s that doubles for each restart in the last 5 minutes. A sixth panic in 5
 // minutes stops all children of the supervisor in reverse start order and
 // escalates the panic to the parent supervisor, which restarts the subtree with
@@ -21,6 +25,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/lucasavila00/immutago/pkg/im"
 )
 
 const (
@@ -28,10 +34,23 @@ const (
 	restartWindow = 5 * time.Minute
 )
 
-// Process marks a mutable struct that runs as a supervised process.
-// Only Start creates it, and other code calls its exported methods through a PID.
+// Process marks a mutable struct that runs as a supervised process with arguments of type A.
+// Only Start and StartReserved create it, and other code calls its exported methods through a PID.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
-type Process struct{}
+type Process[A any] struct {
+	args A
+}
+
+// Args returns the arguments that Start or StartReserved gave to the process.
+func (p *Process[A]) Args() A { return p.args }
+
+// bind sets the arguments of a new process value.
+func (p *Process[A]) bind(args A) { p.args = args }
+
+// None is the argument type of a process without arguments.
+type None struct {
+	im.Shared
+}
 
 // Supervisor runs processes and nested supervisors.
 type Supervisor struct {
@@ -50,13 +69,23 @@ type child struct {
 	done chan struct{}
 }
 
-// PID identifies a process that Start created.
+// PID identifies a process. Start returns a started PID; Reserve returns a PID to start later.
 type PID[T any] struct {
 	value *atomic.Pointer[T]
 }
 
-// Proc returns the process pointer with one atomic load.
-func (p PID[T]) Proc() *T { return p.value.Load() }
+// Proc returns the current process value with one atomic load.
+// It panics if the PID is not started.
+func (p PID[T]) Proc() *T {
+	value := p.value.Load()
+	if value == nil {
+		panic("proc: PID not started")
+	}
+	return value
+}
+
+// Reserve returns a PID that is not started. Proc panics until StartReserved starts it.
+func Reserve[T any]() PID[T] { return PID[T]{value: new(atomic.Pointer[T])} }
 
 // NewRoot returns a root supervisor.
 func NewRoot() *Supervisor { return root(func(value any) { panic(value) }) }
@@ -79,17 +108,41 @@ func StartSupervisor(parent *Supervisor) *Supervisor {
 	return nested
 }
 
-// Start creates a T from its zero value and runs its Run method under parent.
-// If parent is stopped, Start returns the PID and does not run the process.
-func Start[T any, P interface {
+// Start reserves a PID and starts it with args under parent, as StartReserved does.
+func Start[T, A any, P interface {
 	*T
 	Run(context.Context)
-}](parent *Supervisor) PID[T] {
-	value := new(T)
-	pid := PID[T]{value: new(atomic.Pointer[T])}
-	pid.value.Store(value)
-	parent.add(P(value).Run)
+	bind(A)
+}](parent *Supervisor, args A) PID[T] {
+	pid := Reserve[T]()
+	StartReserved[T, A, P](parent, pid, args)
 	return pid
+}
+
+// StartReserved creates a process value with args, stores it in pid, and runs its Run method under parent.
+// The PID is started when StartReserved returns. Each restart creates a new value from the same args.
+// If parent is stopped, the process does not run. StartReserved panics if pid is already started.
+func StartReserved[T, A any, P interface {
+	*T
+	Run(context.Context)
+	bind(A)
+}](parent *Supervisor, pid PID[T], args A) {
+	create := func() *T {
+		value := new(T)
+		P(value).bind(args)
+		return value
+	}
+	if !pid.value.CompareAndSwap(nil, create()) {
+		panic("proc: PID already started")
+	}
+	started := false
+	parent.add(func(ctx context.Context) {
+		if started {
+			pid.value.Store(create())
+		}
+		started = true
+		P(pid.value.Load()).Run(ctx)
+	})
 }
 
 // Stop begins stopping; the channel closes when all children have stopped, last started first.
@@ -200,8 +253,10 @@ func watch(ctx context.Context, run func(context.Context), failure chan<- any, d
 	}
 }
 
-// attempt calls run and returns the panic value if run panics.
+// attempt calls run with a context that ends with the attempt, and returns the panic value if run panics.
 func attempt(ctx context.Context, run func(context.Context)) (value any, failed bool) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	defer func() {
 		if failed {
 			value = recover()
