@@ -3,6 +3,7 @@
 ## Learn and use
 
 - [Get started](getting-started.md): a complete example and check commands.
+- [Runnable projects](../examples/README.md): live configuration, worker groups, and HTTP models with their own tests.
 - [Shared](shared.md) and [Scoped](scoped.md): choose whether pointers can be saved or returned.
 - [Owner](owner.md): replace the current Scoped object while readers use the previous one.
 - [Frozen collections](frozen.md): builders, Freeze, reads, and Clone.

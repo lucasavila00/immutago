@@ -16,9 +16,9 @@ values outside these rules keep their ordinary Go behavior.
 Read [Supervised services](services.md) for a complete FileCache example and
 the startup, restart, and stop behavior. The tables below use its FileCache and
 FileArgs types. Other examples come from the
-[configuration loader](../tests/testdata/accepted/service/config_loader.go),
-[limiter](../tests/testdata/accepted/service/limiter.go), and
-[worker pool](../tests/testdata/accepted/service/worker_pool.go).
+[configuration loader](../examples/configuration/config.go),
+[limiter](../examples/configuration/limiter.go), and
+[worker pool](../examples/workers/pool.go).
 
 ## Service declarations
 
@@ -131,8 +131,8 @@ these groups, see [Child services and groups](service-children.md).
 
 | Allowed forms — exhaustive | Example |
 | --- | --- |
-| Pass `p.Children()` directly as the first argument of Start, StartReserved, or StartGroup | `supervise.Start[Worker](p.Children(), WorkerArgs{ID: 1})`, `supervise.StartReserved(p.Children(), ref, args)`, `supervise.StartGroup(p.Children())` |
-| Bind Children to one new local with `:=`; use that local only as the first argument of those three functions in the same method | `children := p.Children(); supervise.Start[Worker](children, WorkerArgs{ID: 1})` |
+| Pass `p.Children()` directly as the first argument of Start, StartReserved, or StartGroup | `supervise.Start[Worker](p.Children(), WorkerArgs{ID: 1, Version: 1})`, `supervise.StartReserved(p.Children(), ref, args)`, `supervise.StartGroup(p.Children())` |
+| Bind Children to one new local with `:=`; use that local only as the first argument of those three functions in the same method | `children := p.Children(); supervise.Start[Worker](children, WorkerArgs{ID: 1, Version: 1})` |
 | Keep, store, start under, or stop the result of StartGroup; pass or return it through ordinary functions or unexported methods | `group := supervise.StartGroup(p.Children()); p.groups[name] = group`, later `<-group.Stop()` |
 
 | Group source | Who stops it | Where it can be used |

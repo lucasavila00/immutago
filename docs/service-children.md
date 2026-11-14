@@ -11,37 +11,30 @@ run, such as workers in a pool. Choose the parent by the required lifetime:
 
 ## Build a pool during initialization
 
-Use Init when all children can be created from the start arguments. This
-[pool](../tests/testdata/accepted/service/pool_init.go) uses Worker and WorkerArgs from the
-[worker example](../tests/testdata/accepted/service/worker_pool.go):
+Use Init when all children can be created from the start arguments. The
+[worker project](../examples/workers/README.md) creates a
+[pool](../examples/workers/pool.go) of queued
+[text workers](../examples/workers/worker.go). This part of `Pool.Init` starts
+the children and keeps their Refs:
 
 ```go
-// Pool owns the requested number of workers.
-type Pool struct {
-    supervise.Service[int]
+children := p.Children()
+for id := range p.Args().Workers {
+    worker, err := supervise.Start[Worker](children, WorkerArgs{
+        ID: id, Version: p.Args().Version,
+    })
+    if err != nil { return err }
+    p.workers = append(p.workers, worker)
 }
-
-// Init creates the workers before the pool becomes available.
-func (p *Pool) Init() error {
-    children := p.Children()
-    for id := range p.Args() {
-        if _, err := supervise.Start[Worker](children, WorkerArgs{ID: id}); err != nil {
-            return err
-        }
-    }
-    return nil
-}
-
-// Run keeps the pool active until shutdown.
-func (*Pool) Run(ctx context.Context) { <-ctx.Done() }
 ```
 
 - Child Init runs during Start. Child Run waits until the pool's Run begins.
+- Pool.Ready reports when every worker's job loop has started.
 - Failed pool Init stops its children. Init must not wait for work from child Run.
 - Use `children` only as the parent argument of Start, StartReserved, or StartGroup
   in that method. The runtime stops this group.
 - For children you can stop yourself, create a nested group.
-- For work chosen after setup, start children from Run, as in the worker example.
+- For work chosen after setup, start children from Run, as the dispatcher does below.
 - A restart creates a new parent struct and child group; Init or Run rebuilds the children.
 
 ## Stop one group while the parent continues
@@ -50,9 +43,12 @@ Create a nested group under the current run:
 
 ```go
 group := supervise.StartGroup(p.Children())
-worker, err := supervise.Start[Worker](group, WorkerArgs{ID: 1})
+worker, err := supervise.Start[Worker](group, WorkerArgs{ID: 1, Version: 1})
 if err != nil { panic(err) }
-worker.Current().Do()
+if worker.Current().Ready() {
+    result := worker.Current().Process("Hello")
+    if result.Available { println(result.Text) } // HELLO
+}
 ```
 
 - StartGroup returns an ordinary `*supervise.Group`; keep it in a field or map.
@@ -61,20 +57,21 @@ worker.Current().Do()
 - Release shared-state locks before waiting for Stop. A child may need a parent
   method that takes the same lock to finish shutdown.
 
-The [dispatcher](../tests/testdata/accepted/service/dispatcher.go) applies this
-pattern to configuration changes. Its configuration service stores the desired
-variant names. Each variant gets a group with a throttle and a version loader.
-With the example types and an existing root:
+The [dispatcher](../examples/workers/dispatcher.go) applies this pattern to
+configuration changes. Its [configuration service](../examples/workers/config.go)
+stores the desired variant names. Each variant gets a group with a worker pool.
+The [command](../examples/workers/cmd/workers/main.go) starts two variants:
 
 ```go
-config, err := supervise.Start[VariantConfig](root, supervise.NoArgs{})
+config, err := supervise.Start[workers.VariantConfig](root, supervise.NoArgs{})
 if err != nil { panic(err) }
 names := im.FreezeSlice([]string{"blue", "green"})
 config.Current().Set(names)
-dispatcher, err := supervise.Start[Dispatcher](root, DispatcherArgs{Config: config})
+dispatcher, err := supervise.Start[workers.Dispatcher](root, workers.DispatcherArgs{
+    Config: config, Workers: 2, Every: time.Millisecond,
+})
 if err != nil { panic(err) }
 dispatcher.Current().Refresh()
-dispatcher.Current().Load("blue", 1)
 ```
 
 Refresh compares desired names with current groups:
@@ -90,13 +87,22 @@ config.Current().Set(names)
 dispatcher.Current().Refresh()
 ```
 
-The version loader uses one group per version:
+The dispatcher stages each new version in its own group:
 
-- Load starts the work; Ready marks the new server as ready.
-- The previous group stops only after Ready.
+- `Load("blue", 2)` starts a lowercase worker pool for blue.
+- Refresh switches pools only after the candidate's Ready method returns true.
+- The previous group stops after the switch; green keeps running.
+- Failed setup leaves the previous version available.
 - Requests for a pending or current version do nothing.
 
-On restart, the dispatcher reads the configuration again. Keep rebuild data in
+The command waits for each version before it sends a job. Run the whole sequence:
+
+```sh
+go run ./examples/workers/cmd/workers
+```
+
+On restart, the dispatcher reads the configuration again and creates version-1
+pools. This example does not persist version requests. Keep rebuild data in
 start arguments or a longer-lived service; old mutable fields are not copied.
 
 ## Child lifetimes
