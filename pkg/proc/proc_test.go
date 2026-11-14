@@ -256,6 +256,33 @@ func TestStopNested(t *testing.T) {
 	})
 }
 
+// TestStopNestedReleases verifies that a parent keeps no reference to a nested supervisor after its Stop.
+func TestStopNestedReleases(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		root := NewRoot()
+		Start[first](root, None{})
+		for range 3 {
+			nested := StartSupervisor(root)
+			Start[second](nested, None{})
+			synctest.Wait()
+			entry := nested.entry
+			<-nested.Stop()
+			if nested.parent != nil || nested.entry != nil || entry.run != nil {
+				t.Error("stopped supervisor keeps its parent links or run callback")
+			}
+		}
+		root.mu.Lock()
+		children := len(root.children)
+		root.mu.Unlock()
+		if children != 1 {
+			t.Errorf("root keeps %d children, want 1", children)
+		}
+		takeEvents()
+		<-root.Stop()
+		expectEvents(t, "stop first")
+	})
+}
+
 // TestSelfStop verifies that a process can stop its own supervisor.
 func TestSelfStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {

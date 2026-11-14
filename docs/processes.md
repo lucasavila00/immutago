@@ -165,6 +165,8 @@ Rejected examples are not exhaustive:
   counts this failure as a panic of the process.
 - `proc.StartSupervisor(parent)` nests a supervisor. `Stop` begins stopping;
   its channel closes when all children have stopped, last started first.
+  When a nested supervisor's own Stop channel closes, its parent has removed
+  its child entry.
   Cancellation is cooperative: `Run` must observe its context. Stop does not
   wait for direct method calls, and methods must synchronize their shared state.
 - `proctest.NewRoot(t)` fails a test whose process tree does not stop in 5 s.
