@@ -24,6 +24,6 @@ consumption checks. The analyzer adds no runtime state.
 - [Storage](ownership.md): immutable writes, pointer escape rules, and builder flow.
 - [Validation](validation.md): trust boundary, test sources, and hosted checks.
 
-The [language contract](../rules.md) owns the complete allowed forms and examples.
+The [language guide](../rules.md) links the complete allowed forms and examples.
 The [review requirements](../reviewer-focus.md) explain how to trace each form
 from that contract through the matcher and tests.

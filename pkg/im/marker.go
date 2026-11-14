@@ -6,8 +6,10 @@
 // immutable from construction. Whole variables can be rebound to another value.
 //
 // Pointers to Shared objects can be copied, stored, and returned. Pointers to
-// Scoped objects are restricted to local use and direct typed calls that do
-// not let the pointer escape. Go manages object lifetimes. A value copy
+// Scoped objects stay in local bindings or direct typed calls that do not retain
+// them. Owner publishes fresh Scoped objects; its loaded pointers follow the
+// same local-use rules. These mutation and retention restrictions add to Go's
+// memory safety. Go's garbage collector manages object lifetimes. A value copy
 // preserves pointers to the same immutable objects.
 //
 // FreezeSlice and FreezeMap share their input storage without copying. The analyzer
@@ -15,12 +17,17 @@
 // an independent copy.
 // Their zero values are empty collections. Element and key types must themselves
 // be immutable; the analyzer checks this requirement, including nested types.
+// The language guide lists the complete supported forms:
+// https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
 package im
 
 // Shared marks an immutable struct whose shared pointers may be stored or returned.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/shared.md for the complete forms.
 type Shared struct{}
 
-// Scoped marks an immutable struct whose pointers must not escape.
+// Scoped marks an immutable struct whose pointers have restricted retention.
+// Owner is the supported publication slot for fresh Scoped objects.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/scoped.md for the complete forms.
 type Scoped struct{}
