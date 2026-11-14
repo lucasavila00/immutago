@@ -2,10 +2,10 @@
 
 [Language guide](rules.md) · [Shared](shared.md) · [Scoped](scoped.md) · [Frozen collections](frozen.md)
 
-These forms apply to marked objects and frozen collections. Combine them with
-the forms on the relevant type's page. The lists are complete; other protected
-operations are rejected. Rejected examples are not exhaustive.
-[Owner slots and holders](owner.md) have their own forms.
+These forms apply to structs that embed Shared or Scoped, and to frozen slices
+and maps. Combine them with the forms on the type's page. The lists are complete;
+other operations on these values are rejected. Rejected examples are not exhaustive.
+[Owner](owner.md) has its own forms.
 
 [Types](#markers-and-stored-types) · [Values](#construction-and-scalar-reads) ·
 [Pointers](#common-pointer-forms) · [Statements](#statements-and-calls)
@@ -22,8 +22,8 @@ type ScopedPoint struct { im.Scoped; X int }
 type SharedLink struct { im.Shared; P *SharedPoint }
 ```
 
-The allowed stored types are complete below. Every field, key, and element
-must recursively match a row.
+Use the types below for struct fields and frozen collection keys and elements.
+This list is complete. It also applies to each nested field, key, and element.
 
 | Allowed form | Example |
 | --- | --- |
@@ -68,16 +68,15 @@ Rejected generic examples (**not exhaustive**):
 
 ## Construction and scalar reads
 
-Prepare ordinary locals, then construct the object. Copies of marked values and
-frozen collections stay immutable.
-Struct/array copies copy their fields; frozen wrappers and shared pointers keep
-referring to the same read-only storage.
+Calculate field values in local variables, then create the object. To change a
+value, create another object. Copies of frozen collections and Shared pointers
+use the same read-only data.
 
 ```go
 x := 1
 if condition { x = 2 }
 point := SharedPoint{X: x}
-point = SharedPoint{X: 3} // Whole-variable replacement is allowed.
+point = SharedPoint{X: 3} // Replace point with a new value.
 p := &SharedPoint{X: 1}
 q := p
 p = &SharedPoint{X: 2} // q still observes X == 1.
@@ -93,11 +92,12 @@ p = &SharedPoint{X: 2} // q still observes X == 1.
 | Use scalar reads in literals or indices; index or slice strings | `[]int{point.X}`, `a[point.X]`, `user.Name[1:]` |
 | Pass scalar reads to ordinary calls, including builtins, function variables, interface methods, and generics | `callback(point.X)`, `identity(point.X)` |
 
-A scalar read produces ordinary Go data. The statement that reads protected
-storage must still match the statement list below. After `x := point.X`, uses
-of `x` follow ordinary Go rules. Copies that contain marked values, pointers, or frozen collections remain protected.
-Compiler-constant operands, such as the array in `len([1]SharedPoint{})`, do
-not perform runtime reads or create storage.
+After `x := point.X`, `x` is an ordinary Go integer. You can change it or use it
+in a callback. The statement that reads `point.X` must still use one of the
+listed statement forms. Copying a marked value, pointer, or frozen collection
+does not remove its rules.
+Go does not evaluate operands used only for a compiler constant, such as the
+array in `len([1]SharedPoint{})`; these forms are allowed.
 
 Strings also follow ordinary Go rules, including when read from a marked field.
 Ordinary library APIs are trusted to keep string bytes immutable. There is no
@@ -111,9 +111,9 @@ These forms apply to both `*SharedPoint` (`im.Shared`) and
 | Allowed form | Example |
 | --- | --- |
 | Declare a zero or nil pointer | `var p *SharedPoint`, `var p *ScopedPoint = nil` |
-| Construct fresh storage | `p := &SharedPoint{X: 1}`, `p := new(SharedPoint)` |
-| Copy a value into fresh storage | `p := new(point)`, `p := new(SharedPoint{X: 1})` |
-| Copy, rebind, or discard a pointer | `q := p`, `p = q`, `p = nil`, `_ = p` |
+| Create a new object | `p := &SharedPoint{X: 1}`, `p := new(SharedPoint)` |
+| Create a new object from a value | `p := new(point)`, `p := new(SharedPoint{X: 1})` |
+| Copy, replace, or discard a pointer | `q := p`, `p = q`, `p = nil`, `_ = p` |
 | Read a field or copy the whole value | `x := p.X`, `value := *p` |
 | Compare pointers or nil | `same := p == q`, `if p != nil { ... }` |
 | Pass to a direct function with an exact concrete parameter type | `read(p)`; `func read(p *SharedPoint) int { return p.X }` |
@@ -156,7 +156,7 @@ Use the operations above inside these statement forms:
 The one-destination rule applies to assignments and declarations, not returns.
 `Get` is the only two-destination exception; both destinations must be new local
 names or blanks. Blocks, `break`, and `continue` follow ordinary Go rules.
-Whole package variables can also be reassigned; their objects remain immutable.
+Assignments to package variables follow the same one-destination rule.
 Calls carrying protected values or pointers must be direct, synchronous, and
 concretely typed; packages using these contracts are checked under the
 [package boundary](rules.md#package-boundary).
