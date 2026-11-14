@@ -40,8 +40,8 @@ The checker trusts the implementations of `im`, `proc`, and the Go standard
 library. It also skips the test runner that Go generates. There is no comment
 or annotation that lets user code bypass checks. The only trusted value in user
 code is a [process dependency](processes.md#unchecked-dependencies) from
-`proc.Trust`. It is unchecked: the checker does not look inside; the caller's
-promise that the value is safe for concurrent use.
+`proc.Trust`. The checker does not look inside it. The caller promises that the
+value is safe for concurrent use.
 
 In a checked package, `unsafe`, `reflect`, cgo, and functions without Go bodies
 are rejected. For example, write `func readCount() int { return 1 }` instead of

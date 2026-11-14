@@ -23,6 +23,7 @@ const (
     ArgsMethod              = "Args"
     RunMethod               = "Run"
     UncheckedDependencyType = "UncheckedDependency"
+    TrustFunction           = "Trust"
     ValueMethod             = "Value"
 )
 ```
@@ -45,7 +46,7 @@ const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
 func Contains(t types.Type) bool
 ```
 
-Contains reports whether a type stores a marked value or sealed collection. It runs one query; use Classifier to reuse results across queries.
+Contains reports whether a type stores a marked value, sealed collection, or process dependency. It runs one query; use Classifier to reuse results across queries.
 
 ## func IsCollection
 
@@ -159,7 +160,7 @@ Callable reports whether t contains a callback contract that carries protected s
 func (c *Classifier) Contains(t types.Type) bool
 ```
 
-Contains reports whether t stores a marked value or a sealed collection.
+Contains reports whether t stores a marked value, sealed collection, or process dependency.
 
 ## type Prover
 

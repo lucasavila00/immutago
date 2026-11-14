@@ -72,6 +72,10 @@ func (c *subsetChecks) report(n ast.Node, message string) {
 
 // visit sends each protected operation through the complete source-form matcher.
 func (c *subsetChecks) visit(node ast.Node) bool {
+	if expression, ok := node.(ast.Expr); ok && c.pass.TypesInfo.Types[expression].IsType() &&
+		checker.IsRuntimeType(c.pass.TypesInfo.TypeOf(expression), checker.UncheckedDependencyType) {
+		return false
+	}
 	c.checkOwnerNode(node)
 	c.checkProcessNode(node)
 	c.declarationNode(node)

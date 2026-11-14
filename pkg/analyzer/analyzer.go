@@ -137,6 +137,9 @@ func (c *checks) visit(node ast.Node) bool {
 		c.checkImport(n)
 
 	case *ast.TypeSpec:
+		if !n.Assign.IsValid() && checker.IsRuntimeType(c.pass.TypesInfo.TypeOf(n.Type), checker.UncheckedDependencyType) {
+			c.report(n.Pos(), "defined copies of proc.UncheckedDependency are unsupported; use a type alias")
+		}
 		if obj := c.pass.TypesInfo.Defs[n.Name]; obj != nil {
 			c.checkType(n.Pos(), obj.Type())
 		}
@@ -162,6 +165,9 @@ func (c *checks) checkImport(spec *ast.ImportSpec) {
 
 // checkType checks collection arguments and disallows pointers that could expose mutable aliases.
 func (c *checks) checkType(pos token.Pos, t types.Type) {
+	if reason := c.storedTypeReason(t); reason != "" {
+		c.report(pos, "unsupported immutable storage: "+reason+"\n  type: "+diagnosticType(t))
+	}
 	if reflectionValue(t) {
 		c.report(pos, "unsupported reflection value; immutability cannot be proved\n  type: "+diagnosticType(t)+
 			"\n  fix: replace reflection values with concrete typed values and direct "+
@@ -186,6 +192,21 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 	}
 }
 
+// storedTypeReason proves array elements and pointer targets, including argument-only structs.
+func (c *checks) storedTypeReason(t types.Type) string {
+	switch storage := t.Underlying().(type) {
+	case *types.Pointer:
+		if checker.Marked(storage.Elem()) {
+			return c.proofs.Reason(storage.Elem())
+		}
+	case *types.Array:
+		if c.queries.Contains(t) {
+			return c.proofs.Reason(t)
+		}
+	}
+	return ""
+}
+
 // reflectionValue identifies reflection storage even through pointer aliases and recursive pointer types.
 func reflectionValue(t types.Type) bool {
 	seen := make(map[types.Type]bool)
@@ -208,7 +229,7 @@ func reflectionValue(t types.Type) bool {
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") ||
-		checker.IsRuntimeType(t, checker.ProcessMarker) {
+		checker.IsRuntimeType(t, checker.ProcessMarker) || checker.IsRuntimeType(t, checker.UncheckedDependencyType) {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)

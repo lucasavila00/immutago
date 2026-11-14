@@ -69,7 +69,8 @@ func trustedRuntimeCall(object types.Object) bool {
 	}
 	signature := function.Type().(*types.Signature)
 	if signature.Recv() == nil {
-		return runtimeObject(object, checker.StartFunction) || runtimeObject(object, checker.StartReservedFunction)
+		return runtimeObject(object, checker.StartFunction) || runtimeObject(object, checker.StartReservedFunction) ||
+			runtimeObject(object, checker.TrustFunction)
 	}
 	return runtimeMethod(object, checker.ProcessMarker, checker.ArgsMethod)
 }
