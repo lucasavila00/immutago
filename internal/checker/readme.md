@@ -14,16 +14,16 @@ Names of the process runtime identities in RuntimePath and of the process method
 
 ```go
 const (
-    ProcessMarker         = "Process"
-    PIDType               = "PID"
-    StartFunction         = "Start"
-    ReserveFunction       = "Reserve"
-    StartReservedFunction = "StartReserved"
-    ProcMethod            = "Proc"
-    ArgsMethod            = "Args"
-    RunMethod             = "Run"
-    DependencyType        = "Dependency"
-    ValueMethod           = "Value"
+    ProcessMarker           = "Process"
+    PIDType                 = "PID"
+    StartFunction           = "Start"
+    ReserveFunction         = "Reserve"
+    StartReservedFunction   = "StartReserved"
+    ProcMethod              = "Proc"
+    ArgsMethod              = "Args"
+    RunMethod               = "Run"
+    UncheckedDependencyType = "UncheckedDependency"
+    ValueMethod             = "Value"
 )
 ```
 
@@ -125,7 +125,7 @@ Shared reports the presence of an embedded im.Shared value, not type validity.
 func TrustedField(field *types.Var) bool
 ```
 
-TrustedField identifies a named proc.Dependency field, which only a marked process argument struct can store.
+TrustedField identifies a named proc.UncheckedDependency field, which only a marked process argument struct can store.
 
 ## func Unevaluated
 
@@ -177,7 +177,7 @@ type Prover struct {
 func (p *Prover) ArgumentReason(t types.Type) string
 ```
 
-ArgumentReason proves a process argument type. It accepts proc.Dependency as the type, or as a TrustedField of a struct with exactly one marker. Every other component must be an allowed stored type.
+ArgumentReason proves a process argument type. It accepts proc.UncheckedDependency as the type, or as a TrustedField of a struct with exactly one marker. Every other component must be an allowed stored type.
 
 ### func \(\*Prover\) Reason
 

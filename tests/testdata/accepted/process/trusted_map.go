@@ -28,7 +28,7 @@ func (c *Counter) Run(ctx context.Context) {
 // ReporterArgs are the arguments of a Reporter.
 type ReporterArgs struct {
 	im.Shared
-	Seen proc.Dependency[map[string]int]
+	Seen proc.UncheckedDependency[map[string]int]
 }
 
 // Reporter reads the map of a Counter.
