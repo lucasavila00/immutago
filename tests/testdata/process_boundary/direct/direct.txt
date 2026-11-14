@@ -1,0 +1,2 @@
+direct.go:15:13: process Counter is created outside proc.Start; use proc.Start[Counter](parent)
+direct.go:15:17: process type Counter can be named only in its declaration, a pointer receiver, proc.Start[Counter], proc.Reserve[Counter], or proc.PID[Counter]

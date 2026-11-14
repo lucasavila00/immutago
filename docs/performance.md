@@ -71,7 +71,7 @@ cache, so new wrapper types do not expand the same negative component again.
 The pass-local type classifier expands each reachable type and classification
 mode once per cache. Reverse edges propagate positive results through cycles;
 completed queries reuse the stored result. The graph stays in memory until its
-pass ends. Ordinary packages still receive structural and source checks.
+pass ends. Only packages inside the proof boundary receive structural and source checks.
 
 The [marked graph benchmarks](../pkg/analyzer/proof_scaling_test.go) measure the
 complete pass on connected marked types and frozen collections.
@@ -107,3 +107,7 @@ graphs with fresh vet facts and records their total and largest file sizes,
 timing, peak memory, and profiles. [Graph tests](../pkg/analyzer/dependencies_graph_test.go)
 check the selected cause against all original errors, exact gob round trips,
 and constant fact size across deep, wide, and dense graphs.
+The workflow separately checks ordinary graphs without `im` imports and failure
+graphs whose packages directly import `im`. Ordinary graphs must pass both
+drivers. Checked graphs retain 101 local unsafe errors per generated package;
+consumer reports contain one representative cause.

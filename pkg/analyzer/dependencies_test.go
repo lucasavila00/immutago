@@ -38,8 +38,9 @@ func checkInvalidDependencyPropagation(t *testing.T, serialized bool) {
 	packages := dependencyImporter{"unsafe": types.Unsafe, checker.LibraryPath: library}
 	invalid := make(map[*types.Package]invalidPackage)
 	cases := []struct{ path, source, diagnostic string }{
-		{"example/bad", `package bad; import "unsafe"; var _ unsafe.Pointer`, "unsupported unsafe"},
-		{"example/wrapper", `package wrapper; import _ "example/bad"`, ""},
+		{"example/bad", `package bad; import ("unsafe"; _ "` + checker.LibraryPath + `"); var _ unsafe.Pointer`,
+			"unsupported unsafe"},
+		{"example/wrapper", `package wrapper; import _ "example/bad"`, "unsupported dependency example/bad"},
 		{"example/consumer", `package consumer; import (_ "example/wrapper"; _ "` + checker.LibraryPath + `")`,
 			"unsupported dependency example/wrapper"},
 	}
@@ -122,8 +123,9 @@ func TestInvalidProofKeepsRelevanceWhenVetPrunesImports(t *testing.T) {
 			return true
 		},
 		Report: func(d analysis.Diagnostic) { reports = append(reports, d.Message) }}
-	invalid, relevant, _ := invalidDependencies(pass)
-	if !invalid || !relevant || len(reports) != 1 {
+	relevant, invalid := collectDependencyFacts(pass)
+	reportDependencyFailures(pass, invalid)
+	if len(invalid) == 0 || !relevant || len(reports) != 1 {
 		t.Fatal("vet's pruned import graph lost a dependency proof failure")
 	}
 }

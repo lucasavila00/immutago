@@ -11,19 +11,34 @@ The same analyzer runs under `go vet -vettool`. Both provide compiler-resolved
 The [entry point](../../pkg/analyzer/analyzer.go) performs these stages:
 
 1. Skip the fixed `im` and `proc` packages and compiler-supplied standard library.
-2. Reject cgo packages and export their failure before checking generated wrappers.
-3. Collect dependency failure facts and start recording local diagnostics.
-4. Check declarations, imports, field types, exported process methods, and fixed
+2. Collect dependency facts and determine the checked package boundary.
+3. Return for ordinary packages under normal Go API trust.
+4. Reject checked cgo packages and export their failure before checking wrappers.
+5. Report checked dependency failures and record local diagnostics.
+6. Check declarations, imports, field types, exported process methods, and fixed
    `im` and `proc` type arguments.
-5. Run the native builder proof and obtain its set of tracked variables.
-6. Match protected operations and their enclosing statements.
-7. Export accumulated failures for importers.
+7. Run the native builder proof and match protected source forms.
+8. Export accumulated failures for importers.
 
 The builder set identifies separately checked storage. It does not exempt its
 operations. Type, source-form, and builder checks keep separate state.
 
+[Package scope](../../pkg/analyzer/package_scope.go) uses direct `im` or `proc` imports,
+locally used compiler type contracts, and failed checked dependency facts. One
+existential type walk shares a seen set across expression and object roots.
+It inspects alias and named generic metadata before underlying types, selected
+signature receivers and constraints, and explicit interface methods and embedded
+terms. It does not walk all imports or unselected concrete method sets. This
+keeps scalar APIs ordinary even when their implementation uses marked types,
+and preserves the boundary when vet prunes imported type data.
+
+Ordinary code is trusted to respect Go API contracts, including immutable
+strings and no hidden writes to protected memory. This is a conditional proof
+boundary, not a string dataflow or memory-corruption proof. The
+[language contract](../rules.md#package-boundary) owns the exact selection rule.
+
 [Cgo detection](../../pkg/analyzer/cgo.go) uses the compiler's exact generated
-header as a rejection trigger. It never grants trust to generated code. Cgo's
+header as a rejection trigger within checked packages. It never grants trust to generated code. Cgo's
 line directives retain the source package line in both drivers; the original
 `import "C"` is no longer available reliably after rewriting.
 

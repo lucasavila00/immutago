@@ -1,0 +1,4 @@
+frozen.go:11:2: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: logx.Info("weights", frozen)
+  type: ()
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

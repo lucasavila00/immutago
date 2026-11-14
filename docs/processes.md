@@ -16,6 +16,9 @@ methods; start arguments and exported method parameters/results use allowed
 stored types; process pointers are used only for the listed direct calls; and
 only `Start` or `StartReserved` creates a process.
 
+The existing immutable-field and Owner rules still apply. In particular, mutable
+process structs publish protected data through Owner fields.
+
 Method bodies are ordinary Go. These checks do not isolate mutable state:
 `shared = &p.count` or `p.table = globalMap` can share memory through globals or
 helpers. Methods must follow their API contracts and synchronize shared state.

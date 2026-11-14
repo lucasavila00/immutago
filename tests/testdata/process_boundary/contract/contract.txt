@@ -1,0 +1,2 @@
+contract.go:8:1: unsupported function without a Go body; immutability cannot be proved
+  fix: provide a Go implementation so writes and pointer transport can be checked

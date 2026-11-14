@@ -99,6 +99,10 @@ of `x` follow ordinary Go rules. Copies that contain marked values, pointers, or
 Compiler-constant operands, such as the array in `len([1]SharedPoint{})`, do
 not perform runtime reads or create storage.
 
+Strings also follow ordinary Go rules, including when read from a marked field.
+Ordinary library APIs are trusted to keep string bytes immutable. There is no
+string provenance tracking or automatic copy. See the [package boundary](rules.md#package-boundary).
+
 ## Common pointer forms
 
 These forms apply to both `*SharedPoint` (`im.Shared`) and
@@ -114,8 +118,9 @@ These forms apply to both `*SharedPoint` (`im.Shared`) and
 | Compare pointers or nil | `same := p == q`, `if p != nil { ... }` |
 | Pass to a direct function with an exact concrete parameter type | `read(p)`; `func read(p *SharedPoint) int { return p.X }` |
 
-Parentheses and aliases preserve these forms. Targets are concrete marked
-structs. Pointers originate in the listed fresh constructions.
+Parentheses and aliases preserve the pointer forms here and on the marker pages.
+Targets are concrete marked structs. Pointers originate in the listed fresh
+constructions.
 
 Rejected pointer examples (**not exhaustive**):
 
@@ -153,7 +158,8 @@ The one-destination rule applies to assignments and declarations, not returns.
 names or blanks. Blocks, `break`, and `continue` follow ordinary Go rules.
 Whole package variables can also be reassigned; their objects remain immutable.
 Calls carrying protected values or pointers must be direct, synchronous, and
-concretely typed; dependencies are checked.
+concretely typed; packages using these contracts are checked under the
+[package boundary](rules.md#package-boundary).
 
 Rejected statement and call examples (**not exhaustive**):
 
