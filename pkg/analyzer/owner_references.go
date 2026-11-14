@@ -52,15 +52,21 @@ func (c *subsetChecks) findHolderReference(t types.Type, seen map[types.Type]boo
 	case *types.Interface:
 		return c.interfaceHolderReference(value, seen)
 	case *types.Union:
-		for i := 0; i < value.Len(); i++ {
-			if c.findHolderReference(value.Term(i).Type(), seen) {
-				return true
-			}
-		}
+		return c.unionHolderReference(value, seen)
 	case *types.Signature:
 		return c.findHolderReference(value.Params(), seen) || c.findHolderReference(value.Results(), seen)
 	case *types.Tuple:
 		return c.tupleHolderReference(value, seen)
+	}
+	return false
+}
+
+// unionHolderReference checks each term in a type set.
+func (c *subsetChecks) unionHolderReference(value *types.Union, seen map[types.Type]bool) bool {
+	for i := 0; i < value.Len(); i++ {
+		if c.findHolderReference(value.Term(i).Type(), seen) {
+			return true
+		}
 	}
 	return false
 }

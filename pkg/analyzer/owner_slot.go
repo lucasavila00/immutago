@@ -136,45 +136,12 @@ func checkOwner(pass *analysis.Pass) {
 
 // checkOwnerNode verifies slot placement and value uses.
 func (c *subsetChecks) checkOwnerNode(node ast.Node) {
+	c.checkOwnerTypeNode(node)
 	switch n := node.(type) {
 	case *ast.FuncLit:
 		c.checkSlotCapture(n)
-	case *ast.InterfaceType:
-		if c.hasHolderReference(c.pass.TypesInfo.TypeOf(n)) {
-			c.pass.Reportf(n.Pos(), "interfaces cannot contain Owner holder pointers")
-		}
-	case *ast.FuncType:
-		if _, direct := c.parents[n].(*ast.FuncDecl); !direct {
-			if signature, ok := c.pass.TypesInfo.TypeOf(n).(*types.Signature); ok {
-				c.checkHolderSignature(signature, false, n)
-			}
-		}
-		if c.hasSlotValue(c.pass.TypesInfo.TypeOf(n)) {
-			c.pass.Reportf(n.Pos(), "function types cannot pass or return Owner slots or holders by value")
-		}
 	case *ast.FuncDecl:
 		c.checkSlotFunction(n)
-	case *ast.TypeSpec:
-		if !n.Assign.IsValid() && c.holderPointer(c.pass.TypesInfo.TypeOf(n.Type)) {
-			c.pass.Reportf(n.Pos(), "defined holder pointer types are unsupported")
-		}
-		if !n.Assign.IsValid() && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(n.Type), "Owner") {
-			c.pass.Reportf(n.Pos(), "defined copies of Owner slots are unsupported")
-		}
-	case *ast.ArrayType, *ast.MapType, *ast.ChanType:
-		if expression, ok := node.(ast.Expr); ok {
-			typ := c.pass.TypesInfo.TypeOf(expression)
-			if c.hasSlotValue(typ) || c.hasHolderReference(typ) {
-				c.pass.Reportf(node.Pos(), "containers of Owner slots or holders are unsupported")
-			}
-		}
-	case *ast.StarExpr:
-		if c.pass.TypesInfo.Types[n].IsType() {
-			element := c.pass.TypesInfo.TypeOf(n.X)
-			if checker.IsLibraryType(element, "Owner") || c.hasHolderReference(element) {
-				c.pass.Reportf(n.Pos(), "pointers to Owner slots or holder references are unsupported")
-			}
-		}
 	case *ast.ValueSpec:
 		c.checkSlotDeclaration(n)
 	case *ast.StructType:
@@ -186,6 +153,65 @@ func (c *subsetChecks) checkOwnerNode(node ast.Node) {
 	}
 	if expression, ok := node.(ast.Expr); ok {
 		c.checkSlotExpression(expression)
+	}
+}
+
+// checkOwnerTypeNode rejects unsupported type-level holder transport.
+func (c *subsetChecks) checkOwnerTypeNode(node ast.Node) {
+	switch n := node.(type) {
+	case *ast.InterfaceType:
+		if c.hasHolderReference(c.pass.TypesInfo.TypeOf(n)) {
+			c.pass.Reportf(n.Pos(), "interfaces cannot contain Owner holder pointers")
+		}
+	case *ast.FuncType:
+		c.checkOwnerSignatureType(n)
+	case *ast.TypeSpec:
+		c.checkOwnerTypeSpec(n)
+	case *ast.ArrayType, *ast.MapType, *ast.ChanType:
+		expression, _ := node.(ast.Expr)
+		typ := c.pass.TypesInfo.TypeOf(expression)
+		if c.hasSlotValue(typ) || c.hasHolderReference(typ) {
+			c.pass.Reportf(node.Pos(), "containers of Owner slots or holders are unsupported")
+		}
+	case *ast.StarExpr:
+		c.checkOwnerPointerType(n)
+	}
+}
+
+// checkOwnerSignatureType rejects callback contracts carrying holder pointers.
+func (c *subsetChecks) checkOwnerSignatureType(n *ast.FuncType) {
+	if _, direct := c.parents[n].(*ast.FuncDecl); !direct {
+		if signature, ok := c.pass.TypesInfo.TypeOf(n).(*types.Signature); ok {
+			c.checkHolderSignature(signature, false, n)
+		}
+	}
+	if c.hasSlotValue(c.pass.TypesInfo.TypeOf(n)) {
+		c.pass.Reportf(n.Pos(), "function types cannot pass or return Owner slots or holders by value")
+	}
+}
+
+// checkOwnerTypeSpec rejects new defined slot and holder pointer types.
+func (c *subsetChecks) checkOwnerTypeSpec(n *ast.TypeSpec) {
+	if n.Assign.IsValid() {
+		return
+	}
+	typ := c.pass.TypesInfo.TypeOf(n.Type)
+	if c.holderPointer(typ) {
+		c.pass.Reportf(n.Pos(), "defined holder pointer types are unsupported")
+	}
+	if checker.IsLibraryType(typ, "Owner") {
+		c.pass.Reportf(n.Pos(), "defined copies of Owner slots are unsupported")
+	}
+}
+
+// checkOwnerPointerType rejects slot addresses and nested holder pointers.
+func (c *subsetChecks) checkOwnerPointerType(n *ast.StarExpr) {
+	if !c.pass.TypesInfo.Types[n].IsType() {
+		return
+	}
+	element := c.pass.TypesInfo.TypeOf(n.X)
+	if checker.IsLibraryType(element, "Owner") || c.hasHolderReference(element) {
+		c.pass.Reportf(n.Pos(), "pointers to Owner slots or holder references are unsupported")
 	}
 }
 
