@@ -23,17 +23,19 @@ operations. An earlier loaded pointer remains valid after a later `Store`.
 
 ## Allowed forms
 
-These allowed forms are complete. Other slot and holder operations are rejected.
+An Owner field or variable is a **slot**. A struct with a slot field, such as
+`Loader`, is a **holder**. These allowed forms are complete; other slot and
+holder operations are rejected.
 Parentheses preserve these forms. Exported package slots can also use a
 package qualifier.
 
 | Allowed form | Example |
 | --- | --- |
-| Named slot field in an unmarked struct | `type Loader struct { Current im.Owner[ScopedPoint] }` |
-| Zero package slot | `var current im.Owner[ScopedPoint]` |
-| Zero holder local or package variable | `var loader Loader` |
-| Fresh holder pointer in a local | `loader := &Loader{}` or `loader := new(Loader)` |
-| Copy a holder pointer to one local | `other := loader` |
+| Named Owner field in a struct without an im marker | `type Loader struct { Current im.Owner[ScopedPoint] }` |
+| Declare a package Owner variable without an initializer | `var current im.Owner[ScopedPoint]` |
+| Declare a local or package holder variable without an initializer | `var loader Loader` |
+| Create a holder and keep its pointer in a local variable | `loader := &Loader{}` or `loader := new(Loader)` |
+| Copy a holder pointer to one local variable | `other := loader` |
 | Pass a holder pointer to a direct, concrete function | `publish(loader)` where `func publish(l *Loader)` |
 | Store a fresh object in a direct slot field or package slot | `loader.Current.Store(&ScopedPoint{X: 1})`, `current.Store(new(ScopedPoint))` |
 | Load into one local pointer | `point := loader.Current.Load()`, `var point = current.Load()`, `point = current.Load()` |

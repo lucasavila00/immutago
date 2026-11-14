@@ -10,8 +10,8 @@ Those lists and the forms below are complete; other protected operations are
 rejected. Rejected examples are not exhaustive.
 
 Build the slice or map locally, then call Freeze. Freeze does not copy the
-entries. Do not use the original variable again. Call Clone to get a separate
-slice or map that you can edit:
+entries. Read them through the frozen result after the call. Call Clone to get
+a separate slice or map that you can edit:
 
 ```go
 scores := map[string]int{"alice": 10}

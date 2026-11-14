@@ -4,7 +4,7 @@
 
 Use immutago to keep object fields read-only and control where pointers can be
 saved. Set the fields when you create an object. To change data, create another
-object. Go's garbage collector still manages object lifetime.
+object.
 
 Choose the page for the value you need:
 
@@ -12,7 +12,7 @@ Choose the page for the value you need:
 | --- | --- |
 | [Shared](shared.md) | Store or return pointers to immutable objects. |
 | [Scoped](scoped.md) | Keep pointers local; pass them to named functions that do not save them. |
-| [Owner](owner.md) | Publish fresh Scoped objects through an atomic slot. |
+| [Owner](owner.md) | Publish a new Scoped object and read the current one. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 
