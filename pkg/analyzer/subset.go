@@ -43,6 +43,7 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checke
 			return true
 		})
 	}
+	c.checkBuilderTypes()
 	c.ownedInputs()
 	for _, file := range pass.Files {
 		ast.Inspect(file, c.visit)

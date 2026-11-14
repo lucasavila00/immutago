@@ -22,6 +22,8 @@ local_reference_escape.go:25:13: unsupported immutable operation: containers of 
   source: []*Local{value}
   type: []*local_reference_escape.Local
   fix: store Scoped value copies or im.Shared pointers
+local_reference_escape.go:25:2: unsupported native builder: Scoped pointers cannot be stored
+  fix: use allowed stored types for builder keys and elements
 local_reference_escape.go:26:12: immutable collection: type argument 1: Scoped pointers cannot be stored
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
