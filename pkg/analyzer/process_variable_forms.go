@@ -36,6 +36,22 @@ func (c *checks) atomicCounters() map[*types.Var]bool {
 	if c.counters != nil {
 		return c.counters
 	}
+	receivers := c.methodReceivers()
+	c.counters = make(map[*types.Var]bool)
+	for id, object := range c.pass.TypesInfo.Uses {
+		variable := packageVariable(object)
+		if variable == nil || variable.Pkg() != c.pass.Pkg || !atomicType(variable.Type()) {
+			continue
+		}
+		if valid, seen := c.counters[variable]; !seen || valid {
+			c.counters[variable] = receivers[id]
+		}
+	}
+	return c.counters
+}
+
+// methodReceivers finds the names that are the receiver of a direct method call.
+func (c *checks) methodReceivers() map[*ast.Ident]bool {
 	receivers := make(map[*ast.Ident]bool)
 	for _, file := range c.pass.Files {
 		ast.Inspect(file, func(node ast.Node) bool {
@@ -49,15 +65,5 @@ func (c *checks) atomicCounters() map[*types.Var]bool {
 			return true
 		})
 	}
-	c.counters = make(map[*types.Var]bool)
-	for id, object := range c.pass.TypesInfo.Uses {
-		variable := packageVariable(object)
-		if variable == nil || variable.Pkg() != c.pass.Pkg || !atomicType(variable.Type()) {
-			continue
-		}
-		if valid, seen := c.counters[variable]; !seen || valid {
-			c.counters[variable] = receivers[id]
-		}
-	}
-	return c.counters
+	return receivers
 }
