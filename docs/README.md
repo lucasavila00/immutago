@@ -8,6 +8,7 @@
 - [Frozen collections](frozen.md): builders, Freeze, reads, and Clone.
 - [Unchecked immutable values](unchecked-values.md): a trusted, unproven immutable value.
 - [Supervised processes](processes.md): typed start arguments and direct calls.
+- [Child processes](process-children.md): start worker groups and change them while a process runs.
 - [Performance](performance.md): operation costs.
 
 ## Look up a rule or API
