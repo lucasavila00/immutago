@@ -41,28 +41,16 @@ func (w *Worker) Do() int {
 // WorkerPool starts its workers under the supervisor of its run.
 type WorkerPool struct {
 	proc.Process[PoolArgs]
-	mu      sync.Mutex
-	workers []proc.PID[Worker]
 }
 
 // Run starts the workers and a nested group, and waits until ctx ends.
 func (p *WorkerPool) Run(ctx context.Context) {
 	sup := p.Supervisor()
 	for i := range p.Args().Workers {
-		pid := proc.Start[Worker](sup, WorkerArgs{ID: i})
-		p.mu.Lock()
-		p.workers = append(p.workers, pid)
-		p.mu.Unlock()
+		proc.Start[Worker](sup, WorkerArgs{ID: i})
 	}
 	spare := proc.Reserve[Worker]()
 	proc.StartReserved(p.Supervisor(), spare, WorkerArgs{ID: -1})
 	proc.Start[Worker](proc.StartSupervisor((p.Supervisor())), WorkerArgs{ID: -2})
 	<-ctx.Done()
-}
-
-// Workers returns the number of started workers.
-func (p *WorkerPool) Workers() int {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return len(p.workers)
 }
