@@ -297,15 +297,18 @@ func (s *Supervisor) Stop() <-chan struct{} {
 	return s.stopped
 }
 
-// add records a child, runs it if s is running, and returns it.
+// add records a child unless s is stopping, runs it if s is running, and returns its entry.
 func (s *Supervisor) add(run func(context.Context)) *child {
 	done := make(chan struct{})
 	close(done)
 	c := &child{run: run, stop: func() {}, done: done}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.stopping {
+		return c
+	}
 	s.children = append(s.children, c)
-	if s.ctx != nil && !s.stopping {
+	if s.ctx != nil {
 		s.launch(c)
 	}
 	return c
