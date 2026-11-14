@@ -2,18 +2,18 @@
 
 [Documentation](README.md) · [Get started](getting-started.md) · [API](../pkg/im/readme.md)
 
-Immutago restricts mutation and reference retention beyond Go's memory safety.
-Objects are immutable from construction; whole variable bindings can change.
-Go's garbage collector manages object lifetime.
+Use immutago to keep object fields read-only and control where pointers can be
+saved. Set the fields when you create an object. To change data, create another
+object.
 
 Choose the page for the value you need:
 
 | Guide | Use it to |
 | --- | --- |
 | [Shared](shared.md) | Store or return pointers to immutable objects. |
-| [Scoped](scoped.md) | Keep immutable object pointers local or in direct non-retaining calls. |
-| [Owner](owner.md) | Publish fresh Scoped objects through an atomic slot. |
-| [Frozen collections](frozen.md) | Freeze an exclusive native builder, read it, or Clone mutable storage. |
+| [Scoped](scoped.md) | Keep pointers local; pass them to named functions that do not save them. |
+| [Owner](owner.md) | Publish a new Scoped object and read the current one. |
+| [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 
 The common lists and each type's lists define the complete supported forms.

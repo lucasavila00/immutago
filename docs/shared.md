@@ -2,24 +2,28 @@
 
 [Language guide](rules.md) · [Common forms](common-forms.md) · [Scoped](scoped.md)
 
-Use `im.Shared` when pointers to immutable objects must be stored or returned.
-The object is immutable from construction; a variable holding its pointer can
-be reassigned.
+Use `im.Shared` when you need to save or return a pointer. Set the fields when
+you create the object. To change data, replace the pointer with a new object:
 
 ```go
 type SharedPoint struct { im.Shared; X int }
 type SharedLink struct { im.Shared; P *SharedPoint }
 
 func makeSharedPoint() *SharedPoint { return &SharedPoint{X: 1} }
+
+func use() {
+    p := makeSharedPoint()
+    q := p
+    p = &SharedPoint{X: 2} // Allowed. q still points to X == 1.
+    _ = q
+    // p.X = 3           // Rejected. Fields cannot change.
+}
 ```
 
 ## Allowed forms
 
-Use the common lists for [stored types](common-forms.md#markers-and-stored-types),
-[construction and reads](common-forms.md#construction-and-scalar-reads),
-[pointers](common-forms.md#common-pointer-forms), and
-[statements and calls](common-forms.md#statements-and-calls).
-Those lists and the table below are complete. Other protected operations are rejected.
+The [common forms](common-forms.md) and the table below give the complete list
+of allowed operations. Other protected operations are rejected.
 
 `*SharedPoint` also permits these forms:
 
