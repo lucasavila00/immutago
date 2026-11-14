@@ -45,7 +45,8 @@ func run(pass *analysis.Pass) (any, error) {
 	if pass.Pkg.Path() == checker.LibraryPath || standardLibrary(pass) {
 		return nil, nil
 	}
-	invalid, relevant, failures := invalidDependencies(pass)
+	invalid, relevant, imports := invalidDependencies(pass)
+	var failures []proofFailure
 	report := pass.Report
 	pass.Report = func(d analysis.Diagnostic) {
 		invalid = true
@@ -55,7 +56,7 @@ func run(pass *analysis.Pass) (any, error) {
 	defer func() {
 		pass.Report = report
 		if invalid && pass.ExportPackageFact != nil {
-			pass.ExportPackageFact(&invalidPackage{Relevant: relevant, Failures: uniqueFailures(failures)})
+			pass.ExportPackageFact(packageFailureFact(pass.Pkg.Path(), relevant, imports, failures))
 		}
 	}()
 	c := &checks{pass: pass, reported: make(map[token.Pos]bool)}
