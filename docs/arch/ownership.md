@@ -44,14 +44,15 @@ the parameter does not change it.
 The marker selects the pointer rule:
 
 - `im.Shared`: callers can store or return pointers.
-- `im.Scoped`: callers can read through pointers but cannot save or return them.
+- `im.Scoped`: callers can read through pointers, but cannot store them in fields
+  or globals, capture them, or return them.
 
 For either marker, the checker requires:
 
 - Immutable fields, including nested fields and array elements.
 - Immutable targets for stored pointers, so another pointer cannot change them.
 - Allowed key and element types in frozen collections.
-- No writes through another variable or a receiver method.
+- No writes to those fields through another pointer or a receiver method.
 
 This choice gives us one rule to declare, read, and check. The checker uses Go
 type identity instead of a separate pointer policy for each variable and
