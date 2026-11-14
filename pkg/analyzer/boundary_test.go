@@ -73,7 +73,7 @@ func TestPrunedProofBoundary(t *testing.T) {
  type Phantom[T any] struct{}
  func PhantomOwner() Phantom[im.Owner[Model]] { return Phantom[im.Owner[Model]]{} }`).Pkg
 	api.SetImports(nil)
-	importer := dependencyImporter{"sample": api, "unsafe": types.Unsafe}
+	importer := dependencyImporter{"sample": api}
 	cases := []struct{ name, declarations string }{
 		{"alias", `type Alias = api.Value; var value Alias`},
 		{"defined", `type Copy api.Value; var value Copy`},
@@ -96,7 +96,7 @@ func TestPrunedProofBoundary(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			pass := boundaryPass(t, importer,
-				`package boundary; import ("unsafe"; api "sample"); var _ unsafe.Pointer; `+tc.declarations)
+				`package boundary; import api "sample"; func missing(); `+tc.declarations)
 			if usesImmutable(pass.Pkg) {
 				t.Fatal("fixture did not prune the im import graph")
 			}
@@ -107,7 +107,7 @@ func TestPrunedProofBoundary(t *testing.T) {
 			if _, err := run(pass); err != nil {
 				t.Fatal(err)
 			}
-			if !exported || !strings.Contains(strings.Join(reports, "\n"), "unsupported unsafe import") {
+			if !exported || !strings.Contains(strings.Join(reports, "\n"), "unsupported function without a Go body") {
 				t.Fatalf("pruned package escaped checking: fact=%t, reports=%v", exported, reports)
 			}
 			pass.TypesInfo.Types = nil

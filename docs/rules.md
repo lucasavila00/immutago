@@ -55,9 +55,13 @@ The checker checks a package in any of these cases, including its test files:
 - User code has no suppression comments. Its only trust markers are
   `im.UncheckedValue` and `supervise.ConcurrentSafe`.
 
+- Importing `unsafe` or `reflect` is allowed; ordinary values use ordinary Go rules.
+- Protected values still need a listed form: `reflect.ValueOf(1)` is allowed,
+  but `reflect.ValueOf(p)` with a marked pointer fails the interface-boxing rule.
+
 | Rejected examples — non-exhaustive | Use instead |
 | --- | --- |
-| `unsafe`, `reflect`, or cgo | Ordinary typed Go code. Cgo produces one error at the source package line. |
+| Cgo | Ordinary typed Go code. Cgo produces one error at the source package line. |
 | `func readCount() int` without a body | `func readCount() int { return 1 }` |
 
 An imported package's error includes one cause and a command to see its other errors.
