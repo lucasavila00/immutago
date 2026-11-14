@@ -228,7 +228,7 @@ The one-destination rule applies to assignments and declarations, not returns.
 names or blanks. Blocks, `break`, and `continue` follow ordinary Go rules.
 Whole package variables can also be reassigned; their objects remain immutable.
 Calls carrying protected values or pointers must be direct, synchronous, and
-concretely typed; dependencies are checked.
+concretely typed. Their type contracts select checking in the called package.
 
 Rejected statement and call examples (**not exhaustive**):
 
@@ -328,13 +328,50 @@ Run `immutago ./...` or `go vet -vettool=/absolute/path/to/immutago ./...`.
 `go build` alone does not enforce these rules. There are no suppression or trust
 annotations. Unsupported forms fail rather than being skipped.
 
+## Package boundary
+
+A package is checked when it directly imports the fixed `im` package, uses a
+compiler type contract that reaches an `im` type, or imports a failed checked
+package. These selection forms are complete. The fixed `im` implementation and
+the compiler-supplied standard library are trusted separately.
+
+| Selection form | Example |
+| --- | --- |
+| Direct import, including an alias or blank import | `import _ "github.com/lucasavila00/immutago/pkg/im"` |
+| Used marked, frozen, or Owner value or pointer | `var point api.Point`, `var current api.Loader` |
+| Used callback, interface, or generic contract containing an im type | `callback := api.Publish`, `var value api.Alias[int]` when its constraint contains an Owner |
+| Failed checked dependency, including through wrappers | Import a package whose immutable field proof failed. |
+
+The compiler-type walk follows fields, keys, elements, pointer targets,
+receivers, parameters, results, generic arguments and constraints, interface
+methods, and embedded terms. Aliases do not hide these contracts. It does not
+inspect unreferenced members or unselected concrete methods of imported packages. A scalar-only
+API does not select checking merely because its implementation imports `im`.
+CLI and vet use the same rule, including when vet prunes imported type data.
+
+Other packages are ordinary Go code. They may use `unsafe`, `reflect`, cgo, or
+functions implemented outside Go without producing immutago proof errors. This
+also applies when `immutago ./...` selects them directly. Ordinary dependencies
+are trusted to obey normal Go API contracts: strings stay immutable, and hidden
+aliases do not write protected memory. The analyzer does not prove these
+properties inside ordinary code. A library that returns a string over mutable
+bytes and later changes those bytes violates this trust boundary.
+
+Scalar copies and strings, including string fields read from marked values,
+follow ordinary Go rules at this boundary. No string-provenance analysis or
+runtime copy is added. For example, a loader can publish a model and then call
+`logx.Info("published", len(weights))`, or log a loaded model's string version.
+Marked values, protected pointers, frozen collections, Owner slots and holders,
+and callbacks carrying them must still obey their listed transport rules.
+Passing them to `any`, an indirect call, or an unsupported generic remains
+rejected; an ordinary dependency does not provide an escape hatch.
+
 Checked code cannot import `unsafe` or `reflect`, or declare functions without
 Go bodies—even for scalar-only functions. Replace `func readCount() int` with
 a checked Go implementation such as `func readCount() int { return 1 }`.
-
-Cgo packages are rejected as a whole, with one error at a source `package`
-line. Replace `import "C"` and its C calls with checked Go code.
+A checked cgo package is rejected as a whole at a source `package` line.
+Replace `import "C"` and its C calls with checked Go code.
 
 A dependency diagnostic shows one representative original failure, its source
 location, and a command to check the original package. Other dependency errors
-may exist. Reports from direct package analysis do not change.
+may exist. Reports from direct checked package analysis do not change.

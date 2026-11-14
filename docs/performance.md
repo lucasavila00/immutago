@@ -100,3 +100,7 @@ graphs with fresh vet facts and records their total and largest file sizes,
 timing, peak memory, and profiles. [Graph tests](../pkg/analyzer/dependencies_graph_test.go)
 check the selected cause against all original errors, exact gob round trips,
 and constant fact size across deep, wide, and dense graphs.
+The workflow separately checks ordinary graphs without `im` imports and failure
+graphs whose packages directly import `im`. Ordinary graphs must pass both
+drivers. Checked graphs retain 101 local unsafe errors per generated package;
+consumer reports contain one representative cause.

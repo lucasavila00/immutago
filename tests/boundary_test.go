@@ -67,7 +67,7 @@ func checkBoundaryFixtures(t *testing.T, root, binary, mode, fixture, target str
 	}
 }
 
-// checkCheckedBoundary keeps unsafe and reflection values forbidden inside the checked import closure.
+// checkCheckedBoundary keeps unsafe and reflection values forbidden in checked source.
 func checkCheckedBoundary(t *testing.T, root, binary, mode string) {
 	t.Helper()
 	for _, name := range []string{"unsafe_import", "raw_unsafe_import", "indirect_unsafe", "indirect_reflection",
