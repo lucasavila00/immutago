@@ -1,0 +1,6 @@
+projection_walk.go:11:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: (*p).Values[0][0] = 2
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+projection_walk.go:13:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: a, b := (builder)[0], 2
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
