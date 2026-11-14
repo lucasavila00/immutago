@@ -10,19 +10,19 @@ Package checker proves structural immutability from Go compiler type information
 
 ## Constants
 
-Names of the process runtime identities in RuntimePath and of the process methods that only the runtime calls.
+Names of the service runtime identities in RuntimePath and of the service methods that only the runtime calls.
 
 ```go
 const (
-    ProcessMarker                = "Process"
-    PIDType                      = "PID"
+    ServiceMarker                = "Service"
+    RefType                      = "Ref"
     StartFunction                = "Start"
     ReserveFunction              = "Reserve"
     StartReservedFunction        = "StartReserved"
-    StartSupervisorFunction      = "StartSupervisor"
-    ProcMethod                   = "Proc"
+    StartGroupFunction           = "StartGroup"
+    CurrentMethod                = "Current"
     ArgsMethod                   = "Args"
-    SupervisorMethod             = "Supervisor"
+    ChildrenMethod               = "Children"
     RunMethod                    = "Run"
     InitMethod                   = "Init"
     ConcurrentSafeType           = "ConcurrentSafe"
@@ -37,10 +37,10 @@ LibraryPath is the package whose sealed collection implementations are trusted.
 const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 ```
 
-RuntimePath is the package whose supervised process runtime is trusted.
+RuntimePath is the package whose supervised service runtime is trusted.
 
 ```go
-const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
+const RuntimePath = "github.com/lucasavila00/immutago/pkg/supervise"
 ```
 
 ## func Contains
@@ -49,7 +49,7 @@ const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
 func Contains(t types.Type) bool
 ```
 
-Contains reports whether a type stores a marked value, sealed collection, or process dependency. It runs one query; use Classifier to reuse results across queries.
+Contains reports whether a type stores a marked value, sealed collection, or service dependency. It runs one query; use Classifier to reuse results across queries.
 
 ## func IsCollection
 
@@ -73,7 +73,7 @@ IsLibraryType identifies a library type by package identity and name, not spelli
 func IsRuntimeType(t types.Type, name string) bool
 ```
 
-IsRuntimeType identifies a process runtime type by package identity and name, not spelling at its use site.
+IsRuntimeType identifies a service runtime type by package identity and name, not spelling at its use site.
 
 ## func IsUncheckedValue
 
@@ -99,14 +99,6 @@ func MarkerCount(t types.Type) int
 
 MarkerCount counts direct embedded marker identities, including aliases of the same marker.
 
-## func Process
-
-```go
-func Process(t types.Type) bool
-```
-
-Process reports the presence of an embedded proc.Process value. A process is not a marked struct.
-
 ## func Reason
 
 ```go
@@ -123,6 +115,14 @@ func Scoped(t types.Type) bool
 
 Scoped reports the presence of an embedded im.Scoped value, not type validity.
 
+## func Service
+
+```go
+func Service(t types.Type) bool
+```
+
+Service reports the presence of an embedded supervise.Service value. A service is not a marked struct.
+
 ## func Shared
 
 ```go
@@ -137,7 +137,7 @@ Shared reports the presence of an embedded im.Shared value, not type validity.
 func TrustedField(field *types.Var) bool
 ```
 
-TrustedField identifies a named proc.ConcurrentSafe field. Only a marked process argument struct can store it.
+TrustedField identifies a named supervise.ConcurrentSafe field. Only a marked service argument struct can store it.
 
 ## type Classifier
 
@@ -163,7 +163,7 @@ Callable reports whether t contains a callback contract that carries protected s
 func (c *Classifier) Contains(t types.Type) bool
 ```
 
-Contains reports whether t stores a marked value, sealed collection, or process dependency.
+Contains reports whether t stores a marked value, sealed collection, or service dependency.
 
 ## type Prover
 
@@ -181,7 +181,7 @@ type Prover struct {
 func (p *Prover) ArgumentReason(t types.Type) string
 ```
 
-ArgumentReason proves a process argument type. It accepts proc.ConcurrentSafe as the type, or as a TrustedField of a struct with exactly one marker. Every other component must be an allowed stored type.
+ArgumentReason proves a service argument type. It accepts supervise.ConcurrentSafe as the type, or as a TrustedField of a struct with exactly one marker. Every other component must be an allowed stored type.
 
 ### func \(\*Prover\) Reason
 

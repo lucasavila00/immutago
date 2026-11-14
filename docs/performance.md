@@ -14,7 +14,7 @@ check, or extra heap escape. Freeze copies only a native handle.
 | Direct range over `All()` | O(n); no container copy |
 | `Clone` | O(n); independent mutable container storage |
 | `Owner.Load`, `Owner.Store` | Atomic pointer operation; no object copy |
-| `PID.Proc` | One atomic load; no allocation |
+| `Ref.Current` | One atomic load; no allocation |
 
 Clone is shallow. Pointer elements still refer to the same immutable objects;
 replacing a cloned slot does not change the frozen slot. There are no frozen

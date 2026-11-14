@@ -11,20 +11,20 @@ import (
 // LibraryPath is the package whose sealed collection implementations are trusted.
 const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 
-// RuntimePath is the package whose supervised process runtime is trusted.
-const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
+// RuntimePath is the package whose supervised service runtime is trusted.
+const RuntimePath = "github.com/lucasavila00/immutago/pkg/supervise"
 
-// Names of the process runtime identities in RuntimePath and of the process methods that only the runtime calls.
+// Names of the service runtime identities in RuntimePath and of the service methods that only the runtime calls.
 const (
-	ProcessMarker                = "Process"
-	PIDType                      = "PID"
+	ServiceMarker                = "Service"
+	RefType                      = "Ref"
 	StartFunction                = "Start"
 	ReserveFunction              = "Reserve"
 	StartReservedFunction        = "StartReserved"
-	StartSupervisorFunction      = "StartSupervisor"
-	ProcMethod                   = "Proc"
+	StartGroupFunction           = "StartGroup"
+	CurrentMethod                = "Current"
 	ArgsMethod                   = "Args"
-	SupervisorMethod             = "Supervisor"
+	ChildrenMethod               = "Children"
 	RunMethod                    = "Run"
 	InitMethod                   = "Init"
 	ConcurrentSafeType           = "ConcurrentSafe"
@@ -38,7 +38,7 @@ func IsLibraryType(t types.Type, name string) bool {
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == LibraryPath && n.Obj().Name() == name
 }
 
-// IsRuntimeType identifies a process runtime type by package identity and name, not spelling at its use site.
+// IsRuntimeType identifies a service runtime type by package identity and name, not spelling at its use site.
 func IsRuntimeType(t types.Type, name string) bool {
 	n, ok := types.Unalias(t).(*types.Named)
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == RuntimePath && n.Obj().Name() == name
@@ -64,8 +64,8 @@ func Shared(t types.Type) bool { return embedsMarker(t, "Shared") }
 // Scoped reports the presence of an embedded im.Scoped value, not type validity.
 func Scoped(t types.Type) bool { return embedsMarker(t, "Scoped") }
 
-// Process reports the presence of an embedded proc.Process value. A process is not a marked struct.
-func Process(t types.Type) bool {
+// Service reports the presence of an embedded supervise.Service value. A service is not a marked struct.
+func Service(t types.Type) bool {
 	if t == nil {
 		return false
 	}
@@ -74,7 +74,7 @@ func Process(t types.Type) bool {
 		return false
 	}
 	for field := range s.Fields() {
-		if field.Embedded() && IsRuntimeType(field.Type(), ProcessMarker) {
+		if field.Embedded() && IsRuntimeType(field.Type(), ServiceMarker) {
 			return true
 		}
 	}
@@ -116,15 +116,15 @@ func embedsMarker(t types.Type, name string) bool {
 	return false
 }
 
-// Contains reports whether a type stores a marked value, sealed collection, or process dependency.
+// Contains reports whether a type stores a marked value, sealed collection, or service dependency.
 // It runs one query; use Classifier to reuse results across queries.
 func Contains(t types.Type) bool {
 	var classifier Classifier
 	return classifier.Contains(t)
 }
 
-// TrustedField identifies a named proc.ConcurrentSafe field.
-// Only a marked process argument struct can store it.
+// TrustedField identifies a named supervise.ConcurrentSafe field.
+// Only a marked service argument struct can store it.
 func TrustedField(field *types.Var) bool {
 	return !field.Embedded() && IsRuntimeType(field.Type(), ConcurrentSafeType)
 }

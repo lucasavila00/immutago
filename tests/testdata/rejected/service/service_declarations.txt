@@ -1,0 +1,15 @@
+service_declarations.go:14:21: services cannot be generic
+service_declarations.go:14:39: service arguments T are not an allowed stored type: type parameters are unsupported in immutable storage
+service_declarations.go:17:18: supervise.Service must be embedded by value
+service_declarations.go:22:20: services embed supervise.Service once and no immutable marker
+service_declarations.go:23:12: immutable field Service: struct does not embed im.Shared or im.Scoped
+  owner: service.MarkedService; field type: supervise.Service[supervise.NoArgs]
+  fix: embed im.Shared or im.Scoped in the struct and make each field immutable
+service_declarations.go:28:21: a service must declare Run(context.Context) with a pointer receiver and no results
+service_declarations.go:30:2: service field limits contains immutable storage; publish it through an im.Owner field
+service_declarations.go:34:38: supervise.Start, supervise.StartReserved, supervise.Reserve, and supervise.Ref need a service type argument
+service_declarations.go:37:19: a service must declare Run(context.Context) with a pointer receiver and no results
+service_declarations.go:38:12: service arguments map[string]int are not an allowed stored type: map[string]int is not provably immutable
+service_declarations.go:42:21: a service must declare Run(context.Context) with a pointer receiver and no results
+service_declarations.go:42:39: service arguments error are not an allowed stored type: error is not provably immutable
+service_declarations.go:9:15: services require a defined struct type

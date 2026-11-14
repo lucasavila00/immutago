@@ -7,17 +7,17 @@
 - [Owner](owner.md): replace the current Scoped object while readers use the previous one.
 - [Frozen collections](frozen.md): builders, Freeze, reads, and Clone.
 - [Unchecked immutable values](unchecked-values.md): a trusted, unproven immutable value.
-- [Supervised processes](processes.md): typed start arguments and direct calls.
-- [Child processes](process-children.md): start worker groups and change them while a process runs.
+- [Supervised services](services.md): typed start arguments and direct calls.
+- [Child services](service-children.md): start worker groups and change them while a service runs.
 - [Performance](performance.md): operation costs.
 
 ## Look up a rule or API
 
 - [Language reference](rules.md): complete rules and which packages are checked.
 - [Common forms](common-forms.md): field types, construction, reads, pointers, and statements.
-- [Process forms](process-forms.md): declarations, calls, PID use, and rejected examples.
+- [Service forms](service-forms.md): declarations, calls, Ref use, and rejected examples.
 - [Collection API](../pkg/im/readme.md): signatures, zero values, and iteration.
-- [Process API](../pkg/proc/readme.md): supervisors, PIDs, and restarts.
+- [Service API](../pkg/supervise/readme.md): groups, Refs, and restarts.
 
 ## Maintainers
 

@@ -1,31 +1,31 @@
 convergence_rejected.go:14:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: a, b := value.X+1, 2
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 convergence_rejected.go:16:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: c, d = value.X + 1, 2
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 convergence_rejected.go:22:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: a, b := read(new(value)), 2
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 convergence_rejected.go:24:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: c, d = read(new(value)), 2
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 convergence_rejected.go:30:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: a, b := len(builder), 2
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 convergence_rejected.go:32:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: c, d = len(builder), 2
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 convergence_rejected.go:39:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for value.X, value.Y = range []int{1} { }
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 convergence_rejected.go:45:18: unsupported immutable operation: immutable method expressions are unsupported
   source: (im.FrozenMap[int, Value].Get)(frozen, 1)
   type: (review_convergence.Value, bool)
   fix: call the method on its receiver directly (value.Method(...)); do not call it through the type
 convergence_rejected.go:45:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: value, found := (im.FrozenMap[int, Value].Get)(frozen, 1)
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 convergence_rejected.go:52:15: unsupported immutable operation: immutable iterators must be consumed by direct range
   source: (frozen.All)()
   type: iter.Seq2[int, review_convergence.Value]
@@ -75,7 +75,7 @@ convergence_rejected.go:64:62: unsupported immutable operation: dynamic calls wi
   fix: call a named, non-generic function directly with a concrete immutable parameter
 convergence_rejected.go:68:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for _, value.X = range []int{1} { }
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
 convergence_rejected.go:76:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for a[value.X], n = range []int{2} { }
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for proc.Start
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start

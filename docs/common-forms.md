@@ -19,7 +19,7 @@ type SharedLink struct { im.Shared; P *SharedPoint }
 
 Use the types below for struct fields and frozen collection keys and elements.
 This list is complete. It also applies to each nested field, key, and element.
-Process start arguments have one separate [unchecked dependency form](process-forms.md#concurrent-dependencies).
+Service start arguments have one separate [unchecked dependency form](service-forms.md#concurrent-dependencies).
 An argument struct with a dependency field is not an allowed stored type.
 
 | Allowed form | Example |
@@ -34,7 +34,7 @@ An argument struct with a dependency field is not an allowed stored type.
 | Recursive marked struct | `type SharedNode struct { im.Shared; Next *SharedNode }` |
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
-| Process PID | `proc.PID[ConfigLoader]`; see [Supervised processes](processes.md). |
+| Service Ref | `supervise.Ref[ConfigLoader]`; see [Supervised services](services.md). |
 | Trusted handle | `im.UncheckedValue[baked]`; see [Unchecked immutable values](unchecked-values.md). |
 
 Rejected type examples (**not exhaustive**):
@@ -161,7 +161,7 @@ result, and statement forms on this page.
 Method bodies follow the same rules as named functions. A Shared method can
 return its pointer. A Scoped method cannot save or return its pointer; it can
 return a value copy. Neither can change protected fields. Methods cannot have
-generic receivers. Process and fixed library methods use their own listed forms.
+generic receivers. Service and fixed library methods use their own listed forms.
 
 Rejected examples (**not exhaustive**):
 
@@ -183,7 +183,7 @@ Use the operations above inside these statement forms:
 | --- | --- |
 | Declare one variable or assign one destination | `var value SharedPoint`, `value := SharedPoint{X: 1}`, `value = SharedPoint{X: 2}` |
 | Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
-| Bind Start results to two local names or blanks with `:=` or `=` | `pid, err := proc.Start[Worker](root, args)`; see [process forms](process-forms.md#start-processes). |
+| Bind Start results to two local names or blanks with `:=` or `=` | `ref, err := supervise.Start[Worker](root, args)`; see [service forms](service-forms.md#start-services). |
 | Bind a map reader's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |
@@ -197,7 +197,7 @@ Use the operations above inside these statement forms:
 | Use checked operations in a select case body | `case <-ready: values[0] = value` |
 
 The one-destination rule applies to assignments and declarations, not returns.
-FrozenMap's `Get` and `proc.Start` are the two-destination exceptions. Get requires
+FrozenMap's `Get` and `supervise.Start` are the two-destination exceptions. Get requires
 new local names or blanks; Start permits existing local names, `=`, and local
 `var` declarations too. Blocks, `break`, and `continue` follow ordinary Go rules.
 Assignments to package variables follow the same one-destination rule.

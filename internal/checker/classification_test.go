@@ -9,7 +9,7 @@ import (
 
 // opaqueStorage identifies the library and runtime types whose fields are not walked.
 func opaqueStorage(t types.Type) bool {
-	return IsLibraryType(t, "Owner") || IsRuntimeType(t, ProcessMarker)
+	return IsLibraryType(t, "Owner") || IsRuntimeType(t, ServiceMarker)
 }
 
 // classificationStorageOracle retains the original storage walk without shared query state.
@@ -272,18 +272,18 @@ func TestClassifierOwnerIsOpaque(t *testing.T) {
 	}
 }
 
-// TestClassifierProcessIsOpaque checks that process arguments are not immutable storage of the process.
-func TestClassifierProcessIsOpaque(t *testing.T) {
+// TestClassifierServiceIsOpaque checks that service arguments are not immutable storage of the service.
+func TestClassifierServiceIsOpaque(t *testing.T) {
 	marker, _ := testTypes()
 	value := markedType("Arguments", marker)
-	runtime := types.NewPackage(RuntimePath, "proc")
+	runtime := types.NewPackage(RuntimePath, "supervise")
 	field := types.NewField(token.NoPos, runtime, "args", value, false)
-	process := types.NewNamed(types.NewTypeName(token.NoPos, runtime, ProcessMarker, nil),
+	service := types.NewNamed(types.NewTypeName(token.NoPos, runtime, ServiceMarker, nil),
 		types.NewStruct([]*types.Var{field}, nil), nil)
 	var queries Classifier
-	for _, typ := range []types.Type{process, types.NewPointer(process), types.NewArray(process, 1)} {
+	for _, typ := range []types.Type{service, types.NewPointer(service), types.NewArray(service, 1)} {
 		if queries.Contains(typ) || Contains(typ) {
-			t.Errorf("process marker is not opaque for %s", typ)
+			t.Errorf("service marker is not opaque for %s", typ)
 		}
 	}
 }

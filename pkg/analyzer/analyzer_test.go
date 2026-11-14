@@ -36,27 +36,27 @@ const testLibrary = `package im
  func (values FrozenMap[K,V]) All()func(func(K,V)bool) {return nil}
 `
 
-const testRuntime = `package proc
+const testRuntime = `package supervise
  import ("context"; "github.com/lucasavila00/immutago/pkg/im")
- type Process[A any] struct { args A }
- func (p *Process[A]) Init() error { return nil }
- func (p *Process[A]) Args() A { return p.args }
- func (p *Process[A]) bind(args A) { p.args = args }
- func (p *Process[A]) Supervisor() *Supervisor { return nil }
- type None struct { im.Shared }
- type Supervisor struct{}
- func NewRoot(func(any, []byte)) *Supervisor { return nil }
- func StartSupervisor(parent *Supervisor) *Supervisor { return nil }
- func (s *Supervisor) Stop() <-chan struct{} { return nil }
- type PID[T any] struct { value *T }
- func (p PID[T]) Proc() *T { return p.value }
- func Reserve[T any]() PID[T] { return PID[T]{} }
+ type Service[A any] struct { args A }
+ func (p *Service[A]) Init() error { return nil }
+ func (p *Service[A]) Args() A { return p.args }
+ func (p *Service[A]) bind(args A) { p.args = args }
+ func (p *Service[A]) Children() *Group { return nil }
+ type NoArgs struct { im.Shared }
+ type Group struct{}
+ func NewRoot(func(any, []byte)) *Group { return nil }
+ func StartGroup(parent *Group) *Group { return nil }
+ func (s *Group) Stop() <-chan struct{} { return nil }
+ type Ref[T any] struct { value *T }
+ func (p Ref[T]) Current() *T { return p.value }
+ func Reserve[T any]() Ref[T] { return Ref[T]{} }
  func Start[T, A any, P interface{ *T; Run(context.Context); Init() error; bind(A) }](
-  parent *Supervisor, args A) (PID[T], error) {
-  return PID[T]{}, nil
+  parent *Group, args A) (Ref[T], error) {
+  return Ref[T]{}, nil
  }
  func StartReserved[T, A any, P interface{ *T; Run(context.Context); Init() error; bind(A) }](
-  parent *Supervisor, pid PID[T], args A) error { return nil }
+  parent *Group, ref Ref[T], args A) error { return nil }
  type ConcurrentSafe[T any] struct { value T }
  func AssumeConcurrentSafe[T any](v T) ConcurrentSafe[T] { return ConcurrentSafe[T]{value: v} }
  func (d ConcurrentSafe[T]) Value() T { return d.value }
@@ -106,13 +106,13 @@ func sourcePass(t testing.TB, declarations string) *analysis.Pass {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runtimeFile, err := parser.ParseFile(positions, "proc.go", testRuntime, 0)
+	runtimeFile, err := parser.ParseFile(positions, "supervise.go", testRuntime, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	standard := importer.Default()
 	runtimeConfig := types.Config{Importer: testImporter{library, nil, standard}}
-	procPackage, err := runtimeConfig.Check(checker.RuntimePath, positions, []*ast.File{runtimeFile}, nil)
+	servicePackage, err := runtimeConfig.Check(checker.RuntimePath, positions, []*ast.File{runtimeFile}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func sourcePass(t testing.TB, declarations string) *analysis.Pass {
 		Scopes:     make(map[ast.Node]*types.Scope),
 		Implicits:  make(map[ast.Node]types.Object),
 	}
-	config := types.Config{Importer: testImporter{library, procPackage, standard}}
+	config := types.Config{Importer: testImporter{library, servicePackage, standard}}
 	pkg, err := config.Check("sample", positions, []*ast.File{file}, info)
 	if err != nil {
 		t.Fatalf("test source does not compile: %v", err)

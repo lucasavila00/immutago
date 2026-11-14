@@ -1,0 +1,23 @@
+service_receivers.go:23:11: service receivers can only select a field or call a method directly
+service_receivers.go:24:6: service receivers can only select a field or call a method directly
+service_receivers.go:25:20: closures cannot capture a service receiver
+service_receivers.go:26:5: service receivers can only select a field or call a method directly
+service_receivers.go:27:8: service receivers can only select a field or call a method directly
+service_receivers.go:28:10: service receivers can only select a field or call a method directly
+service_receivers.go:29:2: only the runtime can call a service Run method
+service_receivers.go:29:2: service receivers can only select a field or call a method directly
+service_receivers.go:30:2: service pointer escapes; use ref.Current() only as the receiver of a direct exported method call
+service_receivers.go:30:3: service receivers can only select a field or call a method directly
+service_receivers.go:30:7: service Buffer is created outside supervise.Start; use supervise.Start[Buffer](parent, args)
+service_receivers.go:30:7: service type Buffer can be named only in its declaration, a pointer receiver, supervise.Start[Buffer], supervise.StartReserved[Buffer], supervise.Reserve[Buffer], or supervise.Ref[Buffer]
+service_receivers.go:31:12: service receivers can only select a field or call a method directly
+service_receivers.go:32:2: service receivers can only select a field or call a method directly
+service_receivers.go:33:10: service receivers can only select a field or call a method directly
+service_receivers.go:33:2: unsupported immutable operation: immutable callbacks are unsupported
+  source: args := b.Args
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+service_receivers.go:34:18: service pointer escapes; use ref.Current() only as the receiver of a direct exported method call
+service_receivers.go:34:46: unsupported immutable operation: immutable callbacks are unsupported
+  source: args
+  type: func() supervise.NoArgs
+  fix: call a named, non-generic function directly with a concrete immutable parameter

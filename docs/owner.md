@@ -78,7 +78,7 @@ func start() {
 }
 ```
 
-[Processes](processes.md) have separate rules for methods that use Owner fields.
+[Services](services.md) have separate rules for methods that use Owner fields.
 Do not copy an Owner or a struct that contains one; pass a pointer to the struct.
 
 Keep `*Service` pointers in local variables. Pass them to named functions with

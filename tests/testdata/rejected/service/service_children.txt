@@ -1,0 +1,18 @@
+service_children.go:30:10: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:31:15: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:32:7: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:33:2: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:34:9: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:34:9: service receivers can only select a field or call a method directly
+service_children.go:35:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go supervise.Start[Fetcher](f.Children(), supervise.NoArgs{})
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+service_children.go:35:30: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:36:36: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:36:36: closures cannot capture a service receiver
+service_children.go:37:9: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:39:11: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:41:13: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:48:52: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:52:27: call Children() directly on the receiver of a service method, and pass the result only as the parent of supervise.Start, supervise.StartReserved, or supervise.StartGroup, directly or through one local variable
+service_children.go:52:27: service pointer escapes; use ref.Current() only as the receiver of a direct exported method call

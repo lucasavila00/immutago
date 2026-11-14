@@ -199,7 +199,7 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 	if c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
 		return ""
 	}
-	if selection.Kind() == types.MethodVal && (c.processValue(selection.Recv()) || procMethod(selection.Obj())) {
+	if selection.Kind() == types.MethodVal && (c.serviceValue(selection.Recv()) || currentMethod(selection.Obj())) {
 		return ""
 	}
 	if c.dependencyValue(selector) {

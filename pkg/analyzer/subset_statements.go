@@ -49,7 +49,7 @@ func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 	if genericSignature(signature) {
 		c.genericStorage(declaration, declaration.Name)
 	}
-	if signature.Recv() != nil && !c.processSignature(signature) &&
+	if signature.Recv() != nil && !c.serviceSignature(signature) &&
 		(c.queries.Contains(signature.Recv().Type()) || c.queries.Callable(signature)) && !c.markedMethodReceiver(signature) {
 		c.report(declaration.Name, "immutable methods require a concrete non-generic marked receiver")
 	}
@@ -113,7 +113,7 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	if name, ok := ast.Unparen(destination).(*ast.Ident); ok {
 		if variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var); ok &&
 			variable.Parent() == c.pass.Pkg.Scope() && dependencyArgument(source) {
-			return "process dependencies cannot enter package variables"
+			return "service dependencies cannot enter package variables"
 		}
 	}
 	if !localReference(source) {
@@ -146,7 +146,7 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 	for _, name := range declaration.Names {
 		variable := c.pass.TypesInfo.Defs[name]
 		if variable != nil && variable.Parent() == c.pass.Pkg.Scope() && dependencyArgument(variable.Type()) {
-			return "process dependencies cannot enter package variables"
+			return "service dependencies cannot enter package variables"
 		}
 		if variable != nil && localReference(variable.Type()) && variable.Parent() == c.pass.Pkg.Scope() {
 			return "global Scoped pointers are unsupported"
