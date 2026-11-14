@@ -1,20 +1,17 @@
 # Immutago
 
-Use immutago to make struct fields read-only and control where pointers can be
-saved. Choose `im.Shared` to store or return pointers, or `im.Scoped` to keep
-them local. Use `im.Owner[T]` to publish new Scoped objects. Frozen slices and
-maps let you build data locally, then share it without copying the entries.
+A Go checker and library for immutable data and supervised services.
 
-Go's garbage collector manages memory lifetime. Immutago adds rules for mutation
-and pointer use; it does not guarantee prompt collection or prevent all leaks.
+| Task | Guide |
+| --- | --- |
+| Install the checker and run a complete example | [Get started](docs/getting-started.md) |
+| Share read-only objects | [Shared](docs/shared.md) |
+| Prevent functions from saving object pointers | [Scoped](docs/scoped.md) |
+| Replace data while readers finish with the previous version | [Owner](docs/owner.md) |
+| Build a slice or map, then make it read-only | [Frozen collections](docs/frozen.md) |
+| Run a service with supervised restarts | [Processes](docs/processes.md) |
 
-Run [supervised processes](docs/processes.md) with package `proc`; their exported
-methods take and return only immutable values and PIDs.
-Process methods, and the functions they call in checked packages, cannot use
-mutable package variables. See [package variables](docs/processes.md#package-variables)
-and [what is not checked](docs/processes.md#not-checked).
+Run `immutago ./...` to check your code. `go build` does not enforce these rules.
 
-The analyzer must run; `go build` alone does not enforce these rules.
-
-[Get started](docs/getting-started.md) · [Language guide](docs/rules.md) ·
-[Documentation](docs/README.md) · [Development](docs/development.md)
+See the [documentation index](docs/README.md) for the complete language reference,
+API reference, and maintainer docs.

@@ -1,17 +1,36 @@
 # Frozen collections
 
+Use `im.FrozenSlice[T]` or `im.FrozenMap[K, V]` to build data once and pass it to
+readers without letting them change it. Prepare a normal Go slice or map, then
+call Freeze. Freeze reuses that storage; it does not copy the entries.
+
+To make a changed version, Clone the frozen collection, edit the copy, and
+freeze it. The original stays unchanged:
+
 ```go
-scores := map[string]int{"alice": 10}
-frozen := im.FreezeMap(scores)
-next := frozen.Clone()
-next["alice"] = 20
-updated := im.FreezeMap(next) // frozen still contains 10.
+package main
+
+import "github.com/lucasavila00/immutago/pkg/im"
+
+func main() {
+    scores := map[string]int{"alice": 10}
+    frozen := im.FreezeMap(scores)
+
+    next := frozen.Clone()
+    next["alice"] = 20
+    updated := im.FreezeMap(next)
+
+    oldScore, _ := frozen.Get("alice")
+    newScore, _ := updated.Get("alice")
+    println(oldScore, newScore) // 10 20
+}
 ```
 
-Freeze does not copy entries. Clone returns a separate slice or map.
-
+After Freeze, read through `frozen`, not `scores`. The checker rejects aliases
+to the original slice or map, so another variable cannot change the frozen data.
 Keys and elements must use the [allowed types](common-forms.md#markers-and-stored-types).
-The tables below and the [common forms](common-forms.md) are the complete list
+
+The tables below and the [common forms](common-forms.md) give the complete list
 of allowed operations. Rejected examples are not exhaustive.
 
 ## Build before freezing
