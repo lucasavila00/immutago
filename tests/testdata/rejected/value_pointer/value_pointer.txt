@@ -2,7 +2,3 @@ value_pointer.go:11:37: unsupported immutable operation: immutable references re
   source: &value
   type: *rejected.Good
   fix: use &T{...}, new(T), or new(value); do not take the address of an existing variable, field, or element
-value_pointer.go:11:38: unsupported immutable operation: immutable references require fresh allocation
-  source: value
-  type: rejected.Good
-  fix: use &T{...}, new(T), or new(value); do not take the address of an existing variable, field, or element

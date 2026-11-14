@@ -1,17 +1,8 @@
-freeze_delayed_assignment.go:8:13: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: frozen
-  type: im.FrozenSlice[int]
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 freeze_delayed_assignment.go:8:25: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeSlice(values)
   type: im.FrozenSlice[int]
   fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
 freeze_delayed_assignment.go:8:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: values[0]
-  type: int
+  source: values[0], frozen = 2, im.FreezeSlice(values)
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 freeze_delayed_assignment.go:8:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-freeze_delayed_assignment.go:8:40: unsupported immutable operation: Freeze requires a standalone single binding
-  source: values
-  type: []int
-  fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value

@@ -44,5 +44,11 @@ evaluation order. Preserve ordinary Go outside protected storage.
 A forbidden form passing is a defect even if the guide does not show that
 rejection example. Known negative tests do not replace the matcher review.
 
+For each defect, identify why the operation missed a matcher or passed an
+incomplete match. Check the same path through declarations, nil and zero values,
+aliases, nested storage, tuples, and variadic arguments where relevant. Fix that
+path and test both allowed and rejected forms. A test for one failing example
+alone is not sufficient.
+
 Check changed links and generated package references. Use hosted CI for full
 validation. For collection changes, also check the [cost contract](performance.md).

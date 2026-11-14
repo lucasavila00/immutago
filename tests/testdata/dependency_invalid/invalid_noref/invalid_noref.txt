@@ -2,10 +2,5 @@ invalid_noref.go:10:5: unsupported immutable operation: global LocalRef pointers
   source: retained *Local
   fix: keep the LocalRef pointer local, or store a value copy
 invalid_noref.go:12:29: unsupported immutable operation: global LocalRef pointers are unsupported
-  source: retained
-  type: *invalid_noref.Local
-  fix: keep the LocalRef pointer local, or store a value copy
-invalid_noref.go:12:40: unsupported immutable operation: global LocalRef pointers are unsupported
-  source: value
-  type: *invalid_noref.Local
+  source: retained = value
   fix: keep the LocalRef pointer local, or store a value copy

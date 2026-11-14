@@ -1,8 +1,6 @@
 explicit_references.go:14:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: value.X
-  type: int
+  source: value.X = 1
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
 explicit_references.go:23:3: unsupported immutable operation: writes to immutable objects are unsupported
-  source: value.X
-  type: int
+  source: value.X = index
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

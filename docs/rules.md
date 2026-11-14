@@ -148,7 +148,7 @@ Use the operations above inside these statement forms:
 | Conditional or value switch | `if ready { p = makeSharedPoint() }`, `switch p.X { ... }` |
 | Condition, three-clause, or unconditional loop | `for p.X > 0 { ... }`, `for i := 0; i < p.X; i++ { ... }`, `for { ... }` |
 | Range with fresh loop variables | `for i, value := range values { ... }`, `for i := range count { ... }` |
-| Assign one existing loop target | `for i = range count { ... }` |
+| Assign one existing writable loop target, using the assignment rules above | `for i = range count { ... }`, `for a[point.X] = range a { ... }` |
 | Use checked operations in a select case body | `case <-ready: values[0] = value` |
 
 The one-destination rule applies to assignments and declarations, not returns.
@@ -163,6 +163,8 @@ Rejected statement and call examples (**not exhaustive**):
 | --- | --- |
 | `point, found := makePair()` | Return a marked result struct and bind it to one variable. |
 | `value, p = SharedPoint{}, &SharedPoint{}` | Use two statements. |
+| `Other(point)` where `type Other SharedPoint` | Construct `Other{X: point.X}`. |
+| `OtherFrozen(frozen)` where `type OtherFrozen im.FrozenSlice[int]` | Keep the frozen type; use `Clone` for mutable storage. |
 | `for a[point.X], n = range values { ... }` | Bind fresh loop locals, then assign each destination separately. |
 | `use(im.FreezeSlice(values))` | Bind Freeze to a local, then call `use`. |
 | `case _, values[0] = <-ready:` | Receive first; write in the case body. |

@@ -1,36 +1,21 @@
 immutable_object_writes.go:15:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: alias.Value
-  type: int
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
-immutable_object_writes.go:16:11: unsupported immutable operation: writes to immutable objects are unsupported
-  source: Node{Value: 4}
-  type: immutable_object_writes.Node
+  source: alias.Value = 3
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
 immutable_object_writes.go:16:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: *alias
-  type: immutable_object_writes.Node
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
-immutable_object_writes.go:16:3: unsupported immutable operation: writes to immutable objects are unsupported
-  source: alias
-  type: *immutable_object_writes.Node
+  source: *alias = Node{Value: 4}
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
 immutable_object_writes.go:20:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: node.Next.Value
-  type: int
+  source: node.Next.Value++
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
 immutable_object_writes.go:22:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: builder[0].Value
-  type: int
+  source: builder[0].Value = 3
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
 immutable_object_writes.go:25:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: shared.Value
-  type: int
+  source: shared.Value += 4
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
 immutable_object_writes.go:30:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: copy.Value
-  type: int
+  source: copy.Value = 2
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
 immutable_object_writes.go:35:22: unsupported immutable operation: writes to immutable objects are unsupported
-  source: current.Value
-  type: int
+  source: current.Value = 2
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

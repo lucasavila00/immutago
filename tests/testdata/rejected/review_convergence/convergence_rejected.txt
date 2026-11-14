@@ -1,96 +1,81 @@
-convergence_rejected.go:14:10: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: value.X
-  type: int
+convergence_rejected.go:14:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: a, b := value.X+1, 2
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:16:13: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: value.X
-  type: int
+convergence_rejected.go:16:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: c, d = value.X + 1, 2
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:22:10: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: read
-  type: func(p *review_convergence.Value) int
+convergence_rejected.go:22:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: a, b := read(new(value)), 2
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:22:15: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: new(value)
-  type: *review_convergence.Value
+convergence_rejected.go:24:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: c, d = read(new(value)), 2
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:22:19: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: value
-  type: review_convergence.Value
+convergence_rejected.go:30:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: a, b := len(builder), 2
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:24:13: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: read
-  type: func(p *review_convergence.Value) int
+convergence_rejected.go:32:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: c, d = len(builder), 2
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:24:18: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: new(value)
-  type: *review_convergence.Value
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:24:22: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: value
-  type: review_convergence.Value
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:30:14: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: builder
-  type: []int
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:32:17: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: builder
-  type: []int
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:39:15: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: value.Y
-  type: int
-  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:39:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: value.X
-  type: int
+convergence_rejected.go:39:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: for value.X, value.Y = range []int{1} { }
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 convergence_rejected.go:45:18: unsupported immutable operation: immutable method expressions are unsupported
   source: (im.FrozenMap[int, Value].Get)(frozen, 1)
   type: (review_convergence.Value, bool)
   fix: call the method on the collection directly (value.Method(...)); do not call it through the collection type
-convergence_rejected.go:45:19: unsupported immutable operation: immutable method expressions are unsupported
-  source: im.FrozenMap[int, Value].Get
-  type: func(m im.FrozenMap[int, review_convergence.Value], key int) (review_convergence.Value, bool)
-  fix: call the method on the collection directly (value.Method(...)); do not call it through the collection type
-convergence_rejected.go:45:49: unsupported immutable operation: immutable method expressions are unsupported
-  source: frozen
-  type: im.FrozenMap[int, review_convergence.Value]
-  fix: call the method on the collection directly (value.Method(...)); do not call it through the collection type
-convergence_rejected.go:52:14: unsupported immutable operation: immutable callbacks are unsupported
-  source: ((frozen.All)())
-  type: iter.Seq2[int, review_convergence.Value]
-  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:45:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: value, found := (im.FrozenMap[int, Value].Get)(frozen, 1)
+  fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
 convergence_rejected.go:52:15: unsupported immutable operation: immutable iterators must be consumed by direct range
   source: (frozen.All)()
   type: iter.Seq2[int, review_convergence.Value]
   fix: write for key, value := range collection.All() { ... }; do not retain or pass the iterator
-convergence_rejected.go:52:16: unsupported immutable operation: immutable callbacks are unsupported
-  source: frozen.All
-  type: func() iter.Seq2[int, review_convergence.Value]
+convergence_rejected.go:52:2: unsupported immutable operation: immutable callbacks are unsupported
+  source: iterator := ((frozen.All)())
   fix: call a named, non-generic function directly with a concrete immutable parameter
 convergence_rejected.go:53:24: unsupported immutable operation: immutable callbacks are unsupported
   source: iterator
   type: iter.Seq2[int, review_convergence.Value]
   fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:58:29: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() Value
+  type: func() review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
 convergence_rejected.go:58:58: unsupported immutable operation: dynamic calls with immutable storage are unsupported
   source: factory()
   type: review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:60:14: unsupported immutable operation: immutable callbacks are unsupported
+  source: interface{ Make() Value }
+  type: interface{Make() review_convergence.Value}
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:60:29: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() Value
+  type: func() review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:62:30: unsupported immutable operation: immutable callbacks are unsupported
+  source: Factory
+  type: review_convergence.Factory
   fix: call a named, non-generic function directly with a concrete immutable parameter
 convergence_rejected.go:62:54: unsupported immutable operation: dynamic calls with immutable storage are unsupported
   source: factory.Make()
   type: review_convergence.Value
   fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:64:35: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() func() Value
+  type: func() func() review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:64:42: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() Value
+  type: func() review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
 convergence_rejected.go:64:62: unsupported immutable operation: dynamic calls with immutable storage are unsupported
   source: factory()
   type: func() review_convergence.Value
   fix: call a named, non-generic function directly with a concrete immutable parameter
-convergence_rejected.go:68:9: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: value.X
-  type: int
+convergence_rejected.go:68:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: for _, value.X = range []int{1} { }
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables
-convergence_rejected.go:76:8: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: value.X
-  type: int
+convergence_rejected.go:76:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: for a[value.X], n = range []int{2} { }
   fix: write one protected destination per statement; bind a direct frozen.Get result only to two new local variables

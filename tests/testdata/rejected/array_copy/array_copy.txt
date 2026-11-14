@@ -1,4 +1,4 @@
 array_copy.go:13:7: unsupported immutable operation: slice views of immutable storage are unsupported
-  source: value.Array
-  type: [2]int
+  source: value.Array[:]
+  type: []int
   fix: copy the array into local storage before slicing it, or use im.FrozenSlice for immutable sequence values

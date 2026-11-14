@@ -1,16 +1,12 @@
+subset_generic_read.go:18:28: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: *T
+  type: *T
+  fix: allocate a concrete struct that embeds im.Shared or im.LocalRef; copy arrays and frozen collection values without taking their addresses
 subset_generic_read.go:18:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
   source: readGeneric
   type: func[T rejected.Good](p *T)
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
 subset_generic_read.go:19:34: unsupported immutable operation: user generic instantiations with immutable types are unsupported
-  source: readGeneric
-  type: func(p *rejected.Good)
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
-subset_generic_read.go:19:46: unsupported immutable operation: user generic instantiations with immutable types are unsupported
-  source: new(v)
-  type: *rejected.Good
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
-subset_generic_read.go:19:50: unsupported immutable operation: user generic instantiations with immutable types are unsupported
-  source: v
-  type: rejected.Good
+  source: readGeneric(new(v))
+  type: ()
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported

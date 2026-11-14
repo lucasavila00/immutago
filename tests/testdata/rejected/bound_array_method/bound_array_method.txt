@@ -3,8 +3,7 @@ bound_array_method.go:10:17: unsupported immutable operation: user-defined metho
   type: func()
   fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed
 bound_array_method.go:10:28: unsupported immutable operation: writes to immutable objects are unsupported
-  source: p.Values[0]
-  type: int
+  source: p.Values[0] = 1
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
 bound_array_method.go:20:12: unsupported immutable operation: user-defined methods with immutable storage are unsupported
   source: value.N.Change

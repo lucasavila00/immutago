@@ -1,4 +1,3 @@
 pointer_field_write.go:20:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: pointer.X
-  type: int
+  source: pointer.X = 2
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

@@ -186,3 +186,11 @@ by complete shape matches with a rejecting fallback. Trace each allowed form
 through docs, code, ownership checks, CLI fixtures, and diagnostic snapshots.
 A forbidden form passing the checker is a defect even when its example is not
 listed in the docs. Passing known rejection tests does not replace this review.
+
+## 17. Fix the Class of Issue
+
+For every checker defect, identify why the operation missed a matcher or passed
+an incomplete match. Fix the general classification or matching rule. Check
+related forms, including declarations, nil and zero values, aliases, nested
+storage, tuples, and variadic arguments where relevant. Add accepted and rejected
+regressions. Do not replace a class-wide fix with an exception for one example.

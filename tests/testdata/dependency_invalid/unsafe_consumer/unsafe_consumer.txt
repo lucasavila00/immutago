@@ -1,10 +1,5 @@
 unsafe_consumer.go:3:8: unsupported dependency example.com/consumer/invalid_unsafe: immutability proof failed
   import chain: example.com/consumer/unsafe_consumer -> example.com/consumer/invalid_unsafe
-  original failure: example.com/consumer/invalid_unsafe/invalid_unsafe.go:13:46: unsupported immutable operation: protected operation is outside the supported expression forms
-    source: Good{}
-    type: invalid_unsafe.Good
-    fix: use the documented immutable value and reference forms
-  import chain: example.com/consumer/unsafe_consumer -> example.com/consumer/invalid_unsafe
   original failure: example.com/consumer/invalid_unsafe/invalid_unsafe.go:5:2: unsupported unsafe import; immutability cannot be proved
     rule: reflection and unsafe operations can bypass typed ownership checks
     fix: replace these operations with ordinary typed Go code

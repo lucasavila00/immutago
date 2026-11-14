@@ -1,4 +1,4 @@
 implicit_pointer_method.go:17:2: unsupported immutable operation: user-defined methods with immutable storage are unsupported
-  source: value.N.Change
-  type: func()
+  source: value.N.Change()
+  type: ()
   fix: use a named non-generic reader function with a concrete parameter; only direct Get, At, Len, All, and Clone calls on im collections are allowed

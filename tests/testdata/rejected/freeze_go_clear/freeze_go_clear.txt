@@ -1,5 +1,4 @@
-freeze_go_clear.go:5:43: unsupported immutable operation: protected storage requires synchronous calls
-  source: values
-  type: []int
+freeze_go_clear.go:5:34: unsupported immutable operation: protected storage requires synchronous calls
+  source: go clear(values)
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 freeze_go_clear.go:5:43: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder

@@ -1,2 +1,5 @@
+freeze_rebind.go:5:62: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: values = []int{2}
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
 freeze_rebind.go:5:62: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 freeze_rebind.go:5:85: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
