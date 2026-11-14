@@ -56,7 +56,21 @@ func TestPrunedProofBoundary(t *testing.T) {
  type Loader struct { Current im.Owner[Model] }
  var Current im.Owner[Model]
  func Make() *Value { return &Value{} }
- func Publish(*Loader) {}`).Pkg
+ func Publish(*Loader) {}
+ type Mark = im.Shared
+ type OwnerSet interface { im.Owner[Model] }
+ type SafeOwner = im.Owner[Model]
+ type Scalar[T interface{~int | SafeOwner}] = int
+ func MakeScalar() Scalar[int] {return 0}
+ type Plain struct{}
+ func (Plain) Publish(*Loader){}
+ func (Plain) Number() int {return 1}
+ func MakePlain() Plain {return Plain{}}
+ type OwnerAlias = OwnerSet
+ type NestedOwnerSet interface { OwnerAlias }
+ type OwnerAPI interface { Copy(im.Owner[Model]) im.Owner[Model] }
+ type Phantom[T any] struct{}
+ func PhantomOwner() Phantom[im.Owner[Model]] { return Phantom[im.Owner[Model]]{} }`).Pkg
 	api.SetImports(nil)
 	importer := dependencyImporter{"sample": api, "unsafe": types.Unsafe}
 	cases := []struct{ name, declarations string }{
@@ -68,6 +82,15 @@ func TestPrunedProofBoundary(t *testing.T) {
 		{"Owner reference", `var holder *api.Loader`},
 		{"Owner signature", `type Callback func(*api.Loader)`},
 		{"generic constraint", `func read[T interface{*api.Value}](){}`},
+		{"marker alias", `var marker api.Mark`},
+		{"Owner value constraint", `func read[T api.OwnerSet](){}`},
+		{"Owner constraint alias", `type Set = api.OwnerAlias`},
+		{"nested Owner constraint", `func read[T api.NestedOwnerSet](){}`},
+		{"Owner interface values", `var service api.OwnerAPI`},
+		{"phantom Owner argument", `var value = api.PhantomOwner()`},
+		{"generic alias constraint", `var value api.Scalar[int]`},
+		{"returned generic alias", `var value=api.MakeScalar()`},
+		{"selected Owner method", `var callback = api.Plain.Publish`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -91,5 +114,37 @@ func TestPrunedProofBoundary(t *testing.T) {
 				t.Fatal("object types lost proof relevance")
 			}
 		})
+	}
+}
+
+// TestHiddenMarkedImplementation keeps a scalar-only API ordinary in both complete and pruned import graphs.
+func TestHiddenMarkedImplementation(t *testing.T) {
+	api := sourcePass(t, `type hidden struct{im.Shared};func Number() int{return 1}`).Pkg
+	for _, pruned := range []bool{false, true} {
+		if pruned {
+			api.SetImports(nil)
+		}
+		pass := boundaryPass(t, dependencyImporter{"sample": api, "unsafe": types.Unsafe},
+			`package boundary;import("unsafe";api "sample");var _ unsafe.Pointer;var Number=api.Number()`)
+		pass.Report = func(d analysis.Diagnostic) { t.Fatalf("scalar API activated checking: %s", d.Message) }
+		if _, err := run(pass); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// TestUnusedNamedMethodsStayOrdinary does not activate from unreferenced concrete method contracts.
+func TestUnusedNamedMethodsStayOrdinary(t *testing.T) {
+	api := sourcePass(t, `type Model struct{im.Scoped};type Loader struct{Current im.Owner[Model]}
+ type Plain struct{};func(Plain) Publish(*Loader){};func(Plain) Number()int{return 1}
+ func MakePlain()Plain{return Plain{}}`).Pkg
+	api.SetImports(nil)
+	for _, declaration := range []string{`var value=api.MakePlain()`, `var value=api.Plain{}.Number()`} {
+		pass := boundaryPass(t, dependencyImporter{"sample": api, "unsafe": types.Unsafe},
+			`package boundary;import("unsafe";api "sample");var _ unsafe.Pointer;`+declaration)
+		pass.Report = func(d analysis.Diagnostic) { t.Fatalf("unused method activated checking: %s", d.Message) }
+		if _, err := run(pass); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

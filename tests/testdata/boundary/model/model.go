@@ -12,3 +12,6 @@ type Shared struct {
 	im.Shared
 	N int
 }
+
+type SafeOwner = im.Owner[Model]
+type Scalar[T interface{ ~int | SafeOwner }] = int

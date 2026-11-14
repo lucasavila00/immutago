@@ -38,22 +38,10 @@ var compilerSourceDirectory = sync.OnceValues(func() (string, error) {
 	return filepath.Join(strings.TrimSpace(string(output)), "src"), nil
 })
 
-// usesImmutable identifies marked-storage import dependencies without inferring their bodies.
+// usesImmutable reports a direct import of the fixed immutable value package.
 func usesImmutable(pkg *types.Package) bool {
-	return importsImmutable(pkg, make(map[*types.Package]bool))
-}
-
-// importsImmutable visits each compiler package at most once.
-func importsImmutable(pkg *types.Package, seen map[*types.Package]bool) bool {
-	if pkg.Path() == checker.LibraryPath {
-		return true
-	}
-	if seen[pkg] {
-		return false
-	}
-	seen[pkg] = true
 	for _, imported := range pkg.Imports() {
-		if importsImmutable(imported, seen) {
+		if imported.Path() == checker.LibraryPath {
 			return true
 		}
 	}

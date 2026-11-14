@@ -3,8 +3,6 @@ package analyzer
 import (
 	"cmp"
 	"fmt"
-	"go/ast"
-	"go/types"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -107,32 +105,6 @@ func dependencyMessage(path string, fact invalidPackage) string {
 	message.WriteString("\n  fix: run immutago " + fact.Origin +
 		", correct its errors, then rerun immutago on this package")
 	return message.String()
-}
-
-// protectedPackage includes the import closure and compiler types retained when vet prunes imports.
-func protectedPackage(pass *analysis.Pass) bool {
-	if usesImmutable(pass.Pkg) {
-		return true
-	}
-	c := &subsetChecks{}
-	for _, value := range pass.TypesInfo.Types {
-		if c.proofRelevantType(value.Type) {
-			return true
-		}
-	}
-	for _, objects := range []map[*ast.Ident]types.Object{pass.TypesInfo.Defs, pass.TypesInfo.Uses} {
-		for _, object := range objects {
-			if object != nil && c.proofRelevantType(object.Type()) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// proofRelevantType includes stored values, callback contracts, and atomic slot references.
-func (c *subsetChecks) proofRelevantType(t types.Type) bool {
-	return t != nil && (c.queries.Contains(t) || c.queries.Callable(t) || c.slotRelevant(t) || c.hasHolderReference(t))
 }
 
 // compareFailures preserves diagnostic order by portable source location and message.
