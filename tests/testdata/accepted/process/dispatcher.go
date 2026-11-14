@@ -84,10 +84,16 @@ type VersionLoader struct {
 // Run waits until ctx ends.
 func (*VersionLoader) Run(ctx context.Context) { <-ctx.Done() }
 
-// Load starts a server for version. The server calls Ready when it runs.
+// Load starts a server for version. Repeated requests for a pending or current version do nothing.
+// The server calls Ready when it runs.
 func (l *VersionLoader) Load(version int) {
-	next := proc.StartSupervisor(l.Supervisor())
 	l.mu.Lock()
+	_, pending := l.pending[version]
+	if pending || l.current != nil && l.version == version {
+		l.mu.Unlock()
+		return
+	}
+	next := proc.StartSupervisor(l.Supervisor())
 	if l.pending == nil {
 		l.pending = make(map[int]*proc.Supervisor)
 	}
