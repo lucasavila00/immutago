@@ -96,7 +96,9 @@ func (p *Process[A]) serve() {
 }
 
 // bind sets the arguments of a new process value and the panic report of its run supervisors.
-func (p *Process[A]) bind(args A, report func(value any, stack []byte)) { p.args, p.report = args, report }
+func (p *Process[A]) bind(args A, report func(value any, stack []byte)) {
+	p.args, p.report = args, report
+}
 
 // begin returns the context of the run and runs the supervisor of the run if it exists.
 func (p *Process[A]) begin(ctx context.Context) context.Context {
