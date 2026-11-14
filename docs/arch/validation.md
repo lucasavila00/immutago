@@ -9,13 +9,16 @@ implementation. [Toolchain detection](../../pkg/analyzer/toolchain.go) identifie
 standard library source under the active `go env GOROOT`. It identifies generated
 Go test runners by their `.test` main package and compiler-checked standard
 internal test dependency. It still checks user test packages. The analyzer does
-not prove those toolchain implementations.
+not prove those toolchain implementations. Ordinary packages outside the
+[package boundary](../rules.md#package-boundary) are also trusted to obey Go API
+contracts, including immutable strings and no hidden writes to protected memory.
+Their unsafe, reflection, and cgo implementations are not proved.
 
 Application code must run through the analyzer for its selected build
 configuration. An ordinary Go build supplies no immutability checks. Checked
 code cannot use reflection, unsafe imports, or bodyless functions to bypass
 the proof. There are no user trust annotations or suppression directives.
-Dependency failures reach consumers through package facts. Runtime Freeze has
+Failures from checked dependencies reach consumers through package facts. Runtime Freeze has
 no fallback validation when the analyzer is omitted.
 
 ## Test map

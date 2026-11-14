@@ -72,7 +72,7 @@ jobs:
             /usr/bin/time -v -o "$results/$label.time.txt" "$@" > "$results/$label.output.txt" 2>&1 || dep_exit=$?
             case "$dep_exit" in 1|3) ;; *) cat "$results/$label.output.txt"; exit 1;; esac
             local actual
-            actual=$(grep -c "$pattern" "$results/$label.output.txt")
+            actual=$(grep -Ec "$pattern" "$results/$label.output.txt")
             test "$actual" -eq "$expected"
             printf '%s: %s expected failures\n' "$label" "$actual" | tee -a "$results/counts.txt"
           }
@@ -101,11 +101,31 @@ jobs:
           print(f"{pathlib.Path(prefix).name}\t{len(sizes)}\t{sum(sizes.values())}\t{max(sizes.values())}")
           PY
           }
+          measure_ordinary() {
+            local label="$1"
+            shift
+            /usr/bin/time -v -o "$results/$label.time.txt" "$@" > "$results/$label.output.txt" 2>&1
+            test ! -s "$results/$label.output.txt"
+            printf '%s: accepted ordinary packages\n' "$label" | tee -a "$results/counts.txt"
+          }
+          for scale in 1 2; do
+            module="$RUNNER_TEMP/ordinary-dependency-scale-$scale"
+            go run ./scripts/dependency-stress -scale "$scale" -out "$module"
+            (
+              cd "$module"
+              export GOCACHE="$RUNNER_TEMP/ordinary-dependency-cache-$scale"
+              go build ./...
+              measure_ordinary "ordinary-cli-$scale" "$results/current" ./...
+              measure_ordinary "ordinary-vet-$scale" go vet -vettool="$results/current" ./...
+            )
+          done
+          unsafe_pattern='^[^[:space:]].*\.go:[0-9]+:[0-9]+: unsupported unsafe'
           for scale in 1 2 3 4 5 6; do
             module="$RUNNER_TEMP/dependency-scale-$scale"
-            go run ./scripts/dependency-stress -scale "$scale" -out "$module"
+            go run ./scripts/dependency-stress -scale "$scale" -out "$module" -library "$GITHUB_WORKSPACE"
             packages=$((16 * scale * scale))
             expected=$((packages * 101))
+            fact_packages=$((packages + 2))
             revisions=current
             if [ "$scale" -le 2 ]; then revisions="baseline current"; fi
             for revision in $revisions; do
@@ -115,15 +135,15 @@ jobs:
                 # Compile first in a new cache. No vet facts can come from an earlier size or revision.
                 export GOCACHE="$RUNNER_TEMP/dependency-cache-$revision-$scale"
                 go build ./...
-                measure "$revision-cli-$scale" "$expected" ': unsupported unsafe' "$binary" ./...
+                measure "$revision-cli-$scale" "$expected" "$unsafe_pattern" "$binary" ./...
                 if [ "$scale" -eq 2 ]; then
-                  measure "$revision-cli-profile" "$expected" ': unsupported unsafe' "$binary" \
+                  measure "$revision-cli-profile" "$expected" "$unsafe_pattern" "$binary" \
                     -cpuprofile="$results/$revision.cpu.pprof" -memprofile="$results/$revision.heap.pprof" ./...
                   go tool pprof -top "$binary" "$results/$revision.cpu.pprof" > "$results/$revision.cpu-top.txt"
                   go tool pprof -top -sample_index=alloc_space "$binary" "$results/$revision.heap.pprof" \
                     > "$results/$revision.alloc-top.txt"
                 fi
-                measure_vet "$revision-vet-$scale" "$expected" ': unsupported unsafe' "$packages" "$binary" ./...
+                measure_vet "$revision-vet-$scale" "$expected" "$unsafe_pattern" "$fact_packages" "$binary" ./...
               )
             done
           done

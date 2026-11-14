@@ -1,0 +1,1 @@
+owner.go:5:44: Owner holder pointers require local bindings or direct typed calls

@@ -1,0 +1,4 @@
+tuple.go:9:36: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: logx.Values(pair())
+  type: ()
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

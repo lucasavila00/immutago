@@ -24,16 +24,36 @@ and arrays containing them. Owner slots and holders have their own listed forms.
 ## Check the program
 
 Run `immutago ./...` or `go vet -vettool=/absolute/path/to/immutago ./...`.
-`go build` alone does not enforce these rules. There are no suppression or trust
-annotations. Unsupported forms fail rather than being skipped.
+`go build` alone does not enforce these rules.
 
-Checked code cannot import `unsafe` or `reflect`, or declare functions without
-Go bodies—even for scalar-only functions. Replace `func readCount() int` with
-a checked Go implementation such as `func readCount() int { return 1 }`.
+## Package boundary
 
-Cgo packages are rejected as a whole, with one error at a source `package`
-line. Replace `import "C"` and its C calls with checked Go code.
+A package is checked when any selection form below applies. This list is complete.
+The fixed `im` implementation, compiler-supplied standard library, and generated
+Go test runners are trusted separately; user test packages still follow these rules.
 
-A dependency diagnostic shows one representative original failure, its source
-location, and a command to check the original package. Other dependency errors
-may exist. Reports from direct package analysis do not change.
+| Selection form | Example |
+| --- | --- |
+| Direct import, including an alias or blank import | `import _ "github.com/lucasavila00/immutago/pkg/im"` |
+| Used marked, frozen, or Owner value or pointer | `var point api.Point`, `var current api.Loader` |
+| Used callback, interface, or generic contract containing an im type | `callback := api.Publish`, `var value api.Alias[int]` when its constraint contains an Owner |
+| Failed checked dependency, including through wrappers | Import a package whose immutable field proof failed. |
+
+Aliases, generic arguments, and constraints remain part of the used type contract.
+An ordinary scalar API does not select checking merely because its implementation
+uses `im` privately. CLI and vet use the same boundary.
+
+Other packages are ordinary Go, including when selected by `immutago ./...`.
+They may use `unsafe`, `reflect`, cgo, or functions without Go bodies. Their API
+contracts are trusted, including string immutability and no hidden writes to
+protected memory. The analyzer does not prove those implementations. Protected
+values still follow their listed transport rules; ordinary libraries add no
+suppression or trust-bypass annotations.
+
+Checked packages reject `unsafe`, `reflect`, cgo, and functions without Go bodies.
+Use checked typed Go code: replace `func readCount() int` with
+`func readCount() int { return 1 }`, for example. A checked cgo package is rejected
+as a whole.
+
+A dependency diagnostic shows one representative original failure and a command
+to check its origin package. Other dependency errors may exist.

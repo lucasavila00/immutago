@@ -1,0 +1,12 @@
+diamond_wrapper.go:4:2: unsupported dependency example.com/consumer/diamond_left: immutability proof failed
+  representative failure: example.com/consumer/diamond_origin/diamond_origin.go:3:8: unsupported unsafe import; immutability cannot be proved
+    rule: reflection and unsafe operations can bypass typed ownership checks
+    fix: replace these operations with ordinary typed Go code
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/diamond_origin, correct its errors, then rerun immutago on this package
+diamond_wrapper.go:5:2: unsupported dependency example.com/consumer/diamond_right: immutability proof failed
+  representative failure: example.com/consumer/diamond_origin/diamond_origin.go:3:8: unsupported unsafe import; immutability cannot be proved
+    rule: reflection and unsafe operations can bypass typed ownership checks
+    fix: replace these operations with ordinary typed Go code
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/diamond_origin, correct its errors, then rerun immutago on this package

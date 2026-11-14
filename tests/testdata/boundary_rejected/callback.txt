@@ -1,0 +1,4 @@
+callback.go:9:56: unsupported immutable operation: immutable callbacks are unsupported
+  source: makeValue
+  type: func() *model.Shared
+  fix: call a named, non-generic function directly with a concrete immutable parameter
