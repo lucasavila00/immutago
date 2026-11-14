@@ -5,23 +5,22 @@ import (
 	"encoding/gob"
 	"fmt"
 	"math/rand/v2"
-	"slices"
 	"sort"
 	"strings"
 	"testing"
 )
 
-// legacyFailure is the old copied-chain representation, used only as a reporting oracle.
-type legacyFailure struct {
-	location, message string
-	chain             []string
+// failureNode retains all original errors for an independent graph traversal.
+type failureNode struct {
+	imports  []string
+	failures []proofFailure
 }
 
-// TestDependencyGraphMatchesLegacy compares all causes, order, and routes with the previous algorithm.
-func TestDependencyGraphMatchesLegacy(t *testing.T) {
+// TestDependencyWitnessMatchesGraph compares one propagated cause with every reachable original error.
+func TestDependencyWitnessMatchesGraph(t *testing.T) {
 	for _, serialized := range []bool{false, true} {
 		t.Run(fmt.Sprintf("serialized=%t", serialized), func(t *testing.T) {
-			random := rand.New(rand.NewPCG(20, 2026))
+			random := rand.New(rand.NewPCG(28, 2026))
 			for range 80 {
 				checkDependencyGraph(t, random, serialized)
 			}
@@ -29,38 +28,71 @@ func TestDependencyGraphMatchesLegacy(t *testing.T) {
 	}
 }
 
-// checkDependencyGraph compares one random acyclic graph, including prefix paths and silent wrappers.
+// checkDependencyGraph checks an acyclic graph with prefix paths, shared causes, and silent wrappers.
 func checkDependencyGraph(t *testing.T, random *rand.Rand, serialized bool) {
 	t.Helper()
 	facts := make(map[string]invalidPackage)
-	old := make(map[string][]legacyFailure)
+	graph := make(map[string]failureNode)
 	paths := []string{"example/a", "example/a/b", "example/a-a", "example/z"}
 	for i := 4; i < 24; i++ {
 		paths = append(paths, fmt.Sprintf("example/p%02d", i))
 	}
 	for i, path := range paths {
 		imports := make(map[string]invalidPackage)
-		oldImports := make(map[string][]legacyFailure)
+		node := failureNode{failures: graphLocalFailures(path, random.IntN(4))}
 		for _, imported := range paths[:i] {
 			if random.IntN(4) == 0 {
-				imports[imported], oldImports[imported] = facts[imported], old[imported]
+				imports[imported] = facts[imported]
+				node.imports = append(node.imports, imported)
 			}
 		}
-		failures := graphLocalFailures(path, random.IntN(4))
-		if len(imports) == 0 && len(failures) == 0 {
-			failures = graphLocalFailures(path, 1)
+		if len(imports) == 0 && len(node.failures) == 0 {
+			node.failures = graphLocalFailures(path, 1)
 		}
-		old[path] = legacyFailures(path, oldImports, failures)
-		fact := packageFailureFact(path, random.IntN(2) == 0, imports, failures)
+		graph[path] = node
+		relevant := random.IntN(2) == 0
+		fact := packageFailureFact(path, relevant, imports, node.failures)
 		if serialized {
 			fact = roundTripFact(t, fact)
 		}
 		facts[path] = *fact
-		got, want := dependencyMessage("consumer", path, *fact), legacyMessage("consumer", path, old[path])
-		if got != want {
-			t.Fatalf("report changed for %s:\ngot:\n%s\nwant:\n%s", path, got, want)
+		want := firstGraphFailure(graph, path)
+		want.Relevant = relevant
+		if *fact != want {
+			t.Fatalf("witness changed for %s: got %+v, want %+v", path, *fact, want)
 		}
 	}
+}
+
+// firstGraphFailure sorts all reachable errors instead of reducing imported witnesses.
+func firstGraphFailure(graph map[string]failureNode, path string) invalidPackage {
+	var failures []invalidPackage
+	seen := make(map[string]bool)
+	pending := []string{path}
+	for len(pending) > 0 {
+		path = pending[len(pending)-1]
+		pending = pending[:len(pending)-1]
+		if seen[path] {
+			continue
+		}
+		seen[path] = true
+		node := graph[path]
+		pending = append(pending, node.imports...)
+		for _, failure := range node.failures {
+			failures = append(failures, invalidPackage{Origin: path, Failure: failure})
+		}
+	}
+	sort.Slice(failures, func(i, j int) bool {
+		a, b := failures[i], failures[j]
+		if a.Failure.Location != b.Failure.Location {
+			return a.Failure.Location < b.Failure.Location
+		}
+		if a.Failure.Message != b.Failure.Message {
+			return a.Failure.Message < b.Failure.Message
+		}
+		return a.Origin < b.Origin
+	})
+	return failures[0]
 }
 
 // graphLocalFailures includes repeated errors, different errors at one location, and multiline text.
@@ -75,50 +107,7 @@ func graphLocalFailures(path string, count int) []proofFailure {
 	return failures
 }
 
-// legacyFailures reproduces the old collect-sort-deduplicate algorithm without graph traversal.
-func legacyFailures(path string, imports map[string][]legacyFailure, local []proofFailure) []legacyFailure {
-	var failures []legacyFailure
-	for _, imported := range imports {
-		for _, failure := range imported {
-			failure.chain = append([]string{path}, failure.chain...)
-			failures = append(failures, failure)
-		}
-	}
-	for _, failure := range local {
-		failures = append(failures, legacyFailure{failure.Location, failure.Message, []string{path}})
-	}
-	sort.Slice(failures, func(i, j int) bool {
-		a, b := failures[i], failures[j]
-		if a.location != b.location {
-			return a.location < b.location
-		}
-		if a.message != b.message {
-			return a.message < b.message
-		}
-		return strings.Join(a.chain, " -> ") < strings.Join(b.chain, " -> ")
-	})
-	result := failures[:0]
-	for _, failure := range failures {
-		if len(result) == 0 || result[len(result)-1].location != failure.location ||
-			result[len(result)-1].message != failure.message {
-			result = append(result, failure)
-		}
-	}
-	return result
-}
-
-// legacyMessage reproduces the previous public message format.
-func legacyMessage(consumer, path string, failures []legacyFailure) string {
-	message := "unsupported dependency " + path + ": immutability proof failed"
-	for _, failure := range failures {
-		chain := append([]string{consumer}, failure.chain...)
-		message += "\n  import chain: " + strings.Join(chain, " -> ")
-		message += "\n  original failure: " + failure.location + ": " + strings.ReplaceAll(failure.message, "\n", "\n  ")
-	}
-	return message + "\n  fix: correct the original dependency error above, then rerun immutago on this package"
-}
-
-// roundTripFact checks the portable representation without an in-process fact cache.
+// roundTripFact checks the complete portable value without an in-process fact cache.
 func roundTripFact(t *testing.T, fact *invalidPackage) *invalidPackage {
 	t.Helper()
 	data := encodeDependencyFact(t, fact)
@@ -126,15 +115,8 @@ func roundTripFact(t *testing.T, fact *invalidPackage) *invalidPackage {
 	if err := gob.NewDecoder(bytes.NewReader(data)).Decode(&decoded); err != nil {
 		t.Fatal(err)
 	}
-	if fact.Relevant != decoded.Relevant || len(fact.Packages) != len(decoded.Packages) {
-		t.Fatal("fact scope or record count changed during serialization")
-	}
-	for i, before := range fact.Packages {
-		after := decoded.Packages[i]
-		if before.Path != after.Path || !slices.Equal(before.Imports, after.Imports) ||
-			!slices.Equal(before.Failures, after.Failures) {
-			t.Fatalf("fact record %s changed during serialization", before.Path)
-		}
+	if *fact != decoded {
+		t.Fatalf("fact changed during serialization: got %+v, want %+v", decoded, *fact)
 	}
 	return &decoded
 }
@@ -149,63 +131,48 @@ func encodeDependencyFact(t testing.TB, value any) []byte {
 	return data.Bytes()
 }
 
-// TestDependencyFactSharing bounds retained records and serialized data on the reported dense graph.
-func TestDependencyFactSharing(t *testing.T) {
-	facts := layeredDependencyFacts(20, 20, 101)
-	checkSharedDependencyRecords(t, facts)
-	fact := facts[len(facts)-1]
-	encoded := encodeDependencyFact(t, fact)
-	bound := 1024
-	for _, record := range fact.Packages {
-		bound += len(record.Path) + 16
-		for _, path := range record.Imports {
-			bound += len(path) + 8
-		}
-		for _, failure := range record.Failures {
-			bound += len(failure.Location) + len(failure.Message) + 16
-		}
+// TestDependencyFactSize requires constant fact bytes across chains, wide layers, and dense graphs.
+func TestDependencyFactSize(t *testing.T) {
+	for _, shape := range [][2]int{{512, 1}, {1, 64}, {4, 4}, {8, 8}, {12, 12}, {16, 16}, {20, 20}, {24, 24}} {
+		t.Run(fmt.Sprintf("layers=%d/width=%d", shape[0], shape[1]), func(t *testing.T) {
+			facts := layeredDependencyFacts(shape[0], shape[1], 101)
+			// These witnesses have equal text lengths. Depth, edges, and omitted causes add no bytes.
+			one := len(encodeDependencyFact(t, facts[0]))
+			total := 0
+			for _, fact := range facts {
+				data := encodeDependencyFact(t, fact)
+				if len(data) != one {
+					t.Fatalf("fact size grew with the graph: %d bytes, want %d", len(data), one)
+				}
+				total += len(data)
+			}
+			t.Logf("packages=%d total=%d largest=%d bytes", len(facts), total, one)
+			_ = roundTripFact(t, facts[len(facts)-1])
+		})
 	}
-	if len(encoded) > bound {
-		t.Fatalf("encoded graph grew beyond one copy of each record: %d > %d", len(encoded), bound)
-	}
-	if again := encodeDependencyFact(t, fact); !bytes.Equal(encoded, again) {
-		t.Fatal("fact encoding is not deterministic")
-	}
-	imports := make(map[string]invalidPackage)
-	for i, imported := range facts[len(facts)-20:] {
-		imports[fmt.Sprintf("p19_%02d", i)] = *imported
-	}
-	next := encodeDependencyFact(t, packageFailureFact("next", false, imports, nil))
-	for range 5 {
-		if data := encodeDependencyFact(t, packageFailureFact("next", false, imports, nil)); !bytes.Equal(next, data) {
-			t.Fatal("import collection changed the encoded fact order")
-		}
-	}
-	if after := encodeDependencyFact(t, fact); !bytes.Equal(encoded, after) {
-		t.Fatal("an importer changed an existing fact")
-	}
-	_ = roundTripFact(t, fact)
 }
 
-// checkSharedDependencyRecords requires one shared record per package across all exported facts.
-func checkSharedDependencyRecords(t *testing.T, facts []*invalidPackage) {
-	t.Helper()
-	records := make(map[string]*failedPackage)
-	for _, fact := range facts {
-		seen := make(map[string]bool)
-		for _, record := range fact.Packages {
-			if seen[record.Path] {
-				t.Fatalf("duplicate record for %s", record.Path)
-			}
-			seen[record.Path] = true
-			if previous := records[record.Path]; previous != nil && previous != record {
-				t.Fatalf("copied local failures for %s", record.Path)
-			}
-			records[record.Path] = record
-		}
+// TestDependencyWitnessIsExact keeps long original text and its origin through silent wrappers.
+func TestDependencyWitnessIsExact(t *testing.T) {
+	original := &invalidPackage{Origin: "example/origin", Failure: proofFailure{
+		Location: "example/origin/" + strings.Repeat("source", 500) + ".go:12:3",
+		Message:  strings.Repeat("original detail\n  related: more detail\n", 500),
+	}}
+	fact := original
+	for i := range 100 {
+		fact = roundTripFact(t, packageFailureFact(fmt.Sprintf("example/wrapper%d", i), false,
+			map[string]invalidPackage{"previous": *fact}, nil))
 	}
-	if len(records) != 400 {
-		t.Fatalf("retained %d records, want 400", len(records))
+	if *fact != *original {
+		t.Fatal("silent wrappers changed or shortened the original cause")
+	}
+	message := dependencyMessage("example/wrapper99", *fact)
+	for _, want := range []string{"representative failure: " + original.Failure.Location,
+		strings.ReplaceAll(original.Failure.Message, "\n", "\n  "),
+		"other dependency errors may exist", "run immutago example/origin,"} {
+		if !strings.Contains(message, want) {
+			t.Fatalf("missing original detail or command: %q", want)
+		}
 	}
 }
 

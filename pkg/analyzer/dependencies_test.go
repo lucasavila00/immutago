@@ -80,6 +80,9 @@ func checkInvalidDependencyPropagation(t *testing.T, serialized bool) {
 		if tc.path == "example/consumer" {
 			checkDependencyContext(t, got)
 		}
+		if tc.path == "example/bad" && len(reports) != 4 {
+			t.Fatalf("direct analysis reported %d local errors, want all four", len(reports))
+		}
 
 		packages[tc.path] = pkg
 	}
@@ -114,7 +117,8 @@ func TestInvalidProofKeepsRelevanceWhenVetPrunesImports(t *testing.T) {
 	var reports []string
 	pass := &analysis.Pass{Pkg: wrapper, Fset: positions, Files: []*ast.File{file}, TypesInfo: &types.Info{},
 		ImportPackageFact: func(_ *types.Package, fact analysis.Fact) bool {
-			*fact.(*invalidPackage) = *packageFailureFact("example/bad", true, nil, nil)
+			*fact.(*invalidPackage) = *roundTripFact(t, packageFailureFact("example/bad", true, nil,
+				[]proofFailure{{Location: "example/bad/bad.go:1:1", Message: "original error"}}))
 			return true
 		},
 		Report: func(d analysis.Diagnostic) { reports = append(reports, d.Message) }}
@@ -124,15 +128,18 @@ func TestInvalidProofKeepsRelevanceWhenVetPrunesImports(t *testing.T) {
 	}
 }
 
-// checkDependencyContext checks the portable source and import route of the original failure.
+// checkDependencyContext checks the exact original cause and a command that bypasses silent wrappers.
 func checkDependencyContext(t *testing.T, got string) {
 	t.Helper()
 	for _, want := range []string{
-		"example/consumer -> example/wrapper -> example/bad", "example/bad/proof.go:1:",
-		"unsupported unsafe import", "fix:",
+		"representative failure: example/bad/proof.go:1:", "unsupported unsafe import",
+		"other dependency errors may exist", "run immutago example/bad,",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing dependency context %q in %s", want, got)
 		}
+	}
+	if strings.Count(got, "representative failure:") != 1 {
+		t.Errorf("expected one original cause in %s", got)
 	}
 }

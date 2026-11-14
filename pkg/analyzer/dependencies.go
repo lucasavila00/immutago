@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"fmt"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -12,24 +11,17 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// invalidPackage carries a failed proof across drivers that suppress dependency diagnostics.
+// invalidPackage carries one original failure across drivers that hide dependency diagnostics.
 type invalidPackage struct {
 	Relevant bool
-	Packages []*failedPackage
+	Origin   string
+	Failure  proofFailure
 }
 
 // AFact identifies invalidPackage as a portable package-level analysis obligation.
 func (*invalidPackage) AFact() {}
 
-// failedPackage stores one package's local failures and direct invalid imports.
-// Records are shared between facts and are not changed after export.
-type failedPackage struct {
-	Path     string
-	Imports  []string
-	Failures []proofFailure
-}
-
-// proofFailure retains an original diagnostic without a copied import chain.
+// proofFailure retains an exact original diagnostic and its portable source location.
 type proofFailure struct {
 	Location string
 	Message  string
@@ -51,7 +43,7 @@ func localFailure(pass *analysis.Pass, diagnostic analysis.Diagnostic) proofFail
 	}
 }
 
-// invalidDependencies preserves original failures through drivers that hide dependency diagnostics.
+// invalidDependencies reports one original cause for each failed direct import when relevant.
 func invalidDependencies(pass *analysis.Pass) (bool, bool, map[string]invalidPackage) {
 	relevant, invalid := collectDependencyFacts(pass)
 	if len(invalid) == 0 || !relevant {
@@ -64,7 +56,7 @@ func invalidDependencies(pass *analysis.Pass) (bool, bool, map[string]invalidPac
 				continue
 			}
 			if fact, ok := invalid[path]; ok {
-				pass.Reportf(spec.Pos(), "%s", dependencyMessage(pass.Pkg.Path(), path, fact))
+				pass.Reportf(spec.Pos(), "%s", dependencyMessage(path, fact))
 			}
 		}
 	}
@@ -89,96 +81,36 @@ func collectDependencyFacts(pass *analysis.Pass) (bool, map[string]invalidPackag
 	return relevant, invalid
 }
 
-// packageFailureFact joins flat records before export, without copying local failures or import chains.
+// packageFailureFact selects the first original failure without copying the failed import graph.
+// Taking the minimum of local and imported causes preserves the same choice across silent wrappers.
 func packageFailureFact(path string, relevant bool, imports map[string]invalidPackage,
 	failures []proofFailure) *invalidPackage {
-	current := &failedPackage{Path: path, Failures: uniqueFailures(failures)}
-	records := make(map[string]*failedPackage)
-	for imported, fact := range imports {
-		current.Imports = append(current.Imports, imported)
-		for _, record := range fact.Packages {
-			records[record.Path] = record
+	fact := &invalidPackage{Relevant: relevant}
+	consider := func(origin string, failure proofFailure) {
+		order := compareFailures(failure, fact.Failure)
+		if fact.Origin == "" || order < 0 || order == 0 && origin < fact.Origin {
+			fact.Origin, fact.Failure = origin, failure
 		}
 	}
-	slices.Sort(current.Imports)
-	records[path] = current
-	fact := &invalidPackage{Relevant: relevant, Packages: make([]*failedPackage, 0, len(records))}
-	for _, record := range records {
-		fact.Packages = append(fact.Packages, record)
+	for _, failure := range failures {
+		consider(path, failure)
 	}
-	slices.SortFunc(fact.Packages, func(a, b *failedPackage) int { return cmp.Compare(a.Path, b.Path) })
+	for _, imported := range imports {
+		consider(imported.Origin, imported.Failure)
+	}
 	return fact
 }
 
-// routedFailure connects a reported local error to its origin in the import graph.
-type routedFailure struct {
-	failure proofFailure
-	origin  string
-}
-
-// dependencyMessage builds import chains only when a relevant consumer reports a failure.
-func dependencyMessage(consumer, path string, fact invalidPackage) string {
-	parents := dependencyParents(path, fact)
-	var failures []routedFailure
-	for _, record := range fact.Packages {
-		for _, failure := range record.Failures {
-			failures = append(failures, routedFailure{failure: failure, origin: record.Path})
-		}
-	}
-	slices.SortFunc(failures, func(a, b routedFailure) int { return compareFailures(a.failure, b.failure) })
-	chains := make(map[string]string)
+// dependencyMessage identifies the failed import and one cause, with a command for the original package.
+func dependencyMessage(path string, fact invalidPackage) string {
 	var message strings.Builder
 	message.WriteString("unsupported dependency " + path + ": immutability proof failed")
-	for _, failure := range failures {
-		chain, ok := chains[failure.origin]
-		if !ok {
-			chain = dependencyChain(consumer, failure.origin, parents)
-			chains[failure.origin] = chain
-		}
-		message.WriteString("\n  import chain: " + chain)
-		message.WriteString("\n  original failure: " + failure.failure.Location + ": ")
-		message.WriteString(strings.ReplaceAll(failure.failure.Message, "\n", "\n  "))
-	}
-	message.WriteString("\n  fix: correct the original dependency error above, then rerun immutago on this package")
+	message.WriteString("\n  representative failure: " + fact.Failure.Location + ": ")
+	message.WriteString(strings.ReplaceAll(fact.Failure.Message, "\n", "\n  "))
+	message.WriteString("\n  note: other dependency errors may exist")
+	message.WriteString("\n  fix: run immutago " + fact.Origin +
+		", correct its errors, then rerun immutago on this package")
 	return message.String()
-}
-
-// dependencyParents selects the first lexical route through the acyclic import graph.
-func dependencyParents(path string, fact invalidPackage) map[string]string {
-	records := make(map[string]*failedPackage, len(fact.Packages))
-	for _, record := range fact.Packages {
-		records[record.Path] = record
-	}
-	type edge struct{ path, parent string }
-	pending := []edge{{path: path}}
-	parents := make(map[string]string, len(records))
-	for len(pending) > 0 {
-		last := pending[len(pending)-1]
-		pending = pending[:len(pending)-1]
-		if _, seen := parents[last.path]; seen {
-			continue
-		}
-		parents[last.path] = last.parent
-		imports := records[last.path].Imports
-		for i := len(imports) - 1; i >= 0; i-- {
-			pending = append(pending, edge{path: imports[i], parent: last.path})
-		}
-	}
-	return parents
-}
-
-// dependencyChain renders one route from its parent links, including the reporting consumer.
-func dependencyChain(consumer, origin string, parents map[string]string) string {
-	var reversed []string
-	for path := origin; path != ""; path = parents[path] {
-		reversed = append(reversed, path)
-	}
-	var chain strings.Builder
-	chain.WriteString(consumer)
-	for i := len(reversed) - 1; i >= 0; i-- {
-		chain.WriteString(" -> " + reversed[i])
-	}
-	return chain.String()
 }
 
 // protectedPackage also checks source types because vet can prune transitive package imports.
@@ -194,12 +126,6 @@ func protectedPackage(pass *analysis.Pass) bool {
 		}
 	}
 	return false
-}
-
-// uniqueFailures sorts and removes duplicate local diagnostics before their first export.
-func uniqueFailures(failures []proofFailure) []proofFailure {
-	slices.SortFunc(failures, compareFailures)
-	return slices.Compact(failures)
 }
 
 // compareFailures preserves diagnostic order by portable source location and message.
