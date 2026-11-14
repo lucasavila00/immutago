@@ -122,7 +122,7 @@ request body when the user requests that issue or pull request.
 
 Check every field and collection type argument. Use resolved Go type identity,
 not source spelling. Do not accept unknown cases or add escape hatches. The
-one exception is `proc.Dependency[T]` from `proc.Trust`: a trusted, not proved,
+one exception is `proc.UncheckedDependency[T]` from `proc.Trust`: a trusted, not proved,
 concurrency-safe dependency in process start arguments. The user decided this
 in issue #52. Do not add other escape hatches.
 Support cases that can be proved. Report unsupported cases explicitly.

@@ -118,7 +118,7 @@ func (c *subsetChecks) checkProcessNode(node ast.Node) {
 		if procMethod(object) && !c.directProc(n) {
 			c.pass.Reportf(n.Pos(), processEscape)
 		}
-		if runtimeMethod(object, checker.DependencyType, checker.ValueMethod) && !c.dependencyValue(n) {
+		if runtimeMethod(object, checker.UncheckedDependencyType, checker.ValueMethod) && !c.dependencyValue(n) {
 			c.pass.Reportf(n.Pos(), "call Value only directly on l.Args() or on a field of l.Args() in a process method")
 		}
 		if runtimeMethod(object, checker.ProcessMarker, checker.SupervisorMethod) && !c.runSupervisor(n) {
@@ -130,10 +130,10 @@ func (c *subsetChecks) checkProcessNode(node ast.Node) {
 	}
 }
 
-// dependencyValue permits a direct synchronous proc.Dependency.Value call on the arguments of the process receiver
+// dependencyValue permits a direct synchronous proc.UncheckedDependency.Value call on the arguments of the process receiver
 // or on one of their fields.
 func (c *subsetChecks) dependencyValue(selector *ast.SelectorExpr) bool {
-	if !runtimeMethod(c.pass.TypesInfo.ObjectOf(selector.Sel), checker.DependencyType, checker.ValueMethod) ||
+	if !runtimeMethod(c.pass.TypesInfo.ObjectOf(selector.Sel), checker.UncheckedDependencyType, checker.ValueMethod) ||
 		!c.synchronousCall(selector) {
 		return false
 	}

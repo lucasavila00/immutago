@@ -448,16 +448,16 @@ func TestTrustValue(t *testing.T) {
 	if counts["b"] != 2 {
 		t.Fatalf("Value() is not the trusted map: %v", counts)
 	}
-	var zero Dependency[func() int]
+	var zero UncheckedDependency[func() int]
 	if zero.Value() != nil {
-		t.Fatal("zero Dependency has a value")
+		t.Fatal("zero UncheckedDependency has a value")
 	}
 }
 
 // reporterArgs gives a process a trusted function.
 type reporterArgs struct {
 	im.Shared
-	Report Dependency[func(string)]
+	Report UncheckedDependency[func(string)]
 }
 
 // reporter calls its trusted function once.

@@ -44,14 +44,14 @@ fields of a process are not protected storage. The
 - Each parameter and result of an exported method other than `Run` must pass the
   [type proof](../../internal/checker/proof.go). A PID is a leaf of that proof.
 - The type argument of `proc.Process` must pass the same proof, with one
-  exception: `Prover.ArgumentReason` also accepts `proc.Dependency[T]` as the
-  argument type, and named `proc.Dependency[T]` fields of an argument struct
+  exception: `Prover.ArgumentReason` also accepts `proc.UncheckedDependency[T]` as the
+  argument type, and named `proc.UncheckedDependency[T]` fields of an argument struct
   with exactly one marker.
 
-`proc.Dependency[T]` is a [trusted dependency](../processes.md#trusted-dependencies).
+`proc.UncheckedDependency[T]` is a [trusted dependency](../processes.md#trusted-dependencies).
 The type proof rejects it, so it cannot be in an Owner value, a frozen
 collection, another marked struct, or an exported method signature. `checkStruct`
-rejects a `proc.Dependency` field in an unmarked struct, which includes a
+rejects a `proc.UncheckedDependency` field in an unmarked struct, which includes a
 process. `dependencyValue` accepts `Value` only as a direct synchronous call on
 `l.Args()` or on one field of it in a method of process `l`. The `T` value is
 not proved; `proc.Trust` is the promise.

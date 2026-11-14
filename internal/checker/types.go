@@ -26,7 +26,7 @@ const (
 	ArgsMethod              = "Args"
 	SupervisorMethod        = "Supervisor"
 	RunMethod               = "Run"
-	DependencyType          = "Dependency"
+	UncheckedDependencyType = "UncheckedDependency"
 	ValueMethod             = "Value"
 	InitMethod              = "Init"
 )
@@ -122,7 +122,7 @@ func Contains(t types.Type) bool {
 	return classifier.Contains(t)
 }
 
-// TrustedField identifies a named proc.Dependency field, which only a marked process argument struct can store.
+// TrustedField identifies a named proc.UncheckedDependency field, which only a marked process argument struct can store.
 func TrustedField(field *types.Var) bool {
-	return !field.Embedded() && IsRuntimeType(field.Type(), DependencyType)
+	return !field.Embedded() && IsRuntimeType(field.Type(), UncheckedDependencyType)
 }

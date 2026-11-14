@@ -11,20 +11,20 @@ import (
 // SenderArgs are valid process arguments with a dependency.
 type SenderArgs struct {
 	im.Shared
-	Log proc.Dependency[*slog.Logger]
+	Log proc.UncheckedDependency[*slog.Logger]
 }
 
 // Sender stores a dependency in a process field.
 type Sender struct {
 	proc.Process[SenderArgs]
-	log proc.Dependency[*slog.Logger]
+	log proc.UncheckedDependency[*slog.Logger]
 }
 
 // Run waits until ctx ends.
 func (s *Sender) Run(ctx context.Context) { <-ctx.Done() }
 
 // Logger returns a dependency.
-func (s *Sender) Logger() proc.Dependency[*slog.Logger] { return s.Args().Log }
+func (s *Sender) Logger() proc.UncheckedDependency[*slog.Logger] { return s.Args().Log }
 
 // Arguments returns the arguments.
 func (s *Sender) Arguments() SenderArgs { return s.Args() }
@@ -38,7 +38,7 @@ func (s *Sender) copyLog() *slog.Logger {
 // LogState is a Scoped struct with a dependency.
 type LogState struct {
 	im.Scoped
-	Log proc.Dependency[*slog.Logger]
+	Log proc.UncheckedDependency[*slog.Logger]
 }
 
 // Keeper publishes a dependency through an Owner field.
@@ -57,12 +57,12 @@ type Envelope struct {
 }
 
 // loggers is a frozen collection of dependencies.
-var loggers im.FrozenSlice[proc.Dependency[*slog.Logger]]
+var loggers im.FrozenSlice[proc.UncheckedDependency[*slog.Logger]]
 
 // handlers keeps a dependency in an unmarked struct.
 type handlers struct {
-	log proc.Dependency[*slog.Logger]
+	log proc.UncheckedDependency[*slog.Logger]
 }
 
 // unwrap calls Value outside a process method.
-func unwrap(log proc.Dependency[*slog.Logger]) *slog.Logger { return log.Value() }
+func unwrap(log proc.UncheckedDependency[*slog.Logger]) *slog.Logger { return log.Value() }
