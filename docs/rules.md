@@ -160,7 +160,8 @@ An earlier loaded pointer remains valid after a later `Store`. Go does not
 specify when an unused object is collected.
 
 These allowed forms are complete. Other slot and holder operations are rejected.
-Parentheses preserve these forms.
+Parentheses preserve these forms. Exported package slots can also use a
+package qualifier.
 
 | Allowed form | Example |
 | --- | --- |

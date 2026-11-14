@@ -49,16 +49,28 @@ func containsSlotValue(t types.Type, seen map[types.Type]bool) bool {
 	case *types.Signature:
 		return containsSlotValue(typ.Params(), seen) || containsSlotValue(typ.Results(), seen)
 	case *types.Tuple:
-		for i := 0; i < typ.Len(); i++ {
-			if containsSlotValue(typ.At(i).Type(), seen) {
-				return true
-			}
-		}
+		return tupleHasSlotValue(typ, seen)
 	case *types.Struct:
-		for field := range typ.Fields() {
-			if containsSlotValue(field.Type(), seen) {
-				return true
-			}
+		return structHasSlotValue(typ, seen)
+	}
+	return false
+}
+
+// tupleHasSlotValue checks each parameter or result type.
+func tupleHasSlotValue(tuple *types.Tuple, seen map[types.Type]bool) bool {
+	for i := 0; i < tuple.Len(); i++ {
+		if containsSlotValue(tuple.At(i).Type(), seen) {
+			return true
+		}
+	}
+	return false
+}
+
+// structHasSlotValue checks each field stored by value.
+func structHasSlotValue(structure *types.Struct, seen map[types.Type]bool) bool {
+	for field := range structure.Fields() {
+		if containsSlotValue(field.Type(), seen) {
+			return true
 		}
 	}
 	return false
@@ -194,6 +206,9 @@ func (c *subsetChecks) checkSlotExpression(expression ast.Expr) {
 		return
 	}
 	if id, ok := expression.(*ast.Ident); ok {
+		if selector, ok := c.parents[id].(*ast.SelectorExpr); ok && selector.Sel == id {
+			return
+		}
 		if c.pass.TypesInfo.Defs[id] != nil {
 			return
 		}
@@ -394,6 +409,10 @@ func (c *subsetChecks) validSlotReceiver(receiver ast.Expr) bool {
 		return ok && variable.Parent() == c.pass.Pkg.Scope()
 	case *ast.SelectorExpr:
 		selection := c.pass.TypesInfo.Selections[value]
+		if selection == nil {
+			variable, ok := c.pass.TypesInfo.ObjectOf(value.Sel).(*types.Var)
+			return ok && variable.Pkg() != nil && variable.Parent() == variable.Pkg().Scope()
+		}
 		return selection != nil && selection.Kind() == types.FieldVal && len(selection.Index()) == 1 &&
 			c.pass.TypesInfo.Types[value].Addressable()
 	}

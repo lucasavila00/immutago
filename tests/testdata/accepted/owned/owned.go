@@ -10,6 +10,8 @@ type Model struct {
 
 type Loader struct{ Current im.Owned[Model] }
 
+var Current im.Owned[Model]
+
 var current im.Owned[Model]
 
 func Publish(l *Loader, version string, weights []float64) {

@@ -41,6 +41,11 @@ func TestCLI(t *testing.T) {
 			}
 		})
 	}
+	t.Run("owned_cross_package", func(t *testing.T) {
+		dir := consumerModule(t, root, "accepted")
+		output := runCommand(t, dir, true, binary, "./ownedcross")
+		checkFixtureSnapshots(t, root, "accepted/ownedcross", output)
+	})
 	t.Run("accepted", func(t *testing.T) {
 		dir := consumerModule(t, root, "accepted")
 		output := runCommand(t, dir, true, binary, "./...")
