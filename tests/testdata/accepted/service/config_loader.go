@@ -71,3 +71,15 @@ func (l *ConfigLoader) Limit(name string) int {
 	limit, _ := config.Limits.Get(name)
 	return limit
 }
+
+// Record accepts ordinary inputs and returns an immutable count.
+func (*ConfigLoader) Record(ctx context.Context, counts map[string]int, visit func(string), keys ...string) int {
+	if ctx.Err() != nil {
+		return 0
+	}
+	for _, key := range keys {
+		counts[key]++
+		visit(key)
+	}
+	return len(counts)
+}

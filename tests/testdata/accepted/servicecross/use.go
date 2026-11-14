@@ -1,6 +1,7 @@
 package servicecross
 
 import (
+	"context"
 	"time"
 
 	"example.com/consumer/service"
@@ -13,14 +14,6 @@ func Version(root *supervise.Group) int {
 	if err != nil {
 		panic(err)
 	}
+	config.Current().Record(context.Background(), map[string]int{}, func(string) {}, "requests")
 	return config.Current().Version()
-}
-
-// Decide passes an ordinary interface implementation to a service in another package.
-func Decide(root *supervise.Group) bool {
-	sampler, err := supervise.Start[service.Sampler](root, supervise.NoArgs{})
-	if err != nil {
-		panic(err)
-	}
-	return sampler.Current().Decide(service.SampleRequest{Rate: 0.5}, &service.Sequence{})
 }

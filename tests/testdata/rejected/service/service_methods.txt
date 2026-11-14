@@ -1,6 +1,6 @@
-service_methods.go:24:21: exported service method Table returns map[string]int, which is not an allowed stored type: map[string]int is not provably immutable
-service_methods.go:27:21: exported service method Load returns error, which is not an allowed stored type: error is not provably immutable
-service_methods.go:30:21: exported service method Self returns *service.Refresher, which is not an allowed stored type: stored pointers require a concrete marked struct target
+service_methods.go:24:21: exported service method Table carries map[string]int, which is not an allowed stored type: map[string]int is not provably immutable
+service_methods.go:27:21: exported service method Load carries error, which is not an allowed stored type: error is not provably immutable
+service_methods.go:30:21: exported service method Self carries *service.Refresher, which is not an allowed stored type: stored pointers require a concrete marked struct target
 service_methods.go:30:29: service type Refresher can be named only in its declaration, a pointer receiver, supervise.Start[Refresher], supervise.StartReserved[Refresher], supervise.Reserve[Refresher], or supervise.Ref[Refresher]
 service_methods.go:30:48: service receivers can only select a field or call a method directly
 service_methods.go:33:9: service type Refresher can be named only in its declaration, a pointer receiver, supervise.Start[Refresher], supervise.StartReserved[Refresher], supervise.Reserve[Refresher], or supervise.Ref[Refresher]

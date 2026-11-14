@@ -87,6 +87,11 @@ func f(ref supervise.Ref[ConfigLoader]) int { s := ref.Current().Latest(); retur
 	supervise.Service[supervise.NoArgs]; loader supervise.Ref[ConfigLoader] }
 func (c *Cache) Run(ctx context.Context) { _ = c.loader.Current().Version() }`},
 		{"unexported receiver call", `func (l *ConfigLoader) Bump() { l.bump() }`},
+		{"ordinary inputs", `func (l *ConfigLoader) Update(ctx context.Context, values map[string]int) {
+if ctx.Err() == nil { values["key"]++ } }`},
+		{"callback parameter", `func (l *ConfigLoader) Each(visit func(string)) { visit("key") }`},
+		{"variadic parameter", `func (l *ConfigLoader) Values(v ...int) {}`},
+		{"scoped parameter", `func (l *ConfigLoader) Read(c *Config) int { return c.Version }`},
 		{"unexported native result", `func (l *ConfigLoader) table() map[string]int { return map[string]int{} }`},
 		{"slot load", `func (l *ConfigLoader) Level() int { c := l.current.Load(); if c == nil { return 0 }
 	return c.Version }`},

@@ -30,7 +30,7 @@ FileArgs types. Other examples come from the
 | Other service fields use ordinary Go types without protected storage, or the listed [Owner fields](owner.md) | `mu sync.Mutex`, `groups map[string]*supervise.Group`, `loader supervise.Ref[ConfigLoader]`, `current im.Owner[Config]` |
 | Declare Run directly on the service with a pointer receiver, one `context.Context` parameter, and no result | `func (c *FileCache) Run(ctx context.Context) { ... }` |
 | Declare Init directly with a pointer receiver, no parameters, and exactly one `error` result; or use the embedded default | `func (c *FileCache) Init() error { return c.read() }` |
-| Method inputs use ordinary Go types; protected values keep the common source rules | `Decide(g Generator) bool`, `Update(m map[string]int)`, `Each(visit func(string))`, `Count(values ...int) int` |
+| Inputs to methods other than Init and Run follow ordinary Go rules | `Each(visit func(string))`, `Values(v ...int)` |
 | Declare other methods with a pointer receiver | `func (c *FileCache) read() error { ... }` |
 | Exported methods other than Init and Run return only allowed stored types | `func (c *FileCache) Text() string`, `func (l *Limiter) Usage() Usage` |
 | Name the concrete service type in its declaration, a pointer receiver, or the single type argument of Start, StartReserved, Reserve, or Ref | `supervise.Start[FileCache](root, args)`, `supervise.Ref[FileCache]` |
@@ -134,7 +134,7 @@ these groups, see [Child services and groups](service-children.md).
 | --- | --- |
 | Pass `p.Children()` directly as the first argument of Start, StartReserved, or StartGroup | `supervise.Start[Worker](p.Children(), WorkerArgs{ID: 1, Version: 1})`, `supervise.StartReserved(p.Children(), ref, args)`, `supervise.StartGroup(p.Children())` |
 | Bind Children to one new local with `:=`; use that local only as the first argument of those three functions in the same method | `children := p.Children(); supervise.Start[Worker](children, WorkerArgs{ID: 1, Version: 1})` |
-| Keep, store, start under, or stop the result of StartGroup; pass or return it through ordinary functions or unexported methods | `group := supervise.StartGroup(p.Children()); p.groups[name] = group`, later `<-group.Stop()` |
+| Keep, store, start under, or stop the result of StartGroup; pass it through functions or methods; return it through ordinary functions or unexported methods | `group := supervise.StartGroup(p.Children()); p.groups[name] = group`, later `<-group.Stop()` |
 
 | Group source | Who stops it | Where it can be used |
 | --- | --- | --- |
