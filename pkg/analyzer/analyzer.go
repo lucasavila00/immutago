@@ -227,7 +227,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		if field.Pkg() == c.pass.Pkg && field.Pos().IsValid() {
 			fieldPos = field.Pos()
 		}
-		if c.uncheckedField(fieldPos, t, field, marked) {
+		if c.unprovedField(fieldPos, t, field, marked) {
 			continue
 		}
 		if marked {
@@ -250,8 +250,8 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	}
 }
 
-// uncheckedField reports a misplaced marker or proc.Dependency field and identifies a field without a type proof.
-func (c *checks) uncheckedField(pos token.Pos, t types.Type, field *types.Var, marked bool) bool {
+// unprovedField reports a misplaced marker or proc.Dependency field and identifies a field without a type proof.
+func (c *checks) unprovedField(pos token.Pos, t types.Type, field *types.Var, marked bool) bool {
 	if invalidMarkerField(field) {
 		c.report(pos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
 			"\n  fix: embed im.Shared or im.Scoped; remove the marker field name or pointer")
