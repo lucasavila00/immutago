@@ -40,7 +40,7 @@ earlier loaded objects remain immutable. Go's garbage collector manages lifetime
 A [process](../../pkg/proc/proc.go) is mutable and is not a marked struct. The
 classifier treats `proc.Process[A]` as opaque, as it treats `im.Owner`, so the
 fields of a process are not protected storage. The
-[process matcher](../../pkg/analyzer/process.go) applies four rules:
+[process matcher](../../pkg/analyzer/process.go) applies five rules:
 
 - A process value or pointer is valid only as the receiver variable in a method
   of that process or as a direct `PID.Proc()` result. The receiver can select
@@ -55,6 +55,19 @@ fields of a process are not protected storage. The
   exception: `Prover.ArgumentReason` also accepts `proc.UncheckedDependency[T]` as the
   argument type, and named `proc.UncheckedDependency[T]` fields of an argument struct
   with exactly one marker.
+- `Process.Supervisor` is valid only as a direct synchronous call on the
+  receiver of a process method, outside function literals. Its result must be
+  the first argument of a direct synchronous `proc.Start`, `proc.StartReserved`,
+  or `proc.StartSupervisor` call, directly or through one local variable from
+  `:=` that has no other use. The supervisor of the run itself therefore does
+  not escape the method, and only the runtime stops it. A nested supervisor
+  from `proc.StartSupervisor(l.Supervisor())` is an ordinary value: the process
+  can store it, start children under it from any method, and stop it. It cannot
+  be a start argument or an exported method parameter or result, because
+  `*proc.Supervisor` is not an allowed stored type. Other uses follow ordinary
+  Go rules. It stops with the run. `Start` under it after the run ends returns a PID
+  whose `Run` never runs. The checker does not check PID lifetimes, such as a
+  PID reserved outside the run.
 
 `proc.UncheckedDependency[T]` is an [unchecked dependency](../processes.md#unchecked-dependencies).
 The classifier treats the wrapper as protected storage and does not inspect `T`.
@@ -73,7 +86,7 @@ argument-only type as a builder element.
 
 A process is not an Owner holder; the holder pointer rules do not apply to it.
 Methods with a process receiver are exempt from the rule against user-defined
-methods with protected storage, because the four rules leave a direct static
+methods with protected storage, because the five rules leave a direct static
 call as the only use of such a method. The runtime creates a new value from the
 same arguments after each restart delay and stores it in the same PID.
 These rules do not check the origin or destination of mutable field handles

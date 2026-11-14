@@ -93,3 +93,27 @@ func TestNestedSelfStop(t *testing.T) {
 		takeEvents()
 	})
 }
+
+// TestStartAfterStopDoesNotRetainChildren checks late process starts and an unrecorded nested entry.
+func TestStartAfterStopDoesNotRetainChildren(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		parent := NewRoot(nil)
+		<-parent.Stop()
+		for range 1000 {
+			if Start[first](parent, None{}).Proc() == nil {
+				t.Fatal("Start returned an empty PID")
+			}
+		}
+		nested := StartSupervisor(parent)
+		parent.mu.Lock()
+		remaining := len(parent.children)
+		parent.mu.Unlock()
+		if remaining != 0 {
+			t.Errorf("stopped supervisor retains %d new children", remaining)
+		}
+		<-nested.Stop()
+		if nested.parent != nil || nested.entry != nil {
+			t.Error("late nested Stop keeps its parent links")
+		}
+	})
+}

@@ -468,6 +468,15 @@ func BenchmarkPIDProc(b *testing.B) {
 	<-root.Stop()
 }
 
+// TestStopNestedRightAfterStart verifies that a nested supervisor can stop while its parent launches it.
+func TestStopNestedRightAfterStart(t *testing.T) {
+	root := NewRoot(nil)
+	for range 100 {
+		<-StartSupervisor(root).Stop()
+	}
+	<-root.Stop()
+}
+
 // TestTrustValue checks that Value returns the value that Trust wraps.
 func TestTrustValue(t *testing.T) {
 	counts := map[string]int{"a": 1}

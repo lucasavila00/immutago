@@ -9,7 +9,7 @@
 // immutable values and PIDs. For processes that need each other's PIDs, Reserve
 // a PID first and start it later with StartReserved.
 //
-// A supervisor runs its children until Stop. If Run returns, the process ends.
+// A supervisor runs its children until Stop. If Run returns, the process ends, and the supervisor removes it.
 // If Run panics, the supervisor waits 1 s, doubling the delay for each restart
 // in the last 5 minutes. It then creates a new process value from the same
 // arguments, stores it in the same PID, and calls Run. Calls during the delay
@@ -18,6 +18,12 @@
 // escalates the panic to the parent supervisor, which restarts the subtree with
 // the same rule. At the root supervisor, the escalation panics again with the
 // last panic value, and the program exits. NewRoot accepts a function to report recovered panics.
+//
+// A process can start children under the Supervisor of its current run. When
+// the process stops, the runtime stops these children in reverse start order
+// before the Run context ends, so children can still call the process. When
+// Run returns or panics, the runtime stops them before the process restarts or
+// ends. A child that escalates fails the run.
 //
 // Stop cancels each Run context and waits for Run to return. Cancellation is
 // cooperative; Run must observe its context. Stop does not wait for direct
@@ -44,14 +50,104 @@ const (
 // Only Start and StartReserved create it, and other code calls its exported methods through a PID.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
 type Process[A any] struct {
-	args A
+	args     A
+	report   func(value any, stack []byte)
+	mu       sync.Mutex
+	cancel   context.CancelFunc
+	unwatch  func() bool
+	children *Supervisor
+	done     chan struct{}
+	ended    bool
+	failure  any
+	failed   bool
 }
 
 // Args returns the arguments that Start or StartReserved gave to the process.
 func (p *Process[A]) Args() A { return p.args }
 
-// bind sets the arguments of a new process value.
-func (p *Process[A]) bind(args A) { p.args = args }
+// Supervisor returns the supervisor of the current run of the process. Each run has its own supervisor.
+// Processes started under it before Run begins start with the run. When the process stops, the runtime
+// stops its children, last started first, and waits for them before the Run context ends. When Run returns
+// or panics, the runtime stops them and waits for them before the run ends. After the run ends,
+// Supervisor returns a stopped supervisor, and processes started under it do not run.
+// If a child escalates, the run context ends and the run fails with the panic value of the child.
+func (p *Process[A]) Supervisor() *Supervisor {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.children == nil {
+		p.children = &Supervisor{stopped: make(chan struct{}), report: p.report}
+		switch {
+		case p.ended:
+			p.children.Stop()
+		case p.cancel != nil:
+			p.serve()
+		}
+	}
+	return p.children
+}
+
+// serve runs the supervisor of the run until it stops, and ends the run if a child escalates.
+// The caller holds p.mu.
+func (p *Process[A]) serve() {
+	p.done = make(chan struct{})
+	go func() {
+		defer close(p.done)
+		if p.failure, _, p.failed = attempt(context.Background(), p.children.serve, false); p.failed {
+			p.cancel()
+		}
+	}()
+}
+
+// bind sets the arguments and panic reporter before the process is published.
+func (p *Process[A]) bind(args A, report func(any, []byte)) {
+	p.args, p.report = args, report
+}
+
+// begin returns the context of the run and runs the supervisor of the run if it exists.
+// When ctx ends, halt stops the children before the context of the run ends.
+func (p *Process[A]) begin(ctx context.Context) context.Context {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	run, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	p.cancel = cancel
+	p.unwatch = context.AfterFunc(ctx, p.halt)
+	if p.children != nil {
+		p.serve()
+	}
+	return run
+}
+
+// halt stops the supervisor of the run and waits for it, then ends the context of the run.
+func (p *Process[A]) halt() {
+	p.mu.Lock()
+	p.ended = true
+	children := p.children
+	p.mu.Unlock()
+	if children != nil {
+		<-children.Stop()
+	}
+	p.cancel()
+}
+
+// end stops the supervisor of the run and waits for it, and panics if a child escalated to it.
+func (p *Process[A]) end() {
+	p.unwatch()
+	p.mu.Lock()
+	p.ended = true
+	p.cancel()
+	children, done := p.children, p.done
+	p.mu.Unlock()
+	if children == nil {
+		return
+	}
+	<-children.Stop()
+	if done != nil {
+		<-done
+	}
+	if p.failed {
+		panic(p.failure)
+	}
+}
 
 // None is the argument type of a process without arguments.
 type None struct {
@@ -142,7 +238,9 @@ func StartSupervisor(parent *Supervisor) *Supervisor {
 func Start[T, A any, P interface {
 	*T
 	Run(context.Context)
-	bind(A)
+	bind(A, func(any, []byte))
+	begin(context.Context) context.Context
+	end()
 }](parent *Supervisor, args A) PID[T] {
 	pid := Reserve[T]()
 	StartReserved[T, A, P](parent, pid, args)
@@ -155,11 +253,13 @@ func Start[T, A any, P interface {
 func StartReserved[T, A any, P interface {
 	*T
 	Run(context.Context)
-	bind(A)
+	bind(A, func(any, []byte))
+	begin(context.Context) context.Context
+	end()
 }](parent *Supervisor, pid PID[T], args A) {
 	create := func() *T {
 		value := new(T)
-		P(value).bind(args)
+		P(value).bind(args, parent.report)
 		return value
 	}
 	if !pid.value.CompareAndSwap(nil, create()) {
@@ -171,7 +271,9 @@ func StartReserved[T, A any, P interface {
 			pid.value.Store(create())
 		}
 		started = true
-		P(pid.value.Load()).Run(ctx)
+		value := P(pid.value.Load())
+		defer value.end()
+		value.Run(value.begin(ctx))
 	})
 }
 
@@ -195,15 +297,18 @@ func (s *Supervisor) Stop() <-chan struct{} {
 	return s.stopped
 }
 
-// add records a child, runs it if s is running, and returns it.
+// add records a child unless s is stopping, runs it if s is running, and returns its entry.
 func (s *Supervisor) add(run func(context.Context)) *child {
 	done := make(chan struct{})
 	close(done)
 	c := &child{run: run, stop: func() {}, done: done}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.stopping {
+		return c
+	}
 	s.children = append(s.children, c)
-	if s.ctx != nil && !s.stopping {
+	if s.ctx != nil {
 		s.launch(c)
 	}
 	return c
@@ -217,8 +322,14 @@ func (s *Supervisor) release(c *child) {
 	s.mu.Unlock()
 	stop()
 	<-done
+	s.forget(c)
+}
+
+// forget prevents another launch of a child and removes it.
+func (s *Supervisor) forget(c *child) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	c.run = nil
 	// Keep the child order stable for any halt already reading a snapshot.
 	s.children = slices.DeleteFunc(slices.Clone(s.children), func(other *child) bool { return other == c })
 }
@@ -229,8 +340,15 @@ func (s *Supervisor) launch(c *child) {
 		return
 	}
 	ctx, cancel := context.WithCancel(s.ctx)
-	c.stop, c.done = cancel, make(chan struct{})
-	go watch(ctx, c.run, s.failure, c.done, s.report)
+	done := make(chan struct{})
+	c.stop, c.done = cancel, done
+	run := c.run
+	go func() {
+		defer close(done)
+		if watch(ctx, run, s.failure, s.report) {
+			s.forget(c)
+		}
+	}()
 }
 
 // serve runs one incarnation of s until its parent cancels ctx, s stops, or a child escalates.
@@ -278,10 +396,10 @@ func (s *Supervisor) halt() {
 }
 
 // watch runs run until it returns or ctx ends, and restarts it after a panic.
-func watch(ctx context.Context, run func(context.Context), failure chan<- any, done chan<- struct{},
+// It reports whether run returned before ctx ended.
+func watch(ctx context.Context, run func(context.Context), failure chan<- any,
 	report func(value any, stack []byte),
-) {
-	defer close(done)
+) bool {
 	var restarts []time.Time
 	for {
 		value, stack, failed := attempt(ctx, run, report != nil)
@@ -289,7 +407,7 @@ func watch(ctx context.Context, run func(context.Context), failure chan<- any, d
 			report(value, stack)
 		}
 		if !failed || ctx.Err() != nil {
-			return
+			return !failed && ctx.Err() == nil
 		}
 		now := time.Now()
 		restarts = slices.DeleteFunc(restarts, func(at time.Time) bool { return now.Sub(at) >= restartWindow })
@@ -298,7 +416,7 @@ func watch(ctx context.Context, run func(context.Context), failure chan<- any, d
 			case failure <- value:
 			default:
 			}
-			return
+			return false
 		}
 		delay := time.NewTimer(time.Second << len(restarts))
 		restarts = append(restarts, now)
@@ -306,7 +424,7 @@ func watch(ctx context.Context, run func(context.Context), failure chan<- any, d
 		case <-delay.C:
 		case <-ctx.Done():
 			delay.Stop()
-			return
+			return false
 		}
 	}
 }
