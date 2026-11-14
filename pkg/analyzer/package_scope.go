@@ -55,6 +55,11 @@ func usesLibraryType(t types.Type, seen map[types.Type]bool) bool {
 	case *types.TypeParam:
 		return usesLibraryType(value.Constraint(), seen)
 	}
+	return libraryTypeComponents(t, seen)
+}
+
+// libraryTypeComponents follows the storage and callable edges of an unnamed compiler type.
+func libraryTypeComponents(t types.Type, seen map[types.Type]bool) bool {
 	switch value := t.(type) {
 	case *types.Pointer:
 		return usesLibraryType(value.Elem(), seen)
