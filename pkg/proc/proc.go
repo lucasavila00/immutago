@@ -116,6 +116,7 @@ func (p *Process[A]) begin(ctx context.Context) context.Context {
 // halt stops the supervisor of the run and waits for it, then ends the context of the run.
 func (p *Process[A]) halt() {
 	p.mu.Lock()
+	p.ended = true
 	children := p.children
 	p.mu.Unlock()
 	if children != nil {
@@ -136,7 +137,9 @@ func (p *Process[A]) end() {
 		return
 	}
 	<-children.Stop()
-	<-done
+	if done != nil {
+		<-done
+	}
 	if p.failed {
 		panic(p.failure)
 	}

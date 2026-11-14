@@ -51,9 +51,10 @@ fields of a process are not protected storage. The
   `:=` that has no other use. The supervisor of the run itself therefore does
   not escape the method, and only the runtime stops it. A nested supervisor
   from `proc.StartSupervisor(l.Supervisor())` is an ordinary value: the process
-  can store it, start children under it from any method, and stop it. It stays
-  in the process, because `*proc.Supervisor` is not an allowed stored type, and
-  it stops with the run. `Start` under it after the run ends returns a PID
+  can store it, start children under it from any method, and stop it. It cannot
+  be a start argument or an exported method parameter or result, because
+  `*proc.Supervisor` is not an allowed stored type. Other uses follow ordinary
+  Go rules. It stops with the run. `Start` under it after the run ends returns a PID
   whose `Run` never runs. The checker does not check PID lifetimes, such as a
   PID reserved outside the run.
 

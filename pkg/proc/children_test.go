@@ -68,6 +68,34 @@ func TestChildrenStopBeforeRun(t *testing.T) {
 	})
 }
 
+// TestSupervisorDuringHalt checks that a late child cannot start while the run stops.
+func TestSupervisorDuringHalt(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		entered := make(chan struct{})
+		resume := make(chan struct{})
+		var once sync.Once
+		p := &Process[None]{
+			cancel:  func() { once.Do(func() { close(entered); <-resume }) },
+			unwatch: func() bool { return true },
+		}
+		halted := make(chan struct{})
+		go func() { p.halt(); close(halted) }()
+		<-entered
+		s := p.Supervisor()
+		ran := make(chan struct{})
+		s.add(func(context.Context) { close(ran) })
+		synctest.Wait()
+		close(resume)
+		<-halted
+		p.end()
+		select {
+		case <-ran:
+			t.Fatal("child started after halt began")
+		default:
+		}
+	})
+}
+
 // askerArgs is the argument of an asker.
 type askerArgs struct {
 	im.Shared
