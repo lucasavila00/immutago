@@ -47,6 +47,9 @@ its enclosing statement. Each step must match an allowed form. Unmatched forms
 fail. [Call matches](../../pkg/analyzer/subset_calls.go) resolve function identity
 and actual parameter types, including tuple results and variadic elements.
 
+Per-pass caches reuse literal type matches and compiler-constant operand
+classification. Each operand still passes its use and statement checks.
+
 [Dependency facts](../../pkg/analyzer/dependencies.go) retain failure locations,
 messages, relevance, and import chains. Consumers report relevant failures at
 imports and export them again. Duplicate failures use one deterministic route
