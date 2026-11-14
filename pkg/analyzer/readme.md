@@ -8,7 +8,7 @@ import "github.com/lucasavila00/immutago/pkg/analyzer"
 
 Package analyzer exposes the immutago go/analysis analyzer.
 
-Structs that embed im.Shared or im.Scoped are immutable from construction. Their fields must be scalars, unnamed arrays, other marked structs, pointers to concrete Shared structs, or frozen collections of allowed types. Each component is checked recursively. Unmarked structs cannot store protected values. Interfaces, callbacks, user generics with protected storage, reflection, and unsafe operations are unsupported in checked packages.
+Structs that embed im.Shared or im.Scoped are immutable from construction. Their fields must be scalars, unnamed arrays, other marked structs, pointers to concrete Shared structs, or frozen collections of allowed types. Each component is checked recursively. Unmarked structs cannot store protected values. Interfaces, callbacks, and user generics with protected storage are unsupported. Ordinary unsafe and reflection operations follow Go API contracts.
 
 Whole variable bindings can be replaced. Field, element, and pointer\-target writes to protected objects are rejected. Protected pointers start with fresh construction and target concrete marked structs. Shared pointers can be copied, stored, and returned. Scoped pointers stay local or pass to direct typed calls that do not retain them. Neither mode permits protected closure captures or protected operations in go or defer.
 

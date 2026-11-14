@@ -13,9 +13,12 @@ contracts, including immutable strings and no hidden writes to protected memory.
 Their unsafe, reflection, and cgo implementations are not proved.
 
 Application code must run through the analyzer for its selected build
-configuration. An ordinary Go build supplies no immutability checks. Checked
-code cannot use reflection, unsafe imports, or bodyless functions to bypass
-the proof. There are no suppression directives. The two user trust points are
+configuration. An ordinary Go build supplies no immutability checks. Unsafe and
+reflection operations use the ordinary source-form checks. The analyzer does
+not trace scalar origins or prove the memory effects of ordinary unsafe code;
+ordinary helpers must obey Go API contracts, including string immutability.
+Checked code still rejects cgo and bodyless functions. There are no suppression
+directives. The two user trust points are
 `supervise.AssumeConcurrentSafe` for safe concurrent use and `im.Trust` for immutable data. The checker
 does not prove either [promise](../rules.md#trust-markers).
 Failures from checked dependencies reach consumers through package facts. Runtime Freeze has

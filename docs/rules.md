@@ -53,8 +53,13 @@ library. It also skips the test runner that Go generates. There is no comment
 or annotation that lets user code bypass checks. The only trusted values in user
 code are the two [trust markers](#trust-markers).
 
-In a checked package, `unsafe`, `reflect`, cgo, and functions without Go bodies
-are rejected. For example, write `func readCount() int { return 1 }` instead of
+Importing `unsafe` or `reflect` is allowed. Ordinary values use ordinary Go
+rules. Protected values still need a listed form: for example,
+`reflect.ValueOf(1)` is allowed, but `reflect.ValueOf(p)` with a marked pointer
+fails the interface-boxing rule. There is no separate unsafe or reflection exemption.
+
+In a checked package, cgo and functions without Go bodies are rejected.
+For example, write `func readCount() int { return 1 }` instead of
 `func readCount() int`. A cgo package gets one package-level error.
 
 If an imported package fails, the error shows one cause and a command to check

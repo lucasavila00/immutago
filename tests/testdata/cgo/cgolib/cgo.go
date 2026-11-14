@@ -4,6 +4,7 @@ package cgolib
 import "C"
 import (
 	_ "example.com/consumer/bad"
+	_ "github.com/lucasavila00/immutago/pkg/im"
 	_ "unsafe"
 )
 

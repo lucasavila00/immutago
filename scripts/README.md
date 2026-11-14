@@ -16,8 +16,8 @@ Go comments. [.gomarkdoc.yml](../.gomarkdoc.yml) selects the templates;
 from issue 20. Use `go run ./scripts/dependency-stress -scale 5 -out /tmp/deps`
 for 400 ordinary packages, which should pass under ordinary Go API trust. Add
 `-library /absolute/path/to/immutago` to give every generated package a direct
-`im` import and add a consumer. Those packages remain checked: local unsafe
-errors must be reported, and the consumer receives one representative original
+`im` import and add a consumer. Those packages remain checked: invalid immutable fields
+must be reported, and the consumer receives one representative original
 failure. The
 [dependency workflow](../.github/workflows/dependency-performance.yml) runs it
 through both analysis drivers and saves measurements.

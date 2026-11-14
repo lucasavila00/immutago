@@ -87,5 +87,5 @@ check the selected cause against all original errors, exact gob round trips,
 and constant fact size across deep, wide, and dense graphs.
 The workflow separately checks ordinary graphs without `im` imports and failure
 graphs whose packages directly import `im`. Ordinary graphs must pass both
-drivers. Checked graphs retain 101 local unsafe errors per generated package;
+drivers. Checked graphs contain 50 invalid immutable fields per generated package;
 consumer reports contain one representative cause.
