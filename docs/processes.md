@@ -123,6 +123,9 @@ A supervisor recovers these panics, so nothing logs them by default. To see
 them, pass `proc.OnPanic` to `NewRoot`. Its function gets the value and the
 stack of each panic that a supervisor of the tree recovers, before the restart
 delay. A nested supervisor that escalates is such a panic of its parent.
+The function can run concurrently for different children. The supervisor waits
+for it to return; a panic in the function is not recovered. Do not wait for
+the same supervisor to stop from inside the function.
 
 ```go
 root := proc.NewRoot(proc.OnPanic(func(value any, stack []byte) {

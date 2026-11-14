@@ -50,7 +50,7 @@ type Option func(*Supervisor)
 func OnPanic(report func(value any, stack []byte)) Option
 ```
 
-OnPanic makes report receive the value and the stack of every panic that a child of a supervisor in the tree recovers, before its restart delay. A nested supervisor that escalates is such a child of its parent.
+OnPanic makes report receive the value and the stack of every panic that a child of a supervisor in the tree recovers, before its restart delay. A nested supervisor that escalates is such a child of its parent. Calls can run concurrently. The supervisor waits for report to return. A panic in report is not recovered.
 
 ## type PID
 

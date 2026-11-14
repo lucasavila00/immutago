@@ -102,6 +102,8 @@ type Option func(*Supervisor)
 // OnPanic makes report receive the value and the stack of every panic that a
 // child of a supervisor in the tree recovers, before its restart delay. A
 // nested supervisor that escalates is such a child of its parent.
+// Calls can run concurrently. The supervisor waits for report to return.
+// A panic in report is not recovered.
 func OnPanic(report func(value any, stack []byte)) Option {
 	return func(s *Supervisor) { s.report = report }
 }
@@ -118,7 +120,7 @@ func root(exit func(any), options ...Option) *Supervisor {
 		option(s)
 	}
 	go func() {
-		if value, _, failed := attempt(context.Background(), s.serve); failed {
+		if value, _, failed := attempt(context.Background(), s.serve, false); failed {
 			exit(value)
 		}
 	}()
@@ -279,7 +281,7 @@ func watch(ctx context.Context, run func(context.Context), failure chan<- any, d
 	defer close(done)
 	var restarts []time.Time
 	for {
-		value, stack, failed := attempt(ctx, run)
+		value, stack, failed := attempt(ctx, run, report != nil)
 		if failed && report != nil {
 			report(value, stack)
 		}
@@ -308,13 +310,15 @@ func watch(ctx context.Context, run func(context.Context), failure chan<- any, d
 
 // attempt calls run with a context that ends with the attempt, and returns the panic value and its stack if run
 // panics.
-func attempt(ctx context.Context, run func(context.Context)) (value any, stack []byte, failed bool) {
+func attempt(ctx context.Context, run func(context.Context), captureStack bool) (value any, stack []byte, failed bool) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer func() {
 		if failed {
 			value = recover()
-			stack = debug.Stack()
+			if captureStack {
+				stack = debug.Stack()
+			}
 		}
 	}()
 	failed = true

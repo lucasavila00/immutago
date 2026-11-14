@@ -335,6 +335,33 @@ func TestOnPanic(t *testing.T) {
 	})
 }
 
+// TestPanicStackOption checks stack capture only when a reporter needs it.
+func TestPanicStackOption(t *testing.T) {
+	run := func(context.Context) { panic("failure") }
+	for _, capture := range []bool{false, true} {
+		value, stack, failed := attempt(context.Background(), run, capture)
+		if !failed || value != "failure" || (len(stack) != 0) != capture {
+			t.Fatalf("capture %t: value %v, stack length %d, failed %t", capture, value, len(stack), failed)
+		}
+	}
+}
+
+// TestNestedOnPanic checks that a nested supervisor inherits its reporter.
+func TestNestedOnPanic(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		failures.Store(0)
+		reported := make(chan any, 1)
+		root := NewRoot(OnPanic(func(value any, _ []byte) { reported <- value }))
+		nested := StartSupervisor(root)
+		Start[failing](nested, None{})
+		if value := <-reported; value != int64(1) {
+			t.Fatalf("reported %v, want 1", value)
+		}
+		<-root.Stop()
+		takeEvents()
+	})
+}
+
 // TestRestartWindow verifies that restarts older than 5 minutes do not count.
 func TestRestartWindow(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
