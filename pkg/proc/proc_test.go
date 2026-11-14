@@ -496,7 +496,7 @@ func (r *reporter) Run(context.Context) { r.Args().Report.Value()("run") }
 // TestTrustedArgument checks that a process receives the trusted value from its arguments.
 func TestTrustedArgument(t *testing.T) {
 	reported := make(chan string, 1)
-	root := NewRoot()
+	root := NewRoot(nil)
 	Start[reporter](root, reporterArgs{Report: Trust(func(event string) { reported <- event })})
 	if got := <-reported; got != "run" {
 		t.Fatalf("reported %q", got)
