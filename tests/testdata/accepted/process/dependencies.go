@@ -18,9 +18,9 @@ type Store interface {
 type FetcherArgs struct {
 	im.Shared
 	BaseURL  string
-	Log      proc.Dependency[*slog.Logger]
-	Client   proc.Dependency[*http.Client]
-	NewStore proc.Dependency[func(name string) Store]
+	Log      proc.UncheckedDependency[*slog.Logger]
+	Client   proc.UncheckedDependency[*http.Client]
+	NewStore proc.UncheckedDependency[func(name string) Store]
 }
 
 // Fetcher uses a logger, an HTTP client, and a store from its factory.
@@ -54,7 +54,7 @@ func StartFetcher(root *proc.Supervisor, log *slog.Logger) proc.PID[Fetcher] {
 }
 
 // Tracer is a process whose argument is one dependency.
-type Tracer struct{ proc.Process[proc.Dependency[*slog.Logger]] }
+type Tracer struct{ proc.Process[proc.UncheckedDependency[*slog.Logger]] }
 
 // Run logs once.
 func (t *Tracer) Run(ctx context.Context) { t.Args().Value().Info("trace") }

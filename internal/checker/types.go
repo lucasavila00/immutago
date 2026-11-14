@@ -16,16 +16,16 @@ const RuntimePath = "github.com/lucasavila00/immutago/pkg/proc"
 
 // Names of the process runtime identities in RuntimePath and of the process method that only the runtime calls.
 const (
-	ProcessMarker         = "Process"
-	PIDType               = "PID"
-	StartFunction         = "Start"
-	ReserveFunction       = "Reserve"
-	StartReservedFunction = "StartReserved"
-	ProcMethod            = "Proc"
-	ArgsMethod            = "Args"
-	RunMethod             = "Run"
-	DependencyType        = "Dependency"
-	ValueMethod           = "Value"
+	ProcessMarker           = "Process"
+	PIDType                 = "PID"
+	StartFunction           = "Start"
+	ReserveFunction         = "Reserve"
+	StartReservedFunction   = "StartReserved"
+	ProcMethod              = "Proc"
+	ArgsMethod              = "Args"
+	RunMethod               = "Run"
+	UncheckedDependencyType = "UncheckedDependency"
+	ValueMethod             = "Value"
 )
 
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
@@ -119,7 +119,7 @@ func Contains(t types.Type) bool {
 	return classifier.Contains(t)
 }
 
-// TrustedField identifies a named proc.Dependency field, which only a marked process argument struct can store.
+// TrustedField identifies a named proc.UncheckedDependency field, which only a marked process argument struct can store.
 func TrustedField(field *types.Var) bool {
-	return !field.Embedded() && IsRuntimeType(field.Type(), DependencyType)
+	return !field.Embedded() && IsRuntimeType(field.Type(), UncheckedDependencyType)
 }

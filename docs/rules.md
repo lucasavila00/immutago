@@ -23,7 +23,7 @@ promise:
 | Marker | Promise | Where |
 | --- | --- | --- |
 | [`im.Opaque[T]`](opaque.md), from `im.Seal` | The value never changes after `im.Seal`. Only the package that declares `T` can seal or read it. | Anywhere a stored type is allowed. |
-| [`proc.Dependency[T]`](processes.md#trusted-dependencies), from `proc.Trust` | The value is safe for concurrent use by several processes. | Only in process start arguments. |
+| [`proc.UncheckedDependency[T]`](processes.md#trusted-dependencies), from `proc.Trust` | The value is safe for concurrent use by several processes. | Only in process start arguments. |
 
 ## Check the program
 

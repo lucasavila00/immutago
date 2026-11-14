@@ -3,7 +3,7 @@
 [Language guide](rules.md) · [Common forms](common-forms.md) · [API](../pkg/im/readme.md)
 
 `im.Opaque[T]` is one of the two [trust markers](rules.md#trust-markers) of
-immutago; the other is `proc.Dependency[T]`, with a different promise. It holds
+immutago; the other is `proc.UncheckedDependency[T]`, with a different promise. It holds
 a pointer to a value that the analyzer does not check. The analyzer does not
 prove that the value is immutable: the package that declares `T` is trusted to
 never change it after `im.Seal`.
