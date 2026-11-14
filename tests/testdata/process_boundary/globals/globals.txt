@@ -1,0 +1,4 @@
+globals.go:21:41: process method uses package variable state.Hits of another package, which any importer can change; pass the value in the start arguments, or keep the state in a process and publish it through an im.Owner field
+globals.go:24:42: process method uses package variable state.Limit of another package, which any importer can change; pass the value in the start arguments, or keep the state in a process and publish it through an im.Owner field
+globals.go:27:44: process method uses package variable plain.Names of another package, which any importer can change; pass the value in the start arguments, or keep the state in a process and publish it through an im.Owner field
+globals.go:30:47: process method uses package variable plain.Version of another package, which any importer can change; pass the value in the start arguments, or keep the state in a process and publish it through an im.Owner field

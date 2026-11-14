@@ -60,6 +60,9 @@ func (w *Worker) Value() int { return helper() }`},
 		{"standard function call", `func (w *Worker) Write(path string) { _, _ = os.ReadFile(path) }`},
 		{"variable outside process method", `var seen = map[string]int{}
 func count() { seen["hits"]++ }`},
+		{"helper is not followed", `var seen = map[string]int{}
+func hits() int { return seen["hits"] }
+func (w *Worker) Hits() int { return hits() }`},
 		{"local shadow", `var seen = map[string]int{}
 func (w *Worker) Local() int { seen := map[string]int{}; return seen["a"] }`},
 	})
