@@ -2,6 +2,15 @@
 
 Review every checker or supported-language change against these two requirements.
 
+## Local review
+
+- Identify the type or service boundary that the rule protects.
+- Check whether the rule reduces the code that a caller must inspect.
+- Review service field access, locks, mutable input retention, and calls that
+  expose internal state in the service itself.
+- Do not require proof of ordinary dependency implementations or claim full
+  isolation from immutable result types alone.
+
 ## 1. Complete allowed forms
 
 The guide must list every allowed Go form with a short example. It must say

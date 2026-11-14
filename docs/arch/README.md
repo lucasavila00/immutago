@@ -3,6 +3,22 @@
 Immutago combines compiler type proofs, source-form checks, and native builder
 consumption checks. The analyzer adds no runtime state.
 
+## Local review
+
+The design reduces how much code a reviewer must trace. Put enforceable rules
+at a type or API boundary; review implementation behavior inside that boundary.
+
+| Boundary | What it removes from a caller review |
+| --- | --- |
+| Marked types and frozen collections | Searching other callers for writes to the same protected data. |
+| Scoped pointers | Tracing checked callees to see whether they save the pointer. |
+| Service Refs and result types | Inspecting callers for direct field access or mutable return values. |
+
+Review service state changes, synchronization, and input contracts in the service
+implementation. Ordinary inputs and dependency calls follow Go contracts. The
+checker does not prove service logic or full isolation. Do not add whole-program
+effect analysis to make that claim.
+
 ## Code map
 
 | Source | Responsibility |

@@ -2,6 +2,9 @@
 
 A Go checker and library for immutable data and supervised services.
 
+Keep reviews local: reason about immutable data from its type, and review
+mutable state inside the service that manages it.
+
 | What do you need? | Start here |
 | --- | --- |
 | Read-only objects, slices, and maps | [Immutable data with im](docs/README.md#immutable-data-im) |

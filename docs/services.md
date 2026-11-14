@@ -80,6 +80,19 @@ limit through its reference and resets its request count every Window.
 Wait on `<-group.Stop()` to stop both services. Use [child groups](service-children.md) when a service must
 create or remove related work while it runs.
 
+## Review one service
+
+The API rules aim to keep review local. Review these together inside the service:
+
+- Field access from Init, Run, and methods; the locks that protect it.
+- How mutable inputs are used, copied, or saved.
+- Whether callbacks or dependencies receive access to mutable service state.
+- Child startup and shutdown.
+
+Checked callers use methods through Ref; they cannot access service fields.
+Results use allowed stored types. Method logic and ordinary input contracts
+remain part of the service review.
+
 ## Startup errors and reservations
 
 - Only the runtime calls Init and Run. Use the default Init when no setup is needed.
