@@ -122,7 +122,7 @@ var subsetFixes = map[string]string{
 // subsetFix gives a supported replacement for each rejected operation.
 func subsetFix(rule string) string {
 	if strings.Contains(rule, "service reference") || strings.Contains(rule, "Ref requires") {
-		return "keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md"
+		return "keep a concrete supervise.Ref[Service] and call ref.Current().Method(args); see docs/service-references.md"
 	}
 	if fix, ok := subsetFixes[rule]; ok {
 		return fix

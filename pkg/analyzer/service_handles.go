@@ -54,7 +54,7 @@ func refAccessor(object types.Object) bool {
 
 // matchCurrent accepts only a direct exported method call on the selected service.
 func (c *subsetChecks) matchCurrent(selector *ast.SelectorExpr) string {
-	const rejected = "use a service reference only as ref.Current().Message(args); " +
+	const rejected = "use a service reference only as ref.Current().Method(args); " +
 		"do not extract the accessor or service pointer"
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection == nil || selection.Kind() != types.MethodVal || len(selection.Index()) != 1 {
@@ -119,7 +119,8 @@ func (c *subsetChecks) handleInstance(name *ast.Ident) {
 	}
 	for i := 0; i < instance.TypeArgs.Len(); i++ {
 		if c.queries.Handles(instance.TypeArgs.At(i)) {
-			c.report(name, "user generic type arguments cannot contain service references; use concrete Ref parameters and storage")
+			c.report(name, "user generic type arguments cannot contain service references; "+
+				"use concrete Ref parameters and storage")
 			return
 		}
 	}
