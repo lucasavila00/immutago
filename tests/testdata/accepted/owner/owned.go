@@ -32,7 +32,7 @@ func Score(m im.Projection[*Model], features []float64) float64 {
 	total := 0.0
 	weights := NewModelProjection(m).Weights()
 	for i, w := range weights.All() {
-		total += im.Copy(w) * features[i]
+		total += im.Value(w) * features[i]
 	}
 	return total
 }

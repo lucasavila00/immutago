@@ -19,14 +19,6 @@ Choose the API for the data:
 
 Prepare a native collection in one local variable. After Freeze, use only the frozen value. Run immutago to enforce these rules; go build alone does not.
 
-## func Copy
-
-```go
-func Copy[T any](value Projection[T]) T
-```
-
-Copy returns the value from a projection. The checker permits only Copied types, including opaque service references. Copy does not allocate.
-
 ## func IsNil
 
 ```go
@@ -42,6 +34,14 @@ func Unwrap[T any](value UncheckedValue[T]) *T
 ```
 
 Unwrap returns the wrapped pointer, or nil for the zero UncheckedValue. Only the package that declares T can use Unwrap.
+
+## func Value
+
+```go
+func Value[T any](value Projection[T]) T
+```
+
+Value returns the value from a projection. The checker permits only Copied types, including opaque service references. Value does not allocate.
 
 ## type Cell
 
@@ -319,13 +319,13 @@ type MapProjection[K comparable, V any] struct {
 }
 ```
 
-### func ProjectedMap
+### func MapOf
 
 ```go
-func ProjectedMap[K comparable, V any](value Projection[FrozenMap[K, V]]) MapProjection[K, V]
+func MapOf[K comparable, V any](value Projection[FrozenMap[K, V]]) MapProjection[K, V]
 ```
 
-ProjectedMap returns a map read projection without copying entries or allocating.
+MapOf returns a map read projection without copying entries or allocating.
 
 ### func \(MapProjection\[K, V\]\) All
 
@@ -403,13 +403,13 @@ type SliceProjection[E any] struct {
 }
 ```
 
-### func ProjectedSlice
+### func SliceOf
 
 ```go
-func ProjectedSlice[E any](value Projection[FrozenSlice[E]]) SliceProjection[E]
+func SliceOf[E any](value Projection[FrozenSlice[E]]) SliceProjection[E]
 ```
 
-ProjectedSlice returns a slice read projection without copying elements or allocating.
+SliceOf returns a slice read projection without copying elements or allocating.
 
 ### func \(SliceProjection\[E\]\) All
 
@@ -469,21 +469,21 @@ func ProjectString[S ~string](value S) StringProjection
 
 ProjectString returns local read access to a native string without copying bytes or allocating.
 
-### func ProjectedFrozenString
+### func StringOf
 
 ```go
-func ProjectedFrozenString(value Projection[FrozenString]) StringProjection
+func StringOf[S ~string](value Projection[S]) StringProjection
 ```
 
-ProjectedFrozenString returns a local string projection without copying bytes or allocating.
+StringOf returns a string read projection without copying bytes or allocating.
 
-### func ProjectedString
+### func StringOfFrozen
 
 ```go
-func ProjectedString[S ~string](value Projection[S]) StringProjection
+func StringOfFrozen(value Projection[FrozenString]) StringProjection
 ```
 
-ProjectedString returns a string read projection without copying bytes or allocating.
+StringOfFrozen returns a local string projection without copying bytes or allocating.
 
 ### func \(StringProjection\) At
 
@@ -509,13 +509,13 @@ func (s StringProjection) Equal(other StringProjection) bool
 
 Equal compares the bytes with another local projection without copying or allocating.
 
-### func \(StringProjection\) EqualString
+### func \(StringProjection\) Is
 
 ```go
-func (s StringProjection) EqualString(other string) bool
+func (s StringProjection) Is(other string) bool
 ```
 
-EqualString compares the bytes with a native string without copying or allocating.
+Is compares the bytes with a native string without copying or allocating.
 
 ### func \(StringProjection\) Len
 

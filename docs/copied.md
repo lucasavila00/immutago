@@ -91,12 +91,12 @@ score := frozen.Score
 score.Value++
 score.Set(2)
 
-read := im.Copy(cell.Load())
+read := im.Value(cell.Load())
 read.Value++
 ```
 
 The original owner does not change. The same rule applies to generated getters,
-`im.Copy`, frozen collection value reads, and local collection Clone results.
+`im.Value`, frozen collection value reads, and local collection Clone results.
 Native Copied containers use ordinary alias rules unless Freeze requires an
 exclusive builder. The checker adds no runtime ownership state.
 
@@ -112,7 +112,7 @@ exclusive builder. The checker adds no runtime ownership state.
 | `struct { im.Copied; Worker supervise.Ref[Worker] }` | Use a Local result with the reference and copied fields. |
 | `struct { im.Copied; Score *Score }` | Use `Score Score`. |
 | A named array field: `type Flags [2]bool` | Use `Flags [2]bool` directly in the record. |
-| `im.CopyRecord(projection)` for `Projection[Score]` | `im.Copy(projection)` |
+| `im.CopyRecord(projection)` for `Projection[Score]` | `im.Value(projection)` |
 | `alias := scores; frozen := im.FreezeSlice(scores)` | Construct a fresh exclusive builder, then Freeze it. |
 | Use `scores` after `im.FreezeSlice(scores)` | Read the frozen result or Clone it into independent native storage. |
 | An exported service method returning `(Score, bool)` | Return one Copied record that contains the Score and bool fields. |

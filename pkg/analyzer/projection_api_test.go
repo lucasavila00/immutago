@@ -6,14 +6,14 @@ import "testing"
 func TestProjectionEntryPoints(t *testing.T) {
 	for _, source := range []string{
 		`type Label string;func f(s Label){_=im.ProjectString(s).Len()}`,
-		`func f(){_=((im.ProjectString[string]))("text").EqualString("text")}`,
+		`func f(){_=((im.ProjectString[string]))("text").Is("text")}`,
 		`type Text=im.FrozenString;func f(value Text){_=value.Projection().Len()}`,
 		`type Values=im.FrozenSlice[int];func f(value Values){_=value.Projection().Len()}`,
 		`type Values=im.FrozenMap[string,int];func f(value Values){_=value.Projection().Len()}`,
-		`func f(value im.Projection[string]){_=im.ProjectedString(value).Len()}`,
-		`func f(value im.Projection[im.FrozenString]){_=im.ProjectedFrozenString(value).Len()}`,
-		`func f(value im.Projection[im.FrozenSlice[int]]){_=im.ProjectedSlice(value).Len()}`,
-		`func f(value im.Projection[im.FrozenMap[string,int]]){_=im.ProjectedMap(value).Len()}`,
+		`func f(value im.Projection[string]){_=im.StringOf(value).Len()}`,
+		`func f(value im.Projection[im.FrozenString]){_=im.StringOfFrozen(value).Len()}`,
+		`func f(value im.Projection[im.FrozenSlice[int]]){_=im.SliceOf(value).Len()}`,
+		`func f(value im.Projection[im.FrozenMap[string,int]]){_=im.MapOf(value).Len()}`,
 		`type Reply struct{im.Local;Text im.StringProjection}
 func f(text string)Reply{return Reply{Text:im.ProjectString(text)}}`,
 		`type Ordinary struct{};func(Ordinary)Projection()[]int{return nil}

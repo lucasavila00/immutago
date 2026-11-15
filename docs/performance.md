@@ -6,11 +6,11 @@
 | FreezeSlice, FreezeMap | Copy a native handle; no entry copy or allocation. |
 | ProjectionOf | Copy the Go value T; no copy of its backing storage. |
 | Generated record field or array element projection | Read through the root pointer and indices; no copy of the containing record or array. |
-| Copy | Return a Copied value; records and arrays have their ordinary Go value-copy cost. No allocation. Frozen records are not Copied. |
+| Value | Return a Copied value; records and arrays have their ordinary Go value-copy cost. No allocation. Frozen records are not Copied. |
 | CopyRecord | Copy one record into a new root; one allocation for a record with nonzero size. Backing storage remains shared. |
 | ProjectString, frozen Projection methods, generic projection adapters | Copy a native handle; no backing-storage copy or allocation. |
 | FrozenString.Len/At, StringProjection.Len/At, SliceProjection.Len, MapProjection.Len/Get | Native length, indexing, or map lookup; Get wraps its returned value. |
-| FrozenString.Equal/EqualString, StringProjection.Equal/EqualString | Native string equality; no allocation or byte copy. |
+| FrozenString.Equal/EqualString, StringProjection.Equal/Is | Native string equality; no allocation or byte copy. |
 | FrozenString.Unsafe, StringProjection.Unsafe | Copy the native string handle; no allocation or byte copy. |
 | SliceProjection.At | Copy one element into a Projection. |
 | SliceProjection.AtPointer | Return a projection of one record's address without copying the record or allocating. |

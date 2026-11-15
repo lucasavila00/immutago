@@ -26,10 +26,10 @@ func TestIndependentValues(t *testing.T) {
 		t.Fatal("generated getter changed stored data")
 	}
 	scorer.point.Store(point)
-	loaded := im.Copy(scorer.point.Load())
+	loaded := im.Value(scorer.point.Load())
 	loaded.Set(5)
-	if loaded.X != 5 || im.Copy(scorer.point.Load()).X != 1 {
-		t.Fatal("Copy changed the Cell")
+	if loaded.X != 5 || im.Value(scorer.point.Load()).X != 1 {
+		t.Fatal("Value changed the Cell")
 	}
 	copyFromCollections(point)
 	if NativeStorage(point) != 7 || LocalDeclaration() != 2 {
@@ -76,7 +76,7 @@ func TestSavedPointersDoNotReachProtectedCopies(t *testing.T) {
 	*getterPointer = 5
 
 	scorer.point.Store(stored.Point)
-	projectionCopy := im.Copy(scorer.point.Load())
+	projectionCopy := im.Value(scorer.point.Load())
 	projectionPointer := &projectionCopy.X
 	*projectionPointer = 6
 
@@ -91,7 +91,7 @@ func TestSavedPointersDoNotReachProtectedCopies(t *testing.T) {
 		t.Fatal("saved pointers did not change their own copies")
 	}
 	if stored.Point.X != 1 || local.Point.X != 1 || scorer.current.Load().Point().X != 1 ||
-		im.Copy(scorer.point.Load()).X != 1 || sequence.At(0).X != 1 {
+		im.Value(scorer.point.Load()).X != 1 || sequence.At(0).X != 1 {
 		t.Fatal("a saved pointer changed protected storage")
 	}
 }

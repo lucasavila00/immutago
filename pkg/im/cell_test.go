@@ -23,7 +23,7 @@ type testChild struct {
 // TestCellZero checks the zero snapshot, scalar projection, and nil pointer projection.
 func TestCellZero(t *testing.T) {
 	var scalar Cell[int]
-	if Copy(scalar.Load()) != 0 || scalar.LoadShared() != 0 {
+	if Value(scalar.Load()) != 0 || scalar.LoadShared() != 0 {
 		t.Fatal("zero scalar cell changed the zero value")
 	}
 	var pointer Cell[*testChild]
@@ -70,7 +70,7 @@ func TestCellConcurrent(t *testing.T) {
 	for range 4 {
 		workers.Go(func() {
 			for range 100 {
-				value := Copy(cell.Load())
+				value := Value(cell.Load())
 				if value[0] != value[1] {
 					t.Error("load mixed two stored values")
 				}

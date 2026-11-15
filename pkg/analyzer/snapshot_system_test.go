@@ -13,7 +13,7 @@ func load()im.Projection[*Data]{return cell.LoadPointer()}
 func f(){cell.Store(Data{Name:"name",N:3});projection:=load()
 reader:=NewDataProjection(projection);name:=reader.Name();_=name.Clone()
 n:=reader.N();_=n;owned:=cell.LoadShared();_=owned.Name}`,
-		`var cell im.Cell[int];func f(){cell.Store(3);_=im.Copy(cell.Load())}`,
+		`var cell im.Cell[int];func f(){cell.Store(3);_=im.Value(cell.Load())}`,
 		`type Data struct{im.Frozen; Name string};type Reply struct{im.Local; Name im.StringProjection; Score int}
 func makeReply(v im.Projection[*Data])Reply{
 return Reply{Name:NewDataProjection(v).Name(),Score:2}}`,
@@ -24,14 +24,14 @@ if !im.IsNil(projection){_=NewDataProjection(projection).Name().Clone()}}`,
 		`type Data struct{im.Frozen; Name string};type Pointer=*Data
 func f(projection im.Projection[Pointer]){_=im.IsNil(projection);_=NewDataProjection(projection).Name().Len()}`,
 		`func f(){frozen:=im.FreezeMap(map[string]int{"key":3});projection:=frozen.Projection()
-value,ok:=projection.Get("key");_=ok;_=im.Copy(value)
-for key,value:=range projection.All(){_=im.ProjectedString(key).Clone();_=im.Copy(value)}}`,
+value,ok:=projection.Get("key");_=ok;_=im.Value(value)
+for key,value:=range projection.All(){_=im.StringOf(key).Clone();_=im.Value(value)}}`,
 		`func f(){frozen:=im.FreezeSlice([]string{"text"});projection:=frozen.Projection()
-_=im.ProjectedString(projection.At(0)).Clone()
-for _,value:=range projection.All(){_=im.ProjectedString(value).Len()}}`,
+_=im.StringOf(projection.At(0)).Clone()
+for _,value:=range projection.All(){_=im.StringOf(value).Len()}}`,
 		`func f(){frozen:=im.FreezeSlice([]int{1});projection:=frozen.Projection()
 copy:=projection.Clone();copy[0]=2}`,
-		`func f(){values:=im.Copy(im.ProjectionOf([2]int{1,2}));_=values[0]}`,
+		`func f(){values:=im.Value(im.ProjectionOf([2]int{1,2}));_=values[0]}`,
 		`type Data struct{im.Frozen; Text im.FrozenString};var cell im.Cell[Data]
 func f(){text:="text";cell.Store(Data{Text:im.FreezeString(text)});_=text
 projection:=NewDataProjection(cell.LoadPointer()).Text();_=projection.At(0);_=projection.Clone()}`,
@@ -39,7 +39,7 @@ projection:=NewDataProjection(cell.LoadPointer()).Text();_=projection.At(0);_=pr
 frozen:=im.FreezeSlice(values);_=frozen}`,
 		`func f(v im.MapProjection[int,int]){values:=v.Clone();values[1]=2;frozen:=im.FreezeMap(values);_=frozen}`,
 		`func f(){text:=im.FreezeString("text");projection:=text.Projection()
-_=text.EqualString("text");_=text.Equal(text);_=projection.EqualString("text");_=projection.Equal(projection)}`,
+_=text.EqualString("text");_=text.Equal(text);_=projection.Is("text");_=projection.Equal(projection)}`,
 		`var saved string;func format(string){};func f(projection im.StringProjection,text im.FrozenString){
 format(projection.Unsafe());format(text.Unsafe());saved=projection.Unsafe()}`,
 		`type raw struct{values []int};type Data struct{im.Frozen; Raw im.UncheckedValue[raw]};var cell im.Cell[Data]
@@ -61,7 +61,7 @@ func TestSnapshotCategories(t *testing.T) {
 		{`type Result struct{im.Local; Name string}`, "copied values require"},
 		{`type Result struct{im.Local; Values im.FrozenSlice[int]}`, "copied values require"},
 		{`type Result struct{im.Local; Text im.FrozenString}`, "copied values require"},
-		{`func f(){_=im.Copy(im.ProjectionOf(im.FreezeString("text")))}`,
+		{`func f(){_=im.Value(im.ProjectionOf(im.FreezeString("text")))}`,
 			"copied values require"},
 		{`type Result struct{im.Local; Text im.StringProjection};var cell im.Cell[Result]`,
 			"Frozen storage cannot contain Local values"},
@@ -73,7 +73,7 @@ func TestSnapshotCategories(t *testing.T) {
 		{`var values [0]im.Projection[string]`, "package variables"},
 		{`var marker im.Local`, "package variables"},
 		{`type Data struct{im.Frozen};type Pointer *Data`, "defined pointer types"},
-		{`func f(){_=im.Copy(im.ProjectionOf("text"))}`, "copied values require"},
+		{`func f(){_=im.Value(im.ProjectionOf("text"))}`, "copied values require"},
 		{`func f(){frozen:=im.FreezeMap(map[string]int{});projection:=frozen.Projection()
 copy:=projection.Clone();_=copy}`,
 			"copied values require"},
@@ -81,7 +81,7 @@ copy:=projection.Clone();_=copy}`,
 all:=projection.All();_=all}`,
 			"direct range"},
 		{`func f(){projection:=im.ProjectionOf("text");var boxed any=projection;_=boxed}`, "boxing immutable storage"},
-		{`func f(){projection:=im.ProjectionOf(1);go im.Copy(projection)}`,
+		{`func f(){projection:=im.ProjectionOf(1);go im.Value(projection)}`,
 			"synchronous"},
 	}
 	for _, test := range cases {
@@ -195,8 +195,8 @@ func f(value im.Projection[*Route]){`
 func TestCopiedRecordBoundary(t *testing.T) {
 	const record = `type Count struct{im.Frozen;N int};type Alias=Count;`
 	for _, source := range []string{
-		`func f(){_=im.Copy(im.ProjectionOf(Count{N:1}))}`,
-		`func f(){_=im.Copy(im.ProjectionOf([0]Alias{}))}`,
+		`func f(){_=im.Value(im.ProjectionOf(Count{N:1}))}`,
+		`func f(){_=im.Value(im.ProjectionOf([0]Alias{}))}`,
 		`type Reply struct{im.Local;Count Count}`,
 		`type Reply struct{im.Local;Counts [0]Alias}`,
 		`func f(v im.SliceProjection[Count]){copy:=v.Clone();_=copy}`,

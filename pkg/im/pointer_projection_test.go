@@ -21,7 +21,7 @@ func TestPointerProjections(t *testing.T) {
 		t.Fatal("publication changed an earlier pointer projection")
 	}
 	values := FreezeSlice([]testChild{{Number: 6}})
-	element := ProjectedSlice(ProjectionOf(values)).AtPointer(0)
+	element := SliceOf(ProjectionOf(values)).AtPointer(0)
 	if element.value != &values.values[0] || element.value.Number != 6 {
 		t.Fatal("element pointer copied or changed the element")
 	}
@@ -44,7 +44,7 @@ func TestCopyRecord(t *testing.T) {
 func TestPointerProjectionAllocations(t *testing.T) {
 	var cell Cell[testFrozen]
 	cell.Store(testFrozen{Number: 3})
-	values := ProjectedSlice(ProjectionOf(FreezeSlice([]testChild{{Number: 4}})))
+	values := SliceOf(ProjectionOf(FreezeSlice([]testChild{{Number: 4}})))
 	if got := testing.AllocsPerRun(100, func() {
 		pointerProjectionSink = cell.LoadPointer()
 		pointerNumberSink = pointerProjectionSink.Read().Number

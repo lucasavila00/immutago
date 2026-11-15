@@ -73,7 +73,7 @@ func searchIndex(index IndexProjection, request query) Response {
 		if !found {
 			return response
 		}
-		postings := im.ProjectedSlice(value)
+		postings := im.SliceOf(value)
 		for i := 0; i < postings.Len(); i++ {
 			posting := NewPostingProjection(postings.AtPointer(i))
 			id := posting.Document()

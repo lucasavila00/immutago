@@ -97,7 +97,7 @@ func LocalDeclaration() int {
 func CopiedCollections(value api.Point) (api.Point, api.Point) {
 	values := []api.Point{value}
 	sequence := im.FreezeSlice(values)
-	read := im.Copy(sequence.Projection().At(0))
+	read := im.Value(sequence.Projection().At(0))
 	clone := sequence.Projection().Clone()
 	alias := clone
 	alias[0].Set(9)

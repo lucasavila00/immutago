@@ -13,8 +13,8 @@ func ProjectString[S ~string](value S) StringProjection {
 	return StringProjection{value: string(value)}
 }
 
-// ProjectedString returns a string read projection without copying bytes or allocating.
-func ProjectedString[S ~string](value Projection[S]) StringProjection {
+// StringOf returns a string read projection without copying bytes or allocating.
+func StringOf[S ~string](value Projection[S]) StringProjection {
 	return ProjectString(value.value)
 }
 
@@ -28,8 +28,8 @@ func (s StringProjection) At(index int) byte { return s.value[index] }
 // Equal compares the bytes with another local projection without copying or allocating.
 func (s StringProjection) Equal(other StringProjection) bool { return s.value == other.value }
 
-// EqualString compares the bytes with a native string without copying or allocating.
-func (s StringProjection) EqualString(other string) bool { return s.value == other }
+// Is compares the bytes with a native string without copying or allocating.
+func (s StringProjection) Is(other string) bool { return s.value == other }
 
 // Unsafe returns the underlying string without copying or allocating.
 // The checker does not restrict this string; the caller controls its retention.

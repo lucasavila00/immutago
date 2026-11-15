@@ -13,17 +13,17 @@ import (
 // TestSliceProjection checks shared storage, element projections, and independent native copies.
 func TestSliceProjection(t *testing.T) {
 	input := []int{2, 4, 6}
-	projection := ProjectedSlice(ProjectionOf(FreezeSlice(input)))
-	if &projection.values[0] != &input[0] || projection.Len() != 3 || Copy(projection.At(1)) != 4 {
+	projection := SliceOf(ProjectionOf(FreezeSlice(input)))
+	if &projection.values[0] != &input[0] || projection.Len() != 3 || Value(projection.At(1)) != 4 {
 		t.Fatal("slice adapter changed storage or contents")
 	}
 	first, second := projection.Clone(), projection.Clone()
 	first[0] = 9
-	if Copy(projection.At(0)) != 2 || !slices.Equal(second, input) {
+	if Value(projection.At(0)) != 2 || !slices.Equal(second, input) {
 		t.Fatal("slice clone shares storage")
 	}
 	text := strings.Repeat("text", 128)
-	texts := ProjectedSlice(ProjectionOf(FreezeSlice([]string{text})))
+	texts := SliceOf(ProjectionOf(FreezeSlice([]string{text})))
 	if unsafe.StringData(texts.At(0).value) != unsafe.StringData(text) {
 		t.Fatal("element projection copied its backing storage")
 	}
@@ -36,13 +36,13 @@ func TestSliceProjectionEmpty(t *testing.T) {
 		t.Fatal("invalid zero slice projection")
 	}
 	input := make([]int, 1024)
-	projection := ProjectedSlice(ProjectionOf(FreezeSlice(input[512:512])))
+	projection := SliceOf(ProjectionOf(FreezeSlice(input[512:512])))
 	clone := projection.Clone()
 	if clone == nil || len(clone) != 0 || cap(clone) != 0 ||
 		unsafe.SliceData(clone) == unsafe.SliceData(projection.values) {
 		t.Fatal("empty clone retained backing storage or lost nil distinction")
 	}
-	for _, current := range []SliceProjection[int]{zero, ProjectedSlice(ProjectionOf(FreezeSlice([]int{1})))} {
+	for _, current := range []SliceProjection[int]{zero, SliceOf(ProjectionOf(FreezeSlice([]int{1})))} {
 		for _, index := range []int{-1, current.Len()} {
 			func() {
 				defer func() {
@@ -59,15 +59,15 @@ func TestSliceProjectionEmpty(t *testing.T) {
 // TestMapProjection checks shared storage, value projections, and independent native copies.
 func TestMapProjection(t *testing.T) {
 	input := map[int]int{1: 2, 3: 4}
-	projection := ProjectedMap(ProjectionOf(FreezeMap(input)))
+	projection := MapOf(ProjectionOf(FreezeMap(input)))
 	if reflect.ValueOf(projection.values).UnsafePointer() != reflect.ValueOf(input).UnsafePointer() ||
 		projection.Len() != 2 {
 		t.Fatal("map adapter changed storage")
 	}
-	if value, found := projection.Get(3); !found || Copy(value) != 4 {
+	if value, found := projection.Get(3); !found || Value(value) != 4 {
 		t.Fatal("map projection changed contents")
 	}
-	if value, found := projection.Get(9); found || Copy(value) != 0 {
+	if value, found := projection.Get(9); found || Value(value) != 0 {
 		t.Fatal("missing key did not return the zero projection and false")
 	}
 	first, second := projection.Clone(), projection.Clone()
@@ -80,7 +80,7 @@ func TestMapProjection(t *testing.T) {
 	if zero.Len() != 0 || zero.Clone() != nil {
 		t.Fatal("invalid zero map projection")
 	}
-	empty := ProjectedMap(ProjectionOf(FreezeMap(map[int]int{})))
+	empty := MapOf(ProjectionOf(FreezeMap(map[int]int{})))
 	clone := empty.Clone()
 	if clone == nil {
 		t.Fatal("empty clone lost nil distinction")
@@ -95,7 +95,7 @@ func TestMapProjection(t *testing.T) {
 func TestMapProjectionNested(t *testing.T) {
 	key := strings.Repeat("key", 128)
 	child := &testChild{Number: 7}
-	projection := ProjectedMap(ProjectionOf(FreezeMap(map[string]*testChild{key: child})))
+	projection := MapOf(ProjectionOf(FreezeMap(map[string]*testChild{key: child})))
 	if value, found := projection.Get(key); !found || value.value != child {
 		t.Fatal("map value projection changed pointer identity")
 	}
@@ -115,11 +115,11 @@ func TestMapProjectionKeySemantics(t *testing.T) {
 	input := map[float64]int{nan: 1}
 	input[nan] = 2
 	input[math.Copysign(0, -1)] = 3
-	projection := ProjectedMap(ProjectionOf(FreezeMap(input)))
+	projection := MapOf(ProjectionOf(FreezeMap(input)))
 	if _, found := projection.Get(nan); found {
 		t.Fatal("NaN unexpectedly compares equal")
 	}
-	if value, found := projection.Get(0); !found || Copy(value) != 3 {
+	if value, found := projection.Get(0); !found || Value(value) != 3 {
 		t.Fatal("signed zero lookup differs")
 	}
 	if projection.Len() != 3 || len(projection.Clone()) != 3 {
@@ -129,22 +129,22 @@ func TestMapProjectionKeySemantics(t *testing.T) {
 
 // TestProjectionIteration checks order, repeat use, early stop, and empty projections.
 func TestProjectionIteration(t *testing.T) {
-	sequence := ProjectedSlice(ProjectionOf(FreezeSlice([]int{2, 4, 6})))
-	mapping := ProjectedMap(ProjectionOf(FreezeMap(map[int]int{1: 2, 3: 4})))
+	sequence := SliceOf(ProjectionOf(FreezeSlice([]int{2, 4, 6})))
+	mapping := MapOf(ProjectionOf(FreezeMap(map[int]int{1: 2, 3: 4})))
 	for range 2 {
 		var got []int
 		for index, value := range sequence.All() {
 			if index != len(got) {
 				t.Fatal("slice projection iteration order changed")
 			}
-			got = append(got, Copy(value))
+			got = append(got, Value(value))
 		}
 		if !slices.Equal(got, sequence.values) {
 			t.Fatal("slice projection iteration changed contents")
 		}
 		entries := make(map[int]int)
 		for key, value := range mapping.All() {
-			entries[Copy(key)] = Copy(value)
+			entries[Value(key)] = Value(value)
 		}
 		if !maps.Equal(entries, mapping.values) {
 			t.Fatal("map projection iteration changed contents")

@@ -135,16 +135,16 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 		}
 		return "Freeze requires a standalone single binding"
 	case "Trust", "Unwrap", "ProjectionOf", "CopyRecord", "FreezeString", "ProjectString", "IsNil",
-		"ProjectedString", "ProjectedFrozenString", "ProjectedSlice", "ProjectedMap":
+		"StringOf", "StringOfFrozen", "SliceOf", "MapOf":
 		return ""
-	case "Copy":
+	case "Value":
 		return c.proofs.CopiedReason(c.pass.TypesInfo.TypeOf(call))
 	case "Read":
 		if !c.generatedSource(call) {
 			return "Projection.Read is reserved for verified generated projections"
 		}
 		return c.matchLibraryMethod(call, object.Name())
-	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Unsafe", "Projection":
+	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Is", "Unsafe", "Projection":
 		return c.matchLibraryMethod(call, object.Name())
 	}
 	return "protected operation is outside the supported expression forms"

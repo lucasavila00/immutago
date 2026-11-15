@@ -40,14 +40,14 @@ func TestProjectionCopies(t *testing.T) {
 	input := [2]int{1, 2}
 	projection := ProjectionOf(input)
 	input[0] = 9
-	copy := Copy(projection)
+	copy := Value(projection)
 	copy[1] = 8
-	if Copy(projection) != [2]int{1, 2} || Copy(ProjectionOf(3)) != 3 {
+	if Value(projection) != [2]int{1, 2} || Value(ProjectionOf(3)) != 3 {
 		t.Fatal("projection did not keep an independent root value")
 	}
 	var zero Projection[int]
 	var pointer Projection[*testChild]
-	if Copy(zero) != 0 || !IsNil(pointer) || IsNil(ProjectionOf(&testChild{})) {
+	if Value(zero) != 0 || !IsNil(pointer) || IsNil(ProjectionOf(&testChild{})) {
 		t.Fatal("invalid zero or pointer projection")
 	}
 }
@@ -59,7 +59,7 @@ func TestProjectionPublicAPI(t *testing.T) {
 		methods []string
 	}{
 		{reflect.TypeFor[Projection[int]](), []string{"Read"}},
-		{reflect.TypeFor[StringProjection](), []string{"At", "Clone", "Equal", "EqualString", "Len", "Unsafe"}},
+		{reflect.TypeFor[StringProjection](), []string{"At", "Clone", "Equal", "Is", "Len", "Unsafe"}},
 		{reflect.TypeFor[SliceProjection[int]](), []string{"All", "At", "AtPointer", "Clone", "Len"}},
 		{reflect.TypeFor[MapProjection[int, int]](), []string{"All", "Clone", "Get", "Len"}},
 	}
