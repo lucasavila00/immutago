@@ -3,7 +3,9 @@
 ## Result checks
 
 [Service classification](../../internal/checker/types.go) follows embedded fields
-to the resolved `supervise.Service` type, including aliases and pointers.
+to the resolved `supervise.Service` type. `ServiceEmbeddingReason` checks the
+compiler-selected path to the runtime bind method. Every embedded field on that
+path must be a value, including through aliases; other pointer fields stay ordinary Go.
 [Result checking](../../pkg/analyzer/service.go) visits the pointer method sets
 of named and anonymous service structs:
 
@@ -39,7 +41,7 @@ method uses ordinary mutable data.
 
 | Checked code | Required check | Source |
 | --- | --- | --- |
-| `Ref[T]` | T is a concrete struct that embeds `supervise.Service`. The check does not inspect T's mutable fields. | [refTargetReason](../../internal/checker/proof.go) |
+| `Ref[T]` | T is a concrete struct whose selected runtime embedding path contains only value fields. The check does not inspect T's mutable fields. | [refTargetReason](../../internal/checker/proof.go) |
 | `ref.Borrow().Method(args)` | Borrow's result is the receiver of this direct call. Method is exported and is not Init, Run, or a runtime method. Promoted methods are allowed; promoted Borrow calls are rejected. | [matchBorrow](../../pkg/analyzer/service_handles.go) |
 | Service method result | The four result signatures, including for promoted methods. | [checkServiceResults](../../pkg/analyzer/service.go) |
 | Reference fields in marked objects | Reject field writes after construction. | [matchWrite](../../pkg/analyzer/subset_writes.go) |
@@ -84,7 +86,7 @@ The [trusted code list](validation.md#trust-boundary) still applies.
 | --- | --- |
 | Copy Ref | Copy a pointer to an atomic pointer; all copies select the same current service value. |
 | IsZero | Compare the reference's pointer with nil; no atomic load or allocation. It does not check service readiness. |
-| StartReserved | Create a fresh service, set arguments, call Init, then publish with compare-and-swap. A concurrent start that loses the comparison stops its children before it panics. |
+| Start | Create a fresh service, set arguments, and call Init in the caller. Publish after success. Register under the group mutex; if Stop won, clean the candidate without running it. |
 | Restart | Repeat setup; publish with an atomic store only after success. Failure leaves the previous value available. |
 | Borrow | One atomic load, no allocation. |
 | Children created during Init | Register in that run's child group; wait until Run begins. Failed setup stops them. |
@@ -103,3 +105,27 @@ the mutex. It then uses this snapshot to stop children outside the mutex.
 Concurrent removal does not change the snapshot or its order.
 [Registry tests](../../pkg/supervise/registry_test.go) check removal, allocation,
 and snapshot order.
+
+## Lifetime and retry ownership
+
+| Owner | Responsibility |
+| --- | --- |
+| Group | Activate once, admit children, stop in reverse order, and remove completed entries. Never restart. |
+| Service watcher | Retry only its own Init/Run failures. Remove its entry when it ends. |
+| Service value | Own one child group. Stop and wait for it before that value ends. |
+| Root | Select one terminal failure, stop the tree, then panic with that failure. |
+
+A group is pending, active, closing, or stopped. Pending groups belong to a
+service whose Run has not started. Activation runs their registered children;
+Stop cleans those children instead. There is no transition back from closing.
+Initial Init runs outside registration, so Stop does not wait for setup that
+has not registered. Restart setup belongs to the registered watcher.
+
+The group policy context closes as soon as Stop is accepted. Watchers use it to
+stop admitting retries. Run contexts close separately in reverse child order.
+This keeps older dependencies available while newer services stop. A parent
+Run context closes after its child group has stopped.
+
+Failures go directly to the root. The root does not retry groups or pass a
+failure through ancestor watchers. A watcher's final defer detects Goexit and
+reports a terminal failure; it does not need another goroutine to retry it.

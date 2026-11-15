@@ -19,9 +19,8 @@ func optionalCount(r optionalRoute) int {
 }
 ```
 
-`IsZero` does not check service readiness. A reference from `Reserve` is nonzero
-before start, but Borrow panics until initialization succeeds. A reference from
-a successful `Start` stays nonzero after stop. Copies give the same result.
+`IsZero` tests whether Start supplied a reference. A successful Start returns
+a nonzero reference, which stays nonzero after stop. Copies give the same result.
 
 `IsZero` uses ordinary reference call forms. Direct calls also work on a Ref
 field or array element in a Frozen or Local record:
@@ -40,7 +39,7 @@ method, `go`, or `defer` uses it.
 
 | Operation | Rule |
 | --- | --- |
-| Declare or use `supervise.Ref[T]` | T is a concrete struct that embeds `supervise.Service[A]`. |
+| Declare or use `supervise.Ref[T]` | T is a concrete struct with a [value embedding path](services.md#service-embedding--exhaustive) to `supervise.Service[A]`. |
 | Call the concrete Ref's Borrow method | Use `ref.Borrow().Method(args)`; see the call forms below. |
 | Return data from an exported service method | Use the [service result signatures](service-results.md). |
 | Use a reference inside protected im storage | Apply the [im rules](common-forms.md) to that storage. |
@@ -69,7 +68,7 @@ pass the reference independently.
 
 For direct Ref calls, the checker rejects every other use of `Borrow`, despite
 its Go return type of `*T`. Borrow panics with `supervise: zero Ref` for a zero
-reference, or with `supervise: Ref not started` for an unstarted reservation.
+reference.
 Each call selects the last successfully initialized service; a call in progress
 finishes on that instance.
 Borrow is shared and is not exclusive. No release call is needed.
