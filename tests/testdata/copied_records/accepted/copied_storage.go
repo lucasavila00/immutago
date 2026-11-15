@@ -63,7 +63,7 @@ func Store(value api.Summary) State {
 func NativeStorage(value api.Point) int {
 	values := []api.Point{value}
 	alias := values
-	alias[0] = api.Point{X: 2}
+	alias[0].Set(2)
 	values = append(values, value)
 	part := values[1:]
 	array := [2]api.Point{value}
@@ -100,9 +100,21 @@ func CopiedCollections(value api.Point) (api.Point, api.Point) {
 	read := im.Value(sequence.Projection().At(0))
 	clone := sequence.Projection().Clone()
 	alias := clone
-	alias[0] = api.Point{X: 9}
+	alias[0].Set(9)
 	entries := im.FreezeMap(map[api.Point]api.Point{value: value})
 	mapping := entries.Projection().Clone()
-	mapping[value] = api.Point{X: 8}
+	mapped := mapping[value]
+	mapped.Set(8)
+	mapping[value] = mapped
 	return read, sequence.At(0)
+}
+
+func valueCopy[T any](value T) T { return value }
+
+func FieldCopies(stored frozen.Snapshot, callback func(api.Point) int) int {
+	var boxed any = stored.Point
+	value := callback(stored.Point)
+	copy := valueCopy(stored.Point)
+	holder := State{Point: stored.Point}
+	return value + boxed.(api.Point).X + copy.X + holder.Point.X
 }

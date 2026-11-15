@@ -54,8 +54,7 @@ whether a type contains protected storage, callbacks, or service references:
 
 | Query | Edges followed |
 | --- | --- |
-| Storage | All marked records and interfaces, fields, and containers; used for transport checks. |
-| Retained storage | Frozen/Local records, Frozen interfaces, projections, frozen collections, and containing storage. Copied records do not make ordinary holders immutable. |
+| Storage | Frozen/Local records, Frozen interfaces, projections, frozen collections, and containing storage. Copied records and their ordinary holders are not protected storage. |
 | Local | Local records, projection wrappers, and containing storage. |
 | Callback | Storage edges, unmarked interface methods, function parameters and results. |
 | Service reference | Fields, containers, interface methods, function parameters and results. |
@@ -85,10 +84,11 @@ Failure messages:
 Frozen, Copied, and ReadResult have separate cached obligations. Cell and
 Projection use the same Frozen proof. Local fields and service results use
 ReadResult. Copied records use the same Copied field obligations and reject service
-references through the cached handle query. Stored pointers require a Frozen target.
-Copied pointers are rejected. Mutable holders and native Copied containers keep
-whole-slot replacement; the owner walk rejects writes inside any marked record.
-Only retained storage or a later Freeze starts native builder ownership checks. Type parameters fail; [generic checks](../../pkg/analyzer/subset_generics.go)
+references through the cached handle query. Pointer fields in proved stored data require a Frozen target.
+Ordinary Copied storage and pointers use normal Go rules. The owner walk rejects
+writes and addresses inside Frozen and Local records, including nested Copied
+fields. Exact receiver matching rejects implicit addresses into these owners.
+Only protected storage or a later Freeze starts native builder ownership checks. Type parameters fail; [generic checks](../../pkg/analyzer/subset_generics.go)
 retain the fixed im APIs and reject user generics with protected storage.
 
 ## Frozen interface methods

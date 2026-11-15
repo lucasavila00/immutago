@@ -132,9 +132,12 @@ service outputs use one ReadResult proof. Value and local Clone use Copied.
 Do not add a service-only field proof or a context-dependent marker meaning.
 Copied permits booleans, numbers, Copied records, unnamed arrays of Copied values,
 and opaque service references. Copied records contain only bool/numeric fields,
-unnamed arrays, and other Copied records; no strings or reference handles. Their
-fields are immutable from construction. Ordinary holders can store and replace
-complete Copied values without becoming immutable. Copied pointers are rejected.
+unnamed arrays, and other Copied records; no strings or reference handles. Ordinary
+Copied storage and ordinary holders use normal Go mutation, pointer, method,
+interface, callback, generic, tuple, go, and defer operations. A Copied value inside
+protected storage keeps its owner's write and address rules, including implicit
+pointer-receiver calls. Copy it into ordinary storage to change it. Pointer fields
+remain outside the Copied proof.
 Frozen records are not Copied,
 even when their fields contain only numbers. Struct results require Copied, Local,
 or a generated projection.

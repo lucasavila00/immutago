@@ -20,8 +20,8 @@ func TestCopiedRecordCategories(t *testing.T) {
 	bad := markedType("Bad", marker, types.NewField(token.NoPos, nil, "Text", types.Typ[types.String], false))
 	badArray := markedType("BadArray", marker, types.NewField(token.NoPos, nil, "Values", types.NewArray(bad, 0), false))
 	cases := []struct {
-		typ                      types.Type
-		frozen, copied, retained bool
+		typ                       types.Type
+		frozen, copied, protected bool
 	}{
 		{score, true, true, false},
 		{pair, true, true, false},
@@ -29,9 +29,12 @@ func TestCopiedRecordCategories(t *testing.T) {
 		{types.NewArray(pair, 0), true, true, false},
 		{holder, false, false, false},
 		{types.NewPointer(holder), false, false, false},
+		{types.NewArray(holder, 2), false, false, false},
+		{types.NewMap(types.Typ[types.String], holder), false, false, false},
 		{types.NewPointer(score), false, false, false},
 		{types.NewSlice(score), false, false, false},
 		{shared, true, false, true},
+		{types.NewArray(shared, 2), true, false, true},
 		{bad, false, false, false},
 		{badArray, false, false, false},
 	}
@@ -48,11 +51,11 @@ func TestCopiedRecordCategories(t *testing.T) {
 			if got := proofs.ReadResultReason(test.typ) == ""; got != test.copied {
 				t.Errorf("ReadResult(%s)=%v; want %v", test.typ, got, test.copied)
 			}
-			if !queries.Contains(test.typ) {
-				t.Errorf("transport checks missed %s", test.typ)
+			if got := queries.Callable(classificationSignature(test.typ)); got != test.protected {
+				t.Errorf("Callable(func(%s))=%v; want %v", test.typ, got, test.protected)
 			}
-			if got := queries.Retained(test.typ); got != test.retained {
-				t.Errorf("Retained(%s)=%v; want %v", test.typ, got, test.retained)
+			if got := queries.Contains(test.typ); got != test.protected {
+				t.Errorf("Contains(%s)=%v; want %v", test.typ, got, test.protected)
 			}
 		}
 		slices.Reverse(cases)

@@ -42,13 +42,16 @@ func TestCopiedClones(t *testing.T) {
 	value := testCopiedRecord{Values: [16]uint64{3}, Children: [2]testCopiedChild{{Count: 4}}}
 	sequence := FreezeSlice([]testCopiedRecord{value}).Projection()
 	values := sequence.Clone()
-	values[0] = testCopiedRecord{}
+	values[0].Values[0]++
+	values[0].Children[0].Count++
 	if Value(sequence.At(0)) != value {
 		t.Fatal("slice clone changed a stored record")
 	}
 	mapping := FreezeMap(map[testCopiedChild]testCopiedRecord{{Count: 1}: value}).Projection()
 	entries := mapping.Clone()
-	entries[testCopiedChild{Count: 1}] = testCopiedRecord{}
+	entry := entries[testCopiedChild{Count: 1}]
+	entry.Children[0].Count++
+	entries[testCopiedChild{Count: 1}] = entry
 	read, found := mapping.Get(testCopiedChild{Count: 1})
 	if !found || Value(read) != value {
 		t.Fatal("map clone changed a stored record")

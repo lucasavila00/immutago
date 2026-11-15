@@ -52,7 +52,7 @@ type Value struct { im.Frozen; N int }
 func f(p unsafe.Pointer) *Value { return (*Value)(p) }`, "shared pointer conversions"},
 		{"unsafe field", `import "unsafe"
 type Value struct { im.Frozen; N int }
-func f(v Value) { _ = unsafe.Pointer(&v.N) }`, "scalar interior addresses"},
+func f(v Value) { _ = unsafe.Pointer(&v.N) }`, "interior addresses of protected storage"},
 		{"reflection value", `import r "reflect"
 type Value struct { im.Frozen; N int }
 func f(p *Value) { r.ValueOf(p).Elem().FieldByName("N").SetInt(1) }`, "boxing immutable storage"},

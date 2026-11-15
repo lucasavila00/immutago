@@ -2,11 +2,13 @@
 
 These forms apply to:
 
-- Structs that embed `im.Frozen`, `im.Local`, or `im.Copied`.
+- Structs that embed `im.Frozen` or `im.Local`.
 - Named interfaces that embed [im.FrozenInterface](frozen-interfaces.md).
 - `im.FrozenString`, `im.FrozenSlice`, `im.FrozenMap`, and local read projections.
 
 Combine them with each type's forms. [Cell](cell.md) has its own forms.
+Ordinary [Copied values](copied.md) and their ordinary holders use all Go forms.
+Copied data inside protected storage keeps the owner's rules on this page.
 The [glossary](glossary.md) defines marked structs, protected storage, and builders.
 
 ## Markers and stored types
@@ -59,12 +61,14 @@ p = &FrozenPoint{X: 2} // q still observes X == 1.
 | Compare comparable values or arrays with `==` or `!=` | `same := point == other`, `same := points == otherPoints` |
 | Array length and capacity | `len(points)`, `cap(points)` |
 | Scalar unary `+`, `-`, `!`, `^`; scalar binary operators and conversions | `-point.X`, `point.X + 1`, `int64(point.X)` |
-| Use scalar reads in literals or indices; index or slice strings | `[]int{point.X}`, `a[point.X]`, `user.Name[1:]` |
-| Pass scalar reads to ordinary calls, including builtins, function variables, interface methods, and generics | `callback(point.X)`, `identity(point.X)` |
+| Use scalar or Copied field reads in literals | `[]int{point.X}`, `[]Score{point.Score}` |
+| Use scalar reads in indices; index or slice strings | `a[point.X]`, `user.Name[1:]` |
+| Pass scalar or Copied field reads to ordinary calls, including builtins, function variables, interface methods, and generics | `callback(point.X)`, `callback(point.Score)`, `identity(point.Score)` |
+| Store a scalar or Copied field read in an ordinary interface | `var value any = point.Score` |
 
 - After `x := point.X`, `x` is an ordinary integer; you can change it or capture it.
 - The read of `point.X` still needs a listed statement form.
-- Copies of marked values, pointers, and frozen collections keep their rules.
+- Frozen and Local copies, protected pointers, and frozen collections keep their rules.
 - Constant expressions follow the same rules. Use `count := len(points)` before
   a closure, then capture `count`; do not read `points` inside the closure.
 
@@ -138,8 +142,8 @@ forms on this page.
 | --- | --- |
 | Struct with `im.Frozen` | Same checks as named functions; can return its pointer. |
 | Struct with `im.Local` | Its value stays Local. Its pointer can only be used in local direct calls. |
-| Every marked struct | Cannot change protected fields or have generic receivers. |
-| Struct with `im.Copied` | Value receivers only; no pointers to the record. |
+| Frozen or Local record | Cannot change protected fields or have generic receivers. |
+| Copied field inside a protected owner | Exact value-receiver calls copy the field. Pointer-receiver calls that address the field are rejected. |
 | Ordinary concrete receiver with protected inputs or results | Direct, non-generic calls. The protected inputs and results keep their im rules. |
 | Fixed library type | Listed API forms. |
 
@@ -159,8 +163,7 @@ Use the operations above inside these statement forms:
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Declare one variable or assign one destination | `var value FrozenPoint`, `value := FrozenPoint{X: 1}`, `value = FrozenPoint{X: 2}` |
-| Replace a Copied field or element in an ordinary mutable holder | `state.Score = score`, `scores[0] = score`; the [Copied forms](copied.md) list native container operations. |
-| Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
+| Change a native builder slot or its Copied fields | `values[0] = value`, `counts[0]++`, `counts[0] += 2`, `scores[0].Value++` |
 | Bind Start results to two local names or blanks with `:=`, `=`, or `var` | `ref, err := supervise.Start[Worker](root, args)`, `var ref, err = supervise.Start[Worker](root, args)` |
 | Bind a map Get call's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze a slice or map in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |

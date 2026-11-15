@@ -24,15 +24,14 @@ type requestState struct {
 func request(scorer *Scorer) requestState {
     state := requestState{Result: scorer.Last()}
     state.Attempts++
-    state.Result = Score{Value: 3} // Replace the complete stored value.
+    state.Result.Value = 3
     return state
 }
 ```
 
-A copy includes every data field. It shares no field storage with the source.
-The checker proves the fields at the type declaration. Fields cannot change
-after construction, including fields in a local copy. Use a new complete value
-to change a result. Copied records need no generated code.
+A value copy includes every data field. It shares no field storage with the
+source. The checker proves the fields at the type declaration. Ordinary copies
+can change independently. Copied records need no generated code.
 
 ## Fields — exhaustive
 
@@ -45,64 +44,78 @@ of these types, including blank and embedded data fields:
 | Unnamed array of allowed fields, recursively | `Values [4]int`, `Grid [2][3]Score` |
 | Another proved Copied record by value | `Score Score` |
 
-This list is complete. Unlisted field types are rejected. In particular, native
-strings, FrozenString, pointers, slices, maps, channels, functions, interfaces,
-service references, and other im handles are not Copied record fields. A Go
-string copy shares its bytes. There is no owned-string field form.
+Unlisted field types are rejected. Native strings,
+FrozenString, pointers, slices, maps, channels, functions, interfaces, service
+references, and other im handles are not Copied record fields. A Go string copy
+shares its bytes. There is no owned-string field form.
 
 The general [Copied category](types.md) also permits opaque service references
-and arrays of those references. That existing handle rule does not permit
-reference fields in a Copied record.
+and arrays of those references. This handle rule does not permit reference
+fields in a Copied record.
 
 ## Operations — exhaustive
 
-Use these forms with the [common statement and call forms](common-forms.md).
-Unlisted operations on Copied storage are rejected.
-
-| Allowed form | Example |
+| Storage or use | Complete rule |
 | --- | --- |
-| Named, local, or anonymous record declaration; defined record or alias | `type Other Score`, `type Alias = Score`, `struct { im.Copied; N int }` |
-| Zero value, literal, copy, whole variable replacement, or discard | `var score Score`, `score := Score{Value: 1}`, `other := score`, `score = Score{Value: 2}`, `_ = score` |
-| Field or array-element read; comparable value equality | `value := score.Value`, `flag := score.Flags[0]`, `same := score == other` |
-| Store by value in an ordinary struct, array, native slice, or native map | `requestState{Result: score}`, `[2]Score{score}`, `[]Score{score}`, `map[int]Score{1: score}` |
-| Replace a complete field or element in an ordinary mutable holder | `state.Result = score`, `scores[0] = score`, `byID[1] = score` |
-| Change an ordinary field beside a Copied field | `state.Attempts++` |
-| Construct or use a pointer to an ordinary holder | `state := &requestState{Result: score}`, `state.Result = other` |
-| Create, copy, slice, read, or change a native container handle | `scores := make([]Score, 2)`, `alias := scores`, `scores = append(scores, score)`, `part := scores[1:]` |
-| Use native container builtins | `len(scores)`, `cap(scores)`, `copy(scores, otherScores)`, `delete(byID, 1)`, `clear(byID)` |
-| Pass or return through direct concrete functions and methods | `read(score)` with `func read(score Score) int`; `func (s *Scorer) Last() Score` |
-| Declare and call an exact value-receiver method | `func (s Score) Number() float64 { return s.Value }`; `score.Number()` |
-| Use as a Local or Frozen field, Cell payload, or frozen collection argument | `struct { im.Local; Score Score }`, `im.Cell[Score]`, `im.FrozenSlice[Score]` |
-| Read through the fixed copy and projection APIs | `score := im.Value(projection)`, `score := settingsProjection.Score()` |
-| Clone a local slice or map projection with Copied arguments | `scores := projection.Clone()` |
-| Freeze an exclusive native builder in a separate binding | `frozen := im.FreezeSlice(scores)` |
+| Ordinary Copied value or ordinary holder | All Go operations are allowed. The examples below include mutation, pointers, methods, and transport. |
+| Copied field or array element inside a Frozen or Local owner | Use the [common forms](common-forms.md). Read a value copy; do not write or take an address inside the owner. Unlisted protected operations are rejected. |
+| Cell payload or frozen collection element | Use the fixed [Cell](cell.md), [frozen collection](frozen.md), and [projection](projections.md) APIs. Their reads can return independent Copied values. |
+| Native slice or map passed to Freeze | Use an exclusive [builder](frozen.md#build-before-freezing). Freeze consumes it. |
+| Exported service method result | Return no result or one [read result](service-results.md). Ordinary Copied methods can return several results. |
 
-An ordinary holder can change. Its stored Copied record's fields cannot change.
-A Copied field inside a Frozen or Local record also keeps that owner's write
-restriction: replacing the field is rejected. Copy the field into an ordinary
-binding to use it separately.
+An ordinary pointer can share its target under normal Go rules. The pointer is
+not a Copied field type or a service result. The Copied proof applies to value
+copies, not to pointer copies.
 
-Native Copied containers use ordinary alias rules until Freeze requires an
-exclusive builder. Freeze still consumes that builder. Copied values and their
-holders keep the concrete-call, interface, generic, closure, go, and defer rules
-in the common forms. Pointers to Copied records and channels of Copied values
-are not supported.
+| Ordinary Go examples | Source |
+| --- | --- |
+| Declare, copy, or compare a value | `var score Score`, `other := score`, `score == other` |
+| Change fields and array elements | `score.Value++`, `state.Result.Flags[0] = true`, `scores[0].Value = 2` |
+| Use ordinary holders and native containers | `requestState{Result: score}`, `[]Score{score}`, `map[int]Score{1: score}`, `make(chan Score)` |
+| Use pointers and pointer methods | `&score`, `new(Score)`, `func (s *Score) Set(v float64) { s.Value = v }`; `state.Result.Set(2)` |
+| Bind or return several values | `x, y := pair(score)`; `func (s Score) Read() (float64, bool) { return s.Value, s.Flags[0] }` |
+| Use interfaces, decoders, and type assertions | `var value any = &score`, `json.Unmarshal(data, &state)`, `value.(*Score).Set(2)` |
+| Use generics, callbacks, and closures | `identity(score)`, `Box[Score]{Value: score}`, `callback(score)`, `func() { score.Value++ }` |
+| Use method values or expressions | `set := score.Set`, `(*Score).Set(&score, 2)` |
+| Use go, defer, or a function without a Go body | `go use(score)`, `defer state.release()`, `func decode(*Score)` |
+
+A decoder needs no special permission. For example, a Copied record can implement
+`json.Unmarshaler` with a pointer receiver. A decoder can call that method on an
+ordinary holder's field. The implicit address in `payload.Ratio.UnmarshalJSON(data)`
+is allowed.
+
+Copy a protected field before changing it:
+
+```go
+score := frozen.Score
+score.Value++
+score.Set(2)
+
+read := im.Value(cell.Load())
+read.Value++
+```
+
+The original owner does not change. The same rule applies to generated getters,
+`im.Value`, frozen collection value reads, and local collection Clone results.
+Native Copied containers use ordinary alias rules unless Freeze requires an
+exclusive builder. The checker adds no runtime ownership state.
 
 ## Rejected examples — non-exhaustive
 
 | Rejected | Allowed replacement |
 | --- | --- |
-| `score.Value++`, `score.Flags[0] = true` | `score = Score{Value: score.Value + 1, Flags: score.Flags}` |
-| `state.Result.Value = 2` | `state.Result = Score{Value: 2}` |
-| `scores[0].Value = 2` | `scores[0] = Score{Value: 2}` |
+| `frozen.Score.Value++`, `local.Score.Flags[0] = true` | `score := frozen.Score; score.Value++`, or copy the Local field first. |
+| `&frozen.Score`, `&local.Score.Flags[0]` | `score := frozen.Score; p := &score`, or copy the Local field first. |
+| `frozen.Score.Set(2)` with a pointer receiver | `score := frozen.Score; score.Set(2)` |
 | `frozen.Score = score` for a Frozen record | Construct a new complete Frozen record. |
-| `&score`, `&state.Result`, `new(Score)`, `func (s *Score) Change()` | Pass, return, or read a Score value. |
 | `struct { im.Copied; Text string }` | Use a Local result with StringProjection when text is needed. |
 | `struct { im.Copied; Worker supervise.Ref[Worker] }` | Use a Local result with the reference and copied fields. |
+| `struct { im.Copied; Score *Score }` | Use `Score Score`. |
 | A named array field: `type Flags [2]bool` | Use `Flags [2]bool` directly in the record. |
-| `var boxed any = score`, `identity(score)` through a user generic | Keep the concrete Score type and call a direct typed function. |
-| `callback := func() float64 { return score.Value }` | Copy `value := score.Value` first, then capture value. |
 | `im.CopyRecord(projection)` for `Projection[Score]` | `im.Value(projection)` |
+| `alias := scores; frozen := im.FreezeSlice(scores)` | Construct a fresh exclusive builder, then Freeze it. |
+| Use `scores` after `im.FreezeSlice(scores)` | Read the frozen result or Clone it into independent native storage. |
+| An exported service method returning `(Score, bool)` | Return one Copied record that contains the Score and bool fields. |
 
 Copies have the normal Go struct and array copy cost. The marker adds no runtime
-copy operation, allocation, or ownership state. See [operation costs](performance.md).
+copy operation or allocation. See [operation costs](performance.md).

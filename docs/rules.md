@@ -12,7 +12,7 @@ Use this reference to check which Go forms Immutago accepts. The
 | [Frozen](frozen-records.md) | Store or return pointers to immutable objects. |
 | [Frozen interfaces](frozen-interfaces.md) | Store proved implementations and call through local projections. |
 | [Local](local.md) | Combine local projections with copied values. |
-| [Copied](copied.md) | Return immutable value records and store independent copies. |
+| [Copied](copied.md) | Return value records and change independent copies. |
 | [Cell](cell.md) | Publish a Frozen value and read its current projection. |
 | [Typed projections](projections.md) | Generate field projections and choose explicit storage operations. |
 | [Projection primitives](projection-primitives.md) | Check the fixed projection APIs. |
@@ -103,13 +103,14 @@ The checker checks a package in any of these cases, including its test files:
 | Rejected examples — non-exhaustive | Use instead |
 | --- | --- |
 | Cgo in a package that imports or uses im | Ordinary typed Go code. Cgo produces one error at the source package line. |
-| A function without a body whose signature contains an im type | Supply a Go body to check its protected operations. |
+| A function without a body whose signature contains an im type other than Copied | Supply a Go body to check its protected operations. |
 
 An imported package's error includes one cause and a command to see its other errors.
 
 Functions without a body use ordinary Go rules when their compiler-resolved
-receiver, parameters, results, and generic constraints contain no im
-type. For example, `func cpuID() uint64` and
+receiver, parameters, results, and generic constraints contain no im type other
+than Copied. Copied records and their ordinary holders can use functions without
+a Go body. For example, `func cpuID() uint64` and
 `func checksum(data []byte) uint64` can use assembly implementations in a checked
 package. A declaration such as `func read(value *Config) int`, where Config embeds
 im.Frozen, needs a Go body.

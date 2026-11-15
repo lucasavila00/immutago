@@ -34,7 +34,7 @@ const ServiceMarker = "Service"
 func Contains(t types.Type) bool
 ```
 
-Contains reports whether a type stores a marked value or sealed collection. It runs one query; use Classifier to reuse results across queries.
+Contains reports protected storage, including its holders and containers. It runs one query; use Classifier to reuse results across queries.
 
 ## func Copied
 
@@ -172,7 +172,7 @@ Callable reports whether t contains a callback contract that carries protected s
 func (c *Classifier) Contains(t types.Type) bool
 ```
 
-Contains reports whether t stores a marked value or sealed collection.
+Contains reports protected storage, including its holders and containers. Copied records use ordinary Go storage rules.
 
 ### func \(\*Classifier\) Handles
 
@@ -189,14 +189,6 @@ func (c *Classifier) Locals(t types.Type) bool
 ```
 
 Locals reports local projections or records in storage, including through arrays and pointers.
-
-### func \(\*Classifier\) Retained
-
-```go
-func (c *Classifier) Retained(t types.Type) bool
-```
-
-Retained reports protected storage that cannot enter an ordinary mutable holder. Copied records are checked by value and do not make their holders immutable.
 
 ## type Prover
 

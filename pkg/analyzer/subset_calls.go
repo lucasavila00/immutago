@@ -92,11 +92,11 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 	switch builtin.Name() {
 	case "new":
 		if pointer, ok := c.pass.TypesInfo.TypeOf(call).Underlying().(*types.Pointer); ok &&
-			(checker.Marked(pointer.Elem()) || !c.immutableObject(pointer.Elem())) {
+			(checker.Marked(pointer.Elem()) || !c.queries.Contains(pointer.Elem())) {
 			return ""
 		}
 	case "make":
-		if c.exempt[call] || !c.queries.Retained(c.pass.TypesInfo.TypeOf(call)) {
+		if c.exempt[call] || !c.queries.Contains(c.pass.TypesInfo.TypeOf(call)) {
 			return ""
 		}
 	case "len", "cap":
@@ -106,7 +106,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 		if _, array := c.pass.TypesInfo.TypeOf(call.Args[0]).Underlying().(*types.Array); array {
 			return ""
 		}
-		if !c.queries.Retained(c.pass.TypesInfo.TypeOf(call.Args[0])) {
+		if !c.queries.Contains(c.pass.TypesInfo.TypeOf(call.Args[0])) {
 			return ""
 		}
 	case "append", "delete", "clear", "copy":

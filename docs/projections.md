@@ -155,7 +155,7 @@ interfaces, callbacks, closures, user generics, go, or defer.
 | --- | --- |
 | Save `current.Load()` in a package variable | Keep a copied field or explicit Clone result. |
 | `fmt.Sprintf("%s", projection.Title())` | `fmt.Sprintf("%s", projection.Title().Unsafe())`; Clone instead when independent storage is needed. |
-| Capture `projection` in a closure | Read scalar fields or clone strings before the closure. Pass Copied records to a direct typed function. |
+| Capture `projection` in a closure | Read numeric fields or Copied records, or clone strings, before the closure. |
 | `go useProjection(projection)` or `defer useProjection(projection)` | Make the direct synchronous call. |
 | Read a raw pointer or UncheckedValue from a projection | Keep that operation in code with persistent Frozen access. |
 | Declare `SettingsProjection` or `SettingsCell` before generation | Use another source name; these names belong to the generated API. |

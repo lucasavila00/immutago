@@ -13,10 +13,10 @@ func (c *subsetChecks) statementOperation(expression ast.Expr) ast.Node {
 	return expression
 }
 
-// protectedStorage includes native builders and scalar projections of protected owners.
+// protectedStorage includes native builders and fields or elements of protected owners.
 func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 	for expression != nil {
-		if c.immutableObject(c.pass.TypesInfo.TypeOf(expression)) {
+		if c.queries.Contains(c.pass.TypesInfo.TypeOf(expression)) {
 			return true
 		}
 		switch node := expression.(type) {

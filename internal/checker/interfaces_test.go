@@ -28,7 +28,7 @@ func TestFrozenInterfaceCategories(t *testing.T) {
 	for _, typ := range []types.Type{good, alias} {
 		var proofs Prover
 		var queries Classifier
-		if !FrozenInterface(typ) || !queries.Contains(typ) || !queries.Retained(typ) ||
+		if !FrozenInterface(typ) || !queries.Contains(typ) ||
 			queries.Locals(typ) || queries.Callable(typ) {
 			t.Errorf("incorrect interface classification: %s", typ)
 		}

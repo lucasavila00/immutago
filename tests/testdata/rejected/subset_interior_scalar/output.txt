@@ -1,4 +1,4 @@
-subset_interior_scalar.go:20:24: unsupported immutable operation: scalar interior addresses are unsupported
+subset_interior_scalar.go:20:24: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &v.X
   type: *int
-  fix: copy the scalar field into a local; do not take a pointer into immutable storage
+  fix: copy the field into a local; do not take a pointer into immutable storage

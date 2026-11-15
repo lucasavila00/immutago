@@ -23,12 +23,15 @@ Frozen, Copied, or read-result payload types.
 | --- | --- | --- |
 | `im.Frozen` | Frozen fields | Can be copied, stored, and returned from ordinary functions. |
 | `im.Local` | Read-result fields | Can be copied locally, passed directly, and returned; cannot enter persistent storage. |
-| `im.Copied` | Boolean/numeric fields, unnamed arrays, and other Copied records; no strings or reference handles | Can be stored by value in ordinary holders and returned by services; fields remain immutable. |
+| `im.Copied` | Boolean/numeric fields, unnamed arrays, and other Copied records; no strings or reference handles | Can be stored by value in ordinary holders and returned by services; ordinary copies can change independently. |
 
 - Embed exactly one marker by value; aliases work.
 - Declare Frozen records as named package-scope types in non-test Go files.
   Local and Copied records need no generation.
-- Set fields at construction. Later field, element, or dereference writes fail.
+- Set Frozen and Local fields at construction. Later field, element, or
+  dereference writes into these owners fail, including writes into Copied fields.
+- Copied records and their ordinary holders use normal Go operations. Pointers
+  to ordinary Copied storage are allowed; pointers do not satisfy the Copied proof.
 - Each record in a proved field needs its own marker. Unmarked structs can
   hold Copied values and their native containers. They cannot own Frozen or
   Local data. See the complete [Copied forms](copied.md).

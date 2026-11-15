@@ -223,7 +223,7 @@ func (c *subsetChecks) matchUnary(expression *ast.UnaryExpr) string {
 			}
 		}
 		if !c.queries.Contains(c.pass.TypesInfo.TypeOf(expression.X)) {
-			return "scalar interior addresses are unsupported"
+			return "interior addresses of protected storage are unsupported"
 		}
 		if _, fresh := ast.Unparen(expression.X).(*ast.CompositeLit); !fresh {
 			return "immutable references require fresh allocation"

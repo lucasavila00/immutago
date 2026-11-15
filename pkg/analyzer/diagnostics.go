@@ -100,7 +100,7 @@ var subsetFixes = map[string]string{
 	"channels of immutable storage are unsupported": "keep immutable values in " +
 		"owned locals or im collections; channels of these values are outside this subset",
 	"pointer indirection is unsupported": "use a direct pointer to a concrete marked struct",
-	"scalar interior addresses are unsupported": "copy the scalar field into a local; " +
+	"interior addresses of protected storage are unsupported": "copy the field into a local; " +
 		"do not take a pointer into immutable storage",
 	"slice projections of immutable storage are unsupported": "copy the array into local " +
 		"storage before slicing it, or use im.FrozenSlice for immutable sequence values",
@@ -132,9 +132,6 @@ var subsetFixes = map[string]string{
 
 // subsetFix gives a supported replacement for each rejected operation.
 func subsetFix(rule string) string {
-	if strings.HasPrefix(rule, "pointers to Copied records") {
-		return "pass or return the Copied value; replace the whole stored value when needed"
-	}
 	if strings.Contains(rule, "copied values require") {
 		return "copy scalar fields, or use a generated local projection"
 	}

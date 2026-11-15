@@ -25,8 +25,8 @@ Local fields and service results both use this boundary.
 
 | Rule | Implementation |
 | --- | --- |
-| Fields are immutable from construction | [Write matcher](../../pkg/analyzer/subset_writes.go). |
-| Copied values can enter mutable holders | Retained storage classification separates the holder from its immutable Copied fields. Whole holder slots can change; fields inside the Copied record cannot. |
+| Frozen and Local fields are immutable from construction | [Write matcher](../../pkg/analyzer/subset_writes.go). |
+| Ordinary Copied storage uses normal Go operations | One storage classification excludes Copied records. The owner walk still finds Frozen and Local owners around Copied fields and elements. |
 | Protected pointers originate from fresh storage | [Source matcher](../../pkg/analyzer/subset_operations.go); reject addresses of reassignable locals. |
 | Local storage and captures cannot escape | Declaration, assignment, container, callback, and closure checks use the recursive Local classification. |
 | Application code cannot call Projection.Read | [Generation checks](../../pkg/analyzer/generation.go) identify the exact current generated token file before source checks. Handwritten Read calls are rejected. |
@@ -80,7 +80,7 @@ Frozen access can use the existing trusted API.
 
 | Stage | Work |
 | --- | --- |
-| [Discovery](../../internal/freeze/discover.go) | Index local declarations by compiler variable identity. Track containers with retained immutable contents and native Freeze inputs. Native Copied containers need ownership checks only when later frozen. |
+| [Discovery](../../internal/freeze/discover.go) | Index local declarations by compiler variable identity. Track containers with protected contents and native Freeze inputs. Native Copied containers need ownership checks only when later frozen. |
 | Initial source | Match allocation, literal, bare nil, zero declaration, or exact collection Clone. |
 | [Use checks](../../internal/freeze/uses.go) | Reject handle copies, subslices, slot addresses, escapes, and unmatched calls. |
 

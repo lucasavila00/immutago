@@ -8,7 +8,7 @@ for terms such as Frozen, local projection, and builder.
 | Need | Read |
 | --- | --- |
 | Understand the type categories and fields | [Type rules](types.md) |
-| Return an immutable record by value and store its copies | [Copied records](copied.md) |
+| Return a value record and change its independent copies | [Copied records](copied.md) |
 | Declare immutable stored data | [Frozen records](frozen-records.md) |
 | Store polymorphic Frozen data | [Frozen interfaces](frozen-interfaces.md) |
 | Combine local projections and copied results | [Local records](local.md) |

@@ -167,7 +167,7 @@ func (c *checks) checkFunctionBody(declaration *ast.FuncDecl) {
 		return
 	}
 	signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)
-	if usesLibraryType(signature, make(map[types.Type]bool), false) {
+	if usesLibraryType(signature, make(map[types.Type]bool), false, false) {
 		c.report(declaration.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
 			"provide a Go implementation so writes and pointer transport can be checked")
 	}
@@ -194,7 +194,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 		case *types.Struct:
 			c.checkStruct(pos, t)
 		case *types.Pointer:
-			if c.queries.Retained(t) {
+			if c.queries.Contains(t) {
 				c.report(pos, "defined pointer types are unsupported in protected storage; use a pointer alias")
 			}
 		}
@@ -239,7 +239,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 					"\n  fix: "+structuralFix(ft, reason))
 				continue
 			}
-		} else if c.queries.Retained(ft) {
+		} else if c.queries.Contains(ft) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+

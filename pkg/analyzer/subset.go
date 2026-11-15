@@ -102,7 +102,7 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 	case *types.Pointer:
 		return c.subsetPointer(t, u, seen)
 	case *types.Array:
-		if c.queries.Retained(t) {
+		if c.queries.Contains(t) {
 			if reason := c.proofs.Reason(t); reason != "" {
 				return reason
 			}
@@ -119,16 +119,13 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 
 // subsetPointer proves the concrete target and rejects hidden pointer forms.
 func (c *subsetChecks) subsetPointer(t types.Type, pointer *types.Pointer, seen map[types.Type]bool) string {
-	if checker.Copied(pointer.Elem()) {
-		return "pointers to Copied records are unsupported; use a value copy"
-	}
-	if _, named := types.Unalias(t).(*types.Named); named && c.queries.Retained(t) {
+	if _, named := types.Unalias(t).(*types.Named); named && c.queries.Contains(t) {
 		return "defined pointer types are unsupported in protected storage; use a pointer alias"
 	}
-	if _, nested := pointer.Elem().Underlying().(*types.Pointer); nested && c.queries.Retained(t) {
+	if _, nested := pointer.Elem().Underlying().(*types.Pointer); nested && c.queries.Contains(t) {
 		return "pointer indirection is unsupported"
 	}
-	if c.queries.Retained(t) && !checker.Marked(pointer.Elem()) {
+	if c.queries.Contains(t) && !checker.Marked(pointer.Elem()) {
 		return "immutable references require a concrete marked struct target"
 	}
 	if checker.Marked(pointer.Elem()) {
@@ -145,17 +142,12 @@ func (c *subsetChecks) protectedReference(t types.Type) bool {
 		return false
 	}
 	_, ok := t.Underlying().(*types.Pointer)
-	return ok && c.queries.Retained(t)
+	return ok && c.queries.Contains(t)
 }
 
-// immutableObject separates an immutable record from its ordinary mutable holder.
-func (c *subsetChecks) immutableObject(t types.Type) bool {
-	return checker.Copied(t) || c.queries.Retained(t)
-}
-
-// protectedRoot follows projections to detect scalar fields of immutable owners.
+// protectedRoot follows selectors and indices to detect protected owners.
 func (c *subsetChecks) protectedRoot(e ast.Expr) bool {
-	if c.immutableObject(c.pass.TypesInfo.TypeOf(e)) {
+	if c.queries.Contains(c.pass.TypesInfo.TypeOf(e)) {
 		return true
 	}
 	switch x := e.(type) {
@@ -186,11 +178,11 @@ func stringType(t types.Type) bool {
 func (c *subsetChecks) subsetContainer(t types.Type) string {
 	switch u := t.(type) {
 	case *types.Slice:
-		if c.queries.Retained(u.Elem()) {
+		if c.queries.Contains(u.Elem()) {
 			return "native slices of immutable storage are unsupported"
 		}
 	case *types.Map:
-		if c.queries.Retained(u.Key()) || c.queries.Retained(u.Elem()) {
+		if c.queries.Contains(u.Key()) || c.queries.Contains(u.Elem()) {
 			return "native maps of immutable storage are unsupported"
 		}
 	case *types.Chan:

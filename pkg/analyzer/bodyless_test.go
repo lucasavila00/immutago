@@ -10,10 +10,18 @@ func TestBodylessSignatures(t *testing.T) {
 	const prefix = `type Value struct { im.Frozen; N int }
 type Local struct { im.Local; N int }
 type Plain struct { N int }
+type Copy struct { im.Copied; N int }
+type Holder struct { Copy Copy; ID string }
 type Alias = *Value
 `
 	for _, source := range []string{
 		`func cpuID() uint64`,
+		`func decode(*Copy) error`,
+		`func (*Copy) Decode([]byte) error`,
+		`func pair(Copy) (Copy, bool)`,
+		`func decodeHolder(*Holder) error`,
+		`func read(callback func(Copy))`,
+		`type Contract[T interface{ ~int | Copy }] = int; func read(Contract[int])`,
 		`func checksum([]byte) uint64`,
 		`func update(*Plain, map[string]int) error`,
 		`func (*Plain) Read() int`,

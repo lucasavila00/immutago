@@ -14,7 +14,9 @@ including wrappers. Runtime tests check storage transfer, Clone independence,
 and unchanged shared objects after pointer rebinding.
 
 [Copied record tests](copied_records_test.go) use both drivers to check fields,
-mutable holders, service results, generated getters, and consumer-only failures.
+decoders, ordinary mutation, pointers, callbacks, tuples, service results, generated
+getters, and consumer-only failures. Nearby rejected forms check protected owners
+and builder aliases before Freeze.
 The accepted consumer tests also run with the race detector. The
 [runtime cost tests](../pkg/im/copied_test.go) check record layout, zero-allocation
 Value, clone independence, and native/projection copy costs.
