@@ -182,7 +182,7 @@ type Prover struct {
 func (p *Prover) CopiedReason(t types.Type) string
 ```
 
-CopiedReason proves that a value can leave a projection without a shared data reference. Opaque service references retain their explicit reference contract.
+CopiedReason proves bool, numbers, unnamed arrays of these values, or opaque service references.
 
 ### func \(\*Prover\) FrozenReason
 

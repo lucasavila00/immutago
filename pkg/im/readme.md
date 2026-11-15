@@ -44,7 +44,7 @@ Unwrap returns the wrapped pointer, or nil for the zero UncheckedValue. Only the
 
 ## type Cell
 
-Cell stores a replaceable Frozen value. Its zero value has no stored value. Load, LoadPointer, Shared, and Store are atomic. Readers can keep an earlier projection. The checker proves T and restricts use of the returned local projections. A Cell must not be copied after first use. See https://github.com/lucasavila00/immutago/blob/main/docs/cell.md for the complete forms.
+Cell stores a replaceable Frozen value. Its zero value has no stored value. Load, LoadPointer, LoadShared, and Store are atomic. Readers can keep an earlier projection. The checker proves T and restricts use of the returned local projections. A Cell must not be copied after first use. See https://github.com/lucasavila00/immutago/blob/main/docs/cell.md for the complete forms.
 
 ```go
 type Cell[T any] struct {
@@ -68,13 +68,13 @@ func (c *Cell[T]) LoadPointer() Projection[*T]
 
 LoadPointer returns a local pointer projection without copying T or allocating. It returns a nil pointer projection before Store. The checker requires a Frozen record T.
 
-### func \(\*Cell\[T\]\) Shared
+### func \(\*Cell\[T\]\) LoadShared
 
 ```go
-func (c *Cell[T]) Shared() T
+func (c *Cell[T]) LoadShared() T
 ```
 
-Shared returns the current Frozen value for persistent use. It copies T by value without copying backing storage or allocating. If no value was stored, it returns the zero T.
+LoadShared returns the current Frozen value for persistent use. It copies T by value without copying backing storage or allocating. If no value was stored, it returns the zero T.
 
 ### func \(\*Cell\[T\]\) Store
 
@@ -142,6 +142,14 @@ func (m FrozenMap[K, V]) Len() int
 
 Len returns the number of entries in O\(1\) time without allocations.
 
+### func \(FrozenMap\[K, V\]\) Projection
+
+```go
+func (m FrozenMap[K, V]) Projection() MapProjection[K, V]
+```
+
+Projection returns local read access without copying backing storage or allocating.
+
 ## type FrozenSlice
 
 FrozenSlice is a read\-only slice. Its zero value is empty. T must be immutable. Copies share the same read\-only entries.
@@ -191,6 +199,14 @@ func (s FrozenSlice[T]) Len() int
 ```
 
 Len returns the number of elements in O\(1\) time without allocations.
+
+### func \(FrozenSlice\[E\]\) Projection
+
+```go
+func (s FrozenSlice[E]) Projection() SliceProjection[E]
+```
+
+Projection returns local read access without copying backing storage or allocating.
 
 ## type FrozenString
 
@@ -250,6 +266,14 @@ func (s FrozenString) Len() int
 
 Len returns the number of bytes without allocating.
 
+### func \(FrozenString\) Projection
+
+```go
+func (s FrozenString) Projection() StringProjection
+```
+
+Projection returns local read access without copying backing storage or allocating.
+
 ### func \(FrozenString\) Unsafe
 
 ```go
@@ -276,13 +300,13 @@ type MapProjection[K comparable, V any] struct {
 }
 ```
 
-### func Map
+### func ProjectedMap
 
 ```go
-func Map[K comparable, V any](value Projection[FrozenMap[K, V]]) MapProjection[K, V]
+func ProjectedMap[K comparable, V any](value Projection[FrozenMap[K, V]]) MapProjection[K, V]
 ```
 
-Map returns a map read projection without copying entries or allocating.
+ProjectedMap returns a map read projection without copying entries or allocating.
 
 ### func \(MapProjection\[K, V\]\) All
 
@@ -326,13 +350,13 @@ type Projection[T any] struct {
 }
 ```
 
-### func CopyProjection
+### func CopyRecord
 
 ```go
-func CopyProjection[T any](value Projection[T]) Projection[*T]
+func CopyRecord[T any](value Projection[T]) Projection[*T]
 ```
 
-CopyProjection allocates a private root copy and returns a local pointer projection. It copies T by value and shares immutable backing storage. A nonzero\-sized T needs one allocation. The checker requires a Frozen record T.
+CopyRecord allocates a private root copy and returns a local pointer projection. It copies T by value and shares immutable backing storage. A nonzero\-sized T needs one allocation. The checker requires a Frozen record T.
 
 ### func ProjectionOf
 
@@ -360,13 +384,13 @@ type SliceProjection[E any] struct {
 }
 ```
 
-### func Slice
+### func ProjectedSlice
 
 ```go
-func Slice[E any](value Projection[FrozenSlice[E]]) SliceProjection[E]
+func ProjectedSlice[E any](value Projection[FrozenSlice[E]]) SliceProjection[E]
 ```
 
-Slice returns a slice read projection without copying elements or allocating.
+ProjectedSlice returns a slice read projection without copying elements or allocating.
 
 ### func \(SliceProjection\[E\]\) All
 
@@ -418,21 +442,29 @@ type StringProjection struct {
 }
 ```
 
-### func String
+### func ProjectString
 
 ```go
-func String(value Projection[FrozenString]) StringProjection
+func ProjectString[S ~string](value S) StringProjection
 ```
 
-String returns a local string projection without copying bytes or allocating.
+ProjectString returns local read access to a native string without copying bytes or allocating.
 
-### func Text
+### func ProjectedFrozenString
 
 ```go
-func Text[S ~string](value Projection[S]) StringProjection
+func ProjectedFrozenString(value Projection[FrozenString]) StringProjection
 ```
 
-Text returns a string read projection without copying bytes or allocating.
+ProjectedFrozenString returns a local string projection without copying bytes or allocating.
+
+### func ProjectedString
+
+```go
+func ProjectedString[S ~string](value Projection[S]) StringProjection
+```
+
+ProjectedString returns a string read projection without copying bytes or allocating.
 
 ### func \(StringProjection\) At
 
