@@ -5,7 +5,7 @@
 //   - Allowed construction, reads, calls, and assignments; no protected field writes.
 //   - Frozen pointer storage and Local pointer retention.
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
-//   - No result or one service result for each exported service method, including
+//   - No result, one read result, error, or (read result, error) for exported service methods, including
 //     promoted methods. Init, Run, and methods supplied by the runtime are exempt.
 //   - Concrete service references and direct method calls through Ref.Borrow.
 //

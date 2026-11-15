@@ -1,6 +1,8 @@
 # Type rules
 
-These categories define fields, Cells, projections, and service results.
+These categories define fields, Cells, projections, and service data results.
+The [service result signatures](service-results.md) also permit an ordinary error;
+that error does not belong to these categories.
 
 | Category — exhaustive | Types |
 | --- | --- |
@@ -58,10 +60,10 @@ projection when reading through a Local value. See the complete
 | `Cell[T].LoadPointer()`, `SliceProjection[T].AtPointer(i)` | T is a concrete Frozen record; the result is Projection[*T]. |
 | `SliceProjection[E].Clone()` | E is Copied. |
 | `MapProjection[K,V].Clone()` | K and V are Copied. |
-| Exported service method result | No result or one read result. |
+| Exported service method data result | Read result; the [result signatures](service-results.md) also permit an error. |
 
 The service rule does not change a struct's field rules. A Frozen record can be
-stored in a Cell or read through Projection. A service returns its generated
+stored in a Cell or read through Projection. For data, a service returns its generated
 projection, an im.Local result, or a separate im.Copied value. A Frozen record
 with only numeric fields still keeps the Frozen rule.
 

@@ -46,7 +46,7 @@ fields in a Copied record.
 | Copied field or array element inside a Frozen or Local owner | Use the [common forms](common-forms.md). Read a value copy; do not write or take an address inside the owner. Unlisted protected operations are rejected. |
 | Cell payload or frozen collection element | Use the fixed [Cell](cell.md), [frozen collection](frozen.md), and [projection](projections.md) APIs. Their reads can return independent Copied values. |
 | Native slice or map passed to Freeze | Use an exclusive [builder](frozen.md#build-before-freezing). Freeze consumes it. |
-| Exported service method result | Return no result or one [read result](service-results.md). Ordinary Copied methods can return several results. |
+| Exported service method result | Use the [service result signatures](service-results.md). Ordinary Copied methods can return several results. |
 
 An ordinary pointer can share its target under normal Go rules. The pointer is
 not a Copied field type or a service result. The Copied proof applies to value

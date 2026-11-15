@@ -37,7 +37,7 @@ restricted_boundaries.go:22:6: unsupported immutable operation: containers of Lo
 restricted_boundaries.go:22:6: unsupported owned container emptyMap: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 restricted_boundaries.go:27:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for _, value = range frozen.All() { _ = value }
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
 restricted_boundaries.go:39:17: unsupported immutable operation: user generic declarations with immutable storage are unsupported
   source: ProtectedBody
   type: func() int

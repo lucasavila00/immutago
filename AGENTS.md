@@ -128,7 +128,7 @@ request body when the user requests that issue or pull request.
 
 Use compiler-resolved types and the recursive categories in [type rules](docs/reference/types.md).
 Frozen fields, Cell[T], and Projection[T] use one Frozen proof. Local fields and
-service outputs use one ReadResult proof. Value and local Clone use Copied.
+service data outputs use one ReadResult proof. Value and local Clone use Copied.
 Do not add a service-only field proof or a context-dependent marker meaning.
 Copied permits booleans, numbers, Copied records, unnamed arrays of Copied values,
 and opaque service references. Copied records contain only bool/numeric fields,
@@ -275,9 +275,12 @@ Keep source restrictions and examples there. Keep analysis details in the
 - Walk each storage selector/index chain once. Keep one storage classifier and
   one Cell/source context.
 - Pass the builder owner ID and consume/reset flags directly to the bitset solver.
-- Allow no result or one ReadResult from each exported service method
-  except Init and Run. Runtime methods are exempt. Other service code follows
-  ordinary Go rules; im operations use their general checks.
+- Allow no result, one ReadResult, error, or (ReadResult, error) from exported
+  service methods except Init and Run. Runtime methods are exempt. Identify the
+  predeclared error type by compiler identity; aliases work. Error values use Go
+  contracts without origin checks. Error is not a ReadResult or a marked field type.
+  Direct typed result/error calls can bind two local names or blanks with :=, =,
+  or var. Keep the general im call, write, and transport checks.
 - Permit service references as stored values and results. Match every direct Ref Borrow
   call as `ref.Borrow().Method(args)` with an exported service method other
   than Init, Run, or a runtime method. Reject all other direct uses of the returned

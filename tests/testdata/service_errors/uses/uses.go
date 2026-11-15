@@ -46,3 +46,5 @@ func pair[T any](value T) (T, error) { return value, nil }
 func Generic()                       { value, err := pair(api.Reply{}); _ = value; _ = err }
 func wrongPair() (api.Reply, bool)   { return api.Reply{}, false }
 func WrongPair()                     { value, ok := wrongPair(); _ = value; _ = ok }
+
+var GlobalPair, GlobalError = api.Read()

@@ -65,8 +65,9 @@ Read as a Go developer who has not worked on the checker:
 - Name the API before discussing it: `im.Frozen` and `im.Local`, not an unexplained
   “both markers.” Define terms before using them.
 - Use the [glossary](reference/glossary.md) names. Distinguish Local values from Local
-  pointers, and service references from Go pointers. A service result is a
-  result category, not a marker or a promise of full service isolation.
+  pointers, and service references from Go pointers. A read result is a type
+  category. Service result signatures also permit ordinary errors. Neither
+  rule promises full service isolation.
 - Show what the feature does, when to choose it, and a useful working example.
 - Use lists for rules, tables for comparisons, and numbered steps for sequences.
 - Remove repeated prose; retain facts needed to use the example correctly.

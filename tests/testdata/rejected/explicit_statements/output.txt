@@ -1,9 +1,9 @@
 explicit_statements.go:13:32: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: value.X, value.Ready = 1, true
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
 explicit_statements.go:17:7: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: _, value.Ready = <-ready
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
 explicit_statements.go:20:17: unsupported immutable operation: channels of immutable storage are unsupported
   source: chan<- Good
   type: chan<- explicit_statements.Good
@@ -15,10 +15,10 @@ explicit_statements.go:23:7: unsupported immutable operation: channels of immuta
 explicit_statements.go:30:10: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 explicit_statements.go:30:7: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: _, values[0] = <-ready
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
 explicit_statements.go:37:7: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: _, values[0] = <-ready
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
 explicit_statements.go:41:79: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeSlice(values)
   type: im.FrozenSlice[int]
@@ -36,17 +36,17 @@ explicit_statements.go:48:7: unsupported immutable operation: protected storage 
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
 explicit_statements.go:53:32: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: first, second := makePair()
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
 explicit_statements.go:57:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: ready <- value.X
   fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
 explicit_statements.go:66:10: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 explicit_statements.go:66:7: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: _, values["first"] = <-ready
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
 explicit_statements.go:68:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: _, _ = frozen.Get("first")
-  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
 explicit_statements.go:72:9: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeMap(values)
   type: im.FrozenMap[string, int]

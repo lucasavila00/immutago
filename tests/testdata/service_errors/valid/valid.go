@@ -46,3 +46,16 @@ func Ordinary(callback func() (int, error), values []int) {
 	values[0], err = callback()
 	SavedError = err
 }
+
+func scalar(value Reply) (int, error) { return value.Count.N, nil }
+func ReadScalar() int {
+	value, err := api.Read()
+	if err != nil {
+		return 0
+	}
+	count, err := scalar(value)
+	if err != nil {
+		return 0
+	}
+	return count
+}

@@ -42,7 +42,7 @@ method, `go`, or `defer` uses it.
 | --- | --- |
 | Declare or use `supervise.Ref[T]` | T is a concrete struct that embeds `supervise.Service[A]`. |
 | Call the concrete Ref's Borrow method | Use `ref.Borrow().Method(args)`; see the call forms below. |
-| Return data from an exported service method | Return no result or one [service result](service-results.md). |
+| Return data from an exported service method | Use the [service result signatures](service-results.md). |
 | Use a reference inside protected im storage | Apply the [im rules](common-forms.md) to that storage. |
 
 Reference storage and transport use ordinary Go rules. This includes copies,
@@ -64,7 +64,7 @@ pass the reference independently.
 
 | Form | Rule |
 | --- | --- |
-| `ref.Borrow().Method(args)` with a concrete Ref receiver | Method is an exported service method, including a promoted method, other than Init, Run, or a method supplied by the runtime. It returns no result or one [service result](service-results.md). |
+| `ref.Borrow().Method(args)` with a concrete Ref receiver | Method is an exported service method, including a promoted method, other than Init, Run, or a method supplied by the runtime. Its results follow the [service result signatures](service-results.md). |
 | `selected.Borrow()` through an interface or type parameter, including method values and expressions | Ordinary Go rules apply: `pointer := selected.Borrow()`, `accessor := selected.Borrow`, `Borrower.Borrow(selected)` where Borrower is the interface type. The result can be stored and used outside the checked call form. |
 
 For direct Ref calls, the checker rejects every other use of `Borrow`, despite

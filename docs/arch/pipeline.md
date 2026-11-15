@@ -82,7 +82,7 @@ Failure messages:
 - `Reason` is the single-query convenience function.
 
 Frozen, Copied, and ReadResult have separate cached obligations. Cell and
-Projection use the same Frozen proof. Local fields and service results use
+Projection use the same Frozen proof. Local fields and service data results use
 ReadResult. Copied records use the same Copied field obligations and reject service
 references through the cached handle query. Pointer fields in proved stored data require a Frozen target.
 Ordinary Copied storage and pointers use normal Go rules. The owner walk rejects

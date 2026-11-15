@@ -9,7 +9,7 @@ Go type and proof category. The same cached obligations serve all consumers.
 | --- | --- |
 | FrozenReason | Frozen fields, shared frozen arguments, Cell[T], Projection[T], ProjectionOf. |
 | CopiedReason | Copied record fields, Value, and local collection Clone arguments. |
-| ReadResultReason | Local fields and service results. |
+| ReadResultReason | Local fields and service data results. |
 | General immutable proof | Marked records and fixed library types, including Local values. |
 
 Frozen, Local, and Copied markers set one field rule each. API names and service
@@ -19,7 +19,7 @@ Copied contains booleans, numbers, Copied records, unnamed arrays of Copied
 values, and opaque service references. Copied records reject string and reference
 fields, including service references. The cached handle query applies this field
 rule before following Copied field obligations. Frozen records are not Copied.
-Local fields and service results both use this boundary.
+Local fields and service data results both use this boundary.
 
 ## Source matching
 
