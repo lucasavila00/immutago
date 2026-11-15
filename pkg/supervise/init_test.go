@@ -18,16 +18,16 @@ type initHooks struct {
 
 // initializing records the state that Init sets before the runtime publishes it.
 type initializing struct {
-	Service[ConcurrentSafe[*initHooks]]
+	Service[*initHooks]
 	state int
 }
 
 // Init calls the setup selected by the test.
-func (p *initializing) Init() error { return p.Args().Value().init(p) }
+func (p *initializing) Init() error { return p.Args().init(p) }
 
 // Run calls the test's run function, or waits until the service stops.
 func (p *initializing) Run(ctx context.Context) {
-	if run := p.Args().Value().run; run != nil {
+	if run := p.Args().run; run != nil {
 		run(p, ctx)
 		return
 	}
@@ -64,7 +64,7 @@ func TestInitBeforePublication(t *testing.T) {
 			run:  func(p *initializing, ctx context.Context) { ran <- p.state; <-ctx.Done() },
 		}
 		go func() {
-			ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks))
+			ref, err := Start[initializing](root, hooks)
 			if err != nil {
 				panic(err)
 			}
@@ -96,11 +96,11 @@ func TestInitErrorAndRetry(t *testing.T) {
 		root := NewRoot(nil)
 		failure := errors.New("initial setup")
 		hooks := &initHooks{init: func(*initializing) error { return failure }}
-		if ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks)); err != failure || !ref.IsZero() {
+		if ref, err := Start[initializing](root, hooks); err != failure || !ref.IsZero() {
 			t.Fatalf("Start = %v, %v; want zero Ref and original error", ref, err)
 		}
 		hooks.init = func(p *initializing) error { p.state = 3; return nil }
-		ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks))
+		ref, err := Start[initializing](root, hooks)
 		if err != nil || ref.Borrow().state != 3 {
 			t.Fatalf("Start failed: %v", err)
 		}
@@ -134,11 +134,11 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	}
 	hooks := &initHooks{init: func(p *initializing) error {
 		candidates = append(candidates, p)
-		if _, err := Start[initializing](p.Children(), AssumeConcurrentSafe(child)); err != nil {
+		if _, err := Start[initializing](p.Children(), child); err != nil {
 			return err
 		}
 		nested = StartGroup(p.Children())
-		if _, err := Start[initializing](nested, AssumeConcurrentSafe(child)); err != nil {
+		if _, err := Start[initializing](nested, child); err != nil {
 			return err
 		}
 		switch mode {
@@ -156,7 +156,7 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	go func() {
 		defer close(finished)
 		defer func() { panicValue = recover() }()
-		ref, err = Start[initializing](root, AssumeConcurrentSafe(hooks))
+		ref, err = Start[initializing](root, hooks)
 	}()
 	<-finished
 	if mode == "error" && err != failure || mode == "panic" && panicValue != failure {
@@ -175,7 +175,7 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 		t.Fatal("a staged child ran after failed Init")
 	}
 	retained := nested.children.count
-	late, lateErr := Start[initializing](nested, AssumeConcurrentSafe(child))
+	late, lateErr := Start[initializing](nested, child)
 	if lateErr != nil {
 		t.Fatal(lateErr)
 	}
@@ -213,7 +213,7 @@ func TestInitRestartFailures(t *testing.T) {
 				<-ctx.Done()
 			},
 		}
-		ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks))
+		ref, err := Start[initializing](root, hooks)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -254,7 +254,7 @@ func TestInitRestartErrorsEscalate(t *testing.T) {
 			},
 			run: func(*initializing, context.Context) { panic("first run") },
 		}
-		ref, err := Start[initializing](parent, AssumeConcurrentSafe(hooks))
+		ref, err := Start[initializing](parent, hooks)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -285,7 +285,7 @@ func TestInitRestartGoexit(t *testing.T) {
 			},
 			run: func(*initializing, context.Context) { panic("restart") },
 		}
-		ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks))
+		ref, err := Start[initializing](root, hooks)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -324,7 +324,7 @@ func TestInitStopBeforePublication(t *testing.T) {
 		var ref Ref[initializing]
 		go func() {
 			var err error
-			ref, err = Start[initializing](root, AssumeConcurrentSafe(hooks))
+			ref, err = Start[initializing](root, hooks)
 			result <- err
 		}()
 		candidate := <-entered
@@ -362,7 +362,7 @@ func TestInitStopDuringRestart(t *testing.T) {
 			},
 			run: func(*initializing, context.Context) { runs.Add(1); panic("restart") },
 		}
-		ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks))
+		ref, err := Start[initializing](root, hooks)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -392,7 +392,7 @@ func TestInitPendingActivation(t *testing.T) {
 		parent := newGroup(top, false)
 		var attempts atomic.Int32
 		hooks := &initHooks{init: func(p *initializing) error { p.state = int(attempts.Add(1)); return nil }}
-		ref, err := Start[initializing](parent, AssumeConcurrentSafe(hooks))
+		ref, err := Start[initializing](parent, hooks)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -415,15 +415,15 @@ func TestInitStopsStagedGroup(t *testing.T) {
 		var child *initializing
 		hooks := &initHooks{init: func(p *initializing) error {
 			nested := StartGroup(p.Children())
-			_, err := Start[initializing](nested, AssumeConcurrentSafe(&initHooks{init: func(p *initializing) error {
+			_, err := Start[initializing](nested, &initHooks{init: func(p *initializing) error {
 				child = p
 				p.Children()
 				return nil
-			}}))
+			}})
 			<-nested.Stop()
 			return err
 		}}
-		if _, err := Start[initializing](root, AssumeConcurrentSafe(hooks)); err != nil {
+		if _, err := Start[initializing](root, hooks); err != nil {
 			t.Fatal(err)
 		}
 		expectInitEnded(t, child)
@@ -445,7 +445,7 @@ func TestInitUnderStoppedGroups(t *testing.T) {
 				group = StartGroup(parent)
 			}
 			hooks := &initHooks{init: func(p *initializing) error { p.Children(); return nil }}
-			ref, err := Start[initializing](group, AssumeConcurrentSafe(hooks))
+			ref, err := Start[initializing](group, hooks)
 			if err != nil {
 				t.Fatal(err)
 			}

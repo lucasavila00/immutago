@@ -10,32 +10,6 @@ Package supervise runs services with independent retries and owned child lifetim
 
 Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\) error. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. Groups control lifetime and stop order. They do not restart services together.
 
-## type ConcurrentSafe
-
-ConcurrentSafe records a caller's promise that its value supports concurrent use. It adds no synchronization or checker rule. Ordinary arguments can hold T directly.
-
-```go
-type ConcurrentSafe[T any] struct {
-    // contains filtered or unexported fields
-}
-```
-
-### func AssumeConcurrentSafe
-
-```go
-func AssumeConcurrentSafe[T any](v T) ConcurrentSafe[T]
-```
-
-AssumeConcurrentSafe records the caller's promise about concurrent use of v.
-
-### func \(ConcurrentSafe\[T\]\) Value
-
-```go
-func (d ConcurrentSafe[T]) Value() T
-```
-
-Value returns the wrapped dependency. The zero wrapper contains the zero T.
-
 ## type Failure
 
 Failure identifies the service whose terminal failure stopped the root. Value is its last panic value, restart Init error, or a runtime.Goexit error. Stack is captured in that service's goroutine. Groups pass the same failure to the root without wrapping it or applying another retry limit.

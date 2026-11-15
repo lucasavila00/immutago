@@ -63,8 +63,8 @@ type Outer struct{Counter; Commands}`, false},
 		{"mutable result", `func(*Counter) Read() map[string]int {return nil}`, true},
 		{"pointer result", `func(*Counter) Read() *SnapshotReply {return &SnapshotReply{}}`, true},
 		{"byValue pointer", `func(*Counter) Read() *Reply {return nil}`, true},
-		{"ordinary dependency wrapper", `var dep supervise.ConcurrentSafe[map[string]int]
-func use(){dep=supervise.AssumeConcurrentSafe(map[string]int{}); dep.Value()["key"]++}`, false},
+		{"ordinary dependency", `var dep map[string]int
+func use(){dep=map[string]int{}; dep["key"]++}`, false},
 		{"private method", `func(*Counter) read() map[string]int {return nil}`, false},
 		{"promoted result", `type Mutable struct{}; func(Mutable) Read() []int{return nil}
 type Outer struct{Counter; Mutable}`, true},
