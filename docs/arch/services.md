@@ -81,6 +81,7 @@ The [trusted code list](validation.md#trust-boundary) still applies.
 | Operation | Runtime action |
 | --- | --- |
 | Copy Ref | Copy a pointer to an atomic pointer; all copies select the same current service value. |
+| IsZero | Compare the reference's pointer with nil; no atomic load or allocation. It does not check service readiness. |
 | StartReserved | Create a fresh service, set arguments, call Init, then publish with compare-and-swap. A concurrent start that loses the comparison stops its children before it panics. |
 | Restart | Repeat setup; publish with an atomic store only after success. Failure leaves the previous value available. |
 | Borrow | One atomic load, no allocation. |

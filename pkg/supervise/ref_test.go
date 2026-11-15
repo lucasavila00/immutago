@@ -42,6 +42,17 @@ func TestRefIsZero(t *testing.T) {
 	})
 }
 
+// TestZeroRefBorrowPanics checks that an unset reference has no service to select.
+func TestZeroRefBorrowPanics(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("Borrow on a zero Ref did not panic")
+		}
+	}()
+	var ref Ref[counter]
+	ref.Borrow()
+}
+
 // TestRefIsZeroAllocations checks both results without service access.
 func TestRefIsZeroAllocations(t *testing.T) {
 	for _, ref := range []Ref[counter]{{}, Reserve[counter]()} {

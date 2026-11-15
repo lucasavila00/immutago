@@ -1,4 +1,7 @@
 42
+unset: true
 slot count must be positive
+reserved: false
 slot count must be positive
 42
+stopped: false

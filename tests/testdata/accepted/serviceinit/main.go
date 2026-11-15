@@ -38,16 +38,20 @@ func main() {
 	}
 	fmt.Println(table.Borrow().First())
 	failed, err := supervise.Start[Table](root, 0)
-	_ = failed
+	fmt.Println("unset:", failed.IsZero())
 	fmt.Println(err)
 	reserved := supervise.Reserve[Table]()
+	fmt.Println("reserved:", reserved.IsZero())
 	err = supervise.StartReserved(root, reserved, 0)
 	fmt.Println(err)
 	if err := supervise.StartReserved(root, reserved, 1); err != nil {
 		panic(err)
 	}
-	fmt.Println(reserved.Borrow().First())
+	if !reserved.IsZero() {
+		fmt.Println(reserved.Borrow().First())
+	}
 	<-root.Stop()
+	fmt.Println("stopped:", reserved.IsZero())
 }
 
 // startFailure forwards the startup results without a result binding.

@@ -88,14 +88,14 @@ func TestInitBeforePublication(t *testing.T) {
 	})
 }
 
-// TestInitErrorAndRetry checks exact errors, an empty Start result, and reuse of a reserved Ref.
+// TestInitErrorAndRetry checks exact errors, a zero Start result, and reuse of a reserved Ref.
 func TestInitErrorAndRetry(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
 		failure := errors.New("initial setup")
 		hooks := &initHooks{init: func(*initializing) error { return failure }}
 		if ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks)); err != failure || !ref.IsZero() {
-			t.Fatalf("Start = %v, %v; want empty Ref and original error", ref, err)
+			t.Fatalf("Start = %v, %v; want zero Ref and original error", ref, err)
 		}
 		ref := Reserve[initializing]()
 		if err := StartReserved(root, ref, AssumeConcurrentSafe(hooks)); err != failure {

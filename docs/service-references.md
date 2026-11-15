@@ -59,7 +59,7 @@ The examples use `WorkerRef`, an alias of `supervise.Ref[Worker]`.
 | Read or update ordinary reference storage; take an address or dereference a pointer | `ref := route.Worker`, `workers[name] = ref`, `p := &ref`, `next := *p` |
 | Index or slice native storage | `workers[0]`, `workers[1:]` |
 | Compare references or use them in a switch | `ref == next`, `ref != next`, `switch ref { case next: use(ref) }` |
-| Test whether a reference is unset | `ref.IsZero()`, `if !route.Worker.IsZero() { route.Worker.Borrow().Count() }` where route is ordinary mutable storage |
+| Test whether a reference is unset, or bind its test method | `ref.IsZero()`, `check := ref.IsZero`, `WorkerRef.IsZero(ref)`; ordinary pointer, field, element, promoted, and interface calls follow the reference forms above and below. |
 | Range over native storage or an iterator with concrete reference types | `for _, ref := range workers { use(ref) }`, `for ref := range iterator { use(ref) }` |
 | Allocate or change native containers | `make([]WorkerRef, 2)`, `append(workers, ref)`, `copy(dst, src)`, `delete(workers, name)`, `clear(workers)` |
 | Read native container sizes | `len(workers)`, `cap(workers)` |
