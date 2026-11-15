@@ -20,7 +20,7 @@
 | --- | --- |
 | Start a service and understand restarts | [Supervised services](services.md) |
 | Create and replace groups of workers | [Child services](service-children.md) |
-| Supply a logger, client, or other safe concurrent dependency | [Mutable dependencies](services.md#mutable-dependencies) |
+| Supply a logger, client, or other safe concurrent dependency | [Mutable dependencies](services.md#example-mutable-dependencies) |
 | Check method result types | [Scoped results](scoped-results.md) |
 | Look up signatures and lifecycle behavior | [supervise API](../pkg/supervise/readme.md) |
 

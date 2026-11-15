@@ -1,4 +1,4 @@
-# HTTP prediction models
+# Example: HTTP prediction models
 
 This program downloads a linear model, saves the validated JSON, and serves
 predictions while it polls for updates. Failed HTTP or JSON reads leave the
@@ -33,7 +33,7 @@ The arguments hold a logger, HTTP client, and factory directly. The command uses
 Go's concurrent-safe logger and client. Its factory captures only a fixed path and
 creates a FileStore for that service. Use a separate output path per service.
 
-The model package makes a different promise with `im.Trust`: its copied
+The model package promises with `im.Trust` that its copied
 coefficients never change, and its API never exposes the slice. Only that
 package can unwrap the pointer. The service publishes a fresh Scoped snapshot;
 each prediction keeps one snapshot for the whole calculation.
@@ -49,5 +49,5 @@ go test -race ./examples/models/...
 The tests use a real local HTTP server and check reloads, unchanged predictions
 after HTTP, JSON, and store failures, saved documents, concurrent readers, a shared
 recording store, shutdown during an HTTP request, and independence from the
-caller's input slice. The repository's existing CI runs these checks with the
+caller's input slice. Repository CI runs these checks with the
 other packages.

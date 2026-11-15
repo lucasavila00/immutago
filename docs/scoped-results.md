@@ -1,8 +1,8 @@
 # Scoped results
 
-A **Scoped result** is an immutable value returned by value. The category includes
-`int` and `string`; `im.Scoped` is the marker for a struct, not a requirement to
-wrap each scalar in a struct.
+A **Scoped result** is an immutable value returned by value.
+
+## Example: quota results
 
 Examples from the [configuration project](../examples/configuration/README.md):
 
@@ -43,24 +43,24 @@ be a pointer. Frozen results copy their handle, not their entries.
 
 ## Service methods
 
-Every exported method on a service returns **exactly one Scoped result**.
-This includes promoted user methods. Init, Run, and the runtime's own methods
-are not message methods and are exempt.
+Every exported user method on a service returns **exactly one Scoped result**.
+This includes promoted user methods. Init, Run, and runtime methods such as
+`Args` and `Children` are exempt.
 
-This is the only service-specific analyzer rule. Start arguments, receivers,
-closures, child groups, and ordinary method code use Go rules. Any protected
-values used in that code still follow their im rules. In particular, Start saves
-its argument: a Scoped value can be saved, but a Scoped pointer cannot.
+Start arguments, receivers, closures, child groups, and ordinary method code use
+Go rules. Protected values follow the [im rules](common-forms.md). Start saves its
+argument: a Scoped value can be saved, but a Scoped pointer cannot.
 
 ## Rejected examples — non-exhaustive
 
 | Result | Use instead |
 | --- | --- |
-| `*Usage`, or a pointer to a Shared struct | Return the value: `Usage` or `*p`. |
+| `*Usage`, or a pointer to a Shared struct | Declare a value result such as `Read() Usage`; return `*p`. |
 | `[]int` or `map[string]int` | Return a frozen collection. |
 | `error`, `any`, or another interface | Return a marked result struct with the information the caller needs. |
 | No result, or `(int, bool)` | Return one value; use a marked result struct for several fields. |
 | An unmarked struct | Mark it and prove its fields. |
+| `type Counts [2]int` | Return `[2]int`, or a marked struct with an array field. |
 
-Scoped pointers still cannot be saved, returned, or captured. See
+Scoped pointers cannot be saved, returned, or captured. See
 [Scoped objects](scoped.md) for their use inside a function.

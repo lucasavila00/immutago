@@ -8,7 +8,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// markedTypeGraph reproduces the linked marked types and ten operations per function from issue 27.
+// markedTypeGraph creates linked marked types with ten operations per function.
 func markedTypeGraph(count int, invalid bool) string {
 	var source strings.Builder
 	for i := range count {

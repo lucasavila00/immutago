@@ -4,9 +4,9 @@ Review every checker or supported-language change against these two requirements
 
 ## Local review
 
-- State what the rule checks and which code a reviewer no longer needs to trace.
+- State the rule's checks and the facts a reviewer can rely on.
 - Review service state changes, locks, saved inputs, and dependency calls in the
-  service code. Ordinary Go contracts still apply.
+  service code. Ordinary Go contracts apply.
 - Do not claim full service isolation from immutable result types.
 
 ## 1. Complete allowed forms
@@ -31,7 +31,7 @@ For example, fresh protected construction requires `&T{...}` or a supported
 admit field, element, or pointer-target writes.
 
 Check `Shared` sharing and `Scoped` pointer escape separately. Builder
-exclusivity and consumption remain required for both modes.
+exclusivity and consumption are required for both modes.
 
 ## Required evidence
 

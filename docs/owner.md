@@ -10,8 +10,11 @@ operations; the checker adds rules for the objects they access.
 | Readers can keep using an old pointer after Store replaces it | The old object stays read-only. |
 
 Go's GC keeps loaded objects alive while readers use them. Load and Store can
-run in different goroutines. For example, update the request limit while requests
-read the current configuration:
+run in different goroutines.
+
+## Example: a current request limit
+
+Store a limit, then read it through a local pointer:
 
 ```go
 package main
@@ -60,6 +63,8 @@ func main() {
 Loaded pointers use the [Scoped forms](scoped.md).
 An Owner slot can be used inside a closure. Load the Scoped pointer inside
 that closure; do not capture a pointer loaded outside it.
+
+### Example: a background publisher
 
 A named publisher can run in a goroutine:
 

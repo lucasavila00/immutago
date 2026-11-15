@@ -64,7 +64,7 @@ The checker checks a package in any of these cases, including its test files:
   immutability trust marker.
 
 - Importing `unsafe` or `reflect` is allowed; ordinary values use ordinary Go rules.
-- Protected values still need a listed form: `reflect.ValueOf(1)` is allowed,
+- Protected values need a listed form: `reflect.ValueOf(1)` is allowed,
   but `reflect.ValueOf(p)` with a marked pointer fails the interface-boxing rule.
 
 | Rejected examples — non-exhaustive | Use instead |

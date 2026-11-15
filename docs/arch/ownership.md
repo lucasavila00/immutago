@@ -17,7 +17,7 @@ For [im.UncheckedValue](../../pkg/im/unchecked_value.go):
 - The handle has no methods that could expose its pointer.
 - The declaring package supplies the immutability promise.
 
-## Why the rules belong to the type
+## Type markers
 
 One marker sets the rule for every use of a type. Callers do not repeat it on
 fields, parameters, receivers, or local names:
@@ -47,13 +47,9 @@ For either marker, the checker requires:
 - Allowed key and element types in frozen collections.
 - No writes to those fields through another pointer or a receiver method.
 
-| Choice | Benefit | Cost |
-| --- | --- | --- |
-| Type marker | Declare once; match uses with Go type identity. | One type has one pointer policy. A Shared type cannot be used in Owner. Use separate types or value copies when needed. |
-| Per-parameter rule | One type could serve both pointer policies. | Repeated annotations and separate policy checks for copies and calls; no stronger immutable-field rule. |
-
-Keep type markers unless a concrete use case shows a large correctness or
-simplicity gain. The checker still checks each operation; markers are not promises.
+One type has one pointer policy. Owner requires a Scoped type. Use separate
+marked types or value copies when callers need different pointer policies.
+The checker proves the fields and checks each operation.
 
 See [Shared](../shared.md), [Scoped](../scoped.md), and [Owner](../owner.md) for
 the supported forms.
@@ -82,15 +78,15 @@ to the resolved `supervise.Service` type, including aliases and pointers.
    same recursive immutable-value proof as fields and collection elements.
 
 The [Scoped-result reference](../scoped-results.md) lists the allowed types.
-There is no service source grammar. Start arguments, method inputs, callbacks,
-and Current pointers follow ordinary Go rules. Actual im data still passes
-through its type proofs, source matcher, and Freeze checks.
+Start arguments, method inputs, callbacks, and Current pointers follow ordinary
+Go rules. Protected data passes through the im type proofs, source matcher, and
+Freeze checks.
 
 The classifier treats `Service[A]` as runtime storage, so a service can receive
 im values through its start arguments. When A contains im data, its stored-value
 proof must pass; this prevents retaining a Scoped pointer. Ordinary A types need
 no immutable proof. `Ref[T]` is an ordinary mutable handle,
-not an immutable stored type. Runtime calls remain fixed library operations.
+not an immutable stored type. Runtime calls use the fixed library operations.
 
 ### Publication and child lifetimes
 

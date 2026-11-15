@@ -223,54 +223,28 @@ Before extending a proof or matcher:
 5. If the required feature stays, fix its general rule and data structure. Do not
    add an exception for one spelling or discard required behavior just to pass CI.
 
-These examples show how the current design avoids unnecessary machinery. Read
-the [language reference](docs/rules.md) for the complete supported forms.
+Use the [language reference](docs/rules.md) for the complete supported forms.
+Keep source restrictions and examples there. Keep analysis details in the
+[architecture pages](docs/arch/README.md).
 
-### Source forms we reject
+### Analysis requirements
 
-| Example and failure | Decision and fix |
-| --- | --- |
-| An unmarked struct containing a marked child makes writes such as `a.b.c.d = 1` require rules about aliases into nested storage. | Require a marker on each struct that stores protected data, except the explicitly listed Owner and runtime storage forms. Prove the nested fields instead of supporting arbitrary mutable owners of immutable children. |
-| `type Count [2]int` can have a mutating pointer method. Treating it as an immutable field required more method analysis. | Use `type Count struct { im.Shared; Values [2]int }`. Require a marker on each nested struct and prove its fields. The inline array does not need a separate allocation. |
-| `p.Inc()` could call an embedded field's pointer method and mutate a protected value. The broad "method call" category missed the implicit receiver. | Allow direct methods on proved concrete marked structs only when the written receiver has exactly the declared receiver type. Reject promoted calls, implicit address/dereference, method values, and method expressions. Use `outer.Child.Read()` for a marked child or a named reader such as `Read(p)`. Keep the separate fixed library forms. Ordinary concrete receivers can take or return protected values through direct, non-generic calls. |
-| `case _, values[0] = <-ready` could write after another case's channel expression froze `values`. The control-flow graph did not describe that ordering. | Reject protected operations in select channel expressions and receive targets. Receive first, then change the builder in the case body. Do not add a complete select evaluation model for these forms. |
-| `value, p = next, makePointer()` and `use(im.FreezeSlice(values))` mixed writes or consumption with other operations. | Use one assignment destination and a separate Freeze statement: `frozen := im.FreezeSlice(values); use(frozen)`. Keep the explicitly listed result exceptions, such as `Get`. |
-| Mutable construction followed by borrowing still required NLL. Also, `p := &value; value = other` changes the storage observed by `p`. | Make marked objects read-only from construction; create pointers with `&T{...}` or supported `new` forms, not `&value`. Prepare field values in ordinary locals first. Remove the loan machinery; retain Freeze builder checks. |
-| Protected `**T`, interior pointers such as `&value.N`, user generics, callbacks, captures, and go/defer calls enlarged the alias problem. | Keep concrete marked pointer targets and direct typed calls. Read pointers through those forms rather than rejecting all pointers. Copy scalar data before a callback. Support only the listed fixed library generic APIs; reject other protected forms. |
-| `values := []int(nil)` was rejected although the docs loosely said "nil" was supported ([#17](https://github.com/lucasavila00/immutago/issues/17)). The first fix added a shared matcher and an 88-case syntax/type matrix. | The user rejected the feature as unnecessary. Remove the new matcher, accept `var values []int` or `im.FreezeSlice[int](nil)`, and explicitly reject typed-nil conversions. Both alternatives have the same allocation cost. [PR #18](https://github.com/lucasavila00/immutago/pull/18) fixed the documented boundary instead of extending the syntax. |
-| Cgo produced many errors in generated files, and vet did not provide the original `import "C"` location ([#21](https://github.com/lucasavila00/immutago/issues/21)). | Reject a checked cgo package once at its source package line. Do not reconstruct an unavailable import location or analyze all generated wrappers. Ordinary packages outside the checking boundary follow their separate rules. |
-
-### Requirements we removed or narrowed
-
-| Failure or proposed complexity | Decision and fix |
-| --- | --- |
-| A copying `NewMap(map)` and immutable update API added collection copies. Mutable SDK parameters alone did not prove ownership of slice/map backing storage. | Use native local builders, Freeze without copying, read-only FrozenMap/FrozenSlice, and Clone for a new editable version. Remove frozen update methods. Do not build a general mutable-borrow or persistent-tree system to provide this API. |
-| The proof cache replayed old depth-first/FIFO discovery to preserve the exact historical diagnostic cause. That introduced repeated walks for invalid roots. | Exact cause order was never required. Keep one real failure cause and test correct rejection and terminating cause paths. Remove replay and compatibility machinery; update snapshots if needed. [PR #29](https://github.com/lucasavila00/immutago/pull/29) records the change. |
-| Each dependency fact carried every reachable failure, so vet repeatedly wrote and read the same closure of errors. | Carry one representative original failure and a command to check its origin. Do not preserve the whole error closure or add compression merely to retain it. [PR #30](https://github.com/lucasavila00/immutago/pull/30). |
-| Ordinary libraries using unsafe or reflection made unrelated callers fail. A proposed fix would track where strings came from to defend against libraries changing string bytes. | Trust ordinary Go API contracts. Select checked packages from the documented imports/types/failure facts, using one compiler-type traversal. Do not add string taint analysis. [PR #46](https://github.com/lucasavila00/immutago/pull/46). |
-| The service feature claimed that no mutable memory could cross a service boundary, but ordinary method bodies could use a global map. Enforcing the claim required a new language for isolated method bodies. | Require exactly one Scoped result from each exported service method except Init and Run. Other service code follows ordinary Go rules; im operations keep their general checks. Do not claim full isolation or add a separate service source grammar. [PR #45](https://github.com/lucasavila00/immutago/pull/45). |
-| Duplicate push/PR jobs and always-on performance runs made routine CI large. | Keep four routine checks and run performance workflows manually. Keep focused local debugging; use hosted CI for full validation. [PR #26](https://github.com/lucasavila00/immutago/pull/26). |
-
-### Simplify the implementation when the feature is needed
-
-Do not use the examples above to reject useful supported code indiscriminately.
-These fixes kept the behavior and removed repeated work:
-
-- A scalar Clone that is never frozen follows ordinary Go container rules. Apply
-  builder ownership checks only when protected elements or a later Freeze require
-  them; do not restrict every use of a native slice or map.
-- Type proofs and Owner queries revisited the same type graph. Reuse completed
-  proofs and read the existing cache during recursive walks; test cycles and
-  query order. Do not add another graph framework when the current cache suffices.
-- Storage projection checks walked the same selector/index chain repeatedly.
-  Walk that chain once. The duplicate classifier and duplicate Owner/source
-  context were also removed instead of maintained in parallel.
-- Each builder event changed one owner, but adapters built singleton gen/kill
-  maps. Pass the owner ID and consume/reset flags directly to the bitset solver.
-- Broad AST-category checks missed interface destinations, implicit receivers,
-  closure captures, and range targets. Match the complete documented operation,
-  including its types and statement context. Do not keep a permissive category
-  and add one negative check for each newly found bypass.
+- Apply builder ownership checks when protected elements or a later Freeze
+  require them. A scalar Clone that is never frozen follows ordinary Go rules.
+- Reuse completed type proofs and cached Owner queries. Test cycles and query
+  order. Use the existing cache during recursive walks.
+- Keep one real failure cause for each invalid type. Test correct rejection and
+  terminating cause paths. The selected cause may depend on query order.
+- Carry one representative original failure in each dependency fact, with a
+  command to check its origin.
+- Walk each storage selector/index chain once. Keep one storage classifier and
+  one Owner/source context.
+- Pass the builder owner ID and consume/reset flags directly to the bitset solver.
+- Require exactly one Scoped result from each exported user service method
+  except Init and Run. Runtime methods are exempt. Other service code follows
+  ordinary Go rules; im operations use their general checks.
+- Trust ordinary Go API contracts. Use the documented package selection rules;
+  do not add string taint analysis or whole-program service effect analysis.
 
 Require a reproduction and a relevant before/after measurement for a performance
 claim. Keep measurements in the PR, not in user guides. A smaller diff alone does
@@ -278,18 +252,15 @@ not prove a better algorithm.
 
 ### Compiler-constant operands
 
-During PR #60 review, a new array proof rejected this previously accepted form:
+Apply the same source rules to all operands, including operands that Go does
+not evaluate. Constant operands do not bypass capture, type placement, generic,
+or Freeze checks. Direct array `len` and `cap` work in allowed statements.
 
-```go
-// Local is a Scoped struct; p is a local *Local.
-f := func() int { return len([1]*Local{p}) }
-```
+For a local `p *Local`, where Local embeds `im.Scoped`:
 
-Go does not evaluate that array operand, but the source still mentions a
-protected reference in a closure. The user chose to remove the exception.
-Use the known length `1`, or compute an ordinary length before the closure.
+| Rejected form | Allowed replacement |
+| --- | --- |
+| `f := func() int { return len([1]*Local{p}) }` | `f := func() int { return 1 }` |
 
-Apply the same source rules to all operands. Direct array `len` and `cap` still
-work in allowed statements. Constant operands do not bypass capture, type
-placement, generic, or Freeze checks. The shared evaluation helper and both
-caches are removed. The guide and accepted/rejected fixtures record this rule.
+An ordinary length computed before the closure can also be captured. Keep the
+reference, accepted/rejected fixtures, and matcher aligned with this rule.

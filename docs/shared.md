@@ -7,7 +7,9 @@ Use it for objects that callers need to keep:
 - Functions can return pointers to the object.
 - Marked structs can store those pointers.
 
-This order stores a product pointer; reading it does not copy the product:
+## Example: an order
+
+The order stores a product pointer; reading it does not copy the product:
 
 ```go
 package main

@@ -37,8 +37,8 @@ Cache costs:
 
 - Classification expands each reachable type and mode once per cache; reverse
   edges propagate positive results through cycles.
-- Completed negative slot queries cache every visited type. New wrappers reuse
-  those results instead of expanding the same negative component.
+- Completed negative slot queries cache every visited type. Wrappers reuse
+  those results.
 - Each proof obligation expands once; failure edges are processed a bounded
   number of times. Empty pointer/array labels add no rendering chain.
 - Rendering follows retained message size; repeated queries reuse the message.
@@ -63,7 +63,7 @@ direct package diagnostics remain complete.
 | --- | --- |
 | P failed packages, largest fact B bytes | O(P × B) serialized payload. |
 | E direct invalid import edges | O(E × B) bytes read by vet. |
-| CLI driver's inherited fact maps | Can still hold O(P²) pointers. |
+| CLI driver's inherited fact maps | Can hold O(P²) pointers. |
 
 B includes diagnostic and path lengths; messages are not truncated. These bounds
 cover fact payloads, not all driver data or import-graph work.

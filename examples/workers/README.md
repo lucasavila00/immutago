@@ -1,4 +1,4 @@
-# Versioned text workers
+# Example: versioned text workers
 
 This program runs text jobs in child worker pools. Version 1 converts text to
 uppercase; version 2 converts it to lowercase. The dispatcher can replace one
