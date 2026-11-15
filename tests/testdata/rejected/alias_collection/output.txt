@@ -1,9 +1,17 @@
-alias_collection.go:11:12: immutable collection: type argument 1: []int is not provably immutable
+alias_collection.go:13:12: immutable collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-alias_collection.go:11:15: immutable type argument: []int is not provably immutable
+alias_collection.go:13:15: immutable type argument: []int is not provably immutable
   type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable
-alias_collection.go:11:6: immutable collection: type argument 1: []int is not provably immutable
+alias_collection.go:13:6: immutable collection: type argument 1: []int is not provably immutable
   type: rejected.Bad
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+zz_immutago.gen.go:26:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *rejected.Good
+  fix: use the generated field accessor
+zz_immutago.gen.go:60:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *rejected.Good
+  fix: use the generated field accessor

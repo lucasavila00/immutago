@@ -1,8 +1,8 @@
-subset_native_channel.go:18:13: unsupported immutable operation: channels of immutable storage are unsupported
+subset_native_channel.go:20:13: unsupported immutable operation: channels of immutable storage are unsupported
   source: chan Good
   type: chan rejected.Good
   fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset
-subset_native_channel.go:18:30: unsupported immutable operation: channels of immutable storage are unsupported
+subset_native_channel.go:20:30: unsupported immutable operation: channels of immutable storage are unsupported
   source: ch
   type: chan rejected.Good
   fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset

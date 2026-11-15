@@ -1,5 +1,5 @@
 wrapped_borrow_consumer.go:3:8: unsupported dependency example.com/consumer/borrow_wrapper: immutability proof failed
-  representative failure: example.com/consumer/invalid_borrow/invalid_borrow.go:12:49: unsupported immutable operation: scalar interior addresses are unsupported
+  representative failure: example.com/consumer/invalid_borrow/invalid_borrow.go:14:49: unsupported immutable operation: scalar interior addresses are unsupported
     source: &value.X
     type: *int
     fix: copy the scalar field into a local; do not take a pointer into immutable storage

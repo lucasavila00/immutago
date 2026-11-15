@@ -1,4 +1,4 @@
-subset_slice_view.go:18:24: unsupported immutable operation: slice projections of immutable storage are unsupported
+subset_slice_view.go:20:24: unsupported immutable operation: slice projections of immutable storage are unsupported
   source: v.Array[:]
   type: []int
   fix: copy the array into local storage before slicing it, or use im.FrozenSlice for immutable sequence values

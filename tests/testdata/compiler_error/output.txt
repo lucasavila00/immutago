@@ -1,2 +1,31 @@
 broken.go:3:15: undefined: doesNotExist
+consumer.go:44:6: Frozen records require a named package-level type; anonymous records are unsupported
 immutago: analysis skipped due to errors in package
+zz_immutago.gen.go:105:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *consumer.NamedInts
+  fix: use the generated field accessor
+zz_immutago.gen.go:64:49: unsupported immutable operation: immutable references require fresh allocation
+  source: &v.immutagoProjection.Read().Model
+  type: *model.Tree
+  fix: use &T{...}, new(T), or new(value); do not take the address of an existing variable, field, or element
+zz_immutago.gen.go:64:50: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *consumer.Record
+  fix: use the generated field accessor
+zz_immutago.gen.go:69:34: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *consumer.Record
+  fix: use the generated field accessor
+zz_immutago.gen.go:74:32: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *consumer.Record
+  fix: use the generated field accessor
+zz_immutago.gen.go:79:53: unsupported immutable operation: immutable references require fresh allocation
+  source: &v.immutagoProjection.Read().Count
+  type: *model.CountBox
+  fix: use &T{...}, new(T), or new(value); do not take the address of an existing variable, field, or element
+zz_immutago.gen.go:79:54: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *consumer.Record
+  fix: use the generated field accessor

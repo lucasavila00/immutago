@@ -15,6 +15,11 @@ type Record struct {
 	Count   model.CountBox
 }
 
+type Scalar struct {
+	im.Frozen
+	Value int
+}
+
 func Use() {
 	value := model.Value()
 	value = model.Tree{Leaf: model.Leaf{Name: "replacement"}}
@@ -41,8 +46,5 @@ func Use() {
 	_ = model.CountBox{Value: 1}
 	_ = model.Derived{}
 	_ = im.FreezeSlice([][2]string{{"a", "b"}})
-	_ = struct {
-		im.Frozen
-		Value int
-	}{Value: 1}
+	_ = Scalar{Value: 1}
 }

@@ -26,14 +26,17 @@ func f(projection im.Projection[Pointer]){_=im.IsNil(projection);_=NewDataProjec
 		`func f(){frozen:=im.FreezeMap(map[string]int{"key":3});projection:=im.Map(im.ProjectionOf(frozen))
 value,ok:=projection.Get("key");_=ok;_=im.Copy(value)
 for key,value:=range projection.All(){_=im.Text(key).Clone();_=im.Copy(value)}}`,
-		`func f(){frozen:=im.FreezeSlice([]string{"text"});projection:=im.Slice(im.ProjectionOf(frozen));_=im.Text(projection.At(0)).Clone()
+		`func f(){frozen:=im.FreezeSlice([]string{"text"});projection:=im.Slice(im.ProjectionOf(frozen))
+_=im.Text(projection.At(0)).Clone()
 for _,value:=range projection.All(){_=im.Text(value).Len()}}`,
-		`func f(){frozen:=im.FreezeSlice([]int{1});projection:=im.Slice(im.ProjectionOf(frozen));copy:=projection.Clone();copy[0]=2}`,
+		`func f(){frozen:=im.FreezeSlice([]int{1});projection:=im.Slice(im.ProjectionOf(frozen))
+copy:=projection.Clone();copy[0]=2}`,
 		`type Data struct{im.Frozen; N int};func f(){value:=im.Copy(im.ProjectionOf(Data{N:3}));_=value.N}`,
 		`type Data struct{im.Frozen; Text im.FrozenString};var cell im.Cell[Data]
 func f(){text:="text";cell.Store(Data{Text:im.FreezeString(text)});_=text
 projection:=NewDataProjection(cell.LoadPointer()).Text();_=projection.At(0);_=projection.Clone()}`,
-		`func f(v im.SliceProjection[int]){values:=v.Clone();values=append(values,1);frozen:=im.FreezeSlice(values);_=frozen}`,
+		`func f(v im.SliceProjection[int]){values:=v.Clone();values=append(values,1)
+frozen:=im.FreezeSlice(values);_=frozen}`,
 		`func f(v im.MapProjection[int,int]){values:=v.Clone();values[1]=2;frozen:=im.FreezeMap(values);_=frozen}`,
 		`func f(){text:=im.FreezeString("text");projection:=im.String(im.ProjectionOf(text))
 _=text.EqualString("text");_=text.Equal(text);_=projection.EqualString("text");_=projection.Equal(projection)}`,
@@ -57,7 +60,8 @@ func TestSnapshotCategories(t *testing.T) {
 		{`type Result struct{im.Local; Name string}`, "Copied values cannot contain shared data references"},
 		{`type Result struct{im.Local; Values im.FrozenSlice[int]}`, "Copied values cannot contain shared data references"},
 		{`type Result struct{im.Local; Text im.FrozenString}`, "Copied values cannot contain shared data references"},
-		{`func f(){_=im.Copy(im.ProjectionOf(im.FreezeString("text")))}`, "Copied values cannot contain shared data references"},
+		{`func f(){_=im.Copy(im.ProjectionOf(im.FreezeString("text")))}`,
+			"Copied values cannot contain shared data references"},
 		{`type Result struct{im.Local; Text im.StringProjection};var cell im.Cell[Result]`,
 			"Frozen storage cannot contain Local values"},
 		{`type Result struct{im.Local; Text im.StringProjection};func f(){_=im.ProjectionOf(Result{})}`,
@@ -69,12 +73,15 @@ func TestSnapshotCategories(t *testing.T) {
 		{`var marker im.Local`, "package variables"},
 		{`type Data struct{im.Frozen};type Pointer *Data`, "defined pointer types"},
 		{`func f(){_=im.Copy(im.ProjectionOf("text"))}`, "Copied values cannot contain shared data references"},
-		{`func f(){frozen:=im.FreezeMap(map[string]int{});projection:=im.Map(im.ProjectionOf(frozen));copy:=projection.Clone();_=copy}`,
+		{`func f(){frozen:=im.FreezeMap(map[string]int{});projection:=im.Map(im.ProjectionOf(frozen))
+copy:=projection.Clone();_=copy}`,
 			"Copied values cannot contain shared data references"},
-		{`func f(){frozen:=im.FreezeSlice([]int{1});projection:=im.Slice(im.ProjectionOf(frozen));all:=projection.All();_=all}`,
+		{`func f(){frozen:=im.FreezeSlice([]int{1});projection:=im.Slice(im.ProjectionOf(frozen))
+all:=projection.All();_=all}`,
 			"direct range"},
 		{`func f(){projection:=im.ProjectionOf("text");var boxed any=projection;_=boxed}`, "boxing immutable storage"},
-		{`type Data struct{im.Frozen;N int};func f(){projection:=im.ProjectionOf(Data{});go im.Copy(projection)}`, "synchronous"},
+		{`type Data struct{im.Frozen;N int};func f(){projection:=im.ProjectionOf(Data{});go im.Copy(projection)}`,
+			"synchronous"},
 	}
 	for _, test := range cases {
 		t.Run(test.source, func(t *testing.T) {
@@ -111,7 +118,8 @@ func f(projection im.Projection[*Data]){`
 		})
 	}
 	for _, value := range []string{"1", `"text"`} {
-		if got := checkSource(t, `func f(){p:=im.ProjectionOf(`+value+`);_=p.Read()}`); !strings.Contains(got, "reserved for verified generated") {
+		source := `func f(){p:=im.ProjectionOf(` + value + `);_=p.Read()}`
+		if got := checkSource(t, source); !strings.Contains(got, "reserved for verified generated") {
 			t.Fatal(got)
 		}
 	}
@@ -124,7 +132,8 @@ func TestSnapshotServiceResults(t *testing.T) {
 		reject bool
 	}{
 		{`type Data struct{im.Frozen;N int};func(*Counter) Data()Data{return Data{}}`, false},
-		{`type Data struct{im.Frozen;Name string};func(*Counter) Data()im.Projection[Data]{return im.ProjectionOf(Data{})}`, false},
+		{`type Data struct{im.Frozen;Name string}
+func(*Counter) Data()im.Projection[Data]{return im.ProjectionOf(Data{})}`, false},
 		{`type Data struct{im.Frozen;Name string};func(*Counter) Data()Data{return Data{}}`, true},
 		{`type Result struct{im.Local;Text im.StringProjection};func(*Counter) Data()Result{return Result{}}`, false},
 		{`func(*Counter) Text()string{return "text"}`, true},

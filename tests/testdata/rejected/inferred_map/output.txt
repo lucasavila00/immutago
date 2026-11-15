@@ -1,9 +1,17 @@
-inferred_map.go:11:11: immutable collection: type argument 2: []int is not provably immutable
+inferred_map.go:13:11: immutable collection: type argument 2: []int is not provably immutable
   type: im.FrozenMap[string, []int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-inferred_map.go:11:14: immutable type argument: []int is not provably immutable
+inferred_map.go:13:14: immutable type argument: []int is not provably immutable
   type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable
-inferred_map.go:11:5: immutable collection: type argument 2: []int is not provably immutable
+inferred_map.go:13:5: immutable collection: type argument 2: []int is not provably immutable
   type: im.FrozenMap[string, []int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+zz_immutago.gen.go:26:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *rejected.Good
+  fix: use the generated field accessor
+zz_immutago.gen.go:60:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *rejected.Good
+  fix: use the generated field accessor

@@ -1,12 +1,12 @@
-handles.go:13:19: unsupported immutable operation: service references cannot enter interfaces; keep the concrete Ref type
-  source: ref
-  type: supervise.Ref[service.Counter]
-  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
-handles.go:17:47: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
+handles.go:10:13: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
   source: ref.Current
   type: func() *service.Counter
   fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
-handles.go:6:13: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
+handles.go:15:19: unsupported immutable operation: service references cannot enter interfaces; keep the concrete Ref type
+  source: ref
+  type: supervise.Ref[service.Counter]
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+handles.go:19:47: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
   source: ref.Current
   type: func() *service.Counter
   fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
@@ -83,3 +83,7 @@ results.go:52:17: service method List must return a service result: Copied value
   result type: im.FrozenSlice[int]
 results.go:53:17: service method MapResult must return a service result: Copied values cannot contain shared data references
   result type: im.FrozenMap[string, int]
+zz_immutago.gen.go:26:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *service.SnapshotReply
+  fix: use the generated field accessor

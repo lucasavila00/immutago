@@ -1,1 +1,1 @@
-schema_test.go:3:6: marked records require package-level declarations in ordinary .go files
+schema_test.go:3:6: Frozen records require package-level declarations in ordinary .go files

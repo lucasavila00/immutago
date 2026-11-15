@@ -13,9 +13,11 @@ var cell im.Cell[Root]
 // TestPointerProjectionForms checks generated record addresses and explicit root copies.
 func TestPointerProjectionForms(t *testing.T) {
 	for _, source := range []string{
-		`func f(){cell.Store(Root{});projection:=NewRootProjection(cell.LoadPointer());if !projection.IsNil(){_=projection.Child().Name().Len()}}`,
+		`func f(){cell.Store(Root{});projection:=NewRootProjection(cell.LoadPointer())
+if !projection.IsNil(){_=projection.Child().Name().Len()}}`,
 		`func f(projection im.Projection[*Root],index int){_=NewRootProjection(projection).Children().At(index).Number()}`,
-		`func f(){frozen:=im.FreezeSlice([]Child{{}});values:=im.Slice(im.ProjectionOf(frozen));_=NewChildProjection(values.AtPointer(0)).Number()}`,
+		`func f(){frozen:=im.FreezeSlice([]Child{{}});values:=im.Slice(im.ProjectionOf(frozen))
+_=NewChildProjection(values.AtPointer(0)).Number()}`,
 		`func f(){frozen:=im.FreezeMap(map[string]Child{"name":{}});values:=im.Map(im.ProjectionOf(frozen))
 value,ok:=values.Get("name");_=ok;pointer:=im.CopyProjection(value);_=NewChildProjection(pointer).Name().Len()}`,
 	} {

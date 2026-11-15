@@ -45,13 +45,17 @@ func TestSlotCacheQueryOrder(t *testing.T) {
  type Alias = A
  type Pointer *A
  type Contract interface{ Take(A) }
+ type Union interface{ ~int|A }
+ type ConstraintAlias = Union
+ type OrdinaryContract interface{ Take(Empty) }
  type Callback func(A) B`)
 	queries := []struct {
 		name string
 		want bool
 	}{
 		{"A", true}, {"B", true}, {"Empty", false}, {"Mixed", true}, {"Alias", true},
-		{"Pointer", false}, {"Contract", false}, {"Callback", true},
+		{"Pointer", false}, {"Contract", true}, {"Union", true}, {"ConstraintAlias", true},
+		{"OrdinaryContract", false}, {"Callback", true},
 	}
 	for start := range queries {
 		for _, step := range []int{1, -1} {

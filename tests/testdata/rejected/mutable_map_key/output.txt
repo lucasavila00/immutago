@@ -1,9 +1,17 @@
-mutable_map_key.go:11:12: immutable type argument: stored pointers require a concrete marked struct target
+mutable_map_key.go:13:12: immutable type argument: stored pointers require a concrete marked struct target
   type: *int
   fix: replace the pointer field or argument with an owned immutable value
-mutable_map_key.go:11:5: immutable collection: type argument 1: stored pointers require a concrete marked struct target
+mutable_map_key.go:13:5: immutable collection: type argument 1: stored pointers require a concrete marked struct target
   type: im.FrozenMap[*int, int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-mutable_map_key.go:11:9: immutable collection: type argument 1: stored pointers require a concrete marked struct target
+mutable_map_key.go:13:9: immutable collection: type argument 1: stored pointers require a concrete marked struct target
   type: im.FrozenMap[*int, int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+zz_immutago.gen.go:26:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *rejected.Good
+  fix: use the generated field accessor
+zz_immutago.gen.go:60:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *rejected.Good
+  fix: use the generated field accessor

@@ -26,7 +26,8 @@ func (c *subsetChecks) checkGeneration() {
 	}
 	if !position.IsValid() {
 		if generated != nil {
-			c.pass.Reportf(generated.Pos(), "generated projections have no source Frozen records; remove %s", projectiongen.Filename)
+			c.pass.Reportf(generated.Pos(), "generated projections have no source Frozen records; remove %s",
+				projectiongen.Filename)
 		}
 		return
 	}

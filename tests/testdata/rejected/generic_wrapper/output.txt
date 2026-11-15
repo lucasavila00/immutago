@@ -1,8 +1,16 @@
-generic_wrapper.go:10:29: unmarked struct contains immutable field Value; embed an immutable marker
+generic_wrapper.go:12:29: unmarked struct contains immutable field Value; embed an immutable marker
   owner: rejected.Wrapper[rejected.Good]; field type: rejected.Good
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-generic_wrapper.go:12:9: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+generic_wrapper.go:14:9: unsupported immutable operation: user generic instantiations with immutable types are unsupported
   source: Wrapper
   type: rejected.Wrapper[T any]
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+zz_immutago.gen.go:26:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *rejected.Good
+  fix: use the generated field accessor
+zz_immutago.gen.go:60:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *rejected.Good
+  fix: use the generated field accessor
