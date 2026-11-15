@@ -1,10 +1,11 @@
 package accepted
 
 import (
+	"testing"
+
 	"example.com/consumer/api"
 	"example.com/consumer/implementation"
 	"github.com/lucasavila00/immutago/pkg/im"
-	"testing"
 )
 
 // TestVariadicInputs checks zero, individual, and spread arguments.
