@@ -26,7 +26,7 @@ independent copy.
 text := "standard"
 frozen := im.FreezeString(text)
 projection := frozen.Projection()
-println(text, projection.Len(), projection.EqualString("standard"))
+println(text, projection.Len(), projection.Is("standard"))
 ```
 
 | String forms — exhaustive | Example |

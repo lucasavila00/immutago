@@ -73,7 +73,7 @@ Unlisted operations on Copied storage are rejected.
 | Pass or return through direct concrete functions and methods | `read(score)` with `func read(score Score) int`; `func (s *Scorer) Last() Score` |
 | Declare and call an exact value-receiver method | `func (s Score) Number() float64 { return s.Value }`; `score.Number()` |
 | Use as a Local or Frozen field, Cell payload, or frozen collection argument | `struct { im.Local; Score Score }`, `im.Cell[Score]`, `im.FrozenSlice[Score]` |
-| Read through the fixed copy and projection APIs | `score := im.Copy(projection)`, `score := settingsProjection.Score()` |
+| Read through the fixed copy and projection APIs | `score := im.Value(projection)`, `score := settingsProjection.Score()` |
 | Clone a local slice or map projection with Copied arguments | `scores := projection.Clone()` |
 | Freeze an exclusive native builder in a separate binding | `frozen := im.FreezeSlice(scores)` |
 
@@ -102,7 +102,7 @@ are not supported.
 | A named array field: `type Flags [2]bool` | Use `Flags [2]bool` directly in the record. |
 | `var boxed any = score`, `identity(score)` through a user generic | Keep the concrete Score type and call a direct typed function. |
 | `callback := func() float64 { return score.Value }` | Copy `value := score.Value` first, then capture value. |
-| `im.CopyRecord(projection)` for `Projection[Score]` | `im.Copy(projection)` |
+| `im.CopyRecord(projection)` for `Projection[Score]` | `im.Value(projection)` |
 
 Copies have the normal Go struct and array copy cost. The marker adds no runtime
 copy operation, allocation, or ownership state. See [operation costs](performance.md).

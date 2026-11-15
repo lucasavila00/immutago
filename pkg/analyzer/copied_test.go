@@ -33,8 +33,8 @@ func TestCopiedForms(t *testing.T) {
 		`func f(){values:=map[Score]Score{{N:1}:{N:2}};values[Score{}]=Score{};` +
 			`value:=values[Score{}];_=value;delete(values,Score{});clear(values)}`,
 		`func f(){values:=make([]Score,2);other:=make([]Score,2);copy(values,other);_=cap(values)}`,
-		`var cell im.Cell[Score];func f(){cell.Store(Score{N:1});s:=im.Copy(cell.Load());_=s.Read()}`,
-		`func f(){s:=im.FreezeSlice([]Score{{N:1}});value:=im.Copy(s.Projection().At(0));` +
+		`var cell im.Cell[Score];func f(){cell.Store(Score{N:1});s:=im.Value(cell.Load());_=s.Read()}`,
+		`func f(){s:=im.FreezeSlice([]Score{{N:1}});value:=im.Value(s.Projection().At(0));` +
 			`values:=s.Projection().Clone();alias:=values;alias[0]=value;_=alias}`,
 		`func f(){m:=im.FreezeMap(map[Score]Score{{N:1}:{N:2}});values:=m.Projection().Clone();` +
 			`values[Score{}]=Score{};_=values}`,

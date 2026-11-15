@@ -26,10 +26,10 @@ func TestIndependentValues(t *testing.T) {
 		t.Fatal("generated getter changed stored data")
 	}
 	scorer.point.Store(point)
-	loaded := im.Copy(scorer.point.Load())
+	loaded := im.Value(scorer.point.Load())
 	loaded = api.Point{X: 5}
-	if loaded.X != 5 || im.Copy(scorer.point.Load()).X != 1 {
-		t.Fatal("Copy changed the Cell")
+	if loaded.X != 5 || im.Value(scorer.point.Load()).X != 1 {
+		t.Fatal("Value changed the Cell")
 	}
 	copyFromCollections(point)
 	if NativeStorage(point) != 7 || LocalDeclaration() != 2 {

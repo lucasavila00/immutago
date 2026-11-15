@@ -32,27 +32,27 @@ const testLibrary = `package im
  func ProjectionOf[T any](value T) Projection[T] { return Projection[T]{value:value} }
  func CopyRecord[T any](value Projection[T]) Projection[*T] { return Projection[*T]{} }
  func (value Projection[T]) Read() T { return value.value }
- func Copy[T any](value Projection[T]) T { return value.value }
+ func Value[T any](value Projection[T]) T { return value.value }
  func IsNil[T any](value Projection[*T]) bool { return value.value == nil }
  type StringProjection struct { value string }
  func ProjectString[S ~string](value S) StringProjection { return StringProjection{} }
- func ProjectedFrozenString(value Projection[FrozenString]) StringProjection { return StringProjection{} }
- func ProjectedString[S ~string](value Projection[S]) StringProjection { return StringProjection{} }
+ func StringOfFrozen(value Projection[FrozenString]) StringProjection { return StringProjection{} }
+ func StringOf[S ~string](value Projection[S]) StringProjection { return StringProjection{} }
  func (s StringProjection) Len() int { return 0 }
  func (s StringProjection) At(index int) byte { return 0 }
  func (s StringProjection) Clone() string { return "" }
  func (s StringProjection) Equal(other StringProjection) bool { return false }
- func (s StringProjection) EqualString(other string) bool { return false }
+ func (s StringProjection) Is(other string) bool { return false }
  func (s StringProjection) Unsafe() string { return s.value }
  type SliceProjection[E any] struct { values []E }
- func ProjectedSlice[E any](value Projection[FrozenSlice[E]]) SliceProjection[E] { return SliceProjection[E]{} }
+ func SliceOf[E any](value Projection[FrozenSlice[E]]) SliceProjection[E] { return SliceProjection[E]{} }
  func (s SliceProjection[E]) Len() int { return 0 }
  func (s SliceProjection[E]) At(index int) Projection[E] { return Projection[E]{} }
  func (s SliceProjection[E]) AtPointer(index int) Projection[*E] { return Projection[*E]{} }
  func (s SliceProjection[E]) All()func(func(int,Projection[E])bool) { return nil }
  func (s SliceProjection[E]) Clone() []E { return nil }
  type MapProjection[K comparable,V any] struct { values map[K]V }
- func ProjectedMap[K comparable,V any](value Projection[FrozenMap[K,V]]) MapProjection[K,V] {
+ func MapOf[K comparable,V any](value Projection[FrozenMap[K,V]]) MapProjection[K,V] {
  return MapProjection[K,V]{} }
  func (m MapProjection[K,V]) Len() int { return 0 }
  func (m MapProjection[K,V]) Get(key K)(Projection[V],bool) { return Projection[V]{},false }

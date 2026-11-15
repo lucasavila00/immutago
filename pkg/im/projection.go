@@ -21,9 +21,9 @@ func CopyRecord[T any](value Projection[T]) Projection[*T] { return ProjectionOf
 // Application code uses the generated projection methods. The checker controls Read access.
 func (p Projection[T]) Read() T { return p.value }
 
-// Copy returns the value from a projection. The checker permits only Copied types,
-// including opaque service references. Copy does not allocate.
-func Copy[T any](value Projection[T]) T { return value.value }
+// Value returns the value from a projection. The checker permits only Copied types,
+// including opaque service references. Value does not allocate.
+func Value[T any](value Projection[T]) T { return value.value }
 
 // IsNil reports whether a pointer projection contains nil without exposing the pointer.
 func IsNil[T any](value Projection[*T]) bool { return value.value == nil }

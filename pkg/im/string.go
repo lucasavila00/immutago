@@ -34,8 +34,8 @@ func (s FrozenString) Unsafe() string { return s.value }
 // An empty result needs no allocation.
 func (s FrozenString) Clone() string { return strings.Clone(s.value) }
 
-// ProjectedFrozenString returns a local string projection without copying bytes or allocating.
-func ProjectedFrozenString(value Projection[FrozenString]) StringProjection {
+// StringOfFrozen returns a local string projection without copying bytes or allocating.
+func StringOfFrozen(value Projection[FrozenString]) StringProjection {
 	return value.value.Projection()
 }
 

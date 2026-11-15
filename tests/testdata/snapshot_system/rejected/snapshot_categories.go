@@ -44,8 +44,8 @@ func (*Service) Container() []im.Projection[int] { return nil }
 func (*Service) LocalPointer() *Local            { return &Local{} }
 
 func copyRetained(projection im.Projection[Retained], text im.Projection[im.FrozenString], values im.SliceProjection[string], entries im.MapProjection[string, int]) {
-	_ = im.Copy(projection)
-	_ = im.Copy(text)
+	_ = im.Value(projection)
+	_ = im.Value(text)
 	_ = values.Clone()
 	_ = entries.Clone()
 }
@@ -91,7 +91,7 @@ type BadNumericResult struct {
 func (*Service) Numeric() Numeric         { return Numeric{} }
 func (*Service) NumericArray() [0]Numeric { return [0]Numeric{} }
 func copyNumeric(value im.Projection[Numeric], values im.SliceProjection[Numeric], entries im.MapProjection[Numeric, int]) {
-	_ = im.Copy(value)
+	_ = im.Value(value)
 	_ = values.Clone()
 	_ = entries.Clone()
 }

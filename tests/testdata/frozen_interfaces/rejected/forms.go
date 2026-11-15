@@ -30,7 +30,7 @@ func forms(s api.Scorer, local api.ScorerProjection) {
 	var implicit api.Scorer = &implementation.Count{}
 	_ = implicit
 	saved = local
-	_ = im.Copy(im.ProjectionOf(s))
+	_ = im.Value(im.ProjectionOf(s))
 	_ = identity(s)
 	switch s.(type) {
 	case *implementation.Tree:

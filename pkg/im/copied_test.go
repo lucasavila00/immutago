@@ -32,8 +32,8 @@ func TestCopiedRepresentation(t *testing.T) {
 // TestCopiedAllocations checks complete record reads without a new allocation.
 func TestCopiedAllocations(t *testing.T) {
 	value := ProjectionOf(testCopiedRecord{Values: [16]uint64{3}})
-	if got := testing.AllocsPerRun(100, func() { copiedRecordSink = Copy(value) }); got != 0 {
-		t.Fatalf("Copy allocations = %g; want zero", got)
+	if got := testing.AllocsPerRun(100, func() { copiedRecordSink = Value(value) }); got != 0 {
+		t.Fatalf("Value allocations = %g; want zero", got)
 	}
 }
 
@@ -43,14 +43,14 @@ func TestCopiedClones(t *testing.T) {
 	sequence := FreezeSlice([]testCopiedRecord{value}).Projection()
 	values := sequence.Clone()
 	values[0] = testCopiedRecord{}
-	if Copy(sequence.At(0)) != value {
+	if Value(sequence.At(0)) != value {
 		t.Fatal("slice clone changed a stored record")
 	}
 	mapping := FreezeMap(map[testCopiedChild]testCopiedRecord{{Count: 1}: value}).Projection()
 	entries := mapping.Clone()
 	entries[testCopiedChild{Count: 1}] = testCopiedRecord{}
 	read, found := mapping.Get(testCopiedChild{Count: 1})
-	if !found || Copy(read) != value {
+	if !found || Value(read) != value {
 		t.Fatal("map clone changed a stored record")
 	}
 }
@@ -68,7 +68,7 @@ func BenchmarkCopiedRecord(b *testing.B) {
 	b.Run("projection", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
-			copiedRecordSink = Copy(projection)
+			copiedRecordSink = Value(projection)
 		}
 	})
 }

@@ -46,12 +46,12 @@ func use() {
     projection := read()
     limit := projection.Limit()
     title := projection.Title()
-    println(limit, title.Len(), title.EqualString("standard"))
+    println(limit, title.Len(), title.Is("standard"))
     println(title.Unsafe())
 }
 ```
 
-Equal and EqualString compare text without allocating. Unsafe supplies a shared
+Equal and Is compare text without allocating. Unsafe supplies a shared
 native string to ordinary Go APIs; Clone gives independent storage. The integer
 result is Copied data and can be stored directly. An empty Cell or zero
 SettingsProjection has IsNil true. Each Load selects one version for all its field reads.
