@@ -50,7 +50,7 @@ func (p *proof) node(t types.Type) *obligation {
 	if p.queries.Locals(t) {
 		return p.categoryNode(t, readCategory)
 	}
-	return p.categoryNode(t, snapshotCategory)
+	return p.categoryNode(t, frozenCategory)
 }
 
 // categoryNode records one complete type obligation before checking its components.
@@ -72,7 +72,7 @@ func (p *proof) categoryNode(t types.Type, category proofCategory) *obligation {
 	result := &obligation{}
 	(*table)[t] = result
 	switch category {
-	case snapshotCategory:
+	case frozenCategory:
 		p.value(result, t)
 	case copiedCategory:
 		p.copiedValue(result, t)
@@ -87,7 +87,7 @@ func (p *proof) categoryNode(t types.Type, category proofCategory) *obligation {
 
 // depend records an owner and handles children that failed in an earlier query.
 func (p *proof) depend(owner *obligation, t types.Type, label string) {
-	p.dependCategory(owner, t, label, snapshotCategory)
+	p.dependCategory(owner, t, label, frozenCategory)
 }
 
 // dependCategory connects a stored component to its intrinsic category proof.
@@ -144,10 +144,10 @@ func (p *proof) value(result *obligation, t types.Type) {
 		return
 	}
 	if p.queries.Locals(t) {
-		result.reason = "Snapshot storage cannot contain Local values"
+		result.reason = "Frozen storage cannot contain Local values"
 		return
 	}
-	if IsLibraryType(t, "Snapshot") || IsUncheckedValue(t) {
+	if IsLibraryType(t, "Frozen") || IsUncheckedValue(t) {
 		return
 	}
 	if IsRuntimeType(t, "Ref") {
@@ -207,12 +207,12 @@ func refTargetReason(target types.Type) string {
 
 // structure requires one marker and checks every stored field.
 func (p *proof) structure(result *obligation, t types.Type, structure *types.Struct) {
-	if !Snapshot(t) {
-		result.reason = "struct does not embed im.Snapshot"
+	if !Frozen(t) {
+		result.reason = "struct does not embed im.Frozen"
 		return
 	}
-	if Snapshot(t) && Local(t) {
-		result.reason = "struct cannot embed both im.Snapshot and im.Local"
+	if Frozen(t) && Local(t) {
+		result.reason = "struct cannot embed both im.Frozen and im.Local"
 		return
 	}
 	if MarkerCount(t) != 1 {

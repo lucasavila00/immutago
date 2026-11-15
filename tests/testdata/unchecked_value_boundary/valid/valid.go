@@ -7,7 +7,7 @@ import (
 
 // Model keeps a trusted handle in immutable storage.
 type Model struct {
-	im.Snapshot
+	im.Frozen
 	Table im.UncheckedValue[api.Table]
 }
 

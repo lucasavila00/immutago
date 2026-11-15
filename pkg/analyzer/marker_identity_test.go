@@ -7,7 +7,7 @@ import (
 
 // TestMarkerAliasesPreserveLocalCalls checks both embedded marker aliases and local pointer aliases.
 func TestMarkerAliasesPreserveLocalCalls(t *testing.T) {
-	source := `type SnapshotMarker=im.Snapshot
+	source := `type SnapshotMarker=im.Frozen
 type LocalMarker=im.Local
 type SnapshotValue struct{SnapshotMarker;X int}
 type LocalValue struct{LocalMarker;X int}
@@ -33,18 +33,18 @@ func TestLocalPointerAliasesCannotReturn(t *testing.T) {
 
 // TestMarkerCardinality counts compiler identities rather than distinct embedded names.
 func TestMarkerCardinality(t *testing.T) {
-	for _, marker := range []string{"Snapshot", "Local"} {
+	for _, marker := range []string{"Frozen", "Local"} {
 		source := "type First=im." + marker + ";type Second=im." + marker + ";type Value struct{First;Second;X int}"
 		if got := checkSource(t, source); !strings.Contains(got, "exactly one immutable marker") {
 			t.Fatalf("duplicate %s marker aliases accepted: %s", marker, got)
 		}
 	}
-	mixed := `type First=im.Snapshot;type Second=im.Local;type Value struct{First;Second}`
+	mixed := `type First=im.Frozen;type Second=im.Local;type Value struct{First;Second}`
 	if got := checkSource(t, mixed); !strings.Contains(got, "cannot embed both") {
 		t.Fatalf("mixed marker aliases accepted: %s", got)
 	}
-	if got := checkSource(t, `type Alias=im.Snapshot;type Child struct{Alias;X int};
- type Parent struct{im.Snapshot;Child Child}`); got != "" {
+	if got := checkSource(t, `type Alias=im.Frozen;type Child struct{Alias;X int};
+ type Parent struct{im.Frozen;Child Child}`); got != "" {
 		t.Fatalf("single marker with a marked child rejected: %s", got)
 	}
 }

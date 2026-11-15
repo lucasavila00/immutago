@@ -12,7 +12,7 @@ results.go:27:17: service method LocalPointer must return a service result: Copi
 results.go:27:17: unsupported immutable operation: returning Local pointers is unsupported
   source: LocalPointer
   type: func() *service.Reply
-  fix: return a Local value copy, or use im.Snapshot for objects whose pointers must be shared
+  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 results.go:28:50: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Count++
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
@@ -46,8 +46,8 @@ results.go:38:16: service method Mutable must return a service result: Copied va
   result type: []int
 results.go:46:25: service method Mutable must return a service result: Copied values cannot contain shared data references
   result type: []int
-results.go:49:38: stored im argument: Snapshot storage cannot contain Local values
-  fix: pass an immutable value or a Snapshot pointer; Local pointers cannot be stored
+results.go:49:38: stored im argument: Frozen storage cannot contain Local values
+  fix: pass an immutable value or a Frozen pointer; Local pointers cannot be stored
 results.go:51:17: service method PointerArray must return a service result: array element: Copied values cannot contain shared data references
   result type: [1]*service.SnapshotReply
 results.go:52:17: service method List must return a service result: Copied values cannot contain shared data references

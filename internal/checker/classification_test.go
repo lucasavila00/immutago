@@ -24,7 +24,7 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 	if opaqueStorage(t) {
 		return false
 	}
-	if IsCollection(t) || Marked(t) {
+	if IsCollection(t) || Marked(t) || IsLibraryType(t, "Local") {
 		return true
 	}
 	switch u := t.Underlying().(type) {
@@ -218,7 +218,7 @@ func classificationShapes(t *testing.T) []types.Type {
 	receiverOnly := types.NewSignatureType(receiver, nil, nil, nil, nil, false)
 	frozen := sliceType(t, slice, value)
 	frozenAlias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "FrozenAlias", nil), frozen)
-	fakeName := types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Snapshot", nil)
+	fakeName := types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Frozen", nil)
 	fakeMarker := types.NewNamed(fakeName, types.NewStruct(nil, nil), nil)
 	return []types.Type{
 		nil, value, alias, types.NewPointer(alias), types.NewArray(alias, 0), local, types.NewPointer(local),

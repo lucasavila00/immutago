@@ -3,7 +3,7 @@ package smaller_subset
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Node struct {
-	im.Snapshot
+	im.Frozen
 	Value int
 	Next  *Node
 }
@@ -12,7 +12,7 @@ type Local struct {
 	Value int
 }
 type Box[T ~int | ~string] struct {
-	im.Snapshot
+	im.Frozen
 	Value T
 	Next  *Box[T]
 }

@@ -19,7 +19,7 @@ func TestClosureDeclarationScopes(t *testing.T) {
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			got := checkSource(t, `type Value struct{im.Snapshot;X int};`+source)
+			got := checkSource(t, `type Value struct{im.Frozen;X int};`+source)
 			if !strings.Contains(got, "closures cannot capture immutable storage") {
 				t.Fatalf("capture accepted: %s", got)
 			}
@@ -33,14 +33,14 @@ func TestClosureLocalConstruction(t *testing.T) {
 		`var read=func()int{return count};var count=1`,
 		`func f()func()int{values:=[1]Value{};count:=len(values);return func()int{return count}}`,
 		`func f()int{return func()int{value:=&Value{X:1};return value.X}()}`,
-		`type Parent struct{im.Snapshot;Child Value};func f()int{
+		`type Parent struct{im.Frozen;Child Value};func f()int{
  return func()int{value:=Parent{Child:Value{X:1}};return value.Child.X}()}`,
-		`type Parent struct{im.Snapshot;Child *Value};func f()int{
+		`type Parent struct{im.Frozen;Child *Value};func f()int{
  return func()int{value:=Parent{Child:&Value{X:1}};return value.Child.X}()}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type Value struct{im.Snapshot;X int};`+source); got != "" {
+			if got := checkSource(t, `type Value struct{im.Frozen;X int};`+source); got != "" {
 				t.Fatalf("local construction or scalar global rejected: %s", got)
 			}
 		})
@@ -57,7 +57,7 @@ func TestBuilderSourceActivatesWholeRange(t *testing.T) {
 	for _, source := range []string{
 		`func f(){values:=[]int{1};for i,v:=range values{_=i;_=v};_=im.FreezeSlice(values)}`,
 		`func f(){values:=[]int{1};i:=0;for i=range values{};_=i;_=im.FreezeSlice(values)}`,
-		`func f(){values:=[]int{1};i:=0;v:=0;for i,v=range values{};_=i;_=v};var _=im.Snapshot{}`,
+		`func f(){values:=[]int{1};i:=0;v:=0;for i,v=range values{};_=i;_=v};var _=im.Frozen{}`,
 	} {
 		if got := checkSource(t, source); got != "" {
 			t.Fatalf("allowed range rejected: %s", got)

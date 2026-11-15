@@ -3,7 +3,7 @@ package immutable_object_writes
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Node struct {
-	im.Snapshot
+	im.Frozen
 	Value int
 	Next  *Node
 }

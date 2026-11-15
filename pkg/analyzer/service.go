@@ -64,8 +64,8 @@ func (c *checks) checkServiceStorage(name *ast.Ident, argument types.Type) {
 	if !c.queries.Contains(argument) && !c.queries.Callable(argument) {
 		return
 	}
-	if reason := c.proofs.SnapshotReason(argument); reason != "" {
+	if reason := c.proofs.FrozenReason(argument); reason != "" {
 		c.report(name.Pos(), "stored im argument: "+reason+
-			"\n  fix: pass an immutable value or a Snapshot pointer; Local pointers cannot be stored")
+			"\n  fix: pass an immutable value or a Frozen pointer; Local pointers cannot be stored")
 	}
 }

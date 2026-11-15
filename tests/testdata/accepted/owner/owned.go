@@ -3,7 +3,7 @@ package owner
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
-	im.Snapshot
+	im.Frozen
 	Version string
 	Weights im.FrozenSlice[float64]
 }

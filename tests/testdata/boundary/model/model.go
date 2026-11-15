@@ -3,13 +3,13 @@ package model
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
-	im.Snapshot
+	im.Frozen
 	Version string
 	Weights im.FrozenSlice[float64]
 }
 
-type Snapshot struct {
-	im.Snapshot
+type Frozen struct {
+	im.Frozen
 	N int
 }
 

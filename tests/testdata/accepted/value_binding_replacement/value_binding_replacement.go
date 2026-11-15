@@ -3,11 +3,11 @@ package accepted
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Child struct {
-	im.Snapshot
+	im.Frozen
 	X, Y int
 }
 type Good struct {
-	im.Snapshot
+	im.Frozen
 	X, Y  int
 	Child Child
 	Array [2]int

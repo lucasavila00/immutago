@@ -4,7 +4,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type nilInts []int
 type nilIntsAlias = nilInts
-type nilSnapshot struct{ im.Snapshot }
+type nilSnapshot struct{ im.Frozen }
 
 // convertedNilDeclarations must use a zero declaration or bare nil initializer.
 func convertedNilDeclarations() {

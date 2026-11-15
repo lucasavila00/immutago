@@ -3,17 +3,17 @@ package main
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Point struct {
-	im.Snapshot
+	im.Frozen
 	X, Y int
 }
 type Shape struct {
-	im.Snapshot
+	im.Frozen
 	Point Point
 	Items im.FrozenSlice[int]
 }
 
 type PointArray struct {
-	im.Snapshot
+	im.Frozen
 	Values [2]Point
 }
 

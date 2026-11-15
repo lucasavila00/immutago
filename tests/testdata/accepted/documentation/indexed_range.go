@@ -3,7 +3,7 @@ package main
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type IndexedValue struct {
-	im.Snapshot
+	im.Frozen
 	Index int
 }
 

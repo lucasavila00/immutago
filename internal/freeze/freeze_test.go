@@ -13,7 +13,7 @@ import (
 )
 
 const librarySource = `package im
- type Snapshot struct{}
+ type Frozen struct{}
  type FrozenSlice[T any] struct{}
  type FrozenMap[K comparable,V any] struct{}
  func FreezeSlice[T any](v []T)FrozenSlice[T]{return FrozenSlice[T]{}}
@@ -136,10 +136,10 @@ func diagnostics(t *testing.T, body string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	source := `package sample;import "` + checker.LibraryPath + `";type V struct{im.Snapshot;X int};
+	source := `package sample;import "` + checker.LibraryPath + `";type V struct{im.Frozen;X int};
 	 func(v V)Read()int{return v.X};func(v *V)ReadPointer()int{return v.X};
-	 type Ref struct{im.Snapshot;*V};type Scalar int;func(s *Scalar)Inc(){*s++};
-	 type Box[T any]struct{im.Snapshot;X int};func(b *Box[T])Read()int{return b.X};
+	 type Ref struct{im.Frozen;*V};type Scalar int;func(s *Scalar)Inc(){*s++};
+	 type Box[T any]struct{im.Frozen;X int};func(b *Box[T])Read()int{return b.X};
 	 type Fake struct{};func(Fake)Clone()[]int{return nil};
  func take([]int){};func both(im.FrozenSlice[int],int){};
  func index(im.FrozenSlice[int])int{return 0};func key(im.FrozenMap[string,int])string{return "x"};

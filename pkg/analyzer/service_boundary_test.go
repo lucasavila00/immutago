@@ -11,7 +11,7 @@ import (
 // TestPrunedServiceBoundary checks service contracts without a direct im or supervise import.
 func TestPrunedServiceBoundary(t *testing.T) {
 	api := sourcePass(t, `import("context"; "github.com/lucasavila00/immutago/pkg/supervise")
-var _ im.Snapshot
+var _ im.Frozen
 type Counter struct {supervise.Service[int]}
 func (*Counter) Run(context.Context) {}
 func (*Counter) Count() int {return 1}
@@ -54,7 +54,7 @@ func Make() Phantom[Handle] {return Phantom[Handle]{}}`).Pkg
 // TestServiceOnlyPackage keeps ordinary code outside the im source checks.
 func TestServiceOnlyPackage(t *testing.T) {
 	api := sourcePass(t, `import "github.com/lucasavila00/immutago/pkg/supervise"
- var _ im.Snapshot; var _ supervise.NoArgs`).Pkg
+ var _ im.Frozen; var _ supervise.NoArgs`).Pkg
 	imports := testImporter{standard: importer.Default()}
 	for _, pkg := range api.Imports() {
 		if pkg.Path() == checker.RuntimePath {

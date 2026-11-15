@@ -6,7 +6,7 @@ import (
 )
 
 type Good struct {
-	im.Snapshot
+	im.Frozen
 	X int
 }
 

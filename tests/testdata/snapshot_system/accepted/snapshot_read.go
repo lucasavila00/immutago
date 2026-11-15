@@ -1,6 +1,8 @@
 package accepted
 
 import (
+	"fmt"
+
 	"example.com/consumer/api"
 	"github.com/lucasavila00/immutago/pkg/im"
 )
@@ -10,6 +12,7 @@ type Label string
 
 var storedPoint api.Point
 var storedString im.FrozenString
+var typedCell api.ModelCell
 
 func build(text string) {
 	name := im.FreezeString(text)
@@ -77,4 +80,32 @@ func readZero() {
 	_ = reply
 	_ = text.Len()
 	_ = local
+}
+
+func typedWrappers(h *api.Holder) {
+	h.Current.Store(api.Model{})
+	view := h.Current.Load()
+	_ = view.Name().EqualString("name")
+	typedCell.Store(api.Model{})
+	_ = typedCell.Load().Name().Len()
+	_ = fmt.Sprintf("%s", view.Name().Unsafe())
+	_ = fmt.Sprintf("%s", storedString.Unsafe())
+}
+
+func localBuilders(value im.StringView) {
+	values := []im.StringView{value}
+	values = append(values, value)
+	for _, item := range values {
+		_ = item.Len()
+	}
+	byName := map[string]im.StringView{"name": value}
+	for name, item := range byName {
+		_ = name
+		_ = item.Len()
+	}
+	byView := map[im.StringView]int{value: 1}
+	for key, count := range byView {
+		_ = key.Len()
+		_ = count
+	}
 }

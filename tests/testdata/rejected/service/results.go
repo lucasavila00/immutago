@@ -11,7 +11,7 @@ type Reply struct {
 	Count int
 }
 type SnapshotReply struct {
-	im.Snapshot
+	im.Frozen
 	Count int
 }
 type Counter struct {

@@ -137,29 +137,34 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 		return ""
 	case "Copy":
 		return c.proofs.CopiedReason(c.pass.TypesInfo.TypeOf(call))
-	case "Get", "At", "Len", "All", "Clone":
-		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
-		if !ok || !c.exactCollectionMethod(selector) {
-			return "immutable method expressions are unsupported"
-		}
-		receiver := c.pass.TypesInfo.TypeOf(selector.X)
-		if checker.IsView(receiver) && object.Name() == "Clone" {
-			args := types.Unalias(receiver).(*types.Named).TypeArgs()
-			for index := 0; index < args.Len(); index++ {
-				if reason := c.proofs.CopiedReason(args.At(index)); reason != "" {
-					return reason
-				}
-			}
-		}
-		if object.Name() == "All" && (checker.IsView(receiver) || c.queries.Callable(c.pass.TypesInfo.TypeOf(call))) {
-			statement, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
-			if !ok || ast.Unparen(statement.X) != call {
-				return "immutable iterators must be consumed by direct range"
-			}
-		}
-		return ""
+	case "Get", "At", "Len", "All", "Clone", "Equal", "EqualString", "Unsafe":
+		return c.matchLibraryMethod(call, object.Name())
 	}
 	return "protected operation is outside the supported expression forms"
+}
+
+// matchLibraryMethod checks the sealed receiver and any result storage restriction.
+func (c *subsetChecks) matchLibraryMethod(call *ast.CallExpr, method string) string {
+	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+	if !ok || !c.exactCollectionMethod(selector) {
+		return "immutable method expressions are unsupported"
+	}
+	receiver := c.pass.TypesInfo.TypeOf(selector.X)
+	if checker.IsView(receiver) && method == "Clone" {
+		args := types.Unalias(receiver).(*types.Named).TypeArgs()
+		for index := 0; index < args.Len(); index++ {
+			if reason := c.proofs.CopiedReason(args.At(index)); reason != "" {
+				return reason
+			}
+		}
+	}
+	if method == "All" && (checker.IsView(receiver) || c.queries.Callable(c.pass.TypesInfo.TypeOf(call))) {
+		statement, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
+		if !ok || ast.Unparen(statement.X) != call {
+			return "immutable iterators must be consumed by direct range"
+		}
+	}
+	return ""
 }
 
 // matchCallArguments resolves every actual parameter, including forwarded tuples and variadic elements.

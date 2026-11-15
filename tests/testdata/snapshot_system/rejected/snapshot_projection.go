@@ -3,17 +3,17 @@ package rejected
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Data struct {
-	im.Snapshot
+	im.Frozen
 	Name  string
 	Names [2]string
 	Next  *Data
 }
 type Inner struct {
-	im.Snapshot
+	im.Frozen
 	N int
 }
 type Outer struct {
-	im.Snapshot
+	im.Frozen
 	Inner
 }
 type Generic[T any] = [1]T

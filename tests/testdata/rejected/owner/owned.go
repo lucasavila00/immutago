@@ -3,13 +3,13 @@ package owner
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
-	im.Snapshot
+	im.Frozen
 	X int
 }
 type Local struct{ im.Local }
 type Loader struct{ Current im.Cell[Model] }
 type BadCell struct {
-	im.Snapshot
+	im.Frozen
 	Current im.Cell[Model]
 }
 

@@ -5,7 +5,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 type nilInts []int
 
 type nilSnapshot struct {
-	im.Snapshot
+	im.Frozen
 	N int
 }
 

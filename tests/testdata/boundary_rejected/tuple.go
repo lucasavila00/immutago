@@ -5,5 +5,5 @@ import (
 	"example.com/consumer/model"
 )
 
-func pair() (*model.Snapshot, int) { return &model.Snapshot{}, 1 }
-func Leak()                        { logx.Values(pair()) }
+func pair() (*model.Frozen, int) { return &model.Frozen{}, 1 }
+func Leak()                      { logx.Values(pair()) }

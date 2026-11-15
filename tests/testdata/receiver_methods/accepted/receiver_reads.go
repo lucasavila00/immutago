@@ -3,7 +3,7 @@ package accepted
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Product struct {
-	im.Snapshot
+	im.Frozen
 	Price int
 }
 type Alias = Product
@@ -12,7 +12,7 @@ type Settings struct {
 	Limit int
 }
 type Order struct {
-	im.Snapshot
+	im.Frozen
 	Product
 	Pointer *Product
 }

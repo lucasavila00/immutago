@@ -8,7 +8,7 @@ import (
 type proofCategory uint8
 
 const (
-	snapshotCategory proofCategory = iota
+	frozenCategory proofCategory = iota
 	copiedCategory
 	readCategory
 )
@@ -16,7 +16,7 @@ const (
 // copiedValue excludes retained data through the same recursive rule for every use.
 func (p *proof) copiedValue(result *obligation, t types.Type) {
 	p.depend(result, t, "")
-	if IsLibraryType(t, "Snapshot") || IsRuntimeType(t, "Ref") {
+	if IsLibraryType(t, "Frozen") || IsRuntimeType(t, "Ref") {
 		return
 	}
 	switch value := t.Underlying().(type) {
@@ -30,7 +30,7 @@ func (p *proof) copiedValue(result *obligation, t types.Type) {
 			return
 		}
 	case *types.Struct:
-		if Snapshot(t) {
+		if Frozen(t) {
 			for field := range value.Fields() {
 				p.dependCategory(result, field.Type(), field.Name()+": ", copiedCategory)
 			}

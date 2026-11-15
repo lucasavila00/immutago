@@ -17,9 +17,9 @@ type Prover struct {
 // The selected cause can depend on earlier queries; each root message is cached.
 func (p *Prover) Reason(t types.Type) string { return p.render(p.graph.node(t)) }
 
-// SnapshotReason proves the shared payload contract used by Cell and View.
-func (p *Prover) SnapshotReason(t types.Type) string {
-	return p.render(p.graph.categoryNode(t, snapshotCategory))
+// FrozenReason proves the shared payload contract used by Cell and View.
+func (p *Prover) FrozenReason(t types.Type) string {
+	return p.render(p.graph.categoryNode(t, frozenCategory))
 }
 
 // CopiedReason proves that a value can leave a view without a shared data reference.

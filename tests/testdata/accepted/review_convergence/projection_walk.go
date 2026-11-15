@@ -3,7 +3,7 @@ package review_convergence
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type ProjectionValue struct {
-	im.Snapshot
+	im.Frozen
 	Values [1][1]int
 }
 

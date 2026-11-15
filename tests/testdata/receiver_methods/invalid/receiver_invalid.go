@@ -3,7 +3,7 @@ package invalid
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Product struct {
-	im.Snapshot
+	im.Frozen
 	Price int
 }
 

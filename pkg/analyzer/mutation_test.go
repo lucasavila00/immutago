@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-const immutableValueTypes = `type Child struct { im.Snapshot; X, Y int }
- type Value struct { im.Snapshot; X, Y int; Child Child; Array [2]int }
+const immutableValueTypes = `type Child struct { im.Frozen; X, Y int }
+ type Value struct { im.Frozen; X, Y int; Child Child; Array [2]int }
  func read(pointer *Value) int { return pointer.X }
  func readInt(pointer *int) int { return *pointer }
  `
@@ -107,7 +107,7 @@ func TestScalarAddressesCannotLeaveImmutableStorage(t *testing.T) {
 
 // TestRecursivePointerType checks that unsupported-type detection terminates on recursive pointers.
 func TestRecursivePointerType(t *testing.T) {
-	reports := checkSource(t, "type P *P; var _ = im.Snapshot{}")
+	reports := checkSource(t, "type P *P; var _ = im.Frozen{}")
 	if reports != "" {
 		t.Fatalf("ordinary pointer type rejected: %s", reports)
 	}

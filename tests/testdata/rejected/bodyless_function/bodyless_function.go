@@ -5,7 +5,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 func opaque(value im.FrozenSlice[int])
 
 type Config struct {
-	im.Snapshot
+	im.Frozen
 	Count int
 }
 

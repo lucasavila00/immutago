@@ -134,7 +134,8 @@ func (c *Classifier) expand(node *classificationNode) {
 	case storageMode:
 		if parameter, ok := node.key.typ.(*types.TypeParam); ok {
 			c.connect(node, parameter.Constraint(), constraintMode)
-		} else if IsCollection(node.key.typ) || IsView(node.key.typ) || MarkerCount(node.key.typ) != 0 {
+		} else if IsCollection(node.key.typ) || IsView(node.key.typ) ||
+			IsLibraryType(node.key.typ, "Local") || MarkerCount(node.key.typ) != 0 {
 			c.mark(node)
 		} else {
 			c.storageEdges(node)

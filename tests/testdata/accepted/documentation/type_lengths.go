@@ -3,11 +3,11 @@ package main
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type ArrayLengthValue struct {
-	im.Snapshot
+	im.Frozen
 }
 
 type ArrayLengthHolder struct {
-	im.Snapshot
+	im.Frozen
 	Values [1]int
 }
 

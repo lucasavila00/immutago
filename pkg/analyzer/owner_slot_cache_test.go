@@ -8,7 +8,7 @@ import (
 
 // TestSlotCacheReusesCompletedTypes prevents fresh wrappers from expanding a known negative cycle again.
 func TestSlotCacheReusesCompletedTypes(t *testing.T) {
-	pass := sourcePass(t, `type Checked struct{im.Snapshot}
+	pass := sourcePass(t, `type Checked struct{im.Frozen}
  type A struct{ Next []B; N int }
  type B struct{ Next []A }`)
 	a := pass.Pkg.Scope().Lookup("A").Type()
@@ -37,7 +37,7 @@ func TestSlotCacheReusesCompletedTypes(t *testing.T) {
 
 // TestSlotCacheQueryOrder checks that a cycle does not cache an incomplete negative result.
 func TestSlotCacheQueryOrder(t *testing.T) {
-	pass := sourcePass(t, `type Model struct{im.Snapshot}
+	pass := sourcePass(t, `type Model struct{im.Frozen}
  type A struct{ Next []B; Slot im.Cell[Model] }
  type B struct{ Next []A }
  type Empty struct{ Next []Empty }
@@ -69,7 +69,7 @@ func TestSlotCacheQueryOrder(t *testing.T) {
 
 // TestSlotCachePositiveHit checks that a completed positive result is reused inside a fresh wrapper.
 func TestSlotCachePositiveHit(t *testing.T) {
-	pass := sourcePass(t, `type Model struct{im.Snapshot};type Holder struct{Slot im.Cell[Model]}`)
+	pass := sourcePass(t, `type Model struct{im.Frozen};type Holder struct{Slot im.Cell[Model]}`)
 	holder := pass.Pkg.Scope().Lookup("Holder").Type()
 	c := &subsetChecks{}
 	if !c.hasSlotValue(holder) {

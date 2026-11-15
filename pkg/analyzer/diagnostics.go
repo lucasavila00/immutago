@@ -43,15 +43,21 @@ var subsetFixes = map[string]string{
 		"keep frozen collections in their original im type",
 	"native builders require fresh local bindings or append to the same handle": "declare one fresh local builder; " +
 		"use values = append(values, element) to extend it",
-	"Local pointers cannot enter aggregate storage": "store a Local value copy or a Snapshot pointer",
+	"Local pointers cannot enter aggregate storage": "keep a Local value in a local binding, or store a Frozen pointer",
+	"Local values and pointers cannot be stored in package variables": "keep Local values in local bindings; " +
+		"copy the required data into Frozen values before saving it",
+	"Select requires one inline projection path from its parameter": "use a generated view accessor, " +
+		"or one direct field, pointer, or fixed-array path in Select",
+	"Cell holder methods require a direct concrete pointer receiver": "call a direct pointer method " +
+		"on the holder variable or its named field",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
-		"im.Snapshot or im.Local; copy arrays and frozen collection values without taking their addresses",
-	"returning Local pointers is unsupported": "return a Local value copy, or use im.Snapshot " +
+		"im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses",
+	"returning Local pointers is unsupported": "return a Local value copy, or use im.Frozen " +
 		"for objects whose pointers must be shared",
-	"global Local pointers are unsupported": "keep the Local pointer local, or store a value copy",
+	"global Local pointers are unsupported": "keep the Local pointer local, or store a Frozen value",
 	"service dependencies cannot enter package variables": "build the service arguments in a local variable " +
 		"and pass them to supervise.Start or supervise.StartReserved",
-	"containers of Local pointers are unsupported": "keep Local values in local bindings, or store im.Snapshot pointers",
+	"containers of Local pointers are unsupported": "keep Local values in local bindings, or store im.Frozen pointers",
 	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",
 	"user generic instantiations with immutable types are unsupported": "use a non-generic declaration " +
@@ -87,7 +93,7 @@ var subsetFixes = map[string]string{
 	"freezing requires a synchronous call": "freeze the local builder directly before " +
 		"starting deferred or concurrent work",
 	"reference operation is outside the supported allowlist": "use a documented reference form: fresh construction, " +
-		"a concrete variable, a read, or a direct typed call; only Snapshot pointers can be stored or returned",
+		"a concrete variable, a read, or a direct typed call; only Frozen pointers can be stored or returned",
 	"native slices of immutable storage are unsupported": "use im.FrozenSlice[T] and All() for " +
 		"iteration, or build a fresh local slice and consume it with im.FreezeSlice",
 	"native maps of immutable storage are unsupported": "use im.FrozenMap[K, V]; pass an " +
@@ -133,12 +139,16 @@ func subsetFix(rule string) string {
 // structuralFix explains how to replace a field or type argument that failed its recursive proof.
 func structuralFix(t types.Type, reason string) string {
 	switch {
+	case strings.Contains(reason, "cannot contain Local"):
+		return "store Frozen data; keep its View or Local result in local bindings"
+	case strings.Contains(reason, "Copied values"):
+		return "use a local view for reads, or copy the required data explicitly"
 	case strings.Contains(reason, "named array"):
-		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Snapshot or im.Local"
+		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Frozen or im.Local"
 	case strings.Contains(reason, "type parameters"):
 		return "use a concrete type; user generic declarations cannot contain immutable storage"
 	case strings.Contains(reason, "does not embed"):
-		return "embed im.Snapshot or im.Local in the struct and make each field immutable"
+		return "embed im.Frozen or im.Local in the struct and make each field immutable"
 	}
 	switch t.Underlying().(type) {
 	case *types.Pointer:

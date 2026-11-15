@@ -3,7 +3,7 @@ package accepted
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type SnapshotPoint struct {
-	im.Snapshot
+	im.Frozen
 	X int
 }
 type LocalPoint struct {
@@ -11,7 +11,7 @@ type LocalPoint struct {
 	X int
 }
 type PointGroup struct {
-	im.Snapshot
+	im.Frozen
 	SnapshotPoint
 }
 type Position = SnapshotPoint

@@ -4,7 +4,7 @@ import "testing"
 
 // TestCellSlotChecks covers accepted calls and rejected slot transport.
 func TestCellSlotChecks(t *testing.T) {
-	const definitions = `type Model struct { im.Snapshot; X int }
+	const definitions = `type Model struct { im.Frozen; X int }
  type Loader struct { Current im.Cell[Model] }
  `
 	cases := []struct {
@@ -15,9 +15,9 @@ func TestCellSlotChecks(t *testing.T) {
 func read(im.View[Model]){}`, false},
 		{"new store", `func f(l *Loader) { l.Current.Store(Model{}); m:=l.Current.Load(); _=m }`, false},
 		{"package slot", `var slot im.Cell[Model]; func f() { slot.Store(Model{}); m:=slot.Load(); _=m }`, false},
-		{"snapshot argument", `type S struct{im.Snapshot}; var slot im.Cell[S]`, false},
+		{"snapshot argument", `type S struct{im.Frozen}; var slot im.Cell[S]`, false},
 		{"invalid local argument", `type S struct{im.Local; Values []int}; var slot im.Cell[S]`, true},
-		{"marked owner", `type Bad struct{im.Snapshot; Slot im.Cell[Model]}`, true},
+		{"marked owner", `type Bad struct{im.Frozen; Slot im.Cell[Model]}`, true},
 		{"slot copy", `func f(l *Loader) { other:=l.Current; _=other }`, true},
 		{"slot address", `func f(l *Loader) { other:=&l.Current; _=other }`, true},
 		{"zero holder assignment", `func f(l *Loader) { *l=Loader{} }`, true},
@@ -30,7 +30,8 @@ func read(im.View[Model]){}`, false},
 		{"holder value result", `func f(l *Loader) Loader { return *l }`, true},
 		{"holder value method", `func (l Loader) f(){}`, true},
 		{"holder container", `var slots []Loader`, true},
-		{"nested holder", `type Outer struct{ Value Loader }`, true},
+		{"nested named holder", `type Outer struct{ Value Loader }`, false},
+		{"embedded holder", `type Outer struct{ Loader }`, true},
 		{"slot pointer", `type Outer struct{ Value *im.Cell[Model] }`, true},
 		{"store retained value", `func f(l *Loader) { m:=l.Current.Shared(); l.Current.Store(m) }`, false},
 		{"store existing value", `func f(l *Loader) { m:=Model{}; l.Current.Store(m) }`, false},

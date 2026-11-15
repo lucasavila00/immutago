@@ -192,7 +192,7 @@ func (c *subsetChecks) matchReturn(statement *ast.ReturnStmt) string {
 	return ""
 }
 
-// matchReturnValue permits concrete values and Snapshot pointers at a return boundary.
+// matchReturnValue permits concrete values and Frozen pointers at a return boundary.
 func (c *subsetChecks) matchReturnValue(source, destination types.Type) string {
 	if localReference(source) || localReference(destination) {
 		return "returning Local pointers is unsupported"
@@ -334,7 +334,7 @@ func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 		return false
 	}
 	switch selection.Obj().Name() {
-	case "Get", "At", "Len", "All", "Clone":
+	case "Get", "At", "Len", "All", "Clone", "Equal", "EqualString", "Unsafe":
 		return true
 	}
 	return false

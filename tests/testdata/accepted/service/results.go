@@ -11,7 +11,7 @@ type Reply struct {
 	Count int
 }
 type SnapshotReply struct {
-	im.Snapshot
+	im.Frozen
 	Count int
 }
 type Counter struct {
@@ -64,7 +64,7 @@ func use(ref supervise.Ref[Counter]) {
 type Other struct{ *Counter }
 type Alias = Counter
 
-// Immutable values and Snapshot pointers can be stored as start arguments.
+// Immutable values and Frozen pointers can be stored as start arguments.
 type StoredValue struct {
 	supervise.Service[SnapshotReply]
 }
@@ -76,5 +76,5 @@ func (*Counter) Ack() im.Local { return im.Local{} }
 
 func (c *Counter) Update() { c.count++ }
 
-func (*Counter) Snapshot() SnapshotReply         { return SnapshotReply{} }
+func (*Counter) Frozen() SnapshotReply           { return SnapshotReply{} }
 func (*Counter) SnapshotArray() [1]SnapshotReply { return [1]SnapshotReply{} }

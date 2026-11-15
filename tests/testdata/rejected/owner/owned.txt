@@ -1,12 +1,12 @@
 owned.go:13:2: immutable field Current: Cell slots are mutable
   owner: owner.BadCell; field type: im.Cell[owner.Model]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-owned.go:16:12: immutable type argument: Snapshot storage cannot contain Local values
+owned.go:16:12: immutable type argument: Frozen storage cannot contain Local values
   type: owner.Local
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: store Frozen data; keep its View or Local result in local bindings
 owned.go:17:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved im.View[Model]
-  fix: use the documented immutable value and reference forms
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 owned.go:20:11: Cell slots and their holders cannot be copied or transported by value
 owned.go:21:6: Cell slots and their holders cannot be copied or transported by value
 owned.go:22:10: Cell slots and their holders cannot be copied or transported by value
@@ -14,7 +14,7 @@ owned.go:22:11: Cell holder pointers require local bindings or direct typed call
 owned.go:23:6: Cell slots and their holders cannot be copied or transported by value
 owned.go:24:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = l.Current.Load()
-  fix: use the documented immutable value and reference forms
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 owned.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: m.X = 2
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

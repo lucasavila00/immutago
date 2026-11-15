@@ -7,7 +7,7 @@ type Local struct {
 	Value int
 }
 type Node struct {
-	im.Snapshot
+	im.Frozen
 	Value int
 }
 

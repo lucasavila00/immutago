@@ -1,31 +1,31 @@
 snapshot_projection.go:27:6: unsupported immutable operation: Select requires one inline projection path from its parameter
   source: im.Select(view, func(d Data) Data { return d })
   type: im.View[rejected.Data]
-  fix: use the documented immutable value and reference forms
+  fix: use a generated view accessor, or one direct field, pointer, or fixed-array path in Select
 snapshot_projection.go:28:6: unsupported immutable operation: Select requires one inline projection path from its parameter
   source: im.Select(view, func(d Data) string { return d.Name[:] })
   type: im.View[string]
-  fix: use the documented immutable value and reference forms
+  fix: use a generated view accessor, or one direct field, pointer, or fixed-array path in Select
 snapshot_projection.go:29:6: unsupported immutable operation: Select requires one inline projection path from its parameter
   source: im.Select(view, func(d Data) string { return identity(d.Name) })
   type: im.View[string]
-  fix: use the documented immutable value and reference forms
+  fix: use a generated view accessor, or one direct field, pointer, or fixed-array path in Select
 snapshot_projection.go:30:6: unsupported immutable operation: Select requires one inline projection path from its parameter
   source: im.Select(view, func(d Data) string { leaked = d.Name; return d.Name })
   type: im.View[string]
-  fix: use the documented immutable value and reference forms
+  fix: use a generated view accessor, or one direct field, pointer, or fixed-array path in Select
 snapshot_projection.go:31:6: unsupported immutable operation: Select requires one inline projection path from its parameter
   source: im.Select(view, func(d Data) string { return d.Names[index] })
   type: im.View[string]
-  fix: use the documented immutable value and reference forms
+  fix: use a generated view accessor, or one direct field, pointer, or fixed-array path in Select
 snapshot_projection.go:33:6: unsupported immutable operation: Select requires one inline projection path from its parameter
   source: im.Select(view, func(d Data) string { return d.Names[i+1] })
   type: im.View[string]
-  fix: use the documented immutable value and reference forms
+  fix: use a generated view accessor, or one direct field, pointer, or fixed-array path in Select
 snapshot_projection.go:34:6: unsupported immutable operation: Select requires one inline projection path from its parameter
   source: im.Select(view, func(d Data) (name string) { return d.Name })
   type: im.View[string]
-  fix: use the documented immutable value and reference forms
+  fix: use a generated view accessor, or one direct field, pointer, or fixed-array path in Select
 snapshot_projection.go:35:22: unsupported immutable operation: immutable callbacks are unsupported
   source: named
   type: func(value rejected.Data) string
@@ -33,11 +33,11 @@ snapshot_projection.go:35:22: unsupported immutable operation: immutable callbac
 snapshot_projection.go:35:6: unsupported immutable operation: Select requires one inline projection path from its parameter
   source: im.Select(view, named)
   type: im.View[string]
-  fix: use the documented immutable value and reference forms
+  fix: use a generated view accessor, or one direct field, pointer, or fixed-array path in Select
 snapshot_projection.go:36:6: unsupported immutable operation: Select requires one inline projection path from its parameter
   source: im.Select(outer, func(o Outer) int { return o.N })
   type: im.View[int]
-  fix: use the documented immutable value and reference forms
+  fix: use a generated view accessor, or one direct field, pointer, or fixed-array path in Select
 snapshot_projection.go:37:30: unsupported immutable operation: user generic instantiations with immutable types are unsupported
   source: Generic
   type: rejected.Generic[T any]

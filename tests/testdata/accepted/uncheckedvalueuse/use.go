@@ -7,7 +7,7 @@ import (
 
 // Current is the published model.
 type Current struct {
-	im.Snapshot
+	im.Frozen
 	Model *uncheckedvalue.Model
 }
 

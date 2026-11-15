@@ -1,2 +1,2 @@
-broken.go:2:15: undefined: doesNotExist
+broken.go:3:15: undefined: doesNotExist
 immutago: analysis skipped due to errors in package

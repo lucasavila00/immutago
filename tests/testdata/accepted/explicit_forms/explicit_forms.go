@@ -3,7 +3,7 @@ package explicit_forms
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
-	im.Snapshot
+	im.Frozen
 	X int
 }
 type Alias = Good
@@ -39,7 +39,7 @@ func selectValueBody(ready <-chan int) Good {
 }
 
 type Parent struct {
-	im.Snapshot
+	im.Frozen
 	Child Good
 	Other int
 }

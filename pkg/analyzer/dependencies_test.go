@@ -33,12 +33,12 @@ func TestInvalidDependencyProofPropagates(t *testing.T) {
 // checkInvalidDependencyPropagation supplies only direct facts, as the vet driver does.
 func checkInvalidDependencyPropagation(t *testing.T, serialized bool) {
 	t.Helper()
-	library := sourcePass(t, "var _ im.Snapshot").Pkg.Imports()[0]
+	library := sourcePass(t, "var _ im.Frozen").Pkg.Imports()[0]
 	packages := dependencyImporter{checker.LibraryPath: library}
 	invalid := make(map[*types.Package]invalidPackage)
 	cases := []struct{ path, source, diagnostic string }{
 		{"example/bad", `package bad; import im "` + checker.LibraryPath +
-			`"; func missing(im.Snapshot); func other(im.Snapshot)`,
+			`"; func missing(im.Frozen); func other(im.Frozen)`,
 			"unsupported function without a Go body"},
 		{"example/wrapper", `package wrapper; import _ "example/bad"`, "unsupported dependency example/bad"},
 		{"example/consumer", `package consumer; import (_ "example/wrapper"; _ "` + checker.LibraryPath + `")`,

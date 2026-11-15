@@ -16,7 +16,7 @@ func stressGraph(edges [][]int, bad int, aliases bool) []*types.Named {
 		nodes[i] = markedType(fmt.Sprintf("Node%d", i), marker)
 	}
 	for i, targets := range edges {
-		fields := []*types.Var{types.NewField(token.NoPos, nil, "Snapshot", marker, true)}
+		fields := []*types.Var{types.NewField(token.NoPos, nil, "Frozen", marker, true)}
 		for j, target := range targets {
 			var element types.Type = nodes[target]
 			if aliases {

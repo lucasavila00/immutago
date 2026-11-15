@@ -54,10 +54,10 @@ func (c *subsetChecks) matchSelect(call *ast.CallExpr) string {
 	if _, identity := selected.(*ast.Ident); identity || !c.projectionPath(selected, parameter) {
 		return rejected
 	}
-	if reason := c.proofs.SnapshotReason(parameter.Type()); reason != "" {
+	if reason := c.proofs.FrozenReason(parameter.Type()); reason != "" {
 		return reason
 	}
-	return c.proofs.SnapshotReason(c.pass.TypesInfo.TypeOf(selected))
+	return c.proofs.FrozenReason(c.pass.TypesInfo.TypeOf(selected))
 }
 
 // projectionPath accepts direct fields, pointer reads, and fixed-array elements only.
@@ -71,7 +71,7 @@ func (c *subsetChecks) projectionPath(expression ast.Expr, parameter *types.Var)
 			c.projectionPath(value.X, parameter)
 	case *ast.StarExpr:
 		pointer, ok := c.pass.TypesInfo.TypeOf(value.X).Underlying().(*types.Pointer)
-		return ok && checker.Snapshot(pointer.Elem()) && c.projectionPath(value.X, parameter)
+		return ok && checker.Frozen(pointer.Elem()) && c.projectionPath(value.X, parameter)
 	case *ast.IndexExpr:
 		_, array := c.pass.TypesInfo.TypeOf(value.X).Underlying().(*types.Array)
 		return array && c.projectionPath(value.X, parameter) && c.projectionIndex(value.Index)

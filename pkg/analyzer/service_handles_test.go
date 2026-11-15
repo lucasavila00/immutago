@@ -18,7 +18,7 @@ func TestServiceHandles(t *testing.T) {
 		{"marked field", `func use(r Route) int{return r.Worker.Current().Count()}`},
 		{"anonymous target", `type Reader struct{};func(Reader) Count()int{return 1}
 func use(r supervise.Ref[struct{supervise.Service[supervise.NoArgs];Reader}])int{return r.Current().Count()}`},
-		{"shared field", `type SnapshotRoute struct{im.Snapshot;Worker Handle}
+		{"shared field", `type SnapshotRoute struct{im.Frozen;Worker Handle}
 func use(r *SnapshotRoute) int{return r.Worker.Current().Count()}`},
 		{"native map", `func use(r Handle) int{m:=map[string]Handle{"a":r};v,ok:=m["a"];if !ok{return 0}
 return v.Current().Count()}`},
@@ -47,7 +47,7 @@ func(p *Pool) Update(r Handle){p.Workers["x"]=r;self:=p;f:=func(){self.Workers["
 p.Args().Current().Count()}`},
 		{"service callback", `func(c *Counter) Visit(f func(*Counter)){f(c)}
 func use(r Handle){r.Current().Visit(func(c *Counter){c.count++})}`},
-		{"frozen field", `type Routes struct{im.Local;Workers im.FrozenSlice[Handle]}
+		{"frozen field", `type Routes struct{im.Frozen;Workers im.FrozenSlice[Handle]}
 func use(r Routes)int{return r.Workers.At(0).Current().Count()}`},
 		{"implementation", `func(c *Counter) Add(){self:=c;f:=func(){self.count++};f()}`},
 	}

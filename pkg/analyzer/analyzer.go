@@ -1,9 +1,9 @@
 // Package analyzer exposes the immutago go/analysis analyzer.
 //
 // The analyzer checks:
-//   - Recursive field and collection types for structs with im.Snapshot or im.Local.
+//   - Recursive field and collection types for structs with im.Frozen or im.Local.
 //   - Allowed construction, reads, calls, and assignments; no protected field writes.
-//   - Snapshot pointer storage and Local pointer retention.
+//   - Frozen pointer storage and Local pointer retention.
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
 //   - No result or one service result for each exported service method, including
 //     promoted methods. Init, Run, and methods supplied by the runtime are exempt.
@@ -104,7 +104,7 @@ func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance
 	}
 	for i := 0; i < instance.TypeArgs.Len(); i++ {
 		argument := instance.TypeArgs.At(i)
-		reason := c.proofs.SnapshotReason(argument)
+		reason := c.proofs.FrozenReason(argument)
 		if obj.Name() == "Copy" {
 			reason = c.proofs.CopiedReason(argument)
 		}
@@ -192,7 +192,8 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
-	if t == nil || checker.IsCollection(t) || checker.IsView(t) || checker.IsLibraryType(t, "Cell") || checker.IsUncheckedValue(t) ||
+	if t == nil || checker.IsCollection(t) || checker.IsView(t) ||
+		checker.IsLibraryType(t, "Cell") || checker.IsUncheckedValue(t) ||
 		checker.IsRuntimeType(t, checker.ServiceMarker) || checker.IsRuntimeType(t, "Ref") {
 		return
 	}
@@ -201,8 +202,12 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		return
 	}
 	marked := checker.Marked(t)
-	if checker.Snapshot(t) && checker.Local(t) {
-		c.report(pos, "struct cannot embed both im.Snapshot and im.Local")
+	proveField := c.proofs.FrozenReason
+	if checker.Local(t) {
+		proveField = c.proofs.ReadResultReason
+	}
+	if checker.Frozen(t) && checker.Local(t) {
+		c.report(pos, "struct cannot embed both im.Frozen and im.Local")
 	} else if checker.MarkerCount(t) > 1 {
 		c.report(pos, "struct must embed exactly one immutable marker; each embedded alias counts as a marker")
 	}
@@ -214,15 +219,11 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		}
 		if invalidMarkerField(field) {
 			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
-				"\n  fix: embed im.Snapshot or im.Local; remove the marker field name or pointer")
+				"\n  fix: embed im.Frozen or im.Local; remove the marker field name or pointer")
 			continue
 		}
 		if marked {
-			reason := c.proofs.SnapshotReason(ft)
-			if checker.Local(t) {
-				reason = c.proofs.ReadResultReason(ft)
-			}
-			if reason != "" {
+			if reason := proveField(ft); reason != "" {
 				c.report(fieldPos, "immutable field "+field.Name()+": "+reason+
 					"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 					"\n  fix: "+structuralFix(ft, reason))
@@ -232,7 +233,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+
-				"\n  fix: embed im.Snapshot or im.Local and make all fields immutable, or remove the immutable field")
+				"\n  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field")
 			continue
 		}
 	}
@@ -249,5 +250,5 @@ func invalidMarkerField(field *types.Var) bool {
 
 // markerType identifies either exact library marker before its placement is checked.
 func markerType(t types.Type) bool {
-	return checker.IsLibraryType(t, "Snapshot") || checker.IsLibraryType(t, "Local")
+	return checker.IsLibraryType(t, "Frozen") || checker.IsLibraryType(t, "Local")
 }

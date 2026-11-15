@@ -1,64 +1,64 @@
 snapshot_categories.go:18:2: immutable field Text: Copied values cannot contain shared data references
   owner: rejected.BadLocal; field type: string
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: use a local view for reads, or copy the required data explicitly
 snapshot_categories.go:19:2: immutable field Frozen: Copied values cannot contain shared data references
   owner: rejected.BadLocal; field type: im.FrozenString
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-snapshot_categories.go:23:2: immutable field Result: Snapshot storage cannot contain Local values
+  fix: use a local view for reads, or copy the required data explicitly
+snapshot_categories.go:23:2: immutable field Result: Frozen storage cannot contain Local values
   owner: rejected.BadSnapshot; field type: rejected.Local
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: store Frozen data; keep its View or Local result in local bindings
 snapshot_categories.go:25:24: unmarked struct contains immutable field Saved; embed an immutable marker
   owner: rejected.BadNative; field type: im.View[string]
   rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Snapshot or im.Local and make all fields immutable, or remove the immutable field
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
 snapshot_categories.go:28:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved Local
-  fix: use the documented immutable value and reference forms
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 snapshot_categories.go:29:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: savedAlias Alias
-  fix: use the documented immutable value and reference forms
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 snapshot_categories.go:30:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: savedZero [0]im.View[string]
-  fix: use the documented immutable value and reference forms
-snapshot_categories.go:31:16: immutable type argument: Snapshot storage cannot contain Local values
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+snapshot_categories.go:31:16: immutable type argument: Frozen storage cannot contain Local values
   type: rejected.Local
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-snapshot_categories.go:32:13: immutable collection: view payload 1: Snapshot storage cannot contain Local values
+  fix: store Frozen data; keep its View or Local result in local bindings
+snapshot_categories.go:32:13: immutable collection: view payload 1: Frozen storage cannot contain Local values
   type: im.View[rejected.Local]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-snapshot_categories.go:32:16: immutable type argument: Snapshot storage cannot contain Local values
+  fix: store Frozen data; keep its View or Local result in local bindings
+snapshot_categories.go:32:16: immutable type argument: Frozen storage cannot contain Local values
   type: rejected.Local
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-snapshot_categories.go:32:5: immutable collection: view payload 1: Snapshot storage cannot contain Local values
+  fix: store Frozen data; keep its View or Local result in local bindings
+snapshot_categories.go:32:5: immutable collection: view payload 1: Frozen storage cannot contain Local values
   type: im.View[rejected.Local]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: store Frozen data; keep its View or Local result in local bindings
 snapshot_categories.go:32:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: badView im.View[Local]
-  fix: use the documented immutable value and reference forms
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 snapshot_categories.go:33:15: immutable collection: Copied values cannot contain shared data references
   type: im.FrozenSlice[rejected.Local]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-snapshot_categories.go:33:18: immutable type argument: Snapshot storage cannot contain Local values
+  fix: use a local view for reads, or copy the required data explicitly
+snapshot_categories.go:33:18: immutable type argument: Frozen storage cannot contain Local values
   type: rejected.Local
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: store Frozen data; keep its View or Local result in local bindings
 snapshot_categories.go:33:5: immutable collection: Copied values cannot contain shared data references
   type: im.FrozenSlice[rejected.Local]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: use a local view for reads, or copy the required data explicitly
 snapshot_categories.go:33:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: badFrozen im.FrozenSlice[Local]
-  fix: use the documented immutable value and reference forms
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 snapshot_categories.go:34:12: immutable collection: Copied values cannot contain shared data references
   type: im.FrozenMap[im.StringView, int]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-snapshot_categories.go:34:15: immutable type argument: Snapshot storage cannot contain Local values
+  fix: use a local view for reads, or copy the required data explicitly
+snapshot_categories.go:34:15: immutable type argument: Frozen storage cannot contain Local values
   type: im.StringView
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: store Frozen data; keep its View or Local result in local bindings
 snapshot_categories.go:34:5: immutable collection: Copied values cannot contain shared data references
   type: im.FrozenMap[im.StringView, int]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: use a local view for reads, or copy the required data explicitly
 snapshot_categories.go:34:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: badMap im.FrozenMap[im.StringView, int]
-  fix: use the documented immutable value and reference forms
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 snapshot_categories.go:40:17: service method Raw must return a service result: Copied values cannot contain shared data references
   result type: string
 snapshot_categories.go:41:17: service method Frozen must return a service result: Copied values cannot contain shared data references
@@ -76,24 +76,24 @@ snapshot_categories.go:44:17: service method LocalPointer must return a service 
 snapshot_categories.go:44:17: unsupported immutable operation: returning Local pointers is unsupported
   source: LocalPointer
   type: func() *rejected.Local
-  fix: return a Local value copy, or use im.Snapshot for objects whose pointers must be shared
+  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 snapshot_categories.go:44:46: unsupported immutable operation: returning Local pointers is unsupported
   source: return &Local{}
-  fix: return a Local value copy, or use im.Snapshot for objects whose pointers must be shared
+  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 snapshot_categories.go:47:6: unsupported immutable operation: Text: Copied values cannot contain shared data references
   source: im.Copy(view)
   type: rejected.Retained
   fix: use the documented immutable value and reference forms
 snapshot_categories.go:47:9: immutable type argument: Text: Copied values cannot contain shared data references
   type: rejected.Retained
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: use a local view for reads, or copy the required data explicitly
 snapshot_categories.go:48:6: unsupported immutable operation: Copied values cannot contain shared data references
   source: im.Copy(text)
   type: im.FrozenString
   fix: use the documented immutable value and reference forms
 snapshot_categories.go:48:9: immutable type argument: Copied values cannot contain shared data references
   type: im.FrozenString
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: use a local view for reads, or copy the required data explicitly
 snapshot_categories.go:49:6: unsupported immutable operation: Copied values cannot contain shared data references
   source: values.Clone()
   type: []string
@@ -104,7 +104,7 @@ snapshot_categories.go:50:6: unsupported immutable operation: Copied values cann
   fix: use the documented immutable value and reference forms
 snapshot_categories.go:54:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = value
-  fix: use the documented immutable value and reference forms
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 snapshot_categories.go:55:6: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []Local{value}
   type: []rejected.Local
@@ -113,12 +113,12 @@ snapshot_categories.go:56:6: unsupported immutable operation: native maps of imm
   source: map[int]Local{1: value}
   type: map[int]rejected.Local
   fix: use im.FrozenMap[K, V]; pass an owned local map or fresh literal to im.FreezeMap
-snapshot_categories.go:57:6: immutable collection: view payload 1: Snapshot storage cannot contain Local values
+snapshot_categories.go:57:6: immutable collection: view payload 1: Frozen storage cannot contain Local values
   type: im.View[rejected.Local]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-snapshot_categories.go:57:9: immutable type argument: Snapshot storage cannot contain Local values
+  fix: store Frozen data; keep its View or Local result in local bindings
+snapshot_categories.go:57:9: immutable type argument: Frozen storage cannot contain Local values
   type: rejected.Local
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: store Frozen data; keep its View or Local result in local bindings
 snapshot_categories.go:58:15: unsupported immutable operation: immutable references require fresh allocation
   source: &value
   type: *rejected.Local
@@ -152,3 +152,20 @@ snapshot_categories.go:68:72: unsupported immutable operation: immutable callbac
   source: all
   type: iter.Seq2[int, im.View[int]]
   fix: call a named, non-generic function directly with a concrete immutable parameter
+snapshot_categories.go:72:12: immutable collection: Copied values cannot contain shared data references
+  type: im.FrozenSlice[im.StringView]
+  fix: use a local view for reads, or copy the required data explicitly
+snapshot_categories.go:72:15: immutable type argument: Frozen storage cannot contain Local values
+  type: im.StringView
+  fix: store Frozen data; keep its View or Local result in local bindings
+snapshot_categories.go:72:2: immutable collection: Copied values cannot contain shared data references
+  type: im.FrozenSlice[im.StringView]
+  fix: use a local view for reads, or copy the required data explicitly
+snapshot_categories.go:73:6: immutable collection: Copied values cannot contain shared data references
+  type: im.FrozenSlice[im.StringView]
+  fix: use a local view for reads, or copy the required data explicitly
+snapshot_categories.go:76:46: unsupported immutable operation: native slices of immutable storage are unsupported
+  source: []im.StringView
+  type: []im.StringView
+  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+snapshot_categories.go:78:9: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder

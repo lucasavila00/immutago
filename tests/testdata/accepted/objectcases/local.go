@@ -3,11 +3,11 @@ package objectcases
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Child struct {
-	im.Snapshot
+	im.Frozen
 	X, Y int
 }
 type Good struct {
-	im.Snapshot
+	im.Frozen
 	X, Y  int
 	Child Child
 	Array [2]int
@@ -22,7 +22,7 @@ func Conditional(condition bool) Good {
 	x += 3
 	return Good{X: x, Y: 1}
 }
-func Snapshot() *Good {
+func Frozen() *Good {
 	value := &Good{X: 1}
 	copy := value
 	value = &Good{X: 2}

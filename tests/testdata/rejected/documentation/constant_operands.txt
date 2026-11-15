@@ -1,7 +1,7 @@
 constant_operands.go:10:33: unsupported immutable operation: containers of Local pointers are unsupported
   source: [1]*ConstantLocal{local}
   type: [1]*docrejected.ConstantLocal
-  fix: store Local value copies or im.Snapshot pointers
+  fix: keep Local values in local bindings, or store im.Frozen pointers
 constant_operands.go:10:51: unsupported immutable operation: closures cannot capture immutable storage
   source: local
   type: *docrejected.ConstantLocal

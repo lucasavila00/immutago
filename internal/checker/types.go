@@ -1,6 +1,6 @@
 // Package checker proves structural immutability from Go compiler type information.
 // It follows Go's structural type predicates and checks each component.
-// Snapshot type obligations form a graph; definite failures propagate to owners.
+// Frozen type obligations form a graph; definite failures propagate to owners.
 // A recursive collection is accepted only when every reachable obligation holds.
 package checker
 
@@ -46,11 +46,11 @@ func IsView(t types.Type) bool {
 // Marked reports the presence of either embedded marker, including invalid combinations.
 // It does not prove immutability; Reason checks the complete type contract.
 func Marked(t types.Type) bool {
-	return Snapshot(t) || Local(t)
+	return Frozen(t) || Local(t)
 }
 
-// Snapshot reports the presence of an embedded im.Snapshot value, not type validity.
-func Snapshot(t types.Type) bool { return embedsMarker(t, "Snapshot") }
+// Frozen reports the presence of an embedded im.Frozen value, not type validity.
+func Frozen(t types.Type) bool { return embedsMarker(t, "Frozen") }
 
 // Local reports the presence of an embedded im.Local value, not type validity.
 func Local(t types.Type) bool { return embedsMarker(t, "Local") }
@@ -94,7 +94,7 @@ func MarkerCount(t types.Type) int {
 	}
 	count := 0
 	for field := range structure.Fields() {
-		if field.Embedded() && (IsLibraryType(field.Type(), "Snapshot") || IsLibraryType(field.Type(), "Local")) {
+		if field.Embedded() && (IsLibraryType(field.Type(), "Frozen") || IsLibraryType(field.Type(), "Local")) {
 			count++
 		}
 	}

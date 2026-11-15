@@ -6,7 +6,7 @@ import (
 )
 
 const receiverTestTypes = `
-type Value struct { im.Snapshot; X int; Array [2]int }
+type Value struct { im.Frozen; X int; Array [2]int }
 type Local struct { im.Local; X int }
 func (v Value) Read() int { return v.X }
 func (p *Value) ReadPointer() int { if p == nil { return 0 }; return p.X }
@@ -26,10 +26,10 @@ func TestMarkedMethodForms(t *testing.T) {
 		{"alias", `type Alias=Value;func(a Alias)ReadAlias()int{return a.X};
 func f(){a:=Alias{};_=a.ReadAlias();p:=&Alias{};_=p.ReadPointer()}`},
 		{"defined struct", `type Copy Value;func(v Copy)ReadCopy()int{return v.X};func f(){v:=Copy{};_=v.ReadCopy()}`},
-		{"field", `type Outer struct{im.Snapshot;Child Value;P *Value};
+		{"field", `type Outer struct{im.Frozen;Child Value;P *Value};
 func f(o Outer){_=o.Child.Read();_=o.P.ReadPointer()}`},
-		{"embedded field", `type Outer struct{im.Snapshot;Value};func f(o Outer){_=o.Value.Read()}`},
-		{"embedded pointer field", `type Outer struct{im.Snapshot;*Value};func f(o Outer){_=o.Value.ReadPointer()}`},
+		{"embedded field", `type Outer struct{im.Frozen;Value};func f(o Outer){_=o.Value.Read()}`},
+		{"embedded pointer field", `type Outer struct{im.Frozen;*Value};func f(o Outer){_=o.Value.ReadPointer()}`},
 		{"array element", `func f(){a:=[1]Value{{}};_=a[0].Read();b:=[1]*Value{&Value{}};_=b[0].ReadPointer()}`},
 		{"builder value", `func f(){s:=[]Value{{}};_=s[0].Read();_=im.FreezeSlice(s)}`},
 		{"builder pointer", `func f(){s:=[]*Value{&Value{}};_=s[0].ReadPointer();_=im.FreezeSlice(s)}`},
@@ -39,8 +39,8 @@ func f(o Outer){_=o.Child.Read();_=o.P.ReadPointer()}`},
 		{"new", `func f(){_=new(Value).ReadPointer();v:=Value{};_=new(v).ReadPointer()}`},
 		{"call result", `func makeValue()Value{return Value{}};func makePointer()*Value{return &Value{}};
 func f(){_=makeValue().Read();_=makePointer().ReadPointer()}`},
-		{"Snapshot return", `func(p *Value)Self()*Value{return p};func f(){p:=&Value{};q:=p.Self();_=q}`},
-		{"Snapshot retain", `var saved *Value;func(p *Value)Save(){saved=p};func f(){p:=&Value{};p.Save()}`},
+		{"Frozen return", `func(p *Value)Self()*Value{return p};func f(){p:=&Value{};q:=p.Self();_=q}`},
+		{"Frozen retain", `var saved *Value;func(p *Value)Save(){saved=p};func f(){p:=&Value{};p.Save()}`},
 		{"Local copy", `func(p *Local)Copy()Local{return *p};func f(){p:=&Local{};v:=p.Copy();_=v}`},
 		{"receiver replacement", `func(v Value)Replace()Value{v=Value{X:2};return v};
 func(p *Value)ReplacePointer()*Value{p=&Value{X:2};return p}`},
@@ -49,7 +49,7 @@ func f(){v:=Value{};p:=&Local{};_=v.ReadOther(p)}`},
 		{"scalar variadic", `func(v Value)Sum(xs ...int)int{return v.X+len(xs)};func f(v Value){_=v.Sum(1,2)}`},
 		{"tuple forwarding", `func(v Value)Pair()(Value,int){return v,1};func take(Value,int){};
 func f(v Value)(Value,int){take(v.Pair());return v.Pair()}`},
-		{"scalar copy", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Snapshot;Count};
+		{"scalar copy", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Frozen;Count};
 func f(o Outer){c:=o.Count;c.Inc()}`},
 		{"ordinary methods", `type Count int;func(c *Count)Inc(){*c++};func(c Count)Read()int{return int(c)};
 func f(){var c Count;c.Inc();p:=&c;_=p.Read();later:=p.Inc;later()}`},
@@ -68,22 +68,22 @@ func TestMarkedMethodBoundaries(t *testing.T) {
 	cases := []struct{ name, source, want string }{
 		{"implicit address", `func f(v Value){_=v.ReadPointer()}`, "declared type exactly"},
 		{"implicit dereference", `func f(p *Value){_=p.Read()}`, "declared type exactly"},
-		{"field address", `type Outer struct{im.Snapshot;Child Value};func f(o *Outer){_=o.Child.ReadPointer()}`,
+		{"field address", `type Outer struct{im.Frozen;Child Value};func f(o *Outer){_=o.Child.ReadPointer()}`,
 			"declared type exactly"},
 		{"array element address", `func f(){a:=[1]Value{{}};_=a[0].ReadPointer()}`, "declared type exactly"},
 		{"builder element address", `func f(){s:=[]Value{{}};_=s[0].ReadPointer();_=im.FreezeSlice(s)}`,
 			"declared type exactly"},
-		{"promoted value", `type Outer struct{im.Snapshot;Value};func f(o Outer){_=o.Read()}`, "promoted immutable"},
-		{"promoted pointer", `type Outer struct{im.Snapshot;*Value};func f(o Outer){_=o.ReadPointer()}`,
+		{"promoted value", `type Outer struct{im.Frozen;Value};func f(o Outer){_=o.Read()}`, "promoted immutable"},
+		{"promoted pointer", `type Outer struct{im.Frozen;*Value};func f(o Outer){_=o.ReadPointer()}`,
 			"promoted immutable"},
-		{"nested promotion", `type Inner struct{im.Snapshot;Value};type Outer struct{im.Snapshot;Inner};
+		{"nested promotion", `type Inner struct{im.Frozen;Value};type Outer struct{im.Frozen;Inner};
 func f(o Outer){_=o.Read()}`, "promoted immutable"},
-		{"promoted scalar", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Snapshot;Count};
+		{"promoted scalar", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Frozen;Count};
 func f(p *Outer){p.Inc()}`, "promoted immutable"},
-		{"scalar field pointer", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Snapshot;Count};
+		{"scalar field pointer", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Frozen;Count};
 func f(p *Outer){p.Count.Inc()}`, "concrete non-generic marked receiver"},
 		{"scalar field value", `type Count int;func(c Count)Read()int{return int(c)};
-type Outer struct{im.Snapshot;Count};func f(p *Outer){_=p.Count.Read()}`, "concrete non-generic marked receiver"},
+type Outer struct{im.Frozen;Count};func f(p *Outer){_=p.Count.Read()}`, "concrete non-generic marked receiver"},
 		{"bound value", `func f(v Value){callback:=v.Read;_=callback}`, "bound immutable methods"},
 		{"bound pointer", `func f(p *Value){callback:=(p.ReadPointer);_=callback}`, "bound immutable methods"},
 		{"returned bound method", `func f(p *Value)func()int{return p.ReadPointer}`, "bound immutable methods"},
@@ -102,11 +102,11 @@ type Outer struct{im.Snapshot;Count};func f(p *Outer){_=p.Count.Read()}`, "concr
 		{"user Get", `func(v Value)Get()(int,bool){return v.X,true};func f(v Value){a,b:=v.Get();_=a;_=b}`,
 			"multiple assignments"},
 		{"variadic boxing", `func(v Value)Use(...any){};func f(v Value){v.Use(v)}`, "boxing immutable"},
-		{"unproved receiver", `type Bad struct{im.Snapshot;X []int};func(b Bad)ReadBad()int{return len(b.X)}`,
+		{"unproved receiver", `type Bad struct{im.Frozen;X []int};func(b Bad)ReadBad()int{return len(b.X)}`,
 			"concrete non-generic marked receiver"},
-		{"generic receiver", `type Box[T any]struct{im.Snapshot;X int};func(b Box[T])Read()int{return b.X}`,
+		{"generic receiver", `type Box[T any]struct{im.Frozen;X int};func(b Box[T])Read()int{return b.X}`,
 			"user generic declarations"},
-		{"named array", `type Counts [2]int;func(c *Counts)Inc(){c[0]++};type Outer struct{im.Snapshot;Counts}`,
+		{"named array", `type Counts [2]int;func(c *Counts)Inc(){c[0]++};type Outer struct{im.Frozen;Counts}`,
 			"named array"},
 	}
 	for _, test := range cases {
@@ -130,7 +130,7 @@ func TestMarkedMethodBodies(t *testing.T) {
 		{"Local nil result", `func(p *Local)Nothing()*Local{return nil}`, "returning Local pointers"},
 		{"Local capture", `func(p *Local)Later()func()int{return func()int{return p.X}}`, "closures cannot capture"},
 		{"Local stored", `func(p *Local)Save(){s:=[]*Local{p};_=len(s)}`, "Local"},
-		{"Local global", `var saved *Local;func(p *Local)Save(){saved=p}`, "global Local pointers"},
+		{"Local global", `var saved *Local;func(p *Local)Save(){saved=p}`, "package variables"},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {

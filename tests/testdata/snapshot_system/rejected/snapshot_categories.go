@@ -6,7 +6,7 @@ import (
 )
 
 type Retained struct {
-	im.Snapshot
+	im.Frozen
 	Text string
 }
 type Local struct {
@@ -19,7 +19,7 @@ type BadLocal struct {
 	Frozen im.FrozenString
 }
 type BadSnapshot struct {
-	im.Snapshot
+	im.Frozen
 	Result Local
 }
 type BadNative struct{ Saved im.View[string] }
@@ -66,3 +66,14 @@ func consume(im.StringView) {}
 
 func mutableLocal(value Local)                { value.Text = im.StringView{} }
 func escapingIterator(view im.SliceView[int]) { all := view.All(); _ = all }
+
+func freezeLocal(value im.StringView) {
+	values := []im.StringView{value}
+	frozen := im.FreezeSlice(values)
+	_ = frozen
+}
+
+func returnLocalBuilder(value im.StringView) []im.StringView {
+	values := []im.StringView{value}
+	return values
+}

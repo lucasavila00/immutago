@@ -11,7 +11,8 @@ func TestSnapshotCategories(t *testing.T) {
 	snapshot, _ := testTypes()
 	pkg := snapshot.Obj().Pkg()
 	local := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Local", nil), types.NewStruct(nil, nil), nil)
-	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, pkg, "T", nil), types.NewInterfaceType(nil, nil).Complete())
+	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, pkg, "T", nil),
+		types.NewInterfaceType(nil, nil).Complete())
 	view := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "View", nil),
 		types.NewStruct([]*types.Var{types.NewField(token.NoPos, pkg, "value", parameter, false)}, nil), nil)
 	view.SetTypeParams([]*types.TypeParam{parameter})
@@ -51,8 +52,8 @@ func TestSnapshotCategories(t *testing.T) {
 				index = len(cases) - index - 1
 			}
 			test := cases[index]
-			if got := p.SnapshotReason(test.typ) == ""; got != test.snapshot {
-				t.Errorf("Snapshot(%s)=%v; want %v", test.typ, got, test.snapshot)
+			if got := p.FrozenReason(test.typ) == ""; got != test.snapshot {
+				t.Errorf("Frozen(%s)=%v; want %v", test.typ, got, test.snapshot)
 			}
 			if got := p.ReadResultReason(test.typ) == ""; got != test.read {
 				t.Errorf("ReadResult(%s)=%v; want %v", test.typ, got, test.read)

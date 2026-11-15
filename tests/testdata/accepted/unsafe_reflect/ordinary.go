@@ -8,7 +8,7 @@ import (
 )
 
 type Record struct {
-	im.Snapshot
+	im.Frozen
 	Name string
 }
 

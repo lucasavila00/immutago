@@ -15,7 +15,7 @@ type baked struct {
 
 // Model is an immutable object with a trusted internal part.
 type Model struct {
-	im.Snapshot
+	im.Frozen
 	Name   string
 	engine im.UncheckedValue[baked]
 }

@@ -55,18 +55,18 @@ func competingProofRoots() []types.Type {
 	marker, _ := testTypes()
 	root, left, right := markedType("Root", marker), markedType("Left", marker), markedType("Right", marker)
 	root.SetUnderlying(types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Snapshot", marker, true),
+		types.NewField(token.NoPos, nil, "Frozen", marker, true),
 		types.NewField(token.NoPos, nil, "Left", types.NewPointer(left), false),
 		types.NewField(token.NoPos, nil, "Again", types.NewPointer(left), false),
 		types.NewField(token.NoPos, nil, "Right", types.NewPointer(right), false),
 	}, nil))
 	left.SetUnderlying(types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Snapshot", marker, true),
+		types.NewField(token.NoPos, nil, "Frozen", marker, true),
 		types.NewField(token.NoPos, nil, "Back", types.NewPointer(root), false),
 		types.NewField(token.NoPos, nil, "BadA", types.NewSlice(types.Typ[types.Int]), false),
 	}, nil))
 	right.SetUnderlying(types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Snapshot", marker, true),
+		types.NewField(token.NoPos, nil, "Frozen", marker, true),
 		types.NewField(token.NoPos, nil, "BadB", types.NewMap(types.Typ[types.Int], types.Typ[types.Int]), false),
 	}, nil))
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), root)
@@ -114,8 +114,14 @@ func checkProverWitness(t *testing.T, prover *Prover, root types.Type) {
 	for typ, node := range prover.graph.nodes {
 		nodeTypes[node] = typ
 	}
+	for typ, node := range prover.graph.copied {
+		nodeTypes[node] = typ
+	}
+	for typ, node := range prover.graph.reads {
+		nodeTypes[node] = typ
+	}
 	seen := make(map[*obligation]bool)
-	node := prover.graph.nodes[types.Unalias(root)]
+	node := prover.graph.node(root)
 	for node.cause != nil {
 		if seen[node] {
 			t.Fatal("failure witness contains a cycle")
@@ -136,6 +142,9 @@ func checkProverWitness(t *testing.T, prover *Prover, root types.Type) {
 
 // validWitnessEdge uses compiler type identity to check the actual field, element, or type argument.
 func validWitnessEdge(parent, child types.Type, label string) bool {
+	if label == "" && types.Identical(parent, child) {
+		return true
+	}
 	if IsCollection(parent) {
 		args := parent.(*types.Named).TypeArgs()
 		for i := 0; i < args.Len(); i++ {
@@ -247,7 +256,7 @@ func TestProverTypeForms(t *testing.T) {
 	}{
 		{types.Typ[types.Int], ""}, {shared, ""}, {byValue, ""}, {alias, ""},
 		{types.NewPointer(shared), ""}, {types.NewArray(alias, 0), ""}, {sliceType(t, slice, shared), ""},
-		{types.NewPointer(byValue), "Local pointers cannot be stored"},
+		{types.NewPointer(byValue), "Copied values cannot contain shared data references"},
 		{owner, "Cell slots are mutable"}, {parameter, "type parameters are unsupported"},
 		{types.NewPointer(types.Typ[types.Int]), "concrete marked struct target"},
 		{types.NewStruct(nil, nil), "struct does not embed"},

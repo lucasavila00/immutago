@@ -13,7 +13,7 @@ import (
 
 // FileArgs selects a file and its refresh interval.
 type FileArgs struct {
-	im.Snapshot
+	im.Frozen
 	Path  string
 	Every time.Duration
 }

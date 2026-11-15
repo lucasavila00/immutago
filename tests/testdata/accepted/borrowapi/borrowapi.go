@@ -3,14 +3,14 @@ package borrowapi
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
-	im.Snapshot
+	im.Frozen
 	X int
 }
 
 func Read(pointer *Good) int { return pointer.X }
 func Make(number int) Good   { return Good{X: number} }
 
-func Snapshot(number int) *Good { return &Good{X: number} }
+func Frozen(number int) *Good   { return &Good{X: number} }
 func Forward(value *Good) *Good { return value }
 
 type Local struct {

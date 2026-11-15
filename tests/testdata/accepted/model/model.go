@@ -2,7 +2,7 @@ package model
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type MarkerAlias = im.Snapshot
+type MarkerAlias = im.Frozen
 type Number int
 type Title = string
 
@@ -19,14 +19,14 @@ type Leaf struct {
 }
 
 type Tree struct {
-	im.Snapshot
+	im.Frozen
 	Leaf     Leaf
 	Children im.FrozenSlice[Tree]
 	Index    im.FrozenMap[string, Tree]
 }
 
 type CountBox struct {
-	im.Snapshot
+	im.Frozen
 	Value int
 }
 type Alias = Leaf

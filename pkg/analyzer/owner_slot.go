@@ -128,6 +128,8 @@ func (c *subsetChecks) checkCellNode(node ast.Node) {
 	case *ast.CallExpr:
 		if c.ownedSlotCall(n) {
 			c.checkCellCall(n)
+		} else {
+			c.checkHolderMethodCall(n)
 		}
 	}
 	if expression, ok := node.(ast.Expr); ok {
@@ -223,7 +225,7 @@ func (c *subsetChecks) checkSlotDeclaration(n *ast.ValueSpec) {
 	}
 }
 
-// checkSlotFields requires slots to be direct named fields.
+// checkSlotFields permits only direct named slots and nested holder values.
 func (c *subsetChecks) checkSlotFields(n *ast.StructType) {
 	structure, _ := c.pass.TypesInfo.TypeOf(n).Underlying().(*types.Struct)
 	if structure == nil {
@@ -233,8 +235,11 @@ func (c *subsetChecks) checkSlotFields(n *ast.StructType) {
 		if c.hasHolderReference(field.Type()) {
 			c.pass.Reportf(n.Pos(), "Cell holder pointers cannot be stored in fields")
 		}
-		if c.hasSlotValue(field.Type()) && (!checker.IsLibraryType(field.Type(), "Cell") || field.Embedded()) {
-			c.pass.Reportf(n.Pos(), "Cell slots require direct named fields; nested slot storage is unsupported")
+		if c.hasSlotValue(field.Type()) {
+			_, record := field.Type().Underlying().(*types.Struct)
+			if field.Embedded() || !record {
+				c.pass.Reportf(n.Pos(), "Cell slots and holders require direct named fields")
+			}
 		}
 	}
 }
@@ -328,10 +333,10 @@ func (c *subsetChecks) allowedHolderPointer(expression ast.Expr) bool {
 	}
 	switch node := parent.(type) {
 	case *ast.SelectorExpr:
-		return node.X == expression && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(node), "Cell")
+		return node.X == expression && (c.hasSlotValue(c.pass.TypesInfo.TypeOf(node)) || c.matchHolderMethod(node) == "")
 	case *ast.StarExpr:
-		selector, ok := c.parents[node].(*ast.SelectorExpr)
-		return ok && selector.X == node && checker.IsLibraryType(c.pass.TypesInfo.TypeOf(selector), "Cell")
+		selector, ok := c.unparenthesizedParent(node).(*ast.SelectorExpr)
+		return ok && ast.Unparen(selector.X) == node && c.hasSlotValue(c.pass.TypesInfo.TypeOf(selector))
 	case *ast.AssignStmt:
 		if len(node.Lhs) != 1 || len(node.Rhs) != 1 || node.Rhs[0] != expression {
 			return false
@@ -391,9 +396,8 @@ func (c *subsetChecks) allowedSlotValue(expression ast.Expr) bool {
 		selector, ok := parent.(*ast.SelectorExpr)
 		return ok && selector.X == expression && c.ownedSlotSelector(selector) && c.directCall(selector) != nil
 	}
-	if selector, ok := parent.(*ast.SelectorExpr); ok && selector.X == expression &&
-		checker.IsLibraryType(c.pass.TypesInfo.TypeOf(selector), "Cell") {
-		return true
+	if selector, ok := parent.(*ast.SelectorExpr); ok && selector.X == expression {
+		return c.hasSlotValue(c.pass.TypesInfo.TypeOf(selector)) || c.matchHolderMethod(selector) == ""
 	}
 	if _, ok := ast.Unparen(expression).(*ast.CompositeLit); ok {
 		unary, ok := parent.(*ast.UnaryExpr)
@@ -402,7 +406,7 @@ func (c *subsetChecks) allowedSlotValue(expression ast.Expr) bool {
 	return false
 }
 
-// checkCellCall checks the slot capability; payloads use the general Snapshot proof.
+// checkCellCall checks the slot capability; payloads use the general Frozen proof.
 func (c *subsetChecks) checkCellCall(call *ast.CallExpr) {
 	selector := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 	if !c.validSlotReceiver(selector.X) {

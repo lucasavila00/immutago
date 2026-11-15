@@ -3,12 +3,12 @@ package docrejected
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Point struct {
-	im.Snapshot
+	im.Frozen
 	X int
 }
 
 type PointArray struct {
-	im.Snapshot
+	im.Frozen
 	Values [2]Point
 }
 

@@ -7,7 +7,7 @@ type Table struct{ Rows []int }
 
 // Box holds a trusted table.
 type Box struct {
-	im.Snapshot
+	im.Frozen
 	Table im.UncheckedValue[Table]
 }
 

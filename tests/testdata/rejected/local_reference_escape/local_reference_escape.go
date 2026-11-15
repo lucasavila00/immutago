@@ -7,7 +7,7 @@ type Local struct {
 	Value int
 }
 type Stored struct {
-	im.Snapshot
+	im.Frozen
 	Pointer *Local
 }
 
@@ -46,7 +46,7 @@ func delayed() {
 }
 
 type Both struct {
-	im.Snapshot
+	im.Frozen
 	im.Local
 	Value int
 }
@@ -64,6 +64,6 @@ func frozenValues() im.FrozenSlice[Local] {
 }
 
 type SavedValue struct {
-	im.Snapshot
+	im.Frozen
 	Value Local
 }

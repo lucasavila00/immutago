@@ -3,14 +3,14 @@ package rejected
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Count struct {
-	im.Snapshot
+	im.Frozen
 	Values [2]int
 }
 
 func (p *Count) Change() { p.Values[0] = 1 }
 
 type Value struct {
-	im.Snapshot
+	im.Frozen
 	N Count
 }
 

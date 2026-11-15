@@ -32,7 +32,7 @@ func boundaryPass(t *testing.T, importer types.Importer, source string) *analysi
 
 // TestOrdinaryPackageBoundary permits ordinary unsafe, reflection, bodyless, and cgo-header source.
 func TestOrdinaryPackageBoundary(t *testing.T) {
-	library := sourcePass(t, "var _ im.Snapshot").Pkg.Imports()[0]
+	library := sourcePass(t, "var _ im.Frozen").Pkg.Imports()[0]
 	cases := []string{
 		`package ordinary; import "unsafe"; var _ unsafe.Pointer`,
 		`package ordinary; import "reflect"; var Value = reflect.ValueOf(1)`,
@@ -51,13 +51,13 @@ func TestOrdinaryPackageBoundary(t *testing.T) {
 
 // TestPrunedProofBoundary keeps aliases, inferred callbacks, and Cell contracts checked after import pruning.
 func TestPrunedProofBoundary(t *testing.T) {
-	api := sourcePass(t, `type Value struct { im.Snapshot; X int }
- type Model struct { im.Snapshot; X int }
+	api := sourcePass(t, `type Value struct { im.Frozen; X int }
+ type Model struct { im.Frozen; X int }
  type Loader struct { Current im.Cell[Model] }
  var Current im.Cell[Model]
  func Make() *Value { return &Value{} }
  func Publish(*Loader) {}
- type Mark = im.Snapshot
+ type Mark = im.Frozen
  type CellSet interface { im.Cell[Model] }
  type SafeCell = im.Cell[Model]
  type Scalar[T interface{~int | SafeCell}] = int
@@ -116,7 +116,7 @@ func TestPrunedProofBoundary(t *testing.T) {
 
 // TestHiddenMarkedImplementation keeps a scalar-only API ordinary in both complete and pruned import graphs.
 func TestHiddenMarkedImplementation(t *testing.T) {
-	api := sourcePass(t, `type hidden struct{im.Snapshot};func Number() int{return 1}`).Pkg
+	api := sourcePass(t, `type hidden struct{im.Frozen};func Number() int{return 1}`).Pkg
 	for _, pruned := range []bool{false, true} {
 		if pruned {
 			api.SetImports(nil)
@@ -132,7 +132,7 @@ func TestHiddenMarkedImplementation(t *testing.T) {
 
 // TestUnusedNamedMethodsStayOrdinary does not activate from unreferenced concrete method contracts.
 func TestUnusedNamedMethodsStayOrdinary(t *testing.T) {
-	api := sourcePass(t, `type Model struct{im.Snapshot};type Loader struct{Current im.Cell[Model]}
+	api := sourcePass(t, `type Model struct{im.Frozen};type Loader struct{Current im.Cell[Model]}
  type Plain struct{};func(Plain) Publish(*Loader){};func(Plain) Number()int{return 1}
  func MakePlain()Plain{return Plain{}}`).Pkg
 	api.SetImports(nil)

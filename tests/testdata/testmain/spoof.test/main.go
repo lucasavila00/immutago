@@ -7,7 +7,7 @@ import (
 )
 
 type Value struct {
-	im.Snapshot
+	im.Frozen
 	X int
 }
 

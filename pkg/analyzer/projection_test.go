@@ -12,7 +12,7 @@ import (
 func BenchmarkCoreStorageProjection(b *testing.B) {
 	for _, depth := range []int{16, 64, 256} {
 		b.Run(fmt.Sprint(depth), func(b *testing.B) {
-			source := "var _ = im.Snapshot{}\nfunc f(a " + strings.Repeat("[1]", depth) +
+			source := "var _ = im.Frozen{}\nfunc f(a " + strings.Repeat("[1]", depth) +
 				"int) int { return a" + strings.Repeat("[0]", depth) + " }"
 			pass := sourcePass(b, source)
 			var result ast.Expr
@@ -37,7 +37,7 @@ func BenchmarkCoreStorageProjection(b *testing.B) {
 
 // TestStorageProjection checks ordinary, marked, and exclusive builder roots.
 func TestStorageProjection(t *testing.T) {
-	pass := sourcePass(t, `type V struct { im.Snapshot; A [1][1]int }
+	pass := sourcePass(t, `type V struct { im.Frozen; A [1][1]int }
 type Plain struct { Inner struct { X int } }
 func f(p *V, a [1][1]int, v Plain) {
  builder := []int{1}

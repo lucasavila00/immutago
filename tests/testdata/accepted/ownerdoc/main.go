@@ -3,7 +3,7 @@ package main
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Config struct {
-	im.Snapshot
+	im.Frozen
 	Ready bool
 	Limit int
 }

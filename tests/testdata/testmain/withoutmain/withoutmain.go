@@ -3,6 +3,6 @@ package withoutmain
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Value struct {
-	im.Snapshot
+	im.Frozen
 	X int
 }
