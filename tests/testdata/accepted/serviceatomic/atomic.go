@@ -63,3 +63,21 @@ func Interfaces(ref WorkerRef) any {
 	var hidden any = pointer.Load()
 	return hidden
 }
+
+// GenericStorage uses the same Go rules as other generic containers.
+func GenericStorage(ref WorkerRef) {
+	var nested atom.Pointer[Box[WorkerRef]]
+	nested.Store(&Box[WorkerRef]{Value: ref})
+	value := identity(nested.Load())
+	value.Value.Borrow().Count()
+	var ignored Ignored[WorkerRef]
+	var defined Defined[WorkerRef]
+	_, _ = ignored, defined
+}
+
+type Box[T any] struct{ Value T }
+type Ignored[T any] = atom.Pointer[WorkerRef]
+type Defined[T any] atom.Pointer[T]
+
+// identity returns an ordinary Go value.
+func identity[T any](value T) T { return value }
