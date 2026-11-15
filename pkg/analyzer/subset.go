@@ -25,8 +25,13 @@ type subsetChecks struct {
 
 // checkSubset checks the supported immutable forms with compiler-resolved types.
 func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checker.Prover) {
+	newSubsetChecks(pass, proofs).checkImmutable(owners)
+}
+
+// newSubsetChecks records parents once for service handles and immutable source forms.
+func newSubsetChecks(pass *analysis.Pass, proofs *checker.Prover) *subsetChecks {
 	c := &subsetChecks{pass: pass, proofs: proofs, parents: make(map[ast.Node]ast.Node),
-		owners: owners, exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool),
+		exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool),
 		literals: make(map[*ast.CompositeLit]string)}
 	for _, file := range pass.Files {
 		var stack []ast.Node
@@ -42,9 +47,15 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checke
 			return true
 		})
 	}
+	return c
+}
+
+// checkImmutable checks im operations after native builder ownership analysis.
+func (c *subsetChecks) checkImmutable(owners map[*types.Var]bool) {
+	c.owners = owners
 	c.checkBuilderTypes()
 	c.ownedInputs()
-	for _, file := range pass.Files {
+	for _, file := range c.pass.Files {
 		ast.Inspect(file, c.visit)
 	}
 }

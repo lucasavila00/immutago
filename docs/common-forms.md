@@ -35,6 +35,7 @@ They also apply to each nested field, key, and element.
 | Recursive marked struct | `type SharedNode struct { im.Shared; Next *SharedNode }` |
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
+| Service handle | `supervise.Ref[Worker]`; see [handle operations](service-handles.md). |
 | Trusted handle | `im.UncheckedValue[baked]`; see [Unchecked immutable values](unchecked-values.md). |
 
 | Rejected examples — non-exhaustive | Replacement |

@@ -17,7 +17,8 @@ Use `supervise` to start, restart, and stop background services.
 | No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
 | Exported user method result | Return nothing or one [Scoped result](scoped-results.md). This includes promoted user methods. Init, Run, and runtime methods are exempt. |
 | Fields, method inputs, closures, and goroutines | Ordinary Go rules. Synchronize shared mutable data. Uses of protected values follow the [im rules](common-forms.md). |
-| Service construction, Ref copies, Current pointers, and group handles | Ordinary Go rules. Each Current call selects the published service; a saved pointer keeps the selected value. |
+| Service handles | Copy, store, and return Ref values. Call `ref.Current().Message(args)`; see [allowed forms](service-handles.md). |
+| Service construction and group handles | Ordinary Go rules. |
 
 Review these together in the service code:
 
@@ -26,7 +27,8 @@ Review these together in the service code:
 - Whether callbacks or dependencies receive access to mutable service state.
 - Child startup and shutdown.
 
-The result rule does not prove service isolation. Review the ordinary Go
+Service methods can give callbacks or globals access to mutable state; see the
+[callback example](arch/ownership.md#service-handle-boundary). Review the Go
 contracts of callers and dependencies. Use `go test -race` for the accesses your
 tests run.
 

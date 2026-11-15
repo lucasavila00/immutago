@@ -7,6 +7,7 @@
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
 //   - No result or one Scoped result for each exported user service method except Init
 //     and Run, including promoted user methods. Runtime methods are exempt.
+//   - Concrete service handles and direct message calls through Ref.Current.
 //
 // Direct im or supervise imports, used types, and failed checked dependencies
 // select packages for analysis. Ordinary Go API contracts are trusted.
@@ -73,8 +74,10 @@ func run(pass *analysis.Pass) (any, error) {
 			ast.Inspect(file, c.visitService)
 		}
 	}
+	forms := newSubsetChecks(pass, &c.proofs)
+	forms.checkHandles()
 	if immutable {
-		checkSubset(pass, freeze.Check(pass), &c.proofs)
+		forms.checkImmutable(freeze.Check(pass))
 	}
 	return nil, nil
 }
@@ -135,11 +138,7 @@ func (c *checks) visit(node ast.Node) bool {
 			c.checkLibraryArguments(n, instance)
 		}
 	case *ast.FuncDecl:
-		if n.Body == nil && usesLibraryType(c.pass.TypesInfo.Defs[n.Name].Type(), make(map[types.Type]bool), false) {
-			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
-				"provide a Go implementation so writes and pointer transport can be checked")
-		}
-
+		c.checkFunctionBody(n)
 	case *ast.TypeSpec:
 		if obj := c.pass.TypesInfo.Defs[n.Name]; obj != nil {
 			c.checkType(n.Pos(), obj.Type())
@@ -147,6 +146,7 @@ func (c *checks) visit(node ast.Node) bool {
 		}
 	case *ast.StructType:
 		c.checkStruct(n.Pos(), c.pass.TypesInfo.TypeOf(n))
+		c.checkServiceResults(n.Pos(), c.pass.TypesInfo.TypeOf(n))
 	}
 	if expr, ok := node.(ast.Expr); ok {
 		t := c.pass.TypesInfo.TypeOf(expr)
@@ -155,6 +155,22 @@ func (c *checks) visit(node ast.Node) bool {
 		}
 	}
 	return true
+}
+
+// checkFunctionBody requires source for immutable operations and handle transport.
+func (c *checks) checkFunctionBody(declaration *ast.FuncDecl) {
+	if declaration.Body != nil {
+		return
+	}
+	signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)
+	handles := c.queries.Handles(signature)
+	if receiver := signature.Recv(); receiver != nil {
+		handles = handles || c.queries.Handles(receiver.Type())
+	}
+	if handles || usesLibraryType(signature, make(map[types.Type]bool), false) {
+		c.report(declaration.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
+			"provide a Go implementation so writes and pointer transport can be checked")
+	}
 }
 
 // checkType proves collection arguments and named struct fields.
@@ -176,7 +192,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") || checker.IsUncheckedValue(t) ||
-		checker.IsRuntimeType(t, checker.ServiceMarker) {
+		checker.IsRuntimeType(t, checker.ServiceMarker) || checker.IsRuntimeType(t, "Ref") {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)

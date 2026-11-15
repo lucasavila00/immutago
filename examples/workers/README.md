@@ -27,6 +27,7 @@ green v1: STILL RUNNING
 | [Pool](pool.go) | Create child workers during Init and distribute requests among them. |
 | [Configuration](config.go) | Publish immutable variant-name snapshots through `im.Owner`. |
 | [Dispatcher](dispatcher.go) | Poll configuration, stage new versions, and stop old or removed groups. |
+| [Lookup](lookup.go) | Return a pool handle in a Scoped result so callers can use its message methods. |
 | [Command](cmd/workers/main.go) | Start two variants, replace blue, remove blue, and read green. |
 | [Tests](workers_test.go) | Check job results, shutdown, readiness, failed setup, and concurrent changes. |
 
@@ -51,3 +52,17 @@ Removing a name stops both its serving pool and any pending replacement. Start
 arguments use ordinary Go structs; job channels stay inside each worker.
 Set returns nothing. Readers return a scalar or a Scoped struct: Result for
 a job, or VariantSet for a configuration snapshot.
+
+## Example: call a selected pool
+
+```go
+route := dispatcher.Current().Lookup("blue")
+if route.Available {
+    result := route.Pool.Current().Process("Hello World")
+    fmt.Println(result.Text)
+}
+```
+
+Lookup returns a handle to that pool. A later dispatcher replacement can stop
+that pool; the handle does not switch to the replacement group. Process reports
+`Available: false` after shutdown, so callers can use Lookup again.

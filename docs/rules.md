@@ -13,7 +13,8 @@
 
 ## Service results (`supervise`)
 
-- [Scoped results](scoped-results.md): the one service-specific checker rule.
+- [Scoped results](scoped-results.md): exported message results.
+- [Service handles](service-handles.md): copies, storage, and direct message calls.
 - [Supervised services](services.md): execution and restart behavior.
 
 ## Rules for im and supervise
@@ -28,7 +29,7 @@ forms are listed; unlisted protected operations are rejected.
 | --- | --- |
 | Marked struct | A struct that embeds `im.Shared` or `im.Scoped`. |
 | Protected storage | Marked values, their fields, frozen collections, and arrays containing them. |
-| Scoped result | An immutable value returned by value; see the [complete type list](scoped-results.md). |
+| Scoped result | A value that a service message can return; see the [complete type list](scoped-results.md). |
 | Owner slot and holder | An `im.Owner[T]` field or variable, and a struct that contains one. See [Owner](owner.md). |
 
 ### Trusted immutable values
@@ -54,7 +55,7 @@ The checker checks a package in any of these cases, including its test files:
 | Imports a package that failed its checks, directly or through another package | Import a package with an invalid immutable field. |
 
 - Aliases, type arguments, and generic constraints also count.
-- A package that uses only supervise receives the service result check.
+- A package that uses only supervise receives service result and handle checks.
   Importing or using im also selects the immutable-source checks.
 - The CLI and `go vet` use the same rules.
 - Other packages are trusted to obey Go contracts, including immutable strings.
@@ -70,12 +71,13 @@ The checker checks a package in any of these cases, including its test files:
 | Rejected examples — non-exhaustive | Use instead |
 | --- | --- |
 | Cgo in a package that imports or uses im | Ordinary typed Go code. Cgo produces one error at the source package line. |
-| A function without a body whose signature contains an im type | Supply a Go body to check its protected operations. |
+| A function without a body whose signature contains an im type or a service handle | Supply a Go body to check its protected operations. |
 
 An imported package's error includes one cause and a command to see its other errors.
 
 Functions without a body use ordinary Go rules when their compiler-resolved
 receiver, parameters, results, and generic constraints contain no im
-type. For example, `func cpuID() uint64` and `func checksum(data []byte) uint64`
-can use assembly implementations in a checked package. A declaration such as
-`func read(value *Config) int`, where Config embeds im.Shared, needs a Go body.
+type or service handle. For example, `func cpuID() uint64` and
+`func checksum(data []byte) uint64` can use assembly implementations in a checked
+package. A declaration such as `func read(value *Config) int`, where Config embeds
+im.Shared, needs a Go body.

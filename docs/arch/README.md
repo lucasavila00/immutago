@@ -11,6 +11,7 @@ The goal is to reduce how much code a reviewer must trace.
 | --- | --- |
 | Immutable fields and collection elements | Type declarations and the im type proof. |
 | Saved Scoped pointers | The im pointer rules and their source checks. |
+| Access through service handles | [Direct Current calls, copies, and storage](ownership.md#service-handle-boundary). |
 | Service state changes, locks, and input use | The service code and ordinary Go API contracts. |
 
 The checker does not prove full service isolation. Do not add whole-program
