@@ -2,8 +2,8 @@ package docrejected
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
-// ConstantLocal is a ByValue object used in a constant array operand.
-type ConstantLocal struct{ im.ByValue }
+// ConstantLocal is a Scoped object used in a constant array operand.
+type ConstantLocal struct{ im.Scoped }
 
 // constantCapture reads a protected reference in a closure, even though Go does not evaluate it.
 func constantCapture(local *ConstantLocal) func() int {

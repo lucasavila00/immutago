@@ -233,9 +233,9 @@ func TestProverLocalFailures(t *testing.T) {
 func TestProverTypeForms(t *testing.T) {
 	marker, slice := testTypes()
 	shared := markedType("SharedValue", marker)
-	byValueMarker := types.NewNamed(types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "ByValue", nil),
+	scopedMarker := types.NewNamed(types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "Scoped", nil),
 		types.NewStruct(nil, nil), nil)
-	byValue := markedType("ByValueValue", byValueMarker)
+	scoped := markedType("ScopedValue", scopedMarker)
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), shared)
 	owner := types.NewNamed(types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "Owner", nil),
 		types.NewStruct(nil, nil), nil)
@@ -245,9 +245,9 @@ func TestProverTypeForms(t *testing.T) {
 		typ     types.Type
 		failure string
 	}{
-		{types.Typ[types.Int], ""}, {shared, ""}, {byValue, ""}, {alias, ""},
+		{types.Typ[types.Int], ""}, {shared, ""}, {scoped, ""}, {alias, ""},
 		{types.NewPointer(shared), ""}, {types.NewArray(alias, 0), ""}, {sliceType(t, slice, shared), ""},
-		{types.NewPointer(byValue), "ByValue pointers cannot be stored"},
+		{types.NewPointer(scoped), "Scoped pointers cannot be stored"},
 		{owner, "Owner slots are mutable"}, {parameter, "type parameters are unsupported"},
 		{types.NewPointer(types.Typ[types.Int]), "concrete marked struct target"},
 		{types.NewStruct(nil, nil), "struct does not embed"},

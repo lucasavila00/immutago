@@ -1,10 +1,9 @@
 # Shared objects
 
 `im.Shared` is an empty struct embedded as a marker for the checker.
-Use it when callers need to keep pointers to read-only objects:
+Use it for objects that callers need to keep:
 
 - Fields are read-only.
-- Values can be copied, stored, and returned.
 - Functions can return pointers to the object.
 - Marked structs can store those pointers.
 
@@ -40,8 +39,8 @@ func main() {
 }
 ```
 
-Choose [ByValue](by-value.md) when callers can keep value copies but must not
-store, return, or capture pointers to the object.
+Choose [Scoped](scoped.md) instead when a function must not keep a pointer after
+it returns.
 
 ## Allowed forms — exhaustive
 

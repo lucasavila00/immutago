@@ -13,7 +13,7 @@ import (
 
 // Config is one immutable version of the request limits.
 type Config struct {
-	im.ByValue
+	im.Scoped
 	Version int
 	Limits  im.FrozenMap[im.FrozenString, int]
 }

@@ -14,7 +14,7 @@ const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 // RuntimePath is the package whose supervised service runtime is trusted.
 const RuntimePath = "github.com/lucasavila00/immutago/pkg/supervise"
 
-// ServiceMarker identifies supervise.Service, the generic type embedded by services.
+// ServiceMarker identifies the runtime's generic service base.
 const ServiceMarker = "Service"
 
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
@@ -40,16 +40,16 @@ func IsCollection(t types.Type) bool {
 // Marked reports the presence of either embedded marker, including invalid combinations.
 // It does not prove immutability; Reason checks the complete type contract.
 func Marked(t types.Type) bool {
-	return Shared(t) || ByValue(t)
+	return Shared(t) || Scoped(t)
 }
 
 // Shared reports the presence of an embedded im.Shared value, not type validity.
 func Shared(t types.Type) bool { return embedsMarker(t, "Shared") }
 
-// ByValue reports the presence of an embedded im.ByValue value, not type validity.
-func ByValue(t types.Type) bool { return embedsMarker(t, "ByValue") }
+// Scoped reports the presence of an embedded im.Scoped value, not type validity.
+func Scoped(t types.Type) bool { return embedsMarker(t, "Scoped") }
 
-// Service reports whether a struct embeds supervise.Service, directly or indirectly.
+// Service reports whether a struct embeds the runtime Service base, directly or indirectly.
 func Service(t types.Type) bool {
 	seen := make(map[types.Type]bool)
 	pending := []types.Type{t}
@@ -88,7 +88,7 @@ func MarkerCount(t types.Type) int {
 	}
 	count := 0
 	for field := range structure.Fields() {
-		if field.Embedded() && (IsLibraryType(field.Type(), "Shared") || IsLibraryType(field.Type(), "ByValue")) {
+		if field.Embedded() && (IsLibraryType(field.Type(), "Shared") || IsLibraryType(field.Type(), "Scoped")) {
 			count++
 		}
 	}

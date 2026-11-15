@@ -2,11 +2,10 @@
 
 These forms apply to:
 
-- Structs that embed `im.Shared` or `im.ByValue`.
+- Structs that embed `im.Shared` or `im.Scoped`.
 - `im.FrozenSlice` and `im.FrozenMap` values.
 
 Combine them with each type's forms. [Owner](owner.md) has its own forms.
-The [glossary](glossary.md) defines marked structs, protected storage, and builders.
 
 ## Markers and stored types
 
@@ -16,7 +15,7 @@ Embed exactly one marker by value:
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type SharedPoint struct { im.Shared; X int }
-type ByValuePoint struct { im.ByValue; X int }
+type ScopedPoint struct { im.Scoped; X int }
 type SharedLink struct { im.Shared; P *SharedPoint }
 ```
 
@@ -25,29 +24,28 @@ They also apply to each nested field, key, and element.
 
 | Allowed forms — exhaustive | Example |
 | --- | --- |
-| Scalar: boolean, integer, floating-point, complex, or string | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
+| Boolean, integer, float, complex, or string | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
 | Defined scalar | `type Count int` |
-| Empty marker value | `im.Shared`, `im.ByValue` |
+| Empty marker value | `im.Shared`, `im.Scoped` |
 | Unnamed array of allowed elements | `[2]int`, `[2]SharedPoint` |
-| Struct with one embedded marker and allowed fields | `SharedPoint`, `ByValuePoint` above |
+| Struct with one embedded marker and allowed fields | `SharedPoint`, `ScopedPoint` above |
 | Embedded marker alias | `type Mark = im.Shared; type Value struct { Mark; X int }` |
-| Nested marked value, with either marker on the parent or child | `type LocalParent struct { im.ByValue; Child ByValuePoint }`, `type SharedParent struct { im.Shared; Child ByValuePoint }` |
+| Nested marked value, with either marker on the parent or child | `type LocalParent struct { im.Scoped; Child ScopedPoint }`, `type SharedParent struct { im.Shared; Child ScopedPoint }` |
 | Pointer to a concrete Shared struct | `*SharedPoint` |
 | Recursive marked struct | `type SharedNode struct { im.Shared; Next *SharedNode }` |
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
-| Unchecked immutable value | `im.UncheckedValue[baked]`; see [Unchecked immutable values](unchecked-values.md). |
-| Service reference | `supervise.Ref[Worker]`; see [service references](service-references.md). |
+| Trusted handle | `im.UncheckedValue[baked]`; see [Unchecked immutable values](unchecked-values.md). |
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `type Bad struct { Mark im.Shared }` | `type Good struct { im.Shared }` |
 | `type Bad struct { *im.Shared }` | Embed `im.Shared` by value. |
-| `type Bad struct { im.Shared; im.ByValue }` | Embed one marker. |
+| `type Bad struct { im.Shared; im.Scoped }` | Embed one marker. |
 | `type Bad struct { Child SharedPoint }` | `type Good struct { im.Shared; Child SharedPoint }` |
 | `type Bad struct { Children []SharedPoint }` | `type Good struct { im.Shared; Children im.FrozenSlice[SharedPoint] }` |
-| `type Bad struct { im.Shared; P *ByValuePoint }` | Store `ByValuePoint` by value, or use `*SharedPoint` for sharing. |
-| `type Bad struct { im.ByValue; P *ByValuePoint }` | `type Good struct { im.ByValue; P ByValuePoint }` |
+| `type Bad struct { im.Shared; P *ScopedPoint }` | Store `ScopedPoint` by value, or use `*SharedPoint` for sharing. |
+| `type Bad struct { im.Scoped; P *ScopedPoint }` | `type Good struct { im.Scoped; P ScopedPoint }` |
 | `type Counts [2]int` as a stored type | `type Counts struct { im.Shared; Values [2]int }` |
 
 ### Generics
@@ -55,7 +53,7 @@ They also apply to each nested field, key, and element.
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Fixed im types and functions | `im.FrozenSlice[SharedPoint]`, `im.FreezeSlice([]SharedPoint{})` |
-| Fixed supervise APIs with protected values | `supervise.Service[ByValuePoint]`, `supervise.Start[Worker](root, args)`; saved arguments must use the stored types above. |
+| Fixed supervise APIs with protected values | `supervise.Service[ScopedPoint]`, `supervise.Start[Worker](root, args)`; saved arguments must use the stored types above. |
 | User generics without protected storage | `type Plain[T any] struct { Value T }`, used as `Plain[int]` |
 
 | Rejected examples — non-exhaustive | Replacement |
@@ -94,11 +92,11 @@ p = &SharedPoint{X: 2} // q still observes X == 1.
 ## Common pointer forms
 
 These forms apply to both `*SharedPoint` (`im.Shared`) and
-`*ByValuePoint` (`im.ByValue`).
+`*ScopedPoint` (`im.Scoped`).
 
 | Allowed forms — exhaustive | Example |
 | --- | --- |
-| Declare a zero or nil pointer | `var p *SharedPoint`, `var p *ByValuePoint = nil` |
+| Declare a zero or nil pointer | `var p *SharedPoint`, `var p *ScopedPoint = nil` |
 | Create a new object | `p := &SharedPoint{X: 1}`, `p := new(SharedPoint)` |
 | Create a new object from a value | `p := new(point)`, `p := new(SharedPoint{X: 1})` |
 | Copy, replace, or discard a pointer | `q := p`, `p = q`, `p = nil`, `_ = p` |
@@ -108,7 +106,7 @@ These forms apply to both `*SharedPoint` (`im.Shared`) and
 | Call a method with the exact receiver type | `p.Read()`; `func (p *SharedPoint) Read() int { return p.X }` |
 
 - Type aliases and parentheses preserve these forms.
-- Pointer targets must be structs with `im.Shared` or `im.ByValue`.
+- Pointer targets must be structs with `im.Shared` or `im.Scoped`.
 - Construct pointers with the listed `new` or `&T{...}` forms.
 
 | Rejected examples — non-exhaustive | Replacement |
@@ -148,17 +146,17 @@ forms on this page.
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Value receiver on a marked struct | `func (p SharedPoint) XValue() int { return p.X }` |
-| Pointer receiver on a marked struct | `func (p *ByValuePoint) ReadX() int { return p.X }` |
+| Pointer receiver on a marked struct | `func (p *ScopedPoint) ReadX() int { return p.X }` |
 | Direct call on a value or pointer of the declared receiver type | `point.XValue()`, `p.ReadX()`, `(*p).XValue()` |
 | Explicit field or element as receiver | `group.SharedPoint.XValue()`, `points[i].XValue()` |
 | Constructed value, new pointer, or direct call result as receiver | `SharedPoint{X: 3}.XValue()`, `(&SharedPoint{X: 3}).ReadX()`, `makePoint().XValue()` |
-| Direct method on an ordinary concrete receiver with protected inputs or results | `reader.Read(p)` with `func (r *Reader) Read(p *ByValuePoint) int`; `r` can have an ordinary mutable type. |
+| Direct method on an ordinary concrete receiver with protected inputs or results | `reader.Read(p)` with `func (r *Reader) Read(p *ScopedPoint) int`; `r` can have an ordinary mutable type. |
 | Alias or parentheses in these forms | `type Position = SharedPoint`, `(p).ReadX()` |
 
 | Method receiver | Body rules |
 | --- | --- |
 | Struct with `im.Shared` | Same checks as named functions; can return its pointer. |
-| Struct with `im.ByValue` | Same checks as named functions; can return a value copy, but cannot store or return its pointer. |
+| Struct with `im.Scoped` | Same checks as named functions; can return a value copy, but cannot store or return its pointer. |
 | Either marked struct | Cannot change protected fields or have generic receivers. |
 | Ordinary concrete receiver with protected inputs or results | Direct, non-generic calls. The protected inputs and results keep their im rules. |
 | Fixed library type | Listed API forms. |
@@ -215,6 +213,6 @@ Use the operations above inside these statement forms:
 | `var value any = p` | Use a concrete `*SharedPoint` variable. |
 | `callback(p)` through a function variable with protected arguments | Use a direct named function. |
 | `callback := func() int { return point.X }` | `x := point.X; callback := func() int { return x }` |
-| `func() int { return len([1]*ByValuePoint{p}) }` | Use `1`, or compute an ordinary length before the closure. |
+| `func() int { return len([1]*ScopedPoint{p}) }` | Use `1`, or compute an ordinary length before the closure. |
 | `const n = len([1]SharedPoint{})`, `[len([1]SharedPoint{})]int` | Use `const n = 1`, `[1]int`, or `n := len(points)` outside type syntax. |
 | `go read(p)` or `defer read(p)` | Call `read(p)` synchronously. |

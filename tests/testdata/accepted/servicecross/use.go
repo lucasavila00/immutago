@@ -13,8 +13,3 @@ func Count(root *supervise.Group) int {
 	counter.Current().Update()
 	return counter.Current().Read().Count
 }
-
-func route(pool supervise.Ref[service.Pool]) int {
-	selected := pool.Current().Route("worker")
-	return selected.Worker.Current().Count()
-}

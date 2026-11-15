@@ -1,2 +1,0 @@
-anonymous.go:7:24: service method Values must return a service result: service results require a primitive, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
-  result type: []int

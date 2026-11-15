@@ -16,7 +16,7 @@ import (
 
 const testLibrary = `package im
  type Shared struct{}
- type ByValue struct{}
+ type Scoped struct{}
  type Owner[T any] struct{}
  func (o *Owner[T]) Load() *T { return nil }
  func (o *Owner[T]) Store(p *T) {}

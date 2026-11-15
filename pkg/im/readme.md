@@ -11,8 +11,8 @@ Package im provides read\-only structs, slices, and maps checked by immutago.
 Choose the API for the data:
 
 - Shared: read\-only fields; callers can store or return pointers.
-- ByValue: keep read\-only value copies; use pointers through direct checked calls.
-- Owner: publish a new ByValue object while readers finish with the previous one.
+- Scoped: read\-only fields; pointers stay local or pass to checked readers.
+- Owner: publish a new Scoped object while readers finish with the previous one.
 - FrozenSlice and FrozenMap: freeze a native collection without copying entries. Use Clone for an independent mutable copy.
 
 Prepare a native collection in one local variable. After Freeze, use only the frozen value. Run immutago to enforce these rules; go build alone does not.
@@ -24,14 +24,6 @@ func Unwrap[T any](value UncheckedValue[T]) *T
 ```
 
 Unwrap returns the wrapped pointer, or nil for the zero UncheckedValue. Only the package that declares T can use Unwrap.
-
-## type ByValue
-
-ByValue marks a struct with read\-only fields. Values can be copied, stored, and returned. Pointers can stay local or pass to direct checked calls. They cannot be stored in fields or containers, saved globally, returned, or captured by closures. Use Owner to publish a new ByValue object for other code to read. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/by-value.md for the complete forms.
-
-```go
-type ByValue struct{}
-```
 
 ## type FrozenMap
 
@@ -65,7 +57,7 @@ All returns an iterator over key\-value pairs in unspecified order. It reads fro
 func (m FrozenMap[K, V]) Clone() map[K]V
 ```
 
-Clone returns an independent native map in O\(n\) time and space. It copies keys and values by value and preserves nil. Mutating the copy does not change the frozen map. Pointers still point to the same immutable objects; immutable types make deeper copying unnecessary.
+Clone returns an independent native map in O\(n\) time and space. It copies keys and values by value and preserves nil. Mutating the copy does not change the frozen map. References still point to the same immutable objects; immutable types make deeper copying unnecessary.
 
 ### func \(FrozenMap\[K, V\]\) Get
 
@@ -123,7 +115,7 @@ At returns the element at index in O\(1\) time without allocations. It panics if
 func (s FrozenSlice[T]) Clone() []T
 ```
 
-Clone returns an independent native slice in O\(n\) time and space. It copies elements by value and preserves nil. Mutating the copy does not change the frozen slice. Pointers still point to the same immutable objects; immutable element types make deeper copying unnecessary.
+Clone returns an independent native slice in O\(n\) time and space. It copies elements by value and preserves nil. Mutating the copy does not change the frozen slice. References still point to the same immutable objects; immutable element types make deeper copying unnecessary.
 
 ### func \(FrozenSlice\[T\]\) Len
 
@@ -135,7 +127,7 @@ Len returns the number of elements in O\(1\) time without allocations.
 
 ## type Owner
 
-Owner stores a replaceable pointer to a read\-only ByValue object. Load and Store are atomic; readers can continue to use an earlier object. The analyzer checks construction and pointer use. Declare a slot as a package variable or a direct named field of an unmarked struct. Its zero value is empty. An Owner value must not be copied. See https://github.com/lucasavila00/immutago/blob/main/docs/owner.md for the complete forms.
+Owner wraps an atomic.Pointer to an immutable Scoped object. The analyzer checks construction and pointer use; Load and Store use atomic pointer operations. Declare a slot as a package variable or a direct named field of an unmarked struct. Its zero value is empty. An Owner value must not be copied. See https://github.com/lucasavila00/immutago/blob/main/docs/owner.md for the complete forms.
 
 ```go
 type Owner[T any] struct {
@@ -159,9 +151,17 @@ func (o *Owner[T]) Store(value *T)
 
 Store publishes a freshly constructed object.
 
+## type Scoped
+
+Scoped marks a struct with read\-only fields. Its pointers cannot be saved or returned. Its values satisfy the Scoped result contract, which also accepts scalars and arrays of compatible values. Use Owner to publish a new Scoped object for other code to read. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/scoped.md for the complete forms.
+
+```go
+type Scoped struct{}
+```
+
 ## type Shared
 
-Shared marks a struct with read\-only fields. Values and pointers to that struct can be copied, stored, and returned through the allowed source forms. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/shared.md for the complete forms.
+Shared marks a struct with read\-only fields. Its pointers can be saved or returned. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/shared.md for the complete forms.
 
 ```go
 type Shared struct{}
@@ -169,7 +169,7 @@ type Shared struct{}
 
 ## type UncheckedValue
 
-UncheckedValue holds a pointer to data whose immutability the analyzer does not prove. The package that declares T promises never to change the data after Trust.
+UncheckedValue holds a pointer to a value that the analyzer does not look inside. The analyzer does not prove that the value is immutable. The package that declares T trusts its own code to never change the value after Trust.
 
 UncheckedValue is an allowed stored type. Any package can store, copy, and pass it. Only the package that declares T can use Trust and Unwrap, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/unchecked-values.md for the complete forms.
 

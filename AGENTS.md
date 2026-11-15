@@ -11,7 +11,6 @@ The public analyzer is in `pkg/analyzer/`, immutable values are in
 `cmd/immutago/`. End-to-end tests are in `tests/`.
 Read [the contract](docs/rules.md) before analyzer changes.
 Use the [project reference](docs/README.md) to find the current documentation.
-Use the [glossary](docs/glossary.md) for names in guides, comments, and diagnostics.
 Keep supported forms in the guide, implementation choices in the architecture
 pages, and validation evidence with the relevant tests and cost documentation.
 
@@ -134,14 +133,14 @@ that package can wrap or read it. The checker does not prove this promise.
 Do not add other escape hatches.
 Support cases that can be proved. Report unsupported cases explicitly.
 Unmarked structs cannot own marked values or immutable collections.
-Both `im.Shared` and `im.ByValue` require immutable objects from construction.
+Both `im.Shared` and `im.Scoped` require immutable objects from construction.
 Reject field, element, and dereference writes to protected objects. Permit
 reassignment of whole variable bindings. Protected references originate from
 fresh construction, never addresses of reassignable local storage. Protected
 pointers target concrete marked structs only. Reject user generics involving
 protected storage, protected closure captures and callback transport, and
 protected operations in go or defer. Keep the fixed generic im collection APIs.
-`Shared` references can be shared, stored, and returned. `ByValue` references
+`Shared` references can be shared, stored, and returned. `Scoped` references
 stay local or pass through direct typed non-escaping calls; reject storing,
 returning, or capturing them. Do not add mutable initialization, loan lifetimes,
 or runtime ownership state. Keep unsupported transport explicit instead of
@@ -241,13 +240,9 @@ Keep source restrictions and examples there. Keep analysis details in the
 - Walk each storage selector/index chain once. Keep one storage classifier and
   one Owner/source context.
 - Pass the builder owner ID and consume/reset flags directly to the bitset solver.
-- Allow no result or one service result from each exported service method
+- Allow no result or one Scoped result from each exported user service method
   except Init and Run. Runtime methods are exempt. Other service code follows
   ordinary Go rules; im operations use their general checks.
-- Permit service references as stored values and results. Match every Current
-  call as `ref.Current().Method(args)` with an exported service method other
-  than Init, Run, or a runtime method. Reject all other uses of the returned
-  pointer. Keep the reference proof in [service architecture](docs/arch/services.md).
 - Trust ordinary Go API contracts. Use the documented package selection rules;
   do not add string taint analysis or whole-program service effect analysis.
 
@@ -261,7 +256,7 @@ Apply the same source rules to all operands, including operands that Go does
 not evaluate. Constant operands do not bypass capture, type placement, generic,
 or Freeze checks. Direct array `len` and `cap` work in allowed statements.
 
-For a local `p *Local`, where Local embeds `im.ByValue`:
+For a local `p *Local`, where Local embeds `im.Scoped`:
 
 | Rejected form | Allowed replacement |
 | --- | --- |

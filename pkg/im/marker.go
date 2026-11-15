@@ -2,8 +2,8 @@
 //
 // Choose the API for the data:
 //   - Shared: read-only fields; callers can store or return pointers.
-//   - ByValue: keep read-only value copies; use pointers through direct checked calls.
-//   - Owner: publish a new ByValue object while readers finish with the previous one.
+//   - Scoped: read-only fields; pointers stay local or pass to checked readers.
+//   - Owner: publish a new Scoped object while readers finish with the previous one.
 //   - FrozenSlice and FrozenMap: freeze a native collection without copying entries.
 //     Use Clone for an independent mutable copy.
 //
@@ -11,16 +11,15 @@
 // frozen value. Run immutago to enforce these rules; go build alone does not.
 package im
 
-// Shared marks a struct with read-only fields. Values and pointers to that struct
-// can be copied, stored, and returned through the allowed source forms.
+// Shared marks a struct with read-only fields. Its pointers can be saved or returned.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
 // See https://github.com/lucasavila00/immutago/blob/main/docs/shared.md for the complete forms.
 type Shared struct{}
 
-// ByValue marks a struct with read-only fields. Values can be copied, stored, and returned.
-// Pointers can stay local or pass to direct checked calls. They cannot be stored
-// in fields or containers, saved globally, returned, or captured by closures.
-// Use Owner to publish a new ByValue object for other code to read.
+// Scoped marks a struct with read-only fields. Its pointers cannot be saved or returned.
+// Its values satisfy the Scoped result contract, which also accepts scalars
+// and arrays of compatible values.
+// Use Owner to publish a new Scoped object for other code to read.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
-// See https://github.com/lucasavila00/immutago/blob/main/docs/by-value.md for the complete forms.
-type ByValue struct{}
+// See https://github.com/lucasavila00/immutago/blob/main/docs/scoped.md for the complete forms.
+type Scoped struct{}

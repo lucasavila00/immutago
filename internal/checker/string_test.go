@@ -19,7 +19,7 @@ func TestFrozenStringProof(t *testing.T) {
 		}
 	}
 	var prover Prover
-	if reason := prover.ServiceResultReason(alias); reason != "" {
+	if reason := prover.ScopedResultReason(alias); reason != "" {
 		t.Fatal(reason)
 	}
 	native := types.NewNamed(types.NewTypeName(token.NoPos, nil, "Native", nil), types.Typ[types.String], nil)

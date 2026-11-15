@@ -39,27 +39,26 @@ func (p *Prover) Reason(t types.Type) string {
 	return reason
 }
 
-// ServiceResultReason accepts scalars, frozen strings, service references, arrays, and ByValue structs.
-// Fields of a ByValue struct use the ordinary immutable storage proof.
-func (p *Prover) ServiceResultReason(t types.Type) string {
+// ScopedResultReason accepts scalars, frozen strings, arrays, and proved Scoped structs.
+// Fields of a Scoped struct use the ordinary immutable storage proof.
+func (p *Prover) ScopedResultReason(t types.Type) string {
 	t = types.Unalias(t)
 	switch value := t.Underlying().(type) {
 	case *types.Basic:
 		return p.Reason(t)
 	case *types.Array:
 		if _, named := t.(*types.Named); !named {
-			if reason := p.ServiceResultReason(value.Elem()); reason != "" {
+			if reason := p.ScopedResultReason(value.Elem()); reason != "" {
 				return "array element: " + reason
 			}
 			return ""
 		}
 	case *types.Struct:
-		if ByValue(t) || IsLibraryType(t, "ByValue") || IsLibraryType(t, "FrozenString") || IsRuntimeType(t, "Ref") {
+		if Scoped(t) || IsLibraryType(t, "Scoped") || IsLibraryType(t, "FrozenString") {
 			return p.Reason(t)
 		}
 	case *types.Pointer:
-		return "a service result must be a value, not a pointer"
+		return "a Scoped result must be a value, not a pointer"
 	}
-	return "service results require a primitive, im.FrozenString, supervise.Ref, an unnamed array of service results, " +
-		"or a struct with im.ByValue"
+	return "Scoped results require a primitive, im.FrozenString, an unnamed array of Scoped results, or a struct with im.Scoped"
 }

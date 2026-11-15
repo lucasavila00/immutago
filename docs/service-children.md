@@ -1,8 +1,7 @@
 # Child services and groups
 
 Call `p.Children()` inside a service method to start work that stops with that
-service run, such as workers in a pool. Each run has its own service value and
-child group. A restart creates both again. Choose the parent by the required lifetime:
+run, such as workers in a pool. Choose the parent by the required lifetime:
 
 | Parent | Use it for |
 | --- | --- |
@@ -16,7 +15,7 @@ Use Init when all children can be created from the start arguments. The
 [worker project](../examples/workers/README.md) creates a
 [pool](../examples/workers/pool.go) of queued
 [text workers](../examples/workers/worker.go). This part of `Pool.Init` starts
-the children and keeps their service references:
+the children and keeps their Refs:
 
 ```go
 children := p.Children()
@@ -121,13 +120,12 @@ start arguments or a longer-lived service; old mutable fields are not copied.
 - Children can call the parent during shutdown, but must not wait for a parent
   method that stops their own group: that Stop waits for the same child.
 - Run must return when its context ends. Stop does not wait for direct calls.
-- An old child reference still selects the old child after the parent restarts.
-  Keep child references in parent fields and expose methods that select the current child.
+- An old child Ref still selects the old child after the parent restarts.
+  Keep child Refs in parent fields and expose methods that select the current child.
   The checker permits Ref copies; it does not prove their lifetime.
-- For children that need each other's references, use Reserve and StartReserved in the
+- For children that need each other's Refs, use Reserve and StartReserved in the
   same parent method. Create fresh reservations on each run. Reusing a started
   reservation from the parent's arguments would panic.
 
-Groups follow ordinary Go rules. Exported service methods return no result or
-one [service result](service-results.md). Init, Run, and methods supplied by the
-runtime are exempt.
+Child-group handles follow ordinary Go rules. Exported user service methods
+need one [Scoped result](scoped-results.md), except Init and Run.

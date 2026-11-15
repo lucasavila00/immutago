@@ -6,8 +6,8 @@ type SharedPoint struct {
 	im.Shared
 	X int
 }
-type ByValuePoint struct {
-	im.ByValue
+type ScopedPoint struct {
+	im.Scoped
 	X int
 }
 type PointGroup struct {
@@ -16,10 +16,10 @@ type PointGroup struct {
 }
 type Position = SharedPoint
 
-func (p SharedPoint) XValue() int  { return p.X }
-func (p *SharedPoint) ReadX() int  { return p.X }
-func (p *ByValuePoint) ReadX() int { return p.X }
-func makePoint() SharedPoint       { return SharedPoint{X: 3} }
+func (p SharedPoint) XValue() int { return p.X }
+func (p *SharedPoint) ReadX() int { return p.X }
+func (p *ScopedPoint) ReadX() int { return p.X }
+func makePoint() SharedPoint      { return SharedPoint{X: 3} }
 
 func guide() {
 	point := SharedPoint{X: 3}
@@ -35,6 +35,6 @@ func guide() {
 	(p).ReadX()
 	alias := Position{X: 3}
 	alias.XValue()
-	byValue := &ByValuePoint{X: 3}
-	byValue.ReadX()
+	scoped := &ScopedPoint{X: 3}
+	scoped.ReadX()
 }

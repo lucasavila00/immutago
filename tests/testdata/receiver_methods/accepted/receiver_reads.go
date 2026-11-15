@@ -8,7 +8,7 @@ type Product struct {
 }
 type Alias = Product
 type Settings struct {
-	im.ByValue
+	im.Scoped
 	Limit int
 }
 type Order struct {

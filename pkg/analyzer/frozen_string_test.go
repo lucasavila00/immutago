@@ -14,7 +14,7 @@ func TestFrozenStringForms(t *testing.T) {
 		`func f(){text:=im.FreezeString("text");native:=text.Clone();_=native[:1];_=text.Len()}`,
 		`func f(){text:="text";_=im.FreezeString(text);_=text[:1]}`,
 		`type V struct{im.Shared;Text im.FrozenString};func f()V{return V{Text:im.FreezeString("text")}}`,
-		`type V struct{im.ByValue;Text [2]im.FrozenString};func f()V{return V{}}`,
+		`type V struct{im.Scoped;Text [2]im.FrozenString};func f()V{return V{}}`,
 		`func f(){a:=im.FreezeString("same");b:=im.FreezeString("same");_=a==b;_=a!=b}`,
 		`func f(){key:=im.FreezeString("key");values:=map[im.FrozenString]int{key:1};frozen:=im.FreezeMap(values);value,ok:=frozen.Get(key);_=value;_=ok}`,
 		`func f(){values:=[]im.FrozenString{im.FreezeString("text")};frozen:=im.FreezeSlice(values);for _,text:=range frozen.All(){_=text.Clone()}}`,
@@ -65,7 +65,7 @@ func TestFrozenStringRejectedForms(t *testing.T) {
 func TestNativeStringStorage(t *testing.T) {
 	for _, source := range []string{
 		`type V struct{im.Shared;Text string}`,
-		`type Text string;type V struct{im.ByValue;Text Text}`,
+		`type Text string;type V struct{im.Scoped;Text Text}`,
 		`type Text=string;type V struct{im.Shared;Text [0]Text}`,
 		`type V struct{im.Shared;Text [2][3]string}`,
 		`var value im.FrozenSlice[string]`,
@@ -95,11 +95,11 @@ func TestFrozenStringServiceResults(t *testing.T) {
 		{`func(*Counter) Text()im.FrozenString{return im.FreezeString("text")}`, false},
 		{`type Text=im.FrozenString;func(*Counter) Text()Text{return Text{}}`, false},
 		{`func(*Counter) Text()[2]im.FrozenString{return [2]im.FrozenString{}}`, false},
-		{`type Page struct{im.ByValue;Text im.FrozenString};func(*Counter) Text()Page{return Page{}}`, false},
+		{`type Page struct{im.Scoped;Text im.FrozenString};func(*Counter) Text()Page{return Page{}}`, false},
 		{`func(*Counter) Text()string{return "text"}`, true},
 		{`type Text string;func(*Counter) Text()Text{return "text"}`, true},
 		{`type Text=string;func(*Counter) Text()[0]Text{return [0]Text{}}`, true},
-		{`type Page struct{im.ByValue;Text string};func(*Counter) Text()Page{return Page{}}`, true},
+		{`type Page struct{im.Scoped;Text string};func(*Counter) Text()Page{return Page{}}`, true},
 		{`func(*Counter) text(s string)string{return s[:1]};func(c *Counter) Text(s string)im.FrozenString{return im.FreezeString(c.text(s))}`, false},
 	}
 	for _, test := range cases {

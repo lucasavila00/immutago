@@ -25,6 +25,6 @@ func (m FrozenMap[K, V]) Get(key K) (V, bool) { value, found := m.values[key]; r
 
 // Clone returns an independent native map in O(n) time and space.
 // It copies keys and values by value and preserves nil. Mutating the copy does
-// not change the frozen map. Pointers still point to the same immutable objects;
+// not change the frozen map. References still point to the same immutable objects;
 // immutable types make deeper copying unnecessary.
 func (m FrozenMap[K, V]) Clone() map[K]V { return maps.Clone(m.values) }

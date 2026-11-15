@@ -19,7 +19,7 @@ type WorkerArgs struct {
 
 // Result records a completed job. Available is false if the worker has stopped.
 type Result struct {
-	im.ByValue
+	im.Scoped
 	Text      im.FrozenString
 	Worker    int
 	Version   int

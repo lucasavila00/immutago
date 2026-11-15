@@ -207,7 +207,7 @@ func classificationShapes(t *testing.T) []types.Type {
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "T", nil), constraint)
 	ordinary := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "U", nil),
 		types.NewInterfaceType(nil, nil).Complete())
-	localName := types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "ByValue", nil)
+	localName := types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "Scoped", nil)
 	localMarker := types.NewNamed(localName, types.NewStruct(nil, nil), nil)
 	local := markedType("Local", localMarker)
 	results := types.NewTuple(types.NewParam(token.NoPos, nil, "value", value))

@@ -1,23 +1,19 @@
 # Checker reference
 
-Use this reference to check which Go forms Immutago accepts. The
-[glossary](glossary.md) defines its terms.
-
 ## Immutable data forms (`im`)
 
 | Reference | Use it to |
 | --- | --- |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 | [Shared](shared.md) | Store or return pointers to immutable objects. |
-| [ByValue](by-value.md) | Keep immutable value copies and use pointers for local reads. |
-| [Owner](owner.md) | Publish a new ByValue object and read the current one. |
+| [Scoped](scoped.md) | Keep pointers local; use functions and methods that do not save them. |
+| [Owner](owner.md) | Publish a new Scoped object and read the current one. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
 | [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
 
-## Service forms (`supervise`)
+## Service results (`supervise`)
 
-- [Service results](service-results.md): result types for exported service methods.
-- [Service references](service-references.md): stored references and direct calls to the current service.
+- [Scoped results](scoped-results.md): the one service-specific checker rule.
 - [Supervised services](services.md): execution and restart behavior.
 
 ## Rules for im and supervise
@@ -27,6 +23,13 @@ synchronization in the service code.
 
 Use the common forms with each type's forms. **Exhaustive** means all allowed
 forms are listed; unlisted protected operations are rejected.
+
+| Term | Meaning |
+| --- | --- |
+| Marked struct | A struct that embeds `im.Shared` or `im.Scoped`. |
+| Protected storage | Marked values, their fields, frozen collections, and arrays containing them. |
+| Scoped result | An immutable value returned by value; see the [complete type list](scoped-results.md). |
+| Owner slot and holder | An `im.Owner[T]` field or variable, and a struct that contains one. See [Owner](owner.md). |
 
 ### Trusted immutable values
 
@@ -51,7 +54,7 @@ The checker checks a package in any of these cases, including its test files:
 | Imports a package that failed its checks, directly or through another package | Import a package with an invalid immutable field. |
 
 - Aliases, type arguments, and generic constraints also count.
-- A package that uses only supervise receives service result and reference checks.
+- A package that uses only supervise receives the service result check.
   Importing or using im also selects the immutable-source checks.
 - The CLI and `go vet` use the same rules.
 - Other packages are trusted to obey Go contracts, including immutable strings.
@@ -67,12 +70,12 @@ The checker checks a package in any of these cases, including its test files:
 | Rejected examples — non-exhaustive | Use instead |
 | --- | --- |
 | Cgo in a package that imports or uses im | Ordinary typed Go code. Cgo produces one error at the source package line. |
-| A function without a body whose signature contains an im type or a service reference | Supply a Go body to check its protected operations and service calls. |
+| A function without a body whose signature contains an im type | Supply a Go body to check its protected operations. |
 
 An imported package's error includes one cause and a command to see its other errors.
 
 Functions without a body use ordinary Go rules when their compiler-resolved
 receiver, parameters, results, and generic constraints contain no im
-type or service reference. For example, `func cpuID() uint64` and `func checksum(data []byte) uint64`
+type. For example, `func cpuID() uint64` and `func checksum(data []byte) uint64`
 can use assembly implementations in a checked package. A declaration such as
 `func read(value *Config) int`, where Config embeds im.Shared, needs a Go body.

@@ -7,7 +7,7 @@ type Product struct {
 	Price int
 }
 type Settings struct {
-	im.ByValue
+	im.Scoped
 	Limit int
 }
 

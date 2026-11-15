@@ -7,7 +7,7 @@ import (
 )
 
 type Reply struct {
-	im.ByValue
+	im.Scoped
 	Count int
 }
 type SharedReply struct {
@@ -26,11 +26,11 @@ func (c *Counter) Read() Reply       { return Reply{Count: c.count} }
 func (*Counter) Array() [2]int       { return [2]int{1, 2} }
 
 type Listing struct {
-	im.ByValue
+	im.Scoped
 	Values im.FrozenSlice[int]
 }
 type Table struct {
-	im.ByValue
+	im.Scoped
 	Values im.FrozenMap[int, int]
 }
 
@@ -51,10 +51,15 @@ func (c *Counter) Capture() int {
 	return c.count
 }
 func use(ref supervise.Ref[Counter]) {
-	ref.Current().Update()
-	_ = ref.Current().Count()
-	go ref.Current().Count()
-	defer ref.Current().Count()
+	c := ref.Current()
+	c.count++
+	f := c.Count
+	_ = f()
+	go c.Count()
+	defer c.Count()
+	children := c.Children()
+	other := children
+	_ = other
 }
 
 // User embedding and promoted methods use the same result contract.
@@ -67,6 +72,6 @@ type StoredShared struct {
 	supervise.Service[*SharedReply]
 }
 
-func (*Counter) Ack() im.ByValue { return im.ByValue{} }
+func (*Counter) Ack() im.Scoped { return im.Scoped{} }
 
 func (c *Counter) Update() { c.count++ }

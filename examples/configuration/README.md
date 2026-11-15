@@ -10,8 +10,6 @@ Three services turn a JSON file into a request quota:
 
 The services use `supervise.Ref` to call each other. Calls run in the caller's
 goroutine. Each service protects its own mutable fields.
-Their [service results](../../docs/service-results.md) are strings, integer
-decisions, or the read-only `Usage` struct. Callers can keep these values.
 
 ## Run
 

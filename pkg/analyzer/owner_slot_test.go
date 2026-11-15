@@ -4,7 +4,7 @@ import "testing"
 
 // TestOwnerSlotChecks covers accepted calls and rejected slot transport.
 func TestOwnerSlotChecks(t *testing.T) {
-	const definitions = `type Model struct { im.ByValue; X int }
+	const definitions = `type Model struct { im.Scoped; X int }
  type Loader struct { Current im.Owner[Model] }
  `
 	cases := []struct {
@@ -16,7 +16,7 @@ func read(*Model){}`, false},
 		{"new store", `func f(l *Loader) { l.Current.Store(new(Model)); m:=l.Current.Load(); _=m }`, false},
 		{"package slot", `var slot im.Owner[Model]; func f() { slot.Store(&Model{}); m:=slot.Load(); _=m }`, false},
 		{"shared argument", `type S struct{im.Shared}; var slot im.Owner[S]`, true},
-		{"invalid local argument", `type S struct{im.ByValue; Values []int}; var slot im.Owner[S]`, true},
+		{"invalid local argument", `type S struct{im.Scoped; Values []int}; var slot im.Owner[S]`, true},
 		{"marked owner", `type Bad struct{im.Shared; Slot im.Owner[Model]}`, true},
 		{"slot copy", `func f(l *Loader) { other:=l.Current; _=other }`, true},
 		{"slot address", `func f(l *Loader) { other:=&l.Current; _=other }`, true},

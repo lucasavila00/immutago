@@ -28,12 +28,12 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 			continue
 		}
 		if signature.Results().Len() != 1 {
-			c.report(at, "service method "+method.Name()+" must return no value or one service result")
+			c.report(at, "service method "+method.Name()+" must return no value or one Scoped result")
 			continue
 		}
 		result := signature.Results().At(0).Type()
-		if reason := c.proofs.ServiceResultReason(result); reason != "" {
-			c.report(at, "service method "+method.Name()+" must return a service result: "+reason+
+		if reason := c.proofs.ScopedResultReason(result); reason != "" {
+			c.report(at, "service method "+method.Name()+" must return a Scoped result: "+reason+
 				"\n  result type: "+diagnosticType(result))
 		}
 	}
@@ -44,17 +44,12 @@ func runtimeObject(object types.Object) bool {
 	return object != nil && object.Pkg() != nil && object.Pkg().Path() == checker.RuntimePath
 }
 
-// visitService checks service boundaries in packages that do not use im data.
+// visitService checks method results in packages that do not use im data.
 func (c *checks) visitService(node ast.Node) bool {
-	switch declaration := node.(type) {
-	case *ast.TypeSpec:
+	if declaration, ok := node.(*ast.TypeSpec); ok {
 		if object := c.pass.TypesInfo.Defs[declaration.Name]; object != nil {
 			c.checkServiceResults(declaration.Name.Pos(), object.Type())
 		}
-	case *ast.FuncDecl:
-		c.checkFunctionBody(declaration)
-	case *ast.StructType:
-		c.checkServiceResults(declaration.Pos(), c.pass.TypesInfo.TypeOf(declaration))
 	}
 	return true
 }
@@ -66,6 +61,6 @@ func (c *checks) checkServiceStorage(name *ast.Ident, argument types.Type) {
 	}
 	if reason := c.proofs.Reason(argument); reason != "" {
 		c.report(name.Pos(), "stored im argument: "+reason+
-			"\n  fix: pass an immutable value or a Shared pointer; ByValue pointers cannot be stored")
+			"\n  fix: pass an immutable value or a Shared pointer; Scoped pointers cannot be stored")
 	}
 }

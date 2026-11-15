@@ -1,26 +1,26 @@
-receiver_bodies.go:10:5: unsupported immutable operation: global ByValue pointers are unsupported
+receiver_bodies.go:10:5: unsupported immutable operation: global Scoped pointers are unsupported
   source: saved *Settings
-  fix: keep the ByValue pointer local, or store a value copy
+  fix: keep the Scoped pointer local, or store a value copy
 receiver_bodies.go:12:41: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Price = 1
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
 receiver_bodies.go:13:41: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Price = 1
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
-receiver_bodies.go:14:41: unsupported immutable operation: global ByValue pointers are unsupported
+receiver_bodies.go:14:41: unsupported immutable operation: global Scoped pointers are unsupported
   source: saved = s
-  fix: keep the ByValue pointer local, or store a value copy
-receiver_bodies.go:15:20: unsupported immutable operation: returning ByValue pointers is unsupported
+  fix: keep the Scoped pointer local, or store a value copy
+receiver_bodies.go:15:20: unsupported immutable operation: returning Scoped pointers is unsupported
   source: Return
   type: func() *rejected.Settings
-  fix: return a ByValue value copy, or use im.Shared for objects whose pointers must be shared
-receiver_bodies.go:15:41: unsupported immutable operation: returning ByValue pointers is unsupported
+  fix: return a Scoped value copy, or use im.Shared for objects whose pointers must be shared
+receiver_bodies.go:15:41: unsupported immutable operation: returning Scoped pointers is unsupported
   source: return s
-  fix: return a ByValue value copy, or use im.Shared for objects whose pointers must be shared
-receiver_bodies.go:16:20: unsupported immutable operation: returning ByValue pointers is unsupported
+  fix: return a Scoped value copy, or use im.Shared for objects whose pointers must be shared
+receiver_bodies.go:16:20: unsupported immutable operation: returning Scoped pointers is unsupported
   source: Nil
   type: func() *rejected.Settings
-  fix: return a ByValue value copy, or use im.Shared for objects whose pointers must be shared
+  fix: return a Scoped value copy, or use im.Shared for objects whose pointers must be shared
 receiver_bodies.go:17:65: unsupported immutable operation: closures cannot capture immutable storage
   source: s
   type: *rejected.Settings

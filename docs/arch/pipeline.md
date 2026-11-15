@@ -13,12 +13,10 @@ The [entry point](../../pkg/analyzer/analyzer.go) runs these stages:
 3. Return for ordinary packages.
 4. Reject cgo in packages that import or use im; report one source error.
 5. Report checked dependency failures and record local diagnostics.
-6. Check [service method results](services.md), excluding Init, Run, and methods
-   supplied by the runtime. In im packages, also check field types and im type arguments.
-7. Match service reference operations in all selected packages.
-8. For packages that import or use im, prove native builder ownership and match
-   protected source forms.
-9. Export failures for importers.
+6. Check that exported service methods return nothing or one Scoped result.
+7. For packages that import or use im, check field types and im type arguments,
+   prove native builder ownership, and match protected source forms.
+8. Export failures for importers.
 
 Package selection and state:
 
@@ -43,16 +41,15 @@ Package selection and state:
 ## Type proof
 
 [Type predicates](../../internal/checker/types.go) resolve aliases and identify
-`im.Shared`, `im.ByValue`, and frozen collections by package path and named type.
+`im.Shared`, `im.Scoped`, and frozen collections by package path and named type.
 
 The per-pass [classifier](../../internal/checker/classification.go) answers
-whether a type contains protected storage, callbacks, or service references:
+whether a type contains protected storage or callbacks:
 
 | Query | Edges followed |
 | --- | --- |
 | Storage | Fields and containers. |
 | Callback | Storage edges, interface methods, function parameters and results. |
-| Service reference | Fields, containers, interface methods, function parameters and results. |
 | Type-parameter constraint | Separate traversal mode. |
 
 It expands all reachable edges before propagating positive results backwards.
@@ -76,7 +73,7 @@ Failure messages:
 - Earlier queries can affect the selected cause, but not acceptance or rejection.
 - `Reason` is the single-query convenience function.
 
-The proof applies to Shared and ByValue structs. Stored pointers require a
+The proof applies to Shared and Scoped structs. Stored pointers require a
 Shared target. Type parameters fail; [generic checks](../../pkg/analyzer/subset_generics.go)
 retain the fixed im APIs and reject user generics with protected storage.
 

@@ -30,16 +30,14 @@ source, set `-url http://host/path/model.json`.
 | [cmd/models/main.go](cmd/models/main.go) | Start the service with a logger, HTTP client, and store factory. |
 
 The arguments hold a logger, HTTP client, and factory directly. The command uses
-Go's logger and client, which permit concurrent use. Its factory captures only a
-fixed path and creates a FileStore for that service. Use a separate output path
-per service.
+Go's concurrent-safe logger and client. Its factory captures only a fixed path and
+creates a FileStore for that service. Use a separate output path per service.
 
 The model package promises with `im.Trust` that its copied
 coefficients never change, and its API never exposes the slice. Only that
-package can unwrap the pointer. The service publishes each model in a new
-`snapshot` struct with `im.ByValue`. Each prediction reads one snapshot for the
-whole calculation. The returned `Prediction` is a [service result](../../docs/service-results.md)
-with its model name and score from that same version.
+package can unwrap the pointer. The service publishes a fresh Scoped snapshot;
+each prediction keeps one snapshot for the whole calculation.
+The returned Prediction contains its model name and score from that same snapshot.
 
 Check this project and run its tests:
 

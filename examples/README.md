@@ -2,8 +2,6 @@
 
 These projects use the public im and supervise APIs in the repository's Go
 module. Each has a command, a README, and tests for its real behavior.
-Use the [guides](../docs/README.md) for API choices and the
-[glossary](../docs/glossary.md) for shared terms.
 
 | Project | Run and observe |
 | --- | --- |
