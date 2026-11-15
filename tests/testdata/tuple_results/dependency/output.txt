@@ -1,0 +1,5 @@
+dependency.go:3:8: unsupported dependency example.com/consumer/badapi: immutability proof failed
+  representative failure: example.com/consumer/badapi/api.go:19:14: service method First must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+    result type: string
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/badapi, correct its errors, then rerun immutago on this package

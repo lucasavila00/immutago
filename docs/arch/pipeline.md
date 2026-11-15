@@ -49,6 +49,12 @@ addresses still use the protected-storage checks.
 | AST parents | Check statement context and operands that Go does not evaluate. |
 | Declared type parameters | Check generic bodies once; no proof of call effects for each type argument. |
 
+Tuple bindings use one direct typed call when a component needs restricted transport.
+The matcher checks each destination's write, builder, and storage rules. It expands
+tuple arguments and returned calls by compiler result position. Named results use
+their declared types and the same assignment checks. Ordinary tuple components do
+not inherit a Local component's storage limits.
+
 Frozen interface conversions also prove the concrete implementation and its
 selected receivers. The private interface seal alone is not that proof.
 [Conversion checks](../../pkg/analyzer/subset_interfaces.go) apply at the conversion;
