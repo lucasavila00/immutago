@@ -4,9 +4,7 @@ import "testing"
 
 // TestFrozenValueTransport checks ordinary uses of persistent Frozen values.
 func TestFrozenValueTransport(t *testing.T) {
-	const prefix = `package sample
-import "github.com/lucasavila00/immutago/pkg/im"
-type Data struct { im.Frozen; Text im.FrozenString; Values [2]im.FrozenString }
+	const prefix = `type Data struct { im.Frozen; Text im.FrozenString; Values [2]im.FrozenString }
 type Alias = Data
 func identity[T any](value T) T { return value }
 func (value Data) Len() int { return value.Text.Len() }
