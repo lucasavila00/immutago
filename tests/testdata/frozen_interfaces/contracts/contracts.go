@@ -16,11 +16,11 @@ type Variadic interface {
 }
 type Callback interface {
 	im.FrozenInterface
-	Call(func())
+	Call(func() im.StringProjection)
 }
 type Dynamic interface {
 	im.FrozenInterface
-	Use(any)
+	Use(interface{ Read() im.StringProjection })
 }
 type Private interface {
 	im.FrozenInterface
