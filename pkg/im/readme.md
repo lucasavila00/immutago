@@ -103,7 +103,7 @@ type Copied struct{}
 
 ## type Frozen
 
-Frozen marks a struct with immutable fields. Values and pointers to that struct can be copied, stored, and returned through the allowed source forms. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/frozen-records.md for the complete forms.
+Frozen marks a struct with immutable fields. Values and pointers to that struct can be copied, stored, and returned through the allowed source forms. Embed it by value. A named field or pointer embedding does not mark the struct. Only the marker can be embedded; all data fields must have names. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/frozen-records.md for the complete forms.
 
 ```go
 type Frozen struct{}

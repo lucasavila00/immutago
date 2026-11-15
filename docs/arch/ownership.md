@@ -1,127 +1,200 @@
-# Type rules, projections, and builder storage
+# Storage, projections, and builder ownership
 
-## Type rules
+The runtime shares immutable backing storage instead of making a copy for each
+reader. This requires three separate checks: prove the payload type, prevent
+writes to a protected owner, and remove mutable aliases before Freeze. A
+projection then limits what a reader can obtain from that storage.
 
-The [proof graph](../../internal/checker/proof.go) keys each obligation by resolved
-Go type and proof category. The same cached obligations serve all consumers.
+## Payload types and storage owners
 
-| Proof | Consumers |
+[The type prover](../../internal/checker/categories.go) has three recursive
+categories. Each use requests the same category, regardless of its API context.
+
+| Category | Meaning and consumers |
 | --- | --- |
-| FrozenReason | Frozen fields, shared frozen arguments, Cell[T], Projection[T], ProjectionOf. |
-| CopiedReason | Copied record fields and local collection Clone arguments. |
-| ReadResultReason | Local fields, service data results, and Value results (also requiring Frozen). |
-| General immutable proof | Marked records and fixed library types, including Local values. |
+| Frozen | Safe for shared persistent storage. Used for Frozen fields, frozen collection elements, Cell payloads, and projection payloads. Includes booleans, numbers, strings, proved Frozen and Copied records, pointers to proved Frozen records, frozen wrappers and interfaces, service references, unchecked handles, and unnamed arrays of Frozen values. |
+| Copied | Safe as an independent ordinary value. Used for Copied record fields and local projection Clone elements. Includes booleans, numbers, Copied records, unnamed arrays of Copied values, and opaque service references. Copied record fields additionally exclude service references. |
+| ReadResult | Safe to return from a restricted reader. Used for Local fields and service data results. Includes Copied values, Local records, projections with Frozen payloads, unchecked handles, and unnamed arrays of read results. |
 
-Frozen, Local, and Copied markers set one field rule each. API names and service
-context do not change those rules. Ordinary functions can return shared
-Frozen values; APIs that require read results accept Copied values, Local values, unchecked handles, and unnamed arrays of read results.
-Copied contains booleans, numbers, Copied records, unnamed arrays of Copied
-values, and opaque service references. Copied records reject string and reference
-fields, including service references. The cached handle query applies this field
-rule before following Copied field obligations. Frozen records are not Copied.
-Local fields and service data results both use this boundary.
-The Frozen record proof permits the marker as its only embedded field. Each data
-field must have a name. This prevents promoted data-field methods from taking
-implicit addresses through ordinary interface or generic calls.
+`im.Value` requires both Frozen and ReadResult. It can extract a scalar, Copied
+record, unchecked handle, or unnamed array of such values. It cannot extract a
+shared Frozen record or a Local value. A Frozen record is not Copied, even when
+all its fields are numbers. Marker values themselves are annotations, not data
+that satisfy these categories.
 
-## Source matching
+A Frozen record embeds only its marker; each data field must have a name.
+The shared type proof enforces this for both local and imported types. It
+prevents Go from promoting a data-field method that can take a hidden field
+address through an ordinary interface or generic call.
 
-| Rule | Implementation |
-| --- | --- |
-| Frozen and Local fields are immutable from construction | [Write matcher](../../pkg/analyzer/subset_writes.go). |
-| Ordinary Copied storage uses normal Go operations | One storage classification excludes Copied records. The owner walk still finds Frozen and Local owners around Copied fields and elements. |
-| Protected pointers come from fresh storage or a Cell root | [Source matcher](../../pkg/analyzer/subset_operations.go) and fixed LoadSharedPointer call; reject addresses of reassignable locals. |
-| Local storage and captures cannot escape | Declaration, assignment, container, callback, and closure checks use the recursive Local classification. |
-| Application code cannot call Projection.Read | [Generation checks](../../pkg/analyzer/generation.go) identify the exact current generated token file before source checks. Handwritten Read calls are rejected. |
-| Reads preserve access types | Generated getters return Copied values, unchecked handles, or local projections. Value requires both Frozen and ReadResult. |
+Type proof says what a value can contain. The owner of a field determines
+whether that storage can change. Frozen and Local fields are fixed at
+construction, including nested Copied fields and arrays. Copying a Copied field
+into an ordinary variable removes that owner's write restriction:
 
-The cached [classifier](../../internal/checker/classification.go) stops at a
-Frozen pointer. The handle and its ordinary carriers therefore use Go storage
-and transport rules. The source owner walk checks selected and dereferenced
-objects, including compiler-resolved promoted fields. A Frozen target keeps
-its write and address rules. Local pointers keep their existing storage rule.
+```go
+// totals is a Copied field in a Frozen record.
+copy := record.totals
+copy.Count++ // ordinary storage can change
+// record.totals.Count++ would change protected storage.
+```
 
-## Generated projections
+[Storage classification](../../pkg/analyzer/subset_shapes.go) follows selector,
+index, pointer, and parenthesis chains to find the owner. Write checks and
+method receiver checks use that result. An implicit pointer receiver can change
+an addressable field, so method matching checks the declared receiver type
+before it takes an ordinary-call path. Copied values outside a protected owner
+use normal Go mutation, pointers, interfaces, callbacks, and generic calls.
 
-The [generator](../../internal/projectiongen/generate.go) reads named package-scope
-Frozen declarations with compiler type information. Frozen records get typed
-projections, projection constructors, and Cell holders. Local and Copied records need no
-generation.
+The cached classifier stops at a pointer to a Frozen record. The pointer handle
+and its ordinary carriers use Go storage and transport rules. The source owner
+walk still checks selected and dereferenced objects, including fields promoted
+through an ordinary holder. Typed writes and addresses into the Frozen target
+remain rejected. Native containers of these pointers need builder ownership
+checks only if they are passed to Freeze.
 
-[Generated field methods](../../internal/projectiongen/readers.go) use a projection of the
-root pointer and read fields directly. Frozen records and arrays use projections with
-that root and the required indices. Copied scalars/records, opaque service references, and unchecked handles
-return directly. Native strings use ProjectString; frozen string, slice, and map
-fields use their Projection methods.
+Protected pointers start at fresh storage, such as a record literal or
+allocation, or at a published Cell root through LoadSharedPointer. An address of a reassignable local would permit a later write
+through that local, so it is rejected. Local pointers can remain local or pass
+to direct typed calls, but cannot be stored or returned. Local values cannot
+enter persistent storage through a record, array, collection, or Cell. These
+are source restrictions; the runtime adds no loan or ownership state.
 
-The [generation check](../../pkg/analyzer/generation.go) requires the canonical
-directive and compares normalized output bytes with the generator's current
-result. Before source checks, it identifies the matching physical token file.
-Only that file can call im.Projection.Read or form interior Frozen-record
-addresses. A generated header or line directive gives no such permission.
-All ordinary type, write, capture, generic, receiver, and transport checks remain.
-Generated declarations are excluded from input types, not from source checks.
-Function-local, anonymous, and test-only Frozen declarations are rejected.
+## Freeze transfers native storage
 
-## Cell capability
+`FrozenSlice` and `FrozenMap` contain private native handles. Freeze puts the
+existing handle in the wrapper; it does not copy the backing storage. The
+analyzer must therefore establish one mutable builder handle and reject use
+of it after transfer.
 
-[Cell](../../pkg/im/cell.go) stores a private atomic pointer. Store creates a new
-T root. Raw Load returns Projection[T]; LoadPointer returns Projection[*T]; LoadShared returns T.
-LoadSharedPointer returns the selected *T without a copy and requires a Frozen record T.
-The generated Cell.Load uses LoadPointer without a root copy. All reads use the
-same Frozen payload proof. Only code with the Cell has LoadShared access.
-Projection APIs do not return the owning Cell. A generated Frozen interface
-projection has no raw payload getter, but a declared method can return its Frozen
-receiver or other values under the ordinary method rules.
-An unchecked handle can be read with Value; its declaring package can then use Unwrap.
+```go
+values := make([]int, 0, 2)
+values = append(values, 10, 20)
+frozen := im.FreezeSlice(values)
+// Later reads use frozen. A later use of values is rejected.
+```
 
-The [slot matcher](../../pkg/analyzer/owner_slot.go) restricts Cells to named
-slots and direct calls. Named holder fields can contain other holders. Holder
-methods use direct non-generic calls and exact pointer receivers, or Go's
-implicit address of an addressable holder variable or direct field. Holder
-checks prevent copying the atomic pointer. Local
-values cannot be stored in a Cell, even through a Frozen record or type alias.
+[Discovery](../../internal/freeze/discover.go) indexes variables by compiler
+`*types.Var` identity, so shadowed names remain separate. It records each
+builder's declaration, function body, and fresh initializer. Fresh sources are
+native make, literals, bare nil, zero declarations, and the exact fixed Clone
+methods. It selects fresh containers with protected elements and every native
+Freeze input. A scalar Clone that is never frozen needs no builder analysis.
 
-## Trusted values
+[Use checks](../../internal/freeze/uses.go) reject operations that can preserve
+another handle: copies, subslices, slot addresses, escapes, and unmatched calls.
+Reading an immutable pointer element does not alias the container slot. Taking
+the slot's address does. The checks stop following storage when an operation
+produces a separate value.
 
-UncheckedValue is a Frozen handle under its declaring package's immutability
-promise. It is also a read result, so Local fields, services, generated getters,
-and Value can return the handle. It is not Copied; projection Clone keeps its
-Copied requirement. Trust/Unwrap keep their declaring-package check. The handle
-classification stays opaque, so ordinary handle transport keeps Go rules.
+[Flow analysis](../../internal/freeze/flow.go) then checks consumption in each
+participating function:
 
-## Native builders
+1. Build Go's control-flow graph and expand blocks into ordered events.
+2. Give each builder a dense integer ID. Events carry that ID plus consume and
+   reset flags.
+3. Track a bitset of possibly consumed builders at each event. Merge incoming
+   paths by union. Freeze sets its input bit after argument evaluation. A fresh
+   declaration clears its bit, including each execution in a loop.
+4. Report a use when its input state contains that builder's bit.
 
-| Stage | Work |
-| --- | --- |
-| [Discovery](../../internal/freeze/discover.go) | Index local declarations by compiler variable identity. Track containers with protected contents and native Freeze inputs. Native Copied and Frozen-pointer containers need ownership checks only when later frozen. |
-| Initial source | Match allocation, literal, bare nil, zero declaration, or exact collection Clone. |
-| [Use checks](../../internal/freeze/uses.go) | Reject handle copies, subslices, slot addresses, escapes, and unmatched calls. |
+The solver visits reachable events in reverse postorder until states stop
+changing. A Freeze on either branch makes a later joined use invalid. Delayed
+writes occur after operand evaluation, so a Freeze in a write operand cannot
+hide use of the old storage. Freeze during an active range over the same builder
+is rejected because the range retains its handle.
 
-Copying an immutable element pointer does not alias a builder slot; taking the
-slot's address does. Follow selectors and indices only until they produce a separate value.
+Builder analysis returns the participating variable set to source matching.
+That set permits native builder storage; it does not exempt its operations
+from source checks. Exclusive use and consumption are both required. There is
+no runtime fallback if analysis is omitted.
 
-[Flow analysis](../../internal/freeze/flow.go) expands each participating
-function's Go control-flow graph into ordered use, consume, and reset events.
-A forward solver tracks sets of consumed builder identities in bitsets. Each
-function assigns dense IDs to its builders and retains one input and output
-bitset per event:
+## A projection retains a read root
 
-- A join takes the union of predecessor states.
-- Freeze adds the input identity after argument evaluation.
-- A fresh declaration clears its identity, including on each loop iteration.
-- A later use fails if any incoming path has consumed the builder.
+`Projection[T]` contains T by value. For a record reader, T is a pointer to the
+Frozen root. A generated projection is an im.Local record around that pointer
+projection. Its methods select fields directly from the retained root. Nested
+record and array projections keep the root and necessary indices, so a scalar
+read does not copy a large parent record.
 
-The solver visits reachable points in reverse postorder until sets stop
-changing. Delayed writes are recorded after operand evaluation. Freeze inside
-an active range over the same builder is rejected because the range retains
-the handle. [Source attribution](../../third_party/rustc/README.md) covers the
-graph traversal.
+[Generated field methods](../../internal/projectiongen/readers.go) select a
+result representation by type. Copied values, service references, and unchecked
+handles return directly. Frozen records and arrays return further projections.
+Native strings use ProjectString; frozen string, slice, and map fields use their
+Projection methods. Generated field getters do not expose a mutable slice, map,
+or raw record pointer. Declared Frozen interface methods keep their ordinary result
+rules and can return a Frozen pointer.
 
-## Runtime representation
+Collection projections can still copy an element: SliceProjection.At and
+MapProjection.Get copy the element value into a Projection. SliceProjection.AtPointer
+selects a Frozen record element by address without copying it.
 
-- [FrozenSlice](../../pkg/im/slice.go) and [FrozenMap](../../pkg/im/map.go) hold private native handles.
-- Freeze copies the handle; the analyzer enforces exclusive use and consumption.
-- FrozenString holds a private native string. FreezeString does not copy bytes or consume the immutable input.
-- Reads and [iteration](../../pkg/im/iterator.go) use the native storage directly.
-- Clone copies slots, not referenced objects. Those objects remain safe to share because they are immutable.
+A record returned by value from a map lookup has no addressable map slot.
+`CopyRecord` makes an explicit private root copy and returns its pointer
+projection. A retained nonzero-sized root needs heap storage; the compiler can
+eliminate an allocation for local use. Clone makes independent native collection
+slots under its type constraints; it does not clone referenced objects. Shared referenced objects
+remain immutable. `StringProjection.Unsafe` and `FrozenString.Unsafe` explicitly
+return a shared native string. The caller must obey string immutability; the
+analyzer does not track string origins or lifetimes.
+
+## Why generated code has two special permissions
+
+Application code cannot call `Projection.Read`, even for a scalar. The exact
+current generated file can call it and form interior Frozen-record addresses.
+These operations let typed getters read fields without exposing a public raw
+payload getter.
+
+[Generation verification](../../pkg/analyzer/generation.go) requires named
+package-level Frozen records and interfaces in non-test source, plus exactly
+one canonical go:generate directive. It regenerates expected bytes from
+compiler types and compares the complete file after CRLF normalization. It
+then records the physical token file. A generated header, filename alone, or
+line directive cannot grant permission. A stale or changed file gets neither
+permission. The verified file still passes all normal type, write, capture,
+generic, receiver, and transport checks.
+
+The generator first loads source without stale generated declarations. It
+supplies provisional projection names, reloads the package with those names,
+then proves complete types and writes final methods. This lets interface method
+signatures refer to generated Local projections, including recursive results.
+A final compiler load checks changed provisional output.
+
+Frozen interface projections retain the proved interface and forward declared
+method calls. Each concrete implementation is proved at conversion, with exact
+declared receivers and no promoted user methods. The generated projection has
+no raw getter. A declared method can still return its receiver or other values
+under ordinary method rules; there is no method-effect proof.
+
+## Cell replaces the root
+
+[Cell[T]](../../pkg/im/cell.go) contains an atomic pointer to T. Store takes a
+private root copy and publishes its address. It copies T, not immutable backing
+storage. LoadShared copies the current T for persistent use. Raw Load copies T
+into a local Projection[T]. LoadPointer returns a pointer projection without
+copying T; generated record Cell.Load uses this path. LoadSharedPointer returns
+the selected *T with one atomic load and no root copy. It requires a concrete
+Frozen record T and is also exposed by generated record Cells.
+
+A reader can retain an older projection or Frozen pointer after Store. Its root
+remains reachable through that reference and Go keeps it alive. No explicit reader registration
+or runtime ownership tracking is needed. Possession of the Cell also permits
+LoadShared and LoadSharedPointer; projections do not return the Cell to a reader.
+
+[Slot checks](../../pkg/analyzer/owner_slot.go) require named Cell slots and
+restricted direct access, including holder records. Value-copy checks prevent
+copies of the atomic slot. Holder-pointer source forms are also restricted by
+the current matcher. Holder methods use exact pointer receivers, with the
+allowed Go implicit address of an addressable holder variable or direct field. The
+payload still uses the same Frozen proof as every other persistent value.
+
+`UncheckedValue` is a deliberate exception to payload inspection. Its declaring
+package promises immutability; Trust and Unwrap are restricted to that package.
+The opaque handle is Frozen and a ReadResult, but not Copied. It can pass through
+services and generated getters without exposing a local projection of its
+payload. This promise does not add another proof category.
+
+The [type reference](../reference/types.md) and [source reference](../reference/rules.md)
+give the complete allowed forms. [Freeze tests](../../internal/freeze/freeze_test.go)
+check aliases and flow; [generated read tests](../../internal/projectiongen/testdata/readcost/README.md)
+check that field reads preserve the intended representation.
