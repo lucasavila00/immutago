@@ -53,8 +53,38 @@ The examples use `WorkerRef`, an alias of `supervise.Ref[Worker]`.
 | Call an exported service method directly, including in go or defer | `ref.Borrow().Method()`, `go ref.Borrow().Method()`, `defer ref.Borrow().Method()` |
 | Add parentheses to a direct call | `((ref.Borrow)()).Method()` |
 
-Fixed `im` and `supervise` generic APIs are allowed. User generic type arguments
-cannot contain references, including in fields, interfaces, or callback types.
+### Atomic reference storage — exhaustive
+
+Use `sync/atomic.Pointer[T]` when goroutines read and replace a selected reference.
+T follows the reference storage rules above. It can be a reference or contain
+references in struct fields, native containers, or callback signatures.
+For example, `current` can be a field with type `atomic.Pointer[WorkerRef]`:
+
+```go
+current.Store(&ref)
+if selected := current.Load(); selected != nil {
+    count := selected.Borrow().Count()
+    _ = count
+}
+```
+
+| Form | Example |
+| --- | --- |
+| Declare, construct, or allocate the standard pointer type | `var current atomic.Pointer[WorkerRef]`, `atomic.Pointer[WorkerRef]{}`, `new(atomic.Pointer[WorkerRef])` |
+| Store a type that contains references | `type Slot struct { Ref WorkerRef }`; `var current atomic.Pointer[Slot]`; `var produce atomic.Pointer[func() WorkerRef]` |
+| Use an import alias, a concrete type alias, or a generic alias with one type parameter that forwards it unchanged | `import atom "sync/atomic"`; `type Selected = atom.Pointer[WorkerRef]`; `type Pointer[T any] = atom.Pointer[T]`; `var current Pointer[WorkerRef]` |
+| Load, store, swap, or compare and swap typed pointers, including nil | `selected := current.Load()`, `current.Store(&ref)`, `previous := current.Swap(&ref)`, `changed := current.CompareAndSwap(previous, nil)` |
+
+The reference operations above apply to these typed values. The atomic type does
+not change the Borrow call rule or the im type and storage rules. Do not change
+the pointed-to value while another goroutine reads it. Do not copy an atomic
+pointer after its first use.
+
+### Generic reference types — exhaustive
+
+Fixed `im` and `supervise` generic APIs and the atomic forms above are allowed.
+Other generic type arguments cannot contain references, including in fields,
+interfaces, or callback types.
 User generics can name a concrete reference type without using it as a type argument:
 
 | Form | Example |
@@ -107,6 +137,9 @@ service pointers and their use across restarts in the service code.
 | `identity(ref)` with generic identity | Use a concrete `supervise.Ref[Worker]` parameter, or first convert to an interface. |
 | `WorkerRef(other)` where other has a different defined concrete type | Use a reference type alias and copy the value. |
 | `wrapper.Borrow()` through an embedded Ref | Select the reference field: `wrapper.Ref.Borrow().Method()`. |
+| `type Box[T any] struct { Value T }`; `atomic.Pointer[Box[WorkerRef]]` | Use `type Slot struct { Ref WorkerRef }` and `atomic.Pointer[Slot]`. |
+| `type Pointer[T any] = atomic.Pointer[Box[T]]`; `Pointer[WorkerRef]` | Use `type Pointer[T any] = atomic.Pointer[T]` and a concrete Slot type. |
+| `type Pointer[T any] atomic.Pointer[T]`; `Pointer[WorkerRef]` | Use a type alias: `type Pointer[T any] = atomic.Pointer[T]`. |
 
 ## What the reference rule does not check
 
