@@ -157,14 +157,14 @@ The fixed im and supervise implementations obey reviewed API contracts.
 UncheckedValue is the explicit package-level immutability promise. Do not expose
 its payload through a local projection or add another trust annotation.
 
-Every package with user-declared Frozen or Local records must have this directive:
+Every package with user-declared Frozen records must have this directive:
 `//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen`.
-Declare marked records as named package-scope types in non-test Go files.
-Reject function-local, anonymous, and test-only marked declarations.
+Declare Frozen records as named package-scope types in non-test Go files.
+Reject function-local, anonymous, and test-only Frozen declarations.
 Keep the exact current `zz_immutago.gen.go` output. Frozen records get typed
-projections and Cells; Local records use the same required generation step without
-another wrapper. Keep the two generated-only operations above separate from
-the normal checks; do not skip analysis of a generated file.
+projections and Cells. Local records need no generation. Keep the two
+generated-only operations above separate from the normal checks; do not skip
+analysis of a generated file.
 
 Test supported and rejected forms through the real CLI with diagnostic snapshots.
 Keep one `output.txt` per fixture package for combined stdout and stderr. Keep

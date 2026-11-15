@@ -29,9 +29,9 @@ Frozen values; APIs that require read results accept only Copied or Local types.
 ## Generated projections
 
 The [generator](../../internal/projectiongen/generate.go) reads named package-scope
-Frozen and Local declarations with compiler type information. Frozen records get
-typed projections, projection constructors, and Cell holders. Local declarations enter the
-required output without another wrapper.
+Frozen declarations with compiler type information. Frozen records get typed
+projections, projection constructors, and Cell holders. Local records need no
+generation.
 
 [Generated field methods](../../internal/projectiongen/readers.go) use a projection of the
 root pointer and read fields directly. Records and arrays use projections with
@@ -45,7 +45,7 @@ Only that file can call im.Projection.Read or form interior Frozen-record
 addresses. A generated header or line directive gives no such permission.
 All ordinary type, write, capture, generic, receiver, and transport checks remain.
 Generated declarations are excluded from input types, not from source checks.
-Function-local, anonymous, and test-only marked declarations are rejected.
+Function-local, anonymous, and test-only Frozen declarations are rejected.
 
 ## Cell capability
 

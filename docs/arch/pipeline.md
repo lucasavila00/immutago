@@ -15,11 +15,12 @@ The [entry point](../../pkg/analyzer/analyzer.go) runs these stages:
 5. Report checked dependency failures and record local diagnostics.
 6. Check [service method results](services.md), excluding Init, Run, and methods
    supplied by the runtime. In im packages, also check field types and im type arguments.
-7. Match service reference operations in all selected packages.
-8. For packages that import or use im, prove native builder ownership and match
-   protected source forms. Require the exact generation directive and current
-   output for source marked records.
-9. Export failures for importers.
+7. For packages that import or use im, require the exact generation directive
+   and current output for source Frozen records.
+8. Match service reference operations in all selected packages.
+9. For packages that import or use im, prove native builder ownership and match
+   protected source forms.
+10. Export failures for importers.
 
 Package selection and state:
 

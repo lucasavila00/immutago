@@ -6,6 +6,7 @@
 | --- | --- |
 | Go compiler, runtime, and standard library | Compiler types, runtime behavior, and standard APIs. |
 | Fixed im and supervise implementations | Collection storage, Cell, and service runtime. |
+| Canonical projection generator | Read and interior Frozen-record addresses in its exact verified output; all normal source checks still apply. |
 | Ordinary packages outside the [package boundary](../rules.md#package-boundary) | Go API contracts, including immutable strings and no hidden writes to protected memory. |
 | `im.Trust` | The declaring package's immutability promise. |
 
@@ -34,7 +35,7 @@ Enforcement:
 
 | Evidence | Source |
 | --- | --- |
-| Generator startup, repeatable output, Local-only packages, and changed fields | [Generator tests](../../internal/projectiongen/generate_test.go) |
+| Generator startup, repeatable output, Frozen records, and changed fields | [Generator tests](../../internal/projectiongen/generate_test.go) |
 | Frozen, Copied, ReadResult, and recursive marker proofs | [Category tests](../../internal/checker/categories_test.go), [type tests](../../internal/checker/types_test.go), [marker tests](../../internal/checker/markers_test.go) |
 | Immutable writes and pointer escape rules | [Object tests](../../pkg/analyzer/immutable_objects_test.go), [escape tests](../../pkg/analyzer/escape_test.go) |
 | Complete allowed shapes and nearby rejections | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go) |

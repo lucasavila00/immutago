@@ -1,8 +1,8 @@
 # Typed projections
 
-Every package with user-declared `im.Frozen` or `im.Local` records requires
-generation. Frozen records get typed projections; Local records need no additional
-wrapper. Field methods return Copied values or local projections.
+Every package with user-declared `im.Frozen` records requires generation.
+Frozen records get typed projections. Field methods return Copied values or
+local projections. Local records need no generation.
 
 ## Generate projections
 
@@ -25,7 +25,7 @@ type Settings struct {
 
 Run `go generate ./...`. The command writes `zz_immutago.gen.go` in each package
 with this directive. It uses named package-scope records from non-test Go files.
-It generates projections for each concrete Frozen record and records the Local declarations.
+It generates projections for each concrete Frozen record.
 Run it again after a field changes. Keep this output with the source. The checker
 rejects a missing directive, missing output, or stale output. Generated-name
 conflicts are errors.
@@ -150,7 +150,7 @@ The lists are complete; unlisted operations are rejected.
 | Read a raw pointer or UncheckedValue from a projection | Keep that operation in code with persistent Frozen access. |
 | Declare `SettingsProjection` or `SettingsCell` before generation | Use another source name; these names belong to the generated API. |
 | A field name that conflicts with a generated member, such as Local | Rename the source field. |
-| A function-local, anonymous, or test-only marked record | Declare a named type at package scope in a non-test Go file. |
+| A function-local, anonymous, or test-only Frozen record | Declare a named type at package scope in a non-test Go file. |
 
 Generated projections keep a pointer to the selected immutable record. Primitive
 Projection[T] values and explicit copies have their ordinary Go value-copy costs.

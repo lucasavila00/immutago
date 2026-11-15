@@ -1,7 +1,7 @@
 # Local records
 
-Embed `im.Local` to combine local read projections with copied values. Its package
-must use the [required generation step](rules.md#required-generation):
+Embed `im.Local` to combine local read projections with copied values.
+Local records need no generation:
 
 ```go
 type Prediction struct {

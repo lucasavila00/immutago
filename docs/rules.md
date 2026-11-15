@@ -34,7 +34,7 @@ are rejected.
 
 ### Required generation
 
-Declare Frozen and Local records as named types at package scope in non-test Go
+Declare Frozen records as named types at package scope in non-test Go
 files. Every package with these declarations needs one exact directive:
 
 ```go
@@ -43,23 +43,22 @@ files. Every package with these declarations needs one exact directive:
 
 | Package setup — exhaustive | Requirement |
 | --- | --- |
-| Record declaration | Named package-scope type in a `.go` file that does not end in `_test.go`. |
+| Frozen record declaration | Named package-scope type in a `.go` file that does not end in `_test.go`. |
 | Directive | Use exactly one copy of the command above, at column 1 in a non-test package source file. |
 | Output | Keep `zz_immutago.gen.go` from the current declarations. |
 | Frozen records | Generate typed field projections, Projection constructors, and Cells. |
-| Local records | Run the same command; no additional projection type is needed. |
 
 Run `go generate ./...` after a record changes. The checker rejects a missing
 directive, missing output, or stale output. Only verified generated code can use
 the internal Read operation and form interior Frozen-record addresses. All normal
 type, write, capture, generic, receiver, and transport checks still apply.
-Generated Local wrappers are not generation inputs.
+Local records need no generation.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
-| A marked record with no generation directive | Add the exact directive and run generation. |
-| A marked type inside a function or `_test.go` file | Move its declaration to a non-test Go file at package scope. |
-| An anonymous marked record, including a field type | Declare a named package-scope record and use that type. |
+| A Frozen record with no generation directive | Add the exact directive and run generation. |
+| A Frozen type inside a function or `_test.go` file | Move its declaration to a non-test Go file at package scope. |
+| An anonymous Frozen record, including a field type | Declare a named package-scope record and use that type. |
 | An alternate generation command in the directive | Use the canonical command above. |
 | A manually changed or stale generated file | Regenerate from the source declarations. |
 

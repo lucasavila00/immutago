@@ -15,7 +15,7 @@ Use local runs for focused debugging. Push the branch and use
 | Command | Purpose |
 | --- | --- |
 | `make build` | Build `bin/immutago`. |
-| `go generate ./path/to/package` | Update typed projections and required output after marked records change. |
+| `go generate ./path/to/package` | Update typed projections and required output after Frozen records change. |
 | `go test ./internal/freeze -run TestFreezeOwnership -count=1` | Debug builder ownership. |
 | `go test ./tests -run '^TestCLI/documentation$' -count=1` | Check guide fixtures through the CLI. |
 | `make docs` | Generate package references from Go comments. |
@@ -43,7 +43,7 @@ A passing snapshot is not proof of the rule. Check the accepted forms and nearby
 rejections. Consumer-only dependency cases must also pass through CLI and vet.
 
 The checker requires the exact generation directive and current output in every
-package with source Frozen or Local records. Check changed documentation links
+package with source Frozen records. Check changed documentation links
 and run complete examples through the CLI.
 Keep language rules in the guide and implementation facts in architecture.
 [Source checks](../scripts/README.md) define comment and size requirements.

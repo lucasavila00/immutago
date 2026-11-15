@@ -24,10 +24,11 @@ record or require generated output; im.Local still follows Local transport rules
 | `im.Local` | Read-result fields | Can be copied locally, passed directly, and returned; cannot enter persistent storage. |
 
 - Embed exactly one marker by value; aliases work.
-- Declare marked records as named package-scope types in non-test Go files.
+- Declare Frozen records as named package-scope types in non-test Go files.
+  Local records need no generation.
 - Set fields at construction. Later field, element, or dereference writes fail.
-- Each nested record needs its own named declaration and marker. Unmarked structs
-  cannot own protected data.
+- Each nested record needs its own marker. Unmarked structs cannot own
+  protected data.
 - Native containers, interfaces, functions, and Local values are not Frozen fields.
 - A Cell is mutable storage, not a Frozen value or read result.
 
@@ -41,7 +42,7 @@ record or require generated output; im.Local still follows Local transport rules
 | `Text(Projection[S])` | S has underlying type string. |
 | `IsNil(Projection[*T])` | T is a Frozen record. |
 | `Copy(Projection[T])` | T is Copied. |
-| `CopyProjection(Projection[T])` | T is a concrete Frozen record; the result projections a new copied root. |
+| `CopyProjection(Projection[T])` | T is a concrete Frozen record; returns a projection of a new copied root. |
 | `Cell[T].LoadPointer()`, `SliceProjection[T].AtPointer(i)` | T is a concrete Frozen record; the result is Projection[*T]. |
 | `SliceProjection[E].Clone()` | E is Copied. |
 | `MapProjection[K,V].Clone()` | K and V are Copied. |
