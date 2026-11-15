@@ -58,7 +58,7 @@ follows the [common forms](common-forms.md).
 | In that package, use either function as a function value | `read := im.Unwrap[compiled]`; `value := read(p.compiled)` |
 
 Aliases resolve to the original type and package. An instance of a named type,
-such as `table[int]`, belongs to the package that declares `baked`. Parentheses
+such as `table[int]`, belongs to the package that declares `table`. Parentheses
 preserve the forms above. `UncheckedValue` has no methods; an interface call or
 a promoted method cannot expose its pointer.
 
