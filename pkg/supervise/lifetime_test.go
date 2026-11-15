@@ -19,11 +19,11 @@ func TestCompletedRunDuringFailureCleanup(t *testing.T) {
 		group := StartGroup(parent)
 		started, cleanup, release := make(chan struct{}), make(chan struct{}), make(chan struct{})
 		var runs atomic.Int32
-		_, err := Start[initializing](group, AssumeConcurrentSafe(&initHooks{
+		_, err := Start[initializing](group, &initHooks{
 			init: func(*initializing) error { return nil },
 			run: func(p *initializing, _ context.Context) {
 				runs.Add(1)
-				_, childErr := Start[initializing](p.Children(), AssumeConcurrentSafe(&initHooks{
+				_, childErr := Start[initializing](p.Children(), &initHooks{
 					init: func(*initializing) error { return nil },
 					run: func(_ *initializing, ctx context.Context) {
 						close(started)
@@ -31,21 +31,21 @@ func TestCompletedRunDuringFailureCleanup(t *testing.T) {
 						close(cleanup)
 						<-release
 					},
-				}))
+				})
 				if childErr != nil {
 					panic(childErr)
 				}
 				<-started
 			},
-		}))
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
 		<-cleanup
-		_, err = Start[initializing](group, AssumeConcurrentSafe(&initHooks{
+		_, err = Start[initializing](group, &initHooks{
 			init: func(*initializing) error { return nil },
 			run:  func(*initializing, context.Context) { panic("sibling") },
-		}))
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -72,10 +72,10 @@ func TestGoexitIsTerminal(t *testing.T) {
 			reported <- stack
 		})
 		var runs atomic.Int32
-		_, err := Start[initializing](parent, AssumeConcurrentSafe(&initHooks{
+		_, err := Start[initializing](parent, &initHooks{
 			init: func(*initializing) error { return nil },
 			run:  func(*initializing, context.Context) { runs.Add(1); runtime.Goexit() },
-		}))
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -113,10 +113,10 @@ func TestTerminalExitPrecedesStopCompletion(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		cleaned, exiting, release := make(chan struct{}), make(chan struct{}), make(chan struct{})
 		parent := root(func(any) { close(exiting); <-release }, nil)
-		_, err := Start[initializing](parent, AssumeConcurrentSafe(&initHooks{
+		_, err := Start[initializing](parent, &initHooks{
 			init: func(*initializing) error { return nil },
 			run:  func(_ *initializing, ctx context.Context) { <-ctx.Done(); close(cleaned) },
-		}))
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -146,10 +146,10 @@ func TestPendingSubtreeStopsWithoutRun(t *testing.T) {
 		pending := newGroup(top, false)
 		nested := StartGroup(pending)
 		var inits, runs atomic.Int32
-		ref, err := Start[initializing](nested, AssumeConcurrentSafe(&initHooks{
+		ref, err := Start[initializing](nested, &initHooks{
 			init: func(p *initializing) error { inits.Add(1); p.Children(); return nil },
 			run:  func(*initializing, context.Context) { runs.Add(1) },
-		}))
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -179,20 +179,20 @@ func checkAncestorStop(t *testing.T, where string) {
 	t.Helper()
 	parent := root(func(value any) { t.Errorf("root escalated: %v", value) }, nil)
 	var inits atomic.Int32
-	child := AssumeConcurrentSafe(&initHooks{
+	child := &initHooks{
 		init: func(*initializing) error { inits.Add(1); return nil },
 		run:  func(*initializing, context.Context) { panic("child failure") },
-	})
+	}
 	ended := make(chan struct{})
 	if where == "group" {
 		nested := StartGroup(parent)
 		_, _ = Start[initializing](nested, child)
-		_, _ = Start[initializing](nested, AssumeConcurrentSafe(&initHooks{
+		_, _ = Start[initializing](nested, &initHooks{
 			init: func(*initializing) error { return nil },
 			run:  func(_ *initializing, ctx context.Context) { <-ctx.Done(); close(ended) },
-		}))
+		})
 	} else {
-		_, _ = Start[initializing](parent, AssumeConcurrentSafe(&initHooks{
+		_, _ = Start[initializing](parent, &initHooks{
 			init: func(p *initializing) error {
 				if where == "Init" {
 					_, _ = Start[initializing](p.Children(), child)
@@ -206,17 +206,17 @@ func checkAncestorStop(t *testing.T, where string) {
 				<-ctx.Done()
 				close(ended)
 			},
-		}))
+		})
 	}
 	cleanup, release := make(chan struct{}), make(chan struct{})
-	_, _ = Start[initializing](parent, AssumeConcurrentSafe(&initHooks{
+	_, _ = Start[initializing](parent, &initHooks{
 		init: func(*initializing) error { return nil },
 		run: func(_ *initializing, ctx context.Context) {
 			<-ctx.Done()
 			close(cleanup)
 			<-release
 		},
-	}))
+	})
 	time.Sleep(2 * time.Second)
 	before := inits.Load()
 	done := parent.Stop()
@@ -244,7 +244,7 @@ func TestStopDuringAdmittedRestartInit(t *testing.T) {
 				entered := make(chan *initializing, 1)
 				initRelease, slowRelease, cleanup := make(chan struct{}), make(chan struct{}), make(chan struct{})
 				var inits, runs atomic.Int32
-				ref, _ := Start[initializing](parent, AssumeConcurrentSafe(&initHooks{
+				ref, _ := Start[initializing](parent, &initHooks{
 					init: func(p *initializing) error {
 						if inits.Add(1) > 1 {
 							p.Children()
@@ -257,17 +257,17 @@ func TestStopDuringAdmittedRestartInit(t *testing.T) {
 						return nil
 					},
 					run: func(*initializing, context.Context) { runs.Add(1); panic("retry") },
-				}))
+				})
 				original := ref.Borrow()
 				candidate := <-entered
-				_, _ = Start[initializing](parent, AssumeConcurrentSafe(&initHooks{
+				_, _ = Start[initializing](parent, &initHooks{
 					init: func(*initializing) error { return nil },
 					run: func(_ *initializing, ctx context.Context) {
 						<-ctx.Done()
 						close(cleanup)
 						<-slowRelease
 					},
-				}))
+				})
 				synctest.Wait()
 				done := parent.Stop()
 				<-cleanup
