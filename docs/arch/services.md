@@ -41,7 +41,8 @@ method uses ordinary mutable data.
 | `ref.Current().Method(args)` | Current's result is the receiver of this direct call. Method is exported and is not Init, Run, or a runtime method. Promoted methods are allowed; promoted Current calls are rejected. | [matchCurrent](../../pkg/analyzer/service_handles.go) |
 | Service method result | No result or one service result, including for promoted methods. | [checkServiceResults](../../pkg/analyzer/service.go) |
 | Reference copies, storage, and calls | Match the [allowed forms](../service-references.md#reference-operations--exhaustive). Reject conversions, assignments to a different interface type, type assertions, and type-switch recovery. Interfaces with reference parameters or results must keep the same interface type. | [matchHandleUse](../../pkg/analyzer/service_handle_uses.go) |
-| User generic type arguments | Reject service references, including inside fields or callback types. Concrete Ref parameters, fields, and results are allowed. | [handleInstance](../../pkg/analyzer/service_handles.go) |
+| Atomic reference storage | Accept the resolved `sync/atomic.Pointer[T]` type and aliases that forward its one argument unchanged. The normal typed reference operations and im checks still apply. | [atomicPointerInstance](../../pkg/analyzer/service_handles.go) |
+| Other generic type arguments | Reject service references, including inside fields or callback types. Concrete Ref parameters, fields, and results are allowed. | [handleInstance](../../pkg/analyzer/service_handles.go) |
 | Functions with service references in receivers, parameters, or results | Require a Go body. This includes references inside fields and callback types. | [checkFunctionBody](../../pkg/analyzer/analyzer.go) |
 | Reference fields in marked objects | Reject field writes after construction. | [matchWrite](../../pkg/analyzer/subset_writes.go) |
 

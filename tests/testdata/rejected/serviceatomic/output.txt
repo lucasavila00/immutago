@@ -1,0 +1,82 @@
+atomic.go:29:2: unmarked struct contains immutable field Local; embed an immutable marker
+  owner: serviceatomic.MixedSlot; field type: serviceatomic.LocalSlot
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+atomic.go:33:2: unmarked struct contains immutable field Values; embed an immutable marker
+  owner: serviceatomic.FrozenSlot; field type: im.FrozenSlice[int]
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+atomic.go:36:10: unsupported immutable operation: user generic type arguments cannot contain service references; use concrete Ref parameters and storage
+  source: Box
+  type: serviceatomic.Box[T any]
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+atomic.go:37:12: unsupported immutable operation: user generic type arguments cannot contain service references; use concrete Ref parameters and storage
+  source: Nested
+  type: serviceatomic.Nested[T any]
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+atomic.go:38:15: unsupported immutable operation: user generic type arguments cannot contain service references; use concrete Ref parameters and storage
+  source: Pointer
+  type: serviceatomic.Pointer[T any]
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+atomic.go:39:13: unsupported immutable operation: user generic type arguments cannot contain service references; use concrete Ref parameters and storage
+  source: Defined
+  type: serviceatomic.Defined[T any]
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+atomic.go:40:11: unmarked struct contains immutable field _; embed an immutable marker
+  owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+atomic.go:40:18: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: Pointer
+  type: atomic.Pointer[T any]
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+atomic.go:40:5: unmarked struct contains immutable field _; embed an immutable marker
+  owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+atomic.go:40:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: local atomic.Pointer[LocalSlot]
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+atomic.go:41:11: unmarked struct contains immutable field _; embed an immutable marker
+  owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+atomic.go:41:18: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: Pointer
+  type: atomic.Pointer[T any]
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+atomic.go:41:5: unmarked struct contains immutable field _; embed an immutable marker
+  owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+atomic.go:41:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: mixed atomic.Pointer[MixedSlot]
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+atomic.go:42:12: unmarked struct contains immutable field _; embed an immutable marker
+  owner: atomic.Pointer[serviceatomic.FrozenSlot]; field type: [0]*serviceatomic.FrozenSlot
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+atomic.go:42:19: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: Pointer
+  type: atomic.Pointer[T any]
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+atomic.go:42:5: unmarked struct contains immutable field _; embed an immutable marker
+  owner: atomic.Pointer[serviceatomic.FrozenSlot]; field type: [0]*serviceatomic.FrozenSlot
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+atomic.go:46:14: unsupported immutable operation: service references cannot enter interfaces; keep the concrete Ref type
+  source: ref
+  type: serviceatomic.WorkerRef
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+atomic.go:49:19: unsupported immutable operation: service references cannot enter interfaces; keep the concrete Ref type
+  source: pointer.Load()
+  type: *serviceatomic.WorkerRef
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+atomic.go:54:13: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
+  source: pointer.Load().Current
+  type: func() *serviceatomic.Worker
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+atomic.go:61:6: unsupported immutable operation: user generic type arguments cannot contain service references; use concrete Ref parameters and storage
+  source: Generic
+  type: func(value *atomic.Pointer[serviceatomic.WorkerRef]) *atomic.Pointer[serviceatomic.WorkerRef]
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
