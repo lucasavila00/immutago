@@ -142,11 +142,11 @@ The root's terminal panic is `*supervise.Failure`:
 
 | Field | Content |
 | --- | --- |
-| `Service` | Go type name of the failing service. |
+| `Service` | Go type string of the failing service. |
 | `Value` | Original panic, restart Init error, or Goexit error. |
 | `Stack` | Stack from the failing service's goroutine. |
 
 Use `errors.As` to identify Failure and `errors.Is` to match its original error.
 The root selects one terminal failure. Ordered shutdown completes before it
-panics. A Stop request accepted first prevents a later failure from terminating
-the process.
+panics. A Stop request for the failing service's subtree, accepted first, prevents that
+failure from terminating the process. Stopping an unrelated group does not.

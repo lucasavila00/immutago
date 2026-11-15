@@ -80,7 +80,7 @@ type Group struct {
 func NewRoot(report func(any, []byte)) *Group
 ```
 
-NewRoot creates an active lifetime group. An exhausted service or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered panic or restart Init error with its original stack. Reports can overlap, must return, and must not wait for their group to stop.
+NewRoot creates an active lifetime group. An exhausted service or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered panic, restart Init error, or Goexit with its original stack. Reports can overlap, must return, and must not wait for their group to stop.
 
 ### func StartGroup
 

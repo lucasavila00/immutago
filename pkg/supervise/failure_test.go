@@ -51,16 +51,16 @@ func checkFailureOrigin(t *testing.T, shape string, reporting bool) {
 	terminal := make(chan any, 1)
 	var mu sync.Mutex
 	var reports []any
-	var report func(any, []byte)
-	if reporting {
-		report = func(value any, stack []byte) {
-			if !bytes.Contains(stack, []byte("failureLeaf).Run")) {
-				t.Errorf("report lost the leaf stack:\n%s", stack)
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			reports = append(reports, value)
+	report := func(value any, stack []byte) {
+		if !bytes.Contains(stack, []byte("failureLeaf).Run")) {
+			t.Errorf("report lost the leaf stack:\n%s", stack)
 		}
+		mu.Lock()
+		defer mu.Unlock()
+		reports = append(reports, value)
+	}
+	if !reporting {
+		report = nil
 	}
 	top := root(func(value any) { terminal <- value }, report)
 	parent := top

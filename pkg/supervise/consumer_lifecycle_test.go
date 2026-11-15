@@ -107,7 +107,10 @@ func TestConsumerParentReplacement(t *testing.T) {
 		}
 		<-peer.started
 		fail, finish := make(chan struct{}), make(chan struct{})
-		args := consumerParentArgs{starts: new(atomic.Int32), workers: make(chan consumerLifetime, 2), runs: make(chan int32, 2), fail: fail, finish: finish}
+		args := consumerParentArgs{
+			starts: new(atomic.Int32), workers: make(chan consumerLifetime, 2),
+			runs: make(chan int32, 2), fail: fail, finish: finish,
+		}
 		ref, err := Start[consumerParent](group, args)
 		if err != nil {
 			t.Fatal(err)
