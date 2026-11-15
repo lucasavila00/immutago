@@ -23,14 +23,10 @@ The caller can keep `route.Pool` and call the pool directly.
 ## Handle operations — exhaustive
 
 The tables in this section list all allowed handle forms. Unlisted handle
-operations are rejected. Go type rules also apply.
+operations are rejected.
 
 `T` must be a concrete struct that embeds `supervise.Service[A]`.
-The examples use a service named `Worker` and this alias:
-
-```go
-type WorkerRef = supervise.Ref[Worker]
-```
+The examples use `WorkerRef`, an alias of `supervise.Ref[Worker]`.
 
 | Form | Example |
 | --- | --- |
@@ -49,7 +45,8 @@ type WorkerRef = supervise.Ref[Worker]
 | Read native container sizes | `len(workers)`, `cap(workers)` |
 | Send, receive, or close a concrete channel | `ch <- ref`, `ref := <-ch`, `close(ch)` |
 | Copy, pass, or call callbacks with concrete handle parameters and results | `func use(ref WorkerRef, call func(WorkerRef)) { call(ref) }`, `next := produce; ref := next()` where produce has type `func() WorkerRef` |
-| Copy, pass, return, or call a producer interface with the same interface type | `type Producer interface { Worker() WorkerRef }`, `next := producer`, `producer.Worker().Current().Message()` |
+| Copy, pass, or return an interface with concrete handle parameters or results; keep the same interface type | `type Producer interface { Worker() WorkerRef }`, `type Consumer interface { Use(WorkerRef) }`, `next := producer` |
+| Call these interface methods | `producer.Worker().Current().Message()`, `consumer.Use(ref)` |
 | Capture a handle in a closure | `call := func() { ref.Current().Message() }` |
 | Call a message directly, including in go or defer | `ref.Current().Message()`, `go ref.Current().Message()`, `defer ref.Current().Message()` |
 | Add parentheses to a direct call | `((ref.Current)()).Message()` |
@@ -81,7 +78,7 @@ go ref.Current().Message()
 
 The checker rejects every other use of `Current`, despite its Go return type
 of `*T`. Current panics for an empty or unstarted handle. Each call selects the
-last initialized service; a call in progress finishes on that instance.
+last successfully initialized service; a call in progress finishes on that instance.
 
 ## Rejected examples — non-exhaustive
 
