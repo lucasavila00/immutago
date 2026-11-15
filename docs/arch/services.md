@@ -1,67 +1,78 @@
 # Service checks and runtime
 
-## Result checks
+A service is a mutable Go struct with an embedded `supervise.Service[A]` value.
+`A` is its start argument type. The struct supplies `Run(context.Context)` and
+can supply `Init() error`. A `Group` owns its lifetime. A `Ref[T]` selects the
+latest initialized `T` through a shared atomic slot.
 
-[Service classification](../../internal/checker/types.go) follows embedded fields
-to the resolved `supervise.Service` type. `ServiceEmbeddingReason` checks the
-compiler-selected path to the runtime bind method. Every embedded field on that
-path must be a value, including through aliases; other pointer fields stay ordinary Go.
-[Result checking](../../pkg/analyzer/service.go) visits the pointer method sets
-of named and anonymous service structs:
+These parts solve different problems. The runtime starts, retries, and stops
+services. The analyzer checks reference targets, direct Borrow calls, and method
+result types. Neither part supplies locks for application fields.
 
-1. Skip unexported methods, Init, Run, and methods supplied by the runtime.
-2. Match no result, one read result, `error`, or `(read result, error)` with
-   `resultValue`. Identify error by compiler type identity; aliases work.
-3. Require the general ReadResult proof for the data result only. It accepts Copied values, Local values, unchecked handles, and unnamed arrays of read results.
-   It does not apply another recursive field rule to a returned record.
+## From Start to a method call
 
-Start arguments, method parameters, callbacks, and service implementation code
-follow ordinary Go rules. Borrow calls use the service reference matcher.
-Protected data passes through the im type proofs, source matcher, and Freeze checks.
+Consider a service that loads data in Init and serves reads through an exported
+method. Its caller first uses `Start[T](group, args)`, which returns `(Ref[T],
+error)`. It then calls `ref.Borrow().Method(args)`. That method runs in the
+caller's goroutine; there is no mailbox or request queue.
 
-The classifier treats `Service[A]` as runtime storage, so a service can receive
-im values through its start arguments. When A contains im data, its Frozen
-proof must pass; this prevents storing Local values or pointers. Ordinary A types need
-no immutable proof. `Ref[T]` is an allowed stored type. Its proof checks that T
-is a service without inspecting that service's mutable state. Runtime calls
-use the fixed library operations.
+[Start](../../pkg/supervise/supervise.go) performs these steps:
 
-The source matcher accepts the fixed Start result forms when arguments contain
-protected storage, including two local result bindings and a matching named
-function return. Calls with only ordinary arguments use ordinary Go binding
-rules. The same pair matcher permits direct typed calls returning `(read result, error)`.
-It checks each destination and result with the existing write and transport rules.
-Errors use ordinary Go contracts; their origins and payloads are not analyzed. [CLI fixtures](../../tests/testdata/accepted/serviceinit/main.go)
-and [runtime tests](../../pkg/supervise/init_test.go) check these rules.
+1. Allocate a fresh T. Bind its arguments and parent group before Init.
+2. Run Init in the caller. If Init fails or panics, stop children created by
+   that attempt. Return a zero Ref on error; let an initial panic reach the caller.
+3. Allocate the shared atomic slot and publish the initialized T.
+4. Register a watcher with the parent group. An active group launches it; a
+   pending group keeps it for later activation. If shutdown has begun, clean
+   the initialized value without calling Run.
+5. The watcher calls Run with the service's run context. It cleans the attempt
+   and its children when Run ends.
 
-## Service reference boundary
+A copy of Ref copies a pointer to the slot. Borrow performs one atomic load of
+that slot and returns `*T`. A retry publishes a new initialized T in the same
+slot. A call already in progress can finish on an older T. Stop does not clear
+the slot or wait for direct method calls. `IsZero` only checks whether the slot
+pointer is nil; it does not check readiness or shutdown.
 
-The checker restricts calls through `Ref`. It does not check how a service
-method uses ordinary mutable data.
+## What the analyzer proves
 
-| Checked code | Required check | Source |
-| --- | --- | --- |
-| `Ref[T]` | T is a concrete struct whose selected runtime embedding path contains only value fields. The check does not inspect T's mutable fields. | [refTargetReason](../../internal/checker/proof.go) |
-| `ref.Borrow().Method(args)` | Borrow's result is the receiver of this direct call. Method is exported and is not Init, Run, or a runtime method. Promoted methods are allowed; promoted Borrow calls are rejected. | [matchBorrow](../../pkg/analyzer/service_handles.go) |
-| Service method result | The four result signatures, including for promoted methods. | [checkServiceResults](../../pkg/analyzer/service.go) |
-| Reference fields in marked objects | Reject field writes after construction. | [matchWrite](../../pkg/analyzer/subset_writes.go) |
+The analyzer uses compiler type identity, not field or method spelling alone.
+The [service classifier](../../internal/checker/types.go) finds the embedded
+runtime Service through its selected bind method. Each field on that selected
+embedding path must be a value. This prevents a fresh service from having a nil
+embedded runtime pointer. Other pointer fields in the service use Go rules.
 
-These checks use compiler-resolved types. Reference storage and transport follow
-ordinary Go rules. There is no service-reference expression allowlist or special
-case for atomic storage. The [runtime](../../pkg/supervise/supervise.go) keeps
-Ref's fields private. Copies share one atomic slot; Borrow reads that slot once.
-An interface or generic method can expose the service pointer outside the
-direct-call matcher. This is accepted.
+A `Ref[T]` proof requires a concrete service struct T and the valid embedding
+path. It does not inspect T's mutable application fields. A Ref can be copied,
+stored, passed through an interface, or used in a generic function under Go
+rules. Its copies still select the same slot.
 
-For a fixed runtime method on protected storage, [matchMethod](../../pkg/analyzer/subset_methods.go)
-requires a direct call, no promotion, and an exact receiver type from the
-instantiated signature. The runtime contract replaces the user marked-receiver
-proof. Argument, result, statement, and capture checks still apply. The separate
-Borrow matcher runs first. Thus `route.Worker.IsZero()` can copy a reference
-from a protected field without permitting saved bound methods or service pointers.
+[The Borrow matcher](../../pkg/analyzer/service_handles.go) checks each direct
+use of the runtime Borrow selector. The returned pointer must be the receiver
+of an immediate exported service method call. Init, Run, and runtime methods
+are excluded. Promoted service methods can be called; promoted Borrow selectors
+cannot. Saving `ref.Borrow()`, saving Borrow as a function, or saving a bound
+service method fails this match.
 
-A service can still expose its receiver. For a Counter service with a mutable
-count field, this code passes:
+[Result checking](../../pkg/analyzer/service.go) visits the pointer method set,
+including promoted methods. Each exported user method other than Init and Run
+must return no result, one ReadResult, `error`, or `(ReadResult, error)`.
+ReadResult admits booleans, numbers, Copied records, service references, Local
+records and projections, unchecked handles, and unnamed arrays of read results.
+A Frozen record by itself is not a ReadResult: return its local projection for
+read access. Error means the predeclared Go interface, with aliases accepted.
+The checker does not inspect error origins or payloads.
+
+Start arguments are retained for retries. When `Service[A]` contains protected
+im data or a callback carrying that data, A must pass the Frozen proof. This
+excludes retained Local values. Ordinary arguments and method parameters use
+Go contracts. Protected im arguments and results also pass the normal source,
+write, and transport checks; the runtime API does not bypass them.
+
+### What remains a service review
+
+The direct Borrow rule does not prove that the service pointer stays private.
+For example, this exported method can pass its receiver to a callback:
 
 ```go
 func (c *Counter) Visit(call func(*Counter)) { call(c) }
@@ -71,61 +82,67 @@ func change(ref supervise.Ref[Counter]) {
 }
 ```
 
-Visit is exported and returns no result, so the reference check accepts the call.
-Visit gives its receiver to the callback, which changes count. The same method
-can also save its receiver in a global. Review those operations and the locks
-in the service code. The checker does not prove that service state stays private
-or that concurrent calls are safe.
+The method returns no result and the direct call has the required form. Its
+body can also save the receiver in a global. Indirect interface or generic
+calls can expose it as well. Review state changes, locks, callback contracts,
+and input use in the service code. `ConcurrentSafe[T]` records a caller's
+promise; it adds no synchronization or analyzer rule.
 
-The checks apply to [selected packages](../reference/rules.md#package-boundary).
-The [trusted code list](validation.md#trust-boundary) still applies.
+## One attempt owns one child group
 
-## Publication and child lifetimes
+`Service.Children()` creates a group for that service value. During Init the
+group is pending: child Init calls can finish, but child Run calls wait. When
+the parent Run begins, the runtime activates its children. Failed Init stops
+the pending children. Every retry creates a new service and a new child group.
 
-| Operation | Runtime action |
-| --- | --- |
-| Copy Ref | Copy a pointer to an atomic pointer; all copies select the same current service value. |
-| IsZero | Compare the reference's pointer with nil; no atomic load or allocation. It does not check service readiness. |
-| Start | Create a fresh service, set arguments, and call Init in the caller. Publish after success. Register under the group mutex; if Stop won, clean the candidate without running it. |
-| Restart | Repeat setup; publish with an atomic store only after success. Failure leaves the previous value available. |
-| Borrow | One atomic load, no allocation. |
-| Children created during Init | Register in that run's child group; wait until Run begins. Failed setup stops them. |
-| Shutdown | Stop the child group before cancelling the parent's Run context. |
-| Run returns or panics | Finish child cleanup before ending or waiting to restart. |
-| Start a child after the run ends | Init can run, but child Run cannot: the child group is stopped. |
+On ordered shutdown, the runtime stops and waits for the child group before it
+cancels the parent's Run context. When Run returns or panics, attempt cleanup
+also closes child admission and waits for child cleanup before a retry. A later
+Children call on the ended value returns a stopped group. A saved child Ref can
+still select its last value; the checker does not tie it to the current parent
+attempt.
 
-The checker does not establish whether a saved child reference belongs to the
-current parent run. The [child lifetime reference](../reference/services.md#child-lifetimes)
-describes how callers manage these lifetimes.
+## Group registration and shutdown
 
-The group stores children in a doubly linked list under its mutex. Each child
-holds its own links. Add and removal take constant time; removal clears both
-links. Stop closes admission, then selects the last child under the mutex and waits
-for it outside the mutex. It repeats until the list is empty. No new entries
-can appear during shutdown, so no snapshot is needed.
-[Registry tests](../../pkg/supervise/registry_test.go) check removal, allocation,
-and shutdown order.
+A Group stores children in start order in a doubly linked list. Each child has
+its own previous and next links. The group mutex protects admission, list
+changes, activation, and the decision to stop. Removal clears both links.
+This permits removal of a completed child without a list search.
 
-## Lifetime and retry ownership
+Groups activate at most once and stop at most once. A root starts active; a
+service's child group starts pending. `StartGroup` adds a nested lifetime group,
+not another retry budget. Stop closes admission and cancels the group policy
+context. One shutdown goroutine then selects the last child under the mutex,
+releases the mutex, and waits for that child to stop. It repeats until the list
+is empty. Waiting outside the mutex lets completed watchers remove themselves.
+No new entry can be added after admission closes.
 
-| Owner | Responsibility |
-| --- | --- |
-| Group | Activate once, admit children, stop in reverse order, and remove completed entries. Never restart. |
-| Service watcher | Retry only its own Init/Run failures. Remove its entry when it ends. |
-| Service value | Own one child group. Stop and wait for it before that value ends. |
-| Root | Select one terminal failure, stop the tree, then panic with that failure. |
+The policy context prevents new retries across the subtree at once. Each Run
+has a separate context, cancelled in reverse start order. Thus older services
+can remain available while newer services stop. Initial Init runs before
+registration, so Stop cannot wait for that unregistered setup. Restart Init
+belongs to an existing watcher and is part of its lifetime. A service must not
+wait for its own group to stop from Run: the group is waiting for Run to end.
 
-A group is pending, active, closing, or stopped. Pending groups belong to a
-service whose Run has not started. Activation runs their registered children;
-Stop cleans those children instead. There is no transition back from closing.
-Initial Init runs outside registration, so Stop does not wait for setup that
-has not registered. Restart setup belongs to the registered watcher.
+## Retry and terminal failure
 
-The group policy context closes as soon as Stop is accepted. Watchers use it to
-stop admitting retries. Run contexts close separately in reverse child order.
-This keeps older dependencies available while newer services stop. A parent
-Run context closes after its child group has stopped.
+One watcher owns one service's retry history. A normal Run return ends the
+entry. A panic, or an Init error during a retry, can start a new attempt after
+cleanup. The watcher keeps restart times within five minutes. It permits five
+restarts in that window, with delays of 1, 2, 4, 8, and 16 seconds when no prior
+restart expires. Shutdown interrupts the delay. A failed replacement Init leaves
+the previous value in the Ref slot.
 
-Failures go directly to the root. The root does not retry groups or pass a
-failure through ancestor watchers. A watcher's final defer detects Goexit and
-reports a terminal failure; it does not need another goroutine to retry it.
+An exhausted failure goes directly to the root. Groups and ancestor services
+do not retry it. The root uses the same lock for Stop and terminal failure,
+selects one terminal outcome, stops the tree, then panics with `*Failure`.
+`runtime.Goexit` is terminal; a defer in the watcher detects it and reports it.
+The optional report callback receives failures and stacks. Calls can overlap
+and must return without waiting for their group to stop.
+
+[Runtime tests](../../pkg/supervise/supervise_test.go) check retry and stop
+behavior. [Init tests](../../pkg/supervise/init_test.go) check publication and
+failed setup. [Registry tests](../../pkg/supervise/registry_test.go) check list
+removal and shutdown order. [Reference tests](../../pkg/analyzer/service_handles_test.go)
+check the compiler-resolved Borrow forms. The [service reference](../reference/services.md)
+gives the complete supported source forms.
