@@ -245,6 +245,18 @@ Use the operations above inside these statement forms:
 - Local values and pointers need the exact parameter type, such as
   `func read(p *LocalPoint) int`. Call directly, without `go` or `defer`.
 
+| Multiple-result destinations — exhaustive | Example |
+| --- | --- |
+| Local names or blanks | `view, found := readPair()`, `var view, found = readPair()`, `view, _ = readPair()` |
+| Package names for ordinary results | `view, savedFound = readPair()`, `var _, savedFound = readPair()` |
+| Ordinary fields | `view, state.Found = readPair()` |
+| Ordinary array, slice, or map elements | `view, foundByKey[key] = readPair()` |
+| Ordinary pointer targets | `view, *found = readPair()` |
+| Native builder slots with allowed element types | `points[0], view = readPoint()` |
+
+The normal write and type rules apply to every destination. Unlisted restricted
+binding forms are rejected.
+
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `point.X, found = readPair()` when point is Frozen | Bind local names, then construct a new point. |

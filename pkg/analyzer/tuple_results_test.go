@@ -70,11 +70,13 @@ func numbers()(int,bool){return 1,true}`, "writes to immutable"},
 		{"protected last destination", `func f(){var value Local;var ok bool;ok,value.N=numbers();_=ok};
 func numbers()(bool,int){return true,1}`, "writes to immutable"},
 		{"protected nested destination", `type Parent struct{im.Frozen;Count Count};
-func numbers()(bool,int){return true,1};func f(p *Parent){var ok bool;ok,p.Count.N=numbers();_=ok}`, "writes to immutable"},
+func numbers()(bool,int){return true,1};func f(p *Parent){var ok bool;ok,p.Count.N=numbers();_=ok}`,
+			"writes to immutable"},
 		{"consumed scalar slot", `func f(){values:=[]bool{false};_=im.FreezeSlice(values);
 var value Local;value,values[0]=pair();_=value}`, "consumed owned container"},
 		{"consumed protected slot", `func values()(Frozen,Local){return Frozen{},Local{}};
-func f(){items:=[]Frozen{{}};_=im.FreezeSlice(items);var value Local;items[0],value=values();_=value}`, "consumed owned container"},
+func f(){items:=[]Frozen{{}};_=im.FreezeSlice(items);var value Local;items[0],value=values();_=value}`,
+			"consumed owned container"},
 		{"independent expressions", `func f(){value,ok:=Local{},true;_=value;_=ok}`, "multiple assignments"},
 	}
 	for _, test := range cases {
