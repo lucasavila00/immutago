@@ -99,13 +99,10 @@ const testRuntime = `package supervise
  func (s *Group) Stop() <-chan struct{} { return nil }
  type Ref[T any] struct { value *T }
  func (p Ref[T]) Borrow() *T { return p.value }
- func Reserve[T any]() Ref[T] { return Ref[T]{} }
  func Start[T, A any, P interface{ *T; Run(context.Context); Init() error; bind(A) }](
   parent *Group, args A) (Ref[T], error) {
   return Ref[T]{}, nil
  }
- func StartReserved[T, A any, P interface{ *T; Run(context.Context); Init() error; bind(A) }](
-  parent *Group, ref Ref[T], args A) error { return nil }
  type ConcurrentSafe[T any] struct { value T }
  func AssumeConcurrentSafe[T any](v T) ConcurrentSafe[T] { return ConcurrentSafe[T]{value: v} }
  func (d ConcurrentSafe[T]) Value() T { return d.value }

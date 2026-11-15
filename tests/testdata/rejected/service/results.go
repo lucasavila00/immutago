@@ -41,9 +41,9 @@ type Promoted struct {
 	Counter
 	Methods
 }
-type PointerEmbedded struct{ *supervise.Service[int] }
+type ValueEmbedded struct{ supervise.Service[int] }
 
-func (*PointerEmbedded) Mutable() []int { return nil }
+func (*ValueEmbedded) Mutable() []int { return nil }
 
 // The runtime stores arguments, so a Local pointer cannot be a start argument.
 type StoredPointer struct{ supervise.Service[*Reply] }

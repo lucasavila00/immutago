@@ -51,7 +51,7 @@ Enforcement:
 | Application calculations and reloads | [Shipping quotes](../../examples/shipping/quote_test.go), [catalog reloads](../../examples/shipping/loader_test.go), [search ranking](../../examples/search/query_test.go), [index updates](../../examples/search/indexer_test.go) |
 | CLI source coverage for file refresh and child pools | [File-cache fixture](../../tests/testdata/accepted/servicedoc/main.go), [refresh test](../../tests/testdata/accepted/servicedoc/main_test.go) |
 | UncheckedValue handles: declaring-package wrap and read, and storage as an allowed type | [UncheckedValue tests](../../pkg/analyzer/unchecked_value_test.go), [CLI fixtures](../../tests/testdata/accepted/uncheckedvalue) |
-| Restart, backoff, escalation, stop order, reserved service references, and the test helper | [Runtime tests](../../pkg/supervise/supervise_test.go), [helper tests](../../pkg/supervise/supervisetest/supervisetest_test.go) |
+| Independent retries, terminal failures, child lifetimes, stop order, and the test helper | [Runtime tests](../../pkg/supervise/supervise_test.go), [helper tests](../../pkg/supervise/supervisetest/supervisetest_test.go) |
 | Consumer-only dependency failures | [Dependency tests](../../pkg/analyzer/dependencies_test.go), [graph and gob tests](../../pkg/analyzer/dependencies_graph_test.go), [CLI fixtures](../../tests/cli_test.go) |
 
 The CLI harness builds the shipped command and loads independent consumer

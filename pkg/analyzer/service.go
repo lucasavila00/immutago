@@ -8,6 +8,15 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
+// checkServiceEmbedding checks the selected runtime method path before startup.
+func (c *checks) checkServiceEmbedding(pos token.Pos, t types.Type) {
+	if checker.Service(t) {
+		if reason := checker.ServiceEmbeddingReason(t); reason != "" {
+			c.report(pos, reason)
+		}
+	}
+}
+
 // checkServiceResults checks all user-defined exported methods, including promoted methods.
 func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 	if !checker.Service(t) {
@@ -71,6 +80,7 @@ func (c *checks) visitService(node ast.Node) bool {
 	case *ast.FuncDecl:
 		c.checkFunctionBody(declaration)
 	case *ast.StructType:
+		c.checkServiceEmbedding(declaration.Pos(), c.pass.TypesInfo.TypeOf(declaration))
 		c.checkServiceResults(declaration.Pos(), c.pass.TypesInfo.TypeOf(declaration))
 	}
 	return true

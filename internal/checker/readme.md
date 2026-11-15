@@ -148,6 +148,14 @@ func Service(t types.Type) bool
 
 Service reports whether a struct embeds supervise.Service, directly or indirectly.
 
+## func ServiceEmbeddingReason
+
+```go
+func ServiceEmbeddingReason(t types.Type) string
+```
+
+ServiceEmbeddingReason requires a value path to the selected runtime bind method.
+
 ## type Classifier
 
 Classifier caches protected storage, callback, and service reference queries for one analysis pass. Its zero value is ready for use. Types must not change after their first query. A Classifier must not be used by concurrent passes.

@@ -55,7 +55,7 @@ var subsetFixes = map[string]string{
 		"for objects whose pointers must be shared",
 	"global Local pointers are unsupported": "keep the Local pointer local, or store a Frozen value",
 	"service dependencies cannot enter package variables": "build the service arguments in a local variable " +
-		"and pass them to supervise.Start or supervise.StartReserved",
+		"and pass them to supervise.Start",
 	"containers of Local pointers are unsupported": "keep Local values in local bindings, or store im.Frozen pointers",
 	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",

@@ -52,43 +52,45 @@ func expectInitEnded(t *testing.T, p *initializing) {
 	}
 }
 
-// TestInitBeforePublication keeps Borrow and Run unavailable until Init succeeds.
+// TestInitBeforePublication keeps Start and Run unavailable until Init succeeds.
 func TestInitBeforePublication(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		ref := Reserve[initializing]()
 		entered, release := make(chan struct{}), make(chan struct{})
 		ran := make(chan int, 1)
-		result := make(chan error, 1)
+		result := make(chan Ref[initializing], 1)
 		hooks := &initHooks{
-			init: func(p *initializing) error {
-				close(entered)
-				<-release
-				p.state = 17
-				return nil
-			},
-			run: func(p *initializing, ctx context.Context) { ran <- p.state; <-ctx.Done() },
+			init: func(p *initializing) error { close(entered); <-release; p.state = 17; return nil },
+			run:  func(p *initializing, ctx context.Context) { ran <- p.state; <-ctx.Done() },
 		}
-		go func() { result <- StartReserved(root, ref, AssumeConcurrentSafe(hooks)) }()
+		go func() {
+			ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks))
+			if err != nil {
+				panic(err)
+			}
+			result <- ref
+		}()
 		<-entered
-		expectPanic(t, "supervise: Ref not started", func() { ref.Borrow() })
+		select {
+		case <-result:
+			t.Fatal("Start returned before Init")
+		default:
+		}
 		select {
 		case <-ran:
-			t.Fatal("Run started before Init returned")
+			t.Fatal("Run started before Init")
 		default:
 		}
 		close(release)
-		if err := <-result; err != nil {
-			t.Fatal(err)
-		}
+		ref := <-result
 		if ref.Borrow().state != 17 || <-ran != 17 {
-			t.Fatal("Init state was not published to Borrow and Run")
+			t.Fatal("Init state was not published")
 		}
 		<-root.Stop()
 	})
 }
 
-// TestInitErrorAndRetry checks exact errors, a zero Start result, and reuse of a reserved Ref.
+// TestInitErrorAndRetry checks first errors and a later independent Start.
 func TestInitErrorAndRetry(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
@@ -97,20 +99,10 @@ func TestInitErrorAndRetry(t *testing.T) {
 		if ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks)); err != failure || !ref.IsZero() {
 			t.Fatalf("Start = %v, %v; want zero Ref and original error", ref, err)
 		}
-		ref := Reserve[initializing]()
-		if err := StartReserved(root, ref, AssumeConcurrentSafe(hooks)); err != failure {
-			t.Fatalf("StartReserved error = %v", err)
-		}
-		if ref.IsZero() {
-			t.Fatal("reserved Ref is zero after an Init error")
-		}
-		expectPanic(t, "supervise: Ref not started", func() { ref.Borrow() })
 		hooks.init = func(p *initializing) error { p.state = 3; return nil }
-		if err := StartReserved(root, ref, AssumeConcurrentSafe(hooks)); err != nil {
-			t.Fatal(err)
-		}
-		if ref.Borrow().state != 3 {
-			t.Fatal("retry did not publish its initialized value")
+		ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks))
+		if err != nil || ref.Borrow().state != 3 {
+			t.Fatalf("Start failed: %v", err)
 		}
 		<-root.Stop()
 	})
@@ -157,14 +149,14 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 		}
 		return failure
 	}}
-	ref := Reserve[initializing]()
+	var ref Ref[initializing]
 	var err error
 	var panicValue any
 	finished := make(chan struct{})
 	go func() {
 		defer close(finished)
 		defer func() { panicValue = recover() }()
-		err = StartReserved(root, ref, AssumeConcurrentSafe(hooks))
+		ref, err = Start[initializing](root, AssumeConcurrentSafe(hooks))
 	}()
 	<-finished
 	if mode == "error" && err != failure || mode == "panic" && panicValue != failure {
@@ -173,84 +165,26 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	if mode == "Goexit" && (err != nil || panicValue != nil) {
 		t.Fatalf("Goexit became an error or panic: %v, %v", err, panicValue)
 	}
-	expectPanic(t, "supervise: Ref not started", func() { ref.Borrow() })
+	if !ref.IsZero() {
+		t.Fatal("failed or pending Init published a Ref")
+	}
 	for _, candidate := range candidates {
 		expectInitEnded(t, candidate)
 	}
 	if runs.Load() != 0 {
 		t.Fatal("a staged child ran after failed Init")
 	}
-	retained := len(nested.children)
+	retained := nested.children.count
 	late, lateErr := Start[initializing](nested, AssumeConcurrentSafe(child))
 	if lateErr != nil {
 		t.Fatal(lateErr)
 	}
 	expectInitEnded(t, late.Borrow())
-	if len(nested.children) != retained {
+	if nested.children.count != retained {
 		t.Error("failed Init left a nested group that retains late children")
 	}
 	<-nested.Stop()
 	<-root.Stop()
-}
-
-// TestInitDuplicateStart rejects an existing Ref before it calls Init again.
-func TestInitDuplicateStart(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		parent := &Group{stopped: make(chan struct{})}
-		hooks := &initHooks{init: func(*initializing) error { return nil }}
-		ref, err := Start[initializing](parent, AssumeConcurrentSafe(hooks))
-		if err != nil {
-			t.Fatal(err)
-		}
-		hooks.init = func(*initializing) error { t.Error("duplicate start called Init"); return errors.New("duplicate") }
-		expectPanic(t, "supervise: Ref already started", func() {
-			if err := StartReserved(parent, ref, AssumeConcurrentSafe(hooks)); err != nil {
-				panic(err)
-			}
-		})
-		<-parent.Stop()
-	})
-}
-
-// TestInitConcurrentStarts cleans the candidate that loses publication without changing the winner.
-func TestInitConcurrentStarts(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		parent := &Group{stopped: make(chan struct{})}
-		ref := Reserve[initializing]()
-		entered := make(chan *initializing, 2)
-		release := make(chan struct{})
-		results := make(chan any, 2)
-		hooks := &initHooks{init: func(p *initializing) error {
-			p.Children()
-			entered <- p
-			<-release
-			return nil
-		}}
-		for range 2 {
-			go func() {
-				defer func() { results <- recover() }()
-				if err := StartReserved(parent, ref, AssumeConcurrentSafe(hooks)); err != nil {
-					panic(err)
-				}
-			}()
-		}
-		first, second := <-entered, <-entered
-		close(release)
-		a, b := <-results, <-results
-		if !(a == nil && b == "supervise: Ref already started" || b == nil && a == "supervise: Ref already started") {
-			t.Fatalf("concurrent results = %v, %v", a, b)
-		}
-		loser := first
-		if ref.Borrow() == first {
-			loser = second
-		}
-		expectInitEnded(t, loser)
-		if len(parent.children) != 1 {
-			t.Fatalf("parent has %d entries, want 1", len(parent.children))
-		}
-		<-parent.Stop()
-		expectInitEnded(t, ref.Borrow())
-	})
 }
 
 // TestInitRestartFailures keeps the previous value until a later initialization succeeds.
@@ -326,7 +260,7 @@ func TestInitRestartErrorsEscalate(t *testing.T) {
 		}
 		before := ref.Borrow()
 		time.Sleep(31 * time.Second)
-		if value := <-escalated; value != failure || attempts.Load() != 6 || ref.Borrow() != before {
+		if value := <-escalated; value.(*Failure).Value != failure || attempts.Load() != 6 || ref.Borrow() != before {
 			t.Fatalf("escalation = %v, attempts = %d", value, attempts.Load())
 		}
 		<-parent.Stop()
@@ -336,7 +270,8 @@ func TestInitRestartErrorsEscalate(t *testing.T) {
 // TestInitRestartGoexit cleans the unpublished candidate and lets the watcher finish.
 func TestInitRestartGoexit(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot(nil)
+		terminal := make(chan any, 1)
+		root := root(func(value any) { terminal <- value }, nil)
 		candidates := make(chan *initializing, 1)
 		var attempts atomic.Int32
 		hooks := &initHooks{
@@ -362,6 +297,9 @@ func TestInitRestartGoexit(t *testing.T) {
 		if ref.Borrow() != before {
 			t.Fatal("Goexit published its candidate")
 		}
+		if failure := (<-terminal).(*Failure); failure.Value != errGoexit {
+			t.Fatalf("Goexit failure = %v", failure)
+		}
 		<-root.Stop()
 	})
 }
@@ -383,11 +321,17 @@ func TestInitStopBeforePublication(t *testing.T) {
 			},
 			run: func(*initializing, context.Context) { runs.Add(1) },
 		}
-		ref := Reserve[initializing]()
-		go func() { result <- StartReserved(root, ref, AssumeConcurrentSafe(hooks)) }()
+		var ref Ref[initializing]
+		go func() {
+			var err error
+			ref, err = Start[initializing](root, AssumeConcurrentSafe(hooks))
+			result <- err
+		}()
 		candidate := <-entered
 		<-root.Stop()
-		expectPanic(t, "supervise: Ref not started", func() { ref.Borrow() })
+		if !ref.IsZero() {
+			t.Fatal("failed or pending Init published a Ref")
+		}
 		close(release)
 		if err := <-result; err != nil {
 			t.Fatal(err)
@@ -441,10 +385,11 @@ func TestInitStopDuringRestart(t *testing.T) {
 	})
 }
 
-// TestInitPendingRelaunch initializes a new value if a pending first value was already stopped.
-func TestInitPendingRelaunch(t *testing.T) {
+// TestInitPendingActivation uses the first initialized value exactly once.
+func TestInitPendingActivation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		parent := &Group{stopped: make(chan struct{})}
+		top := NewRoot(nil)
+		parent := newGroup(top, false)
 		var attempts atomic.Int32
 		hooks := &initHooks{init: func(p *initializing) error { p.state = int(attempts.Add(1)); return nil }}
 		ref, err := Start[initializing](parent, AssumeConcurrentSafe(hooks))
@@ -452,14 +397,14 @@ func TestInitPendingRelaunch(t *testing.T) {
 			t.Fatal(err)
 		}
 		before := ref.Borrow()
-		parent.halt()
-		expectInitEnded(t, before)
-		go parent.serve(context.Background())
+		parent.activate()
+		parent.activate()
 		synctest.Wait()
-		if ref.Borrow() == before || ref.Borrow().state != 2 {
-			t.Fatal("parent relaunched an ended candidate")
+		if ref.Borrow() != before || attempts.Load() != 1 {
+			t.Fatal("activation replaced pending setup")
 		}
 		<-parent.Stop()
+		<-top.Stop()
 	})
 }
 
@@ -505,7 +450,7 @@ func TestInitUnderStoppedGroups(t *testing.T) {
 				t.Fatal(err)
 			}
 			expectInitEnded(t, ref.Borrow())
-			if len(group.children) != 0 {
+			if group.children.count != 0 {
 				t.Fatal("group under a stopped parent retains a late candidate")
 			}
 			<-group.Stop()

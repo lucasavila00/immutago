@@ -29,7 +29,7 @@ func (*Table) Run(ctx context.Context) { <-ctx.Done() }
 // First reads the first slot, including before Run begins.
 func (t *Table) First() int { return t.slots[0] }
 
-// main checks successful setup, a returned failure, and a retry on a reserved Ref.
+// main checks successful setup, a returned failure, and a new attempt after failure.
 func main() {
 	root := supervise.NewRoot(nil)
 	table, err := supervise.Start[Table](root, 3)
@@ -40,18 +40,17 @@ func main() {
 	failed, err := supervise.Start[Table](root, 0)
 	fmt.Println("unset:", failed.IsZero())
 	fmt.Println(err)
-	reserved := supervise.Reserve[Table]()
-	fmt.Println("reserved:", reserved.IsZero())
-	err = supervise.StartReserved(root, reserved, 0)
-	fmt.Println(err)
-	if err := supervise.StartReserved(root, reserved, 1); err != nil {
+	var zero supervise.Ref[Table]
+	fmt.Println("zero:", zero.IsZero())
+	retry, err := supervise.Start[Table](root, 1)
+	if err != nil {
 		panic(err)
 	}
-	if !reserved.IsZero() {
-		fmt.Println(reserved.Borrow().First())
+	if !retry.IsZero() {
+		fmt.Println(retry.Borrow().First())
 	}
 	<-root.Stop()
-	fmt.Println("stopped:", reserved.IsZero())
+	fmt.Println("stopped:", retry.IsZero())
 }
 
 // startFailure forwards the startup results without a result binding.
