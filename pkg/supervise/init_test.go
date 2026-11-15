@@ -94,12 +94,15 @@ func TestInitErrorAndRetry(t *testing.T) {
 		root := NewRoot(nil)
 		failure := errors.New("initial setup")
 		hooks := &initHooks{init: func(*initializing) error { return failure }}
-		if ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks)); err != failure || ref.value != nil {
+		if ref, err := Start[initializing](root, AssumeConcurrentSafe(hooks)); err != failure || !ref.IsZero() {
 			t.Fatalf("Start = %v, %v; want empty Ref and original error", ref, err)
 		}
 		ref := Reserve[initializing]()
 		if err := StartReserved(root, ref, AssumeConcurrentSafe(hooks)); err != failure {
 			t.Fatalf("StartReserved error = %v", err)
+		}
+		if ref.IsZero() {
+			t.Fatal("reserved Ref is zero after an Init error")
 		}
 		expectPanic(t, "supervise: Ref not started", func() { ref.Borrow() })
 		hooks.init = func(p *initializing) error { p.state = 3; return nil }

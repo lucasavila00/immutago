@@ -4,6 +4,31 @@
 Call an exported service method with `ref.Borrow().Method(args)`.
 Copies select the same service, including after a restart.
 
+## Optional references
+
+The zero `Ref` is the unset value. Use `IsZero` to test an optional reference:
+
+```go
+if !r.cache.IsZero() {
+    r.cache.Borrow().Get(key)
+}
+```
+
+`IsZero` does not check service readiness. A reference from `Reserve` is nonzero
+before start, but Borrow panics until initialization succeeds. A reference from
+a successful `Start` stays nonzero after stop. Copies give the same result.
+
+`IsZero` uses ordinary reference call forms. The [im rules](common-forms.md) still
+apply to protected expressions. Copy a reference field from a marked object
+before calling `IsZero`:
+
+```go
+ref := route.Worker
+if !ref.IsZero() {
+    ref.Borrow().Count()
+}
+```
+
 ## Example: select a catalog for a quote
 
 The [shipping HTTP handler](../examples/shipping/http.go) keeps a reference to
@@ -34,6 +59,7 @@ The examples use `WorkerRef`, an alias of `supervise.Ref[Worker]`.
 | Read or update ordinary reference storage; take an address or dereference a pointer | `ref := route.Worker`, `workers[name] = ref`, `p := &ref`, `next := *p` |
 | Index or slice native storage | `workers[0]`, `workers[1:]` |
 | Compare references or use them in a switch | `ref == next`, `ref != next`, `switch ref { case next: use(ref) }` |
+| Test whether a reference is unset | `ref.IsZero()`, `if !route.Worker.IsZero() { route.Worker.Borrow().Count() }` where route is ordinary mutable storage |
 | Range over native storage or an iterator with concrete reference types | `for _, ref := range workers { use(ref) }`, `for ref := range iterator { use(ref) }` |
 | Allocate or change native containers | `make([]WorkerRef, 2)`, `append(workers, ref)`, `copy(dst, src)`, `delete(workers, name)`, `clear(workers)` |
 | Read native container sizes | `len(workers)`, `cap(workers)` |
@@ -102,7 +128,7 @@ closure, go, or defer uses it.
 | `selected.Borrow()` with an interface receiver, including method values and expressions | Ordinary Go rules apply: `pointer := selected.Borrow()`, `accessor := selected.Borrow`, `Borrower.Borrow(selected)` where Borrower is the interface type. The result can be stored and used outside the checked call form. |
 
 For direct Ref calls, the checker rejects every other use of `Borrow`, despite
-its Go return type of `*T`. Borrow panics for an empty or unstarted reference.
+its Go return type of `*T`. Borrow panics for a zero or unstarted reference.
 Each call selects the last successfully initialized service; a call in progress
 finishes on that instance.
 Borrow is shared and is not exclusive. No release call is needed.
