@@ -28,7 +28,7 @@ handler := search.HTTPHandler(indexer)
 ```
 
 Use handler for the index's HTTP requests. To remove that work, stop accepting
-new requests and wait for the group:
+new requests and wait for active handlers to finish. Then stop the group:
 
 ```go
 <-group.Stop()

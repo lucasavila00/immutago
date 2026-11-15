@@ -32,7 +32,7 @@ func main() {
 	}
 }
 
-// run loads the catalog before serving and drains HTTP requests before stopping the loader.
+// run loads the catalog before serving and gives requests five seconds to finish on shutdown.
 func run(ctx context.Context, path string, listener net.Listener) error {
 	defer func() { _ = listener.Close() }()
 	root := supervise.NewRoot(nil)
@@ -51,6 +51,10 @@ func run(ctx context.Context, path string, listener net.Listener) error {
 	case <-ctx.Done():
 		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		return server.Shutdown(shutdown)
+		if err := server.Shutdown(shutdown); err != nil {
+			_ = server.Close()
+			return err
+		}
+		return nil
 	}
 }

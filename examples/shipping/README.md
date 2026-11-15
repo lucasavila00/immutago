@@ -91,7 +91,8 @@ including when the file changes during the calculation.
 
 Use `-catalog path/to/rates.json` to select another catalog, or
 `-addr 127.0.0.1:8090` to select another listen address. Press Ctrl+C to stop. The command
-lets active HTTP requests finish before it stops the catalog loader.
+gives active HTTP requests up to five seconds to finish, then closes remaining
+connections and stops the catalog loader.
 
 ## Read the code
 
