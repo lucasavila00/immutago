@@ -33,7 +33,7 @@ type snapshot struct {
 // Prediction identifies the model used to calculate one score.
 type Prediction struct {
 	im.ByValue
-	Name  string
+	Name  im.FrozenString
 	Score float64
 }
 

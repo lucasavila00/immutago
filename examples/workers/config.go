@@ -10,7 +10,7 @@ import (
 // VariantSet is one immutable snapshot of the requested variant names.
 type VariantSet struct {
 	im.ByValue
-	Names im.FrozenSlice[string]
+	Names im.FrozenSlice[im.FrozenString]
 }
 
 // VariantConfig keeps configuration outside the dispatcher that consumes it.
@@ -23,7 +23,7 @@ type VariantConfig struct {
 func (*VariantConfig) Run(ctx context.Context) { <-ctx.Done() }
 
 // Set publishes the requested names.
-func (c *VariantConfig) Set(names im.FrozenSlice[string]) {
+func (c *VariantConfig) Set(names im.FrozenSlice[im.FrozenString]) {
 	c.current.Store(&VariantSet{Names: names})
 }
 

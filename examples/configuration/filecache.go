@@ -15,7 +15,7 @@ import (
 // FileArgs selects a file and its refresh interval.
 type FileArgs struct {
 	im.Shared
-	Path  string
+	Path  im.FrozenString
 	Every time.Duration
 }
 
@@ -52,7 +52,7 @@ func (c *FileCache) Run(ctx context.Context) {
 
 // read replaces the contents after a successful read.
 func (c *FileCache) read() error {
-	path := c.Args().Path
+	path := c.Args().Path.Clone()
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -64,8 +64,8 @@ func (c *FileCache) read() error {
 }
 
 // Text returns the last contents.
-func (c *FileCache) Text() string {
+func (c *FileCache) Text() im.FrozenString {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.text
+	return im.FreezeString(c.text)
 }

@@ -16,7 +16,7 @@ func TestLoadCopiesWeights(t *testing.T) {
 	if got := model.Predict(m, features); got != 9 {
 		t.Fatalf("prediction after input change = %v, want 9", got)
 	}
-	if got := m.Name; got != "score" {
+	if got := m.Name.Clone(); got != "score" {
 		t.Fatalf("model name = %q", got)
 	}
 }

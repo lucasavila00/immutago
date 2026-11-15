@@ -14,11 +14,11 @@ func main() {
 	maps := freezebuilders.Map()
 	a := maps.First
 	b := maps.Second
-	old, _ := a.Get("a")
-	next, _ := b.Get("a")
+	old, _ := a.Get(1)
+	next, _ := b.Get(1)
 	fmt.Println(old, next, a.Len(), b.Len())
 	fmt.Println(freezebuilders.MarkedSlice().At(0).X)
-	item, _ := freezebuilders.MarkedMap().Get("a")
+	item, _ := freezebuilders.MarkedMap().Get(1)
 	fmt.Println(item.X)
 	fmt.Println(freezebuilders.Branch(true).At(0), freezebuilders.Loop(3))
 	fmt.Println(freezebuilders.Nil().Clone() == nil)

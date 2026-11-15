@@ -9,7 +9,7 @@ import (
 
 type Record struct {
 	im.Shared
-	Name string
+	Name im.FrozenString
 }
 
 // First reads a string through an ordinary unsafe helper.
@@ -21,15 +21,15 @@ func First(s string) byte {
 	return data[0]
 }
 
-// NameFirst passes a scalar read to an ordinary helper.
-func NameFirst(record *Record) byte { return First(record.Name) }
+// NameFirst passes an independent string copy to an ordinary helper.
+func NameFirst(record *Record) byte { return First(record.Name.Clone()) }
 
-// NameData retains the ordinary Go string contract without provenance tracking.
-func NameData(record *Record) *byte { return unsafe.StringData(record.Name) }
+// NameData exposes the storage of an independent string copy.
+func NameData(record *Record) *byte { return unsafe.StringData(record.Name.Clone()) }
 
 // CopiedNameData uses an ordinary local string.
 func CopiedNameData(record *Record) *byte {
-	name := record.Name
+	name := record.Name.Clone()
 	return unsafe.StringData(name)
 }
 
