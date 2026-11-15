@@ -65,7 +65,8 @@ viewB ───────┘
 | --- | --- |
 | [Cell.Store](../../pkg/im/cell.go) | A private copy of T behind `atomic.Pointer[T]`; referenced frozen storage stays shared. |
 | Generated Cell.Load | A Local reader around `Projection[*T]`; no copy of T. |
-| Raw Cell.Load or LoadShared | A copy of T; no copy of its backing storage. |
+| Raw Cell.Load | `Projection[T]` containing a copy of T; no copy of backing storage. |
+| Cell.LoadShared | A copy of T for persistent use; no copy of backing storage. |
 | A retained reader | Its pointer keeps the selected value reachable for Go's garbage collector. |
 
 Cell source checks prevent copies of the atomic slot. Readers need no registration
