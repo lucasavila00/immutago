@@ -24,6 +24,9 @@ func (v Record64KiBView) IsNil() bool { return im.IsNil(v.immutagoView) }
 
 // Padding reads the Padding field.
 func (v Record64KiBView) Padding() Record64KiBPaddingView {
+	if im.IsNil(v.immutagoView) {
+		panic("nil frozen record")
+	}
 	return Record64KiBPaddingView{immutagoView: v.immutagoView}
 }
 
@@ -60,6 +63,9 @@ func (v Record8KiBView) IsNil() bool { return im.IsNil(v.immutagoView) }
 
 // Padding reads the Padding field.
 func (v Record8KiBView) Padding() Record8KiBPaddingView {
+	if im.IsNil(v.immutagoView) {
+		panic("nil frozen record")
+	}
 	return Record8KiBPaddingView{immutagoView: v.immutagoView}
 }
 

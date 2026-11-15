@@ -205,6 +205,15 @@ func TestReads(t *testing.T) {
  }); got != 0 { t.Fatalf("read allocations = %g", got) }
  if result != 7 { t.Fatal(result) }
 }
+func TestBounds(t *testing.T) {
+ for _, run := range []func(){
+  func(){ _ = current.Load().Grid().At(2) },
+  func(){ _ = current.Load().Grid().At(-1) },
+  func(){ _ = (LargeView{}).Data() },
+ } {
+  func(){ defer func(){ if recover()==nil { t.Error("missing bounds or nil panic") } }(); run() }()
+ }
+}
 `)
 	command := exec.Command("go", "test", ".")
 	command.Dir = dir

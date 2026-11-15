@@ -116,8 +116,12 @@ func (g *generator) writeField(out *bytes.Buffer, item record, field *types.Var)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "// %s reads the %s field.\nfunc (v %s) %s() %s { return %s }\n",
-		field.Name(), field.Name(), item.name, field.Name(), result, expression)
+	fmt.Fprintf(out, "// %s reads the %s field.\nfunc (v %s) %s() %s {\n",
+		field.Name(), field.Name(), item.name, field.Name(), result)
+	if _, fixed := field.Type().Underlying().(*types.Array); fixed {
+		out.WriteString("if im.IsNil(v.immutagoView) { panic(\"nil frozen record\") }\n")
+	}
+	fmt.Fprintf(out, "return %s\n}\n", expression)
 	return nil
 }
 

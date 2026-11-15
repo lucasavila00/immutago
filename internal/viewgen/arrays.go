@@ -43,6 +43,10 @@ func (g *generator) writeArray(out *bytes.Buffer, item array) error {
 	for _, saved := range item.indices {
 		fmt.Fprintf(out, "%s := v.%s\n", saved, saved)
 	}
+	if _, nested := item.typ.Elem().Underlying().(*types.Array); nested {
+		out.WriteString("if im.IsNil(v.immutagoView) { panic(\"nil frozen record\") }\n")
+		fmt.Fprintf(out, "if %s < 0 || %s >= %d { panic(\"array index out of range\") }\n", index, index, item.typ.Len())
+	}
 	fmt.Fprintf(out, "return %s\n}\n", expression)
 	return nil
 }
