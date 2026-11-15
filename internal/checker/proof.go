@@ -166,8 +166,12 @@ func (p *proof) value(result *obligation, t types.Type) {
 		return
 	}
 	if _, named := t.(*types.Named); named {
-		if _, array := t.Underlying().(*types.Array); array {
+		switch t.Underlying().(type) {
+		case *types.Array:
 			result.reason = "named array must be wrapped in a struct with an immutable marker"
+			return
+		case *types.Pointer:
+			result.reason = "defined pointer types are unsupported in Frozen data; use a pointer alias"
 			return
 		}
 	}

@@ -111,18 +111,7 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 	seen[t] = true
 	switch u := t.Underlying().(type) {
 	case *types.Pointer:
-		if _, ok := u.Elem().Underlying().(*types.Pointer); ok && c.queries.Contains(t) {
-			return "pointer indirection is unsupported"
-		}
-		if c.queries.Contains(t) && !checker.Marked(u.Elem()) {
-			return "immutable references require a concrete marked struct target"
-		}
-		if checker.Marked(u.Elem()) {
-			if reason := c.proofs.Reason(u.Elem()); reason != "" {
-				return reason
-			}
-		}
-		return c.subsetType(u.Elem(), seen)
+		return c.subsetPointer(t, u, seen)
 	case *types.Array:
 		if c.queries.Contains(t) {
 			if reason := c.proofs.Reason(t); reason != "" {
@@ -137,6 +126,25 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 	default:
 		return c.subsetContainer(u)
 	}
+}
+
+// subsetPointer proves the concrete target and rejects hidden pointer forms.
+func (c *subsetChecks) subsetPointer(t types.Type, pointer *types.Pointer, seen map[types.Type]bool) string {
+	if _, named := types.Unalias(t).(*types.Named); named && c.queries.Contains(t) {
+		return "defined pointer types are unsupported in protected storage; use a pointer alias"
+	}
+	if _, nested := pointer.Elem().Underlying().(*types.Pointer); nested && c.queries.Contains(t) {
+		return "pointer indirection is unsupported"
+	}
+	if c.queries.Contains(t) && !checker.Marked(pointer.Elem()) {
+		return "immutable references require a concrete marked struct target"
+	}
+	if checker.Marked(pointer.Elem()) {
+		if reason := c.proofs.Reason(pointer.Elem()); reason != "" {
+			return reason
+		}
+	}
+	return c.subsetType(pointer.Elem(), seen)
 }
 
 // protectedReference identifies a pointer whose target contains immutable storage.

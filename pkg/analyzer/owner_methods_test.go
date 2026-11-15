@@ -3,15 +3,15 @@ package analyzer
 import "testing"
 
 const holderViewTypes = `type Model struct{im.Frozen;Name string;Count int}
-type ModelView struct{im.Local;value im.View[Model]}
-func(v ModelView) Count()int{return im.Copy(im.Select(v.value,func(m Model)int{return m.Count}))}
-type ModelCell struct{value im.Cell[Model]}
-func(c *ModelCell) Store(v Model){c.value.Store(v)}
-func(c *ModelCell) Load()ModelView{return ModelView{value:c.value.Load()}}
-func(c *ModelCell) Shared()Model{return c.value.Shared()}
-func(c *ModelCell) Count()int{return 0}
-type Holder struct{Current ModelCell}
-var current ModelCell
+type TypedModelView struct{im.Local;value im.View[Model]}
+func(v TypedModelView) Count()int{return im.Copy(im.Select(v.value,func(m Model)int{return m.Count}))}
+type TypedModelCell struct{value im.Cell[Model]}
+func(c *TypedModelCell) Store(v Model){c.value.Store(v)}
+func(c *TypedModelCell) Load()TypedModelView{return TypedModelView{value:c.value.Load()}}
+func(c *TypedModelCell) Shared()Model{return c.value.Shared()}
+func(c *TypedModelCell) Count()int{return 0}
+type Holder struct{Current TypedModelCell}
+var current TypedModelCell
 `
 
 // TestHolderMethods checks ordinary typed wrappers without generated-code privileges.
@@ -21,35 +21,38 @@ func TestHolderMethods(t *testing.T) {
 		reject       bool
 	}{
 		{"package", `func f(){current.Store(Model{});v:=current.Load();_=v.Count()}`, false},
-		{"local value", `func f(){var c ModelCell;c.Store(Model{});_=c.Load()}`, false},
-		{"local pointer", `func f(){c:=&ModelCell{};c.Store(Model{});_=c.Load()}`, false},
-		{"pointer parameter", `func f(c *ModelCell){c.Store(Model{});_=c.Shared()}`, false},
+		{"local value", `func f(){var c TypedModelCell;c.Store(Model{});_=c.Load()}`, false},
+		{"local pointer", `func f(){c:=&TypedModelCell{};c.Store(Model{});_=c.Load()}`, false},
+		{"pointer parameter", `func f(c *TypedModelCell){c.Store(Model{});_=c.Shared()}`, false},
 		{"nested holder", `func f(h *Holder){h.Current.Store(Model{});_=h.Current.Load()}`, false},
 		{"nested dereference", `func f(h *Holder){(*h).Current.Store(Model{});_=(*h).Current.Load()}`, false},
 		{"new holder", `func f(){h:=new(Holder);h.Current.Store(Model{});_=h.Current.Load()}`, false},
-		{"existing direct call", `func read(*ModelCell){};func f(c *ModelCell){read(c)}`, false},
+		{"existing direct call", `func read(*TypedModelCell){};func f(c *TypedModelCell){read(c)}`, false},
 		{"copy", `func f(){other:=current;_=other}`, true},
 		{"nested copy", `func f(h *Holder){other:=h.Current;_=other}`, true},
-		{"replace", `func f(){current=ModelCell{}}`, true},
-		{"nested replace", `func f(h *Holder){h.Current=ModelCell{}}`, true},
+		{"replace", `func f(){current=TypedModelCell{}}`, true},
+		{"nested replace", `func f(h *Holder){h.Current=TypedModelCell{}}`, true},
 		{"nested address", `func f(h *Holder){p:=&h.Current;_=p}`, true},
-		{"value method", `func(c ModelCell) Bad(){}`, true},
+		{"value method", `func(c TypedModelCell) Bad(){}`, true},
 		{"method value", `func f(){load:=current.Load;_=load}`, true},
-		{"method expression", `func f(c *ModelCell){_=(*ModelCell).Load(c)}`, true},
-		{"promoted method", `type Outer struct{ModelCell};func f(o *Outer){_=o.Load()}`, true},
+		{"method expression", `func f(c *TypedModelCell){_=(*TypedModelCell).Load(c)}`, true},
+		{"promoted method", `type Outer struct{TypedModelCell};func f(o *Outer){_=o.Load()}`, true},
 		{"generic method", `type Generic[T any]struct{value im.Cell[int]}
 func(c *Generic[T]) Read()int{return c.value.Shared()};func f(c *Generic[int]){_=c.Read()}`, true},
 		{"generic holder declaration", `type Generic[T any]struct{value im.Cell[int]}`, true},
 		{"generic holder alias", `type Generic[T any]=struct{value im.Cell[int]}`, true},
 		{"unused generic method", `type Generic[T any]struct{value im.Cell[int]};func(c *Generic[T]) Read(){}`, true},
-		{"generic holder constraint", `type Generic[T interface{ModelCell}]struct{}`, true},
+		{"generic holder constraint", `type Generic[T interface{TypedModelCell}]struct{}`, true},
+		{"named slot constraint", `type Slots interface{im.Cell[int]};func F[T Slots](value T)T{return value}`, true},
+		{"slot union constraint", `type Slots interface{~int|im.Cell[int]};type Alias=Slots
+func F[T Alias](value T)T{return value}`, true},
 		{"go view", `func f(){go current.Load()}`, true},
 		{"defer scalar", `func f(){defer current.Count()}`, true},
 		{"nested go scalar", `func use(int){};func f(){go use(current.Count())}`, true},
-		{"boxed", `func f(c *ModelCell){_=any(c)}`, true},
-		{"result", `func f()*ModelCell{return nil}`, true},
-		{"array field", `type Outer struct{Values [1]ModelCell}`, true},
-		{"pointer field", `type Outer struct{Value *ModelCell}`, true},
+		{"boxed", `func f(c *TypedModelCell){_=any(c)}`, true},
+		{"result", `func f()*TypedModelCell{return nil}`, true},
+		{"array field", `type Outer struct{Values [1]TypedModelCell}`, true},
+		{"pointer field", `type Outer struct{Value *TypedModelCell}`, true},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {

@@ -334,7 +334,7 @@ func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 		return false
 	}
 	switch selection.Obj().Name() {
-	case "Get", "At", "Len", "All", "Clone", "Equal", "EqualString", "Unsafe":
+	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Unsafe":
 		return true
 	}
 	return false

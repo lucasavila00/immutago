@@ -21,6 +21,8 @@ return Reply{Name:im.Text(im.Select(v,func(d Data)string{return d.Name})),Score:
 text:=im.Text(im.Select(view,func(d Data)string{return d.Names[i]}));_=text.Len()}`,
 		`type Data struct{im.Frozen; Name string};func f(){view:=im.ViewOf(&Data{})
 if !im.IsNil(view){_=im.Text(im.Select(view,func(d *Data)string{return d.Name})).Clone()}}`,
+		`type Data struct{im.Frozen; Name string};type Pointer=*Data
+func f(view im.View[Pointer]){_=im.IsNil(view);_=im.Text(im.Select(view,func(d Pointer)string{return d.Name})).Len()}`,
 		`func f(){frozen:=im.FreezeMap(map[string]int{"key":3});view:=im.Map(im.ViewOf(frozen))
 value,ok:=view.Get("key");_=ok;_=im.Copy(value)
 for key,value:=range view.All(){_=im.Text(key).Clone();_=im.Copy(value)}}`,
@@ -65,6 +67,7 @@ func TestSnapshotCategories(t *testing.T) {
 		{`type Result struct{im.Local; Text im.StringView};var saved Result`, "package variables"},
 		{`var values [0]im.View[string]`, "package variables"},
 		{`var marker im.Local`, "package variables"},
+		{`type Data struct{im.Frozen};type Pointer *Data`, "defined pointer types"},
 		{`func f(){_=im.Copy(im.ViewOf("text"))}`, "Copied values cannot contain shared data references"},
 		{`func f(){frozen:=im.FreezeMap(map[string]int{});view:=im.Map(im.ViewOf(frozen));copy:=view.Clone();_=copy}`,
 			"Copied values cannot contain shared data references"},

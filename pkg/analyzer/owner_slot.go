@@ -54,6 +54,29 @@ func (c *subsetChecks) containsSlotValue(t types.Type, seen map[types.Type]bool)
 		return c.tupleHasSlotValue(typ, seen)
 	case *types.Struct:
 		return c.structHasSlotValue(typ, seen)
+	case *types.Interface:
+		return c.interfaceHasSlotValue(typ, seen)
+	case *types.Union:
+		for index := 0; index < typ.Len(); index++ {
+			if c.containsSlotValue(typ.Term(index).Type(), seen) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// interfaceHasSlotValue checks embedded constraints and method contracts.
+func (c *subsetChecks) interfaceHasSlotValue(contract *types.Interface, seen map[types.Type]bool) bool {
+	for index := 0; index < contract.NumEmbeddeds(); index++ {
+		if c.containsSlotValue(contract.EmbeddedType(index), seen) {
+			return true
+		}
+	}
+	for index := 0; index < contract.NumMethods(); index++ {
+		if c.containsSlotValue(contract.Method(index).Type(), seen) {
+			return true
+		}
 	}
 	return false
 }

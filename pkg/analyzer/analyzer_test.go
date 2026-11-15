@@ -6,11 +6,14 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/lucasavila00/immutago/internal/checker"
+	"github.com/lucasavila00/immutago/internal/viewgen"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -19,13 +22,15 @@ const testLibrary = `package im
  type Local struct{}
  type Cell[T any] struct{}
  func (o *Cell[T]) Load() View[T] { return View[T]{} }
+ func (o *Cell[T]) LoadPointer() View[*T] { return View[*T]{} }
  func (o *Cell[T]) Shared() T { var zero T; return zero }
  func (o *Cell[T]) Store(value T) {}
  type View[T any] struct { value T }
  func ViewOf[T any](value T) View[T] { return View[T]{value:value} }
+ func CopyView[T any](value View[T]) View[*T] { return View[*T]{} }
  func Select[T,F any](value View[T], project func(T)F) View[F] { return View[F]{} }
  func Copy[T any](value View[T]) T { return value.value }
- func IsNil[T any,P ~*T](value View[P]) bool { return value.value == nil }
+ func IsNil[T any](value View[*T]) bool { return value.value == nil }
  type StringView struct { value string }
  func String(value View[FrozenString]) StringView { return StringView{} }
  func Text[S ~string](value View[S]) StringView { return StringView{} }
@@ -39,6 +44,7 @@ const testLibrary = `package im
  func Slice[E any](value View[FrozenSlice[E]]) SliceView[E] { return SliceView[E]{} }
  func (s SliceView[E]) Len() int { return 0 }
  func (s SliceView[E]) At(index int) View[E] { return View[E]{} }
+ func (s SliceView[E]) AtPointer(index int) View[*E] { return View[*E]{} }
  func (s SliceView[E]) All()func(func(int,View[E])bool) { return nil }
  func (s SliceView[E]) Clone() []E { return nil }
  type MapView[K comparable,V any] struct { values map[K]V }
@@ -151,28 +157,53 @@ func sourcePass(t testing.TB, declarations string) *analysis.Pass {
 	if err != nil {
 		t.Fatal(err)
 	}
-	source := "package sample\nimport \"" + checker.LibraryPath + "\"\n" + declarations
-	file, err := parser.ParseFile(positions, "sample.go", source, 0)
+	source := viewgen.Directive + "\npackage sample\nimport \"" + checker.LibraryPath + "\"\n" + declarations
+	file, err := parser.ParseFile(positions, "sample.go", source, parser.ParseComments)
 	if err != nil {
 		t.Fatal(err)
 	}
-	info := &types.Info{
-		Types:      make(map[ast.Expr]types.TypeAndValue),
-		Defs:       make(map[*ast.Ident]types.Object),
-		Uses:       make(map[*ast.Ident]types.Object),
-		Instances:  make(map[*ast.Ident]types.Instance),
-		Selections: make(map[*ast.SelectorExpr]*types.Selection),
-		Scopes:     make(map[ast.Node]*types.Scope),
-		Implicits:  make(map[ast.Node]types.Object),
-	}
+	info := sourceTypeInfo()
 	config := types.Config{Importer: testImporter{library, servicePackage, standard}}
-	pkg, err := config.Check("sample", positions, []*ast.File{file}, info)
+	files := []*ast.File{file}
+	pkg, err := config.Check("sample", positions, files, info)
 	if err != nil {
 		t.Fatalf("test source does not compile: %v", err)
 	}
+	generated, generationErr := viewgen.GenerateTypes(pkg, positions)
+	if generationErr == nil {
+		output, parseErr := parser.ParseFile(positions, viewgen.Filename, generated, parser.ParseComments)
+		if parseErr != nil {
+			t.Fatal(parseErr)
+		}
+		files = append(files, output)
+		info = sourceTypeInfo()
+		pkg, err = config.Check("sample", positions, files, info)
+		if err != nil {
+			t.Fatalf("generated test source does not compile: %v", err)
+		}
+	}
 	return &analysis.Pass{
 		TypesSizes: types.SizesFor("gc", runtime.GOARCH),
-		Analyzer:   Analyzer, Fset: positions, Files: []*ast.File{file}, Pkg: pkg, TypesInfo: info,
+		Analyzer:   Analyzer, Fset: positions, Files: files, Pkg: pkg, TypesInfo: info,
+		ReadFile: func(name string) ([]byte, error) {
+			if filepath.Base(name) == viewgen.Filename {
+				return generated, nil
+			}
+			if filepath.Base(name) == "sample.go" {
+				return []byte(source), nil
+			}
+			return nil, os.ErrNotExist
+		},
+	}
+}
+
+// sourceTypeInfo records the compiler facts used by the production analyzer.
+func sourceTypeInfo() *types.Info {
+	return &types.Info{
+		Types: make(map[ast.Expr]types.TypeAndValue), Defs: make(map[*ast.Ident]types.Object),
+		Uses: make(map[*ast.Ident]types.Object), Instances: make(map[*ast.Ident]types.Instance),
+		Selections: make(map[*ast.SelectorExpr]*types.Selection), Scopes: make(map[ast.Node]*types.Scope),
+		Implicits: make(map[ast.Node]types.Object),
 	}
 }
 

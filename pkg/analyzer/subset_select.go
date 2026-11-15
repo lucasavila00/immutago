@@ -75,6 +75,28 @@ func (c *subsetChecks) projectionPath(expression ast.Expr, parameter *types.Var)
 	case *ast.IndexExpr:
 		_, array := c.pass.TypesInfo.TypeOf(value.X).Underlying().(*types.Array)
 		return array && c.projectionPath(value.X, parameter) && c.projectionIndex(value.Index)
+	case *ast.UnaryExpr:
+		return c.projectionAddress(value, parameter)
+	}
+	return false
+}
+
+// projectionAddress selects a record inside immutable pointer-owned storage.
+func (c *subsetChecks) projectionAddress(expression *ast.UnaryExpr, parameter *types.Var) bool {
+	if expression.Op != token.AND {
+		return false
+	}
+	root, pointer := parameter.Type().Underlying().(*types.Pointer)
+	if !pointer || !checker.Frozen(root.Elem()) {
+		return false
+	}
+	target := types.Unalias(c.pass.TypesInfo.TypeOf(expression.X))
+	if _, named := target.(*types.Named); !named || !checker.Frozen(target) {
+		return false
+	}
+	switch ast.Unparen(expression.X).(type) {
+	case *ast.SelectorExpr, *ast.IndexExpr:
+		return c.projectionPath(expression.X, parameter)
 	}
 	return false
 }

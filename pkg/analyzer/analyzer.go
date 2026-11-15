@@ -78,6 +78,9 @@ func run(pass *analysis.Pass) (any, error) {
 	forms.checkHandles()
 	if immutable {
 		forms.checkImmutable(freeze.Check(pass))
+		if !invalid {
+			forms.checkGeneration()
+		}
 	}
 	return nil, nil
 }
@@ -184,8 +187,13 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 	}
 	// Defined types can inherit a struct without a struct literal in this package.
 	if _, ok := types.Unalias(t).(*types.Named); ok && !checker.IsCollection(t) && !checker.IsView(t) {
-		if _, ok := t.Underlying().(*types.Struct); ok {
+		switch t.Underlying().(type) {
+		case *types.Struct:
 			c.checkStruct(pos, t)
+		case *types.Pointer:
+			if c.queries.Contains(t) {
+				c.report(pos, "defined pointer types are unsupported in protected storage; use a pointer alias")
+			}
 		}
 	}
 }
