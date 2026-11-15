@@ -101,7 +101,14 @@ fail. The private im seal is the only promoted-method exception. A conversion
 between proved Frozen interfaces keeps the earlier concrete proof.
 
 Named interface proofs require exported methods, fixed concrete parameters,
-and no result or one general ReadResult. The complete expression and statement
+and any number of results. Each result uses the existing ReadResult proof, the
+predeclared error identity, or the Copied proof for a native slice element.
+Defined slices and aliases use the same proof. No result-origin analysis is
+needed: ordinary caller buffers and Clone results use the normal method body
+checks. A direct typed call can bind all such results to local names or blanks;
+the matcher requires one call, the exact destination count, and a valid proof
+for every result. Service method signatures retain their separate count rule.
+The complete expression and statement
 matchers still check calls, arguments, bindings, captures, and writes. Dependency
 facts carry failed implementation checks to consumers, including consumers that
 import no im package directly.

@@ -62,7 +62,7 @@ func (g *generator) writeInterface(out *bytes.Buffer, item record) error {
 	return nil
 }
 
-// writeInterfaceMethod uses fresh parameter names and the proved read-result type.
+// writeInterfaceMethod uses fresh parameter names and forwards all proved results.
 func (g *generator) writeInterfaceMethod(out *bytes.Buffer, receiver string, method *types.Func) {
 	signature := method.Type().(*types.Signature)
 	var parameters, arguments []string
@@ -73,8 +73,16 @@ func (g *generator) writeInterfaceMethod(out *bytes.Buffer, receiver string, met
 		arguments = append(arguments, name)
 	}
 	result, prefix := "", ""
-	if signature.Results().Len() == 1 {
-		result = " " + g.typeName(signature.Results().At(0).Type())
+	var results []string
+	for item := range signature.Results().Variables() {
+		results = append(results, g.typeName(item.Type()))
+	}
+	if len(results) == 1 {
+		result = " " + results[0]
+	} else if len(results) > 1 {
+		result = " (" + strings.Join(results, ", ") + ")"
+	}
+	if len(results) > 0 {
 		prefix = "return "
 	}
 	fmt.Fprintf(out, "// %s calls the checked interface method with its ordinary Go contract.\n"+

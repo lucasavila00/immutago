@@ -28,7 +28,7 @@ func FrozenInterfaceSeal(method *types.Func) bool {
 	return method.Pkg() != nil && method.Pkg().Path() == LibraryPath && method.Name() == "immutagoFrozen"
 }
 
-// frozenInterface proves a named contract whose methods return only read results.
+// frozenInterface proves a named contract with fixed inputs and supported results.
 func (p *proof) frozenInterface(result *obligation, t types.Type) {
 	if !FrozenInterface(t) {
 		result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
@@ -57,8 +57,8 @@ func (p *proof) frozenInterface(result *obligation, t types.Type) {
 			return
 		}
 		signature := method.Type().(*types.Signature)
-		if signature.Variadic() || signature.Results().Len() > 1 {
-			result.reason = "Frozen interface methods require fixed parameters and at most one read result"
+		if signature.Variadic() {
+			result.reason = "Frozen interface methods require fixed parameters"
 			return
 		}
 		for parameter := range signature.Params().Variables() {
@@ -68,8 +68,31 @@ func (p *proof) frozenInterface(result *obligation, t types.Type) {
 				return
 			}
 		}
-		if signature.Results().Len() == 1 {
-			p.dependCategory(result, signature.Results().At(0).Type(), fmt.Sprintf("%s result: ", method.Name()), readCategory)
+		for output := range signature.Results().Variables() {
+			typ, category := interfaceResult(output.Type())
+			if typ != nil {
+				p.dependCategory(result, typ, fmt.Sprintf("%s result: ", method.Name()), category)
+			}
 		}
 	}
+}
+
+// interfaceResult selects an existing proof for one interface method result.
+func interfaceResult(t types.Type) (types.Type, proofCategory) {
+	if types.Identical(t, types.Universe.Lookup("error").Type()) {
+		return nil, readCategory
+	}
+	if slice, ok := t.Underlying().(*types.Slice); ok {
+		return slice.Elem(), copiedCategory
+	}
+	return t, readCategory
+}
+
+// InterfaceResultReason proves a read result, error, or native slice of Copied values.
+func (p *Prover) InterfaceResultReason(t types.Type) string {
+	typ, category := interfaceResult(t)
+	if typ == nil {
+		return ""
+	}
+	return p.render(p.graph.categoryNode(typ, category))
 }

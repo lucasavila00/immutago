@@ -224,6 +224,14 @@ func (p *Prover) FrozenReason(t types.Type) string
 
 FrozenReason proves the shared payload contract used by Cell and Projection.
 
+### func \(\*Prover\) InterfaceResultReason
+
+```go
+func (p *Prover) InterfaceResultReason(t types.Type) string
+```
+
+InterfaceResultReason proves a read result, error, or native slice of Copied values.
+
 ### func \(\*Prover\) ReadResultReason
 
 ```go

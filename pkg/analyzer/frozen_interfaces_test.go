@@ -92,7 +92,7 @@ _=n}`, "multiple assignments"},
 		{"Copied interface field", `type Bad struct{im.Copied;Scorer Scorer}`, "copied values require"},
 		{"raw result", `type Bad interface{im.FrozenInterface;Self()Scorer}`, "Self result"},
 		{"string result", `type Bad interface{im.FrozenInterface;Name()string}`, "Name result"},
-		{"tuple result", `type Bad interface{im.FrozenInterface;Pair()(int,bool)}`, "at most one read result"},
+
 		{"variadic method", `type Bad interface{im.FrozenInterface;Sum(...int)int}`, "fixed parameters"},
 		{"interface parameter", `type Bad interface{im.FrozenInterface;Use(any)}`, "concrete types"},
 		{"callback parameter", `type Bad interface{im.FrozenInterface;Use(func())}`, "concrete types"},

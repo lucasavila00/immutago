@@ -45,9 +45,18 @@ payload cannot leave that local projection.
 - Use fixed concrete parameters. Interface and function parameters are rejected.
   Ordinary inputs such as `[]float32` follow ordinary Go contracts. Protected
   inputs also need the [common call forms](common-forms.md#statements-and-calls).
-- Return no result or one [read result](types.md). For example, `Score([]float32)
-  float64`, `Name() im.StringProjection`, or `Visit()`. A Copied record is also
-  a read result, such as `Summary() Summary` where Summary embeds im.Copied.
+- Return no results, or any number of results from the complete list below.
+
+| Result type — exhaustive | Example |
+| --- | --- |
+| [Read result](types.md): Copied or Local | `Lookup(string) (float64, bool)`, `Name() im.StringProjection` |
+| The predeclared `error` type or an alias | `Lookup(string) (float64, error)`, `Visit() error` |
+| Native slice with Copied elements, including defined slices and aliases | `Lookup(key, buf []byte) (float64, bool, []byte)`, `Values() []Summary` where Summary embeds im.Copied |
+
+No-result methods such as `Visit()` remain allowed. Result order is not restricted;
+for example, `Read() (error, bool)` is allowed. Each result must satisfy one row.
+A defined interface with an Error method is not the predeclared error type.
+These method result types do not change the Frozen, Local, or service field rules.
 
 These lists are complete. Unlisted operations on protected storage are rejected.
 
@@ -65,8 +74,12 @@ These lists are complete. Unlisted operations on protected storage are rejected.
 | Compare with `==` or `!=` | `scorer == nil`, `scorer == other` |
 | Wrap a local projection | `local := NewScorerProjection(im.ProjectionOf(scorer))` |
 | Call through the local projection | `score := local.Score(features)`, `empty := local.IsNil()` |
+| Bind several results to local names or blanks with `:=`, `=`, or `var` | `value, found, out := local.Lookup(key, buf)`, `value, found, out = local.Lookup(key, buf)`, `var value, found, out = local.Lookup(key, buf)` |
+| Forward all results to a direct typed call or return | `use(local.Lookup(key, buf))`, `return local.Lookup(key, buf)` |
 
-Use one binding per declaration or assignment. Use the common forms for
+Use one binding per declaration or assignment, except for the result-call forms
+above. Multiple-result bindings require local names or blanks for every destination.
+Use the common forms for
 statements, builders, fields, return values, and direct named calls. Each
 implementation method must be declared on the exact converted type. Promoted
 methods and implicit pointer dereferences do not qualify. The private seal
@@ -83,6 +96,26 @@ example, an implementation can save its own Frozen receiver in a package
 variable. A caller of its local projection cannot extract that receiver.
 The checker does not infer method effects.
 
+A slice result uses ordinary Go ownership. It can return a caller buffer such as
+`buf[:n]`, a fresh slice, or an independent `Clone()` result. The checker does not
+track which argument supplied it. The implementation's normal body checks still
+reject native slices in Frozen fields and use of a builder after Freeze. A slice
+result does not expose the implementation's frozen backing storage through an
+allowed source operation. Ordinary inputs, errors, and dependency calls retain
+Go contracts; this rule does not prove method isolation.
+
+```go
+type Tables interface {
+    im.FrozenInterface
+    Lookup(key, buf []byte) (float64, bool, []byte, error)
+}
+
+func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
+    buf = append(buf[:0], key...)
+    return t.Weight, len(key) != 0, buf, nil
+}
+```
+
 ## Rejected examples — non-exhaustive
 
 | Rejected | Allowed replacement |
@@ -96,7 +129,10 @@ The checker does not infer method effects.
 | `method := scorer.Score` or `Scorer.Score(scorer, features)` | `scorer.Score(features)` |
 | `go scorer.Score(features)` or `defer scorer.Score(features)` | Call synchronously. |
 | Capture scorer or its projection in a closure | Compute an ordinary result before the closure. |
-| `Self() Scorer`, `Text() string`, or `Values() []int` | Return a local projection or a copied result. |
+| `Self() Scorer`, `Text() string`, or `Self() *Tree` | Return a local projection or a Copied result. |
+| `Read() any`, `Read() func()`, or `Read() map[int]int` | Return listed concrete results; use a projection for a frozen map. |
+| `Values() []string`, `Values() []*Tree`, or `Values() [][]byte` | Return a frozen collection projection, or a slice with Copied elements. |
+| `value, outputs[0] = local.Read()` | Bind local names first, then assign the ordinary output separately. |
 | Save ScorerProjection in a package variable or Frozen field | Save a Scorer value from an allowed construction. |
 | Read the raw payload with `projection.Read()` | Use the generated method. |
 | `chan Scorer` | Use direct calls with a Scorer parameter. |
