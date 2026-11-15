@@ -28,3 +28,8 @@ func (m FrozenMap[K, V]) Get(key K) (V, bool) { value, found := m.values[key]; r
 // not change the frozen map. Pointers still point to the same immutable objects;
 // immutable types make deeper copying unnecessary.
 func (m FrozenMap[K, V]) Clone() map[K]V { return maps.Clone(m.values) }
+
+// Projection returns local read access without copying backing storage or allocating.
+func (m FrozenMap[K, V]) Projection() MapProjection[K, V] {
+	return MapProjection[K, V]{values: m.values}
+}

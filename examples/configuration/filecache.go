@@ -67,5 +67,5 @@ func (c *FileCache) read() error {
 func (c *FileCache) Text() im.StringProjection {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return im.Text(im.ProjectionOf(c.text))
+	return im.ProjectString(c.text)
 }

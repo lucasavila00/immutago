@@ -93,13 +93,13 @@ func (l *ConfigLoader) load() error {
 
 // Version returns the last valid configuration version.
 func (l *ConfigLoader) Version() int {
-	config := l.current.Shared()
+	config := l.current.LoadShared()
 	return config.Version
 }
 
 // Limit returns the current limit for a key; an absent key has a zero limit.
 func (l *ConfigLoader) Limit(key string) int {
-	config := l.current.Shared()
+	config := l.current.LoadShared()
 	limit, _ := config.Limits.Get(key)
 	return limit
 }
@@ -108,5 +108,5 @@ func (l *ConfigLoader) Limit(key string) int {
 func (l *ConfigLoader) Problem() im.StringProjection {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	return im.Text(im.ProjectionOf(l.problem))
+	return im.ProjectString(l.problem)
 }

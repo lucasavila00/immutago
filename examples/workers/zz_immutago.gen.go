@@ -39,8 +39,8 @@ func (c *PoolArgsCell) Store(value PoolArgs) { c.value.Store(value) }
 // Load reads the current value through a local projection.
 func (c *PoolArgsCell) Load() PoolArgsProjection { return NewPoolArgsProjection(c.value.LoadPointer()) }
 
-// Shared returns the frozen value for persistent use.
-func (c *PoolArgsCell) Shared() PoolArgs { return c.value.Shared() }
+// LoadShared returns the frozen value for persistent use.
+func (c *PoolArgsCell) LoadShared() PoolArgs { return c.value.LoadShared() }
 
 // VariantSetProjection provides local read access to *VariantSet.
 type VariantSetProjection struct {
@@ -58,7 +58,7 @@ func (v VariantSetProjection) IsNil() bool { return im.IsNil(v.immutagoProjectio
 
 // Names reads the Names field.
 func (v VariantSetProjection) Names() im.SliceProjection[string] {
-	return im.Slice(im.ProjectionOf(v.immutagoProjection.Read().Names))
+	return v.immutagoProjection.Read().Names.Projection()
 }
 
 // VariantSetCell publishes frozen VariantSet values. Do not copy it.
@@ -72,8 +72,8 @@ func (c *VariantSetCell) Load() VariantSetProjection {
 	return NewVariantSetProjection(c.value.LoadPointer())
 }
 
-// Shared returns the frozen value for persistent use.
-func (c *VariantSetCell) Shared() VariantSet { return c.value.Shared() }
+// LoadShared returns the frozen value for persistent use.
+func (c *VariantSetCell) LoadShared() VariantSet { return c.value.LoadShared() }
 
 // WorkerArgsProjection provides local read access to *WorkerArgs.
 type WorkerArgsProjection struct {
@@ -110,5 +110,5 @@ func (c *WorkerArgsCell) Load() WorkerArgsProjection {
 	return NewWorkerArgsProjection(c.value.LoadPointer())
 }
 
-// Shared returns the frozen value for persistent use.
-func (c *WorkerArgsCell) Shared() WorkerArgs { return c.value.Shared() }
+// LoadShared returns the frozen value for persistent use.
+func (c *WorkerArgsCell) LoadShared() WorkerArgs { return c.value.LoadShared() }

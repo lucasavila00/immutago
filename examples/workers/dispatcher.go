@@ -79,7 +79,7 @@ func (d *Dispatcher) Refresh() int {
 		names = projection.Names()
 	}
 	for _, item := range names.All() {
-		name := im.Text(item).Clone()
+		name := im.ProjectedString(item).Clone()
 		wanted[name] = true
 		d.mu.Lock()
 		_, exists := d.groups[name]

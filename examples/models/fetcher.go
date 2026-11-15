@@ -119,6 +119,6 @@ func (f *Fetcher) refresh(ctx context.Context) error {
 
 // Predict uses one model version for the whole prediction.
 func (f *Fetcher) Predict(features im.FrozenSlice[float64]) Prediction {
-	current := f.current.Shared()
-	return Prediction{Name: im.Text(im.ProjectionOf(current.Model.Name)), Score: model.Predict(current.Model, features)}
+	current := f.current.LoadShared()
+	return Prediction{Name: im.ProjectString(current.Model.Name), Score: model.Predict(current.Model, features)}
 }

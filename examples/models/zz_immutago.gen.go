@@ -35,5 +35,5 @@ func (c *snapshotCell) Store(value snapshot) { c.value.Store(value) }
 // Load reads the current value through a local projection.
 func (c *snapshotCell) Load() snapshotProjection { return newSnapshotProjection(c.value.LoadPointer()) }
 
-// Shared returns the frozen value for persistent use.
-func (c *snapshotCell) Shared() snapshot { return c.value.Shared() }
+// LoadShared returns the frozen value for persistent use.
+func (c *snapshotCell) LoadShared() snapshot { return c.value.LoadShared() }

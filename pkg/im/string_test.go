@@ -13,7 +13,7 @@ func TestFrozenString(t *testing.T) {
 	parent := strings.Repeat("abcdef", 1024)
 	input := parent[100:107]
 	frozen := FreezeString(input)
-	projection := String(ProjectionOf(frozen))
+	projection := ProjectedFrozenString(ProjectionOf(frozen))
 	if unsafe.StringData(frozen.value) != unsafe.StringData(input) ||
 		unsafe.StringData(projection.value) != unsafe.StringData(input) {
 		t.Fatal("string construction copied backing bytes")
@@ -36,7 +36,7 @@ func TestFrozenString(t *testing.T) {
 // TestFrozenStringEmptyAndBounds checks the zero value and native index panics.
 func TestFrozenStringEmptyAndBounds(t *testing.T) {
 	for _, value := range []FrozenString{{}, FreezeString(""), FreezeString("abc")} {
-		if value.Len() == 0 && (value.Clone() != "" || String(ProjectionOf(value)).Len() != 0) {
+		if value.Len() == 0 && (value.Clone() != "" || ProjectedFrozenString(ProjectionOf(value)).Len() != 0) {
 			t.Fatal("invalid empty string")
 		}
 		for _, index := range []int{-1, value.Len()} {
@@ -61,7 +61,8 @@ func TestFrozenStringAllocations(t *testing.T) {
 		run  func()
 	}{
 		{"freeze", func() { frozenStringSink = FreezeString(input) }},
-		{"projection", func() { stringProjectionSink = String(ProjectionOf(frozen)) }},
+		{"direct projection", func() { stringProjectionSink = frozen.Projection() }},
+		{"projection", func() { stringProjectionSink = ProjectedFrozenString(ProjectionOf(frozen)) }},
 		{"read", func() { stringByteSink = frozen.At(1); benchmarkInt = frozen.Len() }},
 	}
 	for _, test := range cases {
@@ -83,11 +84,11 @@ func TestFrozenStringAllocations(t *testing.T) {
 func TestStringComparisonAndUnsafe(t *testing.T) {
 	input := strings.Repeat("abc", 128)
 	frozen := FreezeString(input)
-	projection := String(ProjectionOf(frozen))
+	projection := ProjectedFrozenString(ProjectionOf(frozen))
 	for _, other := range []string{"", input, "other", input[:len(input)-1]} {
 		want := input == other
 		if frozen.Equal(FreezeString(other)) != want || frozen.EqualString(other) != want ||
-			projection.Equal(Text(ProjectionOf(other))) != want || projection.EqualString(other) != want {
+			projection.Equal(ProjectedString(ProjectionOf(other))) != want || projection.EqualString(other) != want {
 			t.Fatal("string comparison differs from native equality")
 		}
 	}
@@ -96,7 +97,7 @@ func TestStringComparisonAndUnsafe(t *testing.T) {
 		t.Fatal("Unsafe copied backing storage")
 	}
 	if got := testing.AllocsPerRun(100, func() {
-		benchmarkFound = projection.EqualString(input) && projection.Equal(String(ProjectionOf(frozen)))
+		benchmarkFound = projection.EqualString(input) && projection.Equal(ProjectedFrozenString(ProjectionOf(frozen)))
 		benchmarkFound = benchmarkFound && frozen.EqualString(input) && frozen.Equal(frozen)
 		stringCloneSink = projection.Unsafe()
 		stringCloneSink = frozen.Unsafe()
@@ -109,7 +110,7 @@ func TestStringComparisonAndUnsafe(t *testing.T) {
 func BenchmarkStringComparison(b *testing.B) {
 	left := strings.Repeat("abc", 128)
 	right := strings.Clone(left)
-	projection := Text(ProjectionOf(left))
+	projection := ProjectedString(ProjectionOf(left))
 	b.Run("native", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {

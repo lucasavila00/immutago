@@ -28,7 +28,7 @@ func (v ConfigProjection) Version() int {
 
 // Limits reads the Limits field.
 func (v ConfigProjection) Limits() im.MapProjection[string, int] {
-	return im.Map(im.ProjectionOf(v.immutagoProjection.Read().Limits))
+	return v.immutagoProjection.Read().Limits.Projection()
 }
 
 // ConfigCell publishes frozen Config values. Do not copy it.
@@ -40,8 +40,8 @@ func (c *ConfigCell) Store(value Config) { c.value.Store(value) }
 // Load reads the current value through a local projection.
 func (c *ConfigCell) Load() ConfigProjection { return NewConfigProjection(c.value.LoadPointer()) }
 
-// Shared returns the frozen value for persistent use.
-func (c *ConfigCell) Shared() Config { return c.value.Shared() }
+// LoadShared returns the frozen value for persistent use.
+func (c *ConfigCell) LoadShared() Config { return c.value.LoadShared() }
 
 // FileArgsProjection provides local read access to *FileArgs.
 type FileArgsProjection struct {
@@ -59,7 +59,7 @@ func (v FileArgsProjection) IsNil() bool { return im.IsNil(v.immutagoProjection)
 
 // Path reads the Path field.
 func (v FileArgsProjection) Path() im.StringProjection {
-	return im.Text(im.ProjectionOf(v.immutagoProjection.Read().Path))
+	return im.ProjectString(v.immutagoProjection.Read().Path)
 }
 
 // Every reads the Every field.
@@ -76,5 +76,5 @@ func (c *FileArgsCell) Store(value FileArgs) { c.value.Store(value) }
 // Load reads the current value through a local projection.
 func (c *FileArgsCell) Load() FileArgsProjection { return NewFileArgsProjection(c.value.LoadPointer()) }
 
-// Shared returns the frozen value for persistent use.
-func (c *FileArgsCell) Shared() FileArgs { return c.value.Shared() }
+// LoadShared returns the frozen value for persistent use.
+func (c *FileArgsCell) LoadShared() FileArgs { return c.value.LoadShared() }

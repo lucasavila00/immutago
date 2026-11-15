@@ -98,7 +98,7 @@ func (w *Worker) Process(text string) Result {
 	}
 	select {
 	case result := <-reply:
-		return Result{Text: im.Text(im.ProjectionOf(result)), Worker: w.Args().ID, Version: w.Args().Version, Available: true}
+		return Result{Text: im.ProjectString(result), Worker: w.Args().ID, Version: w.Args().Version, Available: true}
 	case <-w.stopped:
 		return Result{}
 	}

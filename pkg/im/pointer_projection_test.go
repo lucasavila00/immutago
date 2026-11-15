@@ -21,22 +21,22 @@ func TestPointerProjections(t *testing.T) {
 		t.Fatal("publication changed an earlier pointer projection")
 	}
 	values := FreezeSlice([]testChild{{Number: 6}})
-	element := Slice(ProjectionOf(values)).AtPointer(0)
+	element := ProjectedSlice(ProjectionOf(values)).AtPointer(0)
 	if element.value != &values.values[0] || element.value.Number != 6 {
 		t.Fatal("element pointer copied or changed the element")
 	}
 }
 
-// TestCopyProjection checks one root copy without a recursive backing-storage copy.
-func TestCopyProjection(t *testing.T) {
+// TestCopyRecord checks one root copy without a recursive backing-storage copy.
+func TestCopyRecord(t *testing.T) {
 	input := testFrozen{Number: 3, Slice: FreezeSlice([]int{4}), Child: &testChild{Number: 5}}
-	projection := CopyProjection(ProjectionOf(input))
+	projection := CopyRecord(ProjectionOf(input))
 	input.Number = 9
 	if projection.value.Number != 3 || projection.value == &input {
-		t.Fatal("CopyProjection retained the caller's root")
+		t.Fatal("CopyRecord retained the caller's root")
 	}
 	if &projection.value.Slice.values[0] != &input.Slice.values[0] || projection.value.Child != input.Child {
-		t.Fatal("CopyProjection copied immutable backing storage")
+		t.Fatal("CopyRecord copied immutable backing storage")
 	}
 }
 
@@ -44,7 +44,7 @@ func TestCopyProjection(t *testing.T) {
 func TestPointerProjectionAllocations(t *testing.T) {
 	var cell Cell[testFrozen]
 	cell.Store(testFrozen{Number: 3})
-	values := Slice(ProjectionOf(FreezeSlice([]testChild{{Number: 4}})))
+	values := ProjectedSlice(ProjectionOf(FreezeSlice([]testChild{{Number: 4}})))
 	if got := testing.AllocsPerRun(100, func() {
 		pointerProjectionSink = cell.LoadPointer()
 		pointerNumberSink = pointerProjectionSink.Read().Number
@@ -53,8 +53,8 @@ func TestPointerProjectionAllocations(t *testing.T) {
 		t.Fatalf("pointer reads allocated %g times; want 0", got)
 	}
 	input := ProjectionOf(testFrozen{Number: 3})
-	if got := testing.AllocsPerRun(100, func() { pointerProjectionSink = CopyProjection(input) }); got != 1 {
-		t.Fatalf("CopyProjection allocated %g times; want 1", got)
+	if got := testing.AllocsPerRun(100, func() { pointerProjectionSink = CopyRecord(input) }); got != 1 {
+		t.Fatalf("CopyRecord allocated %g times; want 1", got)
 	}
 }
 

@@ -45,9 +45,12 @@ func TestProjectionAllocations(t *testing.T) {
 		{"read array index", func() {
 			projectionNumberSink = ProjectionOf(projection.Read().Array[index])
 		}},
-		{"text adapter", func() { stringProjectionSink = Text(ProjectionOf(input.Text)) }},
-		{"slice adapter", func() { sliceProjectionSink = Slice(ProjectionOf(input.Slice)) }},
-		{"map adapter", func() { mapProjectionSink = Map(ProjectionOf(input.Map)) }},
+		{"native string", func() { stringProjectionSink = ProjectString(input.Text) }},
+		{"frozen slice", func() { sliceProjectionSink = input.Slice.Projection() }},
+		{"frozen map", func() { mapProjectionSink = input.Map.Projection() }},
+		{"text adapter", func() { stringProjectionSink = ProjectedString(ProjectionOf(input.Text)) }},
+		{"slice adapter", func() { sliceProjectionSink = ProjectedSlice(ProjectionOf(input.Slice)) }},
+		{"map adapter", func() { mapProjectionSink = ProjectedMap(ProjectionOf(input.Map)) }},
 		{"copy", func() { benchmarkInt = Copy(ProjectionOf(input.Number)) }},
 		{"nil test", func() { benchmarkFound = IsNil(ProjectionOf(input.Child)) }},
 	}
@@ -62,9 +65,9 @@ func TestProjectionAllocations(t *testing.T) {
 
 // TestProjectionReadAllocations checks reads and direct iteration without allocations.
 func TestProjectionReadAllocations(t *testing.T) {
-	text := Text(ProjectionOf(strings.Repeat("text", 128)))
-	sequence := Slice(ProjectionOf(FreezeSlice([]int{2, 4, 6})))
-	mapping := Map(ProjectionOf(FreezeMap(map[int]int{1: 2, 3: 4})))
+	text := ProjectedString(ProjectionOf(strings.Repeat("text", 128)))
+	sequence := ProjectedSlice(ProjectionOf(FreezeSlice([]int{2, 4, 6})))
+	mapping := ProjectedMap(ProjectionOf(FreezeMap(map[int]int{1: 2, 3: 4})))
 	cases := []struct {
 		name string
 		run  func()
@@ -97,9 +100,9 @@ func TestProjectionReadAllocations(t *testing.T) {
 
 // TestProjectionCloneAllocations checks explicit copies whose results escape.
 func TestProjectionCloneAllocations(t *testing.T) {
-	text := Text(ProjectionOf(strings.Repeat("text", 128)))
-	sequence := Slice(ProjectionOf(FreezeSlice([]int{2, 4, 6})))
-	mapping := Map(ProjectionOf(FreezeMap(map[int]int{1: 2, 3: 4})))
+	text := ProjectedString(ProjectionOf(strings.Repeat("text", 128)))
+	sequence := ProjectedSlice(ProjectionOf(FreezeSlice([]int{2, 4, 6})))
+	mapping := ProjectedMap(ProjectionOf(FreezeMap(map[int]int{1: 2, 3: 4})))
 	if got := testing.AllocsPerRun(100, func() { stringCloneSink = text.Clone() }); got != 1 {
 		t.Fatalf("string clone allocations = %g; want one", got)
 	}
@@ -112,7 +115,7 @@ func TestProjectionCloneAllocations(t *testing.T) {
 	if got := testing.AllocsPerRun(100, func() { stringCloneSink = (StringProjection{}).Clone() }); got != 0 {
 		t.Fatalf("empty string clone allocations = %g; want zero", got)
 	}
-	empty := Slice(ProjectionOf(FreezeSlice(make([]int, 0, 1024))))
+	empty := ProjectedSlice(ProjectionOf(FreezeSlice(make([]int, 0, 1024))))
 	if got := testing.AllocsPerRun(100, func() { benchmarkSliceClone = empty.Clone() }); got != 0 {
 		t.Fatalf("empty slice clone allocations = %g; want zero", got)
 	}
@@ -128,7 +131,7 @@ func TestCellAllocations(t *testing.T) {
 	if got := testing.AllocsPerRun(100, func() { projectionRecordSink = cell.Load() }); got != 0 {
 		t.Fatalf("cell load allocations = %g; want zero", got)
 	}
-	if got := testing.AllocsPerRun(100, func() { cellSharedSink = cell.Shared() }); got != 0 {
+	if got := testing.AllocsPerRun(100, func() { cellSharedSink = cell.LoadShared() }); got != 0 {
 		t.Fatalf("cell shared allocations = %g; want zero", got)
 	}
 }
@@ -153,13 +156,13 @@ func BenchmarkCellLoad(b *testing.B) {
 	}
 }
 
-// BenchmarkCellShared measures explicit access to a persistent snapshot.
-func BenchmarkCellShared(b *testing.B) {
+// BenchmarkCellLoadShared measures explicit access to a persistent snapshot.
+func BenchmarkCellLoadShared(b *testing.B) {
 	var cell Cell[testFrozen]
 	cell.Store(testFrozen{Number: 1})
 	b.ReportAllocs()
 	for b.Loop() {
-		cellSharedSink = cell.Shared()
+		cellSharedSink = cell.LoadShared()
 	}
 }
 
@@ -183,9 +186,9 @@ func BenchmarkProjectionField(b *testing.B) {
 
 // BenchmarkProjectionClones measures the explicit allocation cost of native copies.
 func BenchmarkProjectionClones(b *testing.B) {
-	text := Text(ProjectionOf(strings.Repeat("x", 1024)))
-	sequence := Slice(ProjectionOf(FreezeSlice(make([]int, 1024))))
-	mapping := Map(ProjectionOf(FreezeMap(map[int]int{1: 2, 3: 4})))
+	text := ProjectedString(ProjectionOf(strings.Repeat("x", 1024)))
+	sequence := ProjectedSlice(ProjectionOf(FreezeSlice(make([]int, 1024))))
+	mapping := ProjectedMap(ProjectionOf(FreezeMap(map[int]int{1: 2, 3: 4})))
 	b.Run("string", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {

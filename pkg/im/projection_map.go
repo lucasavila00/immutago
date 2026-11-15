@@ -11,9 +11,9 @@ type MapProjection[K comparable, V any] struct {
 	values map[K]V
 }
 
-// Map returns a map read projection without copying entries or allocating.
-func Map[K comparable, V any](value Projection[FrozenMap[K, V]]) MapProjection[K, V] {
-	return MapProjection[K, V]{values: value.value.values}
+// ProjectedMap returns a map read projection without copying entries or allocating.
+func ProjectedMap[K comparable, V any](value Projection[FrozenMap[K, V]]) MapProjection[K, V] {
+	return value.value.Projection()
 }
 
 // Len returns the number of entries in O(1) time without allocations.

@@ -30,9 +30,9 @@ func (g *generator) readPath(typ, root types.Type, path, stem string, indices []
 	}
 	projection := "im.ProjectionOf(" + expression + ")"
 	if basic, ok := typ.Underlying().(*types.Basic); ok && basic.Info()&types.IsString != 0 {
-		return "im.StringProjection", "im.Text(" + projection + ")", nil
+		return "im.StringProjection", "im.ProjectString(" + expression + ")", nil
 	}
-	if result, expression, ok := g.collectionReader(typ, projection); ok {
+	if result, expression, ok := g.collectionReader(typ, expression); ok {
 		return result, expression, nil
 	}
 	if checker.IsUncheckedValue(typ) {
@@ -66,18 +66,18 @@ func (g *generator) pointerReader(typ types.Type) (string, string, error) {
 // collectionReader maps fixed collection types to their local projection APIs.
 func (g *generator) collectionReader(typ types.Type, input string) (string, string, bool) {
 	if checker.IsLibraryType(typ, "FrozenString") {
-		return "im.StringProjection", "im.String(" + input + ")", true
+		return "im.StringProjection", input + ".Projection()", true
 	}
 	named, ok := types.Unalias(typ).(*types.Named)
 	if !ok {
 		return "", "", false
 	}
 	if checker.IsLibraryType(typ, "FrozenSlice") {
-		return "im.SliceProjection[" + g.typeName(named.TypeArgs().At(0)) + "]", "im.Slice(" + input + ")", true
+		return "im.SliceProjection[" + g.typeName(named.TypeArgs().At(0)) + "]", input + ".Projection()", true
 	}
 	if checker.IsLibraryType(typ, "FrozenMap") {
 		arguments := g.typeName(named.TypeArgs().At(0)) + ", " + g.typeName(named.TypeArgs().At(1))
-		return "im.MapProjection[" + arguments + "]", "im.Map(" + input + ")", true
+		return "im.MapProjection[" + arguments + "]", input + ".Projection()", true
 	}
 	return "", "", false
 }
@@ -138,8 +138,8 @@ func (g *generator) writeCell(out *bytes.Buffer, item record) {
 	fmt.Fprintf(out, "// Load reads the current value through a local projection.\n"+
 		"func (c *%sCell) Load() %s { return %s(c.value.LoadPointer()) }\n",
 		stem, item.name, constructorName(item.name))
-	fmt.Fprintf(out, "// Shared returns the frozen value for persistent use.\n"+
-		"func (c *%sCell) Shared() %s { return c.value.Shared() }\n", stem, source)
+	fmt.Fprintf(out, "// LoadShared returns the frozen value for persistent use.\n"+
+		"func (c *%sCell) LoadShared() %s { return c.value.LoadShared() }\n", stem, source)
 }
 
 // constructorName preserves the source type's exported or unexported visibility.

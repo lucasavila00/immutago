@@ -11,9 +11,9 @@ type SliceProjection[E any] struct {
 	values []E
 }
 
-// Slice returns a slice read projection without copying elements or allocating.
-func Slice[E any](value Projection[FrozenSlice[E]]) SliceProjection[E] {
-	return SliceProjection[E]{values: value.value.values}
+// ProjectedSlice returns a slice read projection without copying elements or allocating.
+func ProjectedSlice[E any](value Projection[FrozenSlice[E]]) SliceProjection[E] {
+	return value.value.Projection()
 }
 
 // Len returns the number of elements in O(1) time without allocations.

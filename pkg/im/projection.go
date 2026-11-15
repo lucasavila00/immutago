@@ -12,10 +12,10 @@ type Projection[T any] struct {
 // backing storage or allocating. Run immutago to enforce the local projection rules.
 func ProjectionOf[T any](value T) Projection[T] { return Projection[T]{value: value} }
 
-// CopyProjection allocates a private root copy and returns a local pointer projection.
+// CopyRecord allocates a private root copy and returns a local pointer projection.
 // It copies T by value and shares immutable backing storage. A nonzero-sized T
 // needs one allocation. The checker requires a Frozen record T.
-func CopyProjection[T any](value Projection[T]) Projection[*T] { return ProjectionOf(new(value.value)) }
+func CopyRecord[T any](value Projection[T]) Projection[*T] { return ProjectionOf(new(value.value)) }
 
 // Read supplies direct field access to generated accessors without copying backing storage.
 // Application code uses the generated projection methods. The checker controls Read access.

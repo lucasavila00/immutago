@@ -8,9 +8,14 @@ type StringProjection struct {
 	value string
 }
 
-// Text returns a string read projection without copying bytes or allocating.
-func Text[S ~string](value Projection[S]) StringProjection {
-	return StringProjection{value: string(value.value)}
+// ProjectString returns local read access to a native string without copying bytes or allocating.
+func ProjectString[S ~string](value S) StringProjection {
+	return StringProjection{value: string(value)}
+}
+
+// ProjectedString returns a string read projection without copying bytes or allocating.
+func ProjectedString[S ~string](value Projection[S]) StringProjection {
+	return ProjectString(value.value)
 }
 
 // Len returns the number of bytes in O(1) time without allocations.

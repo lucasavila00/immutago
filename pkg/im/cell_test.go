@@ -23,11 +23,11 @@ type testChild struct {
 // TestCellZero checks the zero snapshot, scalar projection, and nil pointer projection.
 func TestCellZero(t *testing.T) {
 	var scalar Cell[int]
-	if Copy(scalar.Load()) != 0 || scalar.Shared() != 0 {
+	if Copy(scalar.Load()) != 0 || scalar.LoadShared() != 0 {
 		t.Fatal("zero scalar cell changed the zero value")
 	}
 	var pointer Cell[*testChild]
-	if !IsNil(pointer.Load()) || pointer.Shared() != nil {
+	if !IsNil(pointer.Load()) || pointer.LoadShared() != nil {
 		t.Fatal("zero pointer cell is not nil")
 	}
 	var record Cell[testFrozen]
@@ -46,7 +46,7 @@ func TestCellStore(t *testing.T) {
 	}
 	input.Number = 9
 	first := cell.Load()
-	shared := cell.Shared()
+	shared := cell.LoadShared()
 	if first.value.Number != 1 || shared.Number != 1 {
 		t.Fatal("cell root changed with the caller's value")
 	}
@@ -54,11 +54,11 @@ func TestCellStore(t *testing.T) {
 		t.Fatal("cell copied immutable backing storage")
 	}
 	shared.Number = 8
-	if cell.Shared().Number != 1 {
-		t.Fatal("Shared returned the cell's root storage")
+	if cell.LoadShared().Number != 1 {
+		t.Fatal("LoadShared returned the cell's root storage")
 	}
 	cell.Store(testFrozen{Number: 4})
-	if first.value.Number != 1 || cell.Shared().Number != 4 {
+	if first.value.Number != 1 || cell.LoadShared().Number != 4 {
 		t.Fatal("Store changed an earlier snapshot")
 	}
 }
