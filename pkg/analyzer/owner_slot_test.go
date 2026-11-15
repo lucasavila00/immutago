@@ -2,46 +2,46 @@ package analyzer
 
 import "testing"
 
-// TestOwnerSlotChecks covers accepted calls and rejected slot transport.
-func TestOwnerSlotChecks(t *testing.T) {
-	const definitions = `type Model struct { im.ByValue; X int }
- type Loader struct { Current im.Owner[Model] }
+// TestCellSlotChecks covers accepted calls and rejected slot transport.
+func TestCellSlotChecks(t *testing.T) {
+	const definitions = `type Model struct { im.Snapshot; X int }
+ type Loader struct { Current im.Cell[Model] }
  `
 	cases := []struct {
 		name, source string
 		reject       bool
 	}{
-		{"fresh store and local load", `func f(l *Loader) { l.Current.Store(&Model{X:1}); m:=l.Current.Load(); read(m) }
-func read(*Model){}`, false},
-		{"new store", `func f(l *Loader) { l.Current.Store(new(Model)); m:=l.Current.Load(); _=m }`, false},
-		{"package slot", `var slot im.Owner[Model]; func f() { slot.Store(&Model{}); m:=slot.Load(); _=m }`, false},
-		{"shared argument", `type S struct{im.Shared}; var slot im.Owner[S]`, true},
-		{"invalid local argument", `type S struct{im.ByValue; Values []int}; var slot im.Owner[S]`, true},
-		{"marked owner", `type Bad struct{im.Shared; Slot im.Owner[Model]}`, true},
+		{"fresh store and local load", `func f(l *Loader) { l.Current.Store(Model{X:1}); m:=l.Current.Load(); read(m) }
+func read(im.View[Model]){}`, false},
+		{"new store", `func f(l *Loader) { l.Current.Store(Model{}); m:=l.Current.Load(); _=m }`, false},
+		{"package slot", `var slot im.Cell[Model]; func f() { slot.Store(Model{}); m:=slot.Load(); _=m }`, false},
+		{"snapshot argument", `type S struct{im.Snapshot}; var slot im.Cell[S]`, false},
+		{"invalid local argument", `type S struct{im.Local; Values []int}; var slot im.Cell[S]`, true},
+		{"marked owner", `type Bad struct{im.Snapshot; Slot im.Cell[Model]}`, true},
 		{"slot copy", `func f(l *Loader) { other:=l.Current; _=other }`, true},
 		{"slot address", `func f(l *Loader) { other:=&l.Current; _=other }`, true},
 		{"zero holder assignment", `func f(l *Loader) { *l=Loader{} }`, true},
-		{"zero slot assignment", `func f(l *Loader) { l.Current=im.Owner[Model]{} }`, true},
+		{"zero slot assignment", `func f(l *Loader) { l.Current=im.Cell[Model]{} }`, true},
 		{"range callback holder", `func seq(func(Loader) bool){};func f(){for range seq{}}`, true},
 		{"tuple holder result", `func f()(int,Loader){return 0,Loader{}};func g(){_,_=f()}`, true},
-		{"defined slot", `type Hidden im.Owner[Model]`, true},
+		{"defined slot", `type Hidden im.Cell[Model]`, true},
 		{"holder copy", `func f(l *Loader) { other:=*l; _=other }`, true},
 		{"holder value parameter", `func f(Loader){}`, true},
 		{"holder value result", `func f(l *Loader) Loader { return *l }`, true},
 		{"holder value method", `func (l Loader) f(){}`, true},
 		{"holder container", `var slots []Loader`, true},
 		{"nested holder", `type Outer struct{ Value Loader }`, true},
-		{"slot pointer", `type Outer struct{ Value *im.Owner[Model] }`, true},
-		{"store loaded pointer", `func f(l *Loader) { m:=l.Current.Load(); l.Current.Store(m) }`, true},
-		{"store new value", `func f(l *Loader) { m:=Model{}; l.Current.Store(new(m)) }`, true},
-		{"return load", `func f(l *Loader) *Model { return l.Current.Load() }`, true},
-		{"load into global", `var m *Model; func f(l *Loader) { m=l.Current.Load() }`, true},
-		{"load write", `func f(l *Loader) { l.Current.Load().X=1 }`, true},
+		{"slot pointer", `type Outer struct{ Value *im.Cell[Model] }`, true},
+		{"store retained value", `func f(l *Loader) { m:=l.Current.Shared(); l.Current.Store(m) }`, false},
+		{"store existing value", `func f(l *Loader) { m:=Model{}; l.Current.Store(m) }`, false},
+		{"return load", `func f(l *Loader) im.View[Model] { return l.Current.Load() }`, false},
+		{"load into global", `var m im.View[Model]; func f(l *Loader) { m=l.Current.Load() }`, true},
+		{"shared field write", `func f(l *Loader) { m:=l.Current.Shared(); m.X=1 }`, true},
 		{"method value", `func f(l *Loader) { load:=l.Current.Load; _=load }`, true},
-		{"concurrent store", `func f(l *Loader) { go l.Current.Store(&Model{}) }`, true},
-		{"deferred store", `func f(l *Loader) { defer l.Current.Store(&Model{}) }`, true},
+		{"concurrent store", `func f(l *Loader) { go l.Current.Store(Model{}) }`, true},
+		{"deferred store", `func f(l *Loader) { defer l.Current.Store(Model{}) }`, true},
 		{"loaded pointer closure", `func f(l *Loader){ p:=l.Current.Load(); g:=func(){_=p}; g() }`, true},
-		{"holder closure", `func f(l *Loader){ g:=func(){l.Current.Store(&Model{})}; g() }`, false},
+		{"holder closure", `func f(l *Loader){ g:=func(){l.Current.Store(Model{})}; g() }`, false},
 		{"variadic pointer escape", `var saved []*Loader;func retain(v ...*Loader){saved=v}
 func f(){l:=&Loader{};retain(l)}`, true},
 		{"variadic pointer alias", `type P = *Loader; func retain(...P){};func f(l *Loader){retain(l)}`, true},
@@ -70,12 +70,12 @@ func f(){l:=&Loader{};retain(l)}`, true},
 		{"nil pointer conversion", `func f(){p:=(*Loader)(nil);_=p}`, true},
 		{"holder boxing", `func f(l *Loader){ var x any=l; _=x }`, true},
 		{"holder pointer capture", `var saved *Loader; func f(l *Loader){ saved=l }`, true},
-		{"background publisher", `func publish(l *Loader){l.Current.Store(&Model{})}
+		{"background publisher", `func publish(l *Loader){l.Current.Store(Model{})}
 func f(l *Loader){go publish(l)}`, false},
-		{"holder new allocation", `func f(){ l:=new(Loader); l.Current.Store(&Model{}) }`, false},
+		{"holder new allocation", `func f(){ l:=new(Loader); l.Current.Store(Model{}) }`, false},
 		{"holder named callback", `func publish(l *Loader){};func f(){callback:=publish;_=callback}`, true},
 		{"holder method callback", `func(l *Loader) publish(){};func f(){callback:=(*Loader).publish;_=callback}`, true},
-		{"holder construction", `func f(){ l:=&Loader{}; l.Current.Store(&Model{}) }`, false},
+		{"holder construction", `func f(){ l:=&Loader{}; l.Current.Store(Model{}) }`, false},
 		{"generic holder", `func f[T any](*T){}; func g(l *Loader){ f(l) }`, true},
 	}
 	for _, tc := range cases {

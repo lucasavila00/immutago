@@ -71,7 +71,21 @@ func (c *subsetChecks) report(n ast.Node, message string) {
 
 // visit sends each protected operation through the complete source-form matcher.
 func (c *subsetChecks) visit(node ast.Node) bool {
-	c.checkOwnerNode(node)
+	if literal, ok := node.(*ast.FuncLit); ok {
+		if call := c.selectLiteral(literal); call != nil {
+			if rule := c.matchSelect(call); rule != "" {
+				c.report(call, rule)
+			}
+			ast.Inspect(literal.Type, func(node ast.Node) bool {
+				if node == literal.Type {
+					return true
+				}
+				return c.visit(node)
+			})
+			return false
+		}
+	}
+	c.checkCellNode(node)
 	c.declarationNode(node)
 	if name, ok := node.(*ast.Ident); ok {
 		c.genericInstance(name)
@@ -91,7 +105,7 @@ func (c *subsetChecks) visit(node ast.Node) bool {
 
 // subsetType rejects hidden references and native containers, including inferred result types.
 func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string {
-	if t == nil || seen[t] || checker.IsCollection(t) {
+	if t == nil || seen[t] || checker.IsCollection(t) || checker.IsView(t) {
 		return ""
 	}
 	seen[t] = true
@@ -186,7 +200,7 @@ func (c *subsetChecks) subsetContainer(t types.Type) string {
 func subsetResults(results *types.Tuple) string {
 	for i := 0; i < results.Len(); i++ {
 		if localReference(results.At(i).Type()) {
-			return "returning ByValue pointers is unsupported"
+			return "returning Local pointers is unsupported"
 		}
 	}
 	return ""
@@ -222,8 +236,8 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 			c.report(expression, "immutable callbacks are unsupported")
 		}
 	}
-	if storedByValueReference(t, make(map[types.Type]bool)) {
-		c.report(expression, "containers of ByValue pointers are unsupported")
+	if storedLocalReference(t, make(map[types.Type]bool)) {
+		c.report(expression, "containers of Local pointers are unsupported")
 	}
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return
@@ -249,8 +263,8 @@ func (c *subsetChecks) directSlotMethodExpression(expression ast.Expr) bool {
 	return c.ownedSlotSelector(selector) && c.directCall(selector) != nil
 }
 
-// storedByValueReference checks native container elements even when the handle has an ownership proof.
-func storedByValueReference(t types.Type, seen map[types.Type]bool) bool {
+// storedLocalReference checks native container elements even when the handle has an ownership proof.
+func storedLocalReference(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] {
 		return false
 	}
@@ -267,7 +281,7 @@ func storedByValueReference(t types.Type, seen map[types.Type]bool) bool {
 		elements = []types.Type{storage.Elem()}
 	}
 	for _, element := range elements {
-		if localReference(element) || storedByValueReference(element, seen) {
+		if localReference(element) || storedLocalReference(element, seen) {
 			return true
 		}
 	}

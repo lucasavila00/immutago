@@ -32,7 +32,7 @@ func boundaryPass(t *testing.T, importer types.Importer, source string) *analysi
 
 // TestOrdinaryPackageBoundary permits ordinary unsafe, reflection, bodyless, and cgo-header source.
 func TestOrdinaryPackageBoundary(t *testing.T) {
-	library := sourcePass(t, "var _ im.Shared").Pkg.Imports()[0]
+	library := sourcePass(t, "var _ im.Snapshot").Pkg.Imports()[0]
 	cases := []string{
 		`package ordinary; import "unsafe"; var _ unsafe.Pointer`,
 		`package ordinary; import "reflect"; var Value = reflect.ValueOf(1)`,
@@ -49,48 +49,48 @@ func TestOrdinaryPackageBoundary(t *testing.T) {
 	}
 }
 
-// TestPrunedProofBoundary keeps aliases, inferred callbacks, and Owner contracts checked after import pruning.
+// TestPrunedProofBoundary keeps aliases, inferred callbacks, and Cell contracts checked after import pruning.
 func TestPrunedProofBoundary(t *testing.T) {
-	api := sourcePass(t, `type Value struct { im.Shared; X int }
- type Model struct { im.ByValue; X int }
- type Loader struct { Current im.Owner[Model] }
- var Current im.Owner[Model]
+	api := sourcePass(t, `type Value struct { im.Snapshot; X int }
+ type Model struct { im.Snapshot; X int }
+ type Loader struct { Current im.Cell[Model] }
+ var Current im.Cell[Model]
  func Make() *Value { return &Value{} }
  func Publish(*Loader) {}
- type Mark = im.Shared
- type OwnerSet interface { im.Owner[Model] }
- type SafeOwner = im.Owner[Model]
- type Scalar[T interface{~int | SafeOwner}] = int
+ type Mark = im.Snapshot
+ type CellSet interface { im.Cell[Model] }
+ type SafeCell = im.Cell[Model]
+ type Scalar[T interface{~int | SafeCell}] = int
  func MakeScalar() Scalar[int] {return 0}
  type Plain struct{}
  func (Plain) Publish(*Loader){}
  func (Plain) Number() int {return 1}
  func MakePlain() Plain {return Plain{}}
- type OwnerAlias = OwnerSet
- type NestedOwnerSet interface { OwnerAlias }
- type OwnerAPI interface { Copy(im.Owner[Model]) im.Owner[Model] }
+ type CellAlias = CellSet
+ type NestedCellSet interface { CellAlias }
+ type CellAPI interface { Copy(im.Cell[Model]) im.Cell[Model] }
  type Phantom[T any] struct{}
- func PhantomOwner() Phantom[im.Owner[Model]] { return Phantom[im.Owner[Model]]{} }`).Pkg
+ func PhantomCell() Phantom[im.Cell[Model]] { return Phantom[im.Cell[Model]]{} }`).Pkg
 	api.SetImports(nil)
 	importer := dependencyImporter{"sample": api}
 	cases := []struct{ name, declarations string }{
 		{"alias", `type Alias = api.Value; var value Alias`},
 		{"defined", `type Copy api.Value; var value Copy`},
 		{"inferred callback", `var callback = api.Make`},
-		{"Owner callback", `var callback = api.Publish`},
-		{"Owner slot", `var current = api.Current`},
-		{"Owner reference", `var holder *api.Loader`},
-		{"Owner signature", `type Callback func(*api.Loader)`},
+		{"Cell callback", `var callback = api.Publish`},
+		{"Cell slot", `var current = api.Current`},
+		{"Cell reference", `var holder *api.Loader`},
+		{"Cell signature", `type Callback func(*api.Loader)`},
 		{"generic constraint", `func read[T interface{*api.Value}](){}`},
 		{"marker alias", `var marker api.Mark`},
-		{"Owner value constraint", `func read[T api.OwnerSet](){}`},
-		{"Owner constraint alias", `type Set = api.OwnerAlias`},
-		{"nested Owner constraint", `func read[T api.NestedOwnerSet](){}`},
-		{"Owner interface values", `var service api.OwnerAPI`},
-		{"phantom Owner argument", `var value = api.PhantomOwner()`},
+		{"Cell value constraint", `func read[T api.CellSet](){}`},
+		{"Cell constraint alias", `type Set = api.CellAlias`},
+		{"nested Cell constraint", `func read[T api.NestedCellSet](){}`},
+		{"Cell interface values", `var service api.CellAPI`},
+		{"phantom Cell argument", `var value = api.PhantomCell()`},
 		{"generic alias constraint", `var value api.Scalar[int]`},
 		{"returned generic alias", `var value=api.MakeScalar()`},
-		{"selected Owner method", `var callback = api.Plain.Publish`},
+		{"selected Cell method", `var callback = api.Plain.Publish`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -116,7 +116,7 @@ func TestPrunedProofBoundary(t *testing.T) {
 
 // TestHiddenMarkedImplementation keeps a scalar-only API ordinary in both complete and pruned import graphs.
 func TestHiddenMarkedImplementation(t *testing.T) {
-	api := sourcePass(t, `type hidden struct{im.Shared};func Number() int{return 1}`).Pkg
+	api := sourcePass(t, `type hidden struct{im.Snapshot};func Number() int{return 1}`).Pkg
 	for _, pruned := range []bool{false, true} {
 		if pruned {
 			api.SetImports(nil)
@@ -132,7 +132,7 @@ func TestHiddenMarkedImplementation(t *testing.T) {
 
 // TestUnusedNamedMethodsStayOrdinary does not activate from unreferenced concrete method contracts.
 func TestUnusedNamedMethodsStayOrdinary(t *testing.T) {
-	api := sourcePass(t, `type Model struct{im.ByValue};type Loader struct{Current im.Owner[Model]}
+	api := sourcePass(t, `type Model struct{im.Snapshot};type Loader struct{Current im.Cell[Model]}
  type Plain struct{};func(Plain) Publish(*Loader){};func(Plain) Number()int{return 1}
  func MakePlain()Plain{return Plain{}}`).Pkg
 	api.SetImports(nil)

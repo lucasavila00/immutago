@@ -7,8 +7,8 @@ import (
 
 // TestBodylessSignatures checks the native implementation boundary by resolved type.
 func TestBodylessSignatures(t *testing.T) {
-	const prefix = `type Value struct { im.Shared; N int }
-type Local struct { im.ByValue; N int }
+	const prefix = `type Value struct { im.Snapshot; N int }
+type Local struct { im.Local; N int }
 type Plain struct { N int }
 type Alias = *Value
 `
@@ -32,7 +32,7 @@ type Alias = *Value
 		`func (*Value) Read() int`,
 		`func read(*Local) int`,
 		`func read(im.FrozenSlice[int]) int`,
-		`func read(im.Owner[Local]) int`,
+		`func read(im.Cell[Local]) int`,
 		`func read(callback func(*Value))`,
 		`type Contract[T interface{ ~int | im.FrozenSlice[int] }] = int; func read(Contract[int])`,
 	} {

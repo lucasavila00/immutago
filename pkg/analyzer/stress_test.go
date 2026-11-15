@@ -27,7 +27,7 @@ func TestCoreSourceStress(t *testing.T) {
 // stressSource constructs repeated, wide, nested, and ownership-heavy consumer programs.
 func stressSource(shape string, count int, invalid bool) string {
 	var source strings.Builder
-	source.WriteString("type Value struct { im.Shared; N int };\n")
+	source.WriteString("type Value struct { im.Snapshot; N int };\n")
 	switch shape {
 	case "records":
 		source.WriteString("func f(){\n")
@@ -38,7 +38,7 @@ func stressSource(shape string, count int, invalid bool) string {
 			source.WriteString("value:=Value{};value.N=2;\n")
 		}
 	case "wide":
-		source.WriteString("type Wide struct { im.Shared;\n")
+		source.WriteString("type Wide struct { im.Snapshot;\n")
 		for index := range count {
 			fmt.Fprintf(&source, "F%d int;\n", index)
 		}
@@ -51,7 +51,7 @@ func stressSource(shape string, count int, invalid bool) string {
 			source.WriteString("wide.F0=2;\n")
 		}
 	case "nested":
-		source.WriteString("type Node struct { im.Shared; Next *Node; N int };func f(){ value:=")
+		source.WriteString("type Node struct { im.Snapshot; Next *Node; N int };func f(){ value:=")
 		for range count {
 			source.WriteString("&Node{Next:")
 		}

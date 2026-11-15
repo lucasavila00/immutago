@@ -43,15 +43,15 @@ var subsetFixes = map[string]string{
 		"keep frozen collections in their original im type",
 	"native builders require fresh local bindings or append to the same handle": "declare one fresh local builder; " +
 		"use values = append(values, element) to extend it",
-	"ByValue pointers cannot enter aggregate storage": "store a ByValue value copy or a Shared pointer",
+	"Local pointers cannot enter aggregate storage": "store a Local value copy or a Snapshot pointer",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
-		"im.Shared or im.ByValue; copy arrays and frozen collection values without taking their addresses",
-	"returning ByValue pointers is unsupported": "return a ByValue value copy, or use im.Shared " +
+		"im.Snapshot or im.Local; copy arrays and frozen collection values without taking their addresses",
+	"returning Local pointers is unsupported": "return a Local value copy, or use im.Snapshot " +
 		"for objects whose pointers must be shared",
-	"global ByValue pointers are unsupported": "keep the ByValue pointer local, or store a value copy",
+	"global Local pointers are unsupported": "keep the Local pointer local, or store a value copy",
 	"service dependencies cannot enter package variables": "build the service arguments in a local variable " +
 		"and pass them to supervise.Start or supervise.StartReserved",
-	"containers of ByValue pointers are unsupported": "store ByValue value copies or im.Shared pointers",
+	"containers of Local pointers are unsupported": "keep Local values in local bindings, or store im.Snapshot pointers",
 	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",
 	"user generic instantiations with immutable types are unsupported": "use a non-generic declaration " +
@@ -87,7 +87,7 @@ var subsetFixes = map[string]string{
 	"freezing requires a synchronous call": "freeze the local builder directly before " +
 		"starting deferred or concurrent work",
 	"reference operation is outside the supported allowlist": "use a documented reference form: fresh construction, " +
-		"a concrete variable, a read, or a direct typed call; only Shared pointers can be stored or returned",
+		"a concrete variable, a read, or a direct typed call; only Snapshot pointers can be stored or returned",
 	"native slices of immutable storage are unsupported": "use im.FrozenSlice[T] and All() for " +
 		"iteration, or build a fresh local slice and consume it with im.FreezeSlice",
 	"native maps of immutable storage are unsupported": "use im.FrozenMap[K, V]; pass an " +
@@ -134,11 +134,11 @@ func subsetFix(rule string) string {
 func structuralFix(t types.Type, reason string) string {
 	switch {
 	case strings.Contains(reason, "named array"):
-		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Shared or im.ByValue"
+		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Snapshot or im.Local"
 	case strings.Contains(reason, "type parameters"):
 		return "use a concrete type; user generic declarations cannot contain immutable storage"
 	case strings.Contains(reason, "does not embed"):
-		return "embed im.Shared or im.ByValue in the struct and make each field immutable"
+		return "embed im.Snapshot or im.Local in the struct and make each field immutable"
 	}
 	switch t.Underlying().(type) {
 	case *types.Pointer:

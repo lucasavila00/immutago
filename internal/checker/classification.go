@@ -18,6 +18,7 @@ const (
 	callableMode
 	constraintMode
 	handleMode
+	localMode
 )
 
 // classificationKey keeps each traversal mode separate.
@@ -41,6 +42,9 @@ func (c *Classifier) Callable(t types.Type) bool { return c.query(t, callableMod
 
 // Handles reports whether storage or a callable contract contains a service reference.
 func (c *Classifier) Handles(t types.Type) bool { return c.query(t, handleMode) }
+
+// Locals reports local views or records in storage, including through arrays and pointers.
+func (c *Classifier) Locals(t types.Type) bool { return c.query(t, localMode) }
 
 // query completes all reachable edges before propagating positive results through cycles.
 func (c *Classifier) query(t types.Type, mode classificationMode) bool {
@@ -108,11 +112,19 @@ func (c *Classifier) expand(node *classificationNode) {
 		}
 		return
 	}
+	if node.key.mode == localMode {
+		if IsView(node.key.typ) || Local(node.key.typ) || IsLibraryType(node.key.typ, "Local") {
+			c.mark(node)
+		} else {
+			c.storageEdges(node)
+		}
+		return
+	}
 	if node.key.mode == handleMode {
 		c.callableEdges(node)
 		return
 	}
-	if IsLibraryType(node.key.typ, "Owner") || IsRuntimeType(node.key.typ, ServiceMarker) ||
+	if IsLibraryType(node.key.typ, "Cell") || IsRuntimeType(node.key.typ, ServiceMarker) ||
 		IsUncheckedValue(node.key.typ) {
 		return
 	}
@@ -122,7 +134,7 @@ func (c *Classifier) expand(node *classificationNode) {
 	case storageMode:
 		if parameter, ok := node.key.typ.(*types.TypeParam); ok {
 			c.connect(node, parameter.Constraint(), constraintMode)
-		} else if IsCollection(node.key.typ) || MarkerCount(node.key.typ) != 0 {
+		} else if IsCollection(node.key.typ) || IsView(node.key.typ) || MarkerCount(node.key.typ) != 0 {
 			c.mark(node)
 		} else {
 			c.storageEdges(node)

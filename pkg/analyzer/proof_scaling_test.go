@@ -12,7 +12,7 @@ import (
 func markedTypeGraph(count int, invalid bool) string {
 	var source strings.Builder
 	for i := range count {
-		fmt.Fprintf(&source, "type M%d struct { im.Shared; Next *M%d; Many im.FrozenSlice[*M%d]; "+
+		fmt.Fprintf(&source, "type M%d struct { im.Snapshot; Next *M%d; Many im.FrozenSlice[*M%d]; "+
 			"ByKey im.FrozenMap[string,*M%d]; Name string; N int;", i, (i+1)%count, (i*7+3)%count, (i*13+5)%count)
 		if invalid && i == 0 {
 			source.WriteString(" Bad []int;")

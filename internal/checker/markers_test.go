@@ -10,11 +10,11 @@ import (
 // TestMarkerReferenceProofs checks the two marker modes and stored reference boundaries.
 func TestMarkerReferenceProofs(t *testing.T) {
 	sharedMarker, slice := testTypes()
-	localMarker := types.NewNamed(types.NewTypeName(token.NoPos, sharedMarker.Obj().Pkg(), "ByValue", nil),
+	localMarker := types.NewNamed(types.NewTypeName(token.NoPos, sharedMarker.Obj().Pkg(), "Local", nil),
 		types.NewStruct(nil, nil), nil)
-	shared := markedType("Shared", sharedMarker)
+	shared := markedType("Snapshot", sharedMarker)
 	local := markedType("Local", localMarker)
-	if !Shared(shared) || ByValue(shared) || !ByValue(local) || Shared(local) {
+	if !Snapshot(shared) || Local(shared) || !Local(local) || Snapshot(local) {
 		t.Fatal("marker modes were not preserved")
 	}
 	for _, value := range []types.Type{
@@ -31,12 +31,12 @@ func TestMarkerReferenceProofs(t *testing.T) {
 		sliceType(t, slice, types.NewPointer(local)),
 		markedType("Bad", sharedMarker, types.NewField(token.NoPos, nil, "Child", types.NewPointer(local), false)),
 	} {
-		if reason := Reason(value); !strings.Contains(reason, "ByValue pointers cannot be stored") {
+		if reason := Reason(value); !strings.Contains(reason, "Local pointers cannot be stored") {
 			t.Errorf("stored local reference %s: %s", value, reason)
 		}
 	}
 	mixed := markedType("Mixed", sharedMarker,
-		types.NewField(token.NoPos, nil, "ByValue", localMarker, true))
+		types.NewField(token.NoPos, nil, "Local", localMarker, true))
 	if reason := Reason(mixed); !strings.Contains(reason, "cannot embed both") {
 		t.Fatalf("mixed markers accepted: %s", reason)
 	}
@@ -47,7 +47,7 @@ func TestRecursivePointerProof(t *testing.T) {
 	marker, _ := testTypes()
 	node := markedType("Node", marker)
 	fields := []*types.Var{
-		types.NewField(token.NoPos, nil, "Shared", marker, true),
+		types.NewField(token.NoPos, nil, "Snapshot", marker, true),
 		types.NewField(token.NoPos, nil, "Next", types.NewPointer(node), false),
 	}
 	node.SetUnderlying(types.NewStruct(fields, nil))

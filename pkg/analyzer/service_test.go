@@ -6,8 +6,8 @@ const serviceDefinitions = `import (
     "context"
     "github.com/lucasavila00/immutago/pkg/supervise"
 )
-type Reply struct { im.ByValue; Count int }
-type SharedReply struct { im.Shared; Count int }
+type Reply struct { im.Local; Count int }
+type SnapshotReply struct { im.Snapshot; Count int }
 type Counter struct { supervise.Service[map[string]int]; count int }
 func (*Counter) Run(context.Context) {}
 `
@@ -20,16 +20,16 @@ func TestServiceResults(t *testing.T) {
 	}{
 		{"scalar", `func(c *Counter) Count() int { return c.count }`, false},
 		{"byValue value", `func(c *Counter) Read() Reply { return Reply{Count:c.count} }`, false},
-		{"shared value", `func(c *Counter) Read() SharedReply { return SharedReply{Count:c.count} }`, true},
+		{"shared value", `func(c *Counter) Read() SnapshotReply { return SnapshotReply{Count:c.count} }`, true},
 		{"array", `func(*Counter) Read() [2]int { return [2]int{} }`, false},
 		{"frozen", `func(*Counter) Read() im.FrozenSlice[int] { frozen:=im.FreezeSlice([]int{1}); return frozen }`, true},
 		{"frozen map",
 			`func(*Counter) Read() im.FrozenMap[string,int]{var value im.FrozenMap[string,int];return value}`, true},
-		{"shared array", `func(*Counter) Read() [2]SharedReply{return [2]SharedReply{}}`, true},
-		{"pointer array", `func(*Counter) Read() [2]*SharedReply{return [2]*SharedReply{}}`, true},
-		{"frozen field", `type Page struct{im.ByValue;Values im.FrozenSlice[int]}
+		{"shared array", `func(*Counter) Read() [2]SnapshotReply{return [2]SnapshotReply{}}`, true},
+		{"pointer array", `func(*Counter) Read() [2]*SnapshotReply{return [2]*SnapshotReply{}}`, true},
+		{"frozen field", `type Page struct{im.Local;Values im.FrozenSlice[int]}
 func(*Counter) Read() Page{return Page{}}`, false},
-		{"shared field", `type Page struct{im.ByValue;Value SharedReply}
+		{"shared field", `type Page struct{im.Local;Value SnapshotReply}
 func(*Counter) Read() Page{return Page{}}`, false},
 		{"alias", `type Result = Reply;func(*Counter) Read() Result{return Result{}}`, false},
 		{"nested array", `func(*Counter) Read() [2][2]Reply{return [2][2]Reply{}}`, false},
@@ -43,13 +43,13 @@ func use(){r:=&Reader{};p:=&Reply{};_=r.Read(p)}`, false},
 func use(r Reader,p *Reply){_=r.Read(p)}`, true},
 		{"stored byValue pointer", `type Stored struct{supervise.Service[*Reply]}`, true},
 		{"stored byValue value", `type Stored struct{supervise.Service[Reply]}`, false},
-		{"stored shared pointer", `type Stored struct{supervise.Service[*SharedReply]}`, false},
+		{"stored shared pointer", `type Stored struct{supervise.Service[*SnapshotReply]}`, false},
 		{"zero results", `func(c *Counter) Update() { c.count++ }`, false},
 		{"promoted zero results", `type Commands struct{}; func(Commands) Pause(){}
 type Outer struct{Counter; Commands}`, false},
 		{"two results", `func(*Counter) Read()(int,int){return 1,2}`, true},
 		{"mutable result", `func(*Counter) Read() map[string]int {return nil}`, true},
-		{"pointer result", `func(*Counter) Read() *SharedReply {return &SharedReply{}}`, true},
+		{"pointer result", `func(*Counter) Read() *SnapshotReply {return &SnapshotReply{}}`, true},
 		{"byValue pointer", `func(*Counter) Read() *Reply {return nil}`, true},
 		{"ordinary dependency wrapper", `var dep supervise.ConcurrentSafe[map[string]int]
 func use(){dep=supervise.AssumeConcurrentSafe(map[string]int{}); dep.Value()["key"]++}`, false},

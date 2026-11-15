@@ -55,18 +55,18 @@ func competingProofRoots() []types.Type {
 	marker, _ := testTypes()
 	root, left, right := markedType("Root", marker), markedType("Left", marker), markedType("Right", marker)
 	root.SetUnderlying(types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Shared", marker, true),
+		types.NewField(token.NoPos, nil, "Snapshot", marker, true),
 		types.NewField(token.NoPos, nil, "Left", types.NewPointer(left), false),
 		types.NewField(token.NoPos, nil, "Again", types.NewPointer(left), false),
 		types.NewField(token.NoPos, nil, "Right", types.NewPointer(right), false),
 	}, nil))
 	left.SetUnderlying(types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Shared", marker, true),
+		types.NewField(token.NoPos, nil, "Snapshot", marker, true),
 		types.NewField(token.NoPos, nil, "Back", types.NewPointer(root), false),
 		types.NewField(token.NoPos, nil, "BadA", types.NewSlice(types.Typ[types.Int]), false),
 	}, nil))
 	right.SetUnderlying(types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Shared", marker, true),
+		types.NewField(token.NoPos, nil, "Snapshot", marker, true),
 		types.NewField(token.NoPos, nil, "BadB", types.NewMap(types.Typ[types.Int], types.Typ[types.Int]), false),
 	}, nil))
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), root)
@@ -89,8 +89,8 @@ func TestProverWitnessQueryOrder(t *testing.T) {
 	}
 }
 
-// TestProverNewFailedOwners checks new edges to an already failed child, including empty pointer labels.
-func TestProverNewFailedOwners(t *testing.T) {
+// TestProverNewFailedCells checks new edges to an already failed child, including empty pointer labels.
+func TestProverNewFailedCells(t *testing.T) {
 	marker, slice := testTypes()
 	bad := markedType("Bad", marker,
 		types.NewField(token.NoPos, nil, "Mutable", types.NewSlice(types.Typ[types.Int]), false))
@@ -232,12 +232,12 @@ func TestProverLocalFailures(t *testing.T) {
 // TestProverTypeForms checks valid forms and useful terminal reasons without choosing between failures.
 func TestProverTypeForms(t *testing.T) {
 	marker, slice := testTypes()
-	shared := markedType("SharedValue", marker)
-	byValueMarker := types.NewNamed(types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "ByValue", nil),
+	shared := markedType("SnapshotValue", marker)
+	byValueMarker := types.NewNamed(types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "Local", nil),
 		types.NewStruct(nil, nil), nil)
-	byValue := markedType("ByValueValue", byValueMarker)
+	byValue := markedType("LocalValue", byValueMarker)
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), shared)
-	owner := types.NewNamed(types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "Owner", nil),
+	owner := types.NewNamed(types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "Cell", nil),
 		types.NewStruct(nil, nil), nil)
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "T", nil),
 		types.NewInterfaceType(nil, nil).Complete())
@@ -247,8 +247,8 @@ func TestProverTypeForms(t *testing.T) {
 	}{
 		{types.Typ[types.Int], ""}, {shared, ""}, {byValue, ""}, {alias, ""},
 		{types.NewPointer(shared), ""}, {types.NewArray(alias, 0), ""}, {sliceType(t, slice, shared), ""},
-		{types.NewPointer(byValue), "ByValue pointers cannot be stored"},
-		{owner, "Owner slots are mutable"}, {parameter, "type parameters are unsupported"},
+		{types.NewPointer(byValue), "Local pointers cannot be stored"},
+		{owner, "Cell slots are mutable"}, {parameter, "type parameters are unsupported"},
 		{types.NewPointer(types.Typ[types.Int]), "concrete marked struct target"},
 		{types.NewStruct(nil, nil), "struct does not embed"},
 	}

@@ -15,11 +15,26 @@ type Prover struct {
 
 // Reason proves t or returns a component path to a failure.
 // The selected cause can depend on earlier queries; each root message is cached.
-func (p *Prover) Reason(t types.Type) string {
-	if p.graph.nodes == nil {
-		p.graph.nodes = make(map[types.Type]*obligation)
-	}
-	root := p.graph.node(t)
+func (p *Prover) Reason(t types.Type) string { return p.render(p.graph.node(t)) }
+
+// SnapshotReason proves the shared payload contract used by Cell and View.
+func (p *Prover) SnapshotReason(t types.Type) string {
+	return p.render(p.graph.categoryNode(t, snapshotCategory))
+}
+
+// CopiedReason proves that a value can leave a view without a shared data reference.
+// Opaque service references retain their explicit reference contract.
+func (p *Prover) CopiedReason(t types.Type) string {
+	return p.render(p.graph.categoryNode(t, copiedCategory))
+}
+
+// ReadResultReason proves Copied values and local read values through one type rule.
+func (p *Prover) ReadResultReason(t types.Type) string {
+	return p.render(p.graph.categoryNode(t, readCategory))
+}
+
+// render completes pending obligations and reuses the selected failure path.
+func (p *Prover) render(root *obligation) string {
 	p.graph.propagate()
 	if !root.failed() {
 		return ""
@@ -37,30 +52,4 @@ func (p *Prover) Reason(t types.Type) string {
 	}
 	p.reasons[root] = reason
 	return reason
-}
-
-// ServiceResultReason accepts scalars, service references, and proved ByValue structs.
-// It also accepts unnamed arrays of these result types, including nested arrays.
-// Fields of a ByValue struct use the ordinary stored-type checks.
-func (p *Prover) ServiceResultReason(t types.Type) string {
-	t = types.Unalias(t)
-	switch value := t.Underlying().(type) {
-	case *types.Basic:
-		return p.Reason(t)
-	case *types.Array:
-		if _, named := t.(*types.Named); !named {
-			if reason := p.ServiceResultReason(value.Elem()); reason != "" {
-				return "array element: " + reason
-			}
-			return ""
-		}
-	case *types.Struct:
-		if ByValue(t) || IsLibraryType(t, "ByValue") || IsRuntimeType(t, "Ref") {
-			return p.Reason(t)
-		}
-	case *types.Pointer:
-		return "a service result must be a value, not a pointer"
-	}
-	return "service results require a scalar, supervise.Ref, an unnamed array of service results, " +
-		"or a struct with im.ByValue"
 }

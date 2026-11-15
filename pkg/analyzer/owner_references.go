@@ -28,7 +28,7 @@ func (c *subsetChecks) hasHolderReference(t types.Type) bool {
 
 // findHolderReference walks storage while keeping the sealed slot opaque.
 func (c *subsetChecks) findHolderReference(t types.Type, seen map[types.Type]bool) bool {
-	if t == nil || seen[t] || checker.IsLibraryType(t, "Owner") {
+	if t == nil || seen[t] || checker.IsLibraryType(t, "Cell") {
 		return false
 	}
 	if result, ok := c.holderRefs[t]; ok {
@@ -37,7 +37,7 @@ func (c *subsetChecks) findHolderReference(t types.Type, seen map[types.Type]boo
 	seen[t] = true
 	switch value := t.Underlying().(type) {
 	case *types.Pointer:
-		return c.holderPointer(t) || checker.IsLibraryType(value.Elem(), "Owner") ||
+		return c.holderPointer(t) || checker.IsLibraryType(value.Elem(), "Cell") ||
 			c.findHolderReference(value.Elem(), seen)
 	case *types.Array:
 		return c.findHolderReference(value.Elem(), seen)
@@ -109,7 +109,7 @@ func (c *subsetChecks) interfaceHolderReference(value *types.Interface, seen map
 // checkHolderSignature permits only direct, fixed holder pointer parameters.
 func (c *subsetChecks) checkHolderSignature(sig *types.Signature, direct bool, pos ast.Node) {
 	if c.hasHolderReference(sig.Results()) {
-		c.pass.Reportf(pos.Pos(), "Owner holder pointers cannot be returned")
+		c.pass.Reportf(pos.Pos(), "Cell holder pointers cannot be returned")
 	}
 	for i := 0; i < sig.Params().Len(); i++ {
 		parameter := sig.Params().At(i).Type()
@@ -119,6 +119,6 @@ func (c *subsetChecks) checkHolderSignature(sig *types.Signature, direct bool, p
 		if direct && c.holderPointer(parameter) && (!sig.Variadic() || i != sig.Params().Len()-1) {
 			continue
 		}
-		c.pass.Reportf(pos.Pos(), "Owner holder pointers require direct non-variadic parameters")
+		c.pass.Reportf(pos.Pos(), "Cell holder pointers require direct non-variadic parameters")
 	}
 }

@@ -25,6 +25,9 @@ func (c *subsetChecks) calledObject(e ast.Expr) types.Object {
 // matchCall accepts exact im APIs, concrete named calls, or calls with only ordinary scalar data.
 func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	object := c.calledObject(call.Fun)
+	if libraryObject(object) && object.Name() == "Select" {
+		return c.matchSelect(call)
+	}
 	if builtin, ok := object.(*types.Builtin); ok {
 		return c.matchBuiltin(call, builtin)
 	}
@@ -120,24 +123,35 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 // matchLibraryCall matches fixed function identities, receivers, and result contexts.
 func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object) string {
 	switch object.Name() {
-	case "Load", "Store":
+	case "Load", "Store", "Shared":
 		if c.ownedSlotCall(call) {
 			return ""
 		}
-		return "Owner requires a direct slot call"
+		return "Cell requires a direct slot call"
 	case "FreezeMap", "FreezeSlice":
 		if c.standaloneFreeze(call) {
 			return ""
 		}
 		return "Freeze requires a standalone single binding"
-	case "Trust", "Unwrap":
+	case "Trust", "Unwrap", "ViewOf", "Text", "Slice", "Map", "IsNil":
 		return ""
+	case "Copy":
+		return c.proofs.CopiedReason(c.pass.TypesInfo.TypeOf(call))
 	case "Get", "At", "Len", "All", "Clone":
 		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 		if !ok || !c.exactCollectionMethod(selector) {
 			return "immutable method expressions are unsupported"
 		}
-		if object.Name() == "All" && c.queries.Callable(c.pass.TypesInfo.TypeOf(call)) {
+		receiver := c.pass.TypesInfo.TypeOf(selector.X)
+		if checker.IsView(receiver) && object.Name() == "Clone" {
+			args := types.Unalias(receiver).(*types.Named).TypeArgs()
+			for index := 0; index < args.Len(); index++ {
+				if reason := c.proofs.CopiedReason(args.At(index)); reason != "" {
+					return reason
+				}
+			}
+		}
+		if object.Name() == "All" && (checker.IsView(receiver) || c.queries.Callable(c.pass.TypesInfo.TypeOf(call))) {
 			statement, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
 			if !ok || ast.Unparen(statement.X) != call {
 				return "immutable iterators must be consumed by direct range"

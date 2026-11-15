@@ -15,7 +15,7 @@ func slotGraphPass(t testing.TB, count int, checked bool) *analysis.Pass {
 		return ordinaryGraphPass(t, count)
 	}
 	declarations := strings.TrimPrefix(ordinaryTypeGraph(count), "package ordinary\n")
-	pass := sourcePass(t, "type Checked struct { im.Shared }\n"+declarations)
+	pass := sourcePass(t, "type Checked struct { im.Snapshot }\n"+declarations)
 	pass.Report = func(d analysis.Diagnostic) { t.Fatalf("valid graph rejected: %s", d.Message) }
 	return pass
 }

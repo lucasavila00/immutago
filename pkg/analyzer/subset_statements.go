@@ -104,17 +104,20 @@ func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) string {
 	return ""
 }
 
-// matchBinding permits ByValue pointers only in local variable bindings.
+// matchBinding permits Local pointers only in local variable bindings.
 func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) string {
 	if rule := c.matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
 		return rule
 	}
-	if !localReference(source) {
+	if !localReference(source) && !c.queries.Locals(source) {
 		return ""
 	}
 	name, ok := ast.Unparen(destination).(*ast.Ident)
 	if !ok {
-		return "ByValue pointers cannot enter aggregate storage"
+		if localReference(source) {
+			return "Local pointers cannot enter aggregate storage"
+		}
+		return ""
 	}
 	if name.Name == "_" {
 		return ""
@@ -123,7 +126,7 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	if ok && variable.Parent() != c.pass.Pkg.Scope() {
 		return ""
 	}
-	return "global ByValue pointers are unsupported"
+	return "Local values and pointers cannot be stored in package variables"
 }
 
 // matchDeclaration accepts one binding or an exact two-result Get or Start call.
@@ -138,8 +141,12 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 	}
 	for _, name := range declaration.Names {
 		variable := c.pass.TypesInfo.Defs[name]
+		if variable != nil && name.Name != "_" && c.queries.Locals(variable.Type()) &&
+			variable.Parent() == c.pass.Pkg.Scope() {
+			return "Local values and pointers cannot be stored in package variables"
+		}
 		if variable != nil && localReference(variable.Type()) && variable.Parent() == c.pass.Pkg.Scope() {
-			return "global ByValue pointers are unsupported"
+			return "global Local pointers are unsupported"
 		}
 	}
 	if len(declaration.Values) == 0 {
@@ -185,10 +192,10 @@ func (c *subsetChecks) matchReturn(statement *ast.ReturnStmt) string {
 	return ""
 }
 
-// matchReturnValue permits concrete values and Shared pointers at a return boundary.
+// matchReturnValue permits concrete values and Snapshot pointers at a return boundary.
 func (c *subsetChecks) matchReturnValue(source, destination types.Type) string {
 	if localReference(source) || localReference(destination) {
-		return "returning ByValue pointers is unsupported"
+		return "returning Local pointers is unsupported"
 	}
 	return c.matchTransport(source, destination)
 }
@@ -323,7 +330,7 @@ func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 	if pointer, ok := receiver.Underlying().(*types.Pointer); ok {
 		receiver = pointer.Elem()
 	}
-	if !checker.IsCollection(receiver) {
+	if !checker.IsCollection(receiver) && !checker.IsView(receiver) {
 		return false
 	}
 	switch selection.Obj().Name() {

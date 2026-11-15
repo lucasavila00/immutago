@@ -20,7 +20,7 @@ func Select[T, F any](value View[T], project func(T) F) View[F] {
 }
 
 // Copy returns the value from a view. The checker permits only Copied types,
-// whose values contain no references to backing storage. Copy does not allocate.
+// including opaque service references. Copy does not allocate.
 func Copy[T any](value View[T]) T { return value.value }
 
 // IsNil reports whether a pointer view contains nil without exposing the pointer.

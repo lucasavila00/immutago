@@ -9,7 +9,7 @@ import (
 
 // opaqueStorage identifies the library and runtime types whose fields are not walked.
 func opaqueStorage(t types.Type) bool {
-	return IsLibraryType(t, "Owner") || IsRuntimeType(t, ServiceMarker)
+	return IsLibraryType(t, "Cell") || IsRuntimeType(t, ServiceMarker)
 }
 
 // classificationStorageOracle retains the original storage walk without shared query state.
@@ -207,7 +207,7 @@ func classificationShapes(t *testing.T) []types.Type {
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "T", nil), constraint)
 	ordinary := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "U", nil),
 		types.NewInterfaceType(nil, nil).Complete())
-	localName := types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "ByValue", nil)
+	localName := types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "Local", nil)
 	localMarker := types.NewNamed(localName, types.NewStruct(nil, nil), nil)
 	local := markedType("Local", localMarker)
 	results := types.NewTuple(types.NewParam(token.NoPos, nil, "value", value))
@@ -218,7 +218,7 @@ func classificationShapes(t *testing.T) []types.Type {
 	receiverOnly := types.NewSignatureType(receiver, nil, nil, nil, nil, false)
 	frozen := sliceType(t, slice, value)
 	frozenAlias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "FrozenAlias", nil), frozen)
-	fakeName := types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Shared", nil)
+	fakeName := types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Snapshot", nil)
 	fakeMarker := types.NewNamed(fakeName, types.NewStruct(nil, nil), nil)
 	return []types.Type{
 		nil, value, alias, types.NewPointer(alias), types.NewArray(alias, 0), local, types.NewPointer(local),
@@ -257,17 +257,17 @@ func TestClassificationMatchesWalkers(t *testing.T) {
 	}
 }
 
-// TestClassifierOwnerIsOpaque checks that slot implementation fields are not immutable storage.
-func TestClassifierOwnerIsOpaque(t *testing.T) {
+// TestClassifierCellIsOpaque checks that slot implementation fields are not immutable storage.
+func TestClassifierCellIsOpaque(t *testing.T) {
 	marker, _ := testTypes()
 	value := markedType("Value", marker)
 	field := types.NewField(token.NoPos, marker.Obj().Pkg(), "value", types.NewPointer(value), false)
-	name := types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "Owner", nil)
+	name := types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "Cell", nil)
 	owner := types.NewNamed(name, types.NewStruct([]*types.Var{field}, nil), nil)
 	var queries Classifier
 	for _, typ := range []types.Type{owner, types.NewPointer(owner), types.NewArray(owner, 1)} {
 		if queries.Contains(typ) || Contains(typ) {
-			t.Errorf("Owner implementation is not opaque for %s", typ)
+			t.Errorf("Cell implementation is not opaque for %s", typ)
 		}
 	}
 }

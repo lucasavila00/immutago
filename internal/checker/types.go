@@ -1,6 +1,6 @@
 // Package checker proves structural immutability from Go compiler type information.
 // It follows Go's structural type predicates and checks each component.
-// Shared type obligations form a graph; definite failures propagate to owners.
+// Snapshot type obligations form a graph; definite failures propagate to owners.
 // A recursive collection is accepted only when every reachable obligation holds.
 package checker
 
@@ -37,17 +37,23 @@ func IsCollection(t types.Type) bool {
 	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap")
 }
 
+// IsView identifies the fixed local read types.
+func IsView(t types.Type) bool {
+	return IsLibraryType(t, "View") || IsLibraryType(t, "StringView") ||
+		IsLibraryType(t, "SliceView") || IsLibraryType(t, "MapView")
+}
+
 // Marked reports the presence of either embedded marker, including invalid combinations.
 // It does not prove immutability; Reason checks the complete type contract.
 func Marked(t types.Type) bool {
-	return Shared(t) || ByValue(t)
+	return Snapshot(t) || Local(t)
 }
 
-// Shared reports the presence of an embedded im.Shared value, not type validity.
-func Shared(t types.Type) bool { return embedsMarker(t, "Shared") }
+// Snapshot reports the presence of an embedded im.Snapshot value, not type validity.
+func Snapshot(t types.Type) bool { return embedsMarker(t, "Snapshot") }
 
-// ByValue reports the presence of an embedded im.ByValue value, not type validity.
-func ByValue(t types.Type) bool { return embedsMarker(t, "ByValue") }
+// Local reports the presence of an embedded im.Local value, not type validity.
+func Local(t types.Type) bool { return embedsMarker(t, "Local") }
 
 // Service reports whether a struct embeds supervise.Service, directly or indirectly.
 func Service(t types.Type) bool {
@@ -88,7 +94,7 @@ func MarkerCount(t types.Type) int {
 	}
 	count := 0
 	for field := range structure.Fields() {
-		if field.Embedded() && (IsLibraryType(field.Type(), "Shared") || IsLibraryType(field.Type(), "ByValue")) {
+		if field.Embedded() && (IsLibraryType(field.Type(), "Snapshot") || IsLibraryType(field.Type(), "Local")) {
 			count++
 		}
 	}
