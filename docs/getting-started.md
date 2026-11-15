@@ -2,57 +2,59 @@
 
 ## Install
 
-In a Go module, add the library and install the checker:
+In a Go module, add the library and generator, then install the checker:
 
 ```sh
-go get github.com/lucasavila00/immutago@latest
+go get -tool github.com/lucasavila00/immutago/cmd/immutago-gen@latest
 go install github.com/lucasavila00/immutago/cmd/immutago@latest
 ```
 
-## Example: immutable user data
+## Example: typed user reads
 
-This program creates a user with a read-only score map. The checker will reject
-code that changes the user's fields or the frozen map.
+This program publishes immutable user data and reads it through generated
+methods. The checker rejects field writes and requires current generated code.
 
 Save this as `main.go`:
 
 ```go
 package main
 
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type User struct {
-    im.Shared
-    Name   string
-    Scores im.FrozenMap[string, int]
+    im.Frozen
+    Name  im.FrozenString
+    Score int
 }
 
+var current UserCell
+
 func main() {
-    scores := map[string]int{"go": 10}
-    frozen := im.FreezeMap(scores)
-    user := &User{Name: "alice", Scores: frozen}
-    score, _ := user.Scores.Get("go")
-    println(user.Name, score)
+    current.Store(User{Name: im.FreezeString("alice"), Score: 10})
+    user := current.Load()
+    println(user.Name().Unsafe(), user.Score())
 }
 ```
 
-Check and run it:
+Generate `zz_immutago.gen.go`, then check and run the program:
 
 ```sh
+go generate ./...
 immutago ./...
 go run .
 ```
 
 The program prints `alice 10`.
 
-- `im.Shared` is an empty embedded marker. The checker rejects field writes and
-  permits sharing the object's pointer.
-- `FreezeMap` reuses the Go map without copying its entries. After this call,
-  read through the frozen map, not `scores`.
-- `Get` returns the score and whether the key exists.
+- `im.Frozen` marks immutable stored fields.
+- The generator supplies UserCell and UserProjection. Load returns a local UserProjection.
+- Name returns StringProjection; Unsafe supplies its shared native string to println.
+- Score returns a copied integer. FreezeString copies no bytes.
 
-For example, adding `user.Name = "bob"` makes `immutago ./...` report a write
-to an immutable object. See the [checker reference](rules.md) for the allowed forms.
+Run generation again after a record changes. Keep the generated file with the
+source. Missing or stale output fails the checker.
 
 ## Check in CI
 

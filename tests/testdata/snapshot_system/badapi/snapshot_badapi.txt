@@ -1,3 +1,0 @@
-snapshot_badapi.go:7:2: immutable field Name: Copied values cannot contain shared data references
-  owner: badapi.Result; field type: string
-  fix: use a local view for reads, or copy the required data explicitly

@@ -17,8 +17,8 @@ func Publish(l *Loader, version string, weights []float64) {
 }
 
 func LogVersion(l *Loader) {
-	current := l.Current.Load()
-	version := im.Text(im.Select(current, func(value model.Model) string { return value.Version }))
-	weights := im.Slice(im.Select(current, func(value model.Model) im.FrozenSlice[float64] { return value.Weights }))
-	logx.Info(version.Clone(), weights.Len())
+	current := model.NewModelProjection(l.Current.LoadPointer())
+	version := current.Version()
+	weights := current.Weights()
+	logx.Info(version.Unsafe(), weights.Len())
 }

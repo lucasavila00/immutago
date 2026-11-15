@@ -9,18 +9,16 @@ of named and anonymous service structs:
 
 1. Skip unexported methods, Init, Run, and methods supplied by the runtime.
 2. Accept no result or one result, including for promoted methods.
-3. Match the [service result types](../service-results.md#result-types--exhaustive).
-   Prove scalars and ByValue structs with the immutable type proof. Check each
-   array element type. For `Ref[T]`, require a concrete service struct as T.
-   Fields of a ByValue struct use the ordinary stored-type rules.
+3. Require the general ReadResult proof. It accepts Copied and Local values.
+   It does not apply another recursive field rule to a returned record.
 
 Start arguments, method parameters, callbacks, and service implementation code
 follow ordinary Go rules. Current calls use the service reference matcher.
 Protected data passes through the im type proofs, source matcher, and Freeze checks.
 
 The classifier treats `Service[A]` as runtime storage, so a service can receive
-im values through its start arguments. When A contains im data, its stored-value
-proof must pass; this prevents retaining a ByValue pointer. Ordinary A types need
+im values through its start arguments. When A contains im data, its Frozen
+proof must pass; this prevents storing Local values or pointers. Ordinary A types need
 no immutable proof. `Ref[T]` is an allowed stored type. Its proof checks that T
 is a service without inspecting that service's mutable state. Runtime calls
 use the fixed library operations.

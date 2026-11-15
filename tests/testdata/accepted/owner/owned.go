@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package owner
 
 import "github.com/lucasavila00/immutago/pkg/im"
@@ -22,13 +24,13 @@ func Publish(l *Loader, version string, weights []float64) {
 }
 
 func Handle(l *Loader, features []float64) float64 {
-	m := l.Current.Load()
+	m := l.Current.LoadPointer()
 	return Score(m, features)
 }
 
-func Score(m im.View[Model], features []float64) float64 {
+func Score(m im.Projection[*Model], features []float64) float64 {
 	total := 0.0
-	weights := im.Slice(im.Select(m, func(value Model) im.FrozenSlice[float64] { return value.Weights }))
+	weights := NewModelProjection(m).Weights()
 	for i, w := range weights.All() {
 		total += im.Copy(w) * features[i]
 	}

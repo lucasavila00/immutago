@@ -73,10 +73,10 @@ func (d *Dispatcher) Refresh() int {
 		return 0
 	}
 	wanted := make(map[string]bool)
-	view := d.Args().Config.Current().Variants()
-	var names im.SliceView[string]
-	if !view.IsNil() {
-		names = view.Names()
+	projection := d.Args().Config.Current().Variants()
+	var names im.SliceProjection[string]
+	if !projection.IsNil() {
+		names = projection.Names()
 	}
 	for _, item := range names.All() {
 		name := im.Text(item).Clone()

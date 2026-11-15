@@ -1,0 +1,219 @@
+package projectiongen
+
+import (
+	"bytes"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+// module writes an independent consumer module for generator tests.
+func module(t *testing.T, source string) string {
+	t.Helper()
+	root, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	write(t, filepath.Join(dir, "go.mod"), "module example.test/projections\n\ngo 1.27.1\n\n"+
+		"require github.com/lucasavila00/immutago v0.0.0\n"+
+		"replace github.com/lucasavila00/immutago => "+filepath.ToSlash(root)+"\n")
+	write(t, filepath.Join(dir, "main.go"), source)
+	return dir
+}
+
+// write creates a test source file.
+func write(t *testing.T, path, source string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(source), 0600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestGenerate checks bootstrap, repeatability, local composition, and generated runtime behavior.
+func TestGenerate(t *testing.T) {
+	dir := module(t, `package main
+import "github.com/lucasavila00/immutago/pkg/im"
+type Node struct { im.Frozen; Name im.FrozenString; Next *Node }
+type Settings struct { im.Frozen; Limit int; Title string; Node *Node; Names [2]string }
+type Reply struct { im.Local; Settings SettingsProjection }
+var current SettingsCell
+func main() {
+ current.Store(Settings{Limit:3, Title:"ready", Node:&Node{Name:im.FreezeString("leaf")}, Names:[2]string{"a","b"}})
+ projection := current.Load()
+ reply := Reply{Settings:projection}
+ println(reply.Settings.Limit(), projection.Title().Unsafe(), projection.Node().Name().Unsafe(), projection.Names().At(1).Unsafe())
+}
+`)
+	first, err := Generate(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(dir, Filename), string(first))
+	second, err := Generate(dir)
+	if err != nil || !bytes.Equal(first, second) {
+		t.Fatalf("regeneration differs: %v", err)
+	}
+	command := exec.Command("go", "run", ".")
+	command.Dir = dir
+	out, err := command.CombinedOutput()
+	if err != nil || string(out) != "3 ready leaf b\n" {
+		t.Fatalf("generated program: %v\n%s", err, out)
+	}
+}
+
+// TestLocalNeedsNoOutput rejects generation when no Frozen record needs an adapter.
+func TestLocalNeedsNoOutput(t *testing.T) {
+	dir := module(t, `package reply
+import "github.com/lucasavila00/immutago/pkg/im"
+type Reply struct { im.Local; Text im.StringProjection }
+`)
+	if _, err := Generate(dir); err == nil || !strings.Contains(err.Error(), "no structs with im.Frozen") {
+		t.Fatalf("Local-only generation result = %v", err)
+	}
+}
+
+// TestGenerateRejects checks unsupported data and generated-name collisions.
+func TestGenerateRejects(t *testing.T) {
+	for _, source := range []string{
+		`type Bad struct { im.Frozen; Data []int }`,
+		`type Good struct { im.Frozen; N int }; type GoodProjection struct{}`,
+		`type Bad struct { im.Frozen; Local int }`,
+	} {
+		dir := module(t, "package example\nimport \"github.com/lucasavila00/immutago/pkg/im\"\n"+source)
+		if _, err := Generate(dir); err == nil {
+			t.Fatalf("accepted unsupported source: %s", source)
+		}
+	}
+}
+
+// TestRegenerateChangedFields checks replacement of stale methods after a schema edit.
+func TestRegenerateChangedFields(t *testing.T) {
+	source := "package settings\nimport \"github.com/lucasavila00/immutago/pkg/im\"\n" +
+		"type Settings struct { im.Frozen; Title string }\n"
+	dir := module(t, source)
+	first, err := Generate(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(dir, Filename), string(first))
+	write(t, filepath.Join(dir, "main.go"), strings.Replace(source, "Title string", "Count int", 1))
+	updated, err := Generate(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(updated, []byte("Title()")) || !bytes.Contains(updated, []byte("Count() int")) {
+		t.Fatalf("stale accessors:\n%s", updated)
+	}
+}
+
+// TestForeignReaders uses the owning package's accessors for private field types.
+func TestForeignReaders(t *testing.T) {
+	dir := module(t, `package main
+import (
+ "example.test/projections/foreign"
+ "github.com/lucasavila00/immutago/pkg/im"
+)
+type Link = *foreign.Data
+type Settings struct { im.Frozen; Child foreign.Data; Pointer Link }
+var current SettingsCell
+func main() {
+ current.Store(Settings{Child:foreign.Make(), Pointer:new(foreign.Make())})
+ projection := current.Load()
+ println(projection.Child().Value(), projection.Child().Text().Unsafe(), projection.Pointer().Value())
+}
+`)
+	foreign := filepath.Join(dir, "foreign")
+	if err := os.Mkdir(foreign, 0700); err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(foreign, "data.go"), `package foreign
+import "github.com/lucasavila00/immutago/pkg/im"
+type number int
+type Data struct { im.Frozen; Value number; Text string; _ int }
+func Make() Data { return Data{Value:7, Text:"text"} }
+`)
+	for _, directory := range []string{foreign, dir} {
+		output, err := Generate(directory)
+		if err != nil {
+			t.Fatal(err)
+		}
+		write(t, filepath.Join(directory, Filename), string(output))
+	}
+	command := exec.Command("go", "run", ".")
+	command.Dir = dir
+	out, err := command.CombinedOutput()
+	if err != nil || string(out) != "7 text 7\n" {
+		t.Fatalf("foreign readers: %v\n%s", err, out)
+	}
+}
+
+// TestConstructorNames follows Go export rules instead of letter casing alone.
+func TestConstructorNames(t *testing.T) {
+	for input, want := range map[string]string{
+		"SettingsProjection": "NewSettingsProjection", "stateProjection": "newStateProjection",
+		"_stateProjection": "new_stateProjection", "状态Projection": "new状态Projection",
+	} {
+		if got := constructorName(input); got != want {
+			t.Errorf("constructor for %s = %s; want %s", input, got, want)
+		}
+	}
+}
+
+// TestLineDirectiveCannotHideInput uses physical source files for generation ownership.
+func TestLineDirectiveCannotHideInput(t *testing.T) {
+	dir := module(t, `package settings
+import "github.com/lucasavila00/immutago/pkg/im"
+//line zz_immutago.gen.go:1
+type Settings struct { im.Frozen; Limit int }
+`)
+	out, err := Generate(dir)
+	if err != nil || !bytes.Contains(out, []byte("type SettingsProjection struct")) {
+		t.Fatalf("source declaration hidden by line directive: %v\n%s", err, out)
+	}
+}
+
+// TestLargeReaderShape prevents record and array size from entering each reader value.
+func TestLargeReaderShape(t *testing.T) {
+	dir := module(t, `package large
+import "github.com/lucasavila00/immutago/pkg/im"
+type Large struct { im.Frozen; Count int; Data [8192]int; Grid [2][8192]int }
+var current LargeCell
+`)
+	output, err := Generate(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(dir, Filename), string(output))
+	write(t, filepath.Join(dir, "read_test.go"), `package large
+import ("testing"; "unsafe")
+var result int
+func TestReads(t *testing.T) {
+ if unsafe.Sizeof(LargeProjection{}) != unsafe.Sizeof(uintptr(0)) { t.Fatal("record projection copies root") }
+ if unsafe.Sizeof(LargeDataProjection{}) != unsafe.Sizeof(uintptr(0)) { t.Fatal("array projection copies root") }
+ if unsafe.Sizeof(LargeGridElementProjection{}) > 2*unsafe.Sizeof(uintptr(0)) { t.Fatal("nested array copies root") }
+ current.Store(Large{Count:7})
+ if got := testing.AllocsPerRun(100, func() {
+  v := current.Load()
+  result = v.Count()+v.Data().At(8191)+v.Grid().At(1).At(8191)
+ }); got != 0 { t.Fatalf("read allocations = %g", got) }
+ if result != 7 { t.Fatal(result) }
+}
+func TestBounds(t *testing.T) {
+ for _, run := range []func(){
+  func(){ _ = current.Load().Grid().At(2) },
+  func(){ _ = current.Load().Grid().At(-1) },
+  func(){ _ = (LargeProjection{}).Data() },
+ } {
+  func(){ defer func(){ if recover()==nil { t.Error("missing bounds or nil panic") } }(); run() }()
+ }
+}
+`)
+	command := exec.Command("go", "test", ".")
+	command.Dir = dir
+	if out, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("generated read costs: %v\n%s", err, out)
+	}
+}

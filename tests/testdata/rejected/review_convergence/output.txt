@@ -1,0 +1,196 @@
+builder_declarations.go:12:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: left, right := []int{1}, []int{2}
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+builder_declarations.go:18:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: values, count := make([]int, 1), 2
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+builder_declarations.go:6:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: values, count := []int{1}, 2
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+callback_contracts.go:10:11: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(ConversionValue)
+  type: func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:13:20: unsupported immutable operation: immutable callbacks are unsupported
+  source: CallbackHolder
+  type: review_convergence.CallbackHolder
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:14:21: unsupported immutable operation: immutable callbacks are unsupported
+  source: chan func(ConversionValue)
+  type: chan func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:14:26: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(ConversionValue)
+  type: func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:15:21: unsupported immutable operation: immutable callbacks are unsupported
+  source: *func(ConversionValue)
+  type: *func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:15:22: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(ConversionValue)
+  type: func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:17:37: unsupported immutable operation: immutable callbacks are unsupported
+  source: CallbackHolder
+  type: review_convergence.CallbackHolder
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:3:21: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(ConversionValue)
+  type: func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:5:33: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(ConversionValue)
+  type: func(review_convergence.ConversionValue)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+callback_contracts.go:9:21: unsupported immutable operation: immutable callbacks are unsupported
+  source: struct { Callback func(ConversionValue) }
+  type: struct{Callback func(review_convergence.ConversionValue)}
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:14:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: a, b := value.X+1, 2
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+convergence_rejected.go:16:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: c, d = value.X + 1, 2
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+convergence_rejected.go:22:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: a, b := read(new(value)), 2
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+convergence_rejected.go:24:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: c, d = read(new(value)), 2
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+convergence_rejected.go:30:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: a, b := len(builder), 2
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+convergence_rejected.go:32:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: c, d = len(builder), 2
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+convergence_rejected.go:39:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: for value.X, value.Y = range []int{1} { }
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+convergence_rejected.go:45:18: unsupported immutable operation: immutable method expressions are unsupported
+  source: (im.FrozenMap[int, Value].Get)(frozen, 1)
+  type: (review_convergence.Value, bool)
+  fix: call the method on its receiver directly (value.Method(...)); do not call it through the type
+convergence_rejected.go:45:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: value, found := (im.FrozenMap[int, Value].Get)(frozen, 1)
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+convergence_rejected.go:52:15: unsupported immutable operation: immutable iterators must be consumed by direct range
+  source: (frozen.All)()
+  type: iter.Seq2[int, review_convergence.Value]
+  fix: write for key, value := range collection.All() { ... }; do not retain or pass the iterator
+convergence_rejected.go:52:2: unsupported immutable operation: immutable callbacks are unsupported
+  source: iterator := ((frozen.All)())
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:53:24: unsupported immutable operation: immutable callbacks are unsupported
+  source: iterator
+  type: iter.Seq2[int, review_convergence.Value]
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:58:29: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() Value
+  type: func() review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:58:58: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: factory()
+  type: review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:60:14: unsupported immutable operation: immutable callbacks are unsupported
+  source: interface{ Make() Value }
+  type: interface{Make() review_convergence.Value}
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:60:29: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() Value
+  type: func() review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:62:30: unsupported immutable operation: immutable callbacks are unsupported
+  source: Factory
+  type: review_convergence.Factory
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:62:54: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: factory.Make()
+  type: review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:64:35: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() func() Value
+  type: func() func() review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:64:42: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() Value
+  type: func() review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:64:62: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: factory()
+  type: func() review_convergence.Value
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:68:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: for _, value.X = range []int{1} { }
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+convergence_rejected.go:76:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: for a[value.X], n = range []int{2} { }
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+forward_capture.go:10:42: unsupported immutable operation: closures cannot capture immutable storage
+  source: laterValue
+  type: *review_convergence.CapturedValue
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+frozen_conversion.go:8:15: unsupported immutable operation: protected value conversions are unsupported
+  source: UnmarkedFrozen(value)
+  type: review_convergence.UnmarkedFrozen
+  fix: construct the destination marked value from copied fields; keep frozen collections in their original im type
+implicit_conversion.go:13:48: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: retainArguments(value)
+  type: ()
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+implicit_conversion.go:14:48: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: retainArguments(conversionPair())
+  type: ()
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+implicit_conversion.go:15:64: unsupported immutable operation: immutable callbacks are unsupported
+  source: makeConversionValue
+  type: func() review_convergence.ConversionValue
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+implicit_conversion.go:18:2: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: case value:
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+implicit_transport.go:13:33: unsupported immutable operation: immutable callbacks are unsupported
+  source: func(Value, int)
+  type: func(review_convergence.Value, int)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+implicit_transport.go:14:2: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: callback(protectedPair())
+  type: ()
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+implicit_transport.go:4:9: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: pointer == boxed
+  type: bool
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+implicit_transport.go:8:9: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: boxed != value
+  type: bool
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+marker_count.go:10:24: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+marker_count.go:10:6: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+marker_count.go:15:21: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+marker_count.go:15:6: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+marker_count.go:20:19: struct cannot embed both im.Frozen and im.Local
+marker_count.go:20:6: struct cannot embed both im.Frozen and im.Local
+pointer_contracts.go:10:19: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: *im.FrozenSlice[int]
+  type: *im.FrozenSlice[int]
+  fix: allocate a concrete struct that embeds im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses
+pointer_contracts.go:12:26: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: *im.FrozenSlice[int]
+  type: *im.FrozenSlice[int]
+  fix: allocate a concrete struct that embeds im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses
+pointer_contracts.go:14:35: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: *[1]PointerValue
+  type: *[1]review_convergence.PointerValue
+  fix: allocate a concrete struct that embeds im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses
+projection_walk.go:11:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: (*p).Values[0][0] = 2
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+projection_walk.go:13:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: a, b := (builder)[0], 2
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+range_existing_targets.go:9:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: for index, value = range values { }
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start

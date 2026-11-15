@@ -13,20 +13,20 @@ func TestFrozenString(t *testing.T) {
 	parent := strings.Repeat("abcdef", 1024)
 	input := parent[100:107]
 	frozen := FreezeString(input)
-	view := String(ViewOf(frozen))
+	projection := String(ProjectionOf(frozen))
 	if unsafe.StringData(frozen.value) != unsafe.StringData(input) ||
-		unsafe.StringData(view.value) != unsafe.StringData(input) {
+		unsafe.StringData(projection.value) != unsafe.StringData(input) {
 		t.Fatal("string construction copied backing bytes")
 	}
-	if frozen.Len() != len(input) || view.Len() != len(input) {
+	if frozen.Len() != len(input) || projection.Len() != len(input) {
 		t.Fatal("string length changed")
 	}
 	for index := range len(input) {
-		if frozen.At(index) != input[index] || view.At(index) != input[index] {
+		if frozen.At(index) != input[index] || projection.At(index) != input[index] {
 			t.Fatal("string byte changed")
 		}
 	}
-	for _, clone := range []string{frozen.Clone(), view.Clone()} {
+	for _, clone := range []string{frozen.Clone(), projection.Clone()} {
 		if clone != input || unsafe.StringData(clone) == unsafe.StringData(input) {
 			t.Fatal("clone must preserve bytes in independent storage")
 		}
@@ -36,7 +36,7 @@ func TestFrozenString(t *testing.T) {
 // TestFrozenStringEmptyAndBounds checks the zero value and native index panics.
 func TestFrozenStringEmptyAndBounds(t *testing.T) {
 	for _, value := range []FrozenString{{}, FreezeString(""), FreezeString("abc")} {
-		if value.Len() == 0 && (value.Clone() != "" || String(ViewOf(value)).Len() != 0) {
+		if value.Len() == 0 && (value.Clone() != "" || String(ProjectionOf(value)).Len() != 0) {
 			t.Fatal("invalid empty string")
 		}
 		for _, index := range []int{-1, value.Len()} {
@@ -61,7 +61,7 @@ func TestFrozenStringAllocations(t *testing.T) {
 		run  func()
 	}{
 		{"freeze", func() { frozenStringSink = FreezeString(input) }},
-		{"view", func() { stringViewSink = String(ViewOf(frozen)) }},
+		{"projection", func() { stringProjectionSink = String(ProjectionOf(frozen)) }},
 		{"read", func() { stringByteSink = frozen.At(1); benchmarkInt = frozen.Len() }},
 	}
 	for _, test := range cases {
@@ -83,43 +83,43 @@ func TestFrozenStringAllocations(t *testing.T) {
 func TestStringComparisonAndUnsafe(t *testing.T) {
 	input := strings.Repeat("abc", 128)
 	frozen := FreezeString(input)
-	view := String(ViewOf(frozen))
+	projection := String(ProjectionOf(frozen))
 	for _, other := range []string{"", input, "other", input[:len(input)-1]} {
 		want := input == other
 		if frozen.Equal(FreezeString(other)) != want || frozen.EqualString(other) != want ||
-			view.Equal(Text(ViewOf(other))) != want || view.EqualString(other) != want {
+			projection.Equal(Text(ProjectionOf(other))) != want || projection.EqualString(other) != want {
 			t.Fatal("string comparison differs from native equality")
 		}
 	}
 	if unsafe.StringData(frozen.Unsafe()) != unsafe.StringData(input) ||
-		unsafe.StringData(view.Unsafe()) != unsafe.StringData(input) {
+		unsafe.StringData(projection.Unsafe()) != unsafe.StringData(input) {
 		t.Fatal("Unsafe copied backing storage")
 	}
 	if got := testing.AllocsPerRun(100, func() {
-		benchmarkFound = view.EqualString(input) && view.Equal(String(ViewOf(frozen)))
+		benchmarkFound = projection.EqualString(input) && projection.Equal(String(ProjectionOf(frozen)))
 		benchmarkFound = benchmarkFound && frozen.EqualString(input) && frozen.Equal(frozen)
-		stringCloneSink = view.Unsafe()
+		stringCloneSink = projection.Unsafe()
 		stringCloneSink = frozen.Unsafe()
 	}); got != 0 {
 		t.Fatalf("comparison and Unsafe allocations = %g; want zero", got)
 	}
 }
 
-// BenchmarkStringComparison compares native string equality with the view method.
+// BenchmarkStringComparison compares native string equality with the projection method.
 func BenchmarkStringComparison(b *testing.B) {
 	left := strings.Repeat("abc", 128)
 	right := strings.Clone(left)
-	view := Text(ViewOf(left))
+	projection := Text(ProjectionOf(left))
 	b.Run("native", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
 			benchmarkFound = left == right
 		}
 	})
-	b.Run("view", func(b *testing.B) {
+	b.Run("projection", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
-			benchmarkFound = view.EqualString(right)
+			benchmarkFound = projection.EqualString(right)
 		}
 	})
 }

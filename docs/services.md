@@ -38,8 +38,7 @@ tests run.
 ## Example: a file cache
 
 This cache reads a file before startup succeeds. It then refreshes the contents
-at the configured interval. Calls to `Text` return the last contents without reading the
-file again.
+at the configured interval. Calls to `Text` return a local string projection without reading the file again.
 
 The [configuration project](../examples/configuration/README.md) runs this
 [FileCache](../examples/configuration/filecache.go), a JSON configuration loader,
@@ -58,7 +57,7 @@ cache, err := supervise.Start[configuration.FileCache](root, configuration.FileA
     Path: path, Every: 100 * time.Millisecond,
 })
 if err != nil { panic(err) }
-fmt.Print(cache.Current().Text())
+fmt.Print(cache.Current().Text().Unsafe())
 ```
 
 The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and
@@ -156,7 +155,7 @@ root := supervise.NewRoot(func(value any, stack []byte) {
 Report rules:
 
 - Called before the delay for each recovered panic or restart Init error.
-- Shared by nested groups; a failure passed to a parent is reported again.
+- Nested groups use the same report function; a failure passed to a parent is reported again.
 - Can run concurrently for different children.
 - Must return; the group waits for it and does not recover its panics.
 - Must not wait for its own group to stop; that would wait for the report itself.
@@ -176,6 +175,3 @@ In tests, use
 [`supervisetest.NewRoot(t)`](../pkg/supervise/supervisetest/readme.md). It stops
 the tree during cleanup and fails the test if shutdown takes more than five
 seconds.
-
-The [API reference](../pkg/supervise/readme.md) lists signatures;
-the [cost reference](performance.md) lists operation costs.

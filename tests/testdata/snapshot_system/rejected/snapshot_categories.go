@@ -11,7 +11,7 @@ type Retained struct {
 }
 type Local struct {
 	im.Local
-	Text im.StringView
+	Text im.StringProjection
 }
 type BadLocal struct {
 	im.Local
@@ -22,39 +22,39 @@ type BadSnapshot struct {
 	im.Frozen
 	Result Local
 }
-type BadNative struct{ Saved im.View[string] }
+type BadNative struct{ Saved im.Projection[string] }
 type Alias = Local
 
 var saved Local
 var savedAlias Alias
-var savedZero [0]im.View[string]
+var savedZero [0]im.Projection[string]
 var badCell im.Cell[Local]
-var badView im.View[Local]
+var badProjection im.Projection[Local]
 var badFrozen im.FrozenSlice[Local]
-var badMap im.FrozenMap[im.StringView, int]
+var badMap im.FrozenMap[im.StringProjection, int]
 
 type Service struct {
 	supervise.Service[supervise.NoArgs]
 }
 
-func (*Service) Raw() string               { return "text" }
-func (*Service) Frozen() im.FrozenString   { return im.FreezeString("text") }
-func (*Service) Retained() Retained        { return Retained{} }
-func (*Service) Container() []im.View[int] { return nil }
-func (*Service) LocalPointer() *Local      { return &Local{} }
+func (*Service) Raw() string                     { return "text" }
+func (*Service) Frozen() im.FrozenString         { return im.FreezeString("text") }
+func (*Service) Retained() Retained              { return Retained{} }
+func (*Service) Container() []im.Projection[int] { return nil }
+func (*Service) LocalPointer() *Local            { return &Local{} }
 
-func copyRetained(view im.View[Retained], text im.View[im.FrozenString], values im.SliceView[string], entries im.MapView[string, int]) {
-	_ = im.Copy(view)
+func copyRetained(projection im.Projection[Retained], text im.Projection[im.FrozenString], values im.SliceProjection[string], entries im.MapProjection[string, int]) {
+	_ = im.Copy(projection)
 	_ = im.Copy(text)
 	_ = values.Clone()
 	_ = entries.Clone()
 }
 
-func localStorage(value Local, text im.StringView) {
+func localStorage(value Local, text im.StringProjection) {
 	saved = value
 	_ = []Local{value}
 	_ = map[int]Local{1: value}
-	_ = im.ViewOf(value)
+	_ = im.ProjectionOf(value)
 	_ = im.Trust(&value)
 	_ = any(text)
 	go consume(text)
@@ -62,18 +62,18 @@ func localStorage(value Local, text im.StringView) {
 	_ = func() int { return text.Len() }
 }
 
-func consume(im.StringView) {}
+func consume(im.StringProjection) {}
 
-func mutableLocal(value Local)                { value.Text = im.StringView{} }
-func escapingIterator(view im.SliceView[int]) { all := view.All(); _ = all }
+func mutableLocal(value Local)                            { value.Text = im.StringProjection{} }
+func escapingIterator(projection im.SliceProjection[int]) { all := projection.All(); _ = all }
 
-func freezeLocal(value im.StringView) {
-	values := []im.StringView{value}
+func freezeLocal(value im.StringProjection) {
+	values := []im.StringProjection{value}
 	frozen := im.FreezeSlice(values)
 	_ = frozen
 }
 
-func returnLocalBuilder(value im.StringView) []im.StringView {
-	values := []im.StringView{value}
+func returnLocalBuilder(value im.StringProjection) []im.StringProjection {
+	values := []im.StringProjection{value}
 	return values
 }

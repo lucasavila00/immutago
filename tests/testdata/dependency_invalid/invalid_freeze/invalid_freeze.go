@@ -2,9 +2,9 @@ package invalid_freeze
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type View = im.FrozenSlice[int]
+type Projection = im.FrozenSlice[int]
 
-func Value() View {
+func Value() Projection {
 	values := []int{1}
 	frozen := im.FreezeSlice(values)
 	values[0] = 2

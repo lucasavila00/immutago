@@ -1,70 +1,73 @@
-# Object and builder storage
+# Type rules, projections, and builder storage
 
-## Immutable objects
+## Type rules
+
+The [proof graph](../../internal/checker/proof.go) keys each obligation by resolved
+Go type and proof category. The same cached obligations serve all consumers.
+
+| Proof | Consumers |
+| --- | --- |
+| FrozenReason | Frozen fields, shared frozen arguments, Cell[T], Projection[T], ProjectionOf. |
+| CopiedReason | Copy and local collection Clone arguments. |
+| ReadResultReason | Local fields and service results. |
+| General immutable proof | Marked records and fixed library types, including Local values. |
+
+Frozen and Local markers set one field rule each. API names and service
+context do not change those rules. Ordinary functions can return shared
+Frozen values; APIs that require read results accept only Copied or Local types.
+
+## Source matching
 
 | Rule | Implementation |
 | --- | --- |
-| `im.Shared` and `im.ByValue` fields cannot change after construction | [Write matcher](../../pkg/analyzer/subset_writes.go): allow whole-variable and tracked builder-element replacement; reject protected field, array-element, and dereference writes. |
-| Protected pointers start at fresh allocations | [Source matcher](../../pkg/analyzer/subset_operations.go): reject `&variable`, which could expose storage that is later replaced. |
-| Shared pointers can be stored; ByValue pointers cannot | Source matcher checks uses; [type proof](../../internal/checker/proof.go) checks stored pointer targets. |
+| Fields are immutable from construction | [Write matcher](../../pkg/analyzer/subset_writes.go). |
+| Protected pointers originate from fresh storage | [Source matcher](../../pkg/analyzer/subset_operations.go); reject addresses of reassignable locals. |
+| Local storage and captures cannot escape | Declaration, assignment, container, callback, and closure checks use the recursive Local classification. |
+| Application code cannot call Projection.Read | [Generation checks](../../pkg/analyzer/generation.go) identify the exact current generated token file before source checks. Handwritten Read calls are rejected. |
+| Reads preserve access types | Generated getters return Copied scalars or local projections. Copy requires Copied. |
 
-For [im.UncheckedValue](../../pkg/im/unchecked_value.go):
+## Generated projections
 
-- The type proof accepts the handle without inspecting its payload.
-- A handle field in a marked object is still read-only.
-- [Trust and Unwrap](../../pkg/analyzer/unchecked_value.go) require the package
-  that declares T, resolved through aliases and function values.
-- The handle has no methods that could expose its pointer.
-- The declaring package supplies the immutability promise.
+The [generator](../../internal/projectiongen/generate.go) reads named package-scope
+Frozen and Local declarations with compiler type information. Frozen records get
+typed projections, projection constructors, and Cell holders. Local declarations enter the
+required output without another wrapper.
 
-## Type markers
+[Generated field methods](../../internal/projectiongen/readers.go) use a projection of the
+root pointer and read fields directly. Records and arrays use projections with
+that root and the required indices. Copied scalars and opaque service references
+return directly; string and collection fields use the fixed adapters.
 
-One marker sets the rule for every use of a type. Callers do not repeat it on
-fields, parameters, receivers, or local names:
+The [generation check](../../pkg/analyzer/generation.go) requires the canonical
+directive and compares normalized output bytes with the generator's current
+result. Before source checks, it identifies the matching physical token file.
+Only that file can call im.Projection.Read or form interior Frozen-record
+addresses. A generated header or line directive gives no such permission.
+All ordinary type, write, capture, generic, receiver, and transport checks remain.
+Generated declarations are excluded from input types, not from source checks.
+Function-local, anonymous, and test-only marked declarations are rejected.
 
-```go
-type Config struct {
-    im.ByValue
-    Limit int
-}
+## Cell capability
 
-func limit(config *Config) int { return config.Limit }
-```
+[Cell](../../pkg/im/cell.go) stores a private atomic pointer. Store creates a new
+T root. Raw Load returns Projection[T]; LoadPointer returns Projection[*T]; Shared returns T.
+The generated Cell.Load uses LoadPointer without a root copy. All reads use the
+same Frozen payload proof. Only code with the Cell has persistent Shared access.
+A projection cannot recover the Cell or unwrap its payload.
 
-Every function that receives `*Config` gets the ByValue rule, regardless of the
-parameter's name.
+The [slot matcher](../../pkg/analyzer/owner_slot.go) restricts Cells to named
+slots and direct calls. Named holder fields can contain other holders. Holder
+methods use direct non-generic calls and exact pointer receivers, or Go's
+implicit address of an addressable holder variable or direct field. Holder
+checks prevent copying the atomic pointer. Local
+values cannot be stored in a Cell, even through a Frozen record or type alias.
 
-The marker selects the pointer rule:
+## Trusted values
 
-- `im.Shared`: callers can store or return pointers.
-- `im.ByValue`: callers can read through pointers, but cannot store them in fields
-  or globals, capture them, or return them.
-
-For either marker, the checker requires:
-
-- Immutable fields, including nested fields and array elements.
-- Immutable targets for stored pointers, so another pointer cannot change them.
-- Allowed key and element types in frozen collections.
-- No writes to those fields through another pointer or a receiver method.
-
-One type has one pointer policy. Owner requires a ByValue type. Use separate
-marked types or value copies when callers need different pointer policies.
-The checker proves the fields and checks each operation.
-
-See [Shared](../shared.md), [ByValue](../by-value.md), and [Owner](../owner.md) for
-the supported forms.
-
-## Owner slots
-
-- [im.Owner](../../pkg/im/owner.go) is a mutable `atomic.Pointer` slot, allowed
-  as a package variable or a direct named field of an unmarked struct.
-- The [slot matcher](../../pkg/analyzer/owner_slot.go) checks the type argument,
-  receiver, direct call, fresh Store input, and local Load binding.
-- The holder check rejects copies of slots and their containing structs. It
-  also checks holder pointer uses. A closure can access a slot; a loaded pointer
-  still has the ByValue capture restriction.
-- Loaded pointers follow ByValue rules. Store replaces the slot's pointer;
-  previous objects stay immutable. Go's garbage collector manages their lifetime.
+UncheckedValue is a Frozen handle under its declaring package's immutability
+promise. Trust/Unwrap keep their package check. UncheckedValue is not Copied;
+selecting one through a Projection does not permit Unwrap. Code with persistent
+Frozen access can use the existing trusted API.
 
 ## Native builders
 
@@ -98,5 +101,6 @@ graph traversal.
 
 - [FrozenSlice](../../pkg/im/slice.go) and [FrozenMap](../../pkg/im/map.go) hold private native handles.
 - Freeze copies the handle; the analyzer enforces exclusive use and consumption.
+- FrozenString holds a private native string. FreezeString does not copy bytes or consume the immutable input.
 - Reads and [iteration](../../pkg/im/iterator.go) use the native storage directly.
 - Clone copies slots, not referenced objects. Those objects remain safe to share because they are immutable.

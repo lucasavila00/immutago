@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// TestSnapshotSystem checks category and view forms through the shipped drivers.
+// TestSnapshotSystem checks category and projection forms through the shipped drivers.
 func TestSnapshotSystem(t *testing.T) {
 	root, err := filepath.Abs("..")
 	if err != nil {

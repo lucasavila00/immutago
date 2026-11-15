@@ -14,7 +14,7 @@ type BadCell struct {
 }
 
 var bad im.Cell[Local]
-var saved im.View[Model]
+var saved im.Projection[Model]
 
 func badUses(l *Loader) {
 	alias := l.Current

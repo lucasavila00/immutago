@@ -1,0 +1,9 @@
+schema.go:7:6: marked records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+zz_immutago.gen.go:26:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *contract.Data
+  fix: use the generated field accessor
+zz_immutago.gen.go:31:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *contract.Data
+  fix: use the generated field accessor

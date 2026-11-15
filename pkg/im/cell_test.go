@@ -20,7 +20,7 @@ type testChild struct {
 	Number int
 }
 
-// TestCellZero checks the zero snapshot, scalar view, and nil pointer view.
+// TestCellZero checks the zero snapshot, scalar projection, and nil pointer projection.
 func TestCellZero(t *testing.T) {
 	var scalar Cell[int]
 	if Copy(scalar.Load()) != 0 || scalar.Shared() != 0 {
@@ -31,7 +31,7 @@ func TestCellZero(t *testing.T) {
 		t.Fatal("zero pointer cell is not nil")
 	}
 	var record Cell[testFrozen]
-	if Copy(Select(record.Load(), func(v testFrozen) int { return v.Number })) != 0 {
+	if record.Load().Read().Number != 0 {
 		t.Fatal("zero record cell changed the zero value")
 	}
 }

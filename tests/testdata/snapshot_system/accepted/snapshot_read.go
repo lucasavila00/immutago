@@ -7,7 +7,7 @@ import (
 	"github.com/lucasavila00/immutago/pkg/im"
 )
 
-type Alias = im.View[api.Model]
+type Alias = im.Projection[*api.Model]
 type Label string
 
 var storedPoint api.Point
@@ -24,31 +24,32 @@ func build(text string) {
 	storedString = name
 }
 
-func read(view Alias, index int) api.Result {
-	name := im.String(im.Select(view, func(m api.Model) im.FrozenString { return m.Name }))
-	native := im.Text(im.Select(view, func(m api.Model) string { return m.Native }))
+func read(projection Alias, index int) api.Result {
+	model := api.NewModelProjection(projection)
+	name := model.Name()
+	native := model.Native()
 	_ = native.Clone()
-	point := im.Copy(im.Select(view, func(m api.Model) api.Point { return m.Points[index] }))
-	storedPoint = point
-	child := im.Select(view, func(m api.Model) *api.Entry { return m.Child })
-	if !im.IsNil(child) {
-		_ = im.String(im.Select(child, func(e *api.Entry) im.FrozenString { return e.Name })).Len()
+	point := model.Points().At(index)
+	storedPoint = api.Point{X: point.X(), Y: point.Y()}
+	child := model.Child()
+	if !child.IsNil() {
+		_ = child.Name().Len()
 	}
-	names := im.Slice(im.Select(view, func(m api.Model) im.FrozenSlice[im.FrozenString] { return m.Names }))
+	names := model.Names()
 	for _, value := range names.All() {
 		_ = im.String(value).Clone()
 	}
-	entries := im.Map(im.Select(view, func(m api.Model) im.FrozenMap[string, api.Entry] { return m.Entries }))
+	entries := model.Entries()
 	entry, ok := entries.Get("name")
 	score := 0
 	if ok {
-		score = im.Copy(im.Select(entry, func(e api.Entry) int { return e.Score }))
+		score = api.NewEntryProjection(im.CopyProjection(entry)).Score()
 	}
 	for key, value := range entries.All() {
 		_ = im.Text(key).Len()
-		_ = im.String(im.Select(value, func(e api.Entry) im.FrozenString { return e.Name })).At(0)
+		_ = api.NewEntryProjection(im.CopyProjection(value)).Name().At(0)
 	}
-	byName := im.Map(im.Select(view, func(m api.Model) im.FrozenMap[im.FrozenString, int] { return m.ByName }))
+	byName := model.ByName()
 	for key, value := range byName.All() {
 		_ = im.String(key).Clone()
 		_ = im.Copy(value)
@@ -56,7 +57,7 @@ func read(view Alias, index int) api.Result {
 	return api.Result{Name: name, Score: score}
 }
 
-func ordinaryCopies(slice im.SliceView[int], mapping im.MapView[int, int]) {
+func ordinaryCopies(slice im.SliceProjection[int], mapping im.MapProjection[int, int]) {
 	values := slice.Clone()
 	values = append(values, 1)
 	frozenValues := im.FreezeSlice(values)
@@ -65,18 +66,18 @@ func ordinaryCopies(slice im.SliceView[int], mapping im.MapView[int, int]) {
 	entries[1] = 2
 	frozenEntries := im.FreezeMap(entries)
 	_ = frozenEntries
-	label := im.Text(im.ViewOf(Label("label")))
+	label := im.Text(im.ProjectionOf(Label("label")))
 	_ = label.Clone()
 	owned := api.Shared()
 	_ = owned.Native[:1]
 }
 
 func readZero() {
-	var view im.View[api.Model]
+	var projection im.Projection[*api.Model]
 	var reply api.Result
-	var text im.StringView
-	var local [0]im.View[string]
-	_ = read(view, 0)
+	var text im.StringProjection
+	var local [0]im.Projection[string]
+	_ = read(projection, 0)
 	_ = reply
 	_ = text.Len()
 	_ = local
@@ -84,28 +85,41 @@ func readZero() {
 
 func typedWrappers(h *api.Holder) {
 	h.Current.Store(api.Model{})
-	view := h.Current.Load()
-	_ = view.Name().EqualString("name")
+	projection := h.Current.Load()
+	_ = projection.Name().EqualString("name")
 	typedCell.Store(api.Model{})
 	_ = typedCell.Load().Name().Len()
-	_ = fmt.Sprintf("%s", view.Name().Unsafe())
+	_ = fmt.Sprintf("%s", projection.Name().Unsafe())
 	_ = fmt.Sprintf("%s", storedString.Unsafe())
 }
 
-func localBuilders(value im.StringView) {
-	values := []im.StringView{value}
+func localBuilders(value im.StringProjection) {
+	values := []im.StringProjection{value}
 	values = append(values, value)
 	for _, item := range values {
 		_ = item.Len()
 	}
-	byName := map[string]im.StringView{"name": value}
+	byName := map[string]im.StringProjection{"name": value}
 	for name, item := range byName {
 		_ = name
 		_ = item.Len()
 	}
-	byView := map[im.StringView]int{value: 1}
-	for key, count := range byView {
+	byProjection := map[im.StringProjection]int{value: 1}
+	for key, count := range byProjection {
 		_ = key.Len()
 		_ = count
 	}
+}
+
+func recordEntries(values im.MapProjection[string, api.Entry], pointers im.MapProjection[*api.Entry, *api.Entry],
+	sequence im.SliceProjection[api.Entry]) int {
+	value, ok := values.Get("name")
+	if ok {
+		_ = api.NewEntryProjection(im.CopyProjection(value)).Name().Len()
+	}
+	for key, entry := range pointers.All() {
+		_ = api.NewEntryProjection(key).Score()
+		_ = api.NewEntryProjection(entry).Name().EqualString("name")
+	}
+	return api.NewEntryProjection(sequence.AtPointer(0)).Score()
 }

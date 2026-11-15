@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package main
 
 import "github.com/lucasavila00/immutago/pkg/im"
@@ -8,15 +10,15 @@ type Config struct {
 	Limit int
 }
 
-var current im.Cell[Config]
+var current ConfigCell
 
 func allowed(used int) bool {
 	config := current.Load()
-	ready := im.Copy(im.Select(config, func(value Config) bool { return value.Ready }))
+	ready := config.Ready()
 	if !ready {
 		return false
 	}
-	limit := im.Copy(im.Select(config, func(value Config) int { return value.Limit }))
+	limit := config.Limit()
 	return used < limit
 }
 

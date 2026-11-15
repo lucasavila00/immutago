@@ -5,7 +5,7 @@
 | Trusted source | Scope |
 | --- | --- |
 | Go compiler, runtime, and standard library | Compiler types, runtime behavior, and standard APIs. |
-| Fixed im and supervise implementations | Collection storage, Owner, and service runtime. |
+| Fixed im and supervise implementations | Collection storage, Cell, and service runtime. |
 | Ordinary packages outside the [package boundary](../rules.md#package-boundary) | Go API contracts, including immutable strings and no hidden writes to protected memory. |
 | `im.Trust` | The declaring package's immutability promise. |
 
@@ -34,11 +34,13 @@ Enforcement:
 
 | Evidence | Source |
 | --- | --- |
-| Concrete recursive type proofs and marker modes | [Type tests](../../internal/checker/types_test.go), [marker tests](../../internal/checker/markers_test.go) |
+| Generator startup, repeatable output, Local-only packages, and changed fields | [Generator tests](../../internal/projectiongen/generate_test.go) |
+| Frozen, Copied, ReadResult, and recursive marker proofs | [Category tests](../../internal/checker/categories_test.go), [type tests](../../internal/checker/types_test.go), [marker tests](../../internal/checker/markers_test.go) |
 | Immutable writes and pointer escape rules | [Object tests](../../pkg/analyzer/immutable_objects_test.go), [escape tests](../../pkg/analyzer/escape_test.go) |
 | Complete allowed shapes and nearby rejections | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go) |
 | Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
 | Storage reuse, clone independence, identity, and allocation counts | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [iterator tests](../../pkg/im/iterator_test.go) |
+| Generated field reads without record copies | [Generated projection cost fixture](../../internal/projectiongen/testdata/readcost/README.md) |
 | Service result types and ordinary service code | [Service tests](../../pkg/analyzer/service_test.go), [CLI fixtures](../../tests/testdata/accepted/service) |
 | Service reference storage, Current call forms, and concrete transport | [Reference tests](../../pkg/analyzer/service_handles_test.go), [CLI fixtures](../../tests/testdata/accepted/service/handles.go), [rejected forms](../../tests/testdata/rejected/service/handles.go) |
 | Startup errors, publication, and failed setup cleanup | [runtime tests](../../pkg/supervise/init_test.go), [CLI fixture](../../tests/testdata/accepted/serviceinit/main.go) |
@@ -50,7 +52,8 @@ Enforcement:
 
 The CLI harness builds the shipped command and loads independent consumer
 modules. It checks diagnostics, source positions, JSON output, compiler errors,
-and vet integration. Sibling `.txt` files record expected diagnostics; see the
+and vet integration. Each fixture package has one `output.txt` for combined
+stdout and stderr. Source and generated Go files stay separate; see the
 [snapshot workflow](../development.md#diagnostic-snapshots).
 
 ## Hosted checks

@@ -28,7 +28,7 @@ func TestFreezeSlice(t *testing.T) {
 	}
 }
 
-// TestSliceClone checks independent copies, including a nonzero-offset view of larger storage.
+// TestSliceClone checks independent copies, including a nonzero-offset projection of larger storage.
 func TestSliceClone(t *testing.T) {
 	input := []int{1, 2, 3, 4, 5}
 	frozen := FreezeSlice(input[1:4])

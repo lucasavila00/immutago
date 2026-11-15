@@ -65,12 +65,12 @@ func (l *ConfigLoader) Run(ctx context.Context) {
 
 // load copies decoded limits into a fresh builder and publishes one immutable version.
 func (l *ConfigLoader) load() error {
-	view := l.Args().Cache.Current().Text()
+	projection := l.Args().Cache.Current().Text()
 	version := l.Version()
-	if version > 0 && view.EqualString(l.last) {
+	if version > 0 && projection.EqualString(l.last) {
 		return nil
 	}
-	text := view.Clone()
+	text := projection.Clone()
 	var decoded map[string]int
 	if err := json.Unmarshal([]byte(text), &decoded); err != nil {
 		return err
@@ -105,8 +105,8 @@ func (l *ConfigLoader) Limit(key string) int {
 }
 
 // Problem returns the latest parse error, or an empty string after a valid read.
-func (l *ConfigLoader) Problem() im.StringView {
+func (l *ConfigLoader) Problem() im.StringProjection {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	return im.Text(im.ViewOf(l.problem))
+	return im.Text(im.ProjectionOf(l.problem))
 }

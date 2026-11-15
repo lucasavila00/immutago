@@ -1,4 +1,6 @@
-// Package api supplies checked snapshot and result types to another package.
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
+// Package api supplies checked Frozen and result types to another package.
 package api
 
 import (
@@ -32,46 +34,32 @@ type Model struct {
 
 type Result struct {
 	im.Local
-	Name  im.StringView
+	Name  im.StringProjection
 	Score int
-	Pair  [2]im.View[string]
+	Pair  [2]im.Projection[string]
 }
 
-type ModelView struct {
-	im.Local
-	value im.View[Model]
-}
-
-func (v ModelView) Name() im.StringView {
-	return im.String(im.Select(v.value, func(m Model) im.FrozenString { return m.Name }))
-}
-
-type ModelCell struct{ value im.Cell[Model] }
-
-func (c *ModelCell) Store(value Model) { c.value.Store(value) }
-func (c *ModelCell) Load() ModelView   { return ModelView{value: c.value.Load()} }
-func (c *ModelCell) Shared() Model     { return c.value.Shared() }
-func (c *ModelCell) Count() int        { return 2 }
+func (c *ModelCell) Count() int { return 2 }
 
 type Holder struct{ Current ModelCell }
 
 var current im.Cell[Model]
 
-func Publish(value Model)  { current.Store(value) }
-func Read() im.View[Model] { return current.Load() }
-func Shared() Model        { return current.Shared() }
+func Publish(value Model)         { current.Store(value) }
+func Read() im.Projection[*Model] { return current.LoadPointer() }
+func Shared() Model               { return current.Shared() }
 
 type Catalog struct {
 	supervise.Service[supervise.NoArgs]
 	state im.Cell[Model]
 }
 
-func (s *Catalog) Run(ctx context.Context) { <-ctx.Done() }
-func (s *Catalog) Frozen() im.View[Model]  { return s.state.Load() }
-func (s *Catalog) Count() int              { return 2 }
-func (s *Catalog) Origin() Point           { return Point{X: 1} }
+func (s *Catalog) Run(ctx context.Context)       { <-ctx.Done() }
+func (s *Catalog) Frozen() im.Projection[*Model] { return s.state.LoadPointer() }
+func (s *Catalog) Count() int                    { return 2 }
+func (s *Catalog) Origin() Point                 { return Point{X: 1} }
 func (s *Catalog) Result() Result {
-	view := s.state.Load()
-	name := im.String(im.Select(view, func(m Model) im.FrozenString { return m.Name }))
+	projection := s.state.LoadPointer()
+	name := NewModelProjection(projection).Name()
 	return Result{Name: name, Score: 2}
 }

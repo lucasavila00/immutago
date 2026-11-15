@@ -1,2 +1,0 @@
-anonymous.go:7:24: service method Values must return a service result: Copied values cannot contain shared data references
-  result type: []int

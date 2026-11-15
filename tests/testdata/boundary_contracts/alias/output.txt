@@ -1,0 +1,4 @@
+alias.go:7:5: Cell slots require a field or package variable
+alias.go:9:1: Cell slots and their holders cannot be passed or returned by value
+alias.go:9:1: unsupported function without a Go body; immutability cannot be proved
+  fix: provide a Go implementation so writes and pointer transport can be checked

@@ -1,11 +1,11 @@
-// Command immutago-gen generates typed views and cells for a package's Frozen records.
+// Command immutago-gen generates typed projections and cells for a package's Frozen records.
 package main
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/lucasavila00/immutago/internal/viewgen"
+	"github.com/lucasavila00/immutago/internal/projectiongen"
 )
 
 // main writes the generated source in the current package.
@@ -21,9 +21,9 @@ func generate() error {
 	if len(os.Args) != 1 {
 		return fmt.Errorf("run immutago-gen without arguments in the target package")
 	}
-	content, err := viewgen.Generate(".")
+	content, err := projectiongen.Generate(".")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(viewgen.Filename, content, 0644)
+	return os.WriteFile(projectiongen.Filename, content, 0644)
 }

@@ -13,7 +13,7 @@ a service result:
 route := dispatcher.Current().Lookup("blue")
 if route.Available {
     result := route.Pool.Current().Process("Hello World")
-    fmt.Println(result.Text)
+    fmt.Println(result.Text.Unsafe())
 }
 ```
 
@@ -33,7 +33,7 @@ The examples use `WorkerRef`, an alias of `supervise.Ref[Worker]`.
 | Copy or assign references, including multiple bindings and tuple results | `next := ref`, `first, second := ref, ref`, `ref, ok := workers[name]` |
 | Pass or return references with concrete types, including variadic arguments | `use(ref)`, `useAll(ref, next)`, `useAll(workers...)`, `return ref` |
 | Store references in variables, struct fields, arrays, slices, maps, or channels | `var current WorkerRef`, `struct{ Worker WorkerRef }{ref}`, `[2]WorkerRef{ref}`, `[]WorkerRef{ref}`, `map[string]WorkerRef{"blue": ref}`, `make(chan WorkerRef)` |
-| Store references in marked fields or frozen collections | `type Route struct { im.ByValue; Worker WorkerRef }`, `im.FrozenSlice[WorkerRef]`, `im.FrozenMap[string, WorkerRef]` |
+| Store references in marked fields or frozen collections | `type Route struct { im.Frozen; Worker WorkerRef }`, `im.FrozenSlice[WorkerRef]`, `im.FrozenMap[string, WorkerRef]` |
 | Read or update ordinary reference storage; take an address or dereference a pointer | `ref := route.Worker`, `workers[name] = ref`, `p := &ref`, `next := *p` |
 | Index or slice native storage | `workers[0]`, `workers[1:]` |
 | Compare references or use them in a switch | `ref == next`, `ref != next`, `switch ref { case next: use(ref) }` |
@@ -101,6 +101,3 @@ last successfully initialized service; a call in progress finishes on that insta
   other calls. The service must protect shared mutable fields.
 - A service method can give a callback or global access to its mutable state.
   The reference rule does not prevent this.
-
-The [checker table and callback example](arch/services.md#service-reference-boundary)
-show these checks and their limits.

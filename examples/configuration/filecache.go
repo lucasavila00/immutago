@@ -64,8 +64,8 @@ func (c *FileCache) read() error {
 }
 
 // Text returns the last contents.
-func (c *FileCache) Text() im.StringView {
+func (c *FileCache) Text() im.StringProjection {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return im.Text(im.ViewOf(c.text))
+	return im.Text(im.ProjectionOf(c.text))
 }

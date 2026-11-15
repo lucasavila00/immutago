@@ -7,26 +7,28 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
-// ModelView provides local read access to *Model.
-type ModelView struct {
+// ModelProjection provides local read access to *Model.
+type ModelProjection struct {
 	im.Local
-	immutagoView im.View[*Model]
+	immutagoProjection im.Projection[*Model]
 }
 
-// NewModelView wraps a checked local view without copying backing storage.
-func NewModelView(value im.View[*Model]) ModelView { return ModelView{immutagoView: value} }
+// NewModelProjection wraps a checked local projection without copying backing storage.
+func NewModelProjection(value im.Projection[*Model]) ModelProjection {
+	return ModelProjection{immutagoProjection: value}
+}
 
 // IsNil reports whether the selected pointer is nil.
-func (v ModelView) IsNil() bool { return im.IsNil(v.immutagoView) }
+func (v ModelProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
 // Name reads the Name field.
-func (v ModelView) Name() im.StringView {
-	return im.Text(im.Select(v.immutagoView, func(value *Model) string { return value.Name }))
+func (v ModelProjection) Name() im.StringProjection {
+	return im.Text(im.ProjectionOf(v.immutagoProjection.Read().Name))
 }
 
 // engine reads the engine field.
-func (v ModelView) engine() im.View[im.UncheckedValue[baked]] {
-	return im.Select(v.immutagoView, func(value *Model) im.UncheckedValue[baked] { return value.engine })
+func (v ModelProjection) engine() im.Projection[im.UncheckedValue[baked]] {
+	return im.ProjectionOf(v.immutagoProjection.Read().engine)
 }
 
 // ModelCell publishes frozen Model values. Do not copy it.
@@ -35,8 +37,8 @@ type ModelCell struct{ value im.Cell[Model] }
 // Store publishes value.
 func (c *ModelCell) Store(value Model) { c.value.Store(value) }
 
-// Load reads the current value through a local view.
-func (c *ModelCell) Load() ModelView { return NewModelView(c.value.LoadPointer()) }
+// Load reads the current value through a local projection.
+func (c *ModelCell) Load() ModelProjection { return NewModelProjection(c.value.LoadPointer()) }
 
 // Shared returns the frozen value for persistent use.
 func (c *ModelCell) Shared() Model { return c.value.Shared() }

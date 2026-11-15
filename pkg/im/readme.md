@@ -6,16 +6,33 @@
 import "github.com/lucasavila00/immutago/pkg/im"
 ```
 
-Package im provides read\-only structs, slices, and maps checked by immutago.
+Package im provides frozen data and local read projections checked by immutago.
 
 Choose the API for the data:
 
-- Shared: read\-only fields; callers can store or return pointers.
-- ByValue: keep read\-only value copies; use pointers through direct checked calls.
-- Owner: publish a new ByValue object while readers finish with the previous one.
+- Frozen: immutable fields that callers can store and share.
+- Local: fields that follow the checker's local storage and transport rules.
+- Cell: publish a snapshot and read the current value through a Projection.
+- Projection: read selected data without a copy of its backing storage.
 - FrozenSlice and FrozenMap: freeze a native collection without copying entries. Use Clone for an independent mutable copy.
 
 Prepare a native collection in one local variable. After Freeze, use only the frozen value. Run immutago to enforce these rules; go build alone does not.
+
+## func Copy
+
+```go
+func Copy[T any](value Projection[T]) T
+```
+
+Copy returns the value from a projection. The checker permits only Copied types, including opaque service references. Copy does not allocate.
+
+## func IsNil
+
+```go
+func IsNil[T any](value Projection[*T]) bool
+```
+
+IsNil reports whether a pointer projection contains nil without exposing the pointer.
 
 ## func Unwrap
 
@@ -25,12 +42,54 @@ func Unwrap[T any](value UncheckedValue[T]) *T
 
 Unwrap returns the wrapped pointer, or nil for the zero UncheckedValue. Only the package that declares T can use Unwrap.
 
-## type ByValue
+## type Cell
 
-ByValue marks a struct with read\-only fields. Values can be copied, stored, and returned. Pointers can stay local or pass to direct checked calls. They cannot be stored in fields or containers, saved globally, returned, or captured by closures. Use Owner to publish a new ByValue object for other code to read. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/by-value.md for the complete forms.
+Cell stores a replaceable Frozen value. Its zero value has no stored value. Load, LoadPointer, Shared, and Store are atomic. Readers can keep an earlier projection. The checker proves T and restricts use of the returned local projections. A Cell must not be copied after first use. See https://github.com/lucasavila00/immutago/blob/main/docs/cell.md for the complete forms.
 
 ```go
-type ByValue struct{}
+type Cell[T any] struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func \(\*Cell\[T\]\) Load
+
+```go
+func (c *Cell[T]) Load() Projection[T]
+```
+
+Load returns a local projection of the current value, or the zero T if no value was stored. It copies T by value without copying backing storage or allocating.
+
+### func \(\*Cell\[T\]\) LoadPointer
+
+```go
+func (c *Cell[T]) LoadPointer() Projection[*T]
+```
+
+LoadPointer returns a local pointer projection without copying T or allocating. It returns a nil pointer projection before Store. The checker requires a Frozen record T.
+
+### func \(\*Cell\[T\]\) Shared
+
+```go
+func (c *Cell[T]) Shared() T
+```
+
+Shared returns the current Frozen value for persistent use. It copies T by value without copying backing storage or allocating. If no value was stored, it returns the zero T.
+
+### func \(\*Cell\[T\]\) Store
+
+```go
+func (c *Cell[T]) Store(value T)
+```
+
+Store publishes a private copy of value. A nonzero\-sized T needs one allocation. It copies T by value; it does not copy the immutable storage that T refers to.
+
+## type Frozen
+
+Frozen marks a struct with immutable fields. Values and pointers to that struct can be copied, stored, and returned through the allowed source forms. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/frozen-records.md for the complete forms.
+
+```go
+type Frozen struct{}
 ```
 
 ## type FrozenMap
@@ -133,39 +192,261 @@ func (s FrozenSlice[T]) Len() int
 
 Len returns the number of elements in O\(1\) time without allocations.
 
-## type Owner
+## type FrozenString
 
-Owner stores a replaceable pointer to a read\-only ByValue object. Load and Store are atomic; readers can continue to use an earlier object. The analyzer checks construction and pointer use. Declare a slot as a package variable or a direct named field of an unmarked struct. Its zero value is empty. An Owner value must not be copied. See https://github.com/lucasavila00/immutago/blob/main/docs/owner.md for the complete forms.
+FrozenString is a read\-only string. Its zero value is empty. Copies share the same immutable bytes.
 
 ```go
-type Owner[T any] struct {
+type FrozenString struct {
     // contains filtered or unexported fields
 }
 ```
 
-### func \(\*Owner\[T\]\) Load
+### func FreezeString
 
 ```go
-func (o *Owner[T]) Load() *T
+func FreezeString(value string) FrozenString
 ```
 
-Load returns the current pointer, or nil if the slot is empty. Keep the pointer local or pass it to a function that does not save it. It remains valid after a later Store. Go's garbage collector manages its lifetime.
+FreezeString wraps value without copying bytes or allocating. Go strings are immutable, so value remains usable. A substring input still shares its original backing allocation; use Clone for independent storage.
 
-### func \(\*Owner\[T\]\) Store
+### func \(FrozenString\) At
 
 ```go
-func (o *Owner[T]) Store(value *T)
+func (s FrozenString) At(index int) byte
 ```
 
-Store publishes a freshly constructed object.
+At returns the byte at index without allocating. It panics if index is out of range, as native string indexing does.
 
-## type Shared
-
-Shared marks a struct with read\-only fields. Values and pointers to that struct can be copied, stored, and returned through the allowed source forms. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/shared.md for the complete forms.
+### func \(FrozenString\) Clone
 
 ```go
-type Shared struct{}
+func (s FrozenString) Clone() string
 ```
+
+Clone returns a native string with independent storage in O\(n\) time and space. An empty result needs no allocation.
+
+### func \(FrozenString\) Equal
+
+```go
+func (s FrozenString) Equal(other FrozenString) bool
+```
+
+Equal compares the bytes with another frozen string without copying or allocating.
+
+### func \(FrozenString\) EqualString
+
+```go
+func (s FrozenString) EqualString(other string) bool
+```
+
+EqualString compares the bytes with a native string without copying or allocating.
+
+### func \(FrozenString\) Len
+
+```go
+func (s FrozenString) Len() int
+```
+
+Len returns the number of bytes without allocating.
+
+### func \(FrozenString\) Unsafe
+
+```go
+func (s FrozenString) Unsafe() string
+```
+
+Unsafe returns the underlying string without copying or allocating. The caller controls retention of its shared backing storage.
+
+## type Local
+
+Local marks a struct whose fields follow the local projection rules. The checker restricts storage and transport of the struct and its pointers. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/local.md for the complete forms.
+
+```go
+type Local struct{}
+```
+
+## type MapProjection
+
+MapProjection is a local read projection of map entries. Its zero value is empty. The checker restricts its storage and transport. Copies share the entries.
+
+```go
+type MapProjection[K comparable, V any] struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func Map
+
+```go
+func Map[K comparable, V any](value Projection[FrozenMap[K, V]]) MapProjection[K, V]
+```
+
+Map returns a map read projection without copying entries or allocating.
+
+### func \(MapProjection\[K, V\]\) All
+
+```go
+func (m MapProjection[K, V]) All() iter.Seq2[Projection[K], Projection[V]]
+```
+
+All returns an iterator over key\-projection and value\-projection pairs in unspecified order. It copies each K and V by value and stops as soon as yield returns false. Use All only as the operand of a direct range loop.
+
+### func \(MapProjection\[K, V\]\) Clone
+
+```go
+func (m MapProjection[K, V]) Clone() map[K]V
+```
+
+Clone returns an independent native map in O\(n\) time and space and preserves nil. It copies entries by value. The checker permits only Copied key and value types.
+
+### func \(MapProjection\[K, V\]\) Get
+
+```go
+func (m MapProjection[K, V]) Get(key K) (Projection[V], bool)
+```
+
+Get returns a local projection of the value for key and whether it exists. It uses native map lookup and copies V by value without allocating.
+
+### func \(MapProjection\[K, V\]\) Len
+
+```go
+func (m MapProjection[K, V]) Len() int
+```
+
+Len returns the number of entries in O\(1\) time without allocations.
+
+## type SliceProjection
+
+SliceProjection is a local read projection of slice elements. Its zero value is empty. The checker restricts its storage and transport. Copies share the elements.
+
+```go
+type SliceProjection[E any] struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func Slice
+
+```go
+func Slice[E any](value Projection[FrozenSlice[E]]) SliceProjection[E]
+```
+
+Slice returns a slice read projection without copying elements or allocating.
+
+### func \(SliceProjection\[E\]\) All
+
+```go
+func (s SliceProjection[E]) All() iter.Seq2[int, Projection[E]]
+```
+
+All returns an iterator over index and element\-projection pairs in increasing index order. It copies each E by value and stops as soon as yield returns false. Use All only as the operand of a direct range loop.
+
+### func \(SliceProjection\[E\]\) At
+
+```go
+func (s SliceProjection[E]) At(index int) Projection[E]
+```
+
+At returns a local projection of the element at index without allocating. It copies E by value. It panics if index is out of range, as native indexing does.
+
+### func \(SliceProjection\[E\]\) AtPointer
+
+```go
+func (s SliceProjection[E]) AtPointer(index int) Projection[*E]
+```
+
+AtPointer returns a local pointer projection of an element without copying it. The checker requires a Frozen record E. An invalid index has Go's bounds panic.
+
+### func \(SliceProjection\[E\]\) Clone
+
+```go
+func (s SliceProjection[E]) Clone() []E
+```
+
+Clone returns an independent native slice in O\(n\) time and space and preserves nil. It copies elements by value. The checker permits only Copied element types.
+
+### func \(SliceProjection\[E\]\) Len
+
+```go
+func (s SliceProjection[E]) Len() int
+```
+
+Len returns the number of elements in O\(1\) time without allocations.
+
+## type StringProjection
+
+StringProjection is a local read projection of string bytes. Its zero value is empty. The checker restricts its storage and transport. Copies share the bytes.
+
+```go
+type StringProjection struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func String
+
+```go
+func String(value Projection[FrozenString]) StringProjection
+```
+
+String returns a local string projection without copying bytes or allocating.
+
+### func Text
+
+```go
+func Text[S ~string](value Projection[S]) StringProjection
+```
+
+Text returns a string read projection without copying bytes or allocating.
+
+### func \(StringProjection\) At
+
+```go
+func (s StringProjection) At(index int) byte
+```
+
+At returns the byte at index in O\(1\) time without allocations. It panics if index is out of range, as native string indexing does.
+
+### func \(StringProjection\) Clone
+
+```go
+func (s StringProjection) Clone() string
+```
+
+Clone returns a native string with independent storage in O\(n\) time and space. An empty result needs no allocation.
+
+### func \(StringProjection\) Equal
+
+```go
+func (s StringProjection) Equal(other StringProjection) bool
+```
+
+Equal compares the bytes with another local projection without copying or allocating.
+
+### func \(StringProjection\) EqualString
+
+```go
+func (s StringProjection) EqualString(other string) bool
+```
+
+EqualString compares the bytes with a native string without copying or allocating.
+
+### func \(StringProjection\) Len
+
+```go
+func (s StringProjection) Len() int
+```
+
+Len returns the number of bytes in O\(1\) time without allocations.
+
+### func \(StringProjection\) Unsafe
+
+```go
+func (s StringProjection) Unsafe() string
+```
+
+Unsafe returns the underlying string without copying or allocating. The checker does not restrict this string; the caller controls its retention.
 
 ## type UncheckedValue
 
@@ -186,5 +467,39 @@ func Trust[T any](value *T) UncheckedValue[T]
 ```
 
 Trust wraps value with an unchecked promise that it is immutable. It does not copy or freeze the data. Only the package that declares T can use Trust, and that package must not change the value after this call.
+
+## type Projection
+
+Projection holds a value for local reads. Its zero value contains the zero T. The checker proves T and restricts storage and transport of the projection. Copies copy T by value and share its immutable backing storage. See https://github.com/lucasavila00/immutago/blob/main/docs/projections.md for the complete forms.
+
+```go
+type Projection[T any] struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func CopyProjection
+
+```go
+func CopyProjection[T any](value Projection[T]) Projection[*T]
+```
+
+CopyProjection allocates a private root copy and returns a local pointer projection. It copies T by value and shares immutable backing storage. A nonzero\-sized T needs one allocation. The checker requires a Frozen record T.
+
+### func Select
+
+```go
+func Select[T, F any](value Projection[T], project func(T) F) Projection[F]
+```
+
+Select calls project once, before returning, and wraps its result in a Projection. The checker permits only the listed field and array\-index paths in project. Select does not keep project or copy the selected value's backing storage.
+
+### func ProjectionOf
+
+```go
+func ProjectionOf[T any](value T) Projection[T]
+```
+
+ProjectionOf returns a local projection of value. It copies T by value without copying backing storage or allocating. Run immutago to enforce the local projection rules.
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

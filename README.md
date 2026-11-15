@@ -7,7 +7,7 @@ review service state changes and locks in the service code.
 
 | What do you need? | Start here |
 | --- | --- |
-| Read-only objects, slices, and maps | [Immutable data with im](docs/README.md#immutable-data-im) |
+| Frozen records, strings, slices, and maps | [Immutable data with im](docs/README.md#immutable-data-im) |
 | Background services, restarts, and child groups | [Supervised services with supervise](docs/README.md#supervised-services-supervise) |
 
 [Install the checker](docs/getting-started.md#install), then run `immutago ./...`.

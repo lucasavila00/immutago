@@ -29,7 +29,7 @@ func (c *VariantConfig) Set(names im.FrozenSlice[string]) {
 	c.current.Store(VariantSet{Names: names})
 }
 
-// Variants returns a local view of the current variant set.
-func (c *VariantConfig) Variants() VariantSetView {
+// Variants returns a local projection of the current variant set.
+func (c *VariantConfig) Variants() VariantSetProjection {
 	return c.current.Load()
 }

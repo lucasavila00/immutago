@@ -10,26 +10,28 @@ import (
 	time "time"
 )
 
-// ConfigView provides local read access to *Config.
-type ConfigView struct {
+// ConfigProjection provides local read access to *Config.
+type ConfigProjection struct {
 	im.Local
-	immutagoView im.View[*Config]
+	immutagoProjection im.Projection[*Config]
 }
 
-// NewConfigView wraps a checked local view without copying backing storage.
-func NewConfigView(value im.View[*Config]) ConfigView { return ConfigView{immutagoView: value} }
+// NewConfigProjection wraps a checked local projection without copying backing storage.
+func NewConfigProjection(value im.Projection[*Config]) ConfigProjection {
+	return ConfigProjection{immutagoProjection: value}
+}
 
 // IsNil reports whether the selected pointer is nil.
-func (v ConfigView) IsNil() bool { return im.IsNil(v.immutagoView) }
+func (v ConfigProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
 // Version reads the Version field.
-func (v ConfigView) Version() int {
-	return im.Copy(im.Select(v.immutagoView, func(value *Config) int { return value.Version }))
+func (v ConfigProjection) Version() int {
+	return v.immutagoProjection.Read().Version
 }
 
 // Limits reads the Limits field.
-func (v ConfigView) Limits() im.MapView[string, int] {
-	return im.Map(im.Select(v.immutagoView, func(value *Config) im.FrozenMap[string, int] { return value.Limits }))
+func (v ConfigProjection) Limits() im.MapProjection[string, int] {
+	return im.Map(im.ProjectionOf(v.immutagoProjection.Read().Limits))
 }
 
 // ConfigCell publishes frozen Config values. Do not copy it.
@@ -38,32 +40,34 @@ type ConfigCell struct{ value im.Cell[Config] }
 // Store publishes value.
 func (c *ConfigCell) Store(value Config) { c.value.Store(value) }
 
-// Load reads the current value through a local view.
-func (c *ConfigCell) Load() ConfigView { return NewConfigView(c.value.LoadPointer()) }
+// Load reads the current value through a local projection.
+func (c *ConfigCell) Load() ConfigProjection { return NewConfigProjection(c.value.LoadPointer()) }
 
 // Shared returns the frozen value for persistent use.
 func (c *ConfigCell) Shared() Config { return c.value.Shared() }
 
-// FileArgsView provides local read access to *FileArgs.
-type FileArgsView struct {
+// FileArgsProjection provides local read access to *FileArgs.
+type FileArgsProjection struct {
 	im.Local
-	immutagoView im.View[*FileArgs]
+	immutagoProjection im.Projection[*FileArgs]
 }
 
-// NewFileArgsView wraps a checked local view without copying backing storage.
-func NewFileArgsView(value im.View[*FileArgs]) FileArgsView { return FileArgsView{immutagoView: value} }
+// NewFileArgsProjection wraps a checked local projection without copying backing storage.
+func NewFileArgsProjection(value im.Projection[*FileArgs]) FileArgsProjection {
+	return FileArgsProjection{immutagoProjection: value}
+}
 
 // IsNil reports whether the selected pointer is nil.
-func (v FileArgsView) IsNil() bool { return im.IsNil(v.immutagoView) }
+func (v FileArgsProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
 // Path reads the Path field.
-func (v FileArgsView) Path() im.StringView {
-	return im.Text(im.Select(v.immutagoView, func(value *FileArgs) string { return value.Path }))
+func (v FileArgsProjection) Path() im.StringProjection {
+	return im.Text(im.ProjectionOf(v.immutagoProjection.Read().Path))
 }
 
 // Every reads the Every field.
-func (v FileArgsView) Every() time.Duration {
-	return im.Copy(im.Select(v.immutagoView, func(value *FileArgs) time.Duration { return value.Every }))
+func (v FileArgsProjection) Every() time.Duration {
+	return v.immutagoProjection.Read().Every
 }
 
 // FileArgsCell publishes frozen FileArgs values. Do not copy it.
@@ -72,37 +76,39 @@ type FileArgsCell struct{ value im.Cell[FileArgs] }
 // Store publishes value.
 func (c *FileArgsCell) Store(value FileArgs) { c.value.Store(value) }
 
-// Load reads the current value through a local view.
-func (c *FileArgsCell) Load() FileArgsView { return NewFileArgsView(c.value.LoadPointer()) }
+// Load reads the current value through a local projection.
+func (c *FileArgsCell) Load() FileArgsProjection { return NewFileArgsProjection(c.value.LoadPointer()) }
 
 // Shared returns the frozen value for persistent use.
 func (c *FileArgsCell) Shared() FileArgs { return c.value.Shared() }
 
-// UsageView provides local read access to *Usage.
-type UsageView struct {
+// UsageProjection provides local read access to *Usage.
+type UsageProjection struct {
 	im.Local
-	immutagoView im.View[*Usage]
+	immutagoProjection im.Projection[*Usage]
 }
 
-// NewUsageView wraps a checked local view without copying backing storage.
-func NewUsageView(value im.View[*Usage]) UsageView { return UsageView{immutagoView: value} }
+// NewUsageProjection wraps a checked local projection without copying backing storage.
+func NewUsageProjection(value im.Projection[*Usage]) UsageProjection {
+	return UsageProjection{immutagoProjection: value}
+}
 
 // IsNil reports whether the selected pointer is nil.
-func (v UsageView) IsNil() bool { return im.IsNil(v.immutagoView) }
+func (v UsageProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
 // Used reads the Used field.
-func (v UsageView) Used() int {
-	return im.Copy(im.Select(v.immutagoView, func(value *Usage) int { return value.Used }))
+func (v UsageProjection) Used() int {
+	return v.immutagoProjection.Read().Used
 }
 
 // Limit reads the Limit field.
-func (v UsageView) Limit() int {
-	return im.Copy(im.Select(v.immutagoView, func(value *Usage) int { return value.Limit }))
+func (v UsageProjection) Limit() int {
+	return v.immutagoProjection.Read().Limit
 }
 
 // Window reads the Window field.
-func (v UsageView) Window() int {
-	return im.Copy(im.Select(v.immutagoView, func(value *Usage) int { return value.Window }))
+func (v UsageProjection) Window() int {
+	return v.immutagoProjection.Read().Window
 }
 
 // UsageCell publishes frozen Usage values. Do not copy it.
@@ -111,8 +117,8 @@ type UsageCell struct{ value im.Cell[Usage] }
 // Store publishes value.
 func (c *UsageCell) Store(value Usage) { c.value.Store(value) }
 
-// Load reads the current value through a local view.
-func (c *UsageCell) Load() UsageView { return NewUsageView(c.value.LoadPointer()) }
+// Load reads the current value through a local projection.
+func (c *UsageCell) Load() UsageProjection { return NewUsageProjection(c.value.LoadPointer()) }
 
 // Shared returns the frozen value for persistent use.
 func (c *UsageCell) Shared() Usage { return c.value.Shared() }

@@ -1,15 +1,59 @@
-# Frozen collections
+# Frozen strings, slices, and maps
 
-Use `im.FrozenSlice[T]` for a read-only slice and `im.FrozenMap[K, V]` for a
-read-only map.
-The checker rejects aliases and use of the original collection after Freeze.
+FrozenString, FrozenSlice, and FrozenMap satisfy the [Frozen type rule](types.md).
+They can be copied, stored, and returned.
+Their local projections follow the [projection rules](projections.md).
+
+| Data | Stored value | Local projection | Constructor | Projection adapter |
+| --- | --- | --- | --- | --- |
+| String | `im.FrozenString` | `im.StringProjection` | `im.FreezeString(text)` | `im.String(projection)` |
+| Slice | `im.FrozenSlice[E]` | `im.SliceProjection[E]` | `im.FreezeSlice(values)` | `im.Slice(projection)` |
+| Map | `im.FrozenMap[K,V]` | `im.MapProjection[K,V]` | `im.FreezeMap(values)` | `im.Map(projection)` |
+
+Each adapter takes a Projection of the stored value. Slice elements and map keys and
+values must be Frozen types. Map keys must also be Go-comparable.
+Use the forms below with the [common forms](common-forms.md).
+These lists are complete; unlisted operations are rejected.
+
+## Frozen strings
+
+`FreezeString` wraps a native Go string without copying its bytes or consuming
+the input. The native string remains usable because its bytes are immutable.
+A substring input can retain its original allocation. Clone makes an explicit
+independent copy.
+
+```go
+text := "standard"
+frozen := im.FreezeString(text)
+projection := im.String(im.ProjectionOf(frozen))
+println(text, projection.Len(), projection.EqualString("standard"))
+```
+
+| String forms — exhaustive | Example |
+| --- | --- |
+| Zero declaration or empty literal | `var text im.FrozenString`, `im.FrozenString{}` |
+| Wrap a native string | `text := im.FreezeString(source)` |
+| Read byte count or one byte | `n := text.Len()`, `value := text.At(i)` |
+| Compare with FrozenString or native string | `text.Equal(other)`, `text.EqualString("standard")` |
+| Expose the shared native string | `fmt.Sprintf("%s", text.Unsafe())` |
+| Read bytes in a loop | `for i := 0; i < text.Len(); i++ { println(text.At(i)) }` |
+| Copy into independent native string storage | `saved := text.Clone()` |
+| Create a local StringProjection | `projection := im.String(im.ProjectionOf(text))` |
+
+Equal and EqualString use native string equality without allocating. Clone is
+not needed to compare text. The zero value is empty. At has Go's normal bounds
+panic. Unsafe lets the caller keep the shared bytes; the checker does not track
+the returned native string. There is no substring operation or implicit string
+conversion. For an ordinary
+native string projection, use `im.Text(im.ProjectionOf(source))`.
+
+## Frozen slices and maps
+
+The checker rejects aliases and use of the original collection after Freeze:
 
 1. Build a normal Go slice or map.
 2. Freeze it without copying entries. Use only the frozen value after this call.
 3. To make a changed version, Clone, edit the copy, and Freeze again.
-
-Keys and elements must use the [allowed types](common-forms.md#markers-and-stored-types).
-Use the forms below with the [common forms](common-forms.md).
 
 ## Example: change a score
 
@@ -41,6 +85,7 @@ apply before Freeze and to Go containers whose keys or elements contain
 [protected storage](glossary.md).
 Keep the slice or map in one local variable until Freeze. Clone copies the
 slice or map; pointer elements still point to the same read-only objects.
+An exclusive [Local builder](local.md) uses these operations but cannot be frozen.
 
 | Allowed forms — exhaustive | Example |
 | --- | --- |
@@ -84,12 +129,12 @@ Do not use the old slice or map after Freeze, including in another branch or
 loop iteration. A Clone of scalar elements, such as `int`, follows ordinary Go
 rules if you never freeze it.
 
-## Reads and Clone
+## Slice and map reads
 
 Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 `values := im.FrozenSlice[int]{}`; the same forms work for `im.FrozenMap`.
 
-| Allowed methods — exhaustive | Example |
+| Slice and map methods — exhaustive | Example |
 | --- | --- |
 | Length | `n := frozen.Len()` |
 | Slice element | `value := frozen.At(i)` |
@@ -105,7 +150,7 @@ Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
+| `text[0]`, `text[1:]`, or `string(text)` with FrozenString | Use At for a byte, Unsafe for a shared native string, or Clone for independent storage. |
+| Return FrozenString from an exported service method | Return `im.String(im.ProjectionOf(text))`. |
 | `read := frozen.At` | `value := frozen.At(0)` |
 | `im.FrozenSlice[int].At(frozen, 0)` | `frozen.At(0)` |
-
-See [performance](performance.md) for operation costs.

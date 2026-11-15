@@ -13,7 +13,7 @@ Use it when your package supplies immutable data that does not fit the checked f
 type baked struct { weights []float64 }
 
 type Model struct {
-    im.Shared
+    im.Frozen
     Name   string
     engine im.UncheckedValue[baked]
 }
@@ -45,12 +45,13 @@ predictions while new model versions arrive. Each published model stays unchange
 
 ## Allowed forms — exhaustive
 
-The handle follows ordinary Go rules; a marked object that stores it still
+A persistent handle follows ordinary Go rules. A Projection cannot expose the handle
+or call Unwrap. A marked object that stores it still
 follows the [common forms](common-forms.md).
 
 | Allowed form | Example |
 | --- | --- |
-| Use as an allowed stored type in a marked struct, a frozen collection, or ordinary Go | `type Model struct { im.Shared; engine im.UncheckedValue[baked] }` |
+| Use as an allowed stored type in a marked struct, a frozen collection, or ordinary Go | `type Model struct { im.Frozen; engine im.UncheckedValue[baked] }` |
 | Copy, store, pass, or return the handle in any package | `other := m.engine` |
 | Declare a zero handle; Unwrap returns nil | `var engine im.UncheckedValue[baked]` |
 | In the package that declares the named type `T`, wrap a pointer | `engine := im.Trust(&baked{})` |
