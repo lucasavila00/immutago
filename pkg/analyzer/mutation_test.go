@@ -98,7 +98,7 @@ func TestScalarAddressesCannotLeaveImmutableStorage(t *testing.T) {
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
 			reports := checkSource(t, immutableValueTypes+source)
-			if !strings.Contains(reports, "scalar interior addresses are unsupported") {
+			if !strings.Contains(reports, "interior addresses of protected storage are unsupported") {
 				t.Fatalf("scalar address accepted: %s", reports)
 			}
 		})

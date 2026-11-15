@@ -20,14 +20,14 @@ func TestIndependentValues(t *testing.T) {
 	projection := scorer.current.Load()
 	read := projection.Point()
 	arrayRead := projection.Points().At(0)
-	read = api.Point{X: 8}
-	arrayRead = api.Point{X: 9}
+	read.Set(8)
+	arrayRead.X = 9
 	if read.X != 8 || arrayRead.X != 9 || projection.Point().X != 1 || projection.Points().At(0).X != 1 {
 		t.Fatal("generated getter changed stored data")
 	}
 	scorer.point.Store(point)
 	loaded := im.Copy(scorer.point.Load())
-	loaded = api.Point{X: 5}
+	loaded.Set(5)
 	if loaded.X != 5 || im.Copy(scorer.point.Load()).X != 1 {
 		t.Fatal("Copy changed the Cell")
 	}

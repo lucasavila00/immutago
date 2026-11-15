@@ -105,3 +105,5 @@ type BadLocalMarker struct {
 func (*Worker) Bad() *api.Point           { return nil }
 func (*Worker) Unmarked() struct{ N int } { return struct{ N int }{} }
 func (*Worker) Marker() im.Copied         { return im.Copied{} }
+
+func (*Worker) Pair() (api.Point, bool) { return api.Point{}, true }

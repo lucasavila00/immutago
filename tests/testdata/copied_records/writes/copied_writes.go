@@ -1,54 +1,51 @@
 package writes
 
 import (
+	"encoding/json"
+
 	"example.com/consumer/api"
 	"example.com/consumer/frozen"
 	"github.com/lucasavila00/immutago/pkg/im"
 )
 
-type Holder struct {
-	Point api.Point
-	Other int
-}
 type Result struct {
 	im.Local
-	Point api.Point
+	Point api.Alias
+	Rows  [2]api.Summary
 }
 
-func Writes(point api.Point, summary api.Summary, stored frozen.Snapshot, local Result) {
-	point.X++
-	summary.Points[0][0] = api.Point{}
-	state := Holder{Point: point}
-	state.Point.X = 2
-	values := []api.Point{point}
-	values[0].X++
-	array := [2]api.Point{point}
-	array[0].Y = 2
+func Writes(point api.Point, stored frozen.Snapshot, local Result) {
 	stored.Point = point
+	stored.Point.X++
+	stored.Points[0].Y = 2
+	stored.Summary.Points[0][0].X = 3
 	local.Point.X = 3
+	local.Rows[0].Points[0][0].Y++
 }
 
-func Addresses(point api.Point, holder Holder) {
-	_ = &point
-	_ = &point.X
-	_ = &holder.Point
-	_ = new(api.Point)
-	_ = &api.Point{}
+func Addresses(stored *frozen.Snapshot, local *Result) {
+	_ = &stored.Point
+	_ = &stored.Point.X
+	_ = &stored.Points[0]
+	_ = &stored.Summary.Points[0][0]
+	_ = &local.Point
+	_ = &local.Rows[0].Points[0][0].Y
 }
 
-type Alias = *api.Point
-type Defined *api.Point
-
-var pointer Alias
-var defined Defined
-var zero **api.Point
-
-type LocalPoint struct {
-	im.Copied
-	N int
+func ImplicitAddresses(stored *frozen.Snapshot, local *Result) {
+	stored.Point.Set(2)
+	stored.Summary.Points[0][0].Set(3)
+	local.Point.Set(2)
+	local.Rows[0].Points[0][0].Set(3)
+	method := stored.Point.Set
+	method(2)
+	(*api.Point).Set(&stored.Point, 3)
+	_ = json.Unmarshal([]byte(`{"X":2}`), &stored.Point)
 }
 
-func (p *LocalPoint) Change() { p.N++ }
+func SelectedPointer(stored *frozen.Snapshot) *api.Alias {
+	return &stored.Point
+}
 
 func BuilderAliases() {
 	values := []api.Point{{}}
@@ -57,13 +54,35 @@ func BuilderAliases() {
 	_ = im.FreezeSlice(values)
 }
 
+func BuilderMapAlias() {
+	values := map[int]api.Point{0: {}}
+	alias := values
+	_ = alias
+	_ = im.FreezeMap(values)
+}
+
+func BuilderAddresses() {
+	values := []api.Point{{}}
+	pointer := &values[0]
+	pointer.Set(2)
+	_ = im.FreezeSlice(values)
+}
+
+func BuilderImplicitAddress() {
+	values := []api.Point{{}}
+	values[0].Set(2)
+	_ = im.FreezeSlice(values)
+}
+
 func Consumed() {
 	values := []api.Point{{}}
 	_ = im.FreezeSlice(values)
-	values[0] = api.Point{}
+	values[0].X++
 }
 
 func ProjectionPointers(value im.Projection[api.Point], values im.SliceProjection[api.Point]) {
 	_ = im.CopyRecord(value)
 	_ = values.AtPointer(0)
+	_ = value.Read()
+	_ = values.At(0).Read()
 }

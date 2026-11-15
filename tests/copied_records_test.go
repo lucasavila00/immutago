@@ -19,11 +19,11 @@ func TestCopiedRecords(t *testing.T) {
 	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
 	for _, mode := range []string{"cli", "vet"} {
 		for _, target := range []string{
-			"api", "accepted", "frozen", "fields", "writes", "transport", "badapi", "dependency",
+			"api", "accepted", "bodyless", "frozen", "fields", "writes", "transport", "badapi", "dependency",
 		} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
 				dir := consumerModule(t, root, "copied_records")
-				accepted := target == "api" || target == "accepted" || target == "frozen"
+				accepted := target == "api" || target == "accepted" || target == "frozen" || target == "transport" || target == "bodyless"
 				output := runBoundary(t, dir, binary, mode, accepted, "./"+target)
 				checkFixtureSnapshots(t, root, "copied_records/"+target, output)
 			})

@@ -29,6 +29,12 @@ func TestCopiedMutable(t *testing.T) {
 		`func f(s Score){switch v:=any(&s).(type){case *Score:v.N++;case Score:v.N++}}`,
 		`func f(v Snapshot){s:=v.Score;s.N++;p:=&s;p.Flags[0]=true}`,
 		`func f(v Reply){s:=v.Score;s.N++}`,
+		`func f(){values:=[]Score{{}};values[0].N++;_=im.FreezeSlice(values)}`,
+		`func f(){values:=im.FreezeSlice([]Score{{}});copy:=values.At(0);copy.N++}`,
+		`func f(){values:=im.FreezeSlice([]Score{{}});clone:=values.Projection().Clone();clone[0].N++}`,
+		`var cell im.Cell[Score];func f(){s:=cell.LoadShared();s.N++}`,
+		`func(s *Score)Change(){s.N++};func f(v Snapshot){s:=v.Score;s.Change()}`,
+		`func(s *Score)Change(){s.N++};func f(v Reply){s:=v.Score;s.Change()}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {

@@ -171,7 +171,7 @@ func (c *checks) checkFunctionBody(declaration *ast.FuncDecl) {
 	if receiver := signature.Recv(); receiver != nil {
 		handles = handles || c.queries.Handles(receiver.Type())
 	}
-	if handles || usesLibraryType(signature, make(map[types.Type]bool), false) {
+	if handles || usesLibraryType(signature, make(map[types.Type]bool), false, false) {
 		c.report(declaration.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
 			"provide a Go implementation so writes and pointer transport can be checked")
 	}

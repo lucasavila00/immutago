@@ -1,81 +1,101 @@
-copied_writes.go:19:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: point.X++
-  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-copied_writes.go:20:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: summary.Points[0][0] = api.Point{}
-  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-copied_writes.go:22:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: state.Point.X = 2
-  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-copied_writes.go:24:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: values[0].X++
-  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-copied_writes.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: array[0].Y = 2
-  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-copied_writes.go:27:2: unsupported immutable operation: writes to immutable objects are unsupported
+copied_writes.go:18:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: stored.Point = point
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-copied_writes.go:28:2: unsupported immutable operation: writes to immutable objects are unsupported
+copied_writes.go:19:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: stored.Point.X++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+copied_writes.go:20:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: stored.Points[0].Y = 2
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+copied_writes.go:21:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: stored.Summary.Points[0][0].X = 3
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+copied_writes.go:22:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: local.Point.X = 3
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-copied_writes.go:32:6: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: &point
+copied_writes.go:23:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: local.Rows[0].Points[0][0].Y++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+copied_writes.go:27:6: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &stored.Point
   type: *api.Point
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:33:6: unsupported immutable operation: scalar interior addresses are unsupported
-  source: &point.X
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:28:6: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &stored.Point.X
   type: *int
-  fix: copy the scalar field into a local; do not take a pointer into immutable storage
-copied_writes.go:34:6: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: &holder.Point
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:29:6: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &stored.Points[0]
   type: *api.Point
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:35:6: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: new(api.Point)
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:30:6: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &stored.Summary.Points[0][0]
+  type: *api.Alias
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:31:6: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &local.Point
+  type: *api.Alias
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:32:6: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &local.Rows[0].Points[0][0].Y
+  type: *int
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:36:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: stored.Point.Set(2)
+  type: ()
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+copied_writes.go:37:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: stored.Summary.Points[0][0].Set(3)
+  type: ()
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+copied_writes.go:38:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: local.Point.Set(2)
+  type: ()
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+copied_writes.go:39:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: local.Rows[0].Points[0][0].Set(3)
+  type: ()
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+copied_writes.go:40:12: unsupported immutable operation: bound immutable methods are unsupported
+  source: stored.Point.Set
+  type: func(x int)
+  fix: call the method directly (value.Method(...)); do not save or pass its method value
+copied_writes.go:42:19: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &stored.Point
   type: *api.Point
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:36:6: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: &api.Point{}
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:43:40: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &stored.Point
   type: *api.Point
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:39:14: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: *api.Point
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:47:9: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &stored.Point
   type: *api.Point
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:40:14: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: *api.Point
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:52:11: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+copied_writes.go:59:11: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+copied_writes.go:66:13: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &values[0]
   type: *api.Point
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:42:13: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: Alias
-  type: writes.Alias
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:43:13: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: Defined
-  type: writes.Defined
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:44:10: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: **api.Point
-  type: **api.Point
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:44:11: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: *api.Point
-  type: *api.Point
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:51:33: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: p
-  type: *writes.LocalPoint
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:51:9: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
-  source: *LocalPoint
-  type: *writes.LocalPoint
-  fix: pass or return the Copied value; replace the whole stored value when needed
-copied_writes.go:55:11: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
-copied_writes.go:63:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-copied_writes.go:67:6: immutable collection: projection payload 1: stored pointers require a concrete marked struct target
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:66:14: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+copied_writes.go:73:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: values[0].Set(2)
+  type: ()
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+copied_writes.go:73:2: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+copied_writes.go:80:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+copied_writes.go:84:6: immutable collection: projection payload 1: stored pointers require a concrete marked struct target
   type: im.Projection[*api.Point]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-copied_writes.go:68:6: immutable collection: projection payload 1: stored pointers require a concrete marked struct target
+copied_writes.go:85:6: immutable collection: projection payload 1: stored pointers require a concrete marked struct target
   type: im.Projection[*api.Point]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+copied_writes.go:86:6: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: value.Read()
+  type: api.Point
+  fix: use the generated field accessor
+copied_writes.go:87:6: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: values.At(0).Read()
+  type: api.Point
+  fix: use the generated field accessor

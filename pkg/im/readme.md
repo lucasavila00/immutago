@@ -87,7 +87,7 @@ Store publishes a private copy of value. A nonzero\-sized T needs one allocation
 
 ## type Copied
 
-Copied marks a record with immutable bool, numeric, array, or Copied fields. Copying the record copies all its data. Strings and reference fields are rejected. Embed the marker by value. Use whole values; pointers to Copied records are rejected. See https://github.com/lucasavila00/immutago/blob/main/docs/copied.md for the complete forms.
+Copied marks a record with bool, numeric, array, or Copied fields. Copying the record copies all its data. Strings and reference fields are rejected. Embed the marker by value. Ordinary copies use normal Go mutation and pointer rules. A field inside protected storage keeps its owner's write and address rules. See https://github.com/lucasavila00/immutago/blob/main/docs/copied.md for the complete forms.
 
 ```go
 type Copied struct{}

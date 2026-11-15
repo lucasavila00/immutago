@@ -29,9 +29,12 @@ func TestCopiedRecordCategories(t *testing.T) {
 		{types.NewArray(pair, 0), true, true, false},
 		{holder, false, false, false},
 		{types.NewPointer(holder), false, false, false},
+		{types.NewArray(holder, 2), false, false, false},
+		{types.NewMap(types.Typ[types.String], holder), false, false, false},
 		{types.NewPointer(score), false, false, false},
 		{types.NewSlice(score), false, false, false},
 		{shared, true, false, true},
+		{types.NewArray(shared, 2), true, false, true},
 		{bad, false, false, false},
 		{badArray, false, false, false},
 	}

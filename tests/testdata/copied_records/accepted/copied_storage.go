@@ -100,9 +100,11 @@ func CopiedCollections(value api.Point) (api.Point, api.Point) {
 	read := im.Copy(sequence.Projection().At(0))
 	clone := sequence.Projection().Clone()
 	alias := clone
-	alias[0] = api.Point{X: 9}
+	alias[0].Set(9)
 	entries := im.FreezeMap(map[api.Point]api.Point{value: value})
 	mapping := entries.Projection().Clone()
-	mapping[value] = api.Point{X: 8}
+	mapped := mapping[value]
+	mapped.Set(8)
+	mapping[value] = mapped
 	return read, sequence.At(0)
 }

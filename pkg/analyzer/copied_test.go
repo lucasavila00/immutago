@@ -78,6 +78,16 @@ func TestCopiedRejectedForms(t *testing.T) {
 	cases := []struct{ source, want string }{
 		{`func f(v Snapshot){v.Score=Score{}}`, "writes to immutable objects"},
 		{`func f(v Reply){v.Score.N++}`, "writes to immutable objects"},
+		{`func f(v Snapshot){v.Pair.Rest[0].Flags[0]=true}`, "writes to immutable objects"},
+		{`func f(v Snapshot){_=&v.Score}`, "interior addresses"},
+		{`func f(v Reply){_=&v.Score.N}`, "interior addresses"},
+		{`func(s *Score)Change(){s.N++};func f(v Snapshot){v.Score.Change()}`, "must match their declared type"},
+		{`func(s *Score)Change(){s.N++};func f(v Reply){v.Score.Change()}`, "must match their declared type"},
+		{`func(s *Score)Change(){s.N++};func f(v Snapshot){method:=v.Score.Change;method()}`, "bound immutable methods"},
+		{`func(s *Score)Change(){s.N++};func f(){values:=[]Score{{}};values[0].Change();_=im.FreezeSlice(values)}`, "copying"},
+		{`func f(){values:=[]Score{{}};p:=&values[0];_=p;_=im.FreezeSlice(values)}`, "copying"},
+		{`func f(){values:=map[int]Score{};alias:=values;_=alias;_=im.FreezeMap(values)}`, "copying"},
+
 		{`type Worker struct{supervise.Service[supervise.NoArgs]};` +
 			`func(w *Worker)Last()*Score{return nil}`, "service result"},
 		{`type Worker struct{supervise.Service[supervise.NoArgs]};` +
