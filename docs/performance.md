@@ -39,3 +39,16 @@ Copied constraint; otherwise copy each required field explicitly.
 
 Projections keep their selected storage alive during use. Opaque service references
 keep their separate shared-handle behavior.
+
+## Frozen interface projections
+
+A generated Frozen interface projection stores an interface header. Constructing
+or copying the projection copies that header in O(1) time. A generated method
+adds one direct interface call and no allocation of its own. The implementation's
+method body and the original concrete-to-interface conversion keep their ordinary
+Go costs. A Frozen record getter reads only the selected interface field; it
+does not copy the parent record.
+
+The [interface cost fixture](../internal/projectiongen/testdata/interfacecost/README.md)
+checks representation size and allocations and compares direct and projected
+method calls.

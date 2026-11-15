@@ -10,6 +10,7 @@ Use this reference to check which Go forms Immutago accepts. The
 | [Type rules](types.md) | Check the shared Frozen, Copied, and read-result categories. |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 | [Frozen](frozen-records.md) | Store or return pointers to immutable objects. |
+| [Frozen interfaces](frozen-interfaces.md) | Store proved implementations and call through local projections. |
 | [Local](local.md) | Combine local projections with copied values. |
 | [Copied](copied.md) | Return value records and change independent copies. |
 | [Cell](cell.md) | Publish a Frozen value and read its current projection. |
@@ -35,8 +36,8 @@ are rejected.
 
 ### Required generation
 
-Declare Frozen records as named types at package scope in non-test Go
-files. Every package with these declarations needs one exact directive:
+Declare Frozen records and Frozen interfaces as named types at package scope in
+non-test Go files. Every package with these declarations needs one exact directive:
 
 ```go
 //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
@@ -44,12 +45,13 @@ files. Every package with these declarations needs one exact directive:
 
 | Package setup — exhaustive | Requirement |
 | --- | --- |
-| Frozen record declaration | Named package-scope type in a `.go` file that does not end in `_test.go`. |
+| Frozen record or interface declaration | Named package-scope type in a `.go` file that does not end in `_test.go`. |
 | Directive | Use exactly one copy of the command above, at column 1 in a non-test package source file. |
 | Output | Keep `zz_immutago.gen.go` from the current declarations. |
 | Frozen records | Generate typed field projections, Projection constructors, and Cells. |
+| Frozen interfaces | Generate local method projections and Projection constructors. |
 
-Run `go generate ./...` after a record changes. The checker rejects a missing
+Run `go generate ./...` after a record or interface changes. The checker rejects a missing
 directive, missing output, or stale output. Only verified generated code can use
 the internal Read operation and form interior Frozen-record addresses. All normal
 type, write, capture, generic, receiver, and transport checks still apply.

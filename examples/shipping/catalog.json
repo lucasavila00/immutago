@@ -1,0 +1,39 @@
+{
+  "version": "2026-11",
+  "currency": "USD",
+  "zones": {
+    "domestic": ["US"],
+    "nearby": ["CA", "MX"]
+  },
+  "services": [
+    {
+      "id": "parcel-ground",
+      "carrier": "Parcel Post",
+      "name": "Ground",
+      "delivery_days": 5,
+      "rates": {
+        "domestic": [
+          {"up_to_grams": 1000, "price_cents": 650},
+          {"up_to_grams": 5000, "price_cents": 1000},
+          {"up_to_grams": 20000, "price_cents": 1800}
+        ],
+        "nearby": [
+          {"up_to_grams": 1000, "price_cents": 1400},
+          {"up_to_grams": 5000, "price_cents": 2500}
+        ]
+      }
+    },
+    {
+      "id": "city-express",
+      "carrier": "City Courier",
+      "name": "Express",
+      "delivery_days": 2,
+      "rates": {
+        "domestic": [
+          {"up_to_grams": 1000, "price_cents": 1200},
+          {"up_to_grams": 10000, "price_cents": 2200}
+        ]
+      }
+    }
+  ]
+}

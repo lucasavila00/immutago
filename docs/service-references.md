@@ -4,21 +4,18 @@
 Call an exported service method with `ref.Borrow().Method(args)`.
 Copies select the same service, including after a restart.
 
-## Example: call a selected pool
+## Example: select a catalog for a quote
 
-The [worker project](../examples/workers/README.md) returns a pool reference inside
-a service result:
+The [shipping HTTP handler](../examples/shipping/http.go) keeps a reference to
+its catalog loader. Each request selects the current loader, then one catalog:
 
 ```go
-route := dispatcher.Borrow().Lookup("blue")
-if route.Available {
-    result := route.Pool.Borrow().Process("Hello World")
-    fmt.Println(result.Text.Unsafe())
-}
+catalog := loader.Borrow().Catalog()
+response := shipping.Quote(catalog, request)
 ```
 
-[Lookup](../examples/workers/lookup.go) reads the pool index under a lock.
-The caller can keep `route.Pool` and call the pool directly.
+Keep the loader reference for later requests. The selected catalog projection
+stays local to the quote calculation.
 
 ## Reference operations — exhaustive
 
@@ -94,13 +91,8 @@ User generics can name a concrete reference type without using it as a type argu
 | Concrete alias | `type Alias[T any] = WorkerRef`; use `Alias[int]`. |
 
 Marked objects, frozen collections, and other im arguments or results keep the
-[im rules](common-forms.md). For example, copy a reference out of a marked object
-before a closure, go, or defer uses it:
-
-```go
-pool := route.Pool
-go pool.Borrow().Process("Hello")
-```
+[im rules](common-forms.md). Copy a reference out of a marked object before a
+closure, go, or defer uses it.
 
 ## Borrow calls — exhaustive
 

@@ -15,7 +15,8 @@ saved := settings
 ```
 
 Both values share the string bytes. Frozen means immutable, not a deep copy.
-The [type rules](types.md) define allowed fields.
+The [type rules](types.md) define allowed fields. Use a
+[Frozen interface](frozen-interfaces.md) for a polymorphic field.
 
 | Allowed forms — exhaustive | Example |
 | --- | --- |

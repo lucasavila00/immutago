@@ -1,4 +1,4 @@
-// Command immutago-gen generates typed projections and cells for a package's Frozen records.
+// Command immutago-gen generates projections for Frozen records and interfaces.
 package main
 
 import (

@@ -181,15 +181,7 @@ func (p *proof) value(result *obligation, t types.Type) {
 	}
 	switch underlying := t.Underlying().(type) {
 	case *types.Pointer:
-		if Local(underlying.Elem()) {
-			result.reason = "Local pointers cannot be stored"
-			return
-		}
-		if !Marked(underlying.Elem()) {
-			result.reason = "stored pointers require a concrete marked struct target"
-			return
-		}
-		p.depend(result, underlying.Elem(), "")
+		p.frozenPointer(result, underlying)
 		return
 	case *types.Basic:
 		if underlying.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex|types.IsString) != 0 {
@@ -201,8 +193,24 @@ func (p *proof) value(result *obligation, t types.Type) {
 	case *types.Struct:
 		p.structure(result, t, underlying)
 		return
+	case *types.Interface:
+		p.frozenInterface(result, t)
+		return
 	}
 	result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
+}
+
+// frozenPointer proves the concrete record target and excludes stored Local pointers.
+func (p *proof) frozenPointer(result *obligation, pointer *types.Pointer) {
+	if Local(pointer.Elem()) {
+		result.reason = "Local pointers cannot be stored"
+		return
+	}
+	if !Marked(pointer.Elem()) {
+		result.reason = "stored pointers require a concrete marked struct target"
+		return
+	}
+	p.depend(result, pointer.Elem(), "")
 }
 
 // refTargetReason requires the concrete service value selected by Borrow's *T result.

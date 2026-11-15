@@ -13,6 +13,6 @@ review service state changes and locks in the service code.
 [Install the checker](docs/getting-started.md#install), then run `immutago ./...`.
 `go build` does not enforce these rules.
 
-[Example projects](examples/README.md) use both packages in tested programs.
+[Example projects](examples/README.md) show the APIs in small, tested Go applications.
 [Glossary](docs/glossary.md) defines the terms used in the guides and diagnostics.
 [Maintainer documentation](docs/README.md#maintainers) covers development and review.

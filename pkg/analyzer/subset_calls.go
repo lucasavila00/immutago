@@ -76,6 +76,9 @@ func (c *subsetChecks) matchConversion(call *ast.CallExpr) string {
 		if rule := c.matchTransport(source, destination); rule != "" {
 			return rule
 		}
+		if checker.FrozenInterface(destination) && source != types.Typ[types.UntypedNil] {
+			return ""
+		}
 		if c.queries.Contains(source) || c.queries.Contains(destination) {
 			return "protected value conversions are unsupported"
 		}
@@ -193,7 +196,7 @@ func (c *subsetChecks) matchArgument(source, destination types.Type) string {
 	if rule := c.matchTransport(source, destination); rule != "" {
 		return rule
 	}
-	if c.protectedReference(source) && !types.Identical(source, destination) {
+	if c.protectedReference(source) && !types.Identical(source, destination) && !checker.FrozenInterface(destination) {
 		return "reference operation is outside the supported allowlist"
 	}
 	return ""
@@ -212,6 +215,9 @@ func (c *subsetChecks) protectedCallArguments(call *ast.CallExpr) bool {
 
 // matchTransport permits concrete value copies and rejects implicit interface or callback storage.
 func (c *subsetChecks) matchTransport(source, destination types.Type) string {
+	if checker.FrozenInterface(destination) {
+		return c.matchFrozenInterface(source, destination)
+	}
 	if !c.queries.Contains(source) && !c.queries.Callable(source) {
 		return ""
 	}

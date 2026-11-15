@@ -89,15 +89,17 @@ func (c *subsetChecks) generationSource() (token.Pos, bool) {
 func (c *subsetChecks) generationDeclaration(node ast.Node) (token.Pos, bool) {
 	switch declaration := node.(type) {
 	case *ast.TypeSpec:
-		object := c.pass.TypesInfo.Defs[declaration.Name]
-		if declaration.Assign.IsValid() || object == nil || !checker.Frozen(object.Type()) {
+		return c.generationNamed(declaration)
+	case *ast.InterfaceType:
+		if !checker.FrozenInterface(c.pass.TypesInfo.TypeOf(declaration)) {
 			return token.NoPos, true
 		}
-		if object.Parent() != c.pass.Pkg.Scope() || strings.HasSuffix(c.physicalFile(declaration.Pos()), "_test.go") {
-			c.pass.Reportf(declaration.Pos(), "Frozen records require package-level declarations in ordinary .go files")
+		owner, named := c.parents[declaration].(*ast.TypeSpec)
+		if !named || owner.Assign.IsValid() {
+			c.pass.Reportf(declaration.Pos(),
+				"Frozen interfaces require a named package-level type; anonymous interfaces are unsupported")
 			return declaration.Pos(), false
 		}
-		return declaration.Pos(), true
 	case *ast.StructType:
 		if !checker.Frozen(c.pass.TypesInfo.TypeOf(declaration)) {
 			return token.NoPos, true
@@ -112,6 +114,24 @@ func (c *subsetChecks) generationDeclaration(node ast.Node) (token.Pos, bool) {
 	return token.NoPos, true
 }
 
+// generationNamed requires a non-test package declaration for each generated source type.
+func (c *subsetChecks) generationNamed(declaration *ast.TypeSpec) (token.Pos, bool) {
+	object := c.pass.TypesInfo.Defs[declaration.Name]
+	if declaration.Assign.IsValid() || object == nil ||
+		(!checker.Frozen(object.Type()) && !checker.FrozenInterface(object.Type())) {
+		return token.NoPos, true
+	}
+	if object.Parent() != c.pass.Pkg.Scope() || strings.HasSuffix(c.physicalFile(declaration.Pos()), "_test.go") {
+		kind := "Frozen records"
+		if checker.FrozenInterface(object.Type()) {
+			kind = "Frozen interfaces"
+		}
+		c.pass.Reportf(declaration.Pos(), "%s require package-level declarations in ordinary .go files", kind)
+		return declaration.Pos(), false
+	}
+	return declaration.Pos(), true
+}
+
 // generationDirective accepts one exact command without accepting other invocation shapes.
 func (c *subsetChecks) generationDirective(position token.Pos) bool {
 	count := 0
@@ -123,7 +143,14 @@ func (c *subsetChecks) generationDirective(position token.Pos) bool {
 		count += c.generationCommands(file)
 	}
 	if count != 1 {
-		c.pass.Reportf(position, "Frozen records require exactly one package directive: %s", projectiongen.Directive)
+		kind := "Frozen records"
+		for _, object := range c.pass.TypesInfo.Defs {
+			if object != nil && object.Pos() == position && checker.FrozenInterface(object.Type()) {
+				kind = "Frozen interfaces"
+				break
+			}
+		}
+		c.pass.Reportf(position, "%s require exactly one package directive: %s", kind, projectiongen.Directive)
 		return false
 	}
 	return true
