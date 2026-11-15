@@ -30,6 +30,8 @@ func TestCopiedMutable(t *testing.T) {
 		`func f(v Snapshot){s:=v.Score;s.N++;p:=&s;p.Flags[0]=true}`,
 		`func f(v Reply){s:=v.Score;s.N++}`,
 		`func f(v Snapshot){_=v.Score.Read();_=v.Pair.Rest[0].Read()}`,
+		`func f(v Snapshot,callback func(Score)int){_=callback(v.Score);var boxed any=v.Score;_=boxed}`,
+		`func identity[T any](v T)T{return v};func f(v Snapshot){_=identity(v.Score);_=Holder{Score:v.Score}}`,
 		`func f(){values:=[]Score{{}};values[0].N++;_=im.FreezeSlice(values)}`,
 		`func f(){values:=im.FreezeSlice([]Score{{}});copy:=values.At(0);copy.N++}`,
 		`func f(){values:=im.FreezeSlice([]Score{{}});clone:=values.Projection().Clone();clone[0].N++}`,

@@ -108,3 +108,13 @@ func CopiedCollections(value api.Point) (api.Point, api.Point) {
 	mapping[value] = mapped
 	return read, sequence.At(0)
 }
+
+func valueCopy[T any](value T) T { return value }
+
+func FieldCopies(stored frozen.Snapshot, callback func(api.Point) int) int {
+	var boxed any = stored.Point
+	value := callback(stored.Point)
+	copy := valueCopy(stored.Point)
+	holder := State{Point: stored.Point}
+	return value + boxed.(api.Point).X + copy.X + holder.Point.X
+}

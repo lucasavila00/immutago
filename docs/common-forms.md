@@ -61,8 +61,10 @@ p = &FrozenPoint{X: 2} // q still observes X == 1.
 | Compare comparable values or arrays with `==` or `!=` | `same := point == other`, `same := points == otherPoints` |
 | Array length and capacity | `len(points)`, `cap(points)` |
 | Scalar unary `+`, `-`, `!`, `^`; scalar binary operators and conversions | `-point.X`, `point.X + 1`, `int64(point.X)` |
-| Use scalar reads in literals or indices; index or slice strings | `[]int{point.X}`, `a[point.X]`, `user.Name[1:]` |
-| Pass scalar reads to ordinary calls, including builtins, function variables, interface methods, and generics | `callback(point.X)`, `identity(point.X)` |
+| Use scalar or Copied field reads in literals | `[]int{point.X}`, `[]Score{point.Score}` |
+| Use scalar reads in indices; index or slice strings | `a[point.X]`, `user.Name[1:]` |
+| Pass scalar or Copied field reads to ordinary calls, including builtins, function variables, interface methods, and generics | `callback(point.X)`, `callback(point.Score)`, `identity(point.Score)` |
+| Store a scalar or Copied field read in an ordinary interface | `var value any = point.Score` |
 
 - After `x := point.X`, `x` is an ordinary integer; you can change it or capture it.
 - The read of `point.X` still needs a listed statement form.
