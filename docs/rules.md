@@ -14,7 +14,7 @@
 ## Service results (`supervise`)
 
 - [Scoped results](scoped-results.md): exported message results.
-- [Service handles](service-handles.md): copies, storage, and method-only access.
+- [Service handles](service-handles.md): copies, storage, and direct message calls.
 - [Supervised services](services.md): execution and restart behavior.
 
 ## Rules for im and supervise
@@ -29,7 +29,7 @@ forms are listed; unlisted protected operations are rejected.
 | --- | --- |
 | Marked struct | A struct that embeds `im.Shared` or `im.Scoped`. |
 | Protected storage | Marked values, their fields, frozen collections, and arrays containing them. |
-| Scoped result | An allowed value result, including a service handle; see the [complete type list](scoped-results.md). |
+| Scoped result | A value that a service message can return; see the [complete type list](scoped-results.md). |
 | Owner slot and holder | An `im.Owner[T]` field or variable, and a struct that contains one. See [Owner](owner.md). |
 
 ### Trusted immutable values
@@ -77,6 +77,7 @@ An imported package's error includes one cause and a command to see its other er
 
 Functions without a body use ordinary Go rules when their compiler-resolved
 receiver, parameters, results, and generic constraints contain no im
-type or service handle. For example, `func cpuID() uint64` and `func checksum(data []byte) uint64`
-can use assembly implementations in a checked package. A declaration such as
-`func read(value *Config) int`, where Config embeds im.Shared, needs a Go body.
+type or service handle. For example, `func cpuID() uint64` and
+`func checksum(data []byte) uint64` can use assembly implementations in a checked
+package. A declaration such as `func read(value *Config) int`, where Config embeds
+im.Shared, needs a Go body.

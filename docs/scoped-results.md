@@ -1,7 +1,7 @@
 # Scoped results
 
-A handler can return nothing or one **Scoped result**: a primitive, an array of
-Scoped results, a struct with `im.Scoped`, or a service handle.
+A service message can return nothing or one **Scoped result** from the complete
+type list below.
 
 ## Example: quota results
 
@@ -27,6 +27,8 @@ to the limiter's mutable counters.
 
 ## Result types — exhaustive
 
+Only these result types are allowed. Other result types are rejected.
+
 | Type | Example |
 | --- | --- |
 | Boolean, integer, floating-point, complex, or string value | `bool`, `int`, `float64`, `string` |
@@ -34,13 +36,14 @@ to the limiter's mutable counters.
 | Service handle | `supervise.Ref[Worker]`; see [handle operations](service-handles.md). |
 | Empty Scoped marker value | `im.Scoped` |
 | Struct with `im.Scoped` and proved immutable fields | `Usage` |
-| Unnamed array of Scoped results | `[2]int`, `[2]Usage` |
+| Unnamed array of Scoped results | `[2]int`, `[2]Usage`, `[2]supervise.Ref[Worker]` |
 | Alias of an allowed type | `type Response = Usage` |
 
 Fields of a Scoped struct follow the [stored-type rules](common-forms.md#markers-and-stored-types).
 They can contain frozen collections, Shared values, Shared pointers, and service handles.
-Callers can read or copy the result; the checker rejects field writes and storing
-or capturing a Scoped pointer.
+Callers can read or copy the result. The checker rejects field writes and saving
+or capturing a Scoped pointer. A service handle selects a mutable service; the
+handle does not make that service immutable.
 
 ## Service methods
 
@@ -52,8 +55,7 @@ Every exported user method on a service uses one of these result forms:
 | One Scoped result | `func (l *Limiter) Usage() Usage` |
 
 This includes promoted user methods on named or anonymous service structs.
-Init, Run, and runtime methods such as
-`Args` and `Children` are exempt.
+Init, Run, and runtime methods such as Args and Children are exempt.
 
 Start arguments, receivers, closures, child groups, and ordinary method code use
 Go rules. Protected values follow the [im rules](common-forms.md). Start saves its

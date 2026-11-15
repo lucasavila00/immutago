@@ -241,10 +241,10 @@ Keep source restrictions and examples there. Keep analysis details in the
   one Owner/source context.
 - Pass the builder owner ID and consume/reset flags directly to the bitset solver.
 - Allow no result or one Scoped result from each exported user service method
-  except Init and Run. Runtime methods are exempt from result checks. Ref.Current permits only direct
-  exported message calls; concrete Ref handles can be stored and returned. Check
-  indirect accessor and transport forms against docs/service-handles.md. Other
-  service code follows ordinary Go rules; im operations use their general checks.
+  except Init and Run. Runtime methods are exempt from result checks.
+  Ref.Current permits only direct exported message calls. Concrete Ref handles
+  can be stored and returned. Check handle uses against docs/service-handles.md.
+  Other service code follows ordinary Go rules; im operations use their general checks.
 - Trust ordinary Go API contracts. Use the documented package selection rules;
   do not add string taint analysis or whole-program service effect analysis.
 

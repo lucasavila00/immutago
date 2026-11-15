@@ -76,60 +76,56 @@ of named and anonymous service structs:
 1. Skip unexported methods, Init, Run, and methods from the fixed runtime.
 2. Accept no result or one result, including for promoted user methods.
 3. Use `Prover.ScopedResultReason` to match primitives, unnamed arrays of Scoped
-   results, service handles, and structs with im.Scoped. Prove scalars and Scoped structs with
-   the existing immutable type proof; check each array element type recursively.
-   Fields of a Scoped struct use the ordinary stored-type rules.
+   results, service handles, and structs with im.Scoped.
+4. Check each array element type. Check each Scoped field with the ordinary
+   stored-type rules. For `Ref[T]`, require a concrete service struct as T.
 
 The [Scoped-result reference](../scoped-results.md) lists the allowed types.
-Start arguments, method inputs, and service implementation code follow ordinary
-Go rules. Current calls use the service-handle matcher. Protected data passes through the im type proofs, source matcher, and
-Freeze checks.
-
-The classifier treats `Service[A]` as runtime storage, so a service can receive
-im values through its start arguments. When A contains im data, its stored-value
-proof must pass; this prevents retaining a Scoped pointer. Ordinary A types need
-no immutable proof. `Ref[T]` is an opaque stored handle. The type proof checks
-that T is a service; it does not inspect T's mutable state. Runtime calls use the
-fixed library operations.
+Start arguments and method inputs follow ordinary Go rules. When `Service[A]`
+stores im data, A must pass the stored-type checks. This permits Scoped values
+but rejects Scoped pointers. Ordinary A types need no immutable proof.
+All im operations keep their type, source-form, and Freeze checks.
 
 ### Service-handle boundary
 
-The [handle matcher](../../pkg/analyzer/service_handles.go) and
-[concrete transport matcher](../../pkg/analyzer/service_handle_uses.go) establish:
+The checker restricts calls through `Ref`. It does not check how a service
+method uses ordinary mutable data.
 
-1. Copies retain the runtime handle identity. Ref's private storage cannot be
-   written through ordinary external Go field access.
-2. Every use of the compiler-resolved Ref.Current method must match
-   `ref.Current().Message(args)`. The pointer has no other consumer. This rejects
-   saved accessors, method expressions, fields, pointer copies, and bound messages.
-3. The selected message must be an exported user method other than Init or Run.
-   Service result checks prove its declared result, including promoted methods.
-4. Concrete handle transport retains the method identity. Interface boxing,
-   recovery, conversions, promoted accessors, and handle-bearing type arguments
-   in user generic instantiations fail. Concrete Ref parameters in generic code
-   retain the same accessor checks. Typed producer interfaces and callbacks can retain their
-   concrete signatures and exact interface types; they cannot erase a
-   Ref-bearing signature into another interface. The cached handle classifier follows native containers, fields,
-   and callable contracts, including cycles, so a wrapper or iterator cannot hide
-   a Ref from these checks.
-5. Functions whose signatures carry handles require Go bodies, so their
-   accessor and transport operations can be checked. Unrelated assembly APIs
-   remain ordinary Go contracts.
-6. Marked fields containing handles still use the im write checks. Accepting Ref
-   does not make an immutable object's handle field assignable.
+| Checked code | Required check | Source |
+| --- | --- | --- |
+| `Ref[T]` | T is a concrete struct that embeds `supervise.Service`. The check does not inspect T's mutable fields. | [refTargetReason](../../internal/checker/proof.go) |
+| `ref.Current().Message(args)` | Current's result is the receiver of this direct call. Message is exported, is a user method, and is not Init or Run. Promoted messages are allowed; promoted Current calls are rejected. | [matchCurrent](../../pkg/analyzer/service_handles.go) |
+| Message result | No result or one Scoped result, including for promoted user methods. | [checkServiceResults](../../pkg/analyzer/service.go) |
+| Handle copies, storage, and calls | Match the [allowed forms](../service-handles.md#handle-operations--exhaustive). Reject conversions, interface assignments, type assertions, and type-switch recovery. A producer interface must keep the same interface type. | [matchHandleUse](../../pkg/analyzer/service_handle_uses.go) |
+| User generic type arguments | Reject handles, including inside fields or callback types. Concrete Ref parameters, fields, and results are allowed. | [handleInstance](../../pkg/analyzer/service_handles.go) |
+| Functions with handles in receivers, parameters, or results | Require a Go body. This includes handles inside fields and callback types. | [checkFunctionBody](../../pkg/analyzer/analyzer.go) |
+| Handle fields in marked objects | Reject field writes after construction. | [matchWrite](../../pkg/analyzer/subset_writes.go) |
 
-This proves method-only access **through checked handles**. It does not prove
-that service state is immutable, that calls are serialized, or that a service
-cannot expose state deliberately through a callback, global, or ordinary input.
-Review those operations in the service implementation. For example, a method
-that calls `callback(serviceReceiver)` deliberately grants the callback direct
-access; the handle rule does not prove that method safe.
+These checks use compiler-resolved types. [Classifier.Handles](../../internal/checker/classification.go)
+finds handles inside pointers, fields, native containers, function signatures,
+and interface methods. It handles recursive types and caches each result.
+The [runtime](../../pkg/supervise/supervise.go) keeps Ref's fields private.
+Copies share one atomic slot; Current reads that slot once.
 
-The argument assumes all relevant packages pass the checker and ordinary Go API
-contracts hold. The fixed runtime and im implementations are trusted. Unsafe
-memory manipulation, reflection that breaks Go access rules, cgo, and unchecked
-external code are not a memory-security boundary supplied by this checker.
-Run the CLI or vet driver for the build configurations you ship.
+A service can still expose its receiver. For a Counter service with a mutable
+count field, this code passes:
+
+```go
+func (c *Counter) Visit(call func(*Counter)) { call(c) }
+
+func change(ref supervise.Ref[Counter]) {
+    ref.Current().Visit(func(c *Counter) { c.count++ })
+}
+```
+
+Visit is exported and returns no result, so the handle check accepts the call.
+Visit gives its receiver to the callback, which changes count. The same method
+can also save its receiver in a global. Review those operations and the locks
+in the service code. The checker does not prove that service state stays private
+or that concurrent calls are safe.
+
+The checks apply to [selected packages](../rules.md#package-boundary).
+The [trusted code list](validation.md#trust-boundary) still applies.
 
 ### Publication and child lifetimes
 
