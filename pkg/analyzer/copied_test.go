@@ -105,8 +105,10 @@ func TestCopiedRejectedForms(t *testing.T) {
 		{`func f(s Score){go readScore(s)}`, "synchronous calls"},
 		{`func f(s Score){defer readScore(s)}`, "synchronous calls"},
 		{`func f(s Score){s,other:=s,s;_,_=s,other}`, "multiple assignments"},
-		{`type Worker struct{supervise.Service[supervise.NoArgs]};func(w *Worker)Last()*Score{return nil}`, "service result"},
-		{`type Worker struct{supervise.Service[supervise.NoArgs]};func(w *Worker)Last()Holder{return Holder{}}`, "service result"},
+		{`type Worker struct{supervise.Service[supervise.NoArgs]};` +
+			`func(w *Worker)Last()*Score{return nil}`, "service result"},
+		{`type Worker struct{supervise.Service[supervise.NoArgs]};` +
+			`func(w *Worker)Last()Holder{return Holder{}}`, "service result"},
 		{`type Counts [2]int;type Bad struct{im.Copied;N Counts}`, "Copied record:"},
 		{`type Bad[T any]struct{im.Copied;N T}`, "Copied record:"},
 		{`type Bad struct{Marker im.Copied}`, "markers must be embedded by value"},
