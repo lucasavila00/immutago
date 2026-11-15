@@ -90,14 +90,29 @@ func (c *subsetChecks) generationDeclaration(node ast.Node) (token.Pos, bool) {
 	switch declaration := node.(type) {
 	case *ast.TypeSpec:
 		object := c.pass.TypesInfo.Defs[declaration.Name]
-		if declaration.Assign.IsValid() || object == nil || !checker.Frozen(object.Type()) {
+		if declaration.Assign.IsValid() || object == nil ||
+			(!checker.Frozen(object.Type()) && !checker.FrozenInterface(object.Type())) {
 			return token.NoPos, true
 		}
 		if object.Parent() != c.pass.Pkg.Scope() || strings.HasSuffix(c.physicalFile(declaration.Pos()), "_test.go") {
-			c.pass.Reportf(declaration.Pos(), "Frozen records require package-level declarations in ordinary .go files")
+			kind := "Frozen records"
+			if checker.FrozenInterface(object.Type()) {
+				kind = "Frozen interfaces"
+			}
+			c.pass.Reportf(declaration.Pos(), "%s require package-level declarations in ordinary .go files", kind)
 			return declaration.Pos(), false
 		}
 		return declaration.Pos(), true
+	case *ast.InterfaceType:
+		if !checker.FrozenInterface(c.pass.TypesInfo.TypeOf(declaration)) {
+			return token.NoPos, true
+		}
+		owner, named := c.parents[declaration].(*ast.TypeSpec)
+		if !named || owner.Assign.IsValid() {
+			c.pass.Reportf(declaration.Pos(),
+				"Frozen interfaces require a named package-level type; anonymous interfaces are unsupported")
+			return declaration.Pos(), false
+		}
 	case *ast.StructType:
 		if !checker.Frozen(c.pass.TypesInfo.TypeOf(declaration)) {
 			return token.NoPos, true

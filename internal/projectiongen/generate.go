@@ -85,19 +85,23 @@ func GenerateTypes(pkg *types.Package, fset *token.FileSet) ([]byte, error) {
 			continue
 		}
 		typ := object.Type()
-		if !checker.Frozen(typ) {
+		if !checker.Frozen(typ) && !checker.FrozenInterface(typ) {
 			continue
 		}
 		if reason := g.proofs.FrozenReason(typ); reason != "" {
 			return nil, fmt.Errorf("%s: %s", name, reason)
 		}
 		g.imports[imPath] = "im"
-		if err := g.addRecord(types.NewPointer(typ), name+"Projection"); err != nil {
+		if checker.FrozenInterface(typ) {
+			if err := g.addInterface(typ, name+"Projection"); err != nil {
+				return nil, err
+			}
+		} else if err := g.addRecord(types.NewPointer(typ), name+"Projection"); err != nil {
 			return nil, err
 		}
 	}
-	if len(g.records) == 0 {
-		return nil, fmt.Errorf("package %s has no structs with im.Frozen", pkg.Name())
+	if len(g.records) == 0 && len(g.interfaces) == 0 {
+		return nil, fmt.Errorf("package %s has no structs with im.Frozen or interfaces with im.FrozenInterface", pkg.Name())
 	}
 	return g.render()
 }
@@ -118,13 +122,14 @@ func parseSource(fset *token.FileSet, filename string, source []byte) (*ast.File
 
 // generator records the typed output and its required imports.
 type generator struct {
-	pkg     *types.Package
-	fset    *token.FileSet
-	proofs  checker.Prover
-	imports map[string]string
-	names   map[string]bool
-	records []record
-	arrays  []array
+	pkg        *types.Package
+	fset       *token.FileSet
+	proofs     checker.Prover
+	imports    map[string]string
+	names      map[string]bool
+	records    []record
+	arrays     []array
+	interfaces []record
 }
 
 // record describes a generated reader and its publication cell.
@@ -198,6 +203,11 @@ func (g *generator) importUsed(name string) bool {
 // render builds all requested readers before writing the import list.
 func (g *generator) render() ([]byte, error) {
 	var body bytes.Buffer
+	for _, item := range g.interfaces {
+		if err := g.writeInterface(&body, item); err != nil {
+			return nil, err
+		}
+	}
 	for ri, ai := 0, 0; ri < len(g.records) || ai < len(g.arrays); {
 		if ri < len(g.records) {
 			if err := g.writeRecord(&body, g.records[ri]); err != nil {
