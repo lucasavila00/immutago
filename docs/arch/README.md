@@ -2,8 +2,8 @@
 
 Immutago combines compiler type proofs, source-form checks, and native builder
 consumption checks. The analyzer adds no runtime state.
-These pages describe the implementation. The [checker reference](../rules.md)
-defines supported Go forms; the [glossary](../glossary.md) defines shared terms.
+These pages describe the implementation. The [checker reference](../reference/rules.md)
+defines supported Go forms; the [glossary](../reference/glossary.md) defines shared terms.
 
 ## Local review
 

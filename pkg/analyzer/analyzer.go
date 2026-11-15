@@ -15,7 +15,7 @@
 // changes. The checker does not prove this promise.
 //
 // The complete source forms and package rules are in
-// https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
+// https://github.com/lucasavila00/immutago/blob/main/docs/reference/rules.md.
 package analyzer
 
 import (

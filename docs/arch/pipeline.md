@@ -16,7 +16,7 @@ The [entry point](../../pkg/analyzer/analyzer.go) runs these stages:
 6. Check [service method results](services.md), excluding Init, Run, and methods
    supplied by the runtime. In im packages, also check field types and im type arguments.
 7. For packages that import or use im, require the exact generation directive
-   and current output for source Frozen records.
+   and current output for source Frozen records and Frozen interfaces.
 8. Match service reference operations in all selected packages.
 9. For packages that import or use im, prove native builder ownership and match
    protected source forms.
@@ -27,7 +27,7 @@ Package selection and state:
 - Type, source-form, and builder checks keep separate state. Tracking a builder
   does not exempt its operations from matching.
 - [Package scope](../../pkg/analyzer/package_scope.go) implements the
-  [package selection rules](../rules.md#package-boundary).
+  [package selection rules](../reference/rules.md#package-boundary).
 - Each selection walk shares a seen set across expression and object roots. The
   runtime-inclusive walk selects service checks; the im-only walk selects source
   and builder checks. Both use the same type traversal. It visits

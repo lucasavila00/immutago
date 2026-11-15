@@ -7,7 +7,7 @@
 | Go compiler, runtime, and standard library | Compiler types, runtime behavior, and standard APIs. |
 | Fixed im and supervise implementations | Collection storage, Cell, and service runtime. |
 | Canonical projection generator | Read and interior Frozen-record addresses in its exact verified output; all normal source checks still apply. |
-| Ordinary packages outside the [package boundary](../rules.md#package-boundary) | Go API contracts, including immutable strings and no hidden writes to protected memory. |
+| Ordinary packages outside the [package boundary](../reference/rules.md#package-boundary) | Go API contracts, including immutable strings and no hidden writes to protected memory. |
 | `im.Trust` | The declaring package's immutability promise. |
 
 [Toolchain detection](../../pkg/analyzer/toolchain.go):
@@ -24,9 +24,10 @@ Enforcement:
 - Scalar origins and arbitrary unsafe memory effects are not proved; ordinary
   helpers must obey Go API contracts, including string immutability.
 - Packages that import or use im reject cgo. Functions whose signatures contain
-  im types or service references require Go bodies. Packages that use only supervise
-  receive result and reference checks.
-- There are no suppression directives. [UncheckedValue](../unchecked-values.md)
+  im types other than Copied require Go bodies. Copied data, service references,
+  and ordinary types keep Go rules. Packages that use only supervise receive
+  result and reference checks.
+- There are no suppression directives. [UncheckedValue](../reference/unchecked-values.md)
   records the declaring package's immutability promise.
 - Checked dependency failures reach consumers through package facts.
 - Freeze has no runtime fallback when the analyzer is omitted.

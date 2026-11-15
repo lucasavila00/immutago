@@ -8,39 +8,9 @@ import "github.com/lucasavila00/immutago/pkg/supervise"
 
 Package supervise manages background services and restarts them after a panic.
 
-Define a service:
+Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\) error. Start initializes the service and returns Ref\[T\]. Call ref.Borrow\(\).Method\(args\) to select the current service after any restart. Calls run in the caller's goroutine; review shared fields, locks, saved inputs, and dependency calls in the service code. The checker validates exported results and direct Borrow calls.
 
-- Embed Service\[A\] for start arguments of type A; use NoArgs for no arguments.
-- Supply Run\(context.Context\) for background work.
-- Declare Init\(\) error for setup, or use the default Init from Service\[A\].
-- Start calls Init, returns Ref\[T\], and schedules Run in a managed goroutine.
-
-Call a service:
-
-- Keep the Ref and use ref.Borrow\(\).Method\(\).
-- Calls run in the caller's goroutine and can overlap with Run and other calls. Synchronize access to mutable fields.
-- Each exported service method returns no result or one service result: a Copied value or a Local value, including projections and Local records. This includes promoted methods. Init, Run, and methods supplied by the runtime are exempt. See the complete result rules at https://github.com/lucasavila00/immutago/blob/main/docs/service-results.md.
-- Arguments and implementation code follow ordinary Go rules. Uses of im values keep their immutability and pointer rules.
-
-Service methods can give callbacks or globals access to mutable state. Review state changes, locks, saved inputs, and dependency calls in the service code.
-
-### Groups and shutdown
-
-- NewRoot creates an application group; StartGroup creates a nested group.
-- Service.Children supplies the group for one run. Children created during Init wait for Run to begin.
-- Group.Stop returns a completion channel. Children stop last started first, before their parent's Run context is cancelled.
-- Run must return when its context ends. Stop cannot force it to return and does not wait for direct method calls. Init has no cancellation context.
-
-### Replacement and failure
-
-- Normal Run return ends the service. A panic starts a delayed restart.
-- Delay starts at 1 second and doubles for each restart in the last 5 minutes.
-- Each attempt creates a fresh value with the same arguments and calls Init. Successful setup replaces the current value; failed setup counts as a failure.
-- Six failures from one child in 5 minutes stop its siblings and pass failure to the parent group. The parent restarts that group under the same rules. Failure at the root panics and ends the program.
-- NewRoot can report recovered panics and restart Init errors before each delay.
-- Borrow selects the last published value, even during delays and after stop. Calls in progress finish on their selected value.
-- A direct call's panic stays in its goroutine. Calls from Run or a restart Init can fail that attempt. The first Init panic reaches the Start caller.
-- A child Ref does not follow its parent's restart.
+The service guide is at https://github.com/lucasavila00/immutago/blob/main/docs/guides/services.md. The complete source rules and runtime behavior are at https://github.com/lucasavila00/immutago/blob/main/docs/reference/services.md.
 
 ## func StartReserved
 

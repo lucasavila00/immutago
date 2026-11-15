@@ -10,19 +10,17 @@ These fixed APIs build the [generated typed projections](projections.md). They u
 | `im.ProjectString(value)` | Native string input; returns StringProjection. |
 | `frozen.Projection()` | FrozenString, FrozenSlice[E], or FrozenMap[K,V] receiver; returns StringProjection, SliceProjection[E], or MapProjection[K,V]. |
 | `im.ProjectionOf(value)` | Frozen input; returns Projection[T]. |
-| `rawCell.Load()` | Copies T into Projection[T]; reads zero T if the raw slot is empty. |
-| `rawCell.LoadPointer()` | Requires a concrete Frozen record T; returns Projection[*T] without copying T. |
 | `im.CopyRecord(value)` | Requires Projection[T] for a concrete Frozen record T; copies it into a new root and returns Projection[*T]. |
 | `im.Value(projection)` | Requires Copied T; returns T. |
 | `im.StringOf(projection)` | Requires Projection[S] with underlying string S; returns StringProjection. |
 | `im.StringOfFrozen(projection)` | Requires Projection[FrozenString]; returns StringProjection. |
 | `im.SliceOf(projection)` | Requires Projection[FrozenSlice[E]]; returns SliceProjection[E]. |
 | `im.MapOf(projection)` | Requires Projection[FrozenMap[K,V]]; returns MapProjection[K,V]. |
-| `im.IsNil(projection)` | Requires a pointer payload; reports nil without exposing the pointer. |
+| `im.IsNil(projection)` | Requires Projection[*T] for a Frozen record T; reports nil without exposing the pointer. |
 
 Application code uses the listed Value and adapter forms. The internal Read
 operation is restricted to verified generated code. UncheckedValue remains
-opaque through a Projection.
+opaque through a Projection. Raw slot reads use the [Cell methods](cell.md#raw-cell-methods--exhaustive).
 
 ## Collection projections — exhaustive
 
@@ -57,19 +55,11 @@ for key, value := range projection.All() {
   no native storage getters.
 - Methods use exact library receiver types, not promoted methods or method values.
 
-## Local transport — exhaustive
+## Storage and calls
 
-| Form | Example |
-| --- | --- |
-| Zero declaration or empty literal | `var v im.Projection[Settings]`, `im.StringProjection{}` |
-| Local declaration, copy, replacement, or discard | `v := cell.Load()`, `other := v`, `_ = other` |
-| Local record field or unnamed array | `type Reply struct { im.Local; Title im.StringProjection }` |
-| Exclusive local native builder | `values := []im.StringProjection{text}`; use the [Local builder forms](local.md). |
-| Direct concrete argument or result | `func read(v im.StringProjection) int`, `return v` |
-
-These rules follow nested fields and arrays. Projections cannot enter package
-variables, Frozen fields, Cells, shared frozen entries, service start arguments,
-interfaces, callbacks, closures, user generics, go, or defer.
+Use the complete [Local value forms](local.md#value-forms--exhaustive) for
+construction and transport, and the [common forms](common-forms.md) for statement
+contexts. Unlisted operations on protected storage are rejected.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
@@ -77,10 +67,8 @@ interfaces, callbacks, closures, user generics, go, or defer.
 | `im.ProjectionOf(1).Read()` | `im.Value(im.ProjectionOf(1))` |
 | `im.Value(im.ProjectionOf("text"))` | Use `im.ProjectString("text")`; use Unsafe for a shared native string or Clone for independent storage. |
 | `im.Value(record)` with `record im.Projection[Settings]`, including a record with only numeric fields | Use a generated projection and read its fields. |
-| Save a projection in a global | Clone or read the data to keep. |
 | Clone a projection of a string-key map | Iterate; Clone each key and copy each value into a new map. |
 | Clone a slice or map projection with Frozen record elements | Read record projections and copy the required fields into new data. |
-| Capture a projection in a closure | Read numeric fields or Copied records, or clone strings, before the closure. |
 
 Projection creation copies T, not its backing storage. Large records therefore have
 ordinary Go value-copy costs. Native strings and FrozenString can share source

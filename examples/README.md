@@ -28,7 +28,7 @@ Each request selects one complete immutable version. One supervised service per
 application builds and publishes replacements. Failed updates leave the last
 valid data available to requests.
 
-Use the [guides](../docs/README.md) for API rules. The application tests check
+Use the [language reference](../docs/reference/rules.md) for exact API forms. The application tests check
 prices, search results, failed updates, concurrent reads, and shutdown. Checker
 source forms and diagnostics belong in [the CLI fixtures](../tests/readme.md).
 

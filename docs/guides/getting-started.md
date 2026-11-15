@@ -56,6 +56,9 @@ The program prints `alice 10`.
 Run generation again after a record changes. Keep the generated file with the
 source. Missing or stale output fails the checker.
 
+Continue with [Publish immutable data](immutable-data.md) to follow construction,
+publication, and reads in the shipping application.
+
 ## Check in CI
 
 ```sh

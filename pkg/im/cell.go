@@ -6,7 +6,7 @@ import "sync/atomic"
 // Load, LoadPointer, LoadShared, and Store are atomic. Readers can keep an earlier projection.
 // The checker proves T and restricts use of the returned local projections.
 // A Cell must not be copied after first use.
-// See https://github.com/lucasavila00/immutago/blob/main/docs/cell.md for the complete forms.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/reference/cell.md for the complete forms.
 type Cell[T any] struct {
 	value atomic.Pointer[T]
 }

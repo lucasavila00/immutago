@@ -3,7 +3,8 @@ package im
 // Projection holds a value for local reads. Its zero value contains the zero T.
 // The checker proves T and restricts storage and transport of the projection.
 // Copies copy T by value and share its immutable backing storage.
-// See https://github.com/lucasavila00/immutago/blob/main/docs/projections.md for the complete forms.
+// See the complete forms at
+// https://github.com/lucasavila00/immutago/blob/main/docs/reference/projection-primitives.md.
 type Projection[T any] struct {
 	value T
 }

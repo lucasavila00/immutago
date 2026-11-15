@@ -22,6 +22,7 @@
 | Generated Cell.Load, raw Cell.LoadPointer | One atomic pointer load; no record copy or allocation. |
 | Raw Cell.Load, Cell.LoadShared | One atomic load and a T value copy; no backing-storage copy. |
 | Ref.Borrow | One atomic load; no allocation. |
+| Ref.IsZero | Compare the stored pointer with nil; no atomic load or allocation. |
 
 Copied record fields contain no strings or reference handles. A complete copy
 includes all their data. The zero-sized im.Copied marker adds no runtime copy
@@ -49,6 +50,6 @@ method body and the original concrete-to-interface conversion keep their ordinar
 Go costs. A Frozen record getter reads only the selected interface field; it
 does not copy the parent record.
 
-The [interface cost fixture](../internal/projectiongen/testdata/interfacecost/README.md)
+The [interface cost fixture](../../internal/projectiongen/testdata/interfacecost/README.md)
 checks representation size and allocations and compares direct and projected
 method calls.

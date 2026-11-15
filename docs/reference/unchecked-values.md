@@ -7,39 +7,22 @@ Use it when your package supplies immutable data that does not fit the checked f
 - Only the package that declares `T` can wrap it with `im.Trust` or read it with `im.Unwrap`.
 - Other packages can keep the handle and call your functions to read the data.
 
-## Example: a compiled regular expression
-
-A package can expose matching without exposing the mutable regexp object:
+For example, package pattern can keep a compiled regexp behind a private
+payload type:
 
 ```go
-package pattern
-
-//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
-
-import (
-    "regexp"
-
-    "github.com/lucasavila00/immutago/pkg/im"
-)
-
 type compiled struct { re *regexp.Regexp }
 
-type Pattern struct {
-    im.Frozen
-    compiled im.UncheckedValue[compiled]
+func MustCompile(expression string) im.UncheckedValue[compiled] {
+    return im.Trust(&compiled{re: regexp.MustCompile(expression)})
 }
 
-func MustCompile(expression string) *Pattern {
-    re := regexp.MustCompile(expression)
-    return &Pattern{compiled: im.Trust(&compiled{re: re})}
-}
-
-func Match(p *Pattern, text string) bool {
-    return im.Unwrap(p.compiled).re.MatchString(text)
+func Match(value im.UncheckedValue[compiled], text string) bool {
+    return im.Unwrap(value).re.MatchString(text)
 }
 ```
 
-This package never changes or returns the compiled regexp. Trust stores its
+This package never changes or exposes the compiled regexp. Trust stores its
 pointer; it does not freeze or copy the regexp.
 
 ## Allowed forms — exhaustive

@@ -46,37 +46,6 @@ panic. Unsafe lets the caller keep the shared bytes; the checker does not track
 the returned native string. There is no substring operation or implicit string
 conversion. For a native string projection, use `im.ProjectString(source)`.
 
-## Frozen slices and maps
-
-The checker rejects aliases and use of the original collection after Freeze:
-
-1. Build a normal Go slice or map.
-2. Freeze it without copying entries. Use only the frozen value after this call.
-3. To make a changed version, Clone, edit the copy, and Freeze again.
-
-## Example: change a score
-
-Clone the frozen map, change the copy, and freeze it. The original map stays unchanged:
-
-```go
-package main
-
-import "github.com/lucasavila00/immutago/pkg/im"
-
-func main() {
-    scores := map[string]int{"alice": 10}
-    frozen := im.FreezeMap(scores)
-
-    next := frozen.Clone()
-    next["alice"] = 20
-    updated := im.FreezeMap(next)
-
-    oldScore, _ := frozen.Get("alice")
-    newScore, _ := updated.Get("alice")
-    println(oldScore, newScore) // 10 20
-}
-```
-
 ## Build before freezing
 
 A **builder** is a local Go slice or map checked for exclusive use. These rules

@@ -1,15 +1,15 @@
 handles.go:10:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
 handles.go:14:47: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
 handles.go:8:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
 interfaces.go:14:34: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
   source: return route
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
@@ -34,7 +34,7 @@ iszero.go:21:2: unsupported immutable operation: protected storage requires sync
 iszero.go:26:14: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
 iszero.go:36:58: unsupported immutable operation: promoted immutable methods are unsupported
   source: route.IsZero()
   type: bool
@@ -42,7 +42,7 @@ iszero.go:36:58: unsupported immutable operation: promoted immutable methods are
 iszero.go:38:57: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: route.Worker.Borrow
   type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
 iszero.go:49:50: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
   source: status.Status.IsZero()
   type: bool

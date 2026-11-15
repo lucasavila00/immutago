@@ -17,13 +17,13 @@ package im
 // Copying the record copies all its data. Strings and reference fields are rejected.
 // Embed the marker by value. Ordinary copies use normal Go mutation and pointer rules.
 // A field inside protected storage keeps its owner's write and address rules.
-// See https://github.com/lucasavila00/immutago/blob/main/docs/copied.md for the complete forms.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/reference/copied.md for the complete forms.
 type Copied struct{}
 
 // Frozen marks a struct with immutable fields. Values and pointers to that
 // struct can be copied, stored, and returned through the allowed source forms.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
-// See https://github.com/lucasavila00/immutago/blob/main/docs/frozen-records.md for the complete forms.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/reference/frozen-records.md for the complete forms.
 type Frozen struct{}
 
 // immutagoFrozen seals FrozenInterface implementations to types that embed Frozen.
@@ -35,7 +35,7 @@ func (Frozen) immutagoFrozen() {}
 // Methods have fixed concrete parameters and at most one read result.
 // Generated local projections do not expose the interface. Method implementations
 // keep ordinary Go contracts, including retention of their own Frozen receiver.
-// See https://github.com/lucasavila00/immutago/blob/main/docs/frozen-interfaces.md for the complete forms.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/reference/frozen-interfaces.md for the complete forms.
 type FrozenInterface interface {
 	immutagoFrozen()
 }
@@ -43,5 +43,5 @@ type FrozenInterface interface {
 // Local marks a struct whose fields follow the local projection rules.
 // The checker restricts storage and transport of the struct and its pointers.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
-// See https://github.com/lucasavila00/immutago/blob/main/docs/local.md for the complete forms.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/reference/local.md for the complete forms.
 type Local struct{}

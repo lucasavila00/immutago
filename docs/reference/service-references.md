@@ -36,19 +36,6 @@ The [im rules](common-forms.md) still apply to protected expressions. Select an
 embedded Ref field explicitly. Copy a reference out before a closure, bound
 method, `go`, or `defer` uses it.
 
-## Example: select a catalog for a quote
-
-The [shipping HTTP handler](../examples/shipping/http.go) keeps a reference to
-its catalog loader. Each request selects the current loader, then one catalog:
-
-```go
-catalog := loader.Borrow().Catalog()
-response := shipping.Quote(catalog, request)
-```
-
-Keep the loader reference for later requests. The selected catalog projection
-stays local to the quote calculation.
-
 ## Checked operations — exhaustive
 
 | Operation | Rule |
@@ -63,22 +50,11 @@ containers, pointers, conversions, interfaces, generic helpers, callbacks,
 `go`, `defer`, and functions implemented outside Go. A field containing a Ref
 does not make its holder protected storage.
 
-Examples of ordinary Go use:
-
-```go
-type WorkerRef = supervise.Ref[Worker]
-type Server struct { Worker WorkerRef }
-func (*Server) OnFailure(error) {}
-var _ interface{ OnFailure(error) } = (*Server)(nil)
-
-func identity[T any](value T) T { return value }
-func use(ref WorkerRef) {
-    copied := identity(ref)
-    var selected atomic.Pointer[WorkerRef]
-    selected.Store(&copied)
-    selected.Load().Borrow().Method()
-}
-```
+| Ordinary Go examples | Form |
+| --- | --- |
+| Store or copy a reference | `type Server struct { Worker supervise.Ref[Worker] }`, `other := ref` |
+| Use a pointer, generic helper, or interface | `p := &ref`, `other := identity(ref)`, `var value any = ref` |
+| Use atomic storage | `var selected atomic.Pointer[supervise.Ref[Worker]]`; `selected.Store(&ref)` |
 
 Protected storage still has its own rules. For example, a Ref field in a Frozen
 record cannot be replaced. Copy the field into an ordinary variable to store or
