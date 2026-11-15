@@ -1,19 +1,19 @@
-forms.go:21:2: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+forms.go:21:2: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: boxed, ok = pair()
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-forms.go:31:14: unsupported immutable operation: immutable callbacks are unsupported
+forms.go:31:14: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: interface { Read() (im.StringProjection, bool) }
   type: interface{Read() (im.StringProjection, bool)}
   fix: call a named, non-generic function directly with a concrete immutable parameter
-forms.go:32:6: unsupported immutable operation: immutable callbacks are unsupported
+forms.go:32:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: func() (im.StringProjection, bool)
   type: func() (im.StringProjection, bool)
   fix: call a named, non-generic function directly with a concrete immutable parameter
-forms.go:35:16: unsupported immutable operation: immutable callbacks are unsupported
+forms.go:35:16: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: Dynamic
   type: result_rejected.Dynamic
   fix: call a named, non-generic function directly with a concrete immutable parameter
-forms.go:35:34: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+forms.go:35:34: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
   source: r.Read()
   type: (im.StringProjection, bool)
   fix: call a named, non-generic function directly with a concrete immutable parameter

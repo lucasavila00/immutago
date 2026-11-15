@@ -80,7 +80,7 @@ copy:=projection.Clone();_=copy}`,
 		{`func f(){frozen:=im.FreezeSlice([]int{1});projection:=frozen.Projection()
 all:=projection.All();_=all}`,
 			"direct range"},
-		{`func f(){projection:=im.ProjectionOf("text");var boxed any=projection;_=boxed}`, "boxing immutable storage"},
+		{`func f(){projection:=im.ProjectionOf("text");var boxed any=projection;_=boxed}`, "ordinary interfaces require"},
 		{`func f(){projection:=im.ProjectionOf(1);go im.Value(projection)}`,
 			"synchronous"},
 	}

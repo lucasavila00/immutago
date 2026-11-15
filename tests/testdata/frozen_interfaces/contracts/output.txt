@@ -6,15 +6,15 @@ contracts.go:15:6: unsupported immutable operation: native slices of immutable s
   source: ...im.StringProjection
   type: []im.StringProjection
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-contracts.go:19:7: unsupported immutable operation: immutable callbacks are unsupported
+contracts.go:19:7: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: func() im.StringProjection
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-contracts.go:23:21: unsupported immutable operation: immutable callbacks are unsupported
+contracts.go:23:21: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: func() im.StringProjection
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-contracts.go:23:6: unsupported immutable operation: immutable callbacks are unsupported
+contracts.go:23:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: interface{ Read() im.StringProjection }
   type: interface{Read() im.StringProjection}
   fix: call a named, non-generic function directly with a concrete immutable parameter
@@ -24,11 +24,11 @@ contracts.go:38:6: unsupported immutable operation: containers of Local pointers
   source: ...*Local
   type: []*contracts.Local
   fix: keep Local values in local bindings, or store im.Frozen pointers
-contracts.go:42:6: unsupported immutable operation: immutable callbacks are unsupported
+contracts.go:42:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: ...func() im.StringProjection
   type: []func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-contracts.go:42:9: unsupported immutable operation: immutable callbacks are unsupported
+contracts.go:42:9: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: func() im.StringProjection
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter

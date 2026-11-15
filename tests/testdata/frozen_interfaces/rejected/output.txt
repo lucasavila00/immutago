@@ -11,11 +11,11 @@ forms.go:13:21: unmarked struct contains immutable field Value; embed an immutab
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
 forms.go:16:18: service method Raw must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: api.Scorer
-forms.go:21:6: unsupported immutable operation: immutable interface assertions are unsupported
+forms.go:21:6: unsupported immutable operation: interface assertions require ordinary or persistent Frozen values
   source: s.(*implementation.Tree)
   type: *implementation.Tree
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-forms.go:28:30: unsupported immutable operation: closures cannot capture immutable storage
+forms.go:28:30: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: local
   type: api.ScorerProjection
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
@@ -47,7 +47,7 @@ forms.go:41:63: unsupported immutable operation: Projection.Read is reserved for
   source: local.Read()
   type: api.Scorer
   fix: use the generated field accessor
-forms.go:43:9: unsupported immutable operation: immutable interface assertions are unsupported
+forms.go:43:9: unsupported immutable operation: interface assertions require ordinary or persistent Frozen values
   source: local.Read().(*implementation.Tree)
   type: *implementation.Tree
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
@@ -69,95 +69,95 @@ forms.go:60:6: immutable collection: copied values require bool, numbers, Copied
 forms.go:60:9: immutable type argument: Frozen storage cannot contain Local values
   type: api.ScorerProjection
   fix: store Frozen data; keep its Projection or Local result in local bindings
-parameters.go:11:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+parameters.go:11:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: reader.Apply(text, nil)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-parameters.go:12:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+parameters.go:12:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: tree.Apply(text, nil)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-parameters.go:13:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+parameters.go:13:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: local.Apply(text, nil)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-parameters.go:14:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+parameters.go:14:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: local.Apply([1]im.StringProjection{text}, nil)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-parameters.go:17:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+parameters.go:17:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: local.Apply(localPair())
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-parameters.go:28:44: unsupported immutable operation: closures cannot capture immutable storage
+parameters.go:28:44: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: text
   type: im.StringProjection
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-parameters.go:29:43: unsupported immutable operation: closures cannot capture immutable storage
+parameters.go:29:43: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: text
   type: im.StringProjection
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-parameters.go:30:19: unsupported immutable operation: immutable callbacks are unsupported
+parameters.go:30:19: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: protectedInput
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-parameters.go:30:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+parameters.go:30:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: reader.Apply(protectedInput, nil)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-parameters.go:31:18: unsupported immutable operation: immutable callbacks are unsupported
+parameters.go:31:18: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: protectedInput
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-parameters.go:31:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+parameters.go:31:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: local.Apply(protectedInput, nil)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-parameters.go:32:19: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+parameters.go:32:19: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
   source: identity(text)
   type: im.StringProjection
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
-parameters.go:32:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  fix: use a direct non-generic function with concrete parameter types
+parameters.go:32:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: reader.Apply(identity(text), nil)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-variadic.go:11:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+variadic.go:11:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: reader.Box(text)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-variadic.go:12:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+variadic.go:12:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: tree.Box(text)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-variadic.go:13:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+variadic.go:13:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: local.Box(text)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-variadic.go:14:38: unsupported immutable operation: closures cannot capture immutable storage
+variadic.go:14:38: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: text
   type: im.StringProjection
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-variadic.go:15:36: unsupported immutable operation: closures cannot capture immutable storage
+variadic.go:15:36: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: text
   type: im.StringProjection
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-variadic.go:16:37: unsupported immutable operation: closures cannot capture immutable storage
+variadic.go:16:37: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: text
   type: im.StringProjection
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-variadic.go:17:17: unsupported immutable operation: immutable callbacks are unsupported
+variadic.go:17:17: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: protectedInput
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-variadic.go:17:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+variadic.go:17:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: reader.Box(protectedInput)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-variadic.go:18:16: unsupported immutable operation: immutable callbacks are unsupported
+variadic.go:18:16: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: protectedInput
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-variadic.go:18:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+variadic.go:18:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: local.Box(protectedInput)
   type: int
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

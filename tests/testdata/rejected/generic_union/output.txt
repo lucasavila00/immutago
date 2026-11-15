@@ -1,8 +1,8 @@
-generic_union.go:11:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+generic_union.go:11:6: unsupported immutable operation: user generic declarations cannot define Frozen or Local types
   source: Bad
   type: rejected.Bad[T ~int | ~[]int]
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+  fix: declare a concrete Frozen or Local type without type parameters
 generic_union.go:13:2: immutable field Value: type parameters are unsupported in immutable storage
   owner: rejected.Bad[T ~int | ~[]int]; field type: T
-  fix: use a concrete type; user generic declarations cannot contain immutable storage
+  fix: use a concrete proved type for this immutable field or element
 generic_union.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

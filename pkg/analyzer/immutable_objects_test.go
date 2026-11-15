@@ -62,8 +62,8 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"Local stored array", `func f(){p:=&Local{};_=[1]*Local{p}}`, "Local"},
 		{"Local stored slice", `func f(){p:=&Local{};values:=[]*Local{p};_=len(values)}`,
 			"containers of Local pointers"},
-		{"Local capture", `func f(){p:=&Local{};_=func()int{return p.X}}`, "closures cannot capture"},
-		{"shared capture", `func f(){p:=&Frozen{};_=func()int{return p.X}}`, "closures cannot capture"},
+		{"Local capture", `func f(){p:=&Local{};_=func()int{return p.X}}`, "closures require"},
+		{"shared capture", `func f(){p:=&Frozen{};_=func()int{return p.X}}`, "closures require"},
 		{"shared asynchronous", `func f(){p:=&Frozen{};go readSnapshot(p)}`, "synchronous"},
 		{"mixed markers", `type Mixed struct{im.Frozen;im.Local}`, "cannot embed both"},
 		{"generic marked", `type Box[T any]struct{im.Frozen;X int}`, "user generic declarations"},
@@ -71,7 +71,7 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{
 			"generic collection",
 			`func f[T ~int](v T)im.FrozenSlice[T]{s:=im.FreezeSlice([]T{v});return s}`,
-			"user generic declarations",
+			"type parameters are unsupported in immutable storage",
 		},
 		{"generic instance", `type Box[T any]struct{V T};var value Box[Frozen]`, "unmarked struct"},
 		{
@@ -86,7 +86,7 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 			`func f(){values:=im.FreezeMap(map[Frozen]int{{}:1});var boxed any;for boxed=range values.All(){};_=boxed}`,
 			"",
 		},
-		{"reference comparison box", `func f(p *Frozen,boxed any)bool{return p==boxed}`, "boxing immutable storage"},
+		{"reference comparison box", `func f(p *Frozen,boxed any)bool{return p==boxed}`, "ordinary interfaces require"},
 		{"value comparison box", `func f(v Frozen,boxed any)bool{return boxed!=v}`, ""},
 		{
 			"tuple callback",

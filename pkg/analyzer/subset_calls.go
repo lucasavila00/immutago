@@ -56,11 +56,11 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	}
 	function, direct := object.(*types.Func)
 	if !direct {
-		return "dynamic calls with immutable storage are unsupported"
+		return "dynamic calls require ordinary or persistent Frozen parameters and results"
 	}
 	origin := function.Origin().Type().(*types.Signature)
 	if genericSignature(origin) {
-		return "user generic instantiations with immutable types are unsupported"
+		return "user generic instantiations require ordinary or persistent Frozen type arguments"
 	}
 	return ""
 }
@@ -162,7 +162,7 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 func (c *subsetChecks) matchLibraryMethod(call *ast.CallExpr, method string) string {
 	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 	if !ok || !c.exactCollectionMethod(selector) {
-		return "immutable method expressions are unsupported"
+		return "method expressions require ordinary or persistent Frozen receivers and contracts"
 	}
 	receiver := c.pass.TypesInfo.TypeOf(selector.X)
 	if checker.IsProjection(receiver) && method == "Clone" {
@@ -233,10 +233,10 @@ func (c *subsetChecks) matchTransport(source, destination types.Type) string {
 		return ""
 	}
 	if _, boxed := destination.Underlying().(*types.Interface); boxed {
-		return "boxing immutable storage in interfaces is unsupported"
+		return "ordinary interfaces require ordinary or persistent Frozen values"
 	}
 	if c.queries.Callable(source) {
-		return "immutable callbacks are unsupported"
+		return "callbacks require ordinary or persistent Frozen parameters and results"
 	}
 	return ""
 }

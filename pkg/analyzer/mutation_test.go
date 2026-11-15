@@ -131,7 +131,7 @@ func TestUnknownFactoryCannotReturnProtectedStorage(t *testing.T) {
  func f(factory func() *Value) { pointer:=factory(); _=pointer.X }
  `
 	reports := checkSource(t, source)
-	if !strings.Contains(reports, "dynamic calls with immutable storage are unsupported") {
+	if !strings.Contains(reports, "dynamic calls require ordinary or persistent Frozen parameters and results") {
 		t.Fatalf("diagnostics = %q; want dynamic result rejection", reports)
 	}
 }

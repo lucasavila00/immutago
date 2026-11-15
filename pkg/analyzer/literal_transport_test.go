@@ -34,7 +34,7 @@ func TestLiteralTransportRejects(t *testing.T) {
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			got := checkSource(t, `type V struct{im.Local;X int};`+test.source)
-			if !strings.Contains(got, "boxing immutable storage") && !strings.Contains(got, "immutable callbacks") &&
+			if !strings.Contains(got, "ordinary interfaces require") && !strings.Contains(got, "callbacks require") &&
 				!strings.Contains(got, "protected composite literals require a concrete storage type") {
 				t.Fatalf("literal transport accepted: %s", got)
 			}

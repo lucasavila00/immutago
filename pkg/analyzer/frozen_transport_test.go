@@ -56,13 +56,13 @@ func identity[T any](value T) T { return value }
 `
 	for name, test := range map[string]struct{ source, want string }{
 		"unmarked generic": {`type Box[T any]struct{ Value T };var _ Box[im.FrozenString]`, "unmarked struct"},
-		"local boxing":     {`func use(value Alias) { var boxed any = value; _ = boxed }`, "boxing immutable"},
+		"local boxing":     {`func use(value Alias) { var boxed any = value; _ = boxed }`, "ordinary interfaces require"},
 		"local generic":    {`func use(value View) { _ = identity(value) }`, "user generic instantiations"},
 		"local capture": {`func use(value View) { _ = func() int { return value.Text.Len() } }`,
-			"closures cannot capture"},
+			"closures require"},
 		"nested capture": {`func use(values [2]View) { _ = func() int { return values[0].Text.Len() } }`,
-			"closures cannot capture"},
-		"local callback":   {`func use(value View, call func(View)) { call(value) }`, "immutable callbacks"},
+			"closures require"},
+		"local callback":   {`func use(value View, call func(View)) { call(value) }`, "callbacks require"},
 		"local constraint": {`func use[T View](value T) any { return value }`, "user generic declarations"},
 		"write":            {`func use(value Data) { value.N = 2 }`, "writes to immutable"},
 		"capture write":    {`func use(value Data) { _ = func() { value.N = 2 } }`, "writes to immutable"},
@@ -73,7 +73,7 @@ func identity[T any](value T) T { return value }
 		"assert implementation": {`func use(value any) { _ = value.(Contract) }`, "Frozen interface implementation"},
 		"tuple assertion": {`func use(value any) { result, ok := value.(Contract); _ = result;
    _ = ok }`, "Frozen interface implementation"},
-		"pointer boxing": {`func use(value *Data) { var boxed any = value; _ = boxed }`, "boxing immutable"},
+		"pointer boxing": {`func use(value *Data) { var boxed any = value; _ = boxed }`, "ordinary interfaces require"},
 		"builder alias":  {`func use() { values := []im.FrozenString{}; alias := values; _ = alias }`, "alias"},
 	} {
 		t.Run(name, func(t *testing.T) {

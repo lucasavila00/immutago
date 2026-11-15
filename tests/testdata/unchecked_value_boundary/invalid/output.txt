@@ -10,11 +10,11 @@ invalid.go:44:16: service method Native must return a service result: copied val
 invalid.go:47:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved valid.Serving
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-invalid.go:51:38: unsupported immutable operation: closures cannot capture immutable storage
+invalid.go:51:38: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: value
   type: valid.Serving
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-invalid.go:56:38: unsupported immutable operation: closures cannot capture immutable storage
+invalid.go:56:38: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: value
   type: valid.ModelProjection
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

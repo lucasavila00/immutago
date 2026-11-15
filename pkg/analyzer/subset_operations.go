@@ -99,7 +99,7 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	case *ast.TypeAssertExpr:
 		return c.matchAssertion(source)
 	case *ast.FuncLit:
-		return "immutable callbacks are unsupported"
+		return "callbacks require ordinary or persistent Frozen parameters and results"
 	}
 	return "protected operation is outside the supported expression forms"
 }
@@ -111,7 +111,7 @@ func (c *subsetChecks) matchAssertion(expression *ast.TypeAssertExpr) string {
 		return c.matchFrozenInterface(c.pass.TypesInfo.TypeOf(expression.X), destination)
 	}
 	if c.queries.Transport(destination) {
-		return "immutable interface assertions are unsupported"
+		return "interface assertions require ordinary or persistent Frozen values"
 	}
 	return ""
 }
@@ -191,7 +191,7 @@ func (c *subsetChecks) matchFunctionValue(expression ast.Expr) string {
 	if !c.queries.Callable(c.pass.TypesInfo.TypeOf(expression)) {
 		return ""
 	}
-	return "immutable callbacks are unsupported"
+	return "callbacks require ordinary or persistent Frozen parameters and results"
 }
 
 // matchSelector distinguishes fields, package variables, and the supported method calls.
@@ -211,7 +211,7 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 	}
 	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) &&
 		c.queries.Callable(c.pass.TypesInfo.TypeOf(selector)) {
-		return "immutable method expressions are unsupported"
+		return "method expressions require ordinary or persistent Frozen receivers and contracts"
 	}
 	if refAccessor(selection.Obj()) {
 		return c.matchBorrow(selector)
@@ -222,7 +222,7 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 	if c.exactCollectionMethod(selector) {
 		if c.directCall(selector) == nil && (c.queries.Transport(selection.Recv()) ||
 			c.queries.Callable(c.pass.TypesInfo.TypeOf(selector))) {
-			return "bound immutable methods are unsupported"
+			return "method values require ordinary or persistent Frozen receivers and contracts"
 		}
 		return ""
 	}

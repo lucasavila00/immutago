@@ -27,10 +27,10 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	selection := c.pass.TypesInfo.Selections[selector]
 	restricted := c.queries.Transport(selection.Recv()) || c.queries.Callable(c.pass.TypesInfo.TypeOf(selector))
 	if selection.Kind() != types.MethodVal && restricted {
-		return "immutable method expressions are unsupported"
+		return "method expressions require ordinary or persistent Frozen receivers and contracts"
 	}
 	if c.directCall(selector) == nil && restricted {
-		return "bound immutable methods are unsupported"
+		return "method values require ordinary or persistent Frozen receivers and contracts"
 	}
 	if _, parameter := types.Unalias(selection.Recv()).(*types.TypeParam); parameter && !restricted {
 		return ""
@@ -39,12 +39,12 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 		if checker.FrozenInterface(selection.Recv()) {
 			return c.matchFrozenInterfaceMethod(selector)
 		}
-		return "dynamic calls with immutable storage are unsupported"
+		return "dynamic calls require ordinary or persistent Frozen parameters and results"
 	}
 	signature := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
 	if !c.protectedStorage(selector.X) && !c.queries.Contains(signature.Recv().Type()) {
 		if genericSignature(signature) && !runtimeObject(selection.Obj()) {
-			return "user generic instantiations with immutable types are unsupported"
+			return "user generic instantiations require ordinary or persistent Frozen type arguments"
 		}
 		return ""
 	}

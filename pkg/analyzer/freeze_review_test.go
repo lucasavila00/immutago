@@ -22,7 +22,7 @@ func TestFreezeReviewRejectsIndirectEntries(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			got := checkSource(t, tc.source)
 			if !strings.Contains(got, "freeze functions must be called directly") &&
-				!strings.Contains(got, "immutable callbacks are unsupported") {
+				!strings.Contains(got, "callbacks require ordinary or persistent Frozen parameters and results") {
 				t.Fatalf("indirect freeze entry was not rejected at its source: %s", got)
 			}
 		})

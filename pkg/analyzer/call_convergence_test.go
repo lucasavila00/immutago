@@ -31,19 +31,19 @@ func TestDirectCollectionCalls(t *testing.T) {
 func TestDirectCollectionCallBoundaries(t *testing.T) {
 	cases := []struct{ source, diagnostic string }{
 		{`func f(){frozen:=im.FreezeSlice([]int{1});
-   s:=frozen.Projection();fn:=(s.Len);_=fn()}`, "bound immutable methods are unsupported"},
+   s:=frozen.Projection();fn:=(s.Len);_=fn()}`, "method values require"},
 		{
 			`func f(){frozen:=im.FreezeSlice([]int{1});s:=frozen.Projection();_=im.SliceProjection[int].Len(s)}`,
-			"immutable method expressions are unsupported",
+			"method expressions require ordinary or persistent Frozen receivers and contracts",
 		},
 		{
 			`func f(){frozen:=im.FreezeMap(map[int]V{});m:=frozen.Projection();v,ok:=im.MapProjection[int,V].Get(m,1);_=v;_=ok}`,
-			"immutable method expressions are unsupported",
+			"method expressions require ordinary or persistent Frozen receivers and contracts",
 		},
 		{
 			`func f(){frozen:=im.FreezeMap(map[int]V{});m:=frozen.Projection();
    v,ok:=(im.MapProjection[int,V].Get)(m,1);_=v;_=ok}`,
-			"immutable method expressions are unsupported",
+			"method expressions require ordinary or persistent Frozen receivers and contracts",
 		},
 	}
 	for _, test := range cases {

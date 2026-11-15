@@ -29,7 +29,7 @@ convergence_rejected.go:68:2: unsupported immutable operation: multiple assignme
 convergence_rejected.go:76:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for a[value.X], n = range []int{2} { }
   fix: use one protected destination, or local names for all results of one direct typed call
-forward_capture.go:10:42: unsupported immutable operation: closures cannot capture immutable storage
+forward_capture.go:10:42: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: laterValue
   type: *review_convergence.CapturedValue
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
@@ -37,7 +37,7 @@ frozen_conversion.go:8:15: unsupported immutable operation: protected value conv
   source: UnmarkedFrozen(value)
   type: review_convergence.UnmarkedFrozen
   fix: construct the destination marked value from copied fields; keep frozen collections in their original im type
-implicit_transport.go:4:9: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+implicit_transport.go:4:9: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: pointer == boxed
   type: bool
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

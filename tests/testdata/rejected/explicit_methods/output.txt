@@ -6,10 +6,10 @@ explicit_methods.go:18:56: unsupported immutable operation: promoted immutable m
   source: value.Read()
   type: int
   fix: name the embedded field explicitly and call a method allowed on that field; copy scalar fields to ordinary locals before calling their methods
-explicit_methods.go:21:56: unsupported immutable operation: immutable method expressions are unsupported
+explicit_methods.go:21:56: unsupported immutable operation: method expressions require ordinary or persistent Frozen receivers and contracts
   source: (*Good).OwnRead(new(value))
   type: int
-  fix: call the method on its receiver directly (value.Method(...)); do not call it through the type
+  fix: call the receiver method directly (value.Method(...)); do not call it through the type
 explicit_methods.go:30:6: unsupported immutable operation: promoted immutable methods are unsupported
   source: value.Len()
   type: int

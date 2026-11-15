@@ -1,4 +1,4 @@
-subset_closure.go:20:57: unsupported immutable operation: closures cannot capture immutable storage
+subset_closure.go:20:57: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: p
   type: *rejected.Good
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

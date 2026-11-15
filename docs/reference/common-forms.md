@@ -218,11 +218,12 @@ Use the operations above inside these statement forms:
   the same result binding forms. For example, `value, found = frozen.Get(key)`
   can reuse local names, and `var ref, err = supervise.Start[Worker](root, args)`
   can declare the results.
-- Multiple-result bindings require one direct typed call that supplies all results.
-  Each result uses the same type, write, and transport checks as a single result.
+- Multiple-result bindings with Local values, protected pointers, or builders
+  require one direct typed call that supplies all results.
+  Each result keeps its type, write, and storage checks.
   All destinations must be local names or blanks. The `:=`, `=`, and `var` forms
   are allowed, including reused locals in `:=`. Aliases and parentheses keep
-  these forms. For example, `point, found := makePair()` can bind a Frozen record,
+  these forms. For example, `local, found := makeLocalPair()` can bind a Local record,
   and `pointer, found := find()` can bind a Frozen pointer. An assignment cannot
   store a Local value in persistent storage. Persistent Frozen results can be boxed in `any`.
 - The [service result signatures](service-results.md) still limit service methods

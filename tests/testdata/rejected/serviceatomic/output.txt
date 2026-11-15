@@ -13,10 +13,10 @@ atomic.go:36:11: unmarked struct contains immutable field _; embed an immutable 
   owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-atomic.go:36:18: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+atomic.go:36:18: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
   source: Pointer
   type: atomic.Pointer[T any]
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+  fix: use a direct non-generic function with concrete parameter types
 atomic.go:36:5: unmarked struct contains immutable field _; embed an immutable marker
   owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof
@@ -28,10 +28,10 @@ atomic.go:37:11: unmarked struct contains immutable field _; embed an immutable 
   owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-atomic.go:37:18: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+atomic.go:37:18: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
   source: Pointer
   type: atomic.Pointer[T any]
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+  fix: use a direct non-generic function with concrete parameter types
 atomic.go:37:5: unmarked struct contains immutable field _; embed an immutable marker
   owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof

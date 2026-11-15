@@ -2,11 +2,11 @@ subset_generic_read.go:20:28: unsupported immutable operation: immutable referen
   source: *T
   type: *T
   fix: allocate a concrete struct that embeds im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses
-subset_generic_read.go:20:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+subset_generic_read.go:20:6: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
   source: readGeneric
   type: func[T rejected.Good](p *T)
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
-subset_generic_read.go:21:34: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  fix: use a direct non-generic function with concrete parameter types
+subset_generic_read.go:21:34: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
   source: readGeneric(new(v))
   type: ()
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+  fix: use a direct non-generic function with concrete parameter types

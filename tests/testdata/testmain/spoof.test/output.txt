@@ -1,4 +1,4 @@
-main.go:16:19: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+main.go:16:19: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: reflect.TypeOf(im.ProjectString("x"))
   type: reflect.Type
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

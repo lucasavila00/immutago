@@ -329,7 +329,7 @@ func (c *subsetChecks) matchClosure(literal *ast.FuncLit) {
 				return true
 			}
 		}
-		c.report(name, "closures cannot capture immutable storage")
+		c.report(name, "closures require ordinary or persistent Frozen captures")
 		return true
 	})
 }

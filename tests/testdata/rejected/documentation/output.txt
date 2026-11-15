@@ -2,7 +2,7 @@ constant_operands.go:12:33: unsupported immutable operation: containers of Local
   source: [1]*ConstantLocal{local}
   type: [1]*docrejected.ConstantLocal
   fix: keep Local values in local bindings, or store im.Frozen pointers
-constant_operands.go:12:51: unsupported immutable operation: closures cannot capture immutable storage
+constant_operands.go:12:51: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: local
   type: *docrejected.ConstantLocal
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
@@ -37,7 +37,7 @@ reference_forms.go:18:2: unsupported immutable operation: writes to immutable ob
 reference_forms.go:22:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: values[0].X = 1
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-reference_forms.go:32:34: unsupported immutable operation: closures cannot capture immutable storage
+reference_forms.go:32:34: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: point
   type: *docrejected.LocalPoint
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

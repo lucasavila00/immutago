@@ -198,6 +198,14 @@ func (c *Classifier) Locals(t types.Type) bool
 
 Locals reports local projections or records in storage, including through arrays and pointers.
 
+### func \(\*Classifier\) Transport
+
+```go
+func (c *Classifier) Transport(t types.Type) bool
+```
+
+Transport reports values that need restricted calls, bindings, and captures. Frozen values can persist. Local values and protected pointer or native container uses stay restricted.
+
 ## type Prover
 
 Prover reuses immutable type obligations within one analysis pass. Its zero value is ready for use. Types must be complete and must not change. A Prover must not be used by concurrent passes.

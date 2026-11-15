@@ -20,8 +20,8 @@ func TestImplicitInterfaceConversions(t *testing.T) {
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			got := checkSource(t, `type V struct{im.Local;X int};`+test.source)
-			if !strings.Contains(got, "boxing immutable storage in interfaces is unsupported") &&
-				!(test.name == "variadic callback" && strings.Contains(got, "immutable callbacks are unsupported")) {
+			if !strings.Contains(got, "ordinary interfaces require ordinary or persistent Frozen values") &&
+				!(test.name == "variadic callback" && strings.Contains(got, "callbacks require")) {
 				t.Fatalf("implicit interface conversion accepted: %s", got)
 			}
 		})

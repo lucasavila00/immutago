@@ -20,7 +20,7 @@ func (c *subsetChecks) genericInstance(name *ast.Ident) {
 	for i := 0; i < instance.TypeArgs.Len(); i++ {
 		arg := instance.TypeArgs.At(i)
 		if c.queries.Transport(arg) || c.slotRelevant(arg) || c.queries.Callable(arg) {
-			c.report(name, "user generic instantiations with immutable types are unsupported")
+			c.report(name, "user generic instantiations require ordinary or persistent Frozen type arguments")
 		}
 	}
 }
@@ -41,7 +41,7 @@ func (c *subsetChecks) genericStorage(name *ast.Ident) {
 		}
 	case *types.Named:
 		if checker.Marked(definition) || checker.FrozenInterface(definition) {
-			c.report(name, "user generic declarations with immutable storage are unsupported")
+			c.report(name, "user generic declarations cannot define Frozen or Local types")
 			return
 		}
 		parameters = definition.TypeParams()
@@ -53,7 +53,7 @@ func (c *subsetChecks) genericStorage(name *ast.Ident) {
 	}
 	for _, typ := range declared {
 		if c.queries.Transport(typ) || c.slotRelevant(typ) || c.queries.Callable(typ) {
-			c.report(name, "user generic declarations with immutable storage are unsupported")
+			c.report(name, "user generic declarations require ordinary or persistent Frozen contracts")
 			return
 		}
 	}

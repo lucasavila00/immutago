@@ -40,7 +40,7 @@ local_reference_escape.go:26:2: immutable collection: copied values require bool
 local_reference_escape.go:27:6: immutable collection: copied values require bool, numbers, Copied records, arrays, or service references
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: copy scalar fields, or use a generated local projection
-local_reference_escape.go:31:34: unsupported immutable operation: closures cannot capture immutable storage
+local_reference_escape.go:31:34: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: value
   type: *local_reference_escape.Local
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

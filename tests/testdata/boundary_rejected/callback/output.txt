@@ -1,4 +1,4 @@
-callback.go:9:56: unsupported immutable operation: immutable callbacks are unsupported
+callback.go:9:56: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: makeValue
   type: func() *model.Frozen
   fix: call a named, non-generic function directly with a concrete immutable parameter

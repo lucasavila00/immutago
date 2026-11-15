@@ -14,7 +14,7 @@ protected.go:28:52: unsupported immutable operation: shared pointer conversions 
   source: (*Record)(value)
   type: *protected.Record
   fix: keep the original pointer type; copy the value first if a different owned value type is required
-protected.go:31:32: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+protected.go:31:32: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: r.ValueOf(record)
   type: reflect.Value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
@@ -22,7 +22,7 @@ protected.go:40:19: unsupported immutable operation: native slices of immutable 
   source: []Record
   type: []protected.Record
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-protected.go:40:35: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+protected.go:40:35: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: r.ValueOf(values)
   type: reflect.Value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
