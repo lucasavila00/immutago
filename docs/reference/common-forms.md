@@ -35,7 +35,8 @@ A Local value cannot be hidden in persistent storage.
 | --- | --- |
 | Fixed im types and functions | `im.FrozenSlice[FrozenPoint]`, `im.FreezeSlice([]FrozenPoint{})` |
 | Fixed supervise APIs with protected values | `supervise.Service[FrozenPoint]`, `supervise.Start[Worker](root, args)`; saved protected arguments must be Frozen values, never Local values. |
-| User generics without protected storage | `type Plain[T any] struct { Value T }`, used as `Plain[int]` |
+| User generics with ordinary parameters, results, constraints, receivers, and type arguments | `type Plain[T any] struct { Value T }`, used as `Plain[int]` or `Plain[*Cache]` for a Cell holder |
+| Construct and read concrete protected values inside such a generic function or method | `func read[T any]() int { v := FrozenPoint{X: 1}; return v.X }`; normal body checks still apply. |
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |

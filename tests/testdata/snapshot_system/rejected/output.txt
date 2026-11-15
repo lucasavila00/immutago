@@ -238,10 +238,6 @@ snapshot_holders.go:21:10: Cell slots and their holders cannot be copied or tran
 snapshot_holders.go:22:6: Cell slots and their holders cannot be copied or transported by value
 snapshot_holders.go:23:14: Cell slots and their holders cannot be copied or transported by value
 snapshot_holders.go:23:2: Cell slots and their holders cannot be copied or transported by value
-snapshot_holders.go:24:13: Cell holder pointers require local bindings or direct typed calls
-snapshot_holders.go:24:14: Cell slots and their holders cannot be copied or transported by value
-snapshot_holders.go:25:6: Cell holder pointers require local bindings or direct typed calls
-snapshot_holders.go:26:10: Cell slots and their holders cannot be copied or transported by value
 snapshot_holders.go:26:10: unsupported immutable operation: bound immutable methods are unsupported
   source: h.Current.Load
   type: func() api.ModelProjection
@@ -250,22 +246,10 @@ snapshot_holders.go:27:6: unsupported immutable operation: immutable callbacks a
   source: read
   type: func() api.ModelProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-snapshot_holders.go:28:28: Cell holder pointers require local bindings or direct typed calls
-snapshot_holders.go:28:6: unsupported immutable operation: Cell holder methods require a direct concrete pointer receiver
+snapshot_holders.go:28:6: unsupported immutable operation: immutable method expressions are unsupported
   source: (*api.ModelCell).Load(pointer)
   type: api.ModelProjection
-  fix: call a direct pointer method on the holder variable or its named field
-snapshot_holders.go:29:6: Cell holder pointers require local bindings or direct typed calls
-snapshot_holders.go:29:6: unsupported immutable operation: Cell holder methods require a direct concrete pointer receiver
-  source: embedded.Load()
-  type: api.ModelProjection
-  fix: call a direct pointer method on the holder variable or its named field
-snapshot_holders.go:30:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: go typedCell.Count()
-  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-snapshot_holders.go:31:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: defer typedCell.Count()
-  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the method on its receiver directly (value.Method(...)); do not call it through the type
 snapshot_holders.go:32:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go typedCell.Load()
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
