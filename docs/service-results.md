@@ -2,8 +2,8 @@
 
 A service is a struct that embeds `supervise.Service[A]`. Each exported service
 method can return no result or one **service result** from the types below.
-This includes promoted methods from embedded fields. `Init`, `Run`, and methods
-supplied by the supervise runtime are exempt.
+This includes promoted methods on named or anonymous service structs.
+`Init`, `Run`, and methods supplied by the supervise runtime are exempt.
 
 This rule applies to service methods. Ordinary functions and methods use the
 [im source forms](common-forms.md) when they work with protected data.
@@ -43,6 +43,7 @@ to the limiter's mutable counters.
 | --- | --- |
 | Scalar: boolean, integer, floating-point, complex, or string | `bool`, `int`, `float64`, `complex128`, `string` |
 | Defined scalar | `type Count int` |
+| Service reference | `supervise.Ref[Worker]`; see [service references](service-references.md). |
 | Empty ByValue marker value | `im.ByValue` |
 | Struct with `im.ByValue` and proved immutable fields | `Usage` |
 | Unnamed array whose elements use this type list | `[2]int`, `[2]Usage`, `[2][3]Usage` |
@@ -53,7 +54,7 @@ integer is an ordinary Go value: callers can change it. A returned ByValue value
 keeps its read-only fields and [pointer rules](by-value.md).
 
 Fields of a ByValue struct follow the [stored-type rules](common-forms.md#markers-and-stored-types).
-They can contain frozen collections, Shared values, and Shared pointers.
+They can contain frozen collections, Shared values, Shared pointers, and service references.
 For example, return a ByValue struct with a frozen map field when callers need
 a collection. The frozen map is not an allowed service result on its own.
 
@@ -86,7 +87,6 @@ The single Load keeps the name and score consistent with the same model.
 | `(int, bool)` | Return a struct with `im.ByValue` and fields for both values. |
 | An unmarked struct, Shared struct or pointer, or `im.UncheckedValue[T]` | Return a struct with `im.ByValue` and allowed fields. |
 | `type Counts [2]int` | Return `[2]int`, or a struct with `im.ByValue` and an array field. |
-| `supervise.Ref[Worker]` | Keep the child reference in the service; expose a method such as `Process(text string) Result`. |
 
 ByValue pointers cannot be saved, returned, or captured. See
 [ByValue objects](by-value.md) for their use inside a function.

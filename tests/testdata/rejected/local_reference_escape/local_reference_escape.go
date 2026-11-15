@@ -3,7 +3,7 @@ package local_reference_escape
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Local struct {
-	im.Scoped
+	im.ByValue
 	Value int
 }
 type Stored struct {
@@ -47,11 +47,11 @@ func delayed() {
 
 type Both struct {
 	im.Shared
-	im.Scoped
+	im.ByValue
 	Value int
 }
 
 type LocalStored struct {
-	im.Scoped
+	im.ByValue
 	Pointer *Local
 }

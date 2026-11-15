@@ -122,7 +122,7 @@ func TestStressLargeProofGraphs(t *testing.T) {
 // TestStressAliasMarkerPolicy checks long alias chains for both marker policies.
 func TestStressAliasMarkerPolicy(t *testing.T) {
 	shared, _ := testTypes()
-	localName := types.NewTypeName(token.NoPos, shared.Obj().Pkg(), "Scoped", nil)
+	localName := types.NewTypeName(token.NoPos, shared.Obj().Pkg(), "ByValue", nil)
 	local := types.NewNamed(localName, types.NewStruct(nil, nil), nil)
 	for _, marker := range []*types.Named{shared, local} {
 		var alias types.Type = marker

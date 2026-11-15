@@ -13,6 +13,7 @@ The goal is to reduce how much code a reviewer must trace.
 | --- | --- |
 | Immutable fields and collection elements | Type declarations and the im type proof. |
 | Saved ByValue pointers | The im pointer rules and their source checks. |
+| Calls through service references | The Current call matcher and result type checks. |
 | Service state changes, locks, and input use | The service code and ordinary Go API contracts. |
 
 The checker does not prove full service isolation. Do not add whole-program
@@ -35,7 +36,7 @@ effect analysis to make that claim.
 
 - [Pipeline](pipeline.md): pass order, recursive type proofs, and dependency facts.
 - [Storage](ownership.md): type markers, pointer rules, and builder flow.
-- [Services](services.md): result checks, service publication, and child lifetimes.
+- [Services](services.md): result and reference checks, service publication, and child lifetimes.
 - [Validation](validation.md): trust boundary, test sources, and hosted checks.
 - [Performance checks](performance.md): benchmarks, profiles, and checker costs.
 

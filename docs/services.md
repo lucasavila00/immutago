@@ -20,7 +20,8 @@ goroutine; the runtime does not queue them.
 | No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
 | Exported service method result | Return no result or one [service result](service-results.md). This includes promoted methods. Init, Run, and methods supplied by the runtime are exempt. |
 | Fields, method parameters, closures, and goroutines | Ordinary Go rules. Synchronize shared mutable data. Uses of protected values follow the [im rules](common-forms.md). |
-| Service construction, service references, pointers from Current, and groups | Ordinary Go rules. Each Current call selects the published service; a saved pointer keeps the selected value. |
+| Service construction and groups | Ordinary Go rules. |
+| Service references | Copy, store, and return `Ref[T]`. Call through `ref.Current().Method(args)`; the pointer from Current has no other allowed use. See [service references](service-references.md). |
 
 Review these together in the service code:
 

@@ -20,6 +20,7 @@ for terms such as ByValue value, service reference, and builder.
 | Need | Read |
 | --- | --- |
 | Start a service and understand restarts | [Supervised services](services.md) |
+| Keep and call a service across restarts | [Service references](service-references.md) |
 | Create and replace groups of workers | [Child services](service-children.md) |
 | Supply a logger, client, or other safe concurrent dependency | [Mutable dependencies](services.md#example-mutable-dependencies) |
 | Choose result types for exported service methods | [Service results](service-results.md) |

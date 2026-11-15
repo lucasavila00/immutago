@@ -8,7 +8,7 @@ type Node struct {
 	Next  *Node
 }
 type Local struct {
-	im.Scoped
+	im.ByValue
 	Value int
 }
 type Box[T ~int | ~string] struct {

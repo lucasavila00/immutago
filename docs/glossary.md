@@ -21,7 +21,7 @@
 | **Service** | A struct that embeds `supervise.Service[A]`, directly or through embedded fields. The runtime calls Init for setup and Run for background work. See [services](services.md). |
 | **Service method** | A method declared on a service or promoted from an embedded field. Exported methods have a [result rule](service-results.md), except Init, Run, and methods supplied by the runtime. |
 | **Service result** | The optional single result of an exported service method. Its [allowed types](service-results.md#result-types--exhaustive) include scalars and ByValue structs. |
-| **Service reference** | A `supervise.Ref[T]`. Each Current call selects the current service value; a saved `*T` pointer continues to use the earlier selection. See [services](services.md). |
+| **Service reference** | A `supervise.Ref[T]` that can be copied, stored, and returned. `ref.Current().Method(args)` calls the current service. See [service references](service-references.md). |
 | **Service run** | One service value's background execution and child group. A restart creates a new value and run. References to old children do not select children from the new run. See [child lifetimes](service-children.md#child-lifetimes). |
 | **Group; child** | A `supervise.Group` manages services and nested groups. Each service or nested group is a child of its parent group. See [child services](service-children.md). |
 

@@ -2,7 +2,7 @@ package im
 
 import "sync/atomic"
 
-// Owner stores a replaceable pointer to a read-only Scoped object.
+// Owner stores a replaceable pointer to a read-only ByValue object.
 // Load and Store are atomic; readers can continue to use an earlier object.
 // The analyzer checks construction and pointer use.
 // Declare a slot as a package variable or a direct named field of an unmarked struct.

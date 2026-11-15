@@ -43,15 +43,15 @@ var subsetFixes = map[string]string{
 		"keep frozen collections in their original im type",
 	"native builders require fresh local bindings or append to the same handle": "declare one fresh local builder; " +
 		"use values = append(values, element) to extend it",
-	"Scoped pointers cannot enter aggregate storage": "store a Scoped value copy or a Shared pointer",
+	"ByValue pointers cannot enter aggregate storage": "store a ByValue value copy or a Shared pointer",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
-		"im.Shared or im.Scoped; copy arrays and frozen collection values without taking their addresses",
-	"returning Scoped pointers is unsupported": "return a Scoped value copy, or use im.Shared " +
+		"im.Shared or im.ByValue; copy arrays and frozen collection values without taking their addresses",
+	"returning ByValue pointers is unsupported": "return a ByValue value copy, or use im.Shared " +
 		"for objects whose pointers must be shared",
-	"global Scoped pointers are unsupported": "keep the Scoped pointer local, or store a value copy",
+	"global ByValue pointers are unsupported": "keep the ByValue pointer local, or store a value copy",
 	"service dependencies cannot enter package variables": "build the service arguments in a local variable " +
 		"and pass them to supervise.Start or supervise.StartReserved",
-	"containers of Scoped pointers are unsupported": "store Scoped value copies or im.Shared pointers",
+	"containers of ByValue pointers are unsupported": "store ByValue value copies or im.Shared pointers",
 	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",
 	"user generic instantiations with immutable types are unsupported": "use a non-generic declaration " +
@@ -121,6 +121,9 @@ var subsetFixes = map[string]string{
 
 // subsetFix gives a supported replacement for each rejected operation.
 func subsetFix(rule string) string {
+	if strings.Contains(rule, "service reference") || strings.Contains(rule, "Ref requires") {
+		return "keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md"
+	}
 	if fix, ok := subsetFixes[rule]; ok {
 		return fix
 	}
@@ -131,11 +134,11 @@ func subsetFix(rule string) string {
 func structuralFix(t types.Type, reason string) string {
 	switch {
 	case strings.Contains(reason, "named array"):
-		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Shared or im.Scoped"
+		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Shared or im.ByValue"
 	case strings.Contains(reason, "type parameters"):
 		return "use a concrete type; user generic declarations cannot contain immutable storage"
 	case strings.Contains(reason, "does not embed"):
-		return "embed im.Shared or im.Scoped in the struct and make each field immutable"
+		return "embed im.Shared or im.ByValue in the struct and make each field immutable"
 	}
 	switch t.Underlying().(type) {
 	case *types.Pointer:

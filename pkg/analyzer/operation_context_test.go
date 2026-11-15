@@ -14,7 +14,7 @@ func TestClosureDeclarationScopes(t *testing.T) {
 		`func f(){_=func(){value:=&Value{};_=func()int{return value.X}}}`,
 		`var value=&Value{};var read=func()int{return len([1]Value{*value})}`,
 		`func f(value *Value)func()int{return func()int{return len([1]Value{*value})}}`,
-		`type Local struct{im.Scoped};func f(local *Local)func()int{
+		`type Local struct{im.ByValue};func f(local *Local)func()int{
  return func()int{return len([1]*Local{local})}}`,
 	}
 	for _, source := range cases {

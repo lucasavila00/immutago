@@ -25,8 +25,13 @@ type subsetChecks struct {
 
 // checkSubset checks the supported immutable forms with compiler-resolved types.
 func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checker.Prover) {
+	newSubsetChecks(pass, proofs).checkImmutable(owners)
+}
+
+// newSubsetChecks records parents once for service references and immutable source forms.
+func newSubsetChecks(pass *analysis.Pass, proofs *checker.Prover) *subsetChecks {
 	c := &subsetChecks{pass: pass, proofs: proofs, parents: make(map[ast.Node]ast.Node),
-		owners: owners, exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool),
+		exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool),
 		literals: make(map[*ast.CompositeLit]string)}
 	for _, file := range pass.Files {
 		var stack []ast.Node
@@ -42,9 +47,15 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checke
 			return true
 		})
 	}
+	return c
+}
+
+// checkImmutable checks im operations after native builder ownership analysis.
+func (c *subsetChecks) checkImmutable(owners map[*types.Var]bool) {
+	c.owners = owners
 	c.checkBuilderTypes()
 	c.ownedInputs()
-	for _, file := range pass.Files {
+	for _, file := range c.pass.Files {
 		ast.Inspect(file, c.visit)
 	}
 }
@@ -175,7 +186,7 @@ func (c *subsetChecks) subsetContainer(t types.Type) string {
 func subsetResults(results *types.Tuple) string {
 	for i := 0; i < results.Len(); i++ {
 		if localReference(results.At(i).Type()) {
-			return "returning Scoped pointers is unsupported"
+			return "returning ByValue pointers is unsupported"
 		}
 	}
 	return ""
@@ -211,8 +222,8 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 			c.report(expression, "immutable callbacks are unsupported")
 		}
 	}
-	if storedScopedReference(t, make(map[types.Type]bool)) {
-		c.report(expression, "containers of Scoped pointers are unsupported")
+	if storedByValueReference(t, make(map[types.Type]bool)) {
+		c.report(expression, "containers of ByValue pointers are unsupported")
 	}
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return
@@ -238,8 +249,8 @@ func (c *subsetChecks) directSlotMethodExpression(expression ast.Expr) bool {
 	return c.ownedSlotSelector(selector) && c.directCall(selector) != nil
 }
 
-// storedScopedReference checks native container elements even when the handle has an ownership proof.
-func storedScopedReference(t types.Type, seen map[types.Type]bool) bool {
+// storedByValueReference checks native container elements even when the handle has an ownership proof.
+func storedByValueReference(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] {
 		return false
 	}
@@ -256,7 +267,7 @@ func storedScopedReference(t types.Type, seen map[types.Type]bool) bool {
 		elements = []types.Type{storage.Elem()}
 	}
 	for _, element := range elements {
-		if localReference(element) || storedScopedReference(element, seen) {
+		if localReference(element) || storedByValueReference(element, seen) {
 			return true
 		}
 	}

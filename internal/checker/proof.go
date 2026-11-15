@@ -110,7 +110,11 @@ func (p *proof) value(result *obligation, t types.Type) {
 		result.reason = "Owner slots are mutable"
 		return
 	}
-	if IsLibraryType(t, "Shared") || IsLibraryType(t, "Scoped") || IsUncheckedValue(t) {
+	if IsLibraryType(t, "Shared") || IsLibraryType(t, "ByValue") || IsUncheckedValue(t) {
+		return
+	}
+	if IsRuntimeType(t, "Ref") {
+		result.reason = refTargetReason(t.(*types.Named).TypeArgs().At(0))
 		return
 	}
 	if IsCollection(t) {
@@ -132,8 +136,8 @@ func (p *proof) value(result *obligation, t types.Type) {
 	}
 	switch underlying := t.Underlying().(type) {
 	case *types.Pointer:
-		if Scoped(underlying.Elem()) {
-			result.reason = "Scoped pointers cannot be stored"
+		if ByValue(underlying.Elem()) {
+			result.reason = "ByValue pointers cannot be stored"
 			return
 		}
 		if !Marked(underlying.Elem()) {
@@ -156,14 +160,22 @@ func (p *proof) value(result *obligation, t types.Type) {
 	result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
 }
 
+// refTargetReason requires the concrete service value selected by Current's *T result.
+func refTargetReason(target types.Type) string {
+	if _, concrete := target.Underlying().(*types.Struct); !concrete || !Service(target) {
+		return "Ref requires a concrete struct that embeds supervise.Service"
+	}
+	return ""
+}
+
 // structure requires one marker and checks every stored field.
 func (p *proof) structure(result *obligation, t types.Type, structure *types.Struct) {
 	if !Marked(t) {
-		result.reason = "struct does not embed im.Shared or im.Scoped"
+		result.reason = "struct does not embed im.Shared or im.ByValue"
 		return
 	}
-	if Shared(t) && Scoped(t) {
-		result.reason = "struct cannot embed both im.Shared and im.Scoped"
+	if Shared(t) && ByValue(t) {
+		result.reason = "struct cannot embed both im.Shared and im.ByValue"
 		return
 	}
 	if MarkerCount(t) != 1 {

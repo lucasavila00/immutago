@@ -95,7 +95,7 @@ type label struct {
 }
 
 // snapshot is a value that a restarted service publishes.
-type snapshot struct{ im.Scoped }
+type snapshot struct{ im.ByValue }
 
 // restarted is a service that panics on its first run.
 type restarted struct {

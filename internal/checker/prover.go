@@ -39,8 +39,8 @@ func (p *Prover) Reason(t types.Type) string {
 	return reason
 }
 
-// ServiceResultReason accepts scalars, arrays of service results, and proved Scoped structs.
-// Fields of a Scoped struct use the ordinary immutable storage proof.
+// ServiceResultReason accepts scalars, service references, arrays, and proved ByValue structs.
+// Fields of a ByValue struct use the ordinary immutable storage proof.
 func (p *Prover) ServiceResultReason(t types.Type) string {
 	t = types.Unalias(t)
 	switch value := t.Underlying().(type) {
@@ -54,11 +54,12 @@ func (p *Prover) ServiceResultReason(t types.Type) string {
 			return ""
 		}
 	case *types.Struct:
-		if Scoped(t) || IsLibraryType(t, "Scoped") {
+		if ByValue(t) || IsLibraryType(t, "ByValue") || IsRuntimeType(t, "Ref") {
 			return p.Reason(t)
 		}
 	case *types.Pointer:
 		return "a service result must be a value, not a pointer"
 	}
-	return "service results require a primitive, an unnamed array of service results, or a struct with im.Scoped"
+	return "service results require a primitive, supervise.Ref, an unnamed array of service results, " +
+		"or a struct with im.ByValue"
 }

@@ -7,7 +7,7 @@ import (
 )
 
 type Reply struct {
-	im.Scoped
+	im.ByValue
 	Count int
 }
 type SharedReply struct {
@@ -24,7 +24,7 @@ func (*Counter) Map() map[string]int           { return nil }
 func (*Counter) Slice() []int                  { return nil }
 func (*Counter) Interface() error              { return nil }
 func (*Counter) Pointer() *SharedReply         { return &SharedReply{} }
-func (*Counter) ScopedPointer() *Reply         { return nil }
+func (*Counter) ByValuePointer() *Reply        { return nil }
 func (*Counter) Write(p *Reply)                { p.Count++ }
 func (*Counter) Capture(p *Reply)              { f := func() int { return p.Count }; _ = f() }
 func (*Counter) Frozen() im.FrozenSlice[[]int] { var result im.FrozenSlice[[]int]; return result }
@@ -45,7 +45,7 @@ type PointerEmbedded struct{ *supervise.Service[int] }
 
 func (*PointerEmbedded) Mutable() []int { return nil }
 
-// The runtime stores arguments, so a Scoped pointer cannot be a start argument.
+// The runtime stores arguments, so a ByValue pointer cannot be a start argument.
 type StoredPointer struct{ supervise.Service[*Reply] }
 
 func (*Counter) Shared() SharedReply           { return SharedReply{} }

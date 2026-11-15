@@ -52,7 +52,7 @@ func TestOrdinaryPackageBoundary(t *testing.T) {
 // TestPrunedProofBoundary keeps aliases, inferred callbacks, and Owner contracts checked after import pruning.
 func TestPrunedProofBoundary(t *testing.T) {
 	api := sourcePass(t, `type Value struct { im.Shared; X int }
- type Model struct { im.Scoped; X int }
+ type Model struct { im.ByValue; X int }
  type Loader struct { Current im.Owner[Model] }
  var Current im.Owner[Model]
  func Make() *Value { return &Value{} }
@@ -132,7 +132,7 @@ func TestHiddenMarkedImplementation(t *testing.T) {
 
 // TestUnusedNamedMethodsStayOrdinary does not activate from unreferenced concrete method contracts.
 func TestUnusedNamedMethodsStayOrdinary(t *testing.T) {
-	api := sourcePass(t, `type Model struct{im.Scoped};type Loader struct{Current im.Owner[Model]}
+	api := sourcePass(t, `type Model struct{im.ByValue};type Loader struct{Current im.Owner[Model]}
  type Plain struct{};func(Plain) Publish(*Loader){};func(Plain) Number()int{return 1}
  func MakePlain()Plain{return Plain{}}`).Pkg
 	api.SetImports(nil)
