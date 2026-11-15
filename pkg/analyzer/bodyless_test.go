@@ -8,7 +8,7 @@ import (
 // TestBodylessSignatures checks the native implementation boundary by resolved type.
 func TestBodylessSignatures(t *testing.T) {
 	const prefix = `type Value struct { im.Shared; N int }
-type Local struct { im.Scoped; N int }
+type Local struct { im.ByValue; N int }
 type Plain struct { N int }
 type Alias = *Value
 `

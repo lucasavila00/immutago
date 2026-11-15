@@ -1,6 +1,7 @@
 # Frozen collections
 
-`im.FrozenSlice[T]` wraps a Go slice; `im.FrozenMap[K, V]` wraps a Go map.
+Use `im.FrozenSlice[T]` for a read-only slice and `im.FrozenMap[K, V]` for a
+read-only map.
 The checker rejects aliases and use of the original collection after Freeze.
 
 1. Build a normal Go slice or map.
@@ -35,8 +36,9 @@ func main() {
 
 ## Build before freezing
 
-A **builder** is the Go slice or map that you prepare before Freeze. These rules
-also apply to Go containers whose keys or elements contain protected storage.
+A **builder** is a local Go slice or map checked for exclusive use. These rules
+apply before Freeze and to Go containers whose keys or elements contain
+[protected storage](glossary.md).
 Keep the slice or map in one local variable until Freeze. Clone copies the
 slice or map; pointer elements still point to the same read-only objects.
 

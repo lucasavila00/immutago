@@ -6,13 +6,13 @@ import (
 	"go/types"
 )
 
-// matchHandleUse lists consumers that preserve the concrete handle and its accessor checks.
+// matchHandleUse lists consumers that preserve concrete service references and Current checks.
 func (c *subsetChecks) matchHandleUse(expression ast.Expr) string {
 	if call, ok := expression.(*ast.CallExpr); ok && c.pass.TypesInfo.Types[call.Fun].IsType() {
 		return c.handleCall(call)
 	}
 	if _, assertion := expression.(*ast.TypeAssertExpr); assertion {
-		return "service handles cannot be recovered from interfaces; use a concrete Ref type"
+		return "service references cannot be recovered from interfaces; use a concrete Ref type"
 	}
 	if statement, ok := c.parents[expression].(ast.Stmt); ok {
 		return c.handleStatement(statement)
@@ -48,7 +48,7 @@ func (c *subsetChecks) matchHandleUse(expression ast.Expr) string {
 	case *ast.BinaryExpr:
 		return c.matchBinary(parent)
 	}
-	return "service handle operation is outside the allowed concrete copy, storage, and call forms"
+	return "service reference operation is outside the allowed concrete copy, storage, and call forms"
 }
 
 // handleStatement checks concrete copies and each implicit statement conversion.
@@ -74,7 +74,7 @@ func (c *subsetChecks) handleStatement(statement ast.Stmt) string {
 	case *ast.RangeStmt:
 		return c.handleRange(parent)
 	}
-	return "service handle operation is outside the allowed concrete copy, storage, and call forms"
+	return "service reference operation is outside the allowed concrete copy, storage, and call forms"
 }
 
 // handleBindings checks implicit conversions in single, multiple, and tuple assignments.
@@ -98,15 +98,15 @@ func (c *subsetChecks) handleBindings(sources, destinations []ast.Expr) string {
 	return ""
 }
 
-// handleCall checks concrete arguments and disallows conversions that erase handle identity.
+// handleCall checks concrete arguments and rejects conversions that hide service reference types.
 func (c *subsetChecks) handleCall(call *ast.CallExpr) string {
 	if c.pass.TypesInfo.Types[call.Fun].IsType() {
-		return "service handle conversions are unsupported; use a type alias or copy the Ref value"
+		return "service reference conversions are unsupported; use a type alias or copy the Ref value"
 	}
 	if signature, ok := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature); ok {
 		return c.matchCallArguments(call, signature)
 	}
-	return "service handles require a typed call"
+	return "service references require a typed call"
 }
 
 // handleRange checks conversions from native or iterator values into existing range variables.

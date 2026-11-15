@@ -1,9 +1,7 @@
 package im
 
-// UncheckedValue holds a pointer to a value that the analyzer does not look inside.
-// The
-// analyzer does not prove that the value is immutable. The package that
-// declares T trusts its own code to never change the value after Trust.
+// UncheckedValue holds a pointer to data whose immutability the analyzer does not prove.
+// The package that declares T promises never to change the data after Trust.
 //
 // UncheckedValue is an allowed stored type. Any package can store, copy, and pass it.
 // Only the package that declares T can use Trust and Unwrap, so other packages

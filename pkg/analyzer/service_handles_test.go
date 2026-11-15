@@ -5,7 +5,7 @@ import "testing"
 const handleDefinitions = serviceDefinitions + `
 func(c *Counter) Count() int {return c.count}
 type Handle = supervise.Ref[Counter]
-type Route struct { im.Scoped; Worker Handle }
+type Route struct { im.ByValue; Worker Handle }
 `
 
 // TestServiceHandles checks handle copies without exposing the selected service pointer.
@@ -42,12 +42,12 @@ func pass(p Producer)Producer{return p}
 func use(p Producer)int{next:=p;return pass(next).Worker().Current().Count()}`},
 		{"native operations", `func use(r Handle){rs:=make([]Handle,1);rs=append(rs,r);copy(rs,rs);clear(rs)
 m:=make(map[Handle]int);m[r]=1;delete(m,r);_=len(rs);_=cap(rs)}`},
-		{"service handle state", `type Pool struct{supervise.Service[Handle];Workers map[string]Handle}
+		{"service reference state", `type Pool struct{supervise.Service[Handle];Workers map[string]Handle}
 func(p *Pool) Update(r Handle){p.Workers["x"]=r;self:=p;f:=func(){self.Workers["y"]=r};f()
 p.Args().Current().Count()}`},
 		{"service callback", `func(c *Counter) Visit(f func(*Counter)){f(c)}
 func use(r Handle){r.Current().Visit(func(c *Counter){c.count++})}`},
-		{"frozen field", `type Routes struct{im.Scoped;Workers im.FrozenSlice[Handle]}
+		{"frozen field", `type Routes struct{im.ByValue;Workers im.FrozenSlice[Handle]}
 func use(r Routes)int{return r.Workers.At(0).Current().Count()}`},
 		{"implementation", `func(c *Counter) Add(){self:=c;f:=func(){self.count++};f()}`},
 	}
@@ -119,7 +119,7 @@ var ref supervise.Ref[struct{supervise.Service[supervise.NoArgs];Bad}]`},
 		{"generic alias", `type Alias[T any]=Handle;var ref Alias[Handle]`},
 		{"promoted accessor", `type Wrapper struct{Handle};func use(r Wrapper){r.Current().Count()}`},
 		{"protected field write", `func use(r *Route,h Handle){r.Worker=h}`},
-		{"pointer field", `type Bad struct{im.Scoped;Worker *Handle}`},
+		{"pointer field", `type Bad struct{im.ByValue;Worker *Handle}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

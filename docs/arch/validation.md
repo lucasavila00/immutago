@@ -23,8 +23,8 @@ Enforcement:
 - Scalar origins and arbitrary unsafe memory effects are not proved; ordinary
   helpers must obey Go API contracts, including string immutability.
 - Packages that import or use im reject cgo. Functions whose signatures contain
-  im types or service handles require Go bodies. Packages that use only supervise
-  receive result and handle checks.
+  im types or service references require Go bodies. Packages that use only supervise
+  receive result and reference checks.
 - There are no suppression directives. [UncheckedValue](../unchecked-values.md)
   records the declaring package's immutability promise.
 - Checked dependency failures reach consumers through package facts.
@@ -39,13 +39,13 @@ Enforcement:
 | Complete allowed shapes and nearby rejections | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go) |
 | Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
 | Storage reuse, clone independence, identity, and allocation counts | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [iterator tests](../../pkg/im/iterator_test.go) |
-| Direct Current calls, handle copies, and storage | [Handle tests](../../pkg/analyzer/service_handles_test.go), [CLI/vet fixtures](../../tests/testdata/service_boundary) |
-| Scoped results and ordinary service code | [Service tests](../../pkg/analyzer/service_test.go), [CLI fixtures](../../tests/testdata/accepted/service) |
+| Service result types and ordinary service code | [Service tests](../../pkg/analyzer/service_test.go), [CLI fixtures](../../tests/testdata/accepted/service) |
+| Service reference storage, Current call forms, and concrete transport | [Reference tests](../../pkg/analyzer/service_handles_test.go), [CLI fixtures](../../tests/testdata/accepted/service/handles.go), [rejected forms](../../tests/testdata/rejected/service/handles.go) |
 | Startup errors, publication, and failed setup cleanup | [runtime tests](../../pkg/supervise/init_test.go), [CLI fixture](../../tests/testdata/accepted/serviceinit/main.go) |
 | Guide projects and their runtime interactions | [Configuration tests](../../examples/configuration/configuration_test.go), [worker tests](../../examples/workers/workers_test.go), [model tests](../../examples/models/fetcher_test.go) |
 | CLI source coverage for file refresh and child pools | [File-cache fixture](../../tests/testdata/accepted/servicedoc/main.go), [refresh test](../../tests/testdata/accepted/servicedoc/main_test.go) |
 | UncheckedValue handles: declaring-package wrap and read, and storage as an allowed type | [UncheckedValue tests](../../pkg/analyzer/unchecked_value_test.go), [CLI fixtures](../../tests/testdata/accepted/uncheckedvalue) |
-| Restart, backoff, escalation, stop order, reserved Refs, and the test helper | [Runtime tests](../../pkg/supervise/supervise_test.go), [helper tests](../../pkg/supervise/supervisetest/supervisetest_test.go) |
+| Restart, backoff, escalation, stop order, reserved service references, and the test helper | [Runtime tests](../../pkg/supervise/supervise_test.go), [helper tests](../../pkg/supervise/supervisetest/supervisetest_test.go) |
 | Consumer-only dependency failures | [Dependency tests](../../pkg/analyzer/dependencies_test.go), [graph and gob tests](../../pkg/analyzer/dependencies_graph_test.go), [CLI fixtures](../../tests/cli_test.go) |
 
 The CLI harness builds the shipped command and loads independent consumer

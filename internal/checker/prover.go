@@ -39,28 +39,28 @@ func (p *Prover) Reason(t types.Type) string {
 	return reason
 }
 
-// ScopedResultReason accepts scalars, service handles, and proved Scoped structs.
+// ServiceResultReason accepts scalars, service references, and proved ByValue structs.
 // It also accepts unnamed arrays of these result types, including nested arrays.
-// Fields of a Scoped struct use the ordinary stored-type checks.
-func (p *Prover) ScopedResultReason(t types.Type) string {
+// Fields of a ByValue struct use the ordinary stored-type checks.
+func (p *Prover) ServiceResultReason(t types.Type) string {
 	t = types.Unalias(t)
 	switch value := t.Underlying().(type) {
 	case *types.Basic:
 		return p.Reason(t)
 	case *types.Array:
 		if _, named := t.(*types.Named); !named {
-			if reason := p.ScopedResultReason(value.Elem()); reason != "" {
+			if reason := p.ServiceResultReason(value.Elem()); reason != "" {
 				return "array element: " + reason
 			}
 			return ""
 		}
 	case *types.Struct:
-		if Scoped(t) || IsLibraryType(t, "Scoped") || IsRuntimeType(t, "Ref") {
+		if ByValue(t) || IsLibraryType(t, "ByValue") || IsRuntimeType(t, "Ref") {
 			return p.Reason(t)
 		}
 	case *types.Pointer:
-		return "a Scoped result must be a value, not a pointer"
+		return "a service result must be a value, not a pointer"
 	}
-	return "Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, " +
-		"or a struct with im.Scoped"
+	return "service results require a scalar, supervise.Ref, an unnamed array of service results, " +
+		"or a struct with im.ByValue"
 }

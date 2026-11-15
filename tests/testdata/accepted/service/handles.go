@@ -20,7 +20,7 @@ func (p *Pool) Worker(name string) supervise.Ref[Counter] {
 }
 
 type Route struct {
-	im.Scoped
+	im.ByValue
 	Worker supervise.Ref[Counter]
 }
 

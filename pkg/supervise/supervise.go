@@ -3,17 +3,18 @@
 // Define a service:
 //   - Embed Service[A] for start arguments of type A; use NoArgs for no arguments.
 //   - Supply Run(context.Context) for background work.
-//   - Declare Init() error for setup before callers can use the service.
+//   - Declare Init() error for setup, or use the default Init from Service[A].
 //   - Start calls Init, returns Ref[T], and schedules Run in a managed goroutine.
 //
 // Call a service:
 //   - Keep the Ref and use ref.Current().Method().
 //   - Calls run in the caller's goroutine and can overlap with Run and other calls.
 //     Synchronize access to mutable fields.
-//   - Each exported user method except Init and Run returns nothing or one Scoped
-//     result: a scalar, a Ref, an im.Scoped struct with immutable fields, or an
-//     unnamed array of allowed result types. This includes promoted user methods.
-//     The runtime's own methods are exempt. Other result types are rejected.
+//   - Each exported service method returns no result or one service result:
+//     a scalar, a Ref, an im.ByValue struct or marker, or an unnamed array of these
+//     types. This includes promoted methods. Init, Run, and methods supplied by
+//     the runtime are exempt. See the complete result rules at
+//     https://github.com/lucasavila00/immutago/blob/main/docs/service-results.md.
 //   - Arguments and implementation code follow ordinary Go rules. Uses of im
 //     values keep their immutability and pointer rules.
 //
@@ -65,7 +66,7 @@ const (
 // Embed Service[A] to supply start arguments and runtime methods; add
 // Run(context.Context) for background work. Start and StartReserved create and
 // initialize each service value.
-// Call a message with ref.Current().Message(args).
+// Call an exported service method with ref.Current().Method(args).
 type Service[A any] struct {
 	args     A
 	report   func(value any, stack []byte)
@@ -85,8 +86,8 @@ func (p *Service[A]) Args() A { return p.args }
 
 // Init supplies successful empty setup when the service does not declare Init.
 // The runtime calls Init on each fresh value before Current or Run can use it.
-// A declared Init must release any application
-// resources it opened before returning an error; the runtime stops staged children.
+// A declared Init must release any application resources it opened before
+// returning an error; the runtime stops staged children.
 func (*Service[A]) Init() error { return nil }
 
 // Children returns the group owned by this service run. Use it as the parent
@@ -224,23 +225,23 @@ type child struct {
 	group *Group
 }
 
-// Ref is a handle to one service. Copies select the same service, including
+// Ref is a reference to one service. Copies select the same service, including
 // after a restart. The analyzer requires T to be a concrete struct that embeds Service.
-// Handles can be stored in immutable fields and returned as Scoped results;
+// References can be stored in immutable fields and returned as service results;
 // the service state can still change.
-// Start returns an initialized handle. Reserve creates one for later startup;
+// Start returns an initialized reference. Reserve creates one for later startup;
 // a zero Ref is empty and cannot be used in place of Reserve.
 type Ref[T any] struct {
 	value *atomic.Pointer[T]
 }
 
 // Current selects the last successfully initialized service value with one atomic load.
-// The analyzer accepts only ref.Current().Message(args). Message must be an
-// exported user method other than Init or Run. The analyzer rejects saving
-// the pointer, the Current method, or the message method.
+// The analyzer accepts only ref.Current().Method(args). Method must be an
+// exported service method other than Init, Run, or a runtime method. The analyzer
+// rejects saving the pointer, the Current method, or the selected method.
 // A call in progress finishes on its selected instance, even after a restart.
 //
-// Current panics for an empty or unstarted reference. It can return a value whose
+// Current panics for an empty or unstarted reference. It can select a value whose
 // Run has ended. Stop does not invalidate the reference or block later calls.
 func (p Ref[T]) Current() *T {
 	value := p.value.Load()

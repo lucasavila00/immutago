@@ -1,16 +1,21 @@
 # Owner
 
-`im.Owner[T]` wraps Go's `atomic.Pointer[T]`. Load and Store are atomic pointer
-operations; the checker adds rules for the objects they access.
+`im.Owner[T]` stores a replaceable pointer to a read-only ByValue object.
+Use it to publish a new version while readers use the previous object.
+Load and Store are atomic pointer operations.
+
+An **Owner slot** is an `im.Owner[T]` variable or field. An **Owner holder** is
+an unmarked struct with a named Owner field. Neither can be copied.
 
 | Runtime operation | Checker rule |
 | --- | --- |
-| `Store` replaces the pointer without copying the object | T must embed `im.Scoped`; supply a new object. |
+| `Store` replaces the pointer without copying the object | T must embed `im.ByValue`; supply a new object. |
 | `Load` returns the current pointer, or nil before the first Store | Read through a local pointer; do not store it in a field or global, capture it, or return it. |
 | Readers can keep using an old pointer after Store replaces it | The old object stays read-only. |
 
-Go's GC keeps loaded objects alive while readers use them. Load and Store can
-run in different goroutines.
+Go's garbage collector keeps loaded objects alive while readers use them.
+Load and Store can run in different goroutines. Use one Load when several reads
+must use the same version.
 
 ## Example: a current request limit
 
@@ -22,7 +27,7 @@ package main
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Config struct {
-    im.Scoped
+    im.ByValue
     Limit int
 }
 
@@ -60,8 +65,8 @@ func main() {
 | Package-qualified calls | `config := settings.Current.Load()` |
 | Parentheses around an allowed expression | `config := (current).Load()` |
 
-Loaded pointers use the [Scoped forms](scoped.md).
-An Owner slot can be used inside a closure. Load the Scoped pointer inside
+Loaded pointers use the [ByValue forms](by-value.md).
+An Owner slot can be used inside a closure. Load the ByValue pointer inside
 that closure; do not capture a pointer loaded outside it.
 
 ### Example: a background publisher
@@ -81,7 +86,7 @@ func start() {
 
 | Rejected form | Replacement |
 | --- | --- |
-| `im.Owner[SharedConfig]`, where SharedConfig embeds `im.Shared` | Use `im.Owner[Config]` with `im.Scoped`. |
+| `im.Owner[SharedConfig]`, where SharedConfig embeds `im.Shared` | Use `im.Owner[Config]` with `im.ByValue`. |
 | `copy := state.Current` or `copy := *state` | Pass the struct pointer; do not copy the atomic pointer or its containing struct. |
 | `current.Store(config)` | `current.Store(&Config{Limit: config.Limit})` |
 | `return current.Load()` | `config := current.Load(); return *config` with a Config result. |

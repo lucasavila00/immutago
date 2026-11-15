@@ -9,7 +9,7 @@ import (
 
 // VariantSet is one immutable snapshot of the requested variant names.
 type VariantSet struct {
-	im.Scoped
+	im.ByValue
 	Names im.FrozenSlice[string]
 }
 

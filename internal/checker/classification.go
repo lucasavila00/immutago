@@ -2,7 +2,7 @@ package checker
 
 import "go/types"
 
-// Classifier caches protected storage, callback, and service handle queries for one analysis pass.
+// Classifier caches protected storage, callback, and service reference queries for one analysis pass.
 // Its zero value is ready for use. Types must not change after their first query.
 // A Classifier must not be used by concurrent passes.
 type Classifier struct {
@@ -39,7 +39,7 @@ func (c *Classifier) Contains(t types.Type) bool { return c.query(t, storageMode
 // Callable reports whether t contains a callback contract that carries protected storage.
 func (c *Classifier) Callable(t types.Type) bool { return c.query(t, callableMode) }
 
-// Handles reports whether storage or a callable contract contains a service handle.
+// Handles reports whether storage or a callable contract contains a service reference.
 func (c *Classifier) Handles(t types.Type) bool { return c.query(t, handleMode) }
 
 // query completes all reachable edges before propagating positive results through cycles.

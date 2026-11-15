@@ -4,8 +4,8 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type SharedAliasA = im.Shared
 type SharedAliasB = im.Shared
-type LocalAliasA = im.Scoped
-type LocalAliasB = im.Scoped
+type LocalAliasA = im.ByValue
+type LocalAliasB = im.ByValue
 
 type DuplicateShared struct {
 	SharedAliasA

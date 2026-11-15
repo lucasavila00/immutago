@@ -75,7 +75,7 @@ func (c *subsetChecks) matchStoredValue(source, destination types.Type) string {
 		return rule
 	}
 	if localReference(source) {
-		return "Scoped pointers cannot enter aggregate storage"
+		return "ByValue pointers cannot enter aggregate storage"
 	}
 	return ""
 }

@@ -191,7 +191,7 @@ func (c *subsetChecks) protectedCallArguments(call *ast.CallExpr) bool {
 func (c *subsetChecks) matchTransport(source, destination types.Type) string {
 	if destination != nil && c.queries.Handles(source) && !types.Identical(source, destination) {
 		if _, boxed := destination.Underlying().(*types.Interface); boxed {
-			return "service handles cannot enter interfaces; keep the concrete Ref type"
+			return "service references cannot enter interfaces; keep the concrete Ref type"
 		}
 	}
 	if !c.queries.Contains(source) && !c.queries.Callable(source) {

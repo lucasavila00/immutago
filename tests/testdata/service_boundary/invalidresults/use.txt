@@ -1,5 +1,5 @@
 use.go:3:8: unsupported dependency example.com/consumer/invalidapi: immutability proof failed
-  representative failure: example.com/consumer/invalidapi/api.go:7:17: service method Values must return a Scoped result: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+  representative failure: example.com/consumer/invalidapi/api.go:7:17: service method Values must return a service result: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
     result type: []int
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/invalidapi, correct its errors, then rerun immutago on this package

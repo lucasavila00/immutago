@@ -412,7 +412,7 @@ func (c *subsetChecks) checkOwnerCall(call *ast.CallExpr) {
 	switch selector.Sel.Name {
 	case "Store":
 		if len(call.Args) != 1 || !c.freshSlotArgument(call.Args[0]) {
-			c.pass.Reportf(call.Pos(), "Owner.Store requires a fresh Scoped allocation")
+			c.pass.Reportf(call.Pos(), "Owner.Store requires a fresh ByValue allocation")
 			return
 		}
 		if _, ok := c.unparenthesizedParent(call).(*ast.ExprStmt); !ok {

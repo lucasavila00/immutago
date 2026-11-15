@@ -27,7 +27,7 @@ green v1: STILL RUNNING
 | [Pool](pool.go) | Create child workers during Init and distribute requests among them. |
 | [Configuration](config.go) | Publish immutable variant-name snapshots through `im.Owner`. |
 | [Dispatcher](dispatcher.go) | Poll configuration, stage new versions, and stop old or removed groups. |
-| [Lookup](lookup.go) | Return a pool handle in a Scoped result so callers can use its message methods. |
+| [Lookup](lookup.go) | Return a pool reference in a PoolRoute value so callers can call the selected pool. |
 | [Command](cmd/workers/main.go) | Start two variants, replace blue, remove blue, and read green. |
 | [Tests](workers_test.go) | Check job results, shutdown, readiness, failed setup, and concurrent changes. |
 
@@ -50,8 +50,10 @@ shutdown. Callers can retry against the dispatcher's current pool.
 names and creates fresh version-1 pools; version requests are not persisted.
 Removing a name stops both its serving pool and any pending replacement. Start
 arguments use ordinary Go structs; job channels stay inside each worker.
-Set returns nothing. Readers return a scalar or a Scoped struct: Result for
-a job, or VariantSet for a configuration snapshot.
+`Set` has no result. Methods that return data use the
+[service result types](../../docs/service-results.md): a scalar, a `Result`
+struct for a job, or a `VariantSet` struct for the configured names. Both structs
+embed `im.ByValue`; callers can keep their values.
 
 ## Example: call a selected pool
 
@@ -63,6 +65,7 @@ if route.Available {
 }
 ```
 
-Lookup returns a handle to that pool. A later dispatcher replacement can stop
-that pool; the handle does not switch to the replacement group. Process reports
-`Available: false` after shutdown, so callers can use Lookup again.
+Lookup returns a reference to that pool. If the dispatcher replaces the pool,
+the old reference continues to select the old pool. Process reports
+`Available: false` after shutdown, so callers can use Lookup again. See
+[service references](../../docs/service-references.md) for the call rules.

@@ -14,7 +14,7 @@ func Shared(number int) *Good   { return &Good{X: number} }
 func Forward(value *Good) *Good { return value }
 
 type Local struct {
-	im.Scoped
+	im.ByValue
 	X int
 }
 

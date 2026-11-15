@@ -1,8 +1,8 @@
-init_calls.go:6:33: unsupported immutable operation: use a service handle only as ref.Current().Message(args); do not extract the accessor or service pointer
+init_calls.go:6:33: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
   source: ref.Current
   type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-handles.md
-init_calls.go:9:44: unsupported immutable operation: use a service handle only as ref.Current().Message(args); do not extract the accessor or service pointer
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+init_calls.go:9:44: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
   source: ref.Current
   type: func() *api.ReadyCounter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-handles.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md

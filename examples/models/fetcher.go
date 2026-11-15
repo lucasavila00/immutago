@@ -26,13 +26,13 @@ type FetcherArgs struct {
 
 // snapshot is one published model version.
 type snapshot struct {
-	im.Scoped
+	im.ByValue
 	Model *model.Model
 }
 
 // Prediction identifies the model used to calculate one score.
 type Prediction struct {
-	im.Scoped
+	im.ByValue
 	Name  string
 	Score float64
 }

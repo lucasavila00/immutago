@@ -1,24 +1,27 @@
 # Supervised services
 
 Use `supervise` to start, restart, and stop background services.
+A **service** is a struct that embeds `supervise.Service[A]`. The runtime calls
+its `Init` and `Run` methods. Other service method calls run in the caller's
+goroutine; the runtime does not queue them.
 
 | API | Purpose |
 | --- | --- |
 | `Service[A]` | Supply start arguments and child groups to a service struct. |
 | `Group` | Start, restart, and stop related services. |
-| `Ref[T]` | Reach the current service after a restart replaces its struct. |
+| `Ref[T]` | Keep a service reference and select its current value after a restart. |
 
 ## Service contract
 
 | Item | Rule |
 | --- | --- |
-| Runtime methods | `*T` must provide `Init() error`, `Run(context.Context)`, and the methods supplied by embedded `Service[A]`. `Service[A]` supplies a default Init. |
+| Init and Run | `*T` must provide `Init() error` and `Run(context.Context)`. Embedded `Service[A]` supplies a default Init and the runtime methods. |
 | Start arguments | Read them with `s.Args()`. The runtime saves them for each restart. Ordinary Go types are allowed; protected data must satisfy the [stored-type rules](common-forms.md#markers-and-stored-types). |
 | No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
-| Exported user method result | Return nothing or one [Scoped result](scoped-results.md). This includes promoted user methods. Init, Run, and runtime methods are exempt. |
-| Fields, method inputs, closures, and goroutines | Ordinary Go rules. Synchronize shared mutable data. Uses of protected values follow the [im rules](common-forms.md). |
-| Service handles | Copy, store, and return Ref values. Call `ref.Current().Message(args)`; see [allowed forms](service-handles.md). |
-| Service construction and group handles | Ordinary Go rules. |
+| Exported service method result | Return no result or one [service result](service-results.md). This includes promoted methods. Init, Run, and methods supplied by the runtime are exempt. |
+| Fields, method parameters, closures, and goroutines | Ordinary Go rules. Synchronize shared mutable data. Uses of protected values follow the [im rules](common-forms.md). |
+| Service construction and groups | Ordinary Go rules. |
+| Service references | Copy, store, and return `Ref[T]`. Call through `ref.Current().Method(args)`; the pointer from Current has no other allowed use. See [service references](service-references.md). |
 
 Review these together in the service code:
 
@@ -28,7 +31,7 @@ Review these together in the service code:
 - Child startup and shutdown.
 
 Service methods can give callbacks or globals access to mutable state; see the
-[callback example](arch/ownership.md#service-handle-boundary). Review the Go
+[callback example](arch/services.md#service-reference-boundary). Review the Go
 contracts of callers and dependencies. Use `go test -race` for the accesses your
 tests run.
 
@@ -102,7 +105,7 @@ create or remove related work while it runs.
 - A first Init panic reaches the Start caller.
 - To pass a reference before startup: `ref := supervise.Reserve[T]()`, then
   `err := supervise.StartReserved(parent, ref, args)`. Failed Init permits a retry.
-- A zero `Ref[T]` is empty, not reserved. Current panics on empty or unstarted Refs.
+- A zero `Ref[T]` is empty, not reserved. Current panics on empty or unstarted references.
 - Init must not call an unstarted peer. For readiness that depends on Run,
   expose a method such as `Ready() bool`.
 
@@ -134,7 +137,7 @@ Review the concurrency contract of each shared dependency in the service code.
 | Run returns normally | The service ends and its group removes it. |
 | Run panics | The group waits, creates a new struct, calls Init, and starts Run again after Init succeeds. |
 | Init fails during a restart | The attempt fails. The reference continues to use the previous struct. |
-| An ordinary method panics | The panic stays in its caller's goroutine. A call from Run or a restart Init can fail that attempt. |
+| A direct service method call panics | The panic stays in its caller's goroutine. A call from Run or a restart Init can fail that attempt. |
 | A child fails six times within five minutes | Its group stops all children, last started first, and passes the failure to its parent. |
 | A failure reaches the root group | The program panics with the last failure value. |
 

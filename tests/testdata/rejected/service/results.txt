@@ -1,18 +1,18 @@
-results.go:22:17: service method Pair must return no value or one Scoped result
-results.go:23:17: service method Map must return a Scoped result: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+results.go:22:17: service method Pair must return no value or one service result
+results.go:23:17: service method Map must return a service result: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
   result type: map[string]int
-results.go:24:17: service method Slice must return a Scoped result: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+results.go:24:17: service method Slice must return a service result: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
   result type: []int
-results.go:25:17: service method Interface must return a Scoped result: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+results.go:25:17: service method Interface must return a service result: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
   result type: error
-results.go:26:17: service method Pointer must return a Scoped result: a Scoped result must be a value, not a pointer
+results.go:26:17: service method Pointer must return a service result: a service result must be a value, not a pointer
   result type: *service.SharedReply
-results.go:27:17: service method ScopedPointer must return a Scoped result: a Scoped result must be a value, not a pointer
+results.go:27:17: service method ByValuePointer must return a service result: a service result must be a value, not a pointer
   result type: *service.Reply
-results.go:27:17: unsupported immutable operation: returning Scoped pointers is unsupported
-  source: ScopedPointer
+results.go:27:17: unsupported immutable operation: returning ByValue pointers is unsupported
+  source: ByValuePointer
   type: func() *service.Reply
-  fix: return a Scoped value copy, or use im.Shared for objects whose pointers must be shared
+  fix: return a ByValue value copy, or use im.Shared for objects whose pointers must be shared
 results.go:28:50: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Count++
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
@@ -20,41 +20,41 @@ results.go:29:75: unsupported immutable operation: closures cannot capture immut
   source: p
   type: *service.Reply
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-results.go:30:17: service method Frozen must return a Scoped result: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+results.go:30:17: service method Frozen must return a service result: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
   result type: im.FrozenSlice[[]int]
 results.go:30:26: immutable collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
-  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 results.go:30:29: immutable type argument: []int is not provably immutable
   type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable
 results.go:30:54: immutable collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
-  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 results.go:30:61: immutable collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
-  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 results.go:30:64: immutable type argument: []int is not provably immutable
   type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable
 results.go:30:91: immutable collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
-  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-results.go:34:17: service method Struct must return a Scoped result: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+results.go:34:17: service method Struct must return a service result: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
   result type: service.Unmarked
-results.go:38:16: service method Mutable must return a Scoped result: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+results.go:38:16: service method Mutable must return a service result: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
   result type: []int
-results.go:46:25: service method Mutable must return a Scoped result: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+results.go:46:25: service method Mutable must return a service result: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
   result type: []int
-results.go:49:38: stored im argument: Scoped pointers cannot be stored
-  fix: pass an immutable value or a Shared pointer; Scoped pointers cannot be stored
-results.go:51:17: service method Shared must return a Scoped result: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+results.go:49:38: stored im argument: ByValue pointers cannot be stored
+  fix: pass an immutable value or a Shared pointer; ByValue pointers cannot be stored
+results.go:51:17: service method Shared must return a service result: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
   result type: service.SharedReply
-results.go:52:17: service method SharedArray must return a Scoped result: array element: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+results.go:52:17: service method SharedArray must return a service result: array element: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
   result type: [1]service.SharedReply
-results.go:53:17: service method PointerArray must return a Scoped result: array element: a Scoped result must be a value, not a pointer
+results.go:53:17: service method PointerArray must return a service result: array element: a service result must be a value, not a pointer
   result type: [1]*service.SharedReply
-results.go:54:17: service method List must return a Scoped result: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+results.go:54:17: service method List must return a service result: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
   result type: im.FrozenSlice[int]
-results.go:55:17: service method MapResult must return a Scoped result: Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped
+results.go:55:17: service method MapResult must return a service result: service results require a scalar, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
   result type: im.FrozenMap[string, int]
