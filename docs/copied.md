@@ -44,7 +44,7 @@ of these types, including blank and embedded data fields:
 | Unnamed array of allowed fields, recursively | `Values [4]int`, `Grid [2][3]Score` |
 | Another proved Copied record by value | `Score Score` |
 
-This list is complete. Unlisted field types are rejected. Native strings,
+Unlisted field types are rejected. Native strings,
 FrozenString, pointers, slices, maps, channels, functions, interfaces, service
 references, and other im handles are not Copied record fields. A Go string copy
 shares its bytes. There is no owned-string field form.
@@ -67,20 +67,17 @@ An ordinary pointer can share its target under normal Go rules. The pointer is
 not a Copied field type or a service result. The Copied proof applies to value
 copies, not to pointer copies.
 
-| Ordinary Go forms | Examples |
+| Ordinary Go examples | Source |
 | --- | --- |
-| Named, local, or anonymous record; defined record or alias | `type Other Score`, `type Alias = Score`, `struct { im.Copied; N int }` |
-| Zero value, literal, copy, replacement, or comparison | `var score Score`, `score := Score{Value: 1}`, `other := score`, `score == other` |
-| Field and array-element reads and writes | `score.Value++`, `score.Flags[0] = true`, `state.Result.Value = 2`, `scores[0].Value = 2` |
-| Ordinary holders and native containers | `requestState{Result: score}`, `[2]Score{score}`, `[]Score{score}`, `map[int]Score{1: score}`, `make(chan Score)` |
-| Container aliases, slices, builtins, loops, and channel operations | `alias := scores`, `scores = append(scores, score)`, `copy(scores, otherScores)`, `for _, s := range scores { use(s) }`, `ch <- score` |
-| Explicit pointers and pointer writes | `&score`, `&state.Result`, `&scores[0]`, `new(Score)`, `p.Value++`, `*p = score` |
-| Value or pointer methods, including implicit receiver operations and promoted methods | `func (s *Score) Set(v float64) { s.Value = v }`; `state.Result.Set(2)` |
-| Calls, returns, multiple assignments, and multiple results | `x, y := pair(score)`, `state.Attempts, score.Value = 1, 2`, `func (s Score) Read() (float64, bool) { return s.Value, s.Flags[0] }` |
-| Interfaces, decoders, and type assertions | `var value any = &score`, `json.Unmarshal(data, &state)`, `value.(*Score).Set(2)` |
-| Generic functions and ordinary generic holders | `identity(score)`, `Box[Score]{Value: score}` |
-| Callbacks, closures, bound methods, and method expressions | `callback(score)`, `func() { score.Value++ }`, `set := score.Set`, `(*Score).Set(&score, 2)` |
-| `go`, `defer`, and ordinary functions without a Go body | `go use(score)`, `defer state.release()`, `func decode(*Score)` |
+| Declare, copy, or compare a value | `var score Score`, `other := score`, `score == other` |
+| Change fields and array elements | `score.Value++`, `state.Result.Flags[0] = true`, `scores[0].Value = 2` |
+| Use ordinary holders and native containers | `requestState{Result: score}`, `[]Score{score}`, `map[int]Score{1: score}`, `make(chan Score)` |
+| Use pointers and pointer methods | `&score`, `new(Score)`, `func (s *Score) Set(v float64) { s.Value = v }`; `state.Result.Set(2)` |
+| Bind or return several values | `x, y := pair(score)`; `func (s Score) Read() (float64, bool) { return s.Value, s.Flags[0] }` |
+| Use interfaces, decoders, and type assertions | `var value any = &score`, `json.Unmarshal(data, &state)`, `value.(*Score).Set(2)` |
+| Use generics, callbacks, and closures | `identity(score)`, `Box[Score]{Value: score}`, `callback(score)`, `func() { score.Value++ }` |
+| Use method values or expressions | `set := score.Set`, `(*Score).Set(&score, 2)` |
+| Use go, defer, or a function without a Go body | `go use(score)`, `defer state.release()`, `func decode(*Score)` |
 
 A decoder needs no special permission. For example, a Copied record can implement
 `json.Unmarshaler` with a pointer receiver. A decoder can call that method on an
