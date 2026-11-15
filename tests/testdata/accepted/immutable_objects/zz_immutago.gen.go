@@ -42,6 +42,9 @@ func (c *HolderCell) Load() HolderProjection { return NewHolderProjection(c.valu
 // LoadShared returns the frozen value for persistent use.
 func (c *HolderCell) LoadShared() Holder { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *HolderCell) LoadSharedPointer() *Holder { return c.value.LoadSharedPointer() }
+
 // NodeProjection provides local read access to *Node.
 type NodeProjection struct {
 	im.Local
@@ -77,3 +80,6 @@ func (c *NodeCell) Load() NodeProjection { return NewNodeProjection(c.value.Load
 
 // LoadShared returns the frozen value for persistent use.
 func (c *NodeCell) LoadShared() Node { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *NodeCell) LoadSharedPointer() *Node { return c.value.LoadSharedPointer() }

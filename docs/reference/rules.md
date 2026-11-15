@@ -97,8 +97,9 @@ The checker checks a package in any of these cases, including its test files:
 - User code has no suppression comments. `im.UncheckedValue` is the explicit
   immutability trust marker.
 - Importing `unsafe` or `reflect` is allowed; ordinary values use ordinary Go rules.
-- Protected values need a listed form: `reflect.ValueOf(1)` is allowed,
-  but `reflect.ValueOf(p)` with a marked pointer fails the interface-boxing rule.
+- Protected object values need a listed form: `reflect.ValueOf(1)` is allowed,
+  but `reflect.ValueOf(point)` with a Frozen record value fails the interface-boxing rule.
+  Frozen pointer handles and their ordinary carriers use Go transport rules.
 
 | Rejected examples — non-exhaustive | Use instead |
 | --- | --- |

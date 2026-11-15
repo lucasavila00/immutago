@@ -47,6 +47,9 @@ func (c *DocumentCell) Load() DocumentProjection { return NewDocumentProjection(
 // LoadShared returns the frozen value for persistent use.
 func (c *DocumentCell) LoadShared() Document { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *DocumentCell) LoadSharedPointer() *Document { return c.value.LoadSharedPointer() }
+
 // IndexProjection provides local read access to *Index.
 type IndexProjection struct {
 	im.Local
@@ -88,6 +91,9 @@ func (c *IndexCell) Load() IndexProjection { return NewIndexProjection(c.value.L
 // LoadShared returns the frozen value for persistent use.
 func (c *IndexCell) LoadShared() Index { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *IndexCell) LoadSharedPointer() *Index { return c.value.LoadSharedPointer() }
+
 // PostingProjection provides local read access to *Posting.
 type PostingProjection struct {
 	im.Local
@@ -128,3 +134,6 @@ func (c *PostingCell) Load() PostingProjection { return NewPostingProjection(c.v
 
 // LoadShared returns the frozen value for persistent use.
 func (c *PostingCell) LoadShared() Posting { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *PostingCell) LoadSharedPointer() *Posting { return c.value.LoadSharedPointer() }

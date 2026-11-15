@@ -36,3 +36,6 @@ func (c *ConfigCell) Load() ConfigProjection { return NewConfigProjection(c.valu
 
 // LoadShared returns the frozen value for persistent use.
 func (c *ConfigCell) LoadShared() Config { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *ConfigCell) LoadSharedPointer() *Config { return c.value.LoadSharedPointer() }

@@ -37,6 +37,9 @@ func (c *CountBoxCell) Load() CountBoxProjection { return NewCountBoxProjection(
 // LoadShared returns the frozen value for persistent use.
 func (c *CountBoxCell) LoadShared() CountBox { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *CountBoxCell) LoadSharedPointer() *CountBox { return c.value.LoadSharedPointer() }
+
 // DerivedProjection provides local read access to *Derived.
 type DerivedProjection struct {
 	im.Local
@@ -105,6 +108,9 @@ func (c *DerivedCell) Load() DerivedProjection { return NewDerivedProjection(c.v
 
 // LoadShared returns the frozen value for persistent use.
 func (c *DerivedCell) LoadShared() Derived { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *DerivedCell) LoadSharedPointer() *Derived { return c.value.LoadSharedPointer() }
 
 // LeafProjection provides local read access to *Leaf.
 type LeafProjection struct {
@@ -175,6 +181,9 @@ func (c *LeafCell) Load() LeafProjection { return NewLeafProjection(c.value.Load
 // LoadShared returns the frozen value for persistent use.
 func (c *LeafCell) LoadShared() Leaf { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *LeafCell) LoadSharedPointer() *Leaf { return c.value.LoadSharedPointer() }
+
 // TreeProjection provides local read access to *Tree.
 type TreeProjection struct {
 	im.Local
@@ -215,6 +224,9 @@ func (c *TreeCell) Load() TreeProjection { return NewTreeProjection(c.value.Load
 
 // LoadShared returns the frozen value for persistent use.
 func (c *TreeCell) LoadShared() Tree { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *TreeCell) LoadSharedPointer() *Tree { return c.value.LoadSharedPointer() }
 
 // DerivedFlagsProjection reads a fixed array locally.
 type DerivedFlagsProjection struct {

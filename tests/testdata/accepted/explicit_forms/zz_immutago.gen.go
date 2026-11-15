@@ -37,6 +37,9 @@ func (c *GoodCell) Load() GoodProjection { return NewGoodProjection(c.value.Load
 // LoadShared returns the frozen value for persistent use.
 func (c *GoodCell) LoadShared() Good { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *GoodCell) LoadSharedPointer() *Good { return c.value.LoadSharedPointer() }
+
 // ParentProjection provides local read access to *Parent.
 type ParentProjection struct {
 	im.Local
@@ -72,3 +75,6 @@ func (c *ParentCell) Load() ParentProjection { return NewParentProjection(c.valu
 
 // LoadShared returns the frozen value for persistent use.
 func (c *ParentCell) LoadShared() Parent { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *ParentCell) LoadSharedPointer() *Parent { return c.value.LoadSharedPointer() }

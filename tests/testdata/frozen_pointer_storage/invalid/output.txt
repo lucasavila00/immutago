@@ -1,0 +1,80 @@
+invalid.go:14:25: unmarked struct contains immutable field Value; embed an immutable marker
+  owner: invalid.LocalOwner; field type: *invalid.Local
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+invalid.go:15:30: unmarked struct contains immutable field Value; embed an immutable marker
+  owner: invalid.ProjectionOwner; field type: im.Projection[*api.Settings]
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+invalid.go:21:6: Cell.LoadSharedPointer requires a concrete Frozen record
+invalid.go:22:6: Cell.LoadSharedPointer requires a concrete Frozen record
+invalid.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: state.Settings.Limit = 1
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:27:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: *state.Settings = api.Settings{}
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:28:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: state.Settings.Array[0]++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:29:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: values[0].Limit++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:30:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: versions["x"].Limit++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:31:6: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &state.Settings.Limit
+  type: *int
+  fix: copy the field into a local; do not take a pointer into immutable storage
+invalid.go:32:2: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
+  source: state.Settings.Count.Inc()
+  type: ()
+  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
+invalid.go:36:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: outer.Limit++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:37:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: outer.Array[0] = 1
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:38:6: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &outer.Limit
+  type: *int
+  fix: copy the field into a local; do not take a pointer into immutable storage
+invalid.go:39:2: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
+  source: outer.Count.Inc()
+  type: ()
+  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
+invalid.go:44:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.(*api.Settings).Limit++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:46:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.Limit++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:53:11: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+invalid.go:58:45: unsupported immutable operation: writes to immutable objects are unsupported
+  source: (*p).Limit++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:58:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: GenericTarget
+  type: func[T ~*api.Settings](p T)
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+invalid.go:60:50: unsupported immutable operation: writes to immutable objects are unsupported
+  source: *p = api.Settings{}
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:60:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: GenericReplacement
+  type: func[T ~*api.Settings](p T)
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+invalid.go:64:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: (**slot).Limit++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:69:32: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.Limit++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:75:18: service method Read must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: *api.Settings
+invalid.go:9:25: unmarked struct contains immutable field Value; embed an immutable marker
+  owner: invalid.ValueOwner; field type: api.Settings
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field

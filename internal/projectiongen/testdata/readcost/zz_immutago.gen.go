@@ -47,6 +47,9 @@ func (c *Record64KiBCell) Load() Record64KiBProjection {
 // LoadShared returns the frozen value for persistent use.
 func (c *Record64KiBCell) LoadShared() Record64KiB { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *Record64KiBCell) LoadSharedPointer() *Record64KiB { return c.value.LoadSharedPointer() }
+
 // Record8KiBProjection provides local read access to *Record8KiB.
 type Record8KiBProjection struct {
 	im.Local
@@ -87,6 +90,9 @@ func (c *Record8KiBCell) Load() Record8KiBProjection {
 
 // LoadShared returns the frozen value for persistent use.
 func (c *Record8KiBCell) LoadShared() Record8KiB { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *Record8KiBCell) LoadSharedPointer() *Record8KiB { return c.value.LoadSharedPointer() }
 
 // Record64KiBPaddingProjection reads a fixed array locally.
 type Record64KiBPaddingProjection struct {

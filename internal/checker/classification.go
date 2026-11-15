@@ -15,7 +15,6 @@ type classificationMode uint8
 
 const (
 	storageMode classificationMode = iota
-	storedMode
 	callableMode
 	constraintMode
 	handleMode
@@ -35,13 +34,9 @@ type classificationNode struct {
 	value bool
 }
 
-// Contains reports protected operands, including direct pointers to Frozen records.
-// Ordinary holders of Frozen pointers do not contain the pointed objects.
+// Contains reports protected object storage, including its holders and containers.
+// Frozen pointer handles and Copied records use ordinary Go storage rules.
 func (c *Classifier) Contains(t types.Type) bool { return c.query(t, storageMode) }
-
-// Stored reports protected storage that needs a marked owner or native builder.
-// A pointer to a Frozen record can instead occupy an ordinary mutable slot.
-func (c *Classifier) Stored(t types.Type) bool { return c.query(t, storedMode) }
 
 // Callable reports whether t contains a callback contract that carries protected storage.
 func (c *Classifier) Callable(t types.Type) bool { return c.query(t, callableMode) }
@@ -137,7 +132,7 @@ func (c *Classifier) expand(node *classificationNode) {
 	switch node.key.mode {
 	case constraintMode:
 		c.constraintEdges(node)
-	case storageMode, storedMode:
+	case storageMode:
 		c.storedValue(node)
 	case callableMode:
 		c.callableEdges(node)
@@ -146,7 +141,7 @@ func (c *Classifier) expand(node *classificationNode) {
 
 // storedValue identifies types whose storage needs protected operation checks.
 func (c *Classifier) storedValue(node *classificationNode) {
-	if node.key.mode == storedMode && FrozenPointer(node.key.typ) {
+	if FrozenPointer(node.key.typ) {
 		return
 	}
 	if parameter, ok := node.key.typ.(*types.TypeParam); ok {
@@ -161,44 +156,35 @@ func (c *Classifier) storedValue(node *classificationNode) {
 
 // storageEdges follows stored components and recognizes sealed interfaces as protected storage.
 func (c *Classifier) storageEdges(node *classificationNode) {
-	elementMode := node.key.mode
-	if elementMode == storageMode {
-		elementMode = storedMode
-	}
 	switch storage := node.key.typ.Underlying().(type) {
 	case *types.Interface:
-		if (node.key.mode == storageMode || node.key.mode == storedMode) && FrozenInterface(node.key.typ) {
+		if node.key.mode == storageMode && FrozenInterface(node.key.typ) {
 			c.mark(node)
 		}
 	case *types.Pointer:
 		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Array:
-		c.connect(node, storage.Elem(), elementMode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Slice:
-		c.connect(node, storage.Elem(), elementMode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Map:
-		c.connect(node, storage.Key(), elementMode)
-		c.connect(node, storage.Elem(), elementMode)
+		c.connect(node, storage.Key(), node.key.mode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Chan:
-		mode := node.key.mode
-		if mode == storedMode {
-			mode = storageMode
-		}
-		c.connect(node, storage.Elem(), mode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Struct:
 		for field := range storage.Fields() {
-			c.connect(node, field.Type(), elementMode)
+			c.connect(node, field.Type(), node.key.mode)
 		}
 	}
 }
 
-// FrozenPointer identifies the ordinary pointer spelling for a Frozen record.
-// Aliases preserve that spelling; defined pointer types do not.
+// FrozenPointer identifies a pointer to a Frozen record by its resolved target type.
 func FrozenPointer(t types.Type) bool {
 	if t == nil {
 		return false
 	}
-	pointer, ok := types.Unalias(t).(*types.Pointer)
+	pointer, ok := t.Underlying().(*types.Pointer)
 	return ok && Frozen(pointer.Elem())
 }
 

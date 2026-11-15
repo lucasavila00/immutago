@@ -56,6 +56,9 @@ func (c *ModelCell) Load() ModelProjection { return NewModelProjection(c.value.L
 // LoadShared returns the frozen value for persistent use.
 func (c *ModelCell) LoadShared() Model { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *ModelCell) LoadSharedPointer() *Model { return c.value.LoadSharedPointer() }
+
 // ModelReadersProjection reads a fixed array locally.
 type ModelReadersProjection struct {
 	im.Local

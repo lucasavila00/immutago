@@ -53,3 +53,6 @@ func (c *SnapshotCell) Load() SnapshotProjection { return NewSnapshotProjection(
 
 // LoadShared returns the frozen value for persistent use.
 func (c *SnapshotCell) LoadShared() Snapshot { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *SnapshotCell) LoadSharedPointer() *Snapshot { return c.value.LoadSharedPointer() }

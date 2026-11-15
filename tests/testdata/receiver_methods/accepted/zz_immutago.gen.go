@@ -42,6 +42,9 @@ func (c *OrderCell) Load() OrderProjection { return NewOrderProjection(c.value.L
 // LoadShared returns the frozen value for persistent use.
 func (c *OrderCell) LoadShared() Order { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *OrderCell) LoadSharedPointer() *Order { return c.value.LoadSharedPointer() }
+
 // PointGroupProjection provides local read access to *PointGroup.
 type PointGroupProjection struct {
 	im.Local
@@ -75,6 +78,9 @@ func (c *PointGroupCell) Load() PointGroupProjection {
 // LoadShared returns the frozen value for persistent use.
 func (c *PointGroupCell) LoadShared() PointGroup { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *PointGroupCell) LoadSharedPointer() *PointGroup { return c.value.LoadSharedPointer() }
+
 // ProductProjection provides local read access to *Product.
 type ProductProjection struct {
 	im.Local
@@ -105,6 +111,9 @@ func (c *ProductCell) Load() ProductProjection { return NewProductProjection(c.v
 
 // LoadShared returns the frozen value for persistent use.
 func (c *ProductCell) LoadShared() Product { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *ProductCell) LoadSharedPointer() *Product { return c.value.LoadSharedPointer() }
 
 // SnapshotPointProjection provides local read access to *SnapshotPoint.
 type SnapshotPointProjection struct {
@@ -138,3 +147,6 @@ func (c *SnapshotPointCell) Load() SnapshotPointProjection {
 
 // LoadShared returns the frozen value for persistent use.
 func (c *SnapshotPointCell) LoadShared() SnapshotPoint { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *SnapshotPointCell) LoadSharedPointer() *SnapshotPoint { return c.value.LoadSharedPointer() }

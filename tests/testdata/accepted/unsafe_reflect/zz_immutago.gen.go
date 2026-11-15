@@ -36,3 +36,6 @@ func (c *RecordCell) Load() RecordProjection { return NewRecordProjection(c.valu
 
 // LoadShared returns the frozen value for persistent use.
 func (c *RecordCell) LoadShared() Record { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *RecordCell) LoadSharedPointer() *Record { return c.value.LoadSharedPointer() }

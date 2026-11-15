@@ -37,6 +37,9 @@ func (c *PointCell) Load() PointProjection { return NewPointProjection(c.value.L
 // LoadShared returns the frozen value for persistent use.
 func (c *PointCell) LoadShared() Point { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *PointCell) LoadSharedPointer() *Point { return c.value.LoadSharedPointer() }
+
 // PointArrayProjection provides local read access to *PointArray.
 type PointArrayProjection struct {
 	im.Local
@@ -73,6 +76,9 @@ func (c *PointArrayCell) Load() PointArrayProjection {
 // LoadShared returns the frozen value for persistent use.
 func (c *PointArrayCell) LoadShared() PointArray { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *PointArrayCell) LoadSharedPointer() *PointArray { return c.value.LoadSharedPointer() }
+
 // nilSnapshotProjection provides local read access to *nilSnapshot.
 type nilSnapshotProjection struct {
 	im.Local
@@ -100,6 +106,9 @@ func (c *nilSnapshotCell) Load() nilSnapshotProjection {
 
 // LoadShared returns the frozen value for persistent use.
 func (c *nilSnapshotCell) LoadShared() nilSnapshot { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *nilSnapshotCell) LoadSharedPointer() *nilSnapshot { return c.value.LoadSharedPointer() }
 
 // PointArrayValuesProjection reads a fixed array locally.
 type PointArrayValuesProjection struct {

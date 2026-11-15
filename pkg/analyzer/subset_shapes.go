@@ -19,6 +19,9 @@ func (c *subsetChecks) statementOperation(expression ast.Expr) ast.Node {
 // protectedStorage includes native builders and fields or elements of protected owners.
 func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 	for expression != nil {
+		if c.pass.TypesInfo.Types[expression].IsType() {
+			return false
+		}
 		if c.queries.Contains(c.pass.TypesInfo.TypeOf(expression)) {
 			return true
 		}
@@ -43,24 +46,27 @@ func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 	return false
 }
 
-// protectedSelection checks owners hidden by promoted fields and methods.
+// protectedSelection checks field owners, including implicit pointer dereferences and promotion.
 func (c *subsetChecks) protectedSelection(selector *ast.SelectorExpr) bool {
 	selection := c.pass.TypesInfo.Selections[selector]
-	if selection == nil {
+	if selection == nil || selection.Kind() != types.FieldVal {
 		return false
 	}
 	owner := selection.Recv()
 	indices := selection.Index()
-	for _, index := range indices[:len(indices)-1] {
-		if c.queries.Contains(owner) {
-			return true
-		}
+	for step, index := range indices {
 		if pointer, ok := owner.Underlying().(*types.Pointer); ok {
 			owner = pointer.Elem()
 		}
+		if c.queries.Contains(owner) {
+			return true
+		}
+		if step == len(indices)-1 {
+			return false
+		}
 		owner = owner.Underlying().(*types.Struct).Field(index).Type()
 	}
-	return c.queries.Contains(owner)
+	return false
 }
 
 // matchStatement finds the complete statement that owns a protected operand.

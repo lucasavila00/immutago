@@ -37,6 +37,9 @@ func (c *CountCell) Load() CountProjection { return NewCountProjection(c.value.L
 // LoadShared returns the frozen value for persistent use.
 func (c *CountCell) LoadShared() Count { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *CountCell) LoadSharedPointer() *Count { return c.value.LoadSharedPointer() }
+
 // TreeProjection provides local read access to *Tree.
 type TreeProjection struct {
 	im.Local
@@ -72,3 +75,6 @@ func (c *TreeCell) Load() TreeProjection { return NewTreeProjection(c.value.Load
 
 // LoadShared returns the frozen value for persistent use.
 func (c *TreeCell) LoadShared() Tree { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *TreeCell) LoadSharedPointer() *Tree { return c.value.LoadSharedPointer() }

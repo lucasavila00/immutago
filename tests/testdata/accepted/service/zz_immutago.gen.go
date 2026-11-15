@@ -47,6 +47,9 @@ func (c *FrozenRouteCell) Load() FrozenRouteProjection {
 // LoadShared returns the frozen value for persistent use.
 func (c *FrozenRouteCell) LoadShared() FrozenRoute { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *FrozenRouteCell) LoadSharedPointer() *FrozenRoute { return c.value.LoadSharedPointer() }
+
 // SnapshotReplyProjection provides local read access to *SnapshotReply.
 type SnapshotReplyProjection struct {
 	im.Local
@@ -79,6 +82,9 @@ func (c *SnapshotReplyCell) Load() SnapshotReplyProjection {
 
 // LoadShared returns the frozen value for persistent use.
 func (c *SnapshotReplyCell) LoadShared() SnapshotReply { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *SnapshotReplyCell) LoadSharedPointer() *SnapshotReply { return c.value.LoadSharedPointer() }
 
 // FrozenRouteWorkersProjection reads a fixed array locally.
 type FrozenRouteWorkersProjection struct {

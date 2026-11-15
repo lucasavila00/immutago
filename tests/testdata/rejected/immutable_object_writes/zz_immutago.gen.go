@@ -41,3 +41,6 @@ func (c *NodeCell) Load() NodeProjection { return NewNodeProjection(c.value.Load
 
 // LoadShared returns the frozen value for persistent use.
 func (c *NodeCell) LoadShared() Node { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *NodeCell) LoadSharedPointer() *Node { return c.value.LoadSharedPointer() }

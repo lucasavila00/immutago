@@ -36,3 +36,6 @@ func (c *ProductCell) Load() ProductProjection { return NewProductProjection(c.v
 
 // LoadShared returns the frozen value for persistent use.
 func (c *ProductCell) LoadShared() Product { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *ProductCell) LoadSharedPointer() *Product { return c.value.LoadSharedPointer() }

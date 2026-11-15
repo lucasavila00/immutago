@@ -27,10 +27,16 @@ Local fields and service data results both use this boundary.
 | --- | --- |
 | Frozen and Local fields are immutable from construction | [Write matcher](../../pkg/analyzer/subset_writes.go). |
 | Ordinary Copied storage uses normal Go operations | One storage classification excludes Copied records. The owner walk still finds Frozen and Local owners around Copied fields and elements. |
-| Protected pointers originate from fresh storage | [Source matcher](../../pkg/analyzer/subset_operations.go); reject addresses of reassignable locals. |
+| Protected pointers come from fresh storage or a Cell root | [Source matcher](../../pkg/analyzer/subset_operations.go) and fixed LoadSharedPointer call; reject addresses of reassignable locals. |
 | Local storage and captures cannot escape | Declaration, assignment, container, callback, and closure checks use the recursive Local classification. |
 | Application code cannot call Projection.Read | [Generation checks](../../pkg/analyzer/generation.go) identify the exact current generated token file before source checks. Handwritten Read calls are rejected. |
 | Reads preserve access types | Generated getters return Copied values, unchecked handles, or local projections. Value requires both Frozen and ReadResult. |
+
+The cached [classifier](../../internal/checker/classification.go) stops at a
+Frozen pointer. The handle and its ordinary carriers therefore use Go storage
+and transport rules. The source owner walk checks selected and dereferenced
+objects, including compiler-resolved promoted fields. A Frozen target keeps
+its write and address rules. Local pointers keep their existing storage rule.
 
 ## Generated projections
 
@@ -58,6 +64,7 @@ Function-local, anonymous, and test-only Frozen declarations are rejected.
 
 [Cell](../../pkg/im/cell.go) stores a private atomic pointer. Store creates a new
 T root. Raw Load returns Projection[T]; LoadPointer returns Projection[*T]; LoadShared returns T.
+LoadSharedPointer returns the selected *T without a copy and requires a Frozen record T.
 The generated Cell.Load uses LoadPointer without a root copy. All reads use the
 same Frozen payload proof. Only code with the Cell has LoadShared access.
 A projection cannot recover the Cell or expose a raw Frozen-record pointer.
@@ -82,7 +89,7 @@ classification stays opaque, so ordinary handle transport keeps Go rules.
 
 | Stage | Work |
 | --- | --- |
-| [Discovery](../../internal/freeze/discover.go) | Index local declarations by compiler variable identity. Track containers with protected contents and native Freeze inputs. Native Copied containers need ownership checks only when later frozen. |
+| [Discovery](../../internal/freeze/discover.go) | Index local declarations by compiler variable identity. Track containers with protected contents and native Freeze inputs. Native Copied and Frozen-pointer containers need ownership checks only when later frozen. |
 | Initial source | Match allocation, literal, bare nil, zero declaration, or exact collection Clone. |
 | [Use checks](../../internal/freeze/uses.go) | Reject handle copies, subslices, slot addresses, escapes, and unmatched calls. |
 

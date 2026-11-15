@@ -42,6 +42,9 @@ func (c *ArrayLengthHolderCell) Load() ArrayLengthHolderProjection {
 // LoadShared returns the frozen value for persistent use.
 func (c *ArrayLengthHolderCell) LoadShared() ArrayLengthHolder { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *ArrayLengthHolderCell) LoadSharedPointer() *ArrayLengthHolder { return c.value.LoadSharedPointer() }
+
 // ArrayLengthValueProjection provides local read access to *ArrayLengthValue.
 type ArrayLengthValueProjection struct {
 	im.Local
@@ -69,6 +72,9 @@ func (c *ArrayLengthValueCell) Load() ArrayLengthValueProjection {
 
 // LoadShared returns the frozen value for persistent use.
 func (c *ArrayLengthValueCell) LoadShared() ArrayLengthValue { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *ArrayLengthValueCell) LoadSharedPointer() *ArrayLengthValue { return c.value.LoadSharedPointer() }
 
 // IndexedValueProjection provides local read access to *IndexedValue.
 type IndexedValueProjection struct {
@@ -102,6 +108,9 @@ func (c *IndexedValueCell) Load() IndexedValueProjection {
 
 // LoadShared returns the frozen value for persistent use.
 func (c *IndexedValueCell) LoadShared() IndexedValue { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *IndexedValueCell) LoadSharedPointer() *IndexedValue { return c.value.LoadSharedPointer() }
 
 // PointProjection provides local read access to *Point.
 type PointProjection struct {
@@ -139,6 +148,9 @@ func (c *PointCell) Load() PointProjection { return NewPointProjection(c.value.L
 // LoadShared returns the frozen value for persistent use.
 func (c *PointCell) LoadShared() Point { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *PointCell) LoadSharedPointer() *Point { return c.value.LoadSharedPointer() }
+
 // PointArrayProjection provides local read access to *PointArray.
 type PointArrayProjection struct {
 	im.Local
@@ -174,6 +186,9 @@ func (c *PointArrayCell) Load() PointArrayProjection {
 
 // LoadShared returns the frozen value for persistent use.
 func (c *PointArrayCell) LoadShared() PointArray { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *PointArrayCell) LoadSharedPointer() *PointArray { return c.value.LoadSharedPointer() }
 
 // ShapeProjection provides local read access to *Shape.
 type ShapeProjection struct {
@@ -211,6 +226,9 @@ func (c *ShapeCell) Load() ShapeProjection { return NewShapeProjection(c.value.L
 // LoadShared returns the frozen value for persistent use.
 func (c *ShapeCell) LoadShared() Shape { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *ShapeCell) LoadSharedPointer() *Shape { return c.value.LoadSharedPointer() }
+
 // UserProjection provides local read access to *User.
 type UserProjection struct {
 	im.Local
@@ -247,6 +265,9 @@ func (c *UserCell) Load() UserProjection { return NewUserProjection(c.value.Load
 // LoadShared returns the frozen value for persistent use.
 func (c *UserCell) LoadShared() User { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *UserCell) LoadSharedPointer() *User { return c.value.LoadSharedPointer() }
+
 // nilSnapshotProjection provides local read access to *nilSnapshot.
 type nilSnapshotProjection struct {
 	im.Local
@@ -279,6 +300,9 @@ func (c *nilSnapshotCell) Load() nilSnapshotProjection {
 
 // LoadShared returns the frozen value for persistent use.
 func (c *nilSnapshotCell) LoadShared() nilSnapshot { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *nilSnapshotCell) LoadSharedPointer() *nilSnapshot { return c.value.LoadSharedPointer() }
 
 // ArrayLengthHolderValuesProjection reads a fixed array locally.
 type ArrayLengthHolderValuesProjection struct {

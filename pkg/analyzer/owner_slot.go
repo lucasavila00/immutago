@@ -387,7 +387,7 @@ func (c *subsetChecks) localHolderBinding(name *ast.Ident, expression ast.Expr) 
 		types.Identical(variable.Type(), c.pass.TypesInfo.TypeOf(expression))
 }
 
-// directHolderArgument requires a non-generic function with an exact pointer parameter.
+// directHolderArgument uses the common concrete-call rules and an exact pointer parameter.
 func (c *subsetChecks) directHolderArgument(call *ast.CallExpr, expression ast.Expr) bool {
 	function, ok := c.calledObject(call.Fun).(*types.Func)
 	if !ok || genericSignature(function.Origin().Type().(*types.Signature)) {
@@ -395,7 +395,10 @@ func (c *subsetChecks) directHolderArgument(call *ast.CallExpr, expression ast.E
 	}
 	signature := function.Type().(*types.Signature)
 	if signature.Recv() != nil {
-		return false
+		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+		if !ok || c.matchMethod(selector) != "" {
+			return false
+		}
 	}
 	for index, argument := range call.Args {
 		if argument == expression {

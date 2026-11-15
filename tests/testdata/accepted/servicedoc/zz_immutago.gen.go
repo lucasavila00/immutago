@@ -42,3 +42,6 @@ func (c *FileArgsCell) Load() FileArgsProjection { return NewFileArgsProjection(
 
 // LoadShared returns the frozen value for persistent use.
 func (c *FileArgsCell) LoadShared() FileArgs { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *FileArgsCell) LoadSharedPointer() *FileArgs { return c.value.LoadSharedPointer() }

@@ -36,3 +36,6 @@ func (c *GoodCell) Load() GoodProjection { return NewGoodProjection(c.value.Load
 
 // LoadShared returns the frozen value for persistent use.
 func (c *GoodCell) LoadShared() Good { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *GoodCell) LoadSharedPointer() *Good { return c.value.LoadSharedPointer() }

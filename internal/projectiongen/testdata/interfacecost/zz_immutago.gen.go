@@ -54,6 +54,9 @@ func (c *ModelCell) Load() ModelProjection { return NewModelProjection(c.value.L
 // LoadShared returns the frozen value for persistent use.
 func (c *ModelCell) LoadShared() Model { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *ModelCell) LoadSharedPointer() *Model { return c.value.LoadSharedPointer() }
+
 // NumberProjection provides local read access to *Number.
 type NumberProjection struct {
 	im.Local
@@ -84,3 +87,6 @@ func (c *NumberCell) Load() NumberProjection { return NewNumberProjection(c.valu
 
 // LoadShared returns the frozen value for persistent use.
 func (c *NumberCell) LoadShared() Number { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *NumberCell) LoadSharedPointer() *Number { return c.value.LoadSharedPointer() }

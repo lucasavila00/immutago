@@ -22,14 +22,14 @@ func TestFrozenPointerCarriers(t *testing.T) {
 		types.NewField(token.NoPos, nil, "Next", types.NewPointer(first), false),
 	}, nil))
 	shapes := []struct {
-		typ              types.Type
-		contains, stored bool
+		typ      types.Type
+		contains bool
 	}{
-		{record, true, true}, {pointer, true, false}, {alias, true, false},
-		{first, false, false}, {second, false, false}, {types.NewPointer(first), false, false},
-		{types.NewArray(pointer, 2), false, false}, {types.NewSlice(pointer), false, false},
-		{types.NewMap(pointer, types.NewPointer(second)), false, false},
-		{types.NewChan(types.SendRecv, pointer), true, true},
+		{record, true}, {pointer, false}, {alias, false},
+		{first, false}, {second, false}, {types.NewPointer(first), false},
+		{types.NewArray(pointer, 2), false}, {types.NewSlice(pointer), false},
+		{types.NewMap(pointer, types.NewPointer(second)), false},
+		{types.NewChan(types.SendRecv, pointer), false},
 	}
 	for _, reverse := range []bool{false, true} {
 		var queries Classifier
@@ -39,9 +39,6 @@ func TestFrozenPointerCarriers(t *testing.T) {
 				index = len(shapes) - step - 1
 			}
 			shape := shapes[index]
-			if got := queries.Stored(shape.typ); got != shape.stored {
-				t.Errorf("Stored(%s) = %t, want %t", shape.typ, got, shape.stored)
-			}
 			if got := queries.Contains(shape.typ); got != shape.contains {
 				t.Errorf("Contains(%s) = %t, want %t", shape.typ, got, shape.contains)
 			}

@@ -42,6 +42,9 @@ func (c *MapsCell) Load() MapsProjection { return NewMapsProjection(c.value.Load
 // LoadShared returns the frozen value for persistent use.
 func (c *MapsCell) LoadShared() Maps { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *MapsCell) LoadSharedPointer() *Maps { return c.value.LoadSharedPointer() }
+
 // SlicesProjection provides local read access to *Slices.
 type SlicesProjection struct {
 	im.Local
@@ -78,6 +81,9 @@ func (c *SlicesCell) Load() SlicesProjection { return NewSlicesProjection(c.valu
 // LoadShared returns the frozen value for persistent use.
 func (c *SlicesCell) LoadShared() Slices { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *SlicesCell) LoadSharedPointer() *Slices { return c.value.LoadSharedPointer() }
+
 // ValueProjection provides local read access to *Value.
 type ValueProjection struct {
 	im.Local
@@ -108,3 +114,6 @@ func (c *ValueCell) Load() ValueProjection { return NewValueProjection(c.value.L
 
 // LoadShared returns the frozen value for persistent use.
 func (c *ValueCell) LoadShared() Value { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *ValueCell) LoadSharedPointer() *Value { return c.value.LoadSharedPointer() }

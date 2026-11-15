@@ -148,7 +148,7 @@ themselves do not satisfy Frozen, Copied, or ReadResult payload proofs.
 Frozen and Local fields are immutable from construction. Local values cannot
 enter persistent storage, including through nested records or arrays. Local
 pointers stay local or pass to direct typed calls; never store or return them.
-Ordinary protected pointers originate from fresh storage. Fixed projection APIs
+Ordinary protected pointers originate from fresh storage or Cell.LoadSharedPointer. Fixed projection APIs
 and verified generated getters can select record addresses inside frozen storage.
 Do not add mutable construction, loan tracking, string provenance, or runtime
 ownership state.

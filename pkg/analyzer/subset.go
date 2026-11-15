@@ -147,6 +147,9 @@ func (c *subsetChecks) protectedReference(t types.Type) bool {
 
 // protectedRoot follows selectors and indices to detect protected owners.
 func (c *subsetChecks) protectedRoot(e ast.Expr) bool {
+	if c.pass.TypesInfo.Types[e].IsType() {
+		return false
+	}
 	if c.queries.Contains(c.pass.TypesInfo.TypeOf(e)) {
 		return true
 	}
@@ -178,11 +181,11 @@ func stringType(t types.Type) bool {
 func (c *subsetChecks) subsetContainer(t types.Type) string {
 	switch u := t.(type) {
 	case *types.Slice:
-		if c.queries.Stored(u.Elem()) {
+		if c.queries.Contains(u.Elem()) {
 			return "native slices of immutable storage are unsupported"
 		}
 	case *types.Map:
-		if c.queries.Stored(u.Key()) || c.queries.Stored(u.Elem()) {
+		if c.queries.Contains(u.Key()) || c.queries.Contains(u.Elem()) {
 			return "native maps of immutable storage are unsupported"
 		}
 	case *types.Chan:

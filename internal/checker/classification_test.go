@@ -18,6 +18,9 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 		return false
 	}
 	seen[t] = true
+	if FrozenPointer(t) {
+		return false
+	}
 	if parameter, ok := types.Unalias(t).(*types.TypeParam); ok {
 		return classificationConstraintOracle(parameter.Constraint(), seen)
 	}
@@ -31,26 +34,21 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 	case *types.Pointer:
 		return classificationStorageOracle(u.Elem(), seen)
 	case *types.Array:
-		return classificationStoredOracle(u.Elem(), seen)
+		return classificationStorageOracle(u.Elem(), seen)
 	case *types.Slice:
-		return classificationStoredOracle(u.Elem(), seen)
+		return classificationStorageOracle(u.Elem(), seen)
 	case *types.Map:
-		return classificationStoredOracle(u.Key(), seen) || classificationStoredOracle(u.Elem(), seen)
+		return classificationStorageOracle(u.Key(), seen) || classificationStorageOracle(u.Elem(), seen)
 	case *types.Chan:
 		return classificationStorageOracle(u.Elem(), seen)
 	case *types.Struct:
 		for field := range u.Fields() {
-			if classificationStoredOracle(field.Type(), seen) {
+			if classificationStorageOracle(field.Type(), seen) {
 				return true
 			}
 		}
 	}
 	return false
-}
-
-// classificationStoredOracle stops at pointer slots that do not contain the Frozen object.
-func classificationStoredOracle(t types.Type, seen map[types.Type]bool) bool {
-	return !FrozenPointer(t) && classificationStorageOracle(t, seen)
 }
 
 // classificationConstraintOracle follows the original type-parameter constraint rules.

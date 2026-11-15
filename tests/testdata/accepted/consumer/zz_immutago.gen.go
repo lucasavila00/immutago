@@ -43,6 +43,9 @@ func (c *NamedIntsCell) Load() NamedIntsProjection {
 // LoadShared returns the frozen value for persistent use.
 func (c *NamedIntsCell) LoadShared() NamedInts { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *NamedIntsCell) LoadSharedPointer() *NamedInts { return c.value.LoadSharedPointer() }
+
 // RecordProjection provides local read access to *Record.
 type RecordProjection struct {
 	im.Local
@@ -89,6 +92,9 @@ func (c *RecordCell) Load() RecordProjection { return NewRecordProjection(c.valu
 // LoadShared returns the frozen value for persistent use.
 func (c *RecordCell) LoadShared() Record { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *RecordCell) LoadSharedPointer() *Record { return c.value.LoadSharedPointer() }
+
 // ScalarProjection provides local read access to *Scalar.
 type ScalarProjection struct {
 	im.Local
@@ -119,6 +125,9 @@ func (c *ScalarCell) Load() ScalarProjection { return NewScalarProjection(c.valu
 
 // LoadShared returns the frozen value for persistent use.
 func (c *ScalarCell) LoadShared() Scalar { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *ScalarCell) LoadSharedPointer() *Scalar { return c.value.LoadSharedPointer() }
 
 // NamedIntsValuesProjection reads a fixed array locally.
 type NamedIntsValuesProjection struct {

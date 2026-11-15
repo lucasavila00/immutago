@@ -1,0 +1,6 @@
+dependency.go:11:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: outer.Limit++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+dependency.go:7:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: state.Settings.Limit = 1
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

@@ -28,6 +28,12 @@ func TestHolderMethods(t *testing.T) {
 		{"nested dereference", `func f(h *Holder){(*h).Current.Store(Model{});_=(*h).Current.Load()}`, false},
 		{"new holder", `func f(){h:=new(Holder);h.Current.Store(Model{});_=h.Current.Load()}`, false},
 		{"existing direct call", `func read(*TypedModelCell){};func f(c *TypedModelCell){read(c)}`, false},
+		{"concrete method argument", `type State struct{value *Model}
+func(s *State) Begin(c *TypedModelCell){s.value=c.LoadSharedPointer()}
+func(c *TypedModelCell) LoadSharedPointer()*Model{return c.value.LoadSharedPointer()}
+func f(c *TypedModelCell,s *State){s.Begin(c)}`, false},
+		{"dynamic method argument", `type Reader interface{Read(*TypedModelCell)}
+func f(c *TypedModelCell,r Reader){r.Read(c)}`, true},
 		{"copy", `func f(){other:=current;_=other}`, true},
 		{"nested copy", `func f(h *Holder){other:=h.Current;_=other}`, true},
 		{"replace", `func f(){current=TypedModelCell{}}`, true},

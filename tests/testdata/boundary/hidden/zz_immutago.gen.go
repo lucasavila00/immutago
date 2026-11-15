@@ -31,3 +31,6 @@ func (c *valueCell) Load() valueProjection { return newValueProjection(c.value.L
 
 // LoadShared returns the frozen value for persistent use.
 func (c *valueCell) LoadShared() value { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *valueCell) LoadSharedPointer() *value { return c.value.LoadSharedPointer() }

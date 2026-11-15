@@ -45,7 +45,7 @@ Value returns the value from a projection. The checker requires a Frozen read re
 
 ## type Cell
 
-Cell stores a replaceable Frozen value. Its zero value has no stored value. Load, LoadPointer, LoadShared, and Store are atomic. Readers can keep an earlier projection. The checker proves T and restricts use of the returned local projections. A Cell must not be copied after first use. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/cell.md for the complete forms.
+Cell stores a replaceable Frozen value. Its zero value has no stored value. Loads and Store are atomic. Readers can keep an earlier selected version. The checker proves T and restricts use of the returned local projections. A Cell must not be copied after first use. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/cell.md for the complete forms.
 
 ```go
 type Cell[T any] struct {
@@ -76,6 +76,14 @@ func (c *Cell[T]) LoadShared() T
 ```
 
 LoadShared returns the current Frozen value for persistent use. It copies T by value without copying backing storage or allocating. If no value was stored, it returns the zero T.
+
+### func \(\*Cell\[T\]\) LoadSharedPointer
+
+```go
+func (c *Cell[T]) LoadSharedPointer() *T
+```
+
+LoadSharedPointer returns the current root for persistent use without a copy or allocation. It returns nil before Store. The checker requires a concrete Frozen record T.
 
 ### func \(\*Cell\[T\]\) Store
 

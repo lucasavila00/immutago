@@ -42,6 +42,9 @@ func (c *BandCell) Load() BandProjection { return NewBandProjection(c.value.Load
 // LoadShared returns the frozen value for persistent use.
 func (c *BandCell) LoadShared() Band { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *BandCell) LoadSharedPointer() *Band { return c.value.LoadSharedPointer() }
+
 // CarrierServiceProjection provides local read access to *CarrierService.
 type CarrierServiceProjection struct {
 	im.Local
@@ -95,6 +98,9 @@ func (c *CarrierServiceCell) Load() CarrierServiceProjection {
 // LoadShared returns the frozen value for persistent use.
 func (c *CarrierServiceCell) LoadShared() CarrierService { return c.value.LoadShared() }
 
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *CarrierServiceCell) LoadSharedPointer() *CarrierService { return c.value.LoadSharedPointer() }
+
 // CatalogProjection provides local read access to *Catalog.
 type CatalogProjection struct {
 	im.Local
@@ -140,3 +146,6 @@ func (c *CatalogCell) Load() CatalogProjection { return NewCatalogProjection(c.v
 
 // LoadShared returns the frozen value for persistent use.
 func (c *CatalogCell) LoadShared() Catalog { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *CatalogCell) LoadSharedPointer() *Catalog { return c.value.LoadSharedPointer() }

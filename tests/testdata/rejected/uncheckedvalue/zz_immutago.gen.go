@@ -36,3 +36,6 @@ func (c *BoxCell) Load() BoxProjection { return NewBoxProjection(c.value.LoadPoi
 
 // LoadShared returns the frozen value for persistent use.
 func (c *BoxCell) LoadShared() Box { return c.value.LoadShared() }
+
+// LoadSharedPointer returns the frozen root for persistent use without a copy.
+func (c *BoxCell) LoadSharedPointer() *Box { return c.value.LoadSharedPointer() }
