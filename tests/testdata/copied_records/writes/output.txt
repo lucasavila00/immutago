@@ -1,3 +1,18 @@
+copied_writes.go:100:15: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &local.Rows[0].Points[0][0].Y
+  type: *int
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:106:12: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &values[0].X
+  type: *int
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:106:13: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+copied_writes.go:116:19: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+copied_writes.go:124:15: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &values[0].Points[1][0].X
+  type: *int
+  fix: copy the field into a local; do not take a pointer into immutable storage
+copied_writes.go:124:16: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 copied_writes.go:18:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: stored.Point = point
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -99,3 +114,7 @@ copied_writes.go:87:6: unsupported immutable operation: Projection.Read is reser
   source: values.At(0).Read()
   type: api.Point
   fix: use the generated field accessor
+copied_writes.go:95:12: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &stored.Point.X
+  type: *int
+  fix: copy the field into a local; do not take a pointer into immutable storage

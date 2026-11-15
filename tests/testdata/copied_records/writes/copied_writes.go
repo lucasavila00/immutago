@@ -86,3 +86,43 @@ func ProjectionPointers(value im.Projection[api.Point], values im.SliceProjectio
 	_ = value.Read()
 	_ = values.At(0).Read()
 }
+
+var savedField *int
+
+func saveField(pointer *int) { savedField = pointer }
+
+func SaveFrozenField(stored *frozen.Snapshot) {
+	saveField(&stored.Point.X)
+	*savedField = 9
+}
+
+func SaveLocalField(local *Result) {
+	savedField = &local.Rows[0].Points[0][0].Y
+	*savedField = 9
+}
+
+func SaveBuilderField() {
+	values := []api.Point{{X: 1}}
+	saveField(&values[0].X)
+	frozen := im.FreezeSlice(values)
+	*savedField = 9
+	_ = frozen.At(0)
+}
+
+func saveBuilderField(values []api.Point) { savedField = &values[0].X }
+
+func PassBuilderToPointerSaver() {
+	values := []api.Point{{X: 1}}
+	saveBuilderField(values)
+	frozen := im.FreezeSlice(values)
+	*savedField = 9
+	_ = frozen.At(0)
+}
+
+func SaveNestedBuilderField() {
+	values := []api.Summary{{}}
+	savedField = &values[0].Points[1][0].X
+	frozen := im.FreezeSlice(values)
+	*savedField = 9
+	_ = frozen.At(0)
+}
