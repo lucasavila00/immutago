@@ -32,7 +32,7 @@ func (Frozen) immutagoFrozen() {}
 // FrozenInterface marks an interface implemented by proved Frozen records.
 // Embed it in a named interface. Each conversion needs an immutability proof;
 // the private method alone does not prove the fields of an implementation.
-// Methods have fixed concrete parameters and ordinary Go results.
+// Methods have fixed parameters and ordinary Go input and result contracts.
 // Generated local projections forward these methods. Method implementations
 // keep ordinary Go contracts, including retention of their own Frozen receiver.
 // See https://github.com/lucasavila00/immutago/blob/main/docs/reference/frozen-interfaces.md for the complete forms.

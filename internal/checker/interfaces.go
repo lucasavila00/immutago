@@ -61,12 +61,5 @@ func (p *proof) frozenInterface(result *obligation, t types.Type) {
 			result.reason = "Frozen interface methods require fixed parameters"
 			return
 		}
-		for parameter := range signature.Params().Variables() {
-			switch parameter.Type().Underlying().(type) {
-			case *types.Interface, *types.Signature:
-				result.reason = "Frozen interface parameters require concrete types"
-				return
-			}
-		}
 	}
 }

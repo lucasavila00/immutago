@@ -6,6 +6,45 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// InputReaderProjection provides local method access to InputReader.
+type InputReaderProjection struct {
+	im.Local
+	immutagoProjection im.Projection[InputReader]
+}
+
+// NewInputReaderProjection wraps a checked local interface projection.
+func NewInputReaderProjection(value im.Projection[InputReader]) InputReaderProjection {
+	return InputReaderProjection{immutagoProjection: value}
+}
+
+// IsNil reports whether the interface is nil; a stored nil pointer is not nil.
+func (v InputReaderProjection) IsNil() bool { return v.immutagoProjection.Read() == nil }
+
+// Aliased calls the checked interface method with its ordinary Go contract.
+func (v InputReaderProjection) Aliased(arg0 ReaderAlias, arg1 CallbackAlias) int {
+	return v.immutagoProjection.Read().Aliased(arg0, arg1)
+}
+
+// Apply calls the checked interface method with its ordinary Go contract.
+func (v InputReaderProjection) Apply(arg0 any, arg1 func() int) int {
+	return v.immutagoProjection.Read().Apply(arg0, arg1)
+}
+
+// Named calls the checked interface method with its ordinary Go contract.
+func (v InputReaderProjection) Named(arg0 NumberReader, arg1 Callback) int {
+	return v.immutagoProjection.Read().Named(arg0, arg1)
+}
+
+// ReadLocal calls the checked interface method with its ordinary Go contract.
+func (v InputReaderProjection) ReadLocal(arg0 im.StringProjection) int {
+	return v.immutagoProjection.Read().ReadLocal(arg0)
+}
+
+// WithScorer calls the checked interface method with its ordinary Go contract.
+func (v InputReaderProjection) WithScorer(arg0 Scorer) int {
+	return v.immutagoProjection.Read().WithScorer(arg0)
+}
+
 // ReaderProjection provides local method access to Reader.
 type ReaderProjection struct {
 	im.Local
