@@ -34,7 +34,7 @@ func TestGeneratedTestMain(t *testing.T) {
 		{"valid", true, nil},
 		{"withoutmain", true, nil},
 		{"invalid", false, []string{"internal_test.go", "external_test.go", "writes to immutable objects"}},
-		{"spoof.test", false, []string{"main.go", "boxing immutable storage"}},
+		{"spoof.test", false, []string{"main.go", "ordinary interfaces require"}},
 	}
 	for _, mode := range []string{"cli", "vet"} {
 		t.Run(mode, func(t *testing.T) {
