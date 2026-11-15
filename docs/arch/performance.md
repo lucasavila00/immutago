@@ -17,7 +17,7 @@ costs changed and measure the affected operation.
 | ProjectionOf | Copy its T into a projection. No backing-storage copy. T can be a root pointer or a larger value. |
 | SliceProjection.AtPointer | Select a Frozen record element by address without copying it. Map lookup has no corresponding addressable slot. |
 | Generated field read | Read through a retained root pointer. Nested record and array readers retain the root and indices instead of copying parent records. |
-| CopyRecord | Make an explicit private root copy; a nonzero-sized root needs one allocation. |
+| CopyRecord | Make an explicit private root copy. A retained nonzero-sized root needs heap storage; the compiler can eliminate an allocation for local use. |
 | Cell.Store | Publish a private root copy through an atomic pointer; a nonzero-sized T needs one allocation. Backing storage remains shared. |
 | Cell.Load and LoadShared | Copy T by value. No backing-storage copy. |
 | Cell.LoadPointer and generated Cell.Load | Load the root pointer without copying T. |
