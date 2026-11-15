@@ -74,9 +74,10 @@ to the resolved `supervise.Service` type, including aliases and pointers.
 
 1. Skip unexported methods, Init, Run, and methods from the fixed runtime.
 2. Accept no result or one result, including for promoted user methods.
-3. Use `Prover.ScopedResultReason`: prove immutability, then accept a primitive,
-   an unnamed array of Scoped results, or a struct with im.Scoped.
-   Fields of a Scoped struct use the ordinary stored-type proof.
+3. Use `Prover.ScopedResultReason` to match primitives, unnamed arrays of Scoped
+   results, and structs with im.Scoped. Prove scalars and Scoped structs with
+   the existing immutable type proof; check each array element type recursively.
+   Fields of a Scoped struct use the ordinary stored-type rules.
 
 The [Scoped-result reference](../scoped-results.md) lists the allowed types.
 Start arguments, method inputs, callbacks, and Current pointers follow ordinary
