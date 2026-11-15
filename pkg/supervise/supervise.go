@@ -19,6 +19,9 @@
 // Review state changes, locks, saved inputs, and dependency calls in the service
 // code. Immutable results do not prove service isolation.
 //
+// Review state changes, locks, saved inputs, and dependency calls in the service
+// code. Immutable results do not prove service isolation.
+//
 // # Groups and shutdown
 //
 //   - NewRoot creates an application group; StartGroup creates a nested group.
