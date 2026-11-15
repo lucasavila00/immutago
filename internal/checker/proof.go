@@ -114,8 +114,9 @@ func (p *proof) value(result *obligation, t types.Type) {
 		return
 	}
 	if IsRuntimeType(t, "Ref") {
-		if !Service(t.(*types.Named).TypeArgs().At(0)) {
-			result.reason = "Ref requires a service target that embeds supervise.Service"
+		target := t.(*types.Named).TypeArgs().At(0)
+		if _, concrete := target.Underlying().(*types.Struct); !concrete || !Service(target) {
+			result.reason = "Ref requires a concrete struct that embeds supervise.Service"
 		}
 		return
 	}

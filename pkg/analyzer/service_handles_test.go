@@ -16,6 +16,8 @@ func TestServiceHandles(t *testing.T) {
 		{"ref result", `func(*Counter) Worker() Handle {return Handle{}}`},
 		{"marked result", `func(*Counter) Route() Route {return Route{}}`},
 		{"marked field", `func use(r Route) int{return r.Worker.Current().Count()}`},
+		{"anonymous target", `type Reader struct{};func(Reader) Count()int{return 1}
+func use(r supervise.Ref[struct{supervise.Service[supervise.NoArgs];Reader}])int{return r.Current().Count()}`},
 		{"shared field", `type SharedRoute struct{im.Shared;Worker Handle}
 func use(r *SharedRoute) int{return r.Worker.Current().Count()}`},
 		{"native map", `func use(r Handle) int{m:=map[string]Handle{"a":r};v,ok:=m["a"];if !ok{return 0}
@@ -104,6 +106,11 @@ func use(r Handle){_=get(r)}`},
 		{"unused nonservice", `var ref supervise.Ref[int]`},
 		{"nonservice alias", `type Wrong = supervise.Ref[int]`},
 		{"nonservice parameter", `func use(supervise.Ref[int]){}`},
+		{"pointer target", `var ref supervise.Ref[*Counter]`},
+		{"anonymous result", `type Bad struct{};func(Bad) Read()[]int{return nil}
+func use(r supervise.Ref[struct{supervise.Service[supervise.NoArgs];Bad}])[]int{return r.Current().Read()}`},
+		{"unused anonymous result", `type Bad struct{};func(Bad) Read()[]int{return nil}
+var ref supervise.Ref[struct{supervise.Service[supervise.NoArgs];Bad}]`},
 		{"bodyless parameter", `func leak(Handle)any`},
 		{"bodyless result", `func leak()Handle`},
 		{"bodyless callback", `func leak(func()Handle)any`},

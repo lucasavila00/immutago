@@ -70,7 +70,8 @@ the supported forms.
 
 [Service classification](../../internal/checker/types.go) follows embedded fields
 to the resolved `supervise.Service` type, including aliases and pointers.
-[Result checking](../../pkg/analyzer/service.go) visits the pointer method set:
+[Result checking](../../pkg/analyzer/service.go) visits the pointer method sets
+of named and anonymous service structs:
 
 1. Skip unexported methods, Init, Run, and methods from the fixed runtime.
 2. Accept no result or one result, including for promoted user methods.
@@ -107,8 +108,8 @@ The [handle matcher](../../pkg/analyzer/service_handles.go) and
    recovery, conversions, promoted accessors, and handle-bearing type arguments
    in user generic instantiations fail. Concrete Ref parameters in generic code
    retain the same accessor checks. Typed producer interfaces and callbacks can retain their
-   exact contracts; they cannot erase a Ref-bearing signature into another
-   interface. The cached handle classifier follows native containers, fields,
+   concrete signatures and exact interface types; they cannot erase a
+   Ref-bearing signature into another interface. The cached handle classifier follows native containers, fields,
    and callable contracts, including cycles, so a wrapper or iterator cannot hide
    a Ref from these checks.
 5. Functions whose signatures carry handles require Go bodies, so their

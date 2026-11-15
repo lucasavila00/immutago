@@ -51,7 +51,8 @@ Every exported user method on a service uses one of these result forms:
 | No result | `func (c *Counter) Pause() { c.paused.Store(true) }` |
 | One Scoped result | `func (l *Limiter) Usage() Usage` |
 
-This includes promoted user methods. Init, Run, and runtime methods such as
+This includes promoted user methods on named or anonymous service structs.
+Init, Run, and runtime methods such as
 `Args` and `Children` are exempt.
 
 Start arguments, receivers, closures, child groups, and ordinary method code use

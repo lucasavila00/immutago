@@ -146,6 +146,7 @@ func (c *checks) visit(node ast.Node) bool {
 		}
 	case *ast.StructType:
 		c.checkStruct(n.Pos(), c.pass.TypesInfo.TypeOf(n))
+		c.checkServiceResults(n.Pos(), c.pass.TypesInfo.TypeOf(n))
 	}
 	if expr, ok := node.(ast.Expr); ok {
 		t := c.pass.TypesInfo.TypeOf(expr)

@@ -44,7 +44,7 @@ func runtimeObject(object types.Object) bool {
 	return object != nil && object.Pkg() != nil && object.Pkg().Path() == checker.RuntimePath
 }
 
-// visitService checks method results in packages that do not use im data.
+// visitService checks service boundaries in packages that do not use im data.
 func (c *checks) visitService(node ast.Node) bool {
 	switch declaration := node.(type) {
 	case *ast.TypeSpec:
@@ -53,6 +53,8 @@ func (c *checks) visitService(node ast.Node) bool {
 		}
 	case *ast.FuncDecl:
 		c.checkFunctionBody(declaration)
+	case *ast.StructType:
+		c.checkServiceResults(declaration.Pos(), c.pass.TypesInfo.TypeOf(declaration))
 	}
 	return true
 }

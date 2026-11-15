@@ -26,23 +26,25 @@ Use a started handle: Current panics for an empty or unstarted handle.
 
 | Form | Example |
 | --- | --- |
-| Start, reserve, or declare an empty handle | `supervise.Start[Worker](group, args)`, `supervise.Reserve[Worker]()`, `var worker supervise.Ref[Worker]` |
+| Start or reserve a handle | `supervise.Start[Worker](group, args)`, `supervise.Reserve[Worker]()` |
+| Declare, construct, or allocate an empty handle | `var worker supervise.Ref[Worker]`, `supervise.Ref[Worker]{}`, `new(supervise.Ref[Worker])` |
 | Alias the handle type | `type WorkerRef = supervise.Ref[Worker]` |
 | Copy, assign, compare, pass, or return concrete handles | `next := worker`, `next == worker`, `use(worker)`, `return worker` |
 | Store handles in variables, fields, arrays, native containers, or frozen collections | `map[string]supervise.Ref[Worker]`, `Route{Worker: worker}` |
-| Read, address, index, slice, range over, or update ordinary handle storage | `workers[name] = worker`, `for _, worker := range workers { use(worker) }` |
-| Use native container operations | `append(workers, worker)`, `delete(workers, name)`, `ch <- worker`, `<-ch` |
+| Read, address, dereference, index, slice, or update ordinary handle storage | `p := &worker`, `other := *p`, `workers[name] = worker`, `workers[1:]` |
+| Range over native storage or concrete iterators; use concrete switch cases | `for _, worker := range workers { use(worker) }`, `for worker := range iterator { use(worker) }`, `switch worker { case selected: use(worker) }` |
+| Use native container operations: make, append, copy, delete, clear, len, cap, close, send, and receive | `make([]supervise.Ref[Worker], 2)`, `append(workers, worker)`, `copy(dst, src)`, `delete(workers, name)`, `clear(workers)`, `len(workers)`, `cap(workers)`, `close(ch)`, `ch <- worker`, `<-ch` |
 | Keep a typed producer interface | `type Producer interface { Worker() supervise.Ref[Worker] }`; call `producer.Worker().Current().Message()`. |
 | Capture handles or pass them through concrete callbacks | `func() { worker.Current().Resize(image) }` |
 | Call a message directly; parentheses, go, and defer are allowed | `worker.Current().Resize(image)` |
 
-`T` must embed `supervise.Service`. Fixed `im` and `supervise` generic APIs are
+`T` must be a struct that embeds `supervise.Service`. Fixed `im` and `supervise` generic APIs are
 allowed. User generic type arguments cannot contain handles, including in fields
 or callback signatures. A generic helper can still declare a concrete Ref
 parameter: `func use[T any](worker supervise.Ref[Worker], value T)`.
-Handle type conversions are rejected. Ref values cannot enter interfaces. A callback or producer
-interface that mentions Ref must keep its exact type; do not erase it to `any`
-or another interface. Marked objects and frozen collections keep all im rules.
+Handle type conversions are rejected. Ref values cannot enter interfaces. A callback that mentions Ref must keep a concrete signature. A producer
+interface that mentions Ref must keep its exact type. Do not erase either to
+`any` or another interface. Marked objects and frozen collections keep all im rules.
 Copy a handle to a local before capturing it or using it in go or defer:
 
 ```go
