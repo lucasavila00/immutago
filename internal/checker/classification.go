@@ -135,21 +135,23 @@ func (c *Classifier) expand(node *classificationNode) {
 		if parameter, ok := node.key.typ.(*types.TypeParam); ok {
 			c.connect(node, parameter.Constraint(), constraintMode)
 		} else if IsCollection(node.key.typ) || IsProjection(node.key.typ) ||
-			IsLibraryType(node.key.typ, "Local") || FrozenInterface(node.key.typ) || MarkerCount(node.key.typ) != 0 {
+			IsLibraryType(node.key.typ, "Local") || MarkerCount(node.key.typ) != 0 {
 			c.mark(node)
 		} else {
 			c.storageEdges(node)
 		}
 	case callableMode:
-		if !FrozenInterface(node.key.typ) {
-			c.callableEdges(node)
-		}
+		c.callableEdges(node)
 	}
 }
 
-// storageEdges follows stored components and leaves signatures and interfaces opaque.
+// storageEdges follows stored components and recognizes sealed interfaces as protected storage.
 func (c *Classifier) storageEdges(node *classificationNode) {
 	switch storage := node.key.typ.Underlying().(type) {
+	case *types.Interface:
+		if node.key.mode == storageMode && FrozenInterface(node.key.typ) {
+			c.mark(node)
+		}
 	case *types.Pointer:
 		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Array:
@@ -170,6 +172,10 @@ func (c *Classifier) storageEdges(node *classificationNode) {
 
 // constraintEdges preserves the separate interface and union traversal of type sets.
 func (c *Classifier) constraintEdges(node *classificationNode) {
+	if FrozenInterface(node.key.typ) {
+		c.mark(node)
+		return
+	}
 	switch constraint := node.key.typ.Underlying().(type) {
 	case *types.Interface:
 		for i := 0; i < constraint.NumEmbeddeds(); i++ {
@@ -197,6 +203,9 @@ func (c *Classifier) callableEdges(node *classificationNode) {
 			}
 		}
 	case *types.Interface:
+		if node.key.mode == callableMode && FrozenInterface(node.key.typ) {
+			return
+		}
 		for method := range storage.Methods() {
 			c.connect(node, method.Type(), node.key.mode)
 		}

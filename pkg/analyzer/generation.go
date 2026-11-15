@@ -89,20 +89,7 @@ func (c *subsetChecks) generationSource() (token.Pos, bool) {
 func (c *subsetChecks) generationDeclaration(node ast.Node) (token.Pos, bool) {
 	switch declaration := node.(type) {
 	case *ast.TypeSpec:
-		object := c.pass.TypesInfo.Defs[declaration.Name]
-		if declaration.Assign.IsValid() || object == nil ||
-			(!checker.Frozen(object.Type()) && !checker.FrozenInterface(object.Type())) {
-			return token.NoPos, true
-		}
-		if object.Parent() != c.pass.Pkg.Scope() || strings.HasSuffix(c.physicalFile(declaration.Pos()), "_test.go") {
-			kind := "Frozen records"
-			if checker.FrozenInterface(object.Type()) {
-				kind = "Frozen interfaces"
-			}
-			c.pass.Reportf(declaration.Pos(), "%s require package-level declarations in ordinary .go files", kind)
-			return declaration.Pos(), false
-		}
-		return declaration.Pos(), true
+		return c.generationNamed(declaration)
 	case *ast.InterfaceType:
 		if !checker.FrozenInterface(c.pass.TypesInfo.TypeOf(declaration)) {
 			return token.NoPos, true
@@ -125,6 +112,24 @@ func (c *subsetChecks) generationDeclaration(node ast.Node) (token.Pos, bool) {
 		}
 	}
 	return token.NoPos, true
+}
+
+// generationNamed requires a non-test package declaration for each generated source type.
+func (c *subsetChecks) generationNamed(declaration *ast.TypeSpec) (token.Pos, bool) {
+	object := c.pass.TypesInfo.Defs[declaration.Name]
+	if declaration.Assign.IsValid() || object == nil ||
+		(!checker.Frozen(object.Type()) && !checker.FrozenInterface(object.Type())) {
+		return token.NoPos, true
+	}
+	if object.Parent() != c.pass.Pkg.Scope() || strings.HasSuffix(c.physicalFile(declaration.Pos()), "_test.go") {
+		kind := "Frozen records"
+		if checker.FrozenInterface(object.Type()) {
+			kind = "Frozen interfaces"
+		}
+		c.pass.Reportf(declaration.Pos(), "%s require package-level declarations in ordinary .go files", kind)
+		return declaration.Pos(), false
+	}
+	return declaration.Pos(), true
 }
 
 // generationDirective accepts one exact command without accepting other invocation shapes.

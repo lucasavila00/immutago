@@ -18,7 +18,9 @@ func TestFrozenInterfaces(t *testing.T) {
 	}
 	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
 	for _, mode := range []string{"cli", "vet"} {
-		for _, target := range []string{"api", "implementation", "accepted", "rejected", "invalid", "invalidconsumer", "contracts"} {
+		for _, target := range []string{
+			"api", "implementation", "accepted", "rejected", "invalid", "invalidconsumer", "contracts",
+		} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
 				dir := consumerModule(t, root, "frozen_interfaces")
 				valid := target == "api" || target == "implementation" || target == "accepted"
@@ -36,7 +38,8 @@ func (Plain) Score([]float32) float64 { return 0 }
 var _ api.Scorer = Plain{}
 `)
 		output := runCommand(t, dir, false, binary, "./rejected")
-		checkSnapshot(t, filepath.Join(root, "tests/testdata/frozen_interfaces/compiler_seal/output.txt"), normalizeOutput(output))
+		path := filepath.Join(root, "tests/testdata/frozen_interfaces/compiler_seal/output.txt")
+		checkSnapshot(t, path, normalizeOutput(output))
 	})
 	t.Run("runtime", func(t *testing.T) {
 		dir := consumerModule(t, root, "frozen_interfaces")

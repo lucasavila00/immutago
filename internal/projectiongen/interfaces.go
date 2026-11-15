@@ -75,5 +75,6 @@ func (g *generator) writeInterfaceMethod(out *bytes.Buffer, receiver string, met
 	}
 	fmt.Fprintf(out, "// %s calls the checked interface method with its ordinary Go contract.\n"+
 		"func (v %s) %s(%s)%s { %sv.immutagoProjection.Read().%s(%s) }\n",
-		method.Name(), receiver, method.Name(), strings.Join(parameters, ", "), result, prefix, method.Name(), strings.Join(arguments, ", "))
+		method.Name(), receiver, method.Name(), strings.Join(parameters, ", "), result, prefix,
+		method.Name(), strings.Join(arguments, ", "))
 }

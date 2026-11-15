@@ -38,7 +38,15 @@ func TestFrozenInterfaceCategories(t *testing.T) {
 			t.Error("Frozen interface escaped through a read result")
 		}
 	}
+	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "T", nil), good)
+	var queries Classifier
+	if !queries.Contains(parameter) {
+		t.Fatal("a Frozen interface constraint lost its protected type")
+	}
 	var proofs Prover
+	if reason := proofs.FrozenReason(parameter); reason == "" {
+		t.Fatal("a type parameter passed the concrete interface proof")
+	}
 	if reason := proofs.FrozenReason(bad); !strings.Contains(reason, "Text result:") {
 		t.Fatalf("invalid result was accepted: %s", reason)
 	}
