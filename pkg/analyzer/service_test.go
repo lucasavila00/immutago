@@ -20,9 +20,19 @@ func TestServiceResults(t *testing.T) {
 	}{
 		{"scalar", `func(c *Counter) Count() int { return c.count }`, false},
 		{"scoped value", `func(c *Counter) Read() Reply { return Reply{Count:c.count} }`, false},
-		{"shared value", `func(c *Counter) Read() SharedReply { return SharedReply{Count:c.count} }`, false},
+		{"shared value", `func(c *Counter) Read() SharedReply { return SharedReply{Count:c.count} }`, true},
 		{"array", `func(*Counter) Read() [2]int { return [2]int{} }`, false},
-		{"frozen", `func(*Counter) Read() im.FrozenSlice[int] { frozen:=im.FreezeSlice([]int{1}); return frozen }`, false},
+		{"frozen", `func(*Counter) Read() im.FrozenSlice[int] { frozen:=im.FreezeSlice([]int{1}); return frozen }`, true},
+		{"frozen map",
+			`func(*Counter) Read() im.FrozenMap[string,int]{var value im.FrozenMap[string,int];return value}`, true},
+		{"shared array", `func(*Counter) Read() [2]SharedReply{return [2]SharedReply{}}`, true},
+		{"pointer array", `func(*Counter) Read() [2]*SharedReply{return [2]*SharedReply{}}`, true},
+		{"frozen field", `type Page struct{im.Scoped;Values im.FrozenSlice[int]}
+func(*Counter) Read() Page{return Page{}}`, false},
+		{"shared field", `type Page struct{im.Scoped;Value SharedReply}
+func(*Counter) Read() Page{return Page{}}`, false},
+		{"alias", `type Result = Reply;func(*Counter) Read() Result{return Result{}}`, false},
+		{"nested array", `func(*Counter) Read() [2][2]Reply{return [2][2]Reply{}}`, false},
 		{"defined scalar", `type Count int; func(*Counter) Read() Count{return 1}`, false},
 		{"marked array", `func(*Counter) Read() [2]Reply { return [2]Reply{} }`, false},
 		{"named array", `type Counts [2]int; func(*Counter) Read() Counts{return Counts{}}`, true},
@@ -34,7 +44,9 @@ func use(r Reader,p *Reply){_=r.Read(p)}`, true},
 		{"stored scoped pointer", `type Stored struct{supervise.Service[*Reply]}`, true},
 		{"stored scoped value", `type Stored struct{supervise.Service[Reply]}`, false},
 		{"stored shared pointer", `type Stored struct{supervise.Service[*SharedReply]}`, false},
-		{"zero results", `func(*Counter) Update() {}`, true},
+		{"zero results", `func(c *Counter) Update() { c.count++ }`, false},
+		{"promoted zero results", `type Commands struct{}; func(Commands) Pause(){}
+type Outer struct{Counter; Commands}`, false},
 		{"two results", `func(*Counter) Read()(int,int){return 1,2}`, true},
 		{"mutable result", `func(*Counter) Read() map[string]int {return nil}`, true},
 		{"pointer result", `func(*Counter) Read() *SharedReply {return &SharedReply{}}`, true},
@@ -50,8 +62,8 @@ func(*Other) Read() []int{return nil}`, true},
 self:=c; f:=func(){self.count++}; defer f(); go c.add(); c.add(); return c.count }
 func(c *Counter) add(){c.count++}
 func use(ref supervise.Ref[Counter]){c:=ref.Current(); c.count++; read:=c.Count; _=read()}`, false},
-		{"protected write", `func(*Counter) Change(p *Reply) int {p.Count++; return p.Count}`, true},
-		{"protected capture", `func(*Counter) Read(p *Reply) int {f:=func()int{return p.Count};return f()}`, true},
+		{"protected write", `func(*Counter) Change(p *Reply) {p.Count++}`, true},
+		{"protected capture", `func(*Counter) Read(p *Reply) {f:=func()int{return p.Count};_=f()}`, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

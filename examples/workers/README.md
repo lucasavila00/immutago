@@ -49,5 +49,5 @@ shutdown. Callers can retry against the dispatcher's current pool.
 names and creates fresh version-1 pools; version requests are not persisted.
 Removing a name stops both its serving pool and any pending replacement. Start
 arguments use ordinary Go structs; job channels stay inside each worker.
-Exported methods return one Scoped result: a scalar, a frozen collection, or the
-immutable Result struct.
+Set returns nothing. Readers return a scalar or a Scoped struct: Result for
+a job, or VariantSet for a configuration snapshot.

@@ -17,8 +17,8 @@ package im
 type Shared struct{}
 
 // Scoped marks a struct with read-only fields. Its pointers cannot be saved or returned.
-// Its values satisfy the Scoped result contract, which also accepts scalars,
-// immutable arrays, Shared values, and frozen collections.
+// Its values satisfy the Scoped result contract, which also accepts scalars
+// and arrays of compatible values.
 // Use Owner to publish a new Scoped object for other code to read.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
 // See https://github.com/lucasavila00/immutago/blob/main/docs/scoped.md for the complete forms.

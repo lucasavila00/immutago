@@ -10,5 +10,6 @@ func Count(root *supervise.Group) int {
 	if err != nil {
 		panic(err)
 	}
+	counter.Current().Update()
 	return counter.Current().Read().Count
 }

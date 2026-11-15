@@ -7,9 +7,9 @@ Use it for objects that functions can read without keeping their pointers:
 - Functions and [methods](common-forms.md#methods) can read fields and return values.
 - They cannot store the pointer in a field or global, capture it, or return it.
 
-The [Scoped result](scoped-results.md) category also includes primitives, arrays,
-and frozen collections. It describes returned values, while this marker controls
-object fields and pointer retention.
+The [Scoped result](scoped-results.md) category also includes primitives and
+arrays of compatible values. This marker controls object fields and pointer
+retention.
 
 ## Example: a request limit
 

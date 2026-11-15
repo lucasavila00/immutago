@@ -19,7 +19,7 @@ Call a service:
 
 - Keep the Ref and use ref.Current\(\).Method\(\).
 - Calls run in the caller's goroutine and can overlap with Run and other calls. Synchronize access to mutable fields.
-- Each exported user method except Init and Run returns exactly one Scoped result: an immutable value such as an integer, a marked struct, or a frozen collection. This includes promoted user methods. The runtime's own methods are exempt. The analyzer rejects top\-level pointers and mutable result types.
+- Each exported user method except Init and Run returns nothing or one Scoped result: a primitive, an array of compatible values, or a struct with im.Scoped. This includes promoted user methods. The runtime's own methods are exempt. The analyzer rejects top\-level pointers and mutable result types.
 - Arguments and implementation code follow ordinary Go rules. Uses of im values keep their immutability and pointer rules.
 
 Review state changes, locks, saved inputs, and dependency calls in the service code. Immutable results do not prove service isolation.

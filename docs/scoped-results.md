@@ -1,6 +1,7 @@
 # Scoped results
 
-A **Scoped result** is an immutable value returned by value.
+A handler can return nothing or one **Scoped result**: a primitive, an array of
+Scoped results, or a struct with `im.Scoped`.
 
 ## Example: quota results
 
@@ -9,7 +10,7 @@ Examples from the [configuration project](../examples/configuration/README.md):
 | Method | Result |
 | --- | --- |
 | `FileCache.Text() string` | The last file contents. |
-| `Limiter.Take() Decision` | A marked value with the request decision. |
+| `Limiter.Take() Decision` | An integer type with the request decision. |
 | `Limiter.Usage() Usage` | A struct with `im.Scoped` and the current counts. |
 
 ```go
@@ -30,20 +31,25 @@ to the limiter's mutable counters.
 | --- | --- |
 | Boolean, integer, floating-point, complex, or string value | `bool`, `int`, `float64`, `string` |
 | Defined scalar | `type Count int` |
-| Empty marker value | `im.Scoped`, `im.Shared` |
-| Struct with `im.Scoped` or `im.Shared`, with proved immutable fields | `Usage`, a struct with `im.Shared` |
-| Unnamed array of allowed stored elements | `[2]int`, `[2]Usage` |
-| Frozen collection with allowed keys and elements | `im.FrozenSlice[Usage]`, `im.FrozenMap[string, int]` |
-| Trusted immutable handle | `im.UncheckedValue[Model]` |
+| Empty Scoped marker value | `im.Scoped` |
+| Struct with `im.Scoped` and proved immutable fields | `Usage` |
+| Unnamed array of Scoped results | `[2]int`, `[2]Usage` |
 | Alias of an allowed type | `type Response = Usage` |
 
-Every field and collection element follows the [stored-type rules](common-forms.md#markers-and-stored-types).
-Those rules allow Shared pointers inside immutable values. A result itself cannot
-be a pointer. Frozen results copy their handle, not their entries.
+Fields of a Scoped struct follow the [stored-type rules](common-forms.md#markers-and-stored-types).
+They can contain frozen collections, Shared values, and Shared pointers.
+Callers can read or copy the result; the checker rejects field writes and storing
+or capturing a Scoped pointer.
 
 ## Service methods
 
-Every exported user method on a service returns **exactly one Scoped result**.
+Every exported user method on a service uses one of these result forms:
+
+| Allowed forms — exhaustive | Example |
+| --- | --- |
+| No result | `func (c *Counter) Pause() { c.paused.Store(true) }` |
+| One Scoped result | `func (l *Limiter) Usage() Usage` |
+
 This includes promoted user methods. Init, Run, and runtime methods such as
 `Args` and `Children` are exempt.
 
@@ -55,12 +61,12 @@ argument: a Scoped value can be saved, but a Scoped pointer cannot.
 
 | Result | Use instead |
 | --- | --- |
-| `*Usage`, or a pointer to a Shared struct | Declare a value result such as `Read() Usage`; return `*p`. |
-| `[]int` or `map[string]int` | Return a frozen collection. |
-| `error`, `any`, or another interface | Return a marked result struct with the information the caller needs. |
-| No result, or `(int, bool)` | Return one value; use a marked result struct for several fields. |
-| An unmarked struct | Mark it and prove its fields. |
-| `type Counts [2]int` | Return `[2]int`, or a marked struct with an array field. |
+| `*Usage` | Declare a value result such as `Read() Usage`; return `*p`. |
+| `[]int`, `map[string]int`, or a frozen collection | Put a frozen collection in a struct with `im.Scoped` and return that struct. |
+| `error`, `any`, or another interface | Return a struct with `im.Scoped` and the information the caller needs. |
+| `(int, bool)` | Return a struct with `im.Scoped` and fields for both values. |
+| An unmarked struct, Shared struct or pointer, or `im.UncheckedValue[T]` | Return a struct with `im.Scoped` and allowed fields. |
+| `type Counts [2]int` | Return `[2]int`, or a struct with `im.Scoped` and an array field. |
 
 Scoped pointers cannot be saved, returned, or captured. See
 [Scoped objects](scoped.md) for their use inside a function.

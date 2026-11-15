@@ -15,7 +15,7 @@ Use `supervise` to start, restart, and stop background services.
 | Runtime methods | `*T` must provide `Init() error`, `Run(context.Context)`, and the methods supplied by embedded `Service[A]`. `Service[A]` supplies a default Init. |
 | Start arguments | Read them with `s.Args()`. The runtime saves them for each restart. Ordinary Go types are allowed; protected data must satisfy the [stored-type rules](common-forms.md#markers-and-stored-types). |
 | No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
-| Exported user method result | Return exactly one [Scoped result](scoped-results.md). This includes promoted user methods. Init, Run, and runtime methods are exempt. |
+| Exported user method result | Return nothing or one [Scoped result](scoped-results.md). This includes promoted user methods. Init, Run, and runtime methods are exempt. |
 | Fields, method inputs, closures, and goroutines | Ordinary Go rules. Synchronize shared mutable data. Uses of protected values follow the [im rules](common-forms.md). |
 | Service construction, Ref copies, Current pointers, and group handles | Ordinary Go rules. Each Current call selects the published service; a saved pointer keeps the selected value. |
 

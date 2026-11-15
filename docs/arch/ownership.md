@@ -73,9 +73,11 @@ to the resolved `supervise.Service` type, including aliases and pointers.
 [Result checking](../../pkg/analyzer/service.go) visits the pointer method set:
 
 1. Skip unexported methods, Init, Run, and methods from the fixed runtime.
-2. Require exactly one result, including for promoted user methods.
-3. Use `Prover.ScopedResultReason`: reject a top-level pointer, then use the
-   same recursive immutable-value proof as fields and collection elements.
+2. Accept no result or one result, including for promoted user methods.
+3. Use `Prover.ScopedResultReason` to match primitives, unnamed arrays of Scoped
+   results, and structs with im.Scoped. Prove scalars and Scoped structs with
+   the existing immutable type proof; check each array element type recursively.
+   Fields of a Scoped struct use the ordinary stored-type rules.
 
 The [Scoped-result reference](../scoped-results.md) lists the allowed types.
 Start arguments, method inputs, callbacks, and Current pointers follow ordinary

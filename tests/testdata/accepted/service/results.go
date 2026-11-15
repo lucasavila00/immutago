@@ -20,15 +20,24 @@ type Counter struct {
 	current im.Owner[Reply]
 }
 
-func (*Counter) Run(context.Context)       {}
-func (c *Counter) Count() int              { return c.count }
-func (c *Counter) Read() Reply             { return Reply{Count: c.count} }
-func (c *Counter) Shared() SharedReply     { return SharedReply{Count: c.count} }
-func (*Counter) Array() [2]int             { return [2]int{1, 2} }
-func (*Counter) List() im.FrozenSlice[int] { frozen := im.FreezeSlice([]int{1, 2}); return frozen }
-func (*Counter) Table() im.FrozenMap[string, int] {
+func (*Counter) Run(context.Context) {}
+func (c *Counter) Count() int        { return c.count }
+func (c *Counter) Read() Reply       { return Reply{Count: c.count} }
+func (*Counter) Array() [2]int       { return [2]int{1, 2} }
+
+type Listing struct {
+	im.Scoped
+	Values im.FrozenSlice[int]
+}
+type Table struct {
+	im.Scoped
+	Values im.FrozenMap[string, int]
+}
+
+func (*Counter) List() Listing { frozen := im.FreezeSlice([]int{1, 2}); return Listing{Values: frozen} }
+func (*Counter) Table() Table {
 	frozen := im.FreezeMap(map[string]int{"a": 1})
-	return frozen
+	return Table{Values: frozen}
 }
 func (c *Counter) Input(callback func(int), values map[string]int) int {
 	callback(c.count)
@@ -64,3 +73,5 @@ type StoredShared struct {
 }
 
 func (*Counter) Ack() im.Scoped { return im.Scoped{} }
+
+func (c *Counter) Update() { c.count++ }
