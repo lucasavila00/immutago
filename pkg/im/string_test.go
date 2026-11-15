@@ -78,3 +78,48 @@ func TestFrozenStringAllocations(t *testing.T) {
 		t.Fatalf("empty clone allocations = %g; want zero", got)
 	}
 }
+
+// TestStringComparisonAndUnsafe checks native comparisons and explicit shared access.
+func TestStringComparisonAndUnsafe(t *testing.T) {
+	input := strings.Repeat("abc", 128)
+	frozen := FreezeString(input)
+	view := String(ViewOf(frozen))
+	for _, other := range []string{"", input, "other", input[:len(input)-1]} {
+		want := input == other
+		if frozen.Equal(FreezeString(other)) != want || frozen.EqualString(other) != want ||
+			view.Equal(Text(ViewOf(other))) != want || view.EqualString(other) != want {
+			t.Fatal("string comparison differs from native equality")
+		}
+	}
+	if unsafe.StringData(frozen.Unsafe()) != unsafe.StringData(input) ||
+		unsafe.StringData(view.Unsafe()) != unsafe.StringData(input) {
+		t.Fatal("Unsafe copied backing storage")
+	}
+	if got := testing.AllocsPerRun(100, func() {
+		benchmarkFound = view.EqualString(input) && view.Equal(String(ViewOf(frozen)))
+		benchmarkFound = benchmarkFound && frozen.EqualString(input) && frozen.Equal(frozen)
+		stringCloneSink = view.Unsafe()
+		stringCloneSink = frozen.Unsafe()
+	}); got != 0 {
+		t.Fatalf("comparison and Unsafe allocations = %g; want zero", got)
+	}
+}
+
+// BenchmarkStringComparison compares native string equality with the view method.
+func BenchmarkStringComparison(b *testing.B) {
+	left := strings.Repeat("abc", 128)
+	right := strings.Clone(left)
+	view := Text(ViewOf(left))
+	b.Run("native", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			benchmarkFound = left == right
+		}
+	})
+	b.Run("view", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			benchmarkFound = view.EqualString(right)
+		}
+	})
+}

@@ -18,6 +18,16 @@ func (s StringView) Len() int { return len(s.value) }
 // It panics if index is out of range, as native string indexing does.
 func (s StringView) At(index int) byte { return s.value[index] }
 
+// Equal compares the bytes with another local view without copying or allocating.
+func (s StringView) Equal(other StringView) bool { return s.value == other.value }
+
+// EqualString compares the bytes with a native string without copying or allocating.
+func (s StringView) EqualString(other string) bool { return s.value == other }
+
+// Unsafe returns the underlying string without copying or allocating.
+// The checker does not restrict this string; the caller controls its retention.
+func (s StringView) Unsafe() string { return s.value }
+
 // Clone returns a native string with independent storage in O(n) time and space.
 // An empty result needs no allocation.
 func (s StringView) Clone() string { return strings.Clone(s.value) }

@@ -24,4 +24,4 @@ func Select[T, F any](value View[T], project func(T) F) View[F] {
 func Copy[T any](value View[T]) T { return value.value }
 
 // IsNil reports whether a pointer view contains nil without exposing the pointer.
-func IsNil[T any](value View[*T]) bool { return value.value == nil }
+func IsNil[T any, P ~*T](value View[P]) bool { return value.value == nil }
