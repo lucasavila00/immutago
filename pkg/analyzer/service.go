@@ -61,6 +61,10 @@ func (c *checks) visitService(node ast.Node) bool {
 
 // checkServiceStorage applies im storage rules when the runtime saves protected arguments.
 func (c *checks) checkServiceStorage(name *ast.Ident, argument types.Type) {
+	if c.queries.Views(argument) {
+		c.report(name.Pos(), "service start arguments cannot store local frozen views")
+		return
+	}
 	if !c.queries.Contains(argument) && !c.queries.Callable(argument) {
 		return
 	}

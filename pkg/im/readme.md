@@ -6,14 +6,15 @@
 import "github.com/lucasavila00/immutago/pkg/im"
 ```
 
-Package im provides read\-only structs, slices, and maps checked by immutago.
+Package im provides read\-only structs, slices, maps, and strings checked by immutago.
 
 Choose the API for the data:
 
 - Shared: read\-only fields; callers can store or return pointers.
 - ByValue: keep read\-only value copies; use pointers through direct checked calls.
 - Owner: publish a new ByValue object while readers finish with the previous one.
-- FrozenSlice and FrozenMap: freeze a native collection without copying entries. Use Clone for an independent mutable copy.
+- FrozenSlice, FrozenMap, and FrozenString: share read\-only storage without a copy.
+- FrozenByValueSlice, FrozenByValueMap, and FrozenByValueString: read storage locally. Use Clone for independent native storage; nested local views require explicit copies.
 
 Prepare a native collection in one local variable. After Freeze, use only the frozen value. Run immutago to enforce these rules; go build alone does not.
 
@@ -27,11 +28,153 @@ Unwrap returns the wrapped pointer, or nil for the zero UncheckedValue. Only the
 
 ## type ByValue
 
-ByValue marks a struct with read\-only fields. Values can be copied, stored, and returned. Pointers can stay local or pass to direct checked calls. They cannot be stored in fields or containers, saved globally, returned, or captured by closures. Use Owner to publish a new ByValue object for other code to read. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/by-value.md for the complete forms.
+ByValue marks a struct with read\-only fields. Values can be copied and returned. A value with local frozen views must follow their local storage rules. Other values can be stored through the allowed source forms. Pointers can stay local or pass to direct checked calls. They cannot be stored in fields or containers, saved globally, returned, or captured by closures. Use Owner to publish a ByValue object that contains no local frozen views. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/by-value.md for the complete forms.
 
 ```go
 type ByValue struct{}
 ```
+
+## type FrozenByValueMap
+
+FrozenByValueMap is a local read view of map entries. Its zero value is empty. The checker restricts key and value types, storage, and transport. Copies share entries.
+
+```go
+type FrozenByValueMap[K comparable, V any] struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func FreezeByValueMap
+
+```go
+func FreezeByValueMap[K comparable, V any](values map[K]V) FrozenByValueMap[K, V]
+```
+
+FreezeByValueMap makes values read\-only without copying entries or allocating. Keep values in one local variable before Freeze. Afterward, read through the returned view. Run immutago to reject aliases and use of the old map.
+
+### func \(FrozenByValueMap\[K, V\]\) All
+
+```go
+func (m FrozenByValueMap[K, V]) All() iter.Seq2[K, V]
+```
+
+All returns an iterator over key\-value pairs in unspecified order. It reads entries without a copy and stops as soon as yield returns false. Use All only as the operand of a direct range loop. The checker rejects All for FrozenString keys; use Get or Clone instead.
+
+### func \(FrozenByValueMap\[K, V\]\) Clone
+
+```go
+func (m FrozenByValueMap[K, V]) Clone() map[K]V
+```
+
+Clone returns a native map with independent storage and preserves nil. It copies entries by value and copies the bytes of FrozenString keys. Cost is O\(n\) plus the copied key bytes. The checker rejects Clone for local views in entries.
+
+### func \(FrozenByValueMap\[K, V\]\) Get
+
+```go
+func (m FrozenByValueMap[K, V]) Get(key K) (V, bool)
+```
+
+Get returns the value for key and whether it exists, using native map lookup. It allocates no storage and preserves Go's key equality rules.
+
+### func \(FrozenByValueMap\[K, V\]\) Len
+
+```go
+func (m FrozenByValueMap[K, V]) Len() int
+```
+
+Len returns the number of entries in O\(1\) time without allocations.
+
+## type FrozenByValueSlice
+
+FrozenByValueSlice is a local read view of slice entries. Its zero value is empty. The checker restricts element types, storage, and transport. Copies share entries.
+
+```go
+type FrozenByValueSlice[T any] struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func FreezeByValueSlice
+
+```go
+func FreezeByValueSlice[T any](values []T) FrozenByValueSlice[T]
+```
+
+FreezeByValueSlice makes values read\-only without copying entries or allocating. Keep values in one local variable before Freeze. Afterward, read through the returned view. Run immutago to reject aliases and use of the old slice.
+
+### func \(FrozenByValueSlice\[T\]\) All
+
+```go
+func (s FrozenByValueSlice[T]) All() iter.Seq2[int, T]
+```
+
+All returns an iterator over index\-value pairs in increasing index order. It reads entries without a copy and stops as soon as yield returns false. Use All only as the operand of a direct range loop.
+
+### func \(FrozenByValueSlice\[T\]\) At
+
+```go
+func (s FrozenByValueSlice[T]) At(index int) T
+```
+
+At returns the element at index in O\(1\) time without allocations. It panics if index is out of range, as native slice indexing does.
+
+### func \(FrozenByValueSlice\[T\]\) Clone
+
+```go
+func (s FrozenByValueSlice[T]) Clone() []T
+```
+
+Clone returns an independent native slice in O\(n\) time and space and preserves nil. It copies elements by value. The checker rejects Clone for elements with local views.
+
+### func \(FrozenByValueSlice\[T\]\) Len
+
+```go
+func (s FrozenByValueSlice[T]) Len() int
+```
+
+Len returns the number of elements in O\(1\) time without allocations.
+
+## type FrozenByValueString
+
+FrozenByValueString is a local read view of string bytes. Its zero value is empty. The checker restricts storage and transport of the view. Copies share the bytes.
+
+```go
+type FrozenByValueString struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func FreezeByValueString
+
+```go
+func FreezeByValueString(value string) FrozenByValueString
+```
+
+FreezeByValueString wraps value without copying bytes or allocating. The input remains usable. Run immutago to enforce the local view rules.
+
+### func \(FrozenByValueString\) At
+
+```go
+func (s FrozenByValueString) At(index int) byte
+```
+
+At returns the byte at index in O\(1\) time without allocations. It panics if index is out of range, as native string indexing does.
+
+### func \(FrozenByValueString\) Clone
+
+```go
+func (s FrozenByValueString) Clone() string
+```
+
+Clone returns a native string with independent storage in O\(n\) time and space. An empty result needs no allocation.
+
+### func \(FrozenByValueString\) Len
+
+```go
+func (s FrozenByValueString) Len() int
+```
+
+Len returns the number of bytes in O\(1\) time without allocations.
 
 ## type FrozenMap
 
@@ -58,6 +201,14 @@ func (m FrozenMap[K, V]) All() iter.Seq2[K, V]
 ```
 
 All returns an iterator over key\-value pairs in unspecified order. It reads frozen storage directly without making a copy. Each invocation starts a new map traversal and stops as soon as yield returns false.
+
+### func \(FrozenMap\[K, V\]\) ByValue
+
+```go
+func (m FrozenMap[K, V]) ByValue() FrozenByValueMap[K, V]
+```
+
+ByValue returns a local read view without copying entries or allocating. Run immutago to enforce the view's type, storage, and transport rules.
 
 ### func \(FrozenMap\[K, V\]\) Clone
 
@@ -117,6 +268,14 @@ func (s FrozenSlice[T]) At(index int) T
 
 At returns the element at index in O\(1\) time without allocations. It panics if index is out of range, as native slice indexing does.
 
+### func \(FrozenSlice\[T\]\) ByValue
+
+```go
+func (s FrozenSlice[T]) ByValue() FrozenByValueSlice[T]
+```
+
+ByValue returns a local read view without copying entries or allocating. Run immutago to enforce the view's type, storage, and transport rules.
+
 ### func \(FrozenSlice\[T\]\) Clone
 
 ```go
@@ -133,9 +292,59 @@ func (s FrozenSlice[T]) Len() int
 
 Len returns the number of elements in O\(1\) time without allocations.
 
+## type FrozenString
+
+FrozenString holds read\-only bytes. Its zero value is empty. Copies share the source bytes. Native string access requires Clone.
+
+```go
+type FrozenString struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func FreezeString
+
+```go
+func FreezeString(value string) FrozenString
+```
+
+FreezeString wraps value without copying bytes or allocating. The input remains usable because native string bytes are immutable.
+
+### func \(FrozenString\) At
+
+```go
+func (s FrozenString) At(index int) byte
+```
+
+At returns the byte at index in O\(1\) time without allocations. It panics if index is out of range, as native string indexing does.
+
+### func \(FrozenString\) ByValue
+
+```go
+func (s FrozenString) ByValue() FrozenByValueString
+```
+
+ByValue returns a local read view without copying bytes or allocating. Run immutago to enforce the view's storage and transport rules.
+
+### func \(FrozenString\) Clone
+
+```go
+func (s FrozenString) Clone() string
+```
+
+Clone returns a native string with independent storage in O\(n\) time and space. An empty result needs no allocation.
+
+### func \(FrozenString\) Len
+
+```go
+func (s FrozenString) Len() int
+```
+
+Len returns the number of bytes in O\(1\) time without allocations.
+
 ## type Owner
 
-Owner stores a replaceable pointer to a read\-only ByValue object. Load and Store are atomic; readers can continue to use an earlier object. The analyzer checks construction and pointer use. Declare a slot as a package variable or a direct named field of an unmarked struct. Its zero value is empty. An Owner value must not be copied. See https://github.com/lucasavila00/immutago/blob/main/docs/owner.md for the complete forms.
+Owner stores a replaceable pointer to a read\-only ByValue object. Load and Store are atomic; readers can continue to use an earlier object. The analyzer checks construction and pointer use. T cannot contain local frozen views. Declare a slot as a package variable or a direct named field of an unmarked struct. Its zero value is empty. An Owner value must not be copied. See https://github.com/lucasavila00/immutago/blob/main/docs/owner.md for the complete forms.
 
 ```go
 type Owner[T any] struct {

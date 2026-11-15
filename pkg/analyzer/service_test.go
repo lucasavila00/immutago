@@ -27,7 +27,7 @@ func TestServiceResults(t *testing.T) {
 			`func(*Counter) Read() im.FrozenMap[string,int]{var value im.FrozenMap[string,int];return value}`, true},
 		{"shared array", `func(*Counter) Read() [2]SharedReply{return [2]SharedReply{}}`, true},
 		{"pointer array", `func(*Counter) Read() [2]*SharedReply{return [2]*SharedReply{}}`, true},
-		{"frozen field", `type Page struct{im.ByValue;Values im.FrozenSlice[int]}
+		{"frozen field", `type Page struct{im.ByValue;Values im.FrozenByValueSlice[int]}
 func(*Counter) Read() Page{return Page{}}`, false},
 		{"shared field", `type Page struct{im.ByValue;Value SharedReply}
 func(*Counter) Read() Page{return Page{}}`, false},

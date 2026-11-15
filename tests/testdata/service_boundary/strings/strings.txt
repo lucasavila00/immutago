@@ -1,0 +1,6 @@
+strings.go:18:19: service method Text must return a service result: native strings require im.FrozenString in immutable storage
+  result type: string
+strings.go:19:17: service method Named must return a service result: native strings require im.FrozenString in immutable storage
+  result type: strings.Text
+strings.go:20:17: service method Alias must return a service result: array element: native strings require im.FrozenString in immutable storage
+  result type: [0]strings.Alias

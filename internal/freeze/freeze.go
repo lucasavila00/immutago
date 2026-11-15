@@ -122,11 +122,12 @@ func calledObject(pass *analysis.Pass, expression ast.Expr) types.Object {
 	return nil
 }
 
-// freezing recognizes only the sealed library's two ownership-consuming entry points.
+// freezing recognizes only the sealed library's ownership-consuming entry points.
 func freezing(pass *analysis.Pass, call *ast.CallExpr) bool {
 	object := calledObject(pass, call.Fun)
 	return object != nil && object.Pkg() != nil && object.Pkg().Path() == checker.LibraryPath &&
-		(object.Name() == "FreezeSlice" || object.Name() == "FreezeMap")
+		(object.Name() == "FreezeSlice" || object.Name() == "FreezeMap" ||
+			object.Name() == "FreezeByValueSlice" || object.Name() == "FreezeByValueMap")
 }
 
 // report emits one actionable ownership diagnostic at a source position.

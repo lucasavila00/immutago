@@ -65,14 +65,14 @@ func TestPrimitiveProofs(t *testing.T) {
 	for _, kind := range []types.BasicKind{
 		types.Bool, types.Int, types.Int8, types.Int16, types.Int32, types.Int64,
 		types.Uint, types.Uint8, types.Uint16, types.Uint32, types.Uint64, types.Uintptr,
-		types.Float32, types.Float64, types.Complex64, types.Complex128, types.String,
+		types.Float32, types.Float64, types.Complex64, types.Complex128,
 	} {
 		if reason := Reason(types.Typ[kind]); reason != "" {
 			t.Errorf("%s: %s", types.Typ[kind], reason)
 		}
 	}
 	for _, typ := range []types.Type{
-		types.Typ[types.UnsafePointer], types.NewSlice(types.Typ[types.Int]),
+		types.Typ[types.String], types.Typ[types.UnsafePointer], types.NewSlice(types.Typ[types.Int]),
 		types.NewMap(types.Typ[types.String], types.Typ[types.Int]),
 		types.NewChan(types.SendRecv, types.Typ[types.Int]),
 		types.NewPointer(types.Typ[types.Int]), types.NewStruct(nil, nil),

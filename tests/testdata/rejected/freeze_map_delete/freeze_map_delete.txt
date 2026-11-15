@@ -1,1 +1,1 @@
-freeze_map_delete.go:5:81: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+freeze_map_delete.go:5:76: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder

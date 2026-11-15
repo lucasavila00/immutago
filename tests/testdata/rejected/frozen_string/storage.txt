@@ -1,0 +1,49 @@
+storage.go:10:2: immutable field Native: native strings require im.FrozenString in immutable storage
+  owner: frozenstring.Shared; field type: string
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:15:2: immutable field Named: native strings require im.FrozenString in immutable storage
+  owner: frozenstring.ByValue; field type: frozenstring.Text
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:16:2: immutable field Alias: native strings require im.FrozenString in immutable storage
+  owner: frozenstring.ByValue; field type: frozenstring.Alias
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:17:2: immutable field Array: native strings require im.FrozenString in immutable storage
+  owner: frozenstring.ByValue; field type: [0]string
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:20:17: immutable collection: type argument 1: native strings require im.FrozenString in immutable storage
+  type: im.FrozenSlice[string]
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:20:20: immutable type argument: native strings require im.FrozenString in immutable storage
+  type: string
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:20:5: immutable collection: type argument 1: native strings require im.FrozenString in immutable storage
+  type: im.FrozenSlice[string]
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:21:15: immutable collection: type argument 1: native strings require im.FrozenString in immutable storage
+  type: im.FrozenMap[string, int]
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:21:18: immutable type argument: native strings require im.FrozenString in immutable storage
+  type: string
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:21:5: immutable collection: type argument 1: native strings require im.FrozenString in immutable storage
+  type: im.FrozenMap[string, int]
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:22:17: immutable collection: type argument 2: native strings require im.FrozenString in immutable storage
+  type: im.FrozenMap[int, string]
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:22:20: immutable type argument: native strings require im.FrozenString in immutable storage
+  type: string
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:22:5: immutable collection: type argument 2: native strings require im.FrozenString in immutable storage
+  type: im.FrozenMap[int, string]
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:26:6: immutable collection: type argument 1: native strings require im.FrozenString in immutable storage
+  type: im.FrozenSlice[string]
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:26:9: immutable type argument: native strings require im.FrozenString in immutable storage
+  type: string
+  fix: use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage
+storage.go:29:23: unmarked struct contains immutable field Text; embed an immutable marker
+  owner: frozenstring.Unmarked; field type: im.FrozenString
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Shared or im.ByValue and make all fields immutable, or remove the immutable field

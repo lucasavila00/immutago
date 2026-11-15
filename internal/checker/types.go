@@ -34,7 +34,14 @@ func IsUncheckedValue(t types.Type) bool { return IsLibraryType(t, "UncheckedVal
 
 // IsCollection reports whether t is one of the library's sealed collection types.
 func IsCollection(t types.Type) bool {
-	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap")
+	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap") ||
+		IsLibraryType(t, "FrozenString") || IsByValueCollection(t)
+}
+
+// IsByValueCollection identifies the fixed local frozen view types.
+func IsByValueCollection(t types.Type) bool {
+	return IsLibraryType(t, "FrozenByValueSlice") || IsLibraryType(t, "FrozenByValueMap") ||
+		IsLibraryType(t, "FrozenByValueString")
 }
 
 // Marked reports the presence of either embedded marker, including invalid combinations.

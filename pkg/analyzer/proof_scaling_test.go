@@ -13,7 +13,7 @@ func markedTypeGraph(count int, invalid bool) string {
 	var source strings.Builder
 	for i := range count {
 		fmt.Fprintf(&source, "type M%d struct { im.Shared; Next *M%d; Many im.FrozenSlice[*M%d]; "+
-			"ByKey im.FrozenMap[string,*M%d]; Name string; N int;", i, (i+1)%count, (i*7+3)%count, (i*13+5)%count)
+			"ByKey im.FrozenMap[int,*M%d]; Name im.FrozenString; N int;", i, (i+1)%count, (i*7+3)%count, (i*13+5)%count)
 		if invalid && i == 0 {
 			source.WriteString(" Bad []int;")
 		}
@@ -30,13 +30,13 @@ func writeMarkedFunction(source *strings.Builder, count, i int) {
 	next, many, key := (i+1)%count, (i*7+3)%count, (i*13+5)%count
 	fmt.Fprintf(source, "func F%d(next *M%d,a,c *M%d,k *M%d)(*M%d,int){total:=0;\n", i, next, many, key, i)
 	for j := range 10 {
-		fmt.Fprintf(source, "many%d:=[]*M%d{a};many%d=append(many%d,c);keys%d:=map[string]*M%d{\"k\":k};\n",
+		fmt.Fprintf(source, "many%d:=[]*M%d{a};many%d=append(many%d,c);keys%d:=map[int]*M%d{1:k};\n",
 			j, many, j, j, j, key)
 		fmt.Fprintf(source, "fm%d:=im.FreezeSlice(many%d);fk%d:=im.FreezeMap(keys%d);\n", j, j, j, j)
-		fmt.Fprintf(source, "v%d:=&M%d{Next:next,Many:fm%d,ByKey:fk%d,Name:\"x\",N:%d};\n", j, i, j, j, j)
-		fmt.Fprintf(source, "if got,ok:=v%d.ByKey.Get(\"k\");ok{total+=got.N+v%d.Many.Len()+v%d.Next.N};\n", j, j, j)
+		fmt.Fprintf(source, "v%d:=&M%d{Next:next,Many:fm%d,ByKey:fk%d,Name:im.FreezeString(\"x\"),N:%d};\n", j, i, j, j, j)
+		fmt.Fprintf(source, "if got,ok:=v%d.ByKey.Get(1);ok{total+=got.N+v%d.Many.Len()+v%d.Next.N};\n", j, j, j)
 	}
-	fmt.Fprintf(source, "return &M%d{Next:next,Name:\"r\",N:total},total}\n", i)
+	fmt.Fprintf(source, "return &M%d{Next:next,Name:im.FreezeString(\"r\"),N:total},total}\n", i)
 }
 
 // TestMarkedTypeGraph checks both accepted linked objects and a reachable invalid field.

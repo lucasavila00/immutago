@@ -4,7 +4,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
 	im.ByValue
-	Version string
+	Version im.FrozenString
 	Weights im.FrozenSlice[float64]
 }
 

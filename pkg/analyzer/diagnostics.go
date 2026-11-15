@@ -37,6 +37,9 @@ func diagnosticType(t types.Type) string {
 
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
+	"local frozen views cannot be stored in package variables":         "keep the view local, or store independent data from Clone",
+	"local map iteration cannot expose shared keys; use Get or Clone":  "use Get with a caller-owned key, or Clone before iterating",
+	"Clone cannot copy nested local views; copy their data explicitly": "read each nested view and Clone its data into a new builder",
 	"protected operation is outside the supported expression forms": "use a documented concrete value, pointer, " +
 		"reader, or builder operation",
 	"protected value conversions are unsupported": "construct the destination marked value from copied fields; " +
@@ -132,7 +135,14 @@ func subsetFix(rule string) string {
 
 // structuralFix explains how to replace a field or type argument that failed its recursive proof.
 func structuralFix(t types.Type, reason string) string {
+	if strings.Contains(reason, "native strings require im.FrozenString") {
+		return "use im.FrozenString and construct it with im.FreezeString(text), which keeps the string storage"
+	}
 	switch {
+	case strings.Contains(reason, "local frozen reads cannot expose shared data references"):
+		return "use scalar fields or local frozen views for elements and values; only map keys can use im.FrozenString"
+	case strings.Contains(reason, "local frozen views"):
+		return "keep local views in local ByValue values, or store independent data from Clone"
 	case strings.Contains(reason, "named array"):
 		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Shared or im.ByValue"
 	case strings.Contains(reason, "type parameters"):

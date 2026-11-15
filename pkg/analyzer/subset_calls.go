@@ -125,19 +125,24 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 			return ""
 		}
 		return "Owner requires a direct slot call"
-	case "FreezeMap", "FreezeSlice":
+	case "FreezeMap", "FreezeSlice", "FreezeByValueMap", "FreezeByValueSlice":
 		if c.standaloneFreeze(call) {
 			return ""
 		}
 		return "Freeze requires a standalone single binding"
-	case "Trust", "Unwrap":
+	case "FreezeString", "FreezeByValueString", "Trust", "Unwrap":
 		return ""
-	case "Get", "At", "Len", "All", "Clone":
+	case "Get", "At", "Len", "All", "Clone", "ByValue":
 		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 		if !ok || !c.exactCollectionMethod(selector) {
 			return "immutable method expressions are unsupported"
 		}
-		if object.Name() == "All" && c.queries.Callable(c.pass.TypesInfo.TypeOf(call)) {
+		receiver := c.pass.TypesInfo.TypeOf(selector.X)
+		if rule := c.localCollectionCall(receiver, object.Name()); rule != "" {
+			return rule
+		}
+		if object.Name() == "All" &&
+			(checker.IsByValueCollection(receiver) || c.queries.Callable(c.pass.TypesInfo.TypeOf(call))) {
 			statement, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
 			if !ok || ast.Unparen(statement.X) != call {
 				return "immutable iterators must be consumed by direct range"
@@ -146,6 +151,25 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 		return ""
 	}
 	return "protected operation is outside the supported expression forms"
+}
+
+// localCollectionCall rejects reads or clones that would expose retained references.
+func (c *subsetChecks) localCollectionCall(receiver types.Type, method string) string {
+	if !checker.IsByValueCollection(receiver) {
+		return ""
+	}
+	args := types.Unalias(receiver).(*types.Named).TypeArgs()
+	if method == "All" && checker.IsLibraryType(receiver, "FrozenByValueMap") && c.queries.Retains(args.At(0)) {
+		return "local map iteration cannot expose shared keys; use Get or Clone"
+	}
+	if method == "Clone" {
+		for index := 0; index < args.Len(); index++ {
+			if c.queries.Views(args.At(index)) {
+				return "Clone cannot copy nested local views; copy their data explicitly"
+			}
+		}
+	}
+	return ""
 }
 
 // matchCallArguments resolves every actual parameter, including forwarded tuples and variadic elements.

@@ -93,6 +93,9 @@ func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance
 		return
 	}
 	if obj.Name() == "UncheckedValue" {
+		if c.queries.Views(instance.TypeArgs.At(0)) {
+			c.report(ident.Pos(), "unchecked storage cannot contain local frozen views")
+		}
 		return
 	}
 	if obj.Name() == "Trust" || obj.Name() == "Unwrap" {
@@ -101,7 +104,9 @@ func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance
 	}
 	if obj.Name() == "Owner" {
 		arg := instance.TypeArgs.At(0)
-		if !checker.ByValue(arg) || checker.Shared(arg) || c.proofs.Reason(arg) != "" {
+		if c.queries.Views(arg) {
+			c.report(ident.Pos(), "Owner cannot store local frozen views")
+		} else if !checker.ByValue(arg) || checker.Shared(arg) || c.proofs.Reason(arg) != "" {
 			c.report(ident.Pos(), "Owner requires a concrete, valid ByValue struct")
 		}
 		return
@@ -214,6 +219,10 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		if invalidMarkerField(field) {
 			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
 				"\n  fix: embed im.Shared or im.ByValue; remove the marker field name or pointer")
+			continue
+		}
+		if checker.Shared(t) && c.queries.Views(ft) {
+			c.report(fieldPos, "Shared fields cannot contain local frozen views")
 			continue
 		}
 		if marked {

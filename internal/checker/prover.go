@@ -39,9 +39,9 @@ func (p *Prover) Reason(t types.Type) string {
 	return reason
 }
 
-// ServiceResultReason accepts scalars, service references, and proved ByValue structs.
+// ServiceResultReason accepts scalars, service references, local views, and proved ByValue structs.
 // It also accepts unnamed arrays of these result types, including nested arrays.
-// Fields of a ByValue struct use the ordinary stored-type checks.
+// Results cannot expose shared data references through their fields.
 func (p *Prover) ServiceResultReason(t types.Type) string {
 	t = types.Unalias(t)
 	switch value := t.Underlying().(type) {
@@ -55,12 +55,18 @@ func (p *Prover) ServiceResultReason(t types.Type) string {
 			return ""
 		}
 	case *types.Struct:
-		if ByValue(t) || IsLibraryType(t, "ByValue") || IsRuntimeType(t, "Ref") {
-			return p.Reason(t)
+		if ByValue(t) || IsLibraryType(t, "ByValue") || IsRuntimeType(t, "Ref") || IsByValueCollection(t) {
+			if reason := p.Reason(t); reason != "" {
+				return reason
+			}
+			if p.graph.queries.Retains(t) {
+				return "service results cannot expose shared data references; use local frozen views or copied values"
+			}
+			return ""
 		}
 	case *types.Pointer:
 		return "a service result must be a value, not a pointer"
 	}
-	return "service results require a scalar, supervise.Ref, an unnamed array of service results, " +
+	return "service results require a scalar, a local frozen view, supervise.Ref, an unnamed array of service results, " +
 		"or a struct with im.ByValue"
 }

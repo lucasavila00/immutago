@@ -31,6 +31,7 @@ func (n *obligation) failed() bool { return n.reason != "" || n.cause != nil }
 
 // proof visits each concrete type once and propagates failures through recursive owners.
 type proof struct {
+	queries  Classifier
 	nodes    map[types.Type]*obligation
 	failures []*obligation
 	pending  []proofSeed
@@ -110,6 +111,10 @@ func (p *proof) value(result *obligation, t types.Type) {
 		result.reason = "Owner slots are mutable"
 		return
 	}
+	if IsUncheckedValue(t) && p.queries.Views(t) {
+		result.reason = "unchecked storage cannot contain local frozen views"
+		return
+	}
 	if IsLibraryType(t, "Shared") || IsLibraryType(t, "ByValue") || IsUncheckedValue(t) {
 		return
 	}
@@ -118,10 +123,7 @@ func (p *proof) value(result *obligation, t types.Type) {
 		return
 	}
 	if IsCollection(t) {
-		args := t.(*types.Named).TypeArgs()
-		for index := 0; index < args.Len(); index++ {
-			p.depend(result, args.At(index), fmt.Sprintf("type argument %d: ", index+1))
-		}
+		p.collection(result, t)
 		return
 	}
 	if _, generic := t.(*types.TypeParam); generic {
@@ -147,7 +149,11 @@ func (p *proof) value(result *obligation, t types.Type) {
 		p.depend(result, underlying.Elem(), "")
 		return
 	case *types.Basic:
-		if underlying.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex|types.IsString) != 0 {
+		if underlying.Info()&types.IsString != 0 {
+			result.reason = "native strings require im.FrozenString in immutable storage"
+			return
+		}
+		if underlying.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex) != 0 {
 			return
 		}
 	case *types.Array:
@@ -158,6 +164,25 @@ func (p *proof) value(result *obligation, t types.Type) {
 		return
 	}
 	result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
+}
+
+// collection proves every type argument and its stored or yielded retention rule.
+func (p *proof) collection(result *obligation, t types.Type) {
+	args := t.(*types.Named).TypeArgs()
+	for index := 0; index < args.Len(); index++ {
+		argument := args.At(index)
+		label := fmt.Sprintf("type argument %d: ", index+1)
+		if !IsByValueCollection(t) && p.queries.Views(argument) {
+			result.reason = label + "shareable frozen storage cannot contain local frozen views"
+			return
+		}
+		stringKey := IsLibraryType(t, "FrozenByValueMap") && index == 0 && IsLibraryType(argument, "FrozenString")
+		if IsByValueCollection(t) && !stringKey && p.queries.Retains(argument) {
+			result.reason = label + "local frozen reads cannot expose shared data references"
+			return
+		}
+		p.depend(result, argument, label)
+	}
 }
 
 // refTargetReason requires the concrete service value selected by Current's *T result.
@@ -183,6 +208,10 @@ func (p *proof) structure(result *obligation, t types.Type, structure *types.Str
 		return
 	}
 	for field := range structure.Fields() {
+		if Shared(t) && p.queries.Views(field.Type()) {
+			result.reason = field.Name() + ": Shared fields cannot contain local frozen views"
+			return
+		}
 		p.depend(result, field.Type(), field.Name()+": ")
 	}
 }

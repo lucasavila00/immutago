@@ -58,15 +58,15 @@ func scalarSend(ready chan<- int) {
 func nilReference() { var p *Good = nil; _ = p }
 
 func frozenMapReceive(ready <-chan int) {
-	values := map[string]bool{"first": false}
+	values := map[int]bool{1: false}
 	frozen := im.FreezeMap(values)
 	select {
-	case _, values["first"] = <-ready:
+	case _, values[1] = <-ready:
 	}
-	_, _ = frozen.Get("first")
+	_, _ = frozen.Get(1)
 }
-func returnedMap() im.FrozenMap[string, int] {
-	values := map[string]int{"first": 1}
+func returnedMap() im.FrozenMap[int, int] {
+	values := map[int]int{1: 1}
 	return im.FreezeMap(values)
 }
 

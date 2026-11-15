@@ -1,0 +1,31 @@
+frozen_view_reads.go:10:6: immutable collection: type argument 1: local frozen reads cannot expose shared data references
+  type: im.FrozenByValueSlice[*localviews.Shared]
+  fix: use scalar fields or local frozen views for elements and values; only map keys can use im.FrozenString
+frozen_view_reads.go:11:6: immutable collection: type argument 2: local frozen reads cannot expose shared data references
+  type: im.FrozenByValueMap[int, localviews.Retained]
+  fix: use scalar fields or local frozen views for elements and values; only map keys can use im.FrozenString
+frozen_view_reads.go:18:26: unsupported immutable operation: local map iteration cannot expose shared keys; use Get or Clone
+  source: values.All()
+  type: iter.Seq2[im.FrozenString, int]
+  fix: use Get with a caller-owned key, or Clone before iterating
+frozen_view_reads.go:27:9: unsupported immutable operation: immutable iterators must be consumed by direct range
+  source: values.All()
+  type: iter.Seq2[int, int]
+  fix: write for key, value := range collection.All() { ... }; do not retain or pass the iterator
+frozen_view_reads.go:30:11: unsupported immutable operation: immutable iterators must be consumed by direct range
+  source: mapping.All()
+  type: iter.Seq2[int, int]
+  fix: write for key, value := range collection.All() { ... }; do not retain or pass the iterator
+frozen_view_reads.go:37:10: unsupported immutable operation: Clone cannot copy nested local views; copy their data explicitly
+  source: values.Clone()
+  type: []localviews.Text
+  fix: read each nested view and Clone its data into a new builder
+frozen_view_reads.go:38:6: unsupported owned container copy: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+frozen_view_reads.go:40:11: unsupported immutable operation: Clone cannot copy nested local views; copy their data explicitly
+  source: mapping.Clone()
+  type: map[int]localviews.Text
+  fix: read each nested view and Clone its data into a new builder
+frozen_view_reads.go:41:6: unsupported owned container other: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+frozen_view_reads.go:8:6: immutable collection: type argument 1: local frozen reads cannot expose shared data references
+  type: im.FrozenByValueSlice[im.FrozenString]
+  fix: use scalar fields or local frozen views for elements and values; only map keys can use im.FrozenString

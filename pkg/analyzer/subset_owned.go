@@ -61,7 +61,8 @@ func (c *subsetChecks) ownedInputs() {
 			c.ownedDeclaration(node)
 		case *ast.CallExpr:
 			object := c.calledObject(node.Fun)
-			if libraryObject(object) && (object.Name() == "FreezeMap" || object.Name() == "FreezeSlice") {
+			if libraryObject(object) && (object.Name() == "FreezeMap" || object.Name() == "FreezeSlice" ||
+				object.Name() == "FreezeByValueMap" || object.Name() == "FreezeByValueSlice") {
 				for _, value := range node.Args {
 					c.ownedInput(value)
 				}

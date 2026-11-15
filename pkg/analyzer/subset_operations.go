@@ -90,9 +90,6 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	case *ast.UnaryExpr:
 		return c.matchUnary(source)
 	case *ast.SliceExpr:
-		if stringType(c.pass.TypesInfo.TypeOf(source.X)) {
-			return ""
-		}
 		return "slice views of immutable storage are unsupported"
 	case *ast.TypeAssertExpr:
 		return "immutable interface assertions are unsupported"
@@ -142,9 +139,6 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 	case *ast.BinaryExpr:
 		return c.matchBinary(parent)
 	case *ast.SliceExpr:
-		if stringType(c.pass.TypesInfo.TypeOf(parent.X)) {
-			return ""
-		}
 		return "slice views of immutable storage are unsupported"
 	case *ast.CallExpr:
 		return c.matchCall(parent)
@@ -166,7 +160,8 @@ func (c *subsetChecks) matchFunctionValue(expression ast.Expr) string {
 		return c.matchCall(call)
 	}
 	object := c.calledObject(expression)
-	if libraryObject(object) && (object.Name() == "FreezeMap" || object.Name() == "FreezeSlice") {
+	if libraryObject(object) && (object.Name() == "FreezeMap" || object.Name() == "FreezeSlice" ||
+		object.Name() == "FreezeByValueMap" || object.Name() == "FreezeByValueSlice") {
 		return "freeze functions must be called directly"
 	}
 	return "immutable callbacks are unsupported"

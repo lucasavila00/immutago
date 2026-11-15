@@ -1,0 +1,61 @@
+frozen_view_storage.go:20:5: unsupported immutable operation: local frozen views cannot be stored in package variables
+  source: zero Text
+  fix: keep the view local, or store independent data from Clone
+frozen_view_storage.go:21:5: unsupported immutable operation: local frozen views cannot be stored in package variables
+  source: saved = im.FreezeByValueString("text")
+  fix: keep the view local, or store independent data from Clone
+frozen_view_storage.go:22:5: unsupported immutable operation: local frozen views cannot be stored in package variables
+  source: record Reply
+  fix: keep the view local, or store independent data from Clone
+frozen_view_storage.go:23:5: unsupported immutable operation: local frozen views cannot be stored in package variables
+  source: empty [0]Text
+  fix: keep the view local, or store independent data from Clone
+frozen_view_storage.go:24:13: Owner cannot store local frozen views
+frozen_view_storage.go:25:18: unchecked storage cannot contain local frozen views
+frozen_view_storage.go:29:2: Shared fields cannot contain local frozen views
+frozen_view_storage.go:31:22: unmarked struct contains immutable field Text; embed an immutable marker
+  owner: localviews.Mutable; field type: localviews.Text
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Shared or im.ByValue and make all fields immutable, or remove the immutable field
+frozen_view_storage.go:32:32: service start arguments cannot store local frozen views
+frozen_view_storage.go:35:17: service method Text must return a service result: service results require a scalar, a local frozen view, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
+  result type: im.FrozenString
+frozen_view_storage.go:42:17: service method Retained must return a service result: service results cannot expose shared data references; use local frozen views or copied values
+  result type: localviews.Retained
+frozen_view_storage.go:49:17: service method Pointer must return a service result: service results cannot expose shared data references; use local frozen views or copied values
+  result type: localviews.PointerResult
+frozen_view_storage.go:53:2: unsupported immutable operation: local frozen views cannot be stored in package variables
+  source: record = reply
+  fix: keep the view local, or store independent data from Clone
+frozen_view_storage.go:54:2: unsupported immutable operation: local frozen views cannot be stored in package variables
+  source: saved = reply.Text
+  fix: keep the view local, or store independent data from Clone
+frozen_view_storage.go:55:2: unsupported immutable operation: local frozen views cannot be stored in package variables
+  source: empty = [0]Text{}
+  fix: keep the view local, or store independent data from Clone
+frozen_view_storage.go:60:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: boxed any = text
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+frozen_view_storage.go:62:6: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: identity(text)
+  type: localviews.Text
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+frozen_view_storage.go:63:34: unsupported immutable operation: closures cannot capture immutable storage
+  source: text
+  type: localviews.Text
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+frozen_view_storage.go:65:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go text.Len()
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+frozen_view_storage.go:66:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: defer text.Len()
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+frozen_view_storage.go:67:12: unsupported immutable operation: bound immutable methods are unsupported
+  source: text.Clone
+  type: func() string
+  fix: call the method directly (value.Method(...)); do not save or pass its method value
+frozen_view_storage.go:75:6: immutable collection: type argument 1: shareable frozen storage cannot contain local frozen views
+  type: im.FrozenSlice[localviews.Text]
+  fix: keep local views in local ByValue values, or store independent data from Clone
+frozen_view_storage.go:82:6: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+frozen_view_storage.go:88:11: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder

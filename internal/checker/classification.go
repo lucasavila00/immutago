@@ -18,6 +18,8 @@ const (
 	callableMode
 	constraintMode
 	handleMode
+	viewMode
+	retentionMode
 )
 
 // classificationKey keeps each traversal mode separate.
@@ -41,6 +43,13 @@ func (c *Classifier) Callable(t types.Type) bool { return c.query(t, callableMod
 
 // Handles reports whether storage or a callable contract contains a service reference.
 func (c *Classifier) Handles(t types.Type) bool { return c.query(t, handleMode) }
+
+// Views reports whether storage contains a local frozen view.
+func (c *Classifier) Views(t types.Type) bool { return c.query(t, viewMode) }
+
+// Retains reports shared data references that can escape through a value read.
+// Local views have their own transport rules. Service references are separate handles.
+func (c *Classifier) Retains(t types.Type) bool { return c.query(t, retentionMode) }
 
 // query completes all reachable edges before propagating positive results through cycles.
 func (c *Classifier) query(t types.Type, mode classificationMode) bool {
@@ -108,6 +117,10 @@ func (c *Classifier) expand(node *classificationNode) {
 		}
 		return
 	}
+	if node.key.mode == viewMode || node.key.mode == retentionMode {
+		c.retentionEdges(node)
+		return
+	}
 	if node.key.mode == handleMode {
 		c.callableEdges(node)
 		return
@@ -130,6 +143,33 @@ func (c *Classifier) expand(node *classificationNode) {
 	case callableMode:
 		c.callableEdges(node)
 	}
+}
+
+// retentionEdges keeps local view transport separate from shared data retention.
+func (c *Classifier) retentionEdges(node *classificationNode) {
+	if IsByValueCollection(node.key.typ) {
+		if node.key.mode == viewMode {
+			c.mark(node)
+		}
+		return
+	}
+	if node.key.mode == retentionMode {
+		if IsCollection(node.key.typ) || IsUncheckedValue(node.key.typ) {
+			c.mark(node)
+			return
+		}
+		switch value := node.key.typ.Underlying().(type) {
+		case *types.Pointer:
+			c.mark(node)
+			return
+		case *types.Basic:
+			if value.Info()&types.IsString != 0 {
+				c.mark(node)
+			}
+			return
+		}
+	}
+	c.storageEdges(node)
 }
 
 // storageEdges follows stored components and leaves signatures and interfaces opaque.

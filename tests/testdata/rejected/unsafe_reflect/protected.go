@@ -9,7 +9,7 @@ import (
 
 type Record struct {
 	im.Shared
-	Name string
+	Name im.FrozenString
 }
 
 type Cache struct {

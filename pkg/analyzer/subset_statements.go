@@ -104,17 +104,20 @@ func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) string {
 	return ""
 }
 
-// matchBinding permits ByValue pointers only in local variable bindings.
+// matchBinding restricts ByValue pointers and local view storage at each destination.
 func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) string {
 	if rule := c.matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
 		return rule
 	}
-	if !localReference(source) {
+	if !localReference(source) && !c.queries.Views(source) {
 		return ""
 	}
 	name, ok := ast.Unparen(destination).(*ast.Ident)
 	if !ok {
-		return "ByValue pointers cannot enter aggregate storage"
+		if localReference(source) {
+			return "ByValue pointers cannot enter aggregate storage"
+		}
+		return ""
 	}
 	if name.Name == "_" {
 		return ""
@@ -122,6 +125,9 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var)
 	if ok && variable.Parent() != c.pass.Pkg.Scope() {
 		return ""
+	}
+	if c.queries.Views(source) {
+		return "local frozen views cannot be stored in package variables"
 	}
 	return "global ByValue pointers are unsupported"
 }
@@ -138,6 +144,10 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 	}
 	for _, name := range declaration.Names {
 		variable := c.pass.TypesInfo.Defs[name]
+		if variable != nil && name.Name != "_" && c.queries.Views(variable.Type()) &&
+			variable.Parent() == c.pass.Pkg.Scope() {
+			return "local frozen views cannot be stored in package variables"
+		}
 		if variable != nil && localReference(variable.Type()) && variable.Parent() == c.pass.Pkg.Scope() {
 			return "global ByValue pointers are unsupported"
 		}
@@ -327,7 +337,7 @@ func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 		return false
 	}
 	switch selection.Obj().Name() {
-	case "Get", "At", "Len", "All", "Clone":
+	case "Get", "At", "Len", "All", "Clone", "ByValue":
 		return true
 	}
 	return false

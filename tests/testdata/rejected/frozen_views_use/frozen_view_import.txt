@@ -1,0 +1,9 @@
+frozen_view_import.go:10:15: unsupported immutable operation: local frozen views cannot be stored in package variables
+  source: text = viewapi.Text()
+  fix: keep the view local, or store independent data from Clone
+frozen_view_import.go:6:5: unsupported immutable operation: local frozen views cannot be stored in package variables
+  source: text = viewapi.Text()
+  fix: keep the view local, or store independent data from Clone
+frozen_view_import.go:7:5: unsupported immutable operation: local frozen views cannot be stored in package variables
+  source: record = viewapi.Result()
+  fix: keep the view local, or store independent data from Clone
