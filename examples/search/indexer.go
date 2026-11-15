@@ -72,6 +72,7 @@ func (s *Indexer) Status() Status {
 	}
 }
 
+// reload publishes only after all reads and parsing succeed.
 func (s *Indexer) reload() error {
 	documents, err := scanDocuments(s.Args().Files)
 	if err != nil {

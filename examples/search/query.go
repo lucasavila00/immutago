@@ -37,6 +37,7 @@ type candidate struct {
 	first    int
 }
 
+// parseQuery checks query bounds and removes repeated terms.
 func parseQuery(text, limitText string) (query, error) {
 	if !utf8.ValidString(text) || utf8.RuneCountInString(text) > 256 {
 		return query{}, fmt.Errorf("q must contain at most 256 valid UTF-8 characters")
@@ -63,6 +64,7 @@ func parseQuery(text, limitText string) (query, error) {
 	return query{terms: terms, limit: limit}, nil
 }
 
+// searchIndex ranks documents that contain every term in the selected version.
 func searchIndex(index IndexProjection, request query) Response {
 	response := Response{Version: index.Version(), Results: []Result{}}
 	candidates := make(map[int]candidate)
@@ -116,6 +118,7 @@ func searchIndex(index IndexProjection, request query) Response {
 	return response
 }
 
+// excerpt copies up to 160 characters near the first matching body word.
 func excerpt(body im.StringProjection, first int) string {
 	// Unsafe gives the standard string functions read access. The return value is copied.
 	text := body.Unsafe()
@@ -132,12 +135,13 @@ func excerpt(body im.StringProjection, first int) string {
 	if start == 0 && end == len(text) {
 		return strings.Clone(text)
 	}
-	result := strings.Clone(text[start:end])
+	prefix := ""
 	if start > 0 {
-		result = "…" + result
+		prefix = "…"
 	}
+	suffix := ""
 	if end < len(text) {
-		result += "…"
+		suffix = "…"
 	}
-	return result
+	return prefix + text[start:end] + suffix
 }

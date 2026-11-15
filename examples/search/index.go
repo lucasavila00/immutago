@@ -61,6 +61,7 @@ type sourcePosting struct {
 	first    int
 }
 
+// scanDocuments reads regular Markdown files in path order.
 func scanDocuments(files fs.FS) ([]sourceDocument, error) {
 	var documents []sourceDocument
 	err := fs.WalkDir(files, ".", func(name string, entry fs.DirEntry, err error) error {
@@ -85,6 +86,7 @@ func scanDocuments(files fs.FS) ([]sourceDocument, error) {
 	return documents, err
 }
 
+// parseDocument takes an optional first-line title and keeps the remaining source text.
 func parseDocument(name string, data []byte) (sourceDocument, error) {
 	if !utf8.Valid(data) {
 		return sourceDocument{}, fmt.Errorf("parse %s: text is not valid UTF-8", name)
@@ -101,6 +103,7 @@ func parseDocument(name string, data []byte) (sourceDocument, error) {
 	}, nil
 }
 
+// tokenize separates words at characters that are not letters or digits.
 func tokenize(text string) []token {
 	var tokens []token
 	start := -1
@@ -122,6 +125,7 @@ func tokenize(text string) []token {
 	return tokens
 }
 
+// buildIndex freezes the document records and each token's document list.
 func buildIndex(sources []sourceDocument, version int) Index {
 	documents := make([]Document, 0, len(sources))
 	terms := make(map[string][]sourcePosting)

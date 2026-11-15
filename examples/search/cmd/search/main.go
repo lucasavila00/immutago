@@ -17,6 +17,7 @@ import (
 	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
+// main reads the command options and waits for an interrupt.
 func main() {
 	directory := flag.String("dir", "examples/search/documents", "directory with Markdown files")
 	address := flag.String("addr", "127.0.0.1:8081", "HTTP listen address")
@@ -29,6 +30,7 @@ func main() {
 	}
 }
 
+// run starts the indexer, serves requests, and stops both parts on cancellation.
 func run(ctx context.Context, directory, address string, every time.Duration) error {
 	root := supervise.NewRoot(func(value any, _ []byte) { log.Print(value) })
 	defer func() { <-root.Stop() }()
