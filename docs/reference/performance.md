@@ -4,6 +4,8 @@
 | --- | --- |
 | FreezeString | Copy a native string handle; no byte copy, allocation, or input consumption. |
 | FreezeSlice, FreezeMap | Copy a native handle; no entry copy or allocation. |
+| Projection.Unsafe | Return T by value with its shared storage; no allocation. A pointer payload remains the same pointer. |
+| Generated record projection.Unsafe | Return the selected pointer; no record copy, allocation, or Cell load. |
 | ProjectionOf | Copy the Go value T; no copy of its backing storage. |
 | Generated record field or array element projection | Read through the root pointer and indices; no copy of the containing record or array. |
 | Value | Return a Copied value, unchecked handle, or unnamed array of these values. Records and arrays have their ordinary Go value-copy cost. No allocation. |
@@ -20,7 +22,7 @@
 | Local slice/map Clone | O(n); arguments must be Copied. Service references remain opaque shared handles. |
 | Cell.Store | Copy one T root and publish with an atomic store; one allocation for T with nonzero size. |
 | Generated Cell.Load, raw Cell.LoadPointer | One atomic pointer load; no record copy or allocation. |
-| Raw Cell.Load, Cell.LoadShared | One atomic load and a T value copy; no backing-storage copy. |
+| Raw Cell.Load | One atomic load and a T value copy; no backing-storage copy. |
 | Ref.Borrow | One atomic load; no allocation. |
 | Ref.IsZero | Compare the stored pointer with nil; no atomic load or allocation. |
 

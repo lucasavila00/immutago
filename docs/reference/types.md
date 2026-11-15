@@ -28,6 +28,8 @@ Frozen, Copied, or read-result payload types.
 | `im.Copied` | Boolean/numeric fields, unnamed arrays, and other Copied records; no strings or reference handles | Can be stored by value in ordinary holders and returned by services; ordinary copies can change independently. |
 
 - Embed exactly one marker by value; aliases work.
+- Frozen records embed only their marker. Give every data field a name:
+  `Count Count`, not an embedded `Count`. Local and Copied field rules do not change.
 - Declare Frozen records as named package-scope types in non-test Go files.
   Local and Copied records need no generation.
 - Set Frozen and Local fields at construction. Later field, element, or
@@ -35,8 +37,9 @@ Frozen, Copied, or read-result payload types.
 - Copied records and their ordinary holders use normal Go operations. Pointers
   to ordinary Copied storage are allowed; pointers do not satisfy the Copied proof.
 - Each record in a proved field needs its own marker. Unmarked structs can
-  hold Copied values and their native containers. They cannot own Frozen or
-  Local data. See the complete [Copied forms](copied.md).
+  hold Copied values and [Frozen pointers](frozen-records.md#stored-pointers--exhaustive),
+  including their ordinary containers. They cannot own Frozen records by value
+  or Local data. See the complete [Copied forms](copied.md).
 - Native containers, unmarked interfaces, functions, and Local values are not Frozen fields.
 - A Cell is mutable storage, not a Frozen value or read result.
 
@@ -58,6 +61,7 @@ projection when reading through a Local value. See the complete
 | `Value(Projection[T])` | T is both Frozen and a read result: Copied, UncheckedValue, or an unnamed array of these values. |
 | `CopyRecord(Projection[T])` | T is a concrete Frozen record; returns a projection of a new copied root. |
 | `Cell[T].LoadPointer()`, `SliceProjection[T].AtPointer(i)` | T is a concrete Frozen record; the result is Projection[*T]. |
+| `Projection[T].Unsafe()` | T uses the same Frozen proof; the result is T with its shared storage. |
 | `SliceProjection[E].Clone()` | E is Copied. |
 | `MapProjection[K,V].Clone()` | K and V are Copied. |
 | Exported service method data result | Read result; the [result signatures](service-results.md) also permit an error. |
@@ -72,6 +76,7 @@ with only numeric fields still keeps the Frozen rule.
 | Rejected | Use instead |
 | --- | --- |
 | `struct { Mark im.Frozen }` or `struct { *im.Frozen }` | Embed `im.Frozen` by value. |
+| `struct { im.Frozen; Count }` | Use a named data field: `struct { im.Frozen; Count Count }`. |
 | `im.Projection[im.Frozen]` | Embed the marker in a record and use that record. |
 | `struct { im.Frozen; Text im.StringProjection }` | Use `im.Local` for a local result. |
 | `struct { im.Local; Text string }` | Use `im.StringProjection`. |

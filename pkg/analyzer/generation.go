@@ -12,7 +12,7 @@ import (
 	"github.com/lucasavila00/immutago/internal/projectiongen"
 )
 
-// checkGeneration verifies the exact generated source before it can read projection storage.
+// checkGeneration verifies the exact generated source before it can form interior Frozen-record addresses.
 func (c *subsetChecks) checkGeneration() {
 	position, valid := c.generationSource()
 	if !valid {

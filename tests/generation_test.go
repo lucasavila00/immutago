@@ -38,8 +38,8 @@ func TestGenerationContract(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	writeFile(t, sourcePath, string(source)+"\nfunc raw(value im.Projection[int]) int { return value.Read() }\n")
-	check("handwritten_read", false)
+	writeFile(t, sourcePath, string(source)+"\nfunc raw(value im.Projection[int]) int { return value.Unsafe() }\n")
+	check("handwritten_read", true)
 	changed := strings.Replace(string(source), "Number int", "Number int; Ready bool", 1)
 	writeFile(t, sourcePath, changed)
 	check("stale", false)
@@ -51,10 +51,13 @@ func TestGenerationContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, test := range []struct{ name, source string }{
-		{"generated_write", `func illegal(value DataProjection) { value.immutagoProjection.Read().Number = 1 }`},
-		{"generated_string", `func illegal(value DataProjection) string { return value.immutagoProjection.Read().Text }`},
-		{"generated_slice", `func illegal(value DataProjection) []int { return value.immutagoProjection.Read().Values[:] }`},
-		{"generated_address", `func illegal(value DataProjection) *int { return &value.immutagoProjection.Read().Number }`},
+		{"generated_write", `func illegal(value DataProjection) { value.immutagoProjection.Unsafe().Number = 1 }`},
+		{"generated_string", `func illegal(value DataProjection) string { return value.immutagoProjection.Unsafe().Text }`},
+		{
+			"generated_slice",
+			`func illegal(value DataProjection) []int { return value.immutagoProjection.Unsafe().Values[:] }`,
+		},
+		{"generated_address", `func illegal(value DataProjection) *int { return &value.immutagoProjection.Unsafe().Number }`},
 	} {
 		writeFile(t, outputPath, string(generated)+"\n"+test.source+"\n")
 		check(test.name, false)

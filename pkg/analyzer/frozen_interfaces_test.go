@@ -63,21 +63,21 @@ func TestFrozenInterfaceBoundaries(t *testing.T) {
 func(b *Bad)Score([]float32)float64{return 0};func f(){var s Scorer=&Bad{};_=s}`, "Frozen interface implementation"},
 		{"implicit dereference", `func f(){var s Scorer=&Count{};_=s}`, "receivers must match"},
 		{"promoted interface call", `type Outer struct{im.Frozen;Scorer};
-func f(o Outer){_=o.Score(nil)}`, "promoted immutable methods"},
+func f(o Outer){_=o.Score(nil)}`, "Frozen data fields must be named"},
 		{"unmarked nested zero", `type Holder struct{Values [0]Scorer}`, "unmarked struct"},
 		{"anonymous", `func f(){var s interface{im.FrozenInterface;Score([]float32)float64}=&Tree{};
 _=s}`, "anonymous interfaces"},
 		{"local declaration", `func f(){type LocalScorer interface{Scorer};var s LocalScorer;
 _=s}`, "package-level declarations"},
 		{"promoted implementation", `type Outer struct{im.Frozen;Count};
-func f(){var s Scorer=Outer{};_=s}`, "cannot use promoted methods"},
+func f(){var s Scorer=Outer{};_=s}`, "Frozen data fields must be named"},
 		{"unmarked wrapper", `type Outer struct{Scorer};
 func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.Frozen"},
 		{"pointer interface", `func f(){var s *Scorer;_=s}`, "concrete marked struct target"},
 		{"typed nil", `func f(){_=Scorer(nil)}`, "protected value conversions"},
 		{"ordinary interface", `func f(s Scorer){var other any=s;_=other}`, ""},
-		{"assertion", `func f(s Scorer){_=s.(*Tree)}`, "interface assertions"},
-		{"type switch", `func f(s Scorer){switch s.(type){case *Tree:}}`, "type switches"},
+		{"assertion", `func f(s Scorer){_=s.(*Tree)}`, ""},
+		{"type switch", `func f(s Scorer){switch s.(type){case *Tree:}}`, ""},
 		{"method expression", `func f(s Scorer){_=Scorer.Score(s,nil)}`, ""},
 		{"bound method", `func f(s Scorer){method:=s.Score;_=method}`, ""},
 		{"go", `func f(s Scorer){go s.Score(nil)}`, ""},

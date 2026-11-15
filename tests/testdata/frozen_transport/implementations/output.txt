@@ -1,9 +1,3 @@
-forms.go:11:46: unsupported immutable operation: Frozen interface implementations cannot use promoted methods
-  source: return api.Identity(value)
-  fix: convert the explicit embedded Frozen field, or declare the method on the converted record
-forms.go:13:29: unsupported immutable operation: Frozen interface implementations cannot use promoted methods
-  source: return value
-  fix: convert the explicit embedded Frozen field, or declare the method on the converted record
 forms.go:16:6: unsupported immutable operation: Frozen interface implementation: interface{} is not provably immutable
   source: value.(api.Reader)
   type: api.Reader
@@ -19,10 +13,6 @@ forms.go:22:7: unsupported immutable operation: protected storage is unsupported
 forms.go:26:50: unsupported immutable operation: Frozen interface implementation: type parameters are unsupported in immutable storage
   source: return value
   fix: use the documented immutable value and reference forms
-forms.go:7:6: unsupported immutable operation: Frozen interface implementations cannot use promoted methods
+forms.go:7:6: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
   source: reader api.Reader = value
-  fix: convert the explicit embedded Frozen field, or declare the method on the converted record
-forms.go:9:2: unsupported immutable operation: Frozen interface implementations cannot use promoted methods
-  source: take(api.Identity(value))
-  type: ()
-  fix: convert the explicit embedded Frozen field, or declare the method on the converted record
+  fix: use the documented immutable value and reference forms

@@ -9,8 +9,8 @@ those decisions useful.
 | --- | --- |
 | Go compiler | Supplies valid ASTs, resolved types, object identities, and method selections. |
 | Fixed im and supervise packages | Their reviewed implementations obey API contracts; their source is excluded from analysis. |
-| Generated readers | Verify exact bytes for `Projection.Read` and interior Frozen-record addresses; retain all other source checks. |
-| Ordinary Go APIs | Obey their contracts, including string immutability and callback behavior. |
+| Generated readers | Verify exact bytes for interior Frozen-record addresses; retain all other source checks. |
+| Ordinary Go APIs | Obey their contracts, including string immutability and callback behavior. A Frozen pointer must not enter an API that changes its target; reflection and unsafe mutation effects are not proved. |
 | `UncheckedValue[T]` | The declaring package promises that the opaque payload never changes. |
 
 The [package boundary](../reference/rules.md#package-boundary) defines selected source.
@@ -25,6 +25,7 @@ must run the analyzer.
 | Source matcher | Complete accepted forms and rejected nearby forms. | [Shape checks](../../pkg/analyzer/shape_convergence_test.go), [CLI fixtures](../../tests/cli_test.go). |
 | Builder state | Aliases, evaluation order, branch joins, loop resets. | [Freeze](../../internal/freeze/freeze_test.go). |
 | Generation | Repeatable output, provisional names, stale-file rejection. | [Generator](../../internal/projectiongen/generate_test.go), [CLI generation](../../tests/generation_test.go). |
+| Frozen pointer storage | Ordinary handles, protected targets, nil, selected identity, child reads, pooled reuse, and allocation costs. | [CLI and vet](../../tests/frozen_pointer_storage_test.go), [runtime cases](../../tests/testdata/frozen_pointer_storage/valid/selection_test.go). |
 | Runtime storage | Shared Freeze storage, independent Clone storage, publication, allocations. | [Slice](../../pkg/im/slice_test.go), [Cell](../../pkg/im/cell_test.go). |
 | Service lifetime | Setup, publication, retries, child cleanup, list removal. | [Init](../../pkg/supervise/init_test.go), [runtime](../../pkg/supervise/supervise_test.go), [registry](../../pkg/supervise/registry_test.go). |
 | Import boundary | Original failure survives wrappers and both drivers. | [Dependency graph](../../pkg/analyzer/dependencies_graph_test.go), [consumer boundary](../../tests/boundary_test.go). |

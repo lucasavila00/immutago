@@ -15,6 +15,11 @@ return im.ProjectString(d.Text),true,buf[:0],nil}
 // TestInterfaceResultForms checks tuple bindings and ordinary caller buffers.
 func TestInterfaceResultForms(t *testing.T) {
 	cases := []struct{ name, source string }{
+		{"Frozen pointer boxing receiver", `type Reader interface{im.FrozenInterface;Read()any};
+func(d *Data)Read()any{return d}`},
+		{"Frozen pointer capture receiver", `type Reader interface{im.FrozenInterface;Read()func()int};
+func(d *Data)Read()func()int{return func()int{return len(d.Text)}}`},
+		{"Frozen pointer implicit receiver", `func(d Data)Pair()(int,bool){return 1,true};func f(d *Data){_,_=d.Pair()}`},
 		{"short declaration", `func f(r Result){text,ok,buf,err:=r.Lookup(nil);_=text;_=ok;_=buf;_=err}`},
 		{"assignment", `func f(r Result){var text im.StringProjection;var ok bool;var buf []byte;var err error;
 text,ok,buf,err=r.Lookup(buf);_=text;_=ok;_=buf;_=err}`},
@@ -68,10 +73,10 @@ func TestInterfaceResultBoundaries(t *testing.T) {
 			"returning Local pointers"},
 		{"Frozen slice", `type Bad interface{im.FrozenInterface;Read()[]Data}`, "native slices"},
 		{"Local slice", `type Bad interface{im.FrozenInterface;Read()[]im.StringProjection}`, "native slices"},
-		{"boxing receiver", `type Reader interface{im.FrozenInterface;Read()any};func(d *Data)Read()any{return d}`,
-			"ordinary interfaces require"},
+		{"boxing receiver", `type Reader interface{im.FrozenInterface;Read()any};func(d Data)Read()any{return d}`,
+			""},
 		{"capture receiver", `type Reader interface{im.FrozenInterface;Read()func()int};
-func(d *Data)Read()func()int{return func()int{return len(d.Text)}}`, "closures require"},
+func(d Data)Read()func()int{return func()int{return len(d.Text)}}`, ""},
 		{"tuple boxing", `func read()(Data,bool){return Data{},true};
 func f(){var value any;var ok bool;value,ok=read();_=value;_=ok}`,
 			""},
@@ -90,8 +95,8 @@ func f(){var value any;var ok bool;value,ok=read();_=value;_=ok}`,
 		{"unsealed interface", `type Reader interface{Read()(im.StringProjection,bool)};
 func f(r Reader){_,_=r.Read()}`, "dynamic calls"},
 		{"promoted receiver", `type Outer struct{im.Frozen;Result};func f(r Outer){_,_,_,_=r.Lookup(nil)}`,
-			"promoted immutable"},
-		{"implicit receiver", `func(d Data)Pair()(int,bool){return 1,true};func f(d *Data){_,_=d.Pair()}`,
+			"Frozen data fields must be named"},
+		{"implicit receiver", `func(d *Data)Pair()(int,bool){return 1,true};func f(d Data){_,_=d.Pair()}`,
 			"declared type exactly"},
 		{"retained builder", `func(d *Data)Clone()[]byte{buf:=[]byte{1};_=im.FreezeSlice(buf);return buf}`,
 			"unsupported owned container"},

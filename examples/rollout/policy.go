@@ -86,7 +86,11 @@ func (p *Policy) reload() error {
 		err = fmt.Errorf("policy needs a version, positive min_requests, and nonnegative error and latency limits")
 	}
 	if err != nil {
-		previous := p.current.LoadShared()
+		var previous PolicySnapshot
+		selected := p.current.Load()
+		if !selected.IsNil() {
+			previous = *selected.Unsafe()
+		}
 		p.current.Store(PolicySnapshot{Version: previous.Version, Limits: previous.Limits, Problem: err.Error()})
 		return err
 	}

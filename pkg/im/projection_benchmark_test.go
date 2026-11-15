@@ -32,18 +32,18 @@ func TestProjectionAllocations(t *testing.T) {
 		run  func()
 	}{
 		{"projection", func() { projectionRecordSink = ProjectionOf(input) }},
-		{"read string", func() { projectionStringSink = ProjectionOf(projection.Read().Text) }},
+		{"read string", func() { projectionStringSink = ProjectionOf(projection.Unsafe().Text) }},
 		{"read slice", func() {
-			projectionSliceSink = ProjectionOf(projection.Read().Slice)
+			projectionSliceSink = ProjectionOf(projection.Unsafe().Slice)
 		}},
 		{"read map", func() {
-			projectionMapSink = ProjectionOf(projection.Read().Map)
+			projectionMapSink = ProjectionOf(projection.Unsafe().Map)
 		}},
 		{"read pointer", func() {
-			projectionPointerSink = ProjectionOf(projection.Read().Child)
+			projectionPointerSink = ProjectionOf(projection.Unsafe().Child)
 		}},
 		{"read array index", func() {
-			projectionNumberSink = ProjectionOf(projection.Read().Array[index])
+			projectionNumberSink = ProjectionOf(projection.Unsafe().Array[index])
 		}},
 		{"native string", func() { stringProjectionSink = ProjectString(input.Text) }},
 		{"frozen slice", func() { sliceProjectionSink = input.Slice.Projection() }},
@@ -131,7 +131,7 @@ func TestCellAllocations(t *testing.T) {
 	if got := testing.AllocsPerRun(100, func() { projectionRecordSink = cell.Load() }); got != 0 {
 		t.Fatalf("cell load allocations = %g; want zero", got)
 	}
-	if got := testing.AllocsPerRun(100, func() { cellSharedSink = cell.LoadShared() }); got != 0 {
+	if got := testing.AllocsPerRun(100, func() { cellSharedSink = cell.Load().Unsafe() }); got != 0 {
 		t.Fatalf("cell shared allocations = %g; want zero", got)
 	}
 }
@@ -156,13 +156,13 @@ func BenchmarkCellLoad(b *testing.B) {
 	}
 }
 
-// BenchmarkCellLoadShared measures explicit access to a persistent snapshot.
-func BenchmarkCellLoadShared(b *testing.B) {
+// BenchmarkCellUnsafeValue measures explicit access to a persistent snapshot.
+func BenchmarkCellUnsafeValue(b *testing.B) {
 	var cell Cell[testFrozen]
 	cell.Store(testFrozen{Number: 1})
 	b.ReportAllocs()
 	for b.Loop() {
-		cellSharedSink = cell.LoadShared()
+		cellSharedSink = cell.Load().Unsafe()
 	}
 }
 
@@ -180,7 +180,7 @@ func BenchmarkProjectionField(b *testing.B) {
 	projection := ProjectionOf(&testFrozen{Text: strings.Repeat("text", 128)})
 	b.ReportAllocs()
 	for b.Loop() {
-		projectionStringSink = ProjectionOf(projection.Read().Text)
+		projectionStringSink = ProjectionOf(projection.Unsafe().Text)
 	}
 }
 

@@ -1,6 +1,3 @@
-forms.go:21:2: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
-  source: boxed, ok = pair()
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 forms.go:31:14: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: interface { Read() (im.StringProjection, bool) }
   type: interface{Read() (im.StringProjection, bool)}

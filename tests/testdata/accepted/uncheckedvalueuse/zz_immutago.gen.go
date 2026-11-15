@@ -21,9 +21,13 @@ func NewCurrentProjection(value im.Projection[*Current]) CurrentProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v CurrentProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v CurrentProjection) Unsafe() *Current { return v.immutagoProjection.Unsafe() }
+
 // Model reads the Model field.
 func (v CurrentProjection) Model() uncheckedvalue.ModelProjection {
-	return uncheckedvalue.NewModelProjection(im.ProjectionOf(v.immutagoProjection.Read().Model))
+	return uncheckedvalue.NewModelProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Model))
 }
 
 // CurrentCell publishes frozen Current values. Do not copy it.
@@ -34,6 +38,3 @@ func (c *CurrentCell) Store(value Current) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *CurrentCell) Load() CurrentProjection { return NewCurrentProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *CurrentCell) LoadShared() Current { return c.value.LoadShared() }

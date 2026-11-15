@@ -291,6 +291,10 @@ func (c *subsetChecks) matchIndex(expression *ast.IndexExpr) string {
 		return c.matchTransport(c.pass.TypesInfo.TypeOf(expression.Index), source.Key())
 	case *types.Slice, *types.Basic:
 		return ""
+	case *types.Pointer:
+		if _, array := source.Elem().Underlying().(*types.Array); array && !c.queries.Contains(source) {
+			return ""
+		}
 	}
 	return "reference operation is outside the supported allowlist"
 }

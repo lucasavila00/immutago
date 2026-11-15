@@ -26,12 +26,11 @@ const testLibrary = `package im
  type Cell[T any] struct{}
  func (o *Cell[T]) Load() Projection[T] { return Projection[T]{} }
  func (o *Cell[T]) LoadPointer() Projection[*T] { return Projection[*T]{} }
- func (o *Cell[T]) LoadShared() T { var zero T; return zero }
  func (o *Cell[T]) Store(value T) {}
  type Projection[T any] struct { value T }
  func ProjectionOf[T any](value T) Projection[T] { return Projection[T]{value:value} }
  func CopyRecord[T any](value Projection[T]) Projection[*T] { return Projection[*T]{} }
- func (value Projection[T]) Read() T { return value.value }
+ func (value Projection[T]) Unsafe() T { return value.value }
  func Value[T any](value Projection[T]) T { return value.value }
  func IsNil[T any](value Projection[*T]) bool { return value.value == nil }
  type StringProjection struct { value string }

@@ -1,8 +1,4 @@
 protected.go:10:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
-protected.go:16:2: unmarked struct contains immutable field current; embed an immutable marker
-  owner: protected.Cache; field type: *protected.Record
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
 protected.go:21:2: immutable field Pointer: unsafe.Pointer is not provably immutable
   owner: protected.UnsafeField; field type: unsafe.Pointer
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments

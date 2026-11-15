@@ -44,22 +44,22 @@ func ordinary(v Value) *byte { s := v.Name; return unsafe.StringData(s) }`},
 func TestProtectedUnsafeReflection(t *testing.T) {
 	cases := []struct{ name, source, want string }{
 		{"unsafe pointer", `import "unsafe"
-type Value struct { im.Frozen; N int }
+type Value struct { im.Local; N int }
 //nolint:immutago
 func f(p *Value) { _ = unsafe.Pointer(p) }`, "protected value conversions"},
 		{"unsafe result", `import "unsafe"
-type Value struct { im.Frozen; N int }
+type Value struct { im.Local; N int }
 func f(p unsafe.Pointer) *Value { return (*Value)(p) }`, "shared pointer conversions"},
 		{"unsafe field", `import "unsafe"
 type Value struct { im.Frozen; N int }
 func f(v Value) { _ = unsafe.Pointer(&v.N) }`, "interior addresses of protected storage"},
 		{"reflection value", `import r "reflect"
-type Value struct { im.Frozen; N int }
+type Value struct { im.Local; N int }
 func f(p *Value) { r.ValueOf(p).Elem().FieldByName("N").SetInt(1) }`, "ordinary interfaces require"},
 		{"reflection type", "import `reflect`\n" + `type Value struct { im.Local; N int }
 func f(v Value) { _ = reflect.TypeOf(v) }`, "ordinary interfaces require"},
 		{"reflection callback", `import "reflect"
-type Value struct { im.Frozen; N int }
+type Value struct { im.Local; N int }
 func f(p *Value) { inspect := reflect.ValueOf; _ = inspect(p) }`, "ordinary interfaces require"},
 		{"reflection generic", `import "reflect"
 type Value struct { im.Local; N int }

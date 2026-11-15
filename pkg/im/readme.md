@@ -45,7 +45,7 @@ Value returns the value from a projection. The checker requires a Frozen read re
 
 ## type Cell
 
-Cell stores a replaceable Frozen value. Its zero value has no stored value. Load, LoadPointer, LoadShared, and Store are atomic. Readers can keep an earlier projection. The checker proves T and restricts use of the returned local projections. A Cell must not be copied after first use. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/cell.md for the complete forms.
+Cell stores a replaceable Frozen value. Its zero value has no stored value. Loads and Store are atomic. Readers can keep an earlier selected version. The checker proves T and restricts use of the returned local projections. A Cell must not be copied after first use. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/cell.md for the complete forms.
 
 ```go
 type Cell[T any] struct {
@@ -69,14 +69,6 @@ func (c *Cell[T]) LoadPointer() Projection[*T]
 
 LoadPointer returns a local pointer projection without copying T or allocating. It returns a nil pointer projection before Store. The checker requires a Frozen record T.
 
-### func \(\*Cell\[T\]\) LoadShared
-
-```go
-func (c *Cell[T]) LoadShared() T
-```
-
-LoadShared returns the current Frozen value for persistent use. It copies T by value without copying backing storage or allocating. If no value was stored, it returns the zero T.
-
 ### func \(\*Cell\[T\]\) Store
 
 ```go
@@ -95,7 +87,7 @@ type Copied struct{}
 
 ## type Frozen
 
-Frozen marks a struct with immutable fields. Values and pointers to that struct can be copied, stored, and returned through the allowed source forms. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/frozen-records.md for the complete forms.
+Frozen marks a struct with immutable fields. Values and pointers to that struct can be copied, stored, and returned through the allowed source forms. Embed it by value. A named field or pointer embedding does not mark the struct. Only the marker can be embedded; all data fields must have names. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/frozen-records.md for the complete forms.
 
 ```go
 type Frozen struct{}
@@ -385,13 +377,13 @@ func ProjectionOf[T any](value T) Projection[T]
 
 ProjectionOf returns a local projection of value. It copies T by value without copying backing storage or allocating. Run immutago to enforce the local projection rules.
 
-### func \(Projection\[T\]\) Read
+### func \(Projection\[T\]\) Unsafe
 
 ```go
-func (p Projection[T]) Read() T
+func (p Projection[T]) Unsafe() T
 ```
 
-Read supplies direct field access to generated accessors without copying backing storage. Application code uses the generated projection methods. The checker controls Read access.
+Unsafe returns the selected Frozen value for use outside the local projection. It copies T by value without copying backing storage or allocating. A pointer result is the same pointer. The caller controls retention and must not change its target through reflection, unsafe code, or another API.
 
 ## type SliceProjection
 

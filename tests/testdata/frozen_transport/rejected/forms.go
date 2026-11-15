@@ -51,7 +51,7 @@ func consumed() {
 	_ = frozen
 	values[0] = 2
 }
-func pointer(value *api.Count) {
+func pointer(value *View) {
 	var boxed any = value
 	_ = boxed
 }

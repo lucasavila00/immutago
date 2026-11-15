@@ -1,6 +1,9 @@
 package analyzer
 
-import "go/ast"
+import (
+	"go/ast"
+	"go/types"
+)
 
 // statementOperation identifies the statement or declaration that owns an operand.
 func (c *subsetChecks) statementOperation(expression ast.Expr) ast.Node {
@@ -16,6 +19,9 @@ func (c *subsetChecks) statementOperation(expression ast.Expr) ast.Node {
 // protectedStorage includes native builders and fields or elements of protected owners.
 func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 	for expression != nil {
+		if c.pass.TypesInfo.Types[expression].IsType() {
+			return false
+		}
 		if c.queries.Contains(c.pass.TypesInfo.TypeOf(expression)) {
 			return true
 		}
@@ -27,12 +33,34 @@ func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 		case *ast.IndexExpr:
 			expression = node.X
 		case *ast.SelectorExpr:
+			if c.protectedSelection(node) {
+				return true
+			}
 			expression = node.X
 		case *ast.StarExpr:
 			expression = node.X
 		default:
 			return false
 		}
+	}
+	return false
+}
+
+// protectedSelection checks each owner of a compiler-selected field.
+func (c *subsetChecks) protectedSelection(selector *ast.SelectorExpr) bool {
+	selection := c.pass.TypesInfo.Selections[selector]
+	if selection == nil || selection.Kind() != types.FieldVal {
+		return false
+	}
+	owner := selection.Recv()
+	for _, index := range selection.Index() {
+		if pointer, ok := owner.Underlying().(*types.Pointer); ok {
+			owner = pointer.Elem()
+		}
+		if c.queries.Contains(owner) {
+			return true
+		}
+		owner = owner.Underlying().(*types.Struct).Field(index).Type()
 	}
 	return false
 }
@@ -109,6 +137,12 @@ func (c *subsetChecks) matchStatementNode(statement ast.Stmt) string {
 	case *ast.ExprStmt:
 		if call, ok := ast.Unparen(statement.X).(*ast.CallExpr); ok {
 			return c.matchCall(call)
+		}
+		if switched, ok := c.parents[statement].(*ast.TypeSwitchStmt); ok && switched.Assign == statement {
+			if assertion, ok := ast.Unparen(statement.X).(*ast.TypeAssertExpr); ok && assertion.Type == nil &&
+				!c.restrictedOperand(assertion.X) {
+				return ""
+			}
 		}
 	case *ast.GoStmt:
 		return c.matchCall(statement.Call)

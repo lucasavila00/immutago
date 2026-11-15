@@ -26,8 +26,7 @@ type Data struct {
 }
 type Alias = Data
 type Promoted struct {
-	im.Frozen
-	Count
+	*Count
 }
 
 var Current Data

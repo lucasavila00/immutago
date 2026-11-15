@@ -13,7 +13,7 @@ func TestExplicitSubsetRejects(t *testing.T) {
 		{"range protected value", `func empty(yield func(L)bool){};func f(){for v:=range empty{_=v.X}}`},
 		{"native multiple", `func f(){s:=[]int{1};var x int;s[0],x=2,3;_=x;_=im.FreezeSlice(s)}`},
 		{"protected send", `func f(ch chan int){var v V;ch<-v.X}`},
-		{"range reference", `func empty(yield func(*V)bool){};func f(){for p:=range empty{_=p.X}}`},
+		{"range reference", `func empty(yield func(*L)bool){};func f(){for p:=range empty{_=p.X}}`},
 		{"multiple write", `func f(){var v V;v.X,v.X=1,2}`},
 		{"multiple value", `func f(){a,b:=L{},L{};_,_=a,b}`},
 
@@ -28,7 +28,7 @@ var ok bool;value,ok=m.Get(1);_=value;_=ok}`},
 		{"select builder", `func f(ch chan bool){s:=[]bool{true};select{case _,s[0]=<-ch:};_=im.FreezeSlice(s)}`},
 		{"go value", `func use(L){};func f(){go use(L{})}`},
 		{"defer value", `func use(L){};func f(){defer use(L{})}`},
-		{"type switch", `func f(x any){switch v:=x.(type){case *V:_=v.X}}`},
+		{"type switch", `func f(x any){switch v:=x.(type){case *L:_=v.X}}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

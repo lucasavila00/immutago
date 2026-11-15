@@ -14,7 +14,7 @@ type LocalPoint struct {
 }
 type PointGroup struct {
 	im.Frozen
-	SnapshotPoint
+	SnapshotPoint SnapshotPoint
 }
 type Position = SnapshotPoint
 

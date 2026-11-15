@@ -86,3 +86,15 @@ func Exercise() int {
 		fromBox.Text.Len() + imported.Text.Len() + capture() + method() + expression(count) +
 		length() + lengthExpression(text) + readerMethod() + readerExpression(reader) + first.N
 }
+
+func pointers(value *api.Count, reader api.Reader) int {
+	var boxed any = value
+	_ = boxed.(*api.Count)
+	_ = api.Identity(value)
+	_ = api.Capture(value)
+	_ = reader.(*api.Count)
+	switch reader.(type) {
+	case api.Count, *api.Count:
+	}
+	return value.N
+}

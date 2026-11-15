@@ -15,7 +15,7 @@ func opaqueStorage(t types.Type) bool {
 
 // classificationStorageOracle retains the original storage walk without shared query state.
 func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
-	if t == nil || seen[t] {
+	if t == nil || seen[t] || FrozenPointer(t) {
 		return false
 	}
 	seen[t] = true
@@ -124,7 +124,7 @@ func classificationSignatureOracle(signature *types.Signature, seen map[types.Ty
 
 // classificationTransportOracle checks transport without using cached classification answers.
 func classificationTransportOracle(t types.Type, seen map[types.Type]bool) bool {
-	if t == nil || seen[t] || opaqueStorage(t) || IsCollection(t) || Frozen(t) || FrozenInterface(t) {
+	if t == nil || seen[t] || FrozenPointer(t) || opaqueStorage(t) || IsCollection(t) || Frozen(t) || FrozenInterface(t) {
 		return false
 	}
 	seen[t] = true
@@ -200,7 +200,7 @@ func classificationGraph(edges [][]int, leaf int, callback bool) []*types.Named 
 		if i == leaf {
 			var stored types.Type = value
 			if callback {
-				stored = classificationSignature(types.NewPointer(value))
+				stored = classificationSignature(types.NewSlice(value))
 			}
 			fields = append(fields, types.NewField(token.NoPos, nil, "Protected", stored, false))
 		}

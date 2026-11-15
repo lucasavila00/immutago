@@ -1,8 +1,0 @@
-subset_dynamic_read.go:20:20: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
-  source: func(*Good)
-  type: func(*rejected.Good)
-  fix: call a named, non-generic function directly with a concrete immutable parameter
-subset_dynamic_read.go:20:35: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
-  source: f(new(v))
-  type: ()
-  fix: call a named, non-generic function directly with a concrete immutable parameter

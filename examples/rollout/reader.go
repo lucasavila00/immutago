@@ -68,7 +68,7 @@ func (r *Reader) Run(ctx context.Context) {
 			}
 			panic(fmt.Errorf("read %s: %w", args.Path, err))
 		}
-		if scan.totals != r.current.LoadShared() {
+		if scan.totals != im.Value(r.current.Load()) {
 			r.current.Store(scan.totals)
 			notify(args.Updates)
 		}
@@ -81,7 +81,7 @@ func (r *Reader) Run(ctx context.Context) {
 }
 
 // Read returns an independent value. Callers replace the previous replica totals.
-func (r *Reader) Read() Totals { return r.current.LoadShared() }
+func (r *Reader) Read() Totals { return im.Value(r.current.Load()) }
 
 // logScan retains an incomplete final row until its newline arrives.
 type logScan struct {

@@ -14,7 +14,7 @@
 | FrozenString; FrozenSlice; FrozenMap | Stored string, slice, and map types. Copies share immutable backing storage. |
 | Freeze | Wrap native storage without a copy. FreezeSlice and FreezeMap consume a builder; FreezeString retains an immutable input string. |
 | Clone | Make independent native storage. It does not recursively copy arbitrary fields. |
-| Protected storage | Frozen and Local records, Frozen interfaces, frozen collections, projections, and containers that contain them. Copied fields inside these owners keep the owner's rules. Ordinary Copied data and its holders use normal Go operations. |
+| Protected storage | Frozen and Local records, Frozen interfaces, frozen collections, projections, and containers that own them. Frozen pointer handles and ordinary carriers own only replaceable pointer slots; their selected targets remain protected. Copied fields inside protected owners keep the owner's rules. |
 | Checked package | A package selected by the [package boundary](rules.md#package-boundary). |
 | Service | A struct that embeds `supervise.Service[A]`. Init sets it up; Run does background work. |
 | Service method | A declared or promoted method on a service. Exported methods have the [result signature rule](service-results.md). |

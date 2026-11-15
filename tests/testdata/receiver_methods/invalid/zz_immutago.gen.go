@@ -20,9 +20,13 @@ func NewProductProjection(value im.Projection[*Product]) ProductProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ProductProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ProductProjection) Unsafe() *Product { return v.immutagoProjection.Unsafe() }
+
 // Price reads the Price field.
 func (v ProductProjection) Price() int {
-	return v.immutagoProjection.Read().Price
+	return v.immutagoProjection.Unsafe().Price
 }
 
 // ProductCell publishes frozen Product values. Do not copy it.
@@ -33,6 +37,3 @@ func (c *ProductCell) Store(value Product) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ProductCell) Load() ProductProjection { return NewProductProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ProductCell) LoadShared() Product { return c.value.LoadShared() }

@@ -68,7 +68,7 @@ func ordinaryCopies(slice im.SliceProjection[int], mapping im.MapProjection[int,
 	_ = frozenEntries
 	label := im.ProjectString(Label("label"))
 	_ = label.Clone()
-	owned := api.LoadShared()
+	owned := api.Current()
 	_ = owned.Native[:1]
 }
 
@@ -122,4 +122,9 @@ func recordEntries(values im.MapProjection[string, api.Entry], pointers im.MapPr
 		_ = api.NewEntryProjection(entry).Name().Is("name")
 	}
 	return api.NewEntryProjection(sequence.AtPointer(0)).Score()
+}
+
+// SharedRead explicitly retains the selected record and its text.
+func SharedRead(value im.Projection[*api.Model]) *api.Model {
+	return value.Unsafe()
 }

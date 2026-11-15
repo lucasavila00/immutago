@@ -11,10 +11,6 @@ forms.go:13:21: unmarked struct contains immutable field Value; embed an immutab
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
 forms.go:16:18: service method Raw must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: api.Scorer
-forms.go:21:6: unsupported immutable operation: interface assertions require ordinary or persistent Frozen values
-  source: s.(*implementation.Tree)
-  type: *implementation.Tree
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 forms.go:28:30: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: local
   type: api.ScorerProjection
@@ -36,37 +32,22 @@ forms.go:33:6: unsupported immutable operation: copied values require bool, numb
 forms.go:33:9: immutable type argument: copied values require bool, numbers, Copied records, arrays, or service references
   type: api.Scorer
   fix: copy scalar fields, or use a generated local projection
-forms.go:35:9: unsupported immutable operation: protected operation is outside the supported statement forms
-  source: s.(type)
-  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
-forms.go:36:7: unsupported immutable operation: protected storage is unsupported in type switches
-  source: *implementation.Tree
-  type: *implementation.Tree
-  fix: keep concrete protected types in named function parameters instead of recovering values or references from interfaces
-forms.go:41:63: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: local.Read()
-  type: api.Scorer
-  fix: use the generated field accessor
-forms.go:43:9: unsupported immutable operation: interface assertions require ordinary or persistent Frozen values
-  source: local.Read().(*implementation.Tree)
-  type: *implementation.Tree
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-forms.go:45:11: unsupported immutable operation: native slices of immutable storage are unsupported
+forms.go:44:11: unsupported immutable operation: native slices of immutable storage are unsupported
   source: ...api.Scorer
   type: []api.Scorer
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-forms.go:50:2: unsupported immutable operation: writes to immutable objects are unsupported
+forms.go:49:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: tree.Weight = 4
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-forms.go:54:6: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-forms.go:58:6: Cell slots and their holders cannot be copied or transported by value
-forms.go:58:9: immutable type argument: Frozen storage cannot contain Local values
+forms.go:53:6: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+forms.go:57:6: Cell slots and their holders cannot be copied or transported by value
+forms.go:57:9: immutable type argument: Frozen storage cannot contain Local values
   type: api.ScorerProjection
   fix: store Frozen data; keep its Projection or Local result in local bindings
-forms.go:60:6: immutable collection: copied values require bool, numbers, Copied records, arrays, or service references
+forms.go:59:6: immutable collection: copied values require bool, numbers, Copied records, arrays, or service references
   type: im.FrozenSlice[api.ScorerProjection]
   fix: copy scalar fields, or use a generated local projection
-forms.go:60:9: immutable type argument: Frozen storage cannot contain Local values
+forms.go:59:9: immutable type argument: Frozen storage cannot contain Local values
   type: api.ScorerProjection
   fix: store Frozen data; keep its Projection or Local result in local bindings
 parameters.go:11:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values

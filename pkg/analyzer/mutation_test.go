@@ -113,22 +113,22 @@ func TestRecursivePointerType(t *testing.T) {
 	}
 }
 
-// TestIndirectReferenceCannotErasePermission rejects access through a pointer-variable address.
-func TestIndirectReferenceCannotErasePermission(t *testing.T) {
+// TestIndirectReferenceKeepsTargetImmutable checks writes after an ordinary pointer-slot read.
+func TestIndirectReferenceKeepsTargetImmutable(t *testing.T) {
 	source := immutableValueTypes + `
  func dereference(pointer **Value) *Value { return *pointer }
- func f(v Value) { p:=new(v); q:=dereference(&p); v.X=2; _=read(q) }
+ func f(v Value) { p:=new(v); q:=dereference(&p); q.X=2; _=read(q) }
  `
 	reports := checkSource(t, source)
-	if !strings.Contains(reports, "pointer indirection is unsupported") {
-		t.Fatalf("diagnostics = %q; want unsupported pointer indirection", reports)
+	if !strings.Contains(reports, "writes to immutable objects") {
+		t.Fatalf("diagnostics = %q; want immutable target write rejection", reports)
 	}
 }
 
 // TestUnknownFactoryCannotReturnProtectedStorage rejects dynamic protected results.
 func TestUnknownFactoryCannotReturnProtectedStorage(t *testing.T) {
 	source := immutableValueTypes + `
- func f(factory func() *Value) { pointer:=factory(); _=pointer.X }
+ func f(factory func() Value) { value:=factory(); _=value.X }
  `
 	reports := checkSource(t, source)
 	if !strings.Contains(reports, "dynamic calls require ordinary or persistent Frozen parameters and results") {

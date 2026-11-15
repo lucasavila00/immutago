@@ -91,7 +91,7 @@ func TestCellshipGraph(t *testing.T) {
 	marker, slice := testTypes()
 	value := markedType("Value", marker)
 	for _, typ := range []types.Type{
-		value, types.NewPointer(value), types.NewSlice(value), types.NewArray(value, 2),
+		value, types.NewSlice(value), types.NewArray(value, 2),
 		types.NewMap(value, types.Typ[types.Int]), types.NewChan(types.SendRecv, value),
 		sliceType(t, slice, types.Typ[types.Int]),
 	} {

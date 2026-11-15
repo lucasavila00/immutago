@@ -87,6 +87,7 @@ returned. Local values and projections cannot be boxed or captured. See the comp
 | Assign, pass, or return a proved implementation | `var scorer Scorer = &Tree{Weight: 2}`; `use(scorer)`; `return scorer` |
 | Copy or convert between proved Frozen interfaces | `other := scorer`, `other = scorer`, `base := Base(scorer)` |
 | Pass and capture Frozen values | `var boxed any = scorer`, `identity(scorer)`, `read := func() float64 { return scorer.Score(features) }`; see the [complete value forms](common-forms.md#use-frozen-values). |
+| Recover a concrete Frozen value or pointer | `scorer.(*Tree)`, `switch scorer.(type) { case *Tree: }` |
 | Select a method with ordinary or persistent inputs and results | `read := scorer.Score`, `read := Scorer.Score` |
 | Replace the whole interface binding | `scorer = &Tree{Weight: 3}`, `scorer = nil` |
 | Store in Frozen fields, arrays, Cells, or frozen collections | `Model{Scorer: scorer}`, `im.FrozenSlice[Scorer]` |
@@ -146,15 +147,16 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | `reader.Apply(local, nil)` with `local im.StringProjection` | Pass `local.Unsafe()`, or declare a direct `im.StringProjection` parameter. |
 | `reader.Apply(nil, func() int { return local.Len() })` | Read `n := local.Len()` before the closure, then return `n`. |
 | `Apply(func() im.StringProjection)` | Call a named function directly, then pass its projection to a direct typed method. |
-| `scorer.(*Tree)` or `boxed.(Scorer)` with `boxed any` | Add an allowed method, or recover a concrete Frozen record value and convert it to Scorer. |
+| `boxed.(Scorer)` with `boxed any` | Add an allowed method, or recover a concrete Frozen record value and convert it to Scorer. |
 | `method := local.Score` with ScorerProjection | `local.Score(features)` |
 | `go local.Score(features)` or `defer local.Score(features)` with ScorerProjection | Call synchronously. |
 | Capture ScorerProjection in a closure | Capture a Scorer value, or compute an ordinary result before the closure. |
 | `Self() *LocalRecord` | Return the Local record value. |
-| `Values() []*Tree` | Return a FrozenSlice or a projection; native containers cannot hold protected data outside the builder forms. |
-| `func (t *Tree) Value() any { return t }` | Declare a `*Tree` or Scorer result. |
-| `func (t *Tree) Callback() func() float64 { return func() float64 { return t.Weight } }` | Copy Weight to an ordinary local before the closure. |
+| `Values() []Tree` | Return `[]*Tree`, a FrozenSlice, or a projection. |
 | `value, outputs[0] = local.Read()` | Bind local names first, then assign the ordinary output separately. |
 | Save ScorerProjection in a package variable or Frozen field | Save a Scorer value from an allowed construction. |
-| Read the raw payload with `projection.Read()` | Use the generated method. |
 | `chan Scorer` | Use direct calls with a Scorer parameter. |
+
+A generic `im.Projection[Scorer]` can return its Frozen interface with
+`projection.Unsafe()`. The result keeps the Frozen interface rules above. It
+does not remove the implementation proof required for a Frozen interface conversion.

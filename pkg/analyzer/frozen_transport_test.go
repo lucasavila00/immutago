@@ -15,6 +15,7 @@ func (value Data) Len() int { return value.Text.Len() }
 `
 	for name, source := range map[string]string{
 		"ordinary interface": `type Factory interface{Make()Data};func use(factory Factory)Data{return factory.Make()}`,
+		"pointer generic":    `func use(value *Data) { _ = identity(value); _ = func() int { return value.Len() } }`,
 		"interface":          `func use(s im.FrozenString) { var boxed any = s; _ = boxed.(im.FrozenString) }`,
 		"generic":            `func use(s im.FrozenString) { _ = identity(s) }`,
 		"generic body": `func use[T any](value T, s im.FrozenString) T { var boxed any = s; _ = boxed;
@@ -73,7 +74,7 @@ func identity[T any](value T) T { return value }
 		"assert implementation": {`func use(value any) { _ = value.(Contract) }`, "Frozen interface implementation"},
 		"tuple assertion": {`func use(value any) { result, ok := value.(Contract); _ = result;
    _ = ok }`, "Frozen interface implementation"},
-		"pointer boxing": {`func use(value *Data) { var boxed any = value; _ = boxed }`, "ordinary interfaces require"},
+		"pointer boxing": {`func use(value *View) { var boxed any = value; _ = boxed }`, "ordinary interfaces require"},
 		"builder alias":  {`func use() { values := []im.FrozenString{}; alias := values; _ = alias }`, "alias"},
 	} {
 		t.Run(name, func(t *testing.T) {

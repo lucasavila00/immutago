@@ -243,6 +243,10 @@ func (p *proof) structure(result *obligation, t types.Type, structure *types.Str
 		if field.Embedded() && IsLibraryType(field.Type(), "Frozen") {
 			continue
 		}
+		if field.Embedded() {
+			result.reason = field.Name() + ": Frozen data fields must be named"
+			return
+		}
 		p.depend(result, field.Type(), field.Name()+": ")
 	}
 }
