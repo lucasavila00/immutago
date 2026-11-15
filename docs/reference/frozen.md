@@ -116,7 +116,7 @@ Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 - Call methods on a local variable, a struct field, or a named function's result.
 - Pass frozen collections to functions by value.
 - Parentheses around a call or range expression are allowed.
-- Iterators of persistent Frozen values use the [transport forms](common-forms.md#persistent-frozen-value-transport).
+- Iterators of persistent Frozen values use the [value forms](common-forms.md#use-frozen-values).
 - Iterators of protected pointers still require direct `range frozen.All()`.
 
 | Rejected examples — non-exhaustive | Replacement |

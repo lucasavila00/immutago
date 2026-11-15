@@ -48,7 +48,7 @@ A Local value cannot be hidden in persistent storage.
 | `T{point}` with `T ~[]any` | Construct `[]any{point}` first, then convert it to T. |
 | Convert a type parameter to a Frozen interface inside a generic body | Convert the concrete implementation to that Frozen interface before the generic call. |
 
-## Persistent Frozen value transport
+## Use Frozen values
 
 Frozen records, FrozenString, FrozenSlice, FrozenMap, Frozen interfaces, and
 unnamed arrays of these values can persist. Aliases keep these forms. Pointers
@@ -103,7 +103,7 @@ p = &FrozenPoint{X: 2} // q still observes X == 1.
 
 - After `x := point.X`, `x` is an ordinary integer; you can change it or capture it.
 - The read of `point.X` still needs a listed statement form.
-- Frozen values use the transport table above. Local values and protected pointers keep their restricted forms.
+- Frozen values use the forms above. Local values and protected pointers keep their restricted forms.
 - Constant expressions follow the same rules. For a Local array, compute
   `count := len(points)` before a closure, then capture `count`. Frozen arrays can be captured.
 
@@ -179,7 +179,7 @@ forms on this page.
 | Struct with `im.Local` | Its value stays Local. Its pointer can only be used in local direct calls. |
 | Frozen or Local record | Cannot change protected fields or have generic receivers. |
 | Copied field inside a protected owner | Exact value-receiver calls copy the field. Pointer-receiver calls that address the field are rejected. |
-| Ordinary concrete receiver with Local inputs or results | Direct, non-generic calls. Local inputs and results keep their im rules. Persistent values use the transport table. |
+| Ordinary concrete receiver with Local inputs or results | Direct, non-generic calls. Local inputs and results keep their im rules. Persistent values use the forms above. |
 | Fixed library type | Listed API forms. |
 
 | Rejected examples — non-exhaustive | Replacement |
@@ -212,7 +212,7 @@ Use the operations above inside these statement forms:
 | Use checked operations in a select case body | `case <-ready: values[0] = value` |
 
 - Local, pointer, and builder assignments have one destination, except for the
-  result-call forms above. Persistent Frozen values also use the transport table.
+  result-call forms above. Frozen values also use the forms above.
   Returns can have several results.
 - Fixed calls such as FrozenMap.Get, MapProjection.Get, and supervise.Start use
   the same result binding forms. For example, `value, found = frozen.Get(key)`

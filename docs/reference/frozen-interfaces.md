@@ -46,7 +46,7 @@ under the ordinary method rules.
 - Use fixed or variadic parameters. Ordinary inputs, including interface and function values,
   follow ordinary Go contracts. Protected inputs also need the
   [common call forms](common-forms.md#statements-and-calls).
-- Method results use the same type, return, and transport rules as ordinary named
+- Method results use the same type and return rules as ordinary named
   functions and concrete methods. There is no interface-specific result category.
 
 | Parameter form — exhaustive | Example |
@@ -86,7 +86,7 @@ returned. Local values and projections cannot be boxed or captured. See the comp
 | Convert a proved Frozen record value or pointer | `scorer := Scorer(&Tree{Weight: 2})` |
 | Assign, pass, or return a proved implementation | `var scorer Scorer = &Tree{Weight: 2}`; `use(scorer)`; `return scorer` |
 | Copy or convert between proved Frozen interfaces | `other := scorer`, `other = scorer`, `base := Base(scorer)` |
-| Use persistent value transport | `var boxed any = scorer`, `identity(scorer)`, `read := func() float64 { return scorer.Score(features) }`; see the [complete transport forms](common-forms.md#persistent-frozen-value-transport). |
+| Pass and capture Frozen values | `var boxed any = scorer`, `identity(scorer)`, `read := func() float64 { return scorer.Score(features) }`; see the [complete value forms](common-forms.md#use-frozen-values). |
 | Select a method with ordinary or persistent inputs and results | `read := scorer.Score`, `read := Scorer.Score` |
 | Replace the whole interface binding | `scorer = &Tree{Weight: 3}`, `scorer = nil` |
 | Store in Frozen fields, arrays, Cells, or frozen collections | `Model{Scorer: scorer}`, `im.FrozenSlice[Scorer]` |
@@ -99,7 +99,7 @@ returned. Local values and projections cannot be boxed or captured. See the comp
 
 Local projections use one binding per declaration or assignment, except for the
 result-call forms above. Their multiple-result bindings require local names or blanks.
-Persistent interface values also use the common transport forms.
+Frozen interface values also use the common value forms.
 Use the common forms for
 statements, builders, fields, return values, and direct named calls. Each
 implementation method must be declared on the exact converted type. Promoted
