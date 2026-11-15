@@ -64,7 +64,7 @@ projection when reading through a Local value. See the complete
 
 The service rule does not change a struct's field rules. A Frozen record can be
 stored in a Cell or read through Projection. For data, a service returns its generated
-projection, an im.Local result, or a separate im.Copied value. A Frozen record
+projection, an im.Local result, an unchecked handle, or a separate im.Copied value. A Frozen record
 with only numeric fields still keeps the Frozen rule.
 
 ## Rejected examples — non-exhaustive

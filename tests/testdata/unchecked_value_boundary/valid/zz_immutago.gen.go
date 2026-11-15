@@ -26,6 +26,14 @@ func (v ModelProjection) Table() im.UncheckedValue[api.Table] {
 	return v.immutagoProjection.Read().Table
 }
 
+// Models reads the Models field.
+func (v ModelProjection) Models() ModelModelsProjection {
+	if im.IsNil(v.immutagoProjection) {
+		panic("nil frozen record")
+	}
+	return ModelModelsProjection{immutagoProjection: v.immutagoProjection}
+}
+
 // ModelCell publishes frozen Model values. Do not copy it.
 type ModelCell struct{ value im.Cell[Model] }
 
@@ -37,3 +45,39 @@ func (c *ModelCell) Load() ModelProjection { return NewModelProjection(c.value.L
 
 // LoadShared returns the frozen value for persistent use.
 func (c *ModelCell) LoadShared() Model { return c.value.LoadShared() }
+
+// ModelModelsProjection reads a fixed array locally.
+type ModelModelsProjection struct {
+	im.Local
+	immutagoProjection im.Projection[*Model]
+}
+
+// Len returns the array length.
+func (v ModelModelsProjection) Len() int { return 2 }
+
+// At reads the element at index.
+func (v ModelModelsProjection) At(index0 int) ModelModelsElementProjection {
+	if im.IsNil(v.immutagoProjection) {
+		panic("nil frozen record")
+	}
+	if index0 < 0 || index0 >= 2 {
+		panic("array index out of range")
+	}
+	return ModelModelsElementProjection{immutagoProjection: v.immutagoProjection, index0: index0}
+}
+
+// ModelModelsElementProjection reads a fixed array locally.
+type ModelModelsElementProjection struct {
+	im.Local
+	immutagoProjection im.Projection[*Model]
+	index0             int
+}
+
+// Len returns the array length.
+func (v ModelModelsElementProjection) Len() int { return 1 }
+
+// At reads the element at index.
+func (v ModelModelsElementProjection) At(index1 int) Handle {
+	index0 := v.index0
+	return v.immutagoProjection.Read().Models[index0][index1]
+}

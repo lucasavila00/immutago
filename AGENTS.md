@@ -140,7 +140,7 @@ protected storage keeps its owner's write and address rules, including implicit
 pointer-receiver calls. Copy it into ordinary storage to change it. Pointer fields
 remain outside the Copied proof.
 Frozen records are not Copied,
-even when their fields contain only numbers. Struct results require Copied, Local,
+even when their fields contain only numbers. Struct results require Copied, Local, an UncheckedValue handle,
 or a generated projection.
 Embed Frozen, Local, and Copied markers to declare record categories. The markers
 themselves do not satisfy Frozen, Copied, or ReadResult payload proofs.

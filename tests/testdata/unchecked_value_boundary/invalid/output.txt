@@ -1,0 +1,112 @@
+invalid.go:25:5: Copied record: Model: copied values require bool, numbers, Copied records, arrays, or service references
+  type: invalid.Copied
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+invalid.go:38:16: service method Named must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: invalid.Named
+invalid.go:41:16: service method Pointer must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: *valid.Handle
+invalid.go:44:16: service method Native must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: []valid.Handle
+invalid.go:47:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: saved valid.Serving
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+invalid.go:51:38: unsupported immutable operation: closures cannot capture immutable storage
+  source: value
+  type: valid.Serving
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+invalid.go:56:38: unsupported immutable operation: closures cannot capture immutable storage
+  source: value
+  type: valid.ModelProjection
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+invalid.go:60:67: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: value.Read()
+  type: valid.Handle
+  fix: use the generated field accessor
+invalid.go:63:76: unsupported immutable operation: copied values require bool, numbers, Copied records, arrays, or service references
+  source: value.Clone()
+  type: []valid.Handle
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:66:88: unsupported immutable operation: copied values require bool, numbers, Copied records, arrays, or service references
+  source: value.Clone()
+  type: map[int]valid.Handle
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:69:68: unsupported immutable operation: copied values require bool, numbers, Copied records, arrays, or service references
+  source: im.Value(value)
+  type: invalid.Snapshot
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:69:71: immutable type argument: copied values require bool, numbers, Copied records, arrays, or service references
+  type: invalid.Snapshot
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:72:71: unsupported immutable operation: copied values require bool, numbers, Copied records, arrays, or service references
+  source: im.Value(value)
+  type: *invalid.Snapshot
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:72:74: immutable type argument: copied values require bool, numbers, Copied records, arrays, or service references
+  type: *invalid.Snapshot
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:75:67: unsupported immutable operation: copied values require bool, numbers, Copied records, arrays, or service references
+  source: im.Value(value)
+  type: invalid.Scorer
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:75:70: immutable type argument: copied values require bool, numbers, Copied records, arrays, or service references
+  type: invalid.Scorer
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:78:12: immutable collection: projection payload 1: Frozen storage cannot contain Local values
+  type: im.Projection[valid.Serving]
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+invalid.go:78:18: immutable collection: projection payload 1: Frozen storage cannot contain Local values
+  type: im.Projection[valid.Serving]
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+invalid.go:78:21: immutable type argument: Frozen storage cannot contain Local values
+  type: valid.Serving
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+invalid.go:78:71: unsupported immutable operation: Frozen storage cannot contain Local values
+  source: im.Value(value)
+  type: valid.Serving
+  fix: use the documented immutable value and reference forms
+invalid.go:78:74: immutable type argument: Frozen storage cannot contain Local values
+  type: valid.Serving
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+invalid.go:78:80: immutable collection: projection payload 1: Frozen storage cannot contain Local values
+  type: im.Projection[valid.Serving]
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+invalid.go:81:58: unsupported immutable operation: copied values require bool, numbers, Copied records, arrays, or service references
+  source: im.Value(value)
+  type: string
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:81:61: immutable type argument: copied values require bool, numbers, Copied records, arrays, or service references
+  type: string
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:84:88: unsupported immutable operation: copied values require bool, numbers, Copied records, arrays, or service references
+  source: im.Value(value)
+  type: im.FrozenSlice[int]
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:84:91: immutable type argument: copied values require bool, numbers, Copied records, arrays, or service references
+  type: im.FrozenSlice[int]
+  fix: copy scalar fields, or use a generated local projection
+invalid.go:87:13: immutable collection: projection payload 1: immutable markers are annotations, not data
+  type: im.Projection[im.Copied]
+  fix: embed the marker in a named struct; use data fields for values
+invalid.go:87:19: immutable collection: projection payload 1: immutable markers are annotations, not data
+  type: im.Projection[im.Copied]
+  fix: embed the marker in a named struct; use data fields for values
+invalid.go:87:22: immutable type argument: immutable markers are annotations, not data
+  type: im.Copied
+  fix: embed the marker in a named struct; use data fields for values
+invalid.go:87:64: unsupported immutable operation: immutable markers are annotations, not data
+  source: im.Value(value)
+  type: im.Copied
+  fix: embed the marker in a named struct; use data fields for values
+invalid.go:87:67: immutable type argument: immutable markers are annotations, not data
+  type: im.Copied
+  fix: embed the marker in a named struct; use data fields for values
+invalid.go:87:73: immutable collection: projection payload 1: immutable markers are annotations, not data
+  type: im.Projection[im.Copied]
+  fix: embed the marker in a named struct; use data fields for values
+invalid.go:90:35: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.Model = valid.Handle{}
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+invalid.go:93:58: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &value.Model
+  type: *valid.Handle
+  fix: copy the field into a local; do not take a pointer into immutable storage

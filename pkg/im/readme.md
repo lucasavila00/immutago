@@ -537,7 +537,7 @@ Unsafe returns the underlying string without copying or allocating. The checker 
 
 UncheckedValue holds a pointer to data whose immutability the analyzer does not prove. The package that declares T promises never to change the data after Trust.
 
-UncheckedValue is an allowed stored type. Any package can store, copy, and pass it. Only the package that declares T can use Trust and Unwrap, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/unchecked-values.md for the complete forms.
+UncheckedValue is Frozen and a read result, but not Copied. Any package can store, copy, pass, and return the handle. Only the package that declares T can use Trust and Unwrap, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/unchecked-values.md for the complete forms.
 
 ```go
 type UncheckedValue[T any] struct {

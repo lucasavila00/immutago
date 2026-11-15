@@ -25,10 +25,19 @@ func TestSnapshotCategories(t *testing.T) {
 	badLocal := markedType("BadLocal", local, types.NewField(token.NoPos, nil, "Text", types.Typ[types.String], false))
 	badSnapshot := markedType("BadSnapshot", snapshot, types.NewField(token.NoPos, nil, "Reply", reply, false))
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), reply)
+	unchecked := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "UncheckedValue", nil),
+		types.NewStruct([]*types.Var{types.NewField(token.NoPos, pkg, "value", types.NewPointer(retained), false)}, nil), nil)
+	uncheckedAlias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Handle", nil), unchecked)
+	namedHandles := types.NewNamed(types.NewTypeName(token.NoPos, nil, "Handles", nil), types.NewArray(unchecked, 2), nil)
 	cases := []struct {
 		typ                           types.Type
 		snapshot, copied, read, local bool
 	}{
+		{unchecked, true, false, true, false},
+		{uncheckedAlias, true, false, true, false},
+		{types.NewArray(unchecked, 0), true, false, true, false},
+		{types.NewArray(types.NewArray(uncheckedAlias, 1), 2), true, false, true, false},
+		{namedHandles, false, false, false, false},
 		{types.Typ[types.Int], true, true, true, false},
 		{types.Typ[types.String], true, false, false, false},
 		{frozenText, true, false, false, false},
