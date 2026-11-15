@@ -23,6 +23,11 @@ const testLibrary = `package im
  type UncheckedValue[T any] struct { value *T }
  func Trust[T any](value *T) UncheckedValue[T] { return UncheckedValue[T]{value: value} }
  func Unwrap[T any](value UncheckedValue[T]) *T { return value.value }
+ type FrozenString struct { value string }
+ func FreezeString(value string) FrozenString { return FrozenString{} }
+ func (value FrozenString) Len() int { return 0 }
+ func (value FrozenString) At(index int) byte { return 0 }
+ func (value FrozenString) Clone() string { return "" }
  type FrozenSlice[T any] struct { values []T }
  type FrozenMap[K comparable, V any] struct { values map[K]V }
  func FreezeSlice[T any](values []T) FrozenSlice[T] { return FrozenSlice[T]{} }
@@ -144,23 +149,23 @@ func sourcePass(t testing.TB, declarations string) *analysis.Pass {
 // TestValidTypes covers recursive proofs, aliases, and ordinary mutable scalar locals.
 func TestValidTypes(t *testing.T) {
 	cases := []string{
-		`type Value struct { im.Shared; Flag bool; Text string; Number complex128; Array [4]int }`,
+		`type Value struct { im.Shared; Flag bool; Text im.FrozenString; Number complex128; Array [4]int }`,
 		`type Node struct { im.Shared; Children im.FrozenSlice[Node] }`,
 		`type A struct { im.Shared; B im.FrozenSlice[B] }
-   type B struct { im.Shared; A im.FrozenMap[string,A] }`,
+   type B struct { im.Shared; A im.FrozenMap[im.FrozenString,A] }`,
 		`type Alias = im.Shared
-   type Value struct { Alias; Text string }
+   type Value struct { Alias; Text im.FrozenString }
    type Copy Value`,
-		`type Value struct { im.Shared; Items im.FrozenSlice[im.FrozenMap[string,int]] }`,
+		`type Value struct { im.Shared; Items im.FrozenSlice[im.FrozenMap[im.FrozenString,int]] }`,
 		`type Value struct { im.Shared; X int }
    func replace() { v := Value{X: 1}; v = Value{X: 2}; _ = v }`,
 		`type Value struct { im.Shared; A [2]int }
    func copyArray(v Value) { a := v.A; a[0] = 1 }`,
-		`type Value struct { im.Shared; S string }
-   func text(v Value) string { return v.S[:] }`,
+		`type Value struct { im.Shared; S im.FrozenString }
+   func text(v Value) string { return v.S.Clone() }`,
 		`type V struct { im.Shared }; func f(x *V) {}`,
 		`var _ = im.FreezeSlice([]int{1, 2})
-   var _ = im.FreezeMap(map[string]int{"a": 1})`,
+   var _ = im.FreezeMap(map[im.FrozenString]int{im.FreezeString("a"): 1})`,
 	}
 	for _, source := range cases {
 		t.Run(source[:min(len(source), 50)], func(t *testing.T) {

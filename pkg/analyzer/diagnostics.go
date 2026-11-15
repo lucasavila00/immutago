@@ -132,6 +132,9 @@ func subsetFix(rule string) string {
 
 // structuralFix explains how to replace a field or type argument that failed its recursive proof.
 func structuralFix(t types.Type, reason string) string {
+	if strings.Contains(reason, "native strings require im.FrozenString") {
+		return "use im.FrozenString and construct it with im.FreezeString(text), which copies the bytes"
+	}
 	switch {
 	case strings.Contains(reason, "named array"):
 		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Shared or im.ByValue"

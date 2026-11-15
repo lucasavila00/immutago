@@ -147,7 +147,11 @@ func (p *proof) value(result *obligation, t types.Type) {
 		p.depend(result, underlying.Elem(), "")
 		return
 	case *types.Basic:
-		if underlying.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex|types.IsString) != 0 {
+		if underlying.Info()&types.IsString != 0 {
+			result.reason = "native strings require im.FrozenString in immutable storage"
+			return
+		}
+		if underlying.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex) != 0 {
 			return
 		}
 	case *types.Array:
