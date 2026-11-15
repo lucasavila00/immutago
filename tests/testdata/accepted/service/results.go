@@ -61,7 +61,14 @@ func use(ref supervise.Ref[Counter]) {
 }
 
 // User embedding and promoted methods use the same result contract.
-type Other struct{ *Counter }
+type ResultReader struct {
+	supervise.Service[supervise.NoArgs]
+}
+
+func (*ResultReader) Run(context.Context) {}
+func (*ResultReader) Read() Reply         { return Reply{} }
+
+type Other struct{ ResultReader }
 type Alias = Counter
 
 // Immutable values and Frozen pointers can be stored as start arguments.

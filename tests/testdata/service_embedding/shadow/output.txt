@@ -1,0 +1,5 @@
+shadow.go:13:13: service must embed supervise.Service by value through each embedded field
+shadow.go:20:19: unsupported immutable operation: service must embed supervise.Service by value through each embedded field
+  source: Ref
+  type: supervise.Ref[T any]
+  fix: use the documented immutable value and reference forms
