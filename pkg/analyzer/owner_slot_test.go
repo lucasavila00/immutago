@@ -12,7 +12,7 @@ func TestCellSlotChecks(t *testing.T) {
 		reject       bool
 	}{
 		{"fresh store and local load", `func f(l *Loader) { l.Current.Store(Model{X:1}); m:=l.Current.Load(); read(m) }
-func read(im.View[Model]){}`, false},
+func read(im.Projection[Model]){}`, false},
 		{"new store", `func f(l *Loader) { l.Current.Store(Model{}); m:=l.Current.Load(); _=m }`, false},
 		{"package slot", `var slot im.Cell[Model]; func f() { slot.Store(Model{}); m:=slot.Load(); _=m }`, false},
 		{"snapshot argument", `type S struct{im.Frozen}; var slot im.Cell[S]`, false},
@@ -35,8 +35,8 @@ func read(im.View[Model]){}`, false},
 		{"slot pointer", `type Outer struct{ Value *im.Cell[Model] }`, true},
 		{"store retained value", `func f(l *Loader) { m:=l.Current.Shared(); l.Current.Store(m) }`, false},
 		{"store existing value", `func f(l *Loader) { m:=Model{}; l.Current.Store(m) }`, false},
-		{"return load", `func f(l *Loader) im.View[Model] { return l.Current.Load() }`, false},
-		{"load into global", `var m im.View[Model]; func f(l *Loader) { m=l.Current.Load() }`, true},
+		{"return load", `func f(l *Loader) im.Projection[Model] { return l.Current.Load() }`, false},
+		{"load into global", `var m im.Projection[Model]; func f(l *Loader) { m=l.Current.Load() }`, true},
 		{"shared field write", `func f(l *Loader) { m:=l.Current.Shared(); m.X=1 }`, true},
 		{"method value", `func f(l *Loader) { load:=l.Current.Load; _=load }`, true},
 		{"concurrent store", `func f(l *Loader) { go l.Current.Store(Model{}) }`, true},

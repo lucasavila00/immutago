@@ -21,11 +21,14 @@ type subsetChecks struct {
 	reported   map[token.Pos]bool
 	owners     map[*types.Var]bool
 	literals   map[*ast.CompositeLit]string
+	generated  *token.File
 }
 
 // checkSubset checks the supported immutable forms with compiler-resolved types.
 func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checker.Prover) {
-	newSubsetChecks(pass, proofs).checkImmutable(owners)
+	c := newSubsetChecks(pass, proofs)
+	c.checkGeneration()
+	c.checkImmutable(owners)
 }
 
 // newSubsetChecks records parents once for service references and immutable source forms.
@@ -71,20 +74,6 @@ func (c *subsetChecks) report(n ast.Node, message string) {
 
 // visit sends each protected operation through the complete source-form matcher.
 func (c *subsetChecks) visit(node ast.Node) bool {
-	if literal, ok := node.(*ast.FuncLit); ok {
-		if call := c.selectLiteral(literal); call != nil {
-			if rule := c.matchSelect(call); rule != "" {
-				c.report(call, rule)
-			}
-			ast.Inspect(literal.Type, func(node ast.Node) bool {
-				if node == literal.Type {
-					return true
-				}
-				return c.visit(node)
-			})
-			return false
-		}
-	}
 	c.checkCellNode(node)
 	c.declarationNode(node)
 	if name, ok := node.(*ast.Ident); ok {
@@ -105,7 +94,7 @@ func (c *subsetChecks) visit(node ast.Node) bool {
 
 // subsetType rejects hidden references and native containers, including inferred result types.
 func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string {
-	if t == nil || seen[t] || checker.IsCollection(t) || checker.IsView(t) {
+	if t == nil || seen[t] || checker.IsCollection(t) || checker.IsProjection(t) {
 		return ""
 	}
 	seen[t] = true

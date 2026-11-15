@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/lucasavila00/immutago/internal/checker"
-	"github.com/lucasavila00/immutago/internal/viewgen"
+	"github.com/lucasavila00/immutago/internal/projectiongen"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -21,38 +21,38 @@ const testLibrary = `package im
  type Frozen struct{}
  type Local struct{}
  type Cell[T any] struct{}
- func (o *Cell[T]) Load() View[T] { return View[T]{} }
- func (o *Cell[T]) LoadPointer() View[*T] { return View[*T]{} }
+ func (o *Cell[T]) Load() Projection[T] { return Projection[T]{} }
+ func (o *Cell[T]) LoadPointer() Projection[*T] { return Projection[*T]{} }
  func (o *Cell[T]) Shared() T { var zero T; return zero }
  func (o *Cell[T]) Store(value T) {}
- type View[T any] struct { value T }
- func ViewOf[T any](value T) View[T] { return View[T]{value:value} }
- func CopyView[T any](value View[T]) View[*T] { return View[*T]{} }
- func Select[T,F any](value View[T], project func(T)F) View[F] { return View[F]{} }
- func Copy[T any](value View[T]) T { return value.value }
- func IsNil[T any](value View[*T]) bool { return value.value == nil }
- type StringView struct { value string }
- func String(value View[FrozenString]) StringView { return StringView{} }
- func Text[S ~string](value View[S]) StringView { return StringView{} }
- func (s StringView) Len() int { return 0 }
- func (s StringView) At(index int) byte { return 0 }
- func (s StringView) Clone() string { return "" }
- func (s StringView) Equal(other StringView) bool { return false }
- func (s StringView) EqualString(other string) bool { return false }
- func (s StringView) Unsafe() string { return s.value }
- type SliceView[E any] struct { values []E }
- func Slice[E any](value View[FrozenSlice[E]]) SliceView[E] { return SliceView[E]{} }
- func (s SliceView[E]) Len() int { return 0 }
- func (s SliceView[E]) At(index int) View[E] { return View[E]{} }
- func (s SliceView[E]) AtPointer(index int) View[*E] { return View[*E]{} }
- func (s SliceView[E]) All()func(func(int,View[E])bool) { return nil }
- func (s SliceView[E]) Clone() []E { return nil }
- type MapView[K comparable,V any] struct { values map[K]V }
- func Map[K comparable,V any](value View[FrozenMap[K,V]]) MapView[K,V] { return MapView[K,V]{} }
- func (m MapView[K,V]) Len() int { return 0 }
- func (m MapView[K,V]) Get(key K)(View[V],bool) { return View[V]{},false }
- func (m MapView[K,V]) All()func(func(View[K],View[V])bool) { return nil }
- func (m MapView[K,V]) Clone() map[K]V { return nil }
+ type Projection[T any] struct { value T }
+ func ProjectionOf[T any](value T) Projection[T] { return Projection[T]{value:value} }
+ func CopyProjection[T any](value Projection[T]) Projection[*T] { return Projection[*T]{} }
+ func (value Projection[T]) Read() T { return value.value }
+ func Copy[T any](value Projection[T]) T { return value.value }
+ func IsNil[T any](value Projection[*T]) bool { return value.value == nil }
+ type StringProjection struct { value string }
+ func String(value Projection[FrozenString]) StringProjection { return StringProjection{} }
+ func Text[S ~string](value Projection[S]) StringProjection { return StringProjection{} }
+ func (s StringProjection) Len() int { return 0 }
+ func (s StringProjection) At(index int) byte { return 0 }
+ func (s StringProjection) Clone() string { return "" }
+ func (s StringProjection) Equal(other StringProjection) bool { return false }
+ func (s StringProjection) EqualString(other string) bool { return false }
+ func (s StringProjection) Unsafe() string { return s.value }
+ type SliceProjection[E any] struct { values []E }
+ func Slice[E any](value Projection[FrozenSlice[E]]) SliceProjection[E] { return SliceProjection[E]{} }
+ func (s SliceProjection[E]) Len() int { return 0 }
+ func (s SliceProjection[E]) At(index int) Projection[E] { return Projection[E]{} }
+ func (s SliceProjection[E]) AtPointer(index int) Projection[*E] { return Projection[*E]{} }
+ func (s SliceProjection[E]) All()func(func(int,Projection[E])bool) { return nil }
+ func (s SliceProjection[E]) Clone() []E { return nil }
+ type MapProjection[K comparable,V any] struct { values map[K]V }
+ func Map[K comparable,V any](value Projection[FrozenMap[K,V]]) MapProjection[K,V] { return MapProjection[K,V]{} }
+ func (m MapProjection[K,V]) Len() int { return 0 }
+ func (m MapProjection[K,V]) Get(key K)(Projection[V],bool) { return Projection[V]{},false }
+ func (m MapProjection[K,V]) All()func(func(Projection[K],Projection[V])bool) { return nil }
+ func (m MapProjection[K,V]) Clone() map[K]V { return nil }
  type UncheckedValue[T any] struct { value *T }
  func Trust[T any](value *T) UncheckedValue[T] { return UncheckedValue[T]{value: value} }
  func Unwrap[T any](value UncheckedValue[T]) *T { return value.value }
@@ -157,36 +157,37 @@ func sourcePass(t testing.TB, declarations string) *analysis.Pass {
 	if err != nil {
 		t.Fatal(err)
 	}
-	source := viewgen.Directive + "\npackage sample\nimport \"" + checker.LibraryPath + "\"\n" + declarations
+	source := projectiongen.Directive + "\npackage sample\nimport \"" + checker.LibraryPath + "\"\n" + declarations
 	file, err := parser.ParseFile(positions, "sample.go", source, parser.ParseComments)
 	if err != nil {
 		t.Fatal(err)
 	}
 	info := sourceTypeInfo()
-	config := types.Config{Importer: testImporter{library, servicePackage, standard}}
+	config := types.Config{Importer: testImporter{library, servicePackage, standard}, IgnoreFuncBodies: true}
 	files := []*ast.File{file}
 	pkg, err := config.Check("sample", positions, files, info)
 	if err != nil {
 		t.Fatalf("test source does not compile: %v", err)
 	}
-	generated, generationErr := viewgen.GenerateTypes(pkg, positions)
+	generated, generationErr := projectiongen.GenerateTypes(pkg, positions)
 	if generationErr == nil {
-		output, parseErr := parser.ParseFile(positions, viewgen.Filename, generated, parser.ParseComments)
+		output, parseErr := parser.ParseFile(positions, projectiongen.Filename, generated, parser.ParseComments)
 		if parseErr != nil {
 			t.Fatal(parseErr)
 		}
 		files = append(files, output)
-		info = sourceTypeInfo()
-		pkg, err = config.Check("sample", positions, files, info)
-		if err != nil {
-			t.Fatalf("generated test source does not compile: %v", err)
-		}
+	}
+	config.IgnoreFuncBodies = false
+	info = sourceTypeInfo()
+	pkg, err = config.Check("sample", positions, files, info)
+	if err != nil {
+		t.Fatalf("generated test source does not compile: %v", err)
 	}
 	return &analysis.Pass{
 		TypesSizes: types.SizesFor("gc", runtime.GOARCH),
 		Analyzer:   Analyzer, Fset: positions, Files: files, Pkg: pkg, TypesInfo: info,
 		ReadFile: func(name string) ([]byte, error) {
-			if filepath.Base(name) == viewgen.Filename {
+			if filepath.Base(name) == projectiongen.Filename {
 				return generated, nil
 			}
 			if filepath.Base(name) == "sample.go" {

@@ -46,8 +46,7 @@ var subsetFixes = map[string]string{
 	"Local pointers cannot enter aggregate storage": "keep a Local value in a local binding, or store a Frozen pointer",
 	"Local values and pointers cannot be stored in package variables": "keep Local values in local bindings; " +
 		"copy the required data into Frozen values before saving it",
-	"Select requires one inline projection path from its parameter": "use a generated view accessor, " +
-		"or one direct field, pointer, or fixed-array path in Select",
+	"Projection.Read is reserved for verified generated projections": "use the generated field accessor",
 	"Cell holder methods require a direct concrete pointer receiver": "call a direct pointer method " +
 		"on the holder variable or its named field",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
@@ -103,7 +102,7 @@ var subsetFixes = map[string]string{
 	"pointer indirection is unsupported": "use a direct pointer to a concrete marked struct",
 	"scalar interior addresses are unsupported": "copy the scalar field into a local; " +
 		"do not take a pointer into immutable storage",
-	"slice views of immutable storage are unsupported": "copy the array into local " +
+	"slice projections of immutable storage are unsupported": "copy the array into local " +
 		"storage before slicing it, or use im.FrozenSlice for immutable sequence values",
 	"shared pointer conversions are unsupported": "keep the original pointer " +
 		"type; copy the value first if a different owned value type is required",
@@ -140,9 +139,9 @@ func subsetFix(rule string) string {
 func structuralFix(t types.Type, reason string) string {
 	switch {
 	case strings.Contains(reason, "cannot contain Local"):
-		return "store Frozen data; keep its View or Local result in local bindings"
+		return "store Frozen data; keep its Projection or Local result in local bindings"
 	case strings.Contains(reason, "Copied values"):
-		return "use a local view for reads, or copy the required data explicitly"
+		return "use a local projection for reads, or copy the required data explicitly"
 	case strings.Contains(reason, "named array"):
 		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Frozen or im.Local"
 	case strings.Contains(reason, "type parameters"):

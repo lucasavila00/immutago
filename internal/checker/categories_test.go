@@ -13,10 +13,10 @@ func TestSnapshotCategories(t *testing.T) {
 	local := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Local", nil), types.NewStruct(nil, nil), nil)
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, pkg, "T", nil),
 		types.NewInterfaceType(nil, nil).Complete())
-	view := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "View", nil),
+	projection := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Projection", nil),
 		types.NewStruct([]*types.Var{types.NewField(token.NoPos, pkg, "value", parameter, false)}, nil), nil)
-	view.SetTypeParams([]*types.TypeParam{parameter})
-	text := sliceType(t, view, types.Typ[types.String])
+	projection.SetTypeParams([]*types.TypeParam{parameter})
+	text := sliceType(t, projection, types.Typ[types.String])
 	frozenText := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "FrozenString", nil),
 		types.NewStruct([]*types.Var{types.NewField(token.NoPos, pkg, "value", types.Typ[types.String], false)}, nil), nil)
 	copied := markedType("Count", snapshot, types.NewField(token.NoPos, nil, "N", types.Typ[types.Int], false))

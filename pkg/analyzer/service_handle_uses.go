@@ -100,9 +100,6 @@ func (c *subsetChecks) handleBindings(sources, destinations []ast.Expr) string {
 
 // handleCall checks concrete arguments and rejects conversions that hide service reference types.
 func (c *subsetChecks) handleCall(call *ast.CallExpr) string {
-	if object := c.calledObject(call.Fun); libraryObject(object) && object.Name() == "Select" {
-		return c.matchSelect(call)
-	}
 	if c.pass.TypesInfo.Types[call.Fun].IsType() {
 		return "service reference conversions are unsupported; use a type alias or copy the Ref value"
 	}

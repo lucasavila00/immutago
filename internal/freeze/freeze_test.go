@@ -65,7 +65,7 @@ func TestFreezeCellship(t *testing.T) {
 		{"ordinary constant", `const n=len([1]int{});s:=make([]int,n);_=im.FreezeSlice(s)`, false},
 		{"evaluated element", `s:=[]int{1};_=im.FreezeSlice(s);_=len([1]int{s[index(im.FrozenSlice[int]{})]})`, true},
 		{"dead alias", `s:=[]int{1};a:=s;_=a;_=im.FreezeSlice(s)`, true},
-		{"slice view", `s:=[]int{1};a:=s[:];_=a;_=im.FreezeSlice(s)`, true},
+		{"slice projection", `s:=[]int{1};a:=s[:];_=a;_=im.FreezeSlice(s)`, true},
 		{"address", `s:=[]int{1};p:=&s[0];_=p;_=im.FreezeSlice(s)`, true},
 		{"escape", `s:=[]int{1};take(s);_=im.FreezeSlice(s)`, true},
 		{"capture", `s:=[]int{1};g:=func(){_=len(s)};g();_=im.FreezeSlice(s)`, true},
@@ -82,7 +82,7 @@ func TestFreezeCellship(t *testing.T) {
 		{"post copy", `s:=[]int{1};copy(s,im.FreezeSlice(s).Clone())`, true},
 		{"deferred mutation", `s:=[]int{1};defer clear(s);_=im.FreezeSlice(s)`, true},
 		{"concurrent mutation", `s:=[]int{1};go clear(s);_=im.FreezeSlice(s)`, true},
-		{"array view", `s:=[][1]int{{1}};v:=s[0][:];_=im.FreezeSlice(s);v[0]=2`, true},
+		{"array projection", `s:=[][1]int{{1}};v:=s[0][:];_=im.FreezeSlice(s);v[0]=2`, true},
 		{"argument order", `s:=[]int{1};both(im.FreezeSlice(s),s[0])`, true},
 	}
 	for _, tc := range cases {

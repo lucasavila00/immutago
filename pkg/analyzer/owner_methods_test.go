@@ -2,12 +2,12 @@ package analyzer
 
 import "testing"
 
-const holderViewTypes = `type Model struct{im.Frozen;Name string;Count int}
-type TypedModelView struct{im.Local;value im.View[Model]}
-func(v TypedModelView) Count()int{return im.Copy(im.Select(v.value,func(m Model)int{return m.Count}))}
+const holderProjectionTypes = `type Model struct{im.Frozen;Name string;Count int}
+type TypedModelProjection struct{im.Local;value im.Projection[Model]}
+func(v TypedModelProjection) Count()int{return NewModelProjection(im.CopyProjection(v.value)).Count()}
 type TypedModelCell struct{value im.Cell[Model]}
 func(c *TypedModelCell) Store(v Model){c.value.Store(v)}
-func(c *TypedModelCell) Load()TypedModelView{return TypedModelView{value:c.value.Load()}}
+func(c *TypedModelCell) Load()TypedModelProjection{return TypedModelProjection{value:c.value.Load()}}
 func(c *TypedModelCell) Shared()Model{return c.value.Shared()}
 func(c *TypedModelCell) Count()int{return 0}
 type Holder struct{Current TypedModelCell}
@@ -46,7 +46,7 @@ func(c *Generic[T]) Read()int{return c.value.Shared()};func f(c *Generic[int]){_
 		{"named slot constraint", `type Slots interface{im.Cell[int]};func F[T Slots](value T)T{return value}`, true},
 		{"slot union constraint", `type Slots interface{~int|im.Cell[int]};type Alias=Slots
 func F[T Alias](value T)T{return value}`, true},
-		{"go view", `func f(){go current.Load()}`, true},
+		{"go projection", `func f(){go current.Load()}`, true},
 		{"defer scalar", `func f(){defer current.Count()}`, true},
 		{"nested go scalar", `func use(int){};func f(){go use(current.Count())}`, true},
 		{"boxed", `func f(c *TypedModelCell){_=any(c)}`, true},
@@ -56,7 +56,7 @@ func F[T Alias](value T)T{return value}`, true},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, holderViewTypes+test.source); (got != "") != test.reject {
+			if got := checkSource(t, holderProjectionTypes+test.source); (got != "") != test.reject {
 				t.Fatalf("diagnostics=%q; reject=%v", got, test.reject)
 			}
 		})

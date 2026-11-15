@@ -75,12 +75,12 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 	}
 	forms := newSubsetChecks(pass, &c.proofs)
+	if immutable && !invalid {
+		forms.checkGeneration()
+	}
 	forms.checkHandles()
 	if immutable {
 		forms.checkImmutable(freeze.Check(pass))
-		if !invalid {
-			forms.checkGeneration()
-		}
 	}
 	return nil, nil
 }
@@ -179,14 +179,14 @@ func (c *checks) checkFunctionBody(declaration *ast.FuncDecl) {
 
 // checkType proves collection arguments and named struct fields.
 func (c *checks) checkType(pos token.Pos, t types.Type) {
-	if checker.IsCollection(t) || checker.IsView(t) {
+	if checker.IsCollection(t) || checker.IsProjection(t) {
 		if reason := c.proofs.Reason(t); reason != "" {
 			c.report(pos, "immutable collection: "+reason+"\n  type: "+diagnosticType(t)+
 				"\n  fix: "+structuralFix(t, reason))
 		}
 	}
 	// Defined types can inherit a struct without a struct literal in this package.
-	if _, ok := types.Unalias(t).(*types.Named); ok && !checker.IsCollection(t) && !checker.IsView(t) {
+	if _, ok := types.Unalias(t).(*types.Named); ok && !checker.IsCollection(t) && !checker.IsProjection(t) {
 		switch t.Underlying().(type) {
 		case *types.Struct:
 			c.checkStruct(pos, t)
@@ -200,7 +200,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
-	if t == nil || checker.IsCollection(t) || checker.IsView(t) ||
+	if t == nil || checker.IsCollection(t) || checker.IsProjection(t) ||
 		checker.IsLibraryType(t, "Cell") || checker.IsUncheckedValue(t) ||
 		checker.IsRuntimeType(t, checker.ServiceMarker) || checker.IsRuntimeType(t, "Ref") {
 		return

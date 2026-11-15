@@ -42,10 +42,10 @@ func (p *proof) copiedValue(result *obligation, t types.Type) {
 
 // readValue proves the general result category used by Local fields and readers.
 func (p *proof) readValue(result *obligation, t types.Type) {
-	if IsView(t) {
+	if IsProjection(t) {
 		args := t.(*types.Named).TypeArgs()
 		for index := 0; index < args.Len(); index++ {
-			p.depend(result, args.At(index), fmt.Sprintf("view payload %d: ", index+1))
+			p.depend(result, args.At(index), fmt.Sprintf("projection payload %d: ", index+1))
 		}
 		return
 	}

@@ -330,11 +330,11 @@ func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 	if pointer, ok := receiver.Underlying().(*types.Pointer); ok {
 		receiver = pointer.Elem()
 	}
-	if !checker.IsCollection(receiver) && !checker.IsView(receiver) {
+	if !checker.IsCollection(receiver) && !checker.IsProjection(receiver) {
 		return false
 	}
 	switch selection.Obj().Name() {
-	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Unsafe":
+	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Unsafe", "Read":
 		return true
 	}
 	return false

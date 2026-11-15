@@ -43,7 +43,7 @@ func (c *Classifier) Callable(t types.Type) bool { return c.query(t, callableMod
 // Handles reports whether storage or a callable contract contains a service reference.
 func (c *Classifier) Handles(t types.Type) bool { return c.query(t, handleMode) }
 
-// Locals reports local views or records in storage, including through arrays and pointers.
+// Locals reports local projections or records in storage, including through arrays and pointers.
 func (c *Classifier) Locals(t types.Type) bool { return c.query(t, localMode) }
 
 // query completes all reachable edges before propagating positive results through cycles.
@@ -113,7 +113,7 @@ func (c *Classifier) expand(node *classificationNode) {
 		return
 	}
 	if node.key.mode == localMode {
-		if IsView(node.key.typ) || Local(node.key.typ) || IsLibraryType(node.key.typ, "Local") {
+		if IsProjection(node.key.typ) || Local(node.key.typ) || IsLibraryType(node.key.typ, "Local") {
 			c.mark(node)
 		} else {
 			c.storageEdges(node)
@@ -134,7 +134,7 @@ func (c *Classifier) expand(node *classificationNode) {
 	case storageMode:
 		if parameter, ok := node.key.typ.(*types.TypeParam); ok {
 			c.connect(node, parameter.Constraint(), constraintMode)
-		} else if IsCollection(node.key.typ) || IsView(node.key.typ) ||
+		} else if IsCollection(node.key.typ) || IsProjection(node.key.typ) ||
 			IsLibraryType(node.key.typ, "Local") || MarkerCount(node.key.typ) != 0 {
 			c.mark(node)
 		} else {

@@ -17,12 +17,12 @@ type Prover struct {
 // The selected cause can depend on earlier queries; each root message is cached.
 func (p *Prover) Reason(t types.Type) string { return p.render(p.graph.node(t)) }
 
-// FrozenReason proves the shared payload contract used by Cell and View.
+// FrozenReason proves the shared payload contract used by Cell and Projection.
 func (p *Prover) FrozenReason(t types.Type) string {
 	return p.render(p.graph.categoryNode(t, frozenCategory))
 }
 
-// CopiedReason proves that a value can leave a view without a shared data reference.
+// CopiedReason proves that a value can leave a projection without a shared data reference.
 // Opaque service references retain their explicit reference contract.
 func (p *Prover) CopiedReason(t types.Type) string {
 	return p.render(p.graph.categoryNode(t, copiedCategory))

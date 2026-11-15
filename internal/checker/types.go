@@ -37,10 +37,10 @@ func IsCollection(t types.Type) bool {
 	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap") || IsLibraryType(t, "FrozenString")
 }
 
-// IsView identifies the fixed local read types.
-func IsView(t types.Type) bool {
-	return IsLibraryType(t, "View") || IsLibraryType(t, "StringView") ||
-		IsLibraryType(t, "SliceView") || IsLibraryType(t, "MapView")
+// IsProjection identifies the fixed local read types.
+func IsProjection(t types.Type) bool {
+	return IsLibraryType(t, "Projection") || IsLibraryType(t, "StringProjection") ||
+		IsLibraryType(t, "SliceProjection") || IsLibraryType(t, "MapProjection")
 }
 
 // Marked reports the presence of either embedded marker, including invalid combinations.

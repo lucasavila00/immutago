@@ -33,7 +33,7 @@ func TestFreezeReviewRejectsIndirectEntries(t *testing.T) {
 func TestFreezeReviewRejectsNativeAliases(t *testing.T) {
 	cases := []struct{ name, source string }{
 		{"element pointer", `func f(){s:=[]int{1};p:=&s[0];frozen:=im.FreezeSlice(s);*p=2;_=frozen}`},
-		{"slice view", `func f(){s:=[]int{1};alias:=s[:];frozen:=im.FreezeSlice(s);alias[0]=2;_=frozen}`},
+		{"slice projection", `func f(){s:=[]int{1};alias:=s[:];frozen:=im.FreezeSlice(s);alias[0]=2;_=frozen}`},
 		{"named method", `type Raw []int;func(r Raw)Alias()[]int{return r}
    func f(){s:=Raw{1};alias:=s.Alias();frozen:=im.FreezeSlice(s);alias[0]=2;_=frozen}`},
 		{"closure", `func f(){s:=[]int{1};write:=func(){s[0]=2};frozen:=im.FreezeSlice(s);write();_=frozen}`},

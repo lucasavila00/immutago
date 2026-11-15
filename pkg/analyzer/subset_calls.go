@@ -25,9 +25,6 @@ func (c *subsetChecks) calledObject(e ast.Expr) types.Object {
 // matchCall accepts exact im APIs, concrete named calls, or calls with only ordinary scalar data.
 func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	object := c.calledObject(call.Fun)
-	if libraryObject(object) && object.Name() == "Select" {
-		return c.matchSelect(call)
-	}
 	if builtin, ok := object.(*types.Builtin); ok {
 		return c.matchBuiltin(call, builtin)
 	}
@@ -133,10 +130,15 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 			return ""
 		}
 		return "Freeze requires a standalone single binding"
-	case "Trust", "Unwrap", "ViewOf", "CopyView", "FreezeString", "String", "Text", "Slice", "Map", "IsNil":
+	case "Trust", "Unwrap", "ProjectionOf", "CopyProjection", "FreezeString", "String", "Text", "Slice", "Map", "IsNil":
 		return ""
 	case "Copy":
 		return c.proofs.CopiedReason(c.pass.TypesInfo.TypeOf(call))
+	case "Read":
+		if !c.generatedSource(call) {
+			return "Projection.Read is reserved for verified generated projections"
+		}
+		return c.matchLibraryMethod(call, object.Name())
 	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Unsafe":
 		return c.matchLibraryMethod(call, object.Name())
 	}
@@ -150,7 +152,7 @@ func (c *subsetChecks) matchLibraryMethod(call *ast.CallExpr, method string) str
 		return "immutable method expressions are unsupported"
 	}
 	receiver := c.pass.TypesInfo.TypeOf(selector.X)
-	if checker.IsView(receiver) && method == "Clone" {
+	if checker.IsProjection(receiver) && method == "Clone" {
 		args := types.Unalias(receiver).(*types.Named).TypeArgs()
 		for index := 0; index < args.Len(); index++ {
 			if reason := c.proofs.CopiedReason(args.At(index)); reason != "" {
@@ -158,7 +160,7 @@ func (c *subsetChecks) matchLibraryMethod(call *ast.CallExpr, method string) str
 			}
 		}
 	}
-	if method == "All" && (checker.IsView(receiver) || c.queries.Callable(c.pass.TypesInfo.TypeOf(call))) {
+	if method == "All" && (checker.IsProjection(receiver) || c.queries.Callable(c.pass.TypesInfo.TypeOf(call))) {
 		statement, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
 		if !ok || ast.Unparen(statement.X) != call {
 			return "immutable iterators must be consumed by direct range"
