@@ -3,7 +3,7 @@ package model
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
-	im.Scoped
+	im.ByValue
 	Version string
 	Weights im.FrozenSlice[float64]
 }

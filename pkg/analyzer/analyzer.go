@@ -1,9 +1,9 @@
 // Package analyzer exposes the immutago go/analysis analyzer.
 //
 // The analyzer checks:
-//   - Recursive field and collection types for structs with im.Shared or im.Scoped.
+//   - Recursive field and collection types for structs with im.Shared or im.ByValue.
 //   - Allowed construction, reads, calls, and assignments; no protected field writes.
-//   - Shared pointer storage and Scoped pointer retention.
+//   - Shared pointer storage and ByValue pointer retention.
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
 //   - No result or one allowed service result for each exported service method,
 //     including promoted methods. Init, Run, and methods supplied by the runtime
@@ -99,8 +99,8 @@ func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance
 	}
 	if obj.Name() == "Owner" {
 		arg := instance.TypeArgs.At(0)
-		if !checker.Scoped(arg) || checker.Shared(arg) || c.proofs.Reason(arg) != "" {
-			c.report(ident.Pos(), "Owner requires a concrete, valid Scoped struct")
+		if !checker.ByValue(arg) || checker.Shared(arg) || c.proofs.Reason(arg) != "" {
+			c.report(ident.Pos(), "Owner requires a concrete, valid ByValue struct")
 		}
 		return
 	}
@@ -185,8 +185,8 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		return
 	}
 	marked := checker.Marked(t)
-	if checker.Shared(t) && checker.Scoped(t) {
-		c.report(pos, "struct cannot embed both im.Shared and im.Scoped")
+	if checker.Shared(t) && checker.ByValue(t) {
+		c.report(pos, "struct cannot embed both im.Shared and im.ByValue")
 	} else if checker.MarkerCount(t) > 1 {
 		c.report(pos, "struct must embed exactly one immutable marker; each embedded alias counts as a marker")
 	}
@@ -198,7 +198,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		}
 		if invalidMarkerField(field) {
 			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
-				"\n  fix: embed im.Shared or im.Scoped; remove the marker field name or pointer")
+				"\n  fix: embed im.Shared or im.ByValue; remove the marker field name or pointer")
 			continue
 		}
 		if marked {
@@ -212,7 +212,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+
-				"\n  fix: embed im.Shared or im.Scoped and make all fields immutable, or remove the immutable field")
+				"\n  fix: embed im.Shared or im.ByValue and make all fields immutable, or remove the immutable field")
 			continue
 		}
 	}
@@ -229,5 +229,5 @@ func invalidMarkerField(field *types.Var) bool {
 
 // markerType identifies either exact library marker before its placement is checked.
 func markerType(t types.Type) bool {
-	return checker.IsLibraryType(t, "Shared") || checker.IsLibraryType(t, "Scoped")
+	return checker.IsLibraryType(t, "Shared") || checker.IsLibraryType(t, "ByValue")
 }

@@ -12,7 +12,7 @@
 | **Freeze** | `im.FreezeSlice` or `im.FreezeMap` transfers a builder's storage to a frozen collection without copying entries. See [frozen collections](frozen.md). |
 | **Frozen collection; Clone** | A read-only `im.FrozenSlice` or `im.FrozenMap`; its `Clone` method makes an independent mutable slice or map with the same entries. See [collection reads](frozen.md#reads-and-clone). |
 | **Owner slot; Owner holder** | An `im.Owner[T]` package variable or named field; an unmarked struct that contains such a field. See [Owner](owner.md). |
-| **Unchecked immutable value** | An `im.UncheckedValue[T]` handle whose declaring package promises that the wrapped data never changes. See [unchecked values](unchecked-values.md). |
+| **Unchecked immutable value** | An `im.UncheckedValue[T]` handle. The package that declares `T` promises that the wrapped data never changes. See [unchecked values](unchecked-values.md). |
 
 ## Services
 

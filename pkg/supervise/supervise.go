@@ -11,7 +11,7 @@
 //   - Calls run in the caller's goroutine and can overlap with Run and other calls.
 //     Synchronize access to mutable fields.
 //   - Each exported service method returns no result or one service result:
-//     a scalar, a struct with im.Scoped, the empty im.Scoped marker, or an unnamed
+//     a scalar, a struct with im.ByValue, the empty im.ByValue marker, or an unnamed
 //     array of these types. This includes promoted methods. Init, Run, and methods
 //     supplied by the runtime are exempt. The complete result rules are at
 //     https://github.com/lucasavila00/immutago/blob/main/docs/service-results.md.
@@ -225,8 +225,8 @@ type child struct {
 	group *Group
 }
 
-// Ref is a service reference that selects the current value of one service. Copies refer
-// to the same service, including after its restart replaces the value.
+// Ref is a service reference. Copies identify the same service, including after
+// a restart replaces its current value.
 // Start returns an initialized reference. Reserve creates one for later startup;
 // a zero Ref is empty and cannot be used in place of Reserve.
 type Ref[T any] struct {
@@ -237,7 +237,7 @@ type Ref[T any] struct {
 // atomic load. A saved pointer still points to that value after a restart;
 // call Current again to select the replacement.
 //
-// Current panics for an empty or unstarted reference. It can return a value whose
+// Current panics for an empty or unstarted reference. It can select a value whose
 // Run has ended. Stop does not invalidate the reference or block later calls.
 func (p Ref[T]) Current() *T {
 	value := p.value.Load()

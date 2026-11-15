@@ -40,14 +40,14 @@ func IsCollection(t types.Type) bool {
 // Marked reports the presence of either embedded marker, including invalid combinations.
 // It does not prove immutability; Reason checks the complete type contract.
 func Marked(t types.Type) bool {
-	return Shared(t) || Scoped(t)
+	return Shared(t) || ByValue(t)
 }
 
 // Shared reports the presence of an embedded im.Shared value, not type validity.
 func Shared(t types.Type) bool { return embedsMarker(t, "Shared") }
 
-// Scoped reports the presence of an embedded im.Scoped value, not type validity.
-func Scoped(t types.Type) bool { return embedsMarker(t, "Scoped") }
+// ByValue reports the presence of an embedded im.ByValue value, not type validity.
+func ByValue(t types.Type) bool { return embedsMarker(t, "ByValue") }
 
 // Service reports whether a struct embeds supervise.Service, directly or indirectly.
 func Service(t types.Type) bool {
@@ -88,7 +88,7 @@ func MarkerCount(t types.Type) int {
 	}
 	count := 0
 	for field := range structure.Fields() {
-		if field.Embedded() && (IsLibraryType(field.Type(), "Shared") || IsLibraryType(field.Type(), "Scoped")) {
+		if field.Embedded() && (IsLibraryType(field.Type(), "Shared") || IsLibraryType(field.Type(), "ByValue")) {
 			count++
 		}
 	}

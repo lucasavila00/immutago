@@ -1,7 +1,7 @@
 # Documentation
 
 Start with [a working program](getting-started.md). Use the [glossary](glossary.md)
-for terms such as ByValue value, service reference, and builder.
+for terms such as ByValue object, service reference, and builder.
 
 ## Immutable data (`im`)
 

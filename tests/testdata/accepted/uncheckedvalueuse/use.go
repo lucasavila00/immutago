@@ -7,7 +7,7 @@ import (
 
 // Current is the published model.
 type Current struct {
-	im.Scoped
+	im.ByValue
 	Model *uncheckedvalue.Model
 }
 

@@ -61,6 +61,6 @@ func (c *checks) checkServiceStorage(name *ast.Ident, argument types.Type) {
 	}
 	if reason := c.proofs.Reason(argument); reason != "" {
 		c.report(name.Pos(), "stored im argument: "+reason+
-			"\n  fix: pass an immutable value or a Shared pointer; Scoped pointers cannot be stored")
+			"\n  fix: pass an immutable value or a Shared pointer; ByValue pointers cannot be stored")
 	}
 }

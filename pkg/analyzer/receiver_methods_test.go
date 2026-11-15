@@ -7,7 +7,7 @@ import (
 
 const receiverTestTypes = `
 type Value struct { im.Shared; X int; Array [2]int }
-type Local struct { im.Scoped; X int }
+type Local struct { im.ByValue; X int }
 func (v Value) Read() int { return v.X }
 func (p *Value) ReadPointer() int { if p == nil { return 0 }; return p.X }
 func (v Local) Read() int { return v.X }
@@ -19,8 +19,8 @@ func TestMarkedMethodForms(t *testing.T) {
 	cases := []struct{ name, source string }{
 		{"value", `func f(){var v Value;_=v.Read()}`},
 		{"pointer", `func f(){p:=&Value{X:1};_=p.ReadPointer()}`},
-		{"Scoped value", `func f(){v:=Local{X:1};_=v.Read()}`},
-		{"Scoped pointer", `func f(){p:=&Local{X:1};_=p.ReadPointer()}`},
+		{"ByValue value", `func f(){v:=Local{X:1};_=v.Read()}`},
+		{"ByValue pointer", `func f(){p:=&Local{X:1};_=p.ReadPointer()}`},
 		{"nil pointers", `func f(){var p *Value;_=p.ReadPointer();var q *Local=nil;_=q.ReadPointer()}`},
 		{"parentheses", `func f(){p:=&Value{};_=((p).ReadPointer)();_=((*p).Read)()}`},
 		{"alias", `type Alias=Value;func(a Alias)ReadAlias()int{return a.X};
@@ -41,7 +41,7 @@ func f(o Outer){_=o.Child.Read();_=o.P.ReadPointer()}`},
 func f(){_=makeValue().Read();_=makePointer().ReadPointer()}`},
 		{"Shared return", `func(p *Value)Self()*Value{return p};func f(){p:=&Value{};q:=p.Self();_=q}`},
 		{"Shared retain", `var saved *Value;func(p *Value)Save(){saved=p};func f(){p:=&Value{};p.Save()}`},
-		{"Scoped copy", `func(p *Local)Copy()Local{return *p};func f(){p:=&Local{};v:=p.Copy();_=v}`},
+		{"ByValue copy", `func(p *Local)Copy()Local{return *p};func f(){p:=&Local{};v:=p.Copy();_=v}`},
 		{"receiver replacement", `func(v Value)Replace()Value{v=Value{X:2};return v};
 func(p *Value)ReplacePointer()*Value{p=&Value{X:2};return p}`},
 		{"protected arguments", `func(v Value)ReadOther(p *Local)int{return p.X};
@@ -126,11 +126,11 @@ func TestMarkedMethodBodies(t *testing.T) {
 		{"array field", `func(p *Value)Change(){p.Array[0]=1}`, "writes to immutable"},
 		{"pointer target", `func(p *Value)Change(){*p=Value{}}`, "writes to immutable"},
 		{"receiver address", `func(v Value)Address()*Value{return &v}`, "fresh allocation"},
-		{"Scoped return", `func(p *Local)Self()*Local{return p}`, "returning Scoped pointers"},
-		{"Scoped nil result", `func(p *Local)Nothing()*Local{return nil}`, "returning Scoped pointers"},
-		{"Scoped capture", `func(p *Local)Later()func()int{return func()int{return p.X}}`, "closures cannot capture"},
-		{"Scoped stored", `func(p *Local)Save(){s:=[]*Local{p};_=len(s)}`, "Scoped"},
-		{"Scoped global", `var saved *Local;func(p *Local)Save(){saved=p}`, "global Scoped pointers"},
+		{"ByValue return", `func(p *Local)Self()*Local{return p}`, "returning ByValue pointers"},
+		{"ByValue nil result", `func(p *Local)Nothing()*Local{return nil}`, "returning ByValue pointers"},
+		{"ByValue capture", `func(p *Local)Later()func()int{return func()int{return p.X}}`, "closures cannot capture"},
+		{"ByValue stored", `func(p *Local)Save(){s:=[]*Local{p};_=len(s)}`, "ByValue"},
+		{"ByValue global", `var saved *Local;func(p *Local)Save(){saved=p}`, "global ByValue pointers"},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {

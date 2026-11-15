@@ -1,7 +1,7 @@
-constant_operands.go:10:33: unsupported immutable operation: containers of Scoped pointers are unsupported
+constant_operands.go:10:33: unsupported immutable operation: containers of ByValue pointers are unsupported
   source: [1]*ConstantLocal{local}
   type: [1]*docrejected.ConstantLocal
-  fix: store Scoped value copies or im.Shared pointers
+  fix: store ByValue value copies or im.Shared pointers
 constant_operands.go:10:51: unsupported immutable operation: closures cannot capture immutable storage
   source: local
   type: *docrejected.ConstantLocal

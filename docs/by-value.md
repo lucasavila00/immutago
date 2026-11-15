@@ -10,8 +10,6 @@ Use it when callers can keep value copies but must not keep pointers to the obje
 - Pointers cannot be stored in fields or containers, saved globally, returned,
   or captured by closures.
 
-ByValue is a rule about pointer use. It does not tie an object to a Go block,
-make a value expire when a function returns, or set a garbage-collection deadline.
 Value copies can retain memory through strings, frozen collections, Shared
 pointers, or `im.UncheckedValue` fields.
 
@@ -56,9 +54,8 @@ Use the [common forms](common-forms.md).
 | Keep the pointer | A type with [im.Shared](shared.md). |
 | Publish a new version for readers | [im.Owner](owner.md). |
 
-Exported [service methods](service-results.md) can return a ByValue value. Their
-result rule also permits scalars and unnamed arrays; it does not change this
-marker's pointer rules.
+Exported [service methods](service-results.md) can return a ByValue struct.
+Their result rule also permits scalars and unnamed arrays.
 
 ## Rejected examples — non-exhaustive
 

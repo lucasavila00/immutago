@@ -10,11 +10,11 @@ Package analyzer exposes the immutago go/analysis analyzer.
 
 The analyzer checks:
 
-- Recursive field and collection types for structs with im.Shared or im.Scoped.
+- Recursive field and collection types for structs with im.Shared or im.ByValue.
 - Allowed construction, reads, calls, and assignments; no protected field writes.
-- Shared pointer storage and Scoped pointer retention.
+- Shared pointer storage and ByValue pointer retention.
 - Exclusive native builders, Freeze consumption, and use after Freeze.
-- No result or one Scoped result for each exported user service method except Init and Run, including promoted user methods. Runtime methods are exempt.
+- No result or one allowed service result for each exported service method, including promoted methods. Init, Run, and methods supplied by the runtime are exempt.
 
 Direct im or supervise imports, used types, and failed checked dependencies select packages for analysis. Ordinary Go API contracts are trusted. im.UncheckedValue records the declaring package's promise that a value never changes. The checker does not prove this promise.
 
