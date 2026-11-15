@@ -75,15 +75,15 @@ func searchIndex(index IndexProjection, request query) Response {
 		}
 		postings := im.SliceOf(value)
 		for i := 0; i < postings.Len(); i++ {
-			posting := NewPostingProjection(postings.AtPointer(i))
-			id := posting.Document()
+			posting := im.Value(postings.At(i))
+			id := posting.Document
 			item, found := candidates[id]
 			if !found {
 				item = candidate{document: id, first: -1}
 			}
-			item.score += posting.Score()
+			item.score += posting.Score
 			item.matched++
-			first := posting.First()
+			first := posting.First
 			if first >= 0 && (item.first < 0 || first < item.first) {
 				item.first = first
 			}

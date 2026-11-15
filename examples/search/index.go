@@ -33,7 +33,7 @@ type Document struct {
 
 // Posting holds one document's score and first body position for a token.
 type Posting struct {
-	im.Frozen
+	im.Copied
 	Document int
 	Score    int
 	First    int

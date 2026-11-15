@@ -4,6 +4,8 @@ import (
 	"math"
 	"reflect"
 	"testing"
+
+	"github.com/lucasavila00/immutago/pkg/im"
 )
 
 // TestMultiParcelQuote checks the complete offer data for two parcels.
@@ -23,6 +25,23 @@ func TestMultiParcelQuote(t *testing.T) {
 	}
 	if !reflect.DeepEqual(response, want) {
 		t.Fatalf("quote = %+v; want %+v", response, want)
+	}
+}
+
+// TestBandCopy changes an independent numeric band without changing the selected catalog.
+func TestBandCopy(t *testing.T) {
+	catalog := sampleCatalog(t)
+	service := NewCarrierServiceProjection(catalog.Services().AtPointer(0))
+	value, found := service.Rates().Get("domestic")
+	if !found {
+		t.Fatal("missing sample rates")
+	}
+	bands := im.SliceOf(value)
+	band := im.Value(bands.At(0))
+	price := band.PriceCents
+	band.PriceCents += 25
+	if band.PriceCents != price+25 || im.Value(bands.At(0)).PriceCents != price {
+		t.Fatal("band copy did not remain independent")
 	}
 }
 
