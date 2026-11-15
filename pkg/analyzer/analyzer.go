@@ -5,13 +5,12 @@
 //   - Allowed construction, reads, calls, and assignments; no protected field writes.
 //   - Shared pointer storage and Scoped pointer retention.
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
-//   - Service declarations, start arguments, receivers, and calls through Ref.Current.
+//   - Exactly one Scoped result for each exported service method except Init and Run.
 //
 // Direct im or supervise imports, used types, and failed checked dependencies
 // select packages for analysis. Ordinary Go APIs remain trusted.
-// The checker does not prove these promises:
-//   - im.UncheckedValue: the declaring package promises that the value never changes.
-//   - supervise.ConcurrentSafe: the caller promises that concurrent use is safe.
+// im.UncheckedValue records the declaring package's promise that a value never
+// changes. The checker does not prove this promise.
 //
 // The complete source forms and package rules are in
 // https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
@@ -46,7 +45,8 @@ func run(pass *analysis.Pass) (any, error) {
 	if !relevant {
 		return nil, nil
 	}
-	if rejectCgo(pass, imports) {
+	immutable := referencesLibrary(pass, false)
+	if immutable && rejectCgo(pass, imports) {
 		return nil, nil
 	}
 	reportDependencyFailures(pass, imports)
@@ -66,9 +66,15 @@ func run(pass *analysis.Pass) (any, error) {
 	}()
 	c := &checks{pass: pass, reported: make(map[token.Pos]bool)}
 	for _, file := range pass.Files {
-		ast.Inspect(file, c.visit)
+		if immutable {
+			ast.Inspect(file, c.visit)
+		} else {
+			ast.Inspect(file, c.visitService)
+		}
 	}
-	checkSubset(pass, freeze.Check(pass), &c.proofs)
+	if immutable {
+		checkSubset(pass, freeze.Check(pass), &c.proofs)
+	}
 	return nil, nil
 }
 
@@ -124,7 +130,7 @@ func (c *checks) visit(node ast.Node) bool {
 			c.checkLibraryArguments(n, instance)
 		}
 	case *ast.FuncDecl:
-		if n.Body == nil && usesLibraryType(c.pass.TypesInfo.Defs[n.Name].Type(), make(map[types.Type]bool)) {
+		if n.Body == nil && usesLibraryType(c.pass.TypesInfo.Defs[n.Name].Type(), make(map[types.Type]bool), false) {
 			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
 				"provide a Go implementation so writes and pointer transport can be checked")
 		}

@@ -119,8 +119,6 @@ func (c *subsetChecks) slotRelevant(t types.Type) bool {
 func (c *subsetChecks) checkOwnerNode(node ast.Node) {
 	c.checkOwnerTypeNode(node)
 	switch n := node.(type) {
-	case *ast.FuncLit:
-		c.checkSlotCapture(n)
 	case *ast.FuncDecl:
 		c.checkSlotFunction(n)
 	case *ast.ValueSpec:
@@ -278,28 +276,6 @@ func (c *subsetChecks) checkSlotExpression(expression ast.Expr) {
 	if c.hasSlotValue(typ) && !c.allowedSlotValue(expression) {
 		c.pass.Reportf(expression.Pos(), "Owner slots and their holders cannot be copied or transported by value")
 	}
-}
-
-// checkSlotCapture rejects slot and holder references from an outer scope.
-func (c *subsetChecks) checkSlotCapture(literal *ast.FuncLit) {
-	functionScope := c.pass.TypesInfo.Scopes[literal.Type]
-	ast.Inspect(literal.Body, func(node ast.Node) bool {
-		name, ok := node.(*ast.Ident)
-		if !ok {
-			return true
-		}
-		variable, ok := c.pass.TypesInfo.Uses[name].(*types.Var)
-		if !ok || variable.IsField() || !c.slotRelevant(variable.Type()) {
-			return true
-		}
-		for scope := variable.Parent(); scope != nil; scope = scope.Parent() {
-			if scope == functionScope {
-				return true
-			}
-		}
-		c.pass.Reportf(name.Pos(), "closures cannot capture Owner slots or holders")
-		return true
-	})
 }
 
 // slotTuple rejects value parameters and results containing a slot.

@@ -17,12 +17,11 @@ import (
 
 // FetcherArgs selects the model source and its concurrent dependencies.
 type FetcherArgs struct {
-	im.Shared
 	URL      string
 	Every    time.Duration
-	Log      supervise.ConcurrentSafe[*slog.Logger]
-	Client   supervise.ConcurrentSafe[*http.Client]
-	NewStore supervise.ConcurrentSafe[func(name string) Store]
+	Log      *slog.Logger
+	Client   *http.Client
+	NewStore func(name string) Store
 }
 
 // snapshot is one published model version.
@@ -56,7 +55,7 @@ func (f *Fetcher) Init() error {
 	if f.Args().Every <= 0 {
 		return fmt.Errorf("refresh interval must be positive")
 	}
-	factory := f.Args().NewStore.Value()
+	factory := f.Args().NewStore
 	f.store = factory("model")
 	return f.refresh(context.Background())
 }
@@ -66,7 +65,7 @@ func (f *Fetcher) Run(ctx context.Context) {
 	every := f.Args().Every
 	ticker := time.NewTicker(every)
 	defer ticker.Stop()
-	log := f.Args().Log.Value()
+	log := f.Args().Log
 	for {
 		select {
 		case <-ctx.Done():
@@ -86,7 +85,7 @@ func (f *Fetcher) refresh(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	client := f.Args().Client.Value()
+	client := f.Args().Client
 	response, err := client.Do(request)
 	if err != nil {
 		return err
@@ -111,7 +110,7 @@ func (f *Fetcher) refresh(ctx context.Context) error {
 	}
 	m := model.Load(next.Name, next.Weights)
 	f.current.Store(&snapshot{Model: m})
-	log := f.Args().Log.Value()
+	log := f.Args().Log
 	log.Info("model loaded", "name", next.Name)
 	return nil
 }

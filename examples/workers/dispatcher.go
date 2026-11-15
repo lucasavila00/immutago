@@ -13,7 +13,6 @@ import (
 
 // DispatcherArgs selects the configuration, pool size, and polling interval.
 type DispatcherArgs struct {
-	im.Shared
 	Config  supervise.Ref[VariantConfig]
 	Workers int
 	Every   time.Duration

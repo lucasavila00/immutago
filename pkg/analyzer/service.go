@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"go/ast"
 	"go/token"
 	"go/types"
 
@@ -38,4 +39,14 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 // runtimeObject identifies the trusted runtime API that can transport immutable values.
 func runtimeObject(object types.Object) bool {
 	return object != nil && object.Pkg() != nil && object.Pkg().Path() == checker.RuntimePath
+}
+
+// visitService checks method results in packages that do not use im data.
+func (c *checks) visitService(node ast.Node) bool {
+	if declaration, ok := node.(*ast.TypeSpec); ok {
+		if object := c.pass.TypesInfo.Defs[declaration.Name]; object != nil {
+			c.checkServiceResults(declaration.Name.Pos(), object.Type())
+		}
+	}
+	return true
 }

@@ -11,11 +11,11 @@ The [entry point](../../pkg/analyzer/analyzer.go) runs these stages:
 1. Skip the fixed im and supervise implementations and the standard library.
 2. Collect dependency facts and select checked packages.
 3. Return for ordinary packages.
-4. Reject checked cgo packages and export their failure before checking wrappers.
+4. Reject cgo in packages that import or use im; report one source error.
 5. Report checked dependency failures and record local diagnostics.
-6. Check declarations, imports, field types, exported service methods, and fixed
-   im and supervise type arguments.
-7. Prove native builder ownership and match protected source forms.
+6. Check the single Scoped result of exported service methods.
+7. For packages that import or use im, check field types and im type arguments,
+   prove native builder ownership, and match protected source forms.
 8. Export failures for importers.
 
 Package selection and state:
@@ -24,7 +24,9 @@ Package selection and state:
   does not exempt its operations from matching.
 - [Package scope](../../pkg/analyzer/package_scope.go) implements the
   [package selection rules](../rules.md#package-boundary).
-- One type walk shares a seen set across expression and object roots. It visits
+- Each selection walk shares a seen set across expression and object roots. The
+  runtime-inclusive walk selects service checks; the im-only walk selects source
+  and builder checks. Both use the same type traversal. It visits
   aliases and generic metadata before underlying types, selected receivers,
   constraints, interface methods, and embedded terms.
 - It does not walk all imports or unselected concrete methods. Scalar APIs stay
@@ -33,7 +35,7 @@ Package selection and state:
 - Ordinary code is trusted to obey Go contracts. The checker does not track
   string origins or defend against arbitrary memory writes.
 - [Cgo detection](../../pkg/analyzer/cgo.go) rejects the compiler's exact generated
-  header in checked packages. It reports the original package line, retained by
+  header in packages that import or use im. It reports the original package line, retained by
   line directives; `import "C"` is no longer reliably available after rewriting.
 
 ## Type proof
@@ -95,6 +97,10 @@ identity and actual parameter types, including tuples and variadic elements.
   object's signature; a selector signature can include Go adjustments.
 - Receiver checks before the ordinary-call fast path. Even a scalar method can
   implicitly take a protected field's address.
+
+Ordinary concrete receivers can also take protected inputs or return protected
+values through direct, non-generic methods. Their receiver does not need a marker;
+the protected values keep the same source checks.
 
 Method bodies still pass write, pointer-use, and statement checks. Literal type
 matches are cached, but every operand is checked, even when Go does not evaluate

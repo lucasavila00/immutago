@@ -20,7 +20,6 @@ type Config struct {
 
 // LoaderArgs supplies the text cache and the interval between checks.
 type LoaderArgs struct {
-	im.Shared
 	Cache supervise.Ref[FileCache]
 	Every time.Duration
 }

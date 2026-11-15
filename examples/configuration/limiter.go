@@ -21,7 +21,6 @@ const (
 
 // LimiterArgs selects a configuration key and a fixed window duration.
 type LimiterArgs struct {
-	im.Shared
 	Loader supervise.Ref[ConfigLoader]
 	Key    string
 	Window time.Duration

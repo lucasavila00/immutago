@@ -1,4 +1,0 @@
-service_entrypoints.go:10:17: a service must declare Run(context.Context) with a pointer receiver and no results
-service_entrypoints.go:15:15: a service must declare Run(context.Context) with a pointer receiver and no results
-service_entrypoints.go:23:16: a service must declare Run(context.Context) with a pointer receiver and no results
-service_entrypoints.go:37:18: a service must declare Run(context.Context) with a pointer receiver and no results

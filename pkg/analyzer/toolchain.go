@@ -51,10 +51,10 @@ func testMainPackage(pkg *types.Package) bool {
 	return false
 }
 
-// usesImmutable reports a direct import of the fixed immutable value or service package.
-func usesImmutable(pkg *types.Package) bool {
+// importsCheckedLibrary finds a direct import that selects the requested checks.
+func importsCheckedLibrary(pkg *types.Package, includeRuntime bool) bool {
 	for _, imported := range pkg.Imports() {
-		if imported.Path() == checker.LibraryPath || imported.Path() == checker.RuntimePath {
+		if imported.Path() == checker.LibraryPath || (includeRuntime && imported.Path() == checker.RuntimePath) {
 			return true
 		}
 	}

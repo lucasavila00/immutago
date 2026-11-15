@@ -38,9 +38,9 @@ func run(ctx context.Context, url, cache string) error {
 	factory := func(string) models.Store { return models.FileStore{Path: cache} }
 	args := models.FetcherArgs{
 		URL: url, Every: time.Second,
-		Log:      supervise.AssumeConcurrentSafe(logger),
-		Client:   supervise.AssumeConcurrentSafe(client),
-		NewStore: supervise.AssumeConcurrentSafe(factory),
+		Log:      logger,
+		Client:   client,
+		NewStore: factory,
 	}
 	fetcher, err := supervise.Start[models.Fetcher](root, args)
 	if err != nil {

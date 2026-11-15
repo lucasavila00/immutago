@@ -37,9 +37,9 @@ func TestStopCancelsRefresh(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	args := models.FetcherArgs{
 		URL: server.URL, Every: time.Millisecond,
-		Log:      supervise.AssumeConcurrentSafe(log),
-		Client:   supervise.AssumeConcurrentSafe(client),
-		NewStore: supervise.AssumeConcurrentSafe(factory),
+		Log:      log,
+		Client:   client,
+		NewStore: factory,
 	}
 	_, err := supervise.Start[models.Fetcher](root, args)
 	if err != nil {

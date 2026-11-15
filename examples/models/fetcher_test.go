@@ -64,9 +64,9 @@ func startFetcher(
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	args := models.FetcherArgs{
 		URL: server.URL, Every: 5 * time.Millisecond,
-		Log:      supervise.AssumeConcurrentSafe(log),
-		Client:   supervise.AssumeConcurrentSafe(server.Client()),
-		NewStore: supervise.AssumeConcurrentSafe(factory),
+		Log:      log,
+		Client:   server.Client(),
+		NewStore: factory,
 	}
 	fetcher, err := supervise.Start[models.Fetcher](root, args)
 	if err != nil {

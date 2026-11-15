@@ -47,6 +47,7 @@ shutdown. Callers can retry against the dispatcher's current pool.
 
 `VariantConfig` outlives the dispatcher. A restarted dispatcher reads its current
 names and creates fresh version-1 pools; version requests are not persisted.
-Removing a name stops both its serving pool and any pending replacement. No
-trust markers are needed: start arguments are immutable values and service Refs;
-job channels stay inside each worker.
+Removing a name stops both its serving pool and any pending replacement. Start
+arguments use ordinary Go structs; job channels stay inside each worker.
+Exported methods return one Scoped result: a scalar, a frozen collection, or the
+immutable Result struct.

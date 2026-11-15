@@ -1,0 +1,49 @@
+results.go:22:17: service method Missing must return exactly one Scoped result
+results.go:23:17: service method Pair must return exactly one Scoped result
+results.go:24:17: service method Map must return a Scoped result: map[string]int is not provably immutable
+  result type: map[string]int
+results.go:25:17: service method Slice must return a Scoped result: []int is not provably immutable
+  result type: []int
+results.go:26:17: service method Interface must return a Scoped result: error is not provably immutable
+  result type: error
+results.go:27:17: service method Pointer must return a Scoped result: a Scoped result must be a value, not a pointer
+  result type: *service.SharedReply
+results.go:28:17: service method ScopedPointer must return a Scoped result: a Scoped result must be a value, not a pointer
+  result type: *service.Reply
+results.go:28:17: unsupported immutable operation: returning Scoped pointers is unsupported
+  source: ScopedPointer
+  type: func() *service.Reply
+  fix: return a Scoped value copy, or use im.Shared for objects whose pointers must be shared
+results.go:29:50: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.Count++
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+results.go:30:75: unsupported immutable operation: closures cannot capture immutable storage
+  source: p
+  type: *service.Reply
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+results.go:31:17: service method Frozen must return a Scoped result: type argument 1: []int is not provably immutable
+  result type: im.FrozenSlice[[]int]
+results.go:31:26: immutable collection: type argument 1: []int is not provably immutable
+  type: im.FrozenSlice[[]int]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+results.go:31:29: immutable type argument: []int is not provably immutable
+  type: []int
+  fix: replace the native slice with im.FrozenSlice[T], where T is immutable
+results.go:31:54: immutable collection: type argument 1: []int is not provably immutable
+  type: im.FrozenSlice[[]int]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+results.go:31:61: immutable collection: type argument 1: []int is not provably immutable
+  type: im.FrozenSlice[[]int]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+results.go:31:64: immutable type argument: []int is not provably immutable
+  type: []int
+  fix: replace the native slice with im.FrozenSlice[T], where T is immutable
+results.go:31:91: immutable collection: type argument 1: []int is not provably immutable
+  type: im.FrozenSlice[[]int]
+  fix: use primitive values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+results.go:35:17: service method Struct must return a Scoped result: struct does not embed im.Shared or im.Scoped
+  result type: service.Unmarked
+results.go:39:16: service method Mutable must return a Scoped result: []int is not provably immutable
+  result type: []int
+results.go:47:25: service method Mutable must return a Scoped result: []int is not provably immutable
+  result type: []int

@@ -23,6 +23,14 @@ func TestServiceResults(t *testing.T) {
 		{"shared value", `func(c *Counter) Read() SharedReply { return SharedReply{Count:c.count} }`, false},
 		{"array", `func(*Counter) Read() [2]int { return [2]int{} }`, false},
 		{"frozen", `func(*Counter) Read() im.FrozenSlice[int] { frozen:=im.FreezeSlice([]int{1}); return frozen }`, false},
+		{"defined scalar", `type Count int; func(*Counter) Read() Count{return 1}`, false},
+		{"marked array", `func(*Counter) Read() [2]Reply { return [2]Reply{} }`, false},
+		{"named array", `type Counts [2]int; func(*Counter) Read() Counts{return Counts{}}`, true},
+		{"ordinary receiver", `type Reader struct{count int}
+func(r *Reader) Read(p *Reply) Reply{return Reply{Count:p.Count+r.count}}
+func use(){r:=&Reader{};p:=&Reply{};_=r.Read(p)}`, false},
+		{"interface receiver", `type Reader interface{Read(*Reply) Reply}
+func use(r Reader,p *Reply){_=r.Read(p)}`, true},
 		{"zero results", `func(*Counter) Update() {}`, true},
 		{"two results", `func(*Counter) Read()(int,int){return 1,2}`, true},
 		{"mutable result", `func(*Counter) Read() map[string]int {return nil}`, true},

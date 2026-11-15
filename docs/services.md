@@ -41,7 +41,7 @@ The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and
 2. After Init succeeds, Start returns `Ref[FileCache]` and schedules Run in a
    goroutine. Run might not have started when Start returns.
 3. `cache.Current().Text()` runs in the caller's goroutine. The mutex protects
-   concurrent reads and refreshes. Keep `cache`; call methods directly on Current.
+   concurrent reads and refreshes. Keep `cache` to select the current service after a restart.
 4. A later file-read error makes Run panic. The group waits, then creates a
    replacement with the same arguments. Calls use the old cache until the new
    Init succeeds; calls already in progress finish on the old cache.
@@ -52,7 +52,8 @@ The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and
 | --- | --- |
 | Start arguments | Embed `supervise.Service[A]`; read `p.Args()` in a service method. |
 | No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
-| Start arguments and results of methods called through Current | [Allowed stored types](common-forms.md#markers-and-stored-types), such as scalars, marked structs, frozen collections, and Refs. |
+| Start arguments | Any Go type. The service must synchronize shared mutable data. |
+| Exported method result | Exactly one [Scoped result](scoped-results.md): an immutable value, such as an integer, a marked struct, or a frozen collection. Init and Run are excluded. |
 | Method inputs | Ordinary Go types, including interfaces, callbacks, pointers, slices, maps, and channels. Protected values follow the [common source rules](common-forms.md). |
 | Return a list | `im.FrozenSlice[string]`. |
 | Replace immutable configuration | An [im.Owner[Config]](owner.md) field. |
@@ -93,51 +94,24 @@ create or remove related work while it runs.
 
 The [startup and retry example](../examples/configuration/README.md#startup-and-retry) shows errors and a retry.
 
-## Concurrent dependencies
+## Mutable dependencies
 
-Some start arguments are mutable values that several goroutines can use
-safely, such as a logger or an HTTP client. Declare a named
-`supervise.ConcurrentSafe[T]` field and wrap its value with
-`supervise.AssumeConcurrentSafe`. The [model service](../examples/models/fetcher.go)
-uses these arguments; [Store](../examples/models/store.go) saves each valid document:
+Pass ordinary Go fields for a logger, client, or factory. The
+[model service](../examples/models/fetcher.go) receives:
 
 ```go
 type FetcherArgs struct {
-    im.Shared
     URL      string
     Every    time.Duration
-    Log      supervise.ConcurrentSafe[*slog.Logger]
-    Client   supervise.ConcurrentSafe[*http.Client]
-    NewStore supervise.ConcurrentSafe[func(name string) Store]
+    Log      *slog.Logger
+    Client   *http.Client
+    NewStore func(name string) Store
 }
 ```
 
-Build the arguments where you start the service:
-
-```go
-args := models.FetcherArgs{
-    URL:      "http://localhost:8080/model.json",
-    Every:    time.Second,
-    Log:      supervise.AssumeConcurrentSafe(logger),
-    Client:   supervise.AssumeConcurrentSafe(http.DefaultClient),
-    NewStore: supervise.AssumeConcurrentSafe(factory),
-}
-```
-
-| Operation | Example |
-| --- | --- |
-| Give the service these arguments | Embed `supervise.Service[FetcherArgs]`; pass `args` to Start. |
-| Read a dependency inside a service method | `log := f.Args().Log.Value()` |
-| Use it directly | `f.Args().Log.Value().Info("start")` |
-
-`AssumeConcurrentSafe` is a caller promise, not a proof, lock, or freeze.
-An incorrect promise can cause a data race. Use only the listed
-[dependency forms](service-forms.md#concurrent-dependencies).
-`supervise.ConcurrentSafe` is not an immutable stored type.
-The [model project](../examples/models/README.md) downloads real model data,
-saves it through the factory's store, and serves predictions during reloads.
-Its [command](../examples/models/cmd/models/main.go) supplies `logger` and
-`factory`; its tests use a local HTTP server and a shared recording store.
+The [model project](../examples/models/README.md) downloads a model, saves it
+through the factory's store, and serves predictions during refreshes.
+Review the concurrency contract of each shared dependency in the service code.
 
 ## Failure and shutdown
 
@@ -186,14 +160,16 @@ In tests, use
 the tree during cleanup and fails the test if shutdown takes more than five
 seconds.
 
-## What the checker covers
+## Checker contract
 
-| Checked by immutago | Still ordinary Go |
+| Checked | Ordinary Go review |
 | --- | --- |
-| Listed argument, method, Ref, and child-group forms | Mutable service fields, global maps, and data shared through ordinary helpers |
+| Every exported user method except Init and Run returns exactly one [Scoped result](scoped-results.md). | Start arguments, method inputs, mutable fields, locks, callbacks, and goroutines. |
+| Uses of im values follow the [im rules](common-forms.md). | Service construction, Ref copies, Current pointers, and child-group handles. |
 
-Synchronize shared mutable state. Use `go test -race` to check the accesses your tests execute.
+The result rule prevents a method from returning mutable data or a top-level
+pointer. It does not prove service isolation. Review the service's state changes,
+locks, saved inputs, and calls. Use `go test -race` for the accesses your tests run.
 
-Use the [service reference](service-forms.md) for all allowed source forms and
-concrete rejected examples. The [API reference](../pkg/supervise/readme.md)
-lists signatures and the [cost reference](performance.md) lists operation costs.
+The [API reference](../pkg/supervise/readme.md) lists signatures;
+the [cost reference](performance.md) lists operation costs.
