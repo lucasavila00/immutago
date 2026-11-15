@@ -128,7 +128,8 @@ request body when the user requests that issue or pull request.
 
 Use compiler-resolved types and the recursive categories in [type rules](docs/reference/types.md).
 Frozen fields, Cell[T], and Projection[T] use one Frozen proof. Local fields and
-service data outputs use one ReadResult proof. Value and local Clone use Copied.
+service data outputs use one ReadResult proof. Value requires Frozen and ReadResult;
+local Clone uses Copied.
 Do not add a service-only field proof or a context-dependent marker meaning.
 Copied permits booleans, numbers, Copied records, unnamed arrays of Copied values,
 and opaque service references. Copied records contain only bool/numeric fields,
@@ -139,7 +140,7 @@ protected storage keeps its owner's write and address rules, including implicit
 pointer-receiver calls. Copy it into ordinary storage to change it. Pointer fields
 remain outside the Copied proof.
 Frozen records are not Copied,
-even when their fields contain only numbers. Struct results require Copied, Local,
+even when their fields contain only numbers. Struct results require Copied, Local, an UncheckedValue handle,
 or a generated projection.
 Embed Frozen, Local, and Copied markers to declare record categories. The markers
 themselves do not satisfy Frozen, Copied, or ReadResult payload proofs.
@@ -162,7 +163,7 @@ do not copy parent values during field reads.
 CopyRecord is the explicit root copy for a record value, including a map result.
 Use ProjectString for native strings and Projection methods for frozen strings,
 slices, and maps. Keep generic projection adapters in the low-level reference.
-Normal projection reads return Copied values or further projections. StringProjection.Unsafe and
+Normal projection reads return Copied values, UncheckedValue handles, or further projections. StringProjection.Unsafe and
 FrozenString.Unsafe explicitly return a shared native string; trust the caller
 and add no string provenance or lifetime analysis. Native collection builders keep
 exclusive-use and consume-on-Freeze checks. Freeze copies no backing storage;

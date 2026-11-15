@@ -2,6 +2,7 @@ package foreign
 
 import (
 	"example.com/consumer/api"
+	"example.com/consumer/valid"
 	"github.com/lucasavila00/immutago/pkg/im"
 )
 
@@ -49,3 +50,9 @@ func ReadDefined(value Defined) *api.Table { return im.Unwrap(im.UncheckedValue[
 
 // InferredReader infers the same foreign type argument from its declaration.
 var InferredReader func(im.UncheckedValue[api.Table]) *api.Table = im.Unwrap
+
+// Projected cannot unwrap a foreign handle returned by a generated getter.
+func Projected(value valid.ModelProjection) *api.Table { return im.Unwrap(value.Table()) }
+
+// Result cannot unwrap a foreign handle held by a Local result.
+func Result(value valid.Serving) *api.Table { return im.Unwrap(value.Model) }

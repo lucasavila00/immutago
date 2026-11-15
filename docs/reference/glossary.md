@@ -7,8 +7,8 @@
 | Copied | Boolean/numeric data, records with `im.Copied`, opaque service references, and unnamed arrays of Copied values. Frozen records are not Copied. |
 | Copied record | A struct with `im.Copied`. All data fields copy by value. Ordinary copies can change independently. It has no string or reference fields. |
 | Local value | A read projection, a record with `im.Local`, or an unnamed array of Local values. It cannot enter persistent storage. |
-| Read result | Copied or Local. This is a type category, not a service-specific field rule. |
-| Projection | Local access to a Frozen value. Generated types such as SettingsProjection return Copied fields or more projections. |
+| Read result | Copied, Local, UncheckedValue handles, or unnamed arrays of read results. This is a type category, not a service-specific field rule. |
+| Projection | Local access to a Frozen value. Generated types such as SettingsProjection return Copied fields, unchecked handles, or more projections. |
 | Cell; cell holder | An `im.Cell[T]` slot; an unmarked struct containing a named slot or holder field. Generated types such as SettingsCell are holders. |
 | Builder | A native slice or map checked for exclusive use before Freeze. |
 | FrozenString; FrozenSlice; FrozenMap | Stored string, slice, and map types. Copies share immutable backing storage. |
