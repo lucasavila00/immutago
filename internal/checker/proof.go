@@ -151,6 +151,10 @@ func (p *proof) value(result *obligation, t types.Type) {
 		result.reason = "immutable markers are annotations, not data"
 		return
 	}
+	if FrozenInterface(t) {
+		p.frozenInterface(result, t)
+		return
+	}
 	if IsUncheckedValue(t) {
 		return
 	}

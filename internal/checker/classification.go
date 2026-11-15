@@ -135,13 +135,15 @@ func (c *Classifier) expand(node *classificationNode) {
 		if parameter, ok := node.key.typ.(*types.TypeParam); ok {
 			c.connect(node, parameter.Constraint(), constraintMode)
 		} else if IsCollection(node.key.typ) || IsProjection(node.key.typ) ||
-			IsLibraryType(node.key.typ, "Local") || MarkerCount(node.key.typ) != 0 {
+			IsLibraryType(node.key.typ, "Local") || FrozenInterface(node.key.typ) || MarkerCount(node.key.typ) != 0 {
 			c.mark(node)
 		} else {
 			c.storageEdges(node)
 		}
 	case callableMode:
-		c.callableEdges(node)
+		if !FrozenInterface(node.key.typ) {
+			c.callableEdges(node)
+		}
 	}
 }
 
