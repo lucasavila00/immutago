@@ -18,14 +18,20 @@ func frozenContract(name string, methods ...*types.Func) *types.Named {
 
 // TestFrozenInterfaceCategories checks sealing, result proofs, aliases, and category separation.
 func TestFrozenInterfaceCategories(t *testing.T) {
-	method := func(name string, result types.Type) *types.Func {
-		results := types.NewTuple(types.NewVar(token.NoPos, nil, "", result))
+	method := func(name string, result ...types.Type) *types.Func {
+		var variables []*types.Var
+		for _, typ := range result {
+			variables = append(variables, types.NewVar(token.NoPos, nil, "", typ))
+		}
+		results := types.NewTuple(variables...)
 		return types.NewFunc(token.NoPos, nil, name, types.NewSignatureType(nil, nil, nil, nil, results, false))
 	}
-	good := frozenContract("Scorer", method("Score", types.Typ[types.Float64]))
-	bad := frozenContract("Text", method("Text", types.Typ[types.String]))
+	good := frozenContract("Scorer", method("Score", types.Typ[types.Float64]),
+		method("Lookup", types.Typ[types.Float64], types.Typ[types.Bool], types.NewSlice(types.Typ[types.Byte]),
+			types.Universe.Lookup("error").Type()))
+	text := frozenContract("Text", method("Text", types.Typ[types.String]))
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), good)
-	for _, typ := range []types.Type{good, alias} {
+	for _, typ := range []types.Type{good, alias, text} {
 		var proofs Prover
 		var queries Classifier
 		if !FrozenInterface(typ) || !queries.Contains(typ) ||
@@ -47,9 +53,6 @@ func TestFrozenInterfaceCategories(t *testing.T) {
 	var proofs Prover
 	if reason := proofs.FrozenReason(parameter); reason == "" {
 		t.Fatal("a type parameter passed the concrete interface proof")
-	}
-	if reason := proofs.FrozenReason(bad); !strings.Contains(reason, "Text result:") {
-		t.Fatalf("invalid result was accepted: %s", reason)
 	}
 	if reason := proofs.FrozenReason(good.Underlying()); !strings.Contains(reason, "named non-generic") {
 		t.Fatalf("anonymous interface was accepted: %s", reason)

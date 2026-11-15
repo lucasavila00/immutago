@@ -16,7 +16,7 @@ func TestStatementShapeRejects(t *testing.T) {
 		{"length declaration", `func f(){s:=[]int{1};var a,b=len(s),2;_,_=a,b;_=im.FreezeSlice(s)}`},
 		{"nested builder binding", `func f(){s:=[]int{1};a,b:=(s[0]+1)*2,2;_,_=a,b;_=im.FreezeSlice(s)}`},
 		{"nested builder declaration", `func f(){s:=[]int{1};var a,b=(s[0]+1)*2,2;_,_=a,b;_=im.FreezeSlice(s)}`},
-		{"tuple result", `func pair()(V,int){return V{},0};func f(){v,n:=pair();_=v;_=n}`},
+
 		{"range targets", `func f(){var v V;for v.X,v.Y=range []int{2}{};_=v}`},
 		{"nested range index", `func f(){var v V;var a [1]int;var n int;for a[v.X],n=range []int{2}{};_=a;_=n}`},
 		{"nested range call", `func f(){var v V;var a [1]int;var n int;for a[read(new(v))],n=range []int{2}{};_=a;_=n}`},
@@ -34,9 +34,10 @@ func TestStatementShapeRejects(t *testing.T) {
 	}
 }
 
-// TestStatementShapeAccepts checks single bindings, fresh Get results, and range value copies.
+// TestStatementShapeAccepts checks single bindings, Get results, and range value copies.
 func TestStatementShapeAccepts(t *testing.T) {
 	cases := []string{
+		`func pair()(V,int){return V{},0};func f(){v,n:=pair();_=v;_=n}`,
 		`func f(){var v V;a:=v.X+1;_=a}`,
 		`func f(){var v V;var a=v.X+1;_=a}`,
 		`func f(){s:=[]int{1};a:=len(s);_=a;_=im.FreezeSlice(s)}`,

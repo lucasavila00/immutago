@@ -49,12 +49,12 @@ reference_forms.go:40:9: unsupported immutable operation: user generic instantia
   source: identity(point)
   type: docrejected.Point
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
-reference_forms.go:46:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: point, found := makePair()
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
-reference_forms.go:51:5: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+reference_forms.go:48:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: points[0], found = makePair()
+  fix: use one protected destination, or local names for all results of one direct typed call
+reference_forms.go:53:5: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: _, _ = pairMap.Get(0)
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 typed_nil_boundaries.go:11:2: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 typed_nil_boundaries.go:11:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: values := []int(nil)

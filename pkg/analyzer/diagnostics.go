@@ -82,7 +82,7 @@ var subsetFixes = map[string]string{
 	"immutable method receivers must match their declared type exactly": "use an existing pointer for a pointer " +
 		"receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage",
 	"multiple assignments involving protected storage are unsupported": "use one protected destination, " +
-		"or local bindings for Get, Start, or (read result, error)",
+		"or local names for all results of one direct typed call",
 	"protected storage is unsupported in select communication clauses": "keep protected " +
 		"values and native builders out of channel expressions and receive targets; use them in the selected case body",
 	"Freeze requires a standalone single binding": "assign frozen := im.FreezeSlice(builder) " +

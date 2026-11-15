@@ -1,13 +1,17 @@
-contracts.go:13:6: immutable interface: Frozen interface methods require fixed parameters and at most one read result
-  fix: use fixed concrete parameters and at most one read result
+contracts.go:11:6: unsupported immutable operation: returning Local pointers is unsupported
+  source: func() (int, *Local)
+  type: func() (int, *contracts.Local)
+  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+contracts.go:13:6: immutable interface: Frozen interface methods require fixed parameters
+  fix: use exported methods with fixed concrete parameters
 contracts.go:17:6: immutable interface: Frozen interface parameters require concrete types
-  fix: use fixed concrete parameters and at most one read result
+  fix: use exported methods with fixed concrete parameters
 contracts.go:21:6: immutable interface: Frozen interface parameters require concrete types
-  fix: use fixed concrete parameters and at most one read result
+  fix: use exported methods with fixed concrete parameters
 contracts.go:25:6: immutable interface: Frozen interface methods must be exported
-  fix: use fixed concrete parameters and at most one read result
+  fix: use exported methods with fixed concrete parameters
 contracts.go:5:6: Frozen interfaces require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
-contracts.go:5:6: immutable interface: Text result: copied values require bool, numbers, Copied records, arrays, or service references
-  fix: use fixed concrete parameters and at most one read result
-contracts.go:9:6: immutable interface: Frozen interface methods require fixed parameters and at most one read result
-  fix: use fixed concrete parameters and at most one read result
+contracts.go:7:9: unsupported immutable operation: native slices of immutable storage are unsupported
+  source: []im.StringProjection
+  type: []im.StringProjection
+  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
