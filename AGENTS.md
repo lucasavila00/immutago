@@ -134,8 +134,8 @@ Copied permits only booleans, numbers, unnamed arrays of Copied values, and
 opaque service references. Frozen records are not Copied,
 even when their fields contain only numbers. Struct results require Local or a
 generated projection.
-Frozen and Local markers are embedded annotations, not standalone values or
-payload types.
+Embed Frozen and Local markers to declare record categories. The markers
+themselves do not satisfy Frozen, Copied, or ReadResult payload proofs.
 
 Frozen and Local fields are immutable from construction. Local values cannot
 enter persistent storage, including through nested records or arrays. Local

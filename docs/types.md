@@ -13,8 +13,8 @@ Defined scalar types and aliases keep their category. Named arrays need a
 marked struct wrapper. Copied excludes native strings, pointers, and all structs
 except opaque service references. Frozen records are not Copied.
 Copying a service reference does not copy its service.
-Markers are embedded annotations. They cannot be used as standalone values or
-payload types.
+Embed a marker to declare a record category. The markers themselves are not
+Frozen, Copied, or read-result payload types.
 
 ## Markers — exhaustive
 
@@ -58,7 +58,7 @@ projection or an im.Local result, including when all fields are numbers.
 | Rejected | Use instead |
 | --- | --- |
 | `struct { Mark im.Frozen }` or `struct { *im.Frozen }` | Embed `im.Frozen` by value. |
-| `var marker im.Local` or `im.Projection[im.Frozen]` | Embed the marker in a record and use that record. |
+| `im.Projection[im.Frozen]` | Embed the marker in a record and use that record. |
 | `struct { im.Frozen; Text im.StringProjection }` | Use `im.Local` for a local result. |
 | `struct { im.Local; Text string }` | Use `im.StringProjection`. |
 | `struct { im.Local; Text im.FrozenString }` | Use `im.StringProjection`. |
