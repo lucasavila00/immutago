@@ -1,3 +1,0 @@
-subset_concurrent_read.go:20:20: unsupported immutable operation: protected storage requires synchronous calls
-  source: go read(new(v))
-  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer

@@ -125,9 +125,9 @@ func TestIndirectReferenceKeepsTargetImmutable(t *testing.T) {
 	}
 }
 
-// TestUnknownFactoryCannotReturnProtectedStorage rejects dynamic protected results.
-func TestUnknownFactoryCannotReturnProtectedStorage(t *testing.T) {
-	source := immutableValueTypes + `
+// TestUnknownFactoryCannotReturnLocal rejects dynamic Local results.
+func TestUnknownFactoryCannotReturnLocal(t *testing.T) {
+	source := `type Value struct { im.Local; X int }
  func f(factory func() Value) { value:=factory(); _=value.X }
  `
 	reports := checkSource(t, source)

@@ -1,8 +1,0 @@
-explicit_iteration.go:12:28: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
-  source: func(*Good) bool
-  type: func(*explicit_iteration.Good) bool
-  fix: call a named, non-generic function directly with a concrete immutable parameter
-explicit_iteration.go:15:23: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
-  source: pointerIterator
-  type: func(yield func(*explicit_iteration.Good) bool)
-  fix: call a named, non-generic function directly with a concrete immutable parameter

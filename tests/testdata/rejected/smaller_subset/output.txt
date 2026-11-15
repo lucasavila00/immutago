@@ -55,10 +55,6 @@ smaller_subset.go:26:65: unsupported immutable operation: immutable references r
   source: p
   type: *im.FrozenSlice[int]
   fix: allocate a concrete struct that embeds im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses
-smaller_subset.go:29:29: unsupported immutable operation: closures require ordinary or persistent Frozen captures
-  source: shared
-  type: *smaller_subset.Node
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
 smaller_subset.go:37:29: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: value
   type: smaller_subset.Local
