@@ -11,17 +11,16 @@ import (
 
 // subsetChecks matches immutable operations and rejects unsupported transport.
 type subsetChecks struct {
-	slots      map[types.Type]bool
-	holderRefs map[types.Type]bool
-	queries    checker.Classifier
-	proofs     *checker.Prover
-	pass       *analysis.Pass
-	parents    map[ast.Node]ast.Node
-	exempt     map[ast.Node]bool
-	reported   map[token.Pos]bool
-	owners     map[*types.Var]bool
-	literals   map[*ast.CompositeLit]string
-	generated  *token.File
+	slots     map[types.Type]bool
+	queries   checker.Classifier
+	proofs    *checker.Prover
+	pass      *analysis.Pass
+	parents   map[ast.Node]ast.Node
+	exempt    map[ast.Node]bool
+	reported  map[token.Pos]bool
+	owners    map[*types.Var]bool
+	literals  map[*ast.CompositeLit]string
+	generated *token.File
 }
 
 // checkSubset checks the supported immutable forms with compiler-resolved types.

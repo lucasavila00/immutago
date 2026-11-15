@@ -11,11 +11,11 @@ type Holder struct{ Value api.Dependency }
 // Slice stores imported dependency aliases in a native container.
 func Slice() { var values []api.Dependency; _ = len(values) }
 
-// Unwrap calls Value through an interface outside a service.
+// Unwrap passes a dependency through an interface outside a service.
 func Unwrap(value api.Dependency) *int {
-	var getter interface{ Value() *int } = value
-	return getter.Value()
+	var stored any = value
+	return stored.(*int)
 }
 
-// DirectUnwrap reads the wrapper through an ordinary direct method call.
-func DirectUnwrap(value api.Dependency) *int { return value.Value() }
+// DirectUnwrap returns the pointer through an ordinary direct call.
+func DirectUnwrap(value api.Dependency) *int { return value }

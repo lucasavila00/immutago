@@ -48,36 +48,81 @@ Use generated field getters for local reads. A service returns the projection;
 a caller can use Unsafe when it needs to keep the selected record. See
 [generated projections](projections.md) for child and collection reads.
 
-## Cell and holder forms — exhaustive
+## Cell storage
 
 An `im.Cell[T]` is a raw slot. A holder is an unmarked struct with a named slot
-or another named holder field. Generated cell types are holders and use these
-same rules. Service receivers keep their ordinary [service rules](services.md).
+or another named holder field. Generated Cell types are holders. A holder is
+not an `im.Local` record. The slot stores Frozen data; Load returns a Local
+projection. Service receivers keep their [service rules](services.md).
+
+| Operation | Holder pointer `*Cache` | Holder value `Cache` | Raw `im.Cell[T]` | Local load result |
+| --- | --- | --- | --- | --- |
+| Copy, store, return, or pass | Ordinary Go rules | Rejected | Rejected | [Local forms](local.md) only |
+| Use in an interface, callback, closure, or generic type argument | Ordinary Go rules | No value copies | No value copies | Rejected |
+| Change storage | Change ordinary fields or rebind the pointer | No replacement; change ordinary fields | Store only | No field writes |
+| Take an address | Ordinary pointer indirection | Address the holder without a copy | Rejected | [Local pointer forms](local.md#pointer-forms) only |
+
+A holder pointer shares one slot. Copying the pointer does not copy the slot.
+The holder, its nested holder fields, and its raw slots cannot be copied or
+replaced. Frozen fields, Local values, and projection results keep their type
+and source rules.
+
+## Slot and holder value forms — exhaustive
 
 | Form | Example |
 | --- | --- |
 | Package raw slot without an initializer | `var raw im.Cell[Settings]` |
-| Named slot or holder field in an unmarked struct | `type Cache struct { settings SettingsCell }`, `type Slot struct { value im.Cell[Settings] }` |
+| Named slot or holder field in an unmarked struct | `type Cache struct { settings SettingsCell; Calls int }`, `type Slot struct { value im.Cell[Settings] }` |
 | Local or package holder variable without an initializer | `var cache Cache` |
-| New holder pointer in a local variable | `cache := &Cache{}`, `cache := new(Cache)` |
-| Copy a holder pointer to a local variable | `other := cache` |
-| Pass a holder pointer to a named, non-generic function or concrete method with an exact fixed parameter type | `publish(cache)` with `func publish(c *Cache)`; `state.begin(cache)` with `func (s *State) begin(c *Cache)` |
-| Capture a Cell slot or holder pointer | `func() { v := raw.Load(); _ = v }` |
-| Call a named holder function in a goroutine | `go publish(cache)` with `func publish(c *Cache)` |
-| Declare a direct, non-generic method on a holder pointer | `func (c *Cache) Read() SettingsProjection { return c.settings.Load() }` |
-| Call that method through its exact pointer type | `cache.Read()` for `cache *Cache` |
-| Call that method through an addressable holder variable or direct field | `settings.Load()`, `cache.settings.Load()` |
+| Construct a holder through its address; leave slot and holder fields zero | `cache := &Cache{Calls: 1}`, `cache := new(Cache)` |
+| Take the address of a holder variable or named holder field | `p := &cache`, `p := &outer.cache` |
+| Select a field without copying its holder | `cache.Calls++`, `n := (*p).Calls`, `p := &cache.Calls` |
+| Select a pointer-receiver method, or a promoted method on an ordinary field, without copying its holder | `cache.Read()`, `read := cache.Count`, `outer.cache.Read()` |
+| Use a slot or holder variable inside a closure | `func() { v := raw.Load(); _ = v }`, `func() { cache.Calls++ }` |
 | Store through a direct raw slot in its own synchronous statement | `raw.Store(next)`, `slot.value.Store(next)` |
 | Read through a direct raw slot in a common statement form | `v := raw.Load()`, `return slot.value.Load()`, `saved := raw.Load().Unsafe()` |
 | Keep a selected Frozen pointer from a direct raw slot | `saved := raw.LoadPointer().Unsafe()`, `state.settings = raw.LoadPointer().Unsafe()` |
 | Alias, package-qualified slot, or parentheses | `type Current = SettingsCell`, `v := config.Current.Load()`, `v := (raw).Load()` |
 
 Raw slots cannot be copied, addressed, returned, passed to helpers, or embedded.
-A holder pointer cannot enter a field, container, or package variable, or be
-returned. Holder values cannot be copied, replaced, embedded, or put in arrays
-or native containers. Calls use the [common forms](common-forms.md); unlisted
-Cell operations are rejected. Load projections inside a closure; do not capture
-projections loaded outside it.
+Holder values cannot be copied, replaced, embedded, or put in arrays or native
+containers. Calls that carry protected values use the
+[common forms](common-forms.md). Unlisted slot and holder value operations are
+rejected. A closure refers to the same holder variable; a value copy such as
+`copy := cache` is still rejected inside that closure. Load projections inside
+a closure; do not capture projections loaded outside it.
+
+## Holder pointer forms
+
+Holder pointers and ordinary structs that contain those pointers permit all
+ordinary Go storage and transport operations. Operations on the pointed-to slot
+or holder value need a form from the exhaustive list above.
+
+| Examples — non-exhaustive | Go form |
+| --- | --- |
+| Construct, copy, replace, or return a pointer | `func New() *Cache { return new(Cache) }`, `other := cache`, `cache = other` |
+| Initialize ordinary holder fields | `cache := &Cache{Calls: 1}` |
+| Store in a package variable, field, array, slice, map, or channel | `var saved *Cache`, `type Parent struct { Child *Cache }`, `values := []*Cache{cache}` |
+| Copy an ordinary wrapper that contains a holder pointer | `other := Parent{Child: cache}` |
+| Use aliases, defined pointer types, conversions, or nil | `type Pointer *Cache`, `p := Pointer(cache)`, `p = nil` |
+| Address or rebind a pointer | `p := &cache`, `*p = new(Cache)` |
+| Use multiple bindings, tuple results, comparisons, switches, range, or select | `a, b = b, a`, `if cache != nil {}`, `for _, p := range values { p.Count() }` |
+| Use fixed or variadic arguments and results | `use(cache)`, `useAll(cache, other)`, `return cache, nil` |
+| Use interfaces and type assertions | `var value any = cache`, `cache = value.(*Cache)` |
+| Use function values, closures, go, or defer with ordinary arguments and results | `f := func() *Cache { return cache }`, `go use(cache)`, `defer use(cache)` |
+| Use pointer methods, method values, or method expressions with ordinary arguments and results | `cache.Count()`, `count := cache.Count`, `(*Cache).Count(cache)` |
+| Embed a holder pointer and promote its pointer methods | `type Parent struct { *Cache }`, `parent.Count()` |
+| Use a pointer as a generic type argument or constraint | `identity(cache)` for `func identity[T any](v T) T`, `type Set interface { ~*Cache }` |
+
+Methods that pass or return protected values still need the common forms. For
+example, `view := cache.settings.Load()` is allowed, but saving its Load method
+as a callback is rejected because its result is Local.
+
+A generic type argument of `Cache` is rejected, including for a parameter
+`p *T`: the generic body could copy `*p`. Use a type argument of `*Cache` and a
+parameter `p T`. Generic holder declarations that store slots by value remain
+rejected. The [package boundary](rules.md#package-boundary) still requires a Go
+body for a function whose contract contains a Cell.
 
 ## Raw Cell methods — exhaustive
 
@@ -97,11 +142,12 @@ through that form; it does not use LoadPointer.
 | --- | --- |
 | `copy := raw` or `p := &raw` | Call the slot directly. |
 | `var current im.Cell[Settings]` inside a function | Declare a package slot or a named Cell field. |
-| `copy := *cache` or `return cache` | Keep the holder pointer local or pass it to a named function. |
-| `p := &cache.settings` | Call `cache.settings.Load()` directly. |
-| A value receiver, promoted call, method value, or method expression on a holder | Declare a direct pointer-receiver method and call it directly. |
+| `copy := *cache` or `*cache = Cache{}` | Copy or replace the pointer: `other := cache`, `cache = new(Cache)`. |
+| `p := &slot.value` for a raw slot | Call `slot.value.Load()` directly. |
+| A holder value receiver | Declare a pointer receiver. |
+| `parent.value.Load()` through an embedded holder pointer | Select the embedded pointer explicitly: `parent.Cache.value.Load()`. |
 | `read := settings.Load` | `projection := settings.Load()` |
-| `go settings.Store(next)` or `defer cache.Read()` | Call synchronously; use `go publish(cache)` for a named publisher. |
+| `go raw.Store(next)` or `defer cache.settings.Load()` | Use a function that calls Store or Load synchronously. |
 | `im.Cell[LocalResult]` | Store Frozen data; build local projections when reading. |
 | Return `settings.Load().Unsafe()` from a service | Return `settings.Load()`. |
 | `raw.LoadPointer()` with `raw im.Cell[int]` | Use `im.Value(raw.Load())`. |

@@ -436,36 +436,22 @@ func TestStopNestedRightAfterStart(t *testing.T) {
 	<-root.Stop()
 }
 
-// TestAssumeConcurrentSafeValue checks that Value returns the value that AssumeConcurrentSafe wraps.
-func TestAssumeConcurrentSafeValue(t *testing.T) {
-	counts := map[string]int{"a": 1}
-	AssumeConcurrentSafe(counts).Value()["b"] = 2
-	if counts["b"] != 2 {
-		t.Fatalf("Value() is not the trusted map: %v", counts)
-	}
-	var zero ConcurrentSafe[func() int]
-	if zero.Value() != nil {
-		t.Fatal("zero ConcurrentSafe has a value")
-	}
-}
-
 // reporterArgs gives a service a trusted function.
 type reporterArgs struct {
-	im.Frozen
-	Report ConcurrentSafe[func(string)]
+	Report func(string)
 }
 
 // reporter calls its trusted function once.
 type reporter struct{ Service[reporterArgs] }
 
 // Run calls the trusted function.
-func (r *reporter) Run(context.Context) { r.Args().Report.Value()("run") }
+func (r *reporter) Run(context.Context) { r.Args().Report("run") }
 
 // TestTrustedArgument checks that a service receives the trusted value from its arguments.
 func TestTrustedArgument(t *testing.T) {
 	reported := make(chan string, 1)
 	root := NewRoot(nil)
-	args := reporterArgs{Report: AssumeConcurrentSafe(func(event string) { reported <- event })}
+	args := reporterArgs{Report: func(event string) { reported <- event }}
 	if _, err := Start[reporter](root, args); err != nil {
 		t.Fatal(err)
 	}

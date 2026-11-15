@@ -116,16 +116,6 @@ func (p *Service[A]) end() {
 // NoArgs supplies empty start arguments.
 type NoArgs struct{}
 
-// ConcurrentSafe records a caller's promise that its value supports concurrent use.
-// It adds no synchronization or checker rule. Ordinary arguments can hold T directly.
-type ConcurrentSafe[T any] struct{ value T }
-
-// AssumeConcurrentSafe records the caller's promise about concurrent use of v.
-func AssumeConcurrentSafe[T any](v T) ConcurrentSafe[T] { return ConcurrentSafe[T]{value: v} }
-
-// Value returns the wrapped dependency. The zero wrapper contains the zero T.
-func (d ConcurrentSafe[T]) Value() T { return d.value }
-
 // Group owns an ordered set of service lifetimes and nested groups.
 // It activates at most once and stops at most once. The zero value is not usable.
 type Group struct {

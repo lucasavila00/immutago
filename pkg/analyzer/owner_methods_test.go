@@ -32,12 +32,12 @@ func TestHolderMethods(t *testing.T) {
 func(s *State) Begin(c *TypedModelCell){s.value=c.Load().Unsafe()}
 func f(c *TypedModelCell,s *State){s.Begin(c)}`, false},
 		{"dynamic method argument", `type Reader interface{Read(*TypedModelCell)}
-func f(c *TypedModelCell,r Reader){r.Read(c)}`, true},
+func f(c *TypedModelCell,r Reader){r.Read(c)}`, false},
 		{"copy", `func f(){other:=current;_=other}`, true},
 		{"nested copy", `func f(h *Holder){other:=h.Current;_=other}`, true},
 		{"replace", `func f(){current=TypedModelCell{}}`, true},
 		{"nested replace", `func f(h *Holder){h.Current=TypedModelCell{}}`, true},
-		{"nested address", `func f(h *Holder){p:=&h.Current;_=p}`, true},
+		{"nested address", `func f(h *Holder){p:=&h.Current;_=p}`, false},
 		{"value method", `func(c TypedModelCell) Bad(){}`, true},
 		{"method value", `func f(){load:=current.Load;_=load}`, true},
 		{"method expression", `func f(c *TypedModelCell){_=(*TypedModelCell).Load(c)}`, true},
@@ -52,12 +52,12 @@ func(c *Generic[T]) Read()int{return c.value.Load().Unsafe()};func f(c *Generic[
 		{"slot union constraint", `type Slots interface{~int|im.Cell[int]};type Alias=Slots
 func F[T Alias](value T)T{return value}`, true},
 		{"go projection", `func f(){go current.Load()}`, true},
-		{"defer scalar", `func f(){defer current.Count()}`, true},
-		{"nested go scalar", `func use(int){};func f(){go use(current.Count())}`, true},
-		{"boxed", `func f(c *TypedModelCell){_=any(c)}`, true},
-		{"result", `func f()*TypedModelCell{return nil}`, true},
+		{"defer scalar", `func f(){defer current.Count()}`, false},
+		{"nested go scalar", `func use(int){};func f(){go use(current.Count())}`, false},
+		{"boxed", `func f(c *TypedModelCell){_=any(c)}`, false},
+		{"result", `func f()*TypedModelCell{return nil}`, false},
 		{"array field", `type Outer struct{Values [1]TypedModelCell}`, true},
-		{"pointer field", `type Outer struct{Value *TypedModelCell}`, true},
+		{"pointer field", `type Outer struct{Value *TypedModelCell}`, false},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {

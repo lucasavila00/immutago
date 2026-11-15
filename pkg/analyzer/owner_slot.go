@@ -121,23 +121,6 @@ func (c *subsetChecks) hasSlotValue(t types.Type) bool {
 	return result
 }
 
-// slotRelevant follows pointers to find slot-bearing types at package boundaries.
-func (c *subsetChecks) slotRelevant(t types.Type) bool {
-	seen := make(map[types.Type]bool)
-	for t != nil && !seen[t] {
-		seen[t] = true
-		if c.hasSlotValue(t) {
-			return true
-		}
-		pointer, ok := t.Underlying().(*types.Pointer)
-		if !ok {
-			return false
-		}
-		t = pointer.Elem()
-	}
-	return false
-}
-
 // checkCellNode verifies slot placement and value uses.
 func (c *subsetChecks) checkCellNode(node ast.Node) {
 	c.checkCellTypeNode(node)
@@ -151,22 +134,18 @@ func (c *subsetChecks) checkCellNode(node ast.Node) {
 	case *ast.CallExpr:
 		if c.ownedSlotCall(n) {
 			c.checkCellCall(n)
-		} else {
-			c.checkHolderMethodCall(n)
 		}
+	case *ast.SelectorExpr:
+		c.checkSlotSelection(n)
 	}
 	if expression, ok := node.(ast.Expr); ok {
 		c.checkSlotExpression(expression)
 	}
 }
 
-// checkCellTypeNode rejects unsupported type-level holder transport.
+// checkCellTypeNode rejects slot pointers and value containers.
 func (c *subsetChecks) checkCellTypeNode(node ast.Node) {
 	switch n := node.(type) {
-	case *ast.InterfaceType:
-		if c.hasHolderReference(c.pass.TypesInfo.TypeOf(n)) {
-			c.pass.Reportf(n.Pos(), "interfaces cannot contain Cell holder pointers")
-		}
 	case *ast.FuncType:
 		c.checkCellSignatureType(n)
 	case *ast.TypeSpec:
@@ -174,7 +153,7 @@ func (c *subsetChecks) checkCellTypeNode(node ast.Node) {
 	case *ast.ArrayType, *ast.MapType, *ast.ChanType:
 		expression, _ := node.(ast.Expr)
 		typ := c.pass.TypesInfo.TypeOf(expression)
-		if c.hasSlotValue(typ) || c.hasHolderReference(typ) {
+		if c.hasSlotValue(typ) {
 			c.pass.Reportf(node.Pos(), "containers of Cell slots or holders are unsupported")
 		}
 	case *ast.StarExpr:
@@ -182,40 +161,32 @@ func (c *subsetChecks) checkCellTypeNode(node ast.Node) {
 	}
 }
 
-// checkCellSignatureType rejects callback contracts carrying holder pointers.
+// checkCellSignatureType rejects callback contracts that copy slots.
 func (c *subsetChecks) checkCellSignatureType(n *ast.FuncType) {
-	if _, direct := c.parents[n].(*ast.FuncDecl); !direct {
-		if signature, ok := c.pass.TypesInfo.TypeOf(n).(*types.Signature); ok {
-			c.checkHolderSignature(signature, false, n)
-		}
-	}
 	if c.hasSlotValue(c.pass.TypesInfo.TypeOf(n)) {
 		c.pass.Reportf(n.Pos(), "function types cannot pass or return Cell slots or holders by value")
 	}
 }
 
-// checkCellTypeSpec rejects new defined slot and holder pointer types.
+// checkCellTypeSpec rejects new defined slot types.
 func (c *subsetChecks) checkCellTypeSpec(n *ast.TypeSpec) {
 	if n.Assign.IsValid() {
 		return
 	}
 	typ := c.pass.TypesInfo.TypeOf(n.Type)
-	if c.holderPointer(typ) {
-		c.pass.Reportf(n.Pos(), "defined holder pointer types are unsupported")
-	}
 	if checker.IsLibraryType(typ, "Cell") {
 		c.pass.Reportf(n.Pos(), "defined copies of Cell slots are unsupported")
 	}
 }
 
-// checkCellPointerType rejects slot addresses and nested holder pointers.
+// checkCellPointerType rejects raw slot pointer types.
 func (c *subsetChecks) checkCellPointerType(n *ast.StarExpr) {
 	if !c.pass.TypesInfo.Types[n].IsType() {
 		return
 	}
 	element := c.pass.TypesInfo.TypeOf(n.X)
-	if checker.IsLibraryType(element, "Cell") || c.hasHolderReference(element) {
-		c.pass.Reportf(n.Pos(), "pointers to Cell slots or holder references are unsupported")
+	if checker.IsLibraryType(element, "Cell") {
+		c.pass.Reportf(n.Pos(), "pointers to Cell slots are unsupported")
 	}
 }
 
@@ -225,7 +196,6 @@ func (c *subsetChecks) checkSlotFunction(n *ast.FuncDecl) {
 	if sig == nil {
 		return
 	}
-	c.checkHolderSignature(sig, true, n)
 	if (sig.Recv() != nil && c.hasSlotValue(sig.Recv().Type())) ||
 		c.slotTuple(sig.Params()) || c.slotTuple(sig.Results()) {
 		c.pass.Reportf(n.Pos(), "Cell slots and their holders cannot be passed or returned by value")
@@ -242,9 +212,6 @@ func (c *subsetChecks) checkSlotDeclaration(n *ast.ValueSpec) {
 		if checker.IsLibraryType(variable.Type(), "Cell") && variable.Parent() != c.pass.Pkg.Scope() {
 			c.pass.Reportf(name.Pos(), "Cell slots require a field or package variable")
 		}
-		if variable.Parent() == c.pass.Pkg.Scope() && c.hasHolderReference(variable.Type()) {
-			c.pass.Reportf(name.Pos(), "Cell holder pointers cannot be stored in package variables")
-		}
 	}
 }
 
@@ -255,9 +222,6 @@ func (c *subsetChecks) checkSlotFields(n *ast.StructType) {
 		return
 	}
 	for field := range structure.Fields() {
-		if c.hasHolderReference(field.Type()) {
-			c.pass.Reportf(n.Pos(), "Cell holder pointers cannot be stored in fields")
-		}
 		if c.hasSlotValue(field.Type()) {
 			_, record := field.Type().Underlying().(*types.Struct)
 			if field.Embedded() || !record {
@@ -267,7 +231,7 @@ func (c *subsetChecks) checkSlotFields(n *ast.StructType) {
 	}
 }
 
-// checkSlotExpression rejects copies and unproved pointer transport.
+// checkSlotExpression rejects value copies and raw slot pointers.
 func (c *subsetChecks) checkSlotExpression(expression ast.Expr) {
 	if c.pass.TypesInfo.Types[expression].IsType() {
 		return
@@ -292,13 +256,11 @@ func (c *subsetChecks) checkSlotExpression(expression ast.Expr) {
 	if typ == nil {
 		return
 	}
-	if _, callable := typ.Underlying().(*types.Signature); callable &&
-		c.hasHolderReference(typ) && c.directCall(expression) == nil {
-		c.pass.Reportf(expression.Pos(), "function values cannot carry Cell holder pointers")
+	if _, callable := typ.Underlying().(*types.Signature); callable && c.directCall(expression) != nil {
 		return
 	}
-	if c.holderPointer(typ) && (!c.validHolderSource(expression) || !c.allowedHolderPointer(expression)) {
-		c.pass.Reportf(expression.Pos(), "Cell holder pointers require local bindings or direct typed calls")
+	if pointer, ok := typ.Underlying().(*types.Pointer); ok && checker.IsLibraryType(pointer.Elem(), "Cell") {
+		c.pass.Reportf(expression.Pos(), "Cell slots cannot be addressed or transported as pointers")
 		return
 	}
 	if c.hasSlotValue(typ) && !c.allowedSlotValue(expression) {
@@ -316,103 +278,7 @@ func (c *subsetChecks) slotTuple(tuple *types.Tuple) bool {
 	return false
 }
 
-// holderPointer identifies a pointer to a slot-bearing struct.
-func (c *subsetChecks) holderPointer(t types.Type) bool {
-	if t == nil {
-		return false
-	}
-	pointer, ok := t.Underlying().(*types.Pointer)
-	if !ok || checker.IsLibraryType(pointer.Elem(), "Cell") || checker.Service(pointer.Elem()) {
-		return false
-	}
-	_, structure := pointer.Elem().Underlying().(*types.Struct)
-	return structure && c.hasSlotValue(pointer.Elem())
-}
-
-// validHolderSource permits local bindings and fresh holder allocation.
-func (c *subsetChecks) validHolderSource(expression ast.Expr) bool {
-	switch source := expression.(type) {
-	case *ast.ParenExpr:
-		return true
-	case *ast.Ident:
-		variable, ok := c.pass.TypesInfo.ObjectOf(source).(*types.Var)
-		return ok && variable.Parent() != variable.Pkg().Scope()
-	case *ast.UnaryExpr:
-		_, literal := ast.Unparen(source.X).(*ast.CompositeLit)
-		return source.Op == token.AND && literal
-	case *ast.CallExpr:
-		builtin, ok := c.calledObject(source.Fun).(*types.Builtin)
-		return ok && builtin.Name() == "new" && len(source.Args) == 1 &&
-			c.pass.TypesInfo.Types[source.Args[0]].IsType()
-	}
-	return false
-}
-
-// allowedHolderPointer permits local pointers, field selection, and checked direct calls.
-func (c *subsetChecks) allowedHolderPointer(expression ast.Expr) bool {
-	parent := c.parents[expression]
-	if paren, ok := parent.(*ast.ParenExpr); ok {
-		return c.allowedHolderPointer(paren)
-	}
-	switch node := parent.(type) {
-	case *ast.SelectorExpr:
-		return node.X == expression && (c.hasSlotValue(c.pass.TypesInfo.TypeOf(node)) || c.matchHolderMethod(node) == "")
-	case *ast.StarExpr:
-		selector, ok := c.unparenthesizedParent(node).(*ast.SelectorExpr)
-		return ok && ast.Unparen(selector.X) == node && c.hasSlotValue(c.pass.TypesInfo.TypeOf(selector))
-	case *ast.AssignStmt:
-		if len(node.Lhs) != 1 || len(node.Rhs) != 1 || node.Rhs[0] != expression {
-			return false
-		}
-		name, ok := node.Lhs[0].(*ast.Ident)
-		return ok && c.localHolderBinding(name, expression)
-	case *ast.ValueSpec:
-		if len(node.Names) != 1 || len(node.Values) != 1 || node.Values[0] != expression {
-			return false
-		}
-		return c.localHolderBinding(node.Names[0], expression)
-	case *ast.CallExpr:
-		if _, deferred := c.parents[node].(*ast.DeferStmt); deferred {
-			return false
-		}
-		return c.directHolderArgument(node, expression)
-	}
-	return false
-}
-
-// localHolderBinding checks the destination of a holder pointer copy.
-func (c *subsetChecks) localHolderBinding(name *ast.Ident, expression ast.Expr) bool {
-	variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var)
-	return ok && variable.Parent() != c.pass.Pkg.Scope() &&
-		types.Identical(variable.Type(), c.pass.TypesInfo.TypeOf(expression))
-}
-
-// directHolderArgument uses the common concrete-call rules and an exact pointer parameter.
-func (c *subsetChecks) directHolderArgument(call *ast.CallExpr, expression ast.Expr) bool {
-	function, ok := c.calledObject(call.Fun).(*types.Func)
-	if !ok || genericSignature(function.Origin().Type().(*types.Signature)) {
-		return false
-	}
-	signature := function.Type().(*types.Signature)
-	if signature.Recv() != nil {
-		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
-		if !ok || c.matchMethod(selector) != "" {
-			return false
-		}
-	}
-	for index, argument := range call.Args {
-		if argument == expression {
-			if signature.Variadic() && index >= signature.Params().Len()-1 {
-				return false
-			}
-			parameter := callParameter(signature, index, call.Ellipsis.IsValid())
-			return types.Identical(c.pass.TypesInfo.TypeOf(expression), parameter)
-		}
-	}
-	return false
-}
-
-// allowedSlotValue admits only a slot receiver or a fresh holder address.
+// allowedSlotValue admits slot calls and holder uses that do not copy storage.
 func (c *subsetChecks) allowedSlotValue(expression ast.Expr) bool {
 	parent := c.parents[expression]
 	if paren, ok := parent.(*ast.ParenExpr); ok {
@@ -423,11 +289,15 @@ func (c *subsetChecks) allowedSlotValue(expression ast.Expr) bool {
 		return ok && selector.X == expression && c.ownedSlotSelector(selector) && c.directCall(selector) != nil
 	}
 	if selector, ok := parent.(*ast.SelectorExpr); ok && selector.X == expression {
-		return c.hasSlotValue(c.pass.TypesInfo.TypeOf(selector)) || c.matchHolderMethod(selector) == ""
+		selection := c.pass.TypesInfo.Selections[selector]
+		if selection != nil && selection.Kind() == types.FieldVal {
+			return true
+		}
+		return c.slotMethodSelection(selector)
 	}
-	if _, ok := ast.Unparen(expression).(*ast.CompositeLit); ok {
-		unary, ok := parent.(*ast.UnaryExpr)
-		return ok && unary.Op == token.AND
+	if unary, ok := parent.(*ast.UnaryExpr); ok && unary.Op == token.AND {
+		_, holder := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Struct)
+		return holder
 	}
 	return false
 }
