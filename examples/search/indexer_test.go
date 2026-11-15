@@ -103,16 +103,17 @@ func TestConcurrentRefresh(t *testing.T) {
 	indexer := startIndexer(t, root, files)
 	handler := HTTPHandler(indexer)
 	selected := indexer.Current().Read()
-	entered, release := files.pause("a.md")
-	resume := sync.OnceFunc(func() { close(release) })
-	defer resume()
-	select {
-	case <-entered:
-	case <-time.After(5 * time.Second):
-		t.Fatal("the next scan did not start")
-	}
+	firstEntered, firstRelease := files.pause("a.md")
+	resumeFirst := sync.OnceFunc(func() { close(firstRelease) })
+	defer resumeFirst()
+	awaitRead(t, firstEntered)
 	writeDocument(t, directory, "a.md", "# Release\nalpha versiontwo")
 	writeDocument(t, directory, "b.md", "# Release\nbeta versiontwo")
+	entered, release := files.pause("b.md")
+	resume := sync.OnceFunc(func() { close(release) })
+	defer resume()
+	resumeFirst()
+	awaitRead(t, entered)
 	if response := readResponse(t, handler, "/search?q=release"); response.Version != 1 {
 		t.Fatalf("published an incomplete scan: %+v", response)
 	}
@@ -281,6 +282,16 @@ type pausedFS struct {
 	entered chan struct{}
 	release chan struct{}
 	reads   atomic.Int64
+}
+
+// awaitRead waits for a scan to reach the requested file.
+func awaitRead(t *testing.T, entered <-chan struct{}) {
+	t.Helper()
+	select {
+	case <-entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the scan did not reach the requested file")
+	}
 }
 
 // pause stops the next read of name until the test releases it.

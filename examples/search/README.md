@@ -58,10 +58,10 @@ Press Ctrl+C to stop HTTP requests and wait for the indexer to stop.
 
 - Read regular `.md` files in the directory and its subdirectories. The extension
   ignores case. Do not follow symbolic links.
-- Require valid UTF-8. Use a first line that starts with `# ` as the title;
-  otherwise use the file name without its extension. Collapse body whitespace
-  for snippets. Search Markdown source, including code and link text; do not
-  render Markdown or remove its syntax.
+- Require valid UTF-8. Trim outer whitespace, then use a first line that starts
+  with `# ` as the title; otherwise use the file name without its extension.
+  Collapse body whitespace for snippets. Search Markdown source, including code
+  and link text; do not render Markdown or remove its syntax.
 - Split text at each character that is not a Unicode letter or digit, then
   convert words to lower case. Do not remove accents, stem words, or interpret
   quotes and operators.
@@ -95,9 +95,9 @@ edits must appear together.
 `Index`, `Document`, and `Posting` are Frozen records. The generated
 [projections](zz_immutago.gen.go) read their fields directly. `Indexer.Read`
 returns `IndexProjection`; its root stays fixed throughout a query, including
-when another version is published. The query does not save or capture that
-projection outside the call. `Status` is a Local result with copied counts and an
-error projection.
+when another version is published. The query keeps that projection local and does
+not capture it. `Status` is a Local result with copied counts and an error
+projection.
 
 `Path` and `Title` use `Clone` because the ordinary result owns their text.
 The snippet function uses `Unsafe` for local reads by the standard string APIs,

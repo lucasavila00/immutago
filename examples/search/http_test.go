@@ -37,7 +37,8 @@ func TestHTTP(t *testing.T) {
 			t.Errorf("%s %s: status %d, want %d", test.method, test.target, recorder.Code, test.code)
 		}
 		if test.code == http.StatusOK || test.code == http.StatusBadRequest {
-			if recorder.Header().Get("Content-Type") != "application/json" || !json.Valid(recorder.Body.Bytes()) {
+			if recorder.Header().Get("Content-Type") != "application/json" ||
+				!json.Valid(recorder.Body.Bytes()) {
 				t.Errorf("%s did not return JSON: %s", test.target, recorder.Body.String())
 			}
 		}
