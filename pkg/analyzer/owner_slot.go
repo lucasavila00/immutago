@@ -212,7 +212,6 @@ func (c *subsetChecks) checkSlotDeclaration(n *ast.ValueSpec) {
 		if checker.IsLibraryType(variable.Type(), "Cell") && variable.Parent() != c.pass.Pkg.Scope() {
 			c.pass.Reportf(name.Pos(), "Cell slots require a field or package variable")
 		}
-
 	}
 }
 

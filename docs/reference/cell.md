@@ -64,11 +64,11 @@ a closure; do not capture projections loaded outside it.
 
 ## Holder pointer forms
 
-Holder pointers and ordinary structs that contain only those pointers use Go
-rules. The following list covers their permitted operation groups. Operations
-on the pointed-to slot still need a form from the exhaustive list above.
+Holder pointers and ordinary structs that contain those pointers permit all
+ordinary Go storage and transport operations. Operations on the pointed-to slot
+or holder value need a form from the exhaustive list above.
 
-| Form | Example |
+| Examples — non-exhaustive | Go form |
 | --- | --- |
 | Construct, copy, replace, or return a pointer | `func New() *Cache { return new(Cache) }`, `other := cache`, `cache = other` |
 | Initialize ordinary holder fields | `cache := &Cache{Calls: 1}` |
