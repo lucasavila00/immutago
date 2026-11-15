@@ -1,19 +1,30 @@
-handles.go:10:13: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
-  source: ref.Current
+handles.go:10:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
+  source: ref.Borrow
   type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
-handles.go:15:19: unsupported immutable operation: service references cannot enter interfaces; keep the concrete Ref type
-  source: ref
-  type: supervise.Ref[service.Counter]
-  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
-handles.go:19:47: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
-  source: ref.Current
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
+handles.go:14:47: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
+  source: ref.Borrow
   type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
-handles.go:8:13: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
-  source: ref.Current
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
+handles.go:8:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
+  source: ref.Borrow
   type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
+interfaces.go:14:34: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: return route
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+interfaces.go:14:41: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: route
+  type: service.Route
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+interfaces.go:17:45: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: any(route)
+  type: any
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+interfaces.go:17:49: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: route
+  type: service.Route
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 result_uses.go:12:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = pointer
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it

@@ -104,7 +104,7 @@ func TestFetcherRefresh(t *testing.T) {
 func assertScore(t *testing.T, fetcher supervise.Ref[models.Fetcher], want float64) {
 	t.Helper()
 	features := im.FreezeSlice([]float64{2, 3})
-	prediction := fetcher.Current().Predict(features)
+	prediction := fetcher.Borrow().Predict(features)
 	if prediction.Score != want {
 		t.Fatalf("prediction = %v, want %v", prediction.Score, want)
 	}
@@ -135,7 +135,7 @@ func waitName(t *testing.T, fetcher supervise.Ref[models.Fetcher], want string) 
 	features := im.FreezeSlice([]float64{2, 3})
 	deadline := time.Now().Add(5 * time.Second)
 	for {
-		prediction := fetcher.Current().Predict(features)
+		prediction := fetcher.Borrow().Predict(features)
 		if prediction.Name.EqualString(want) {
 			return
 		}
@@ -237,7 +237,7 @@ func readScores(fetcher supervise.Ref[models.Fetcher], done <-chan struct{}, fai
 		case <-done:
 			return
 		default:
-			prediction := fetcher.Current().Predict(features)
+			prediction := fetcher.Borrow().Predict(features)
 			validFirst := prediction.Name.EqualString("first") && prediction.Score == 13
 			validSecond := prediction.Name.EqualString("second") && prediction.Score == 11
 			if !validFirst && !validSecond {

@@ -73,7 +73,7 @@ func (d *Dispatcher) Refresh() int {
 		return 0
 	}
 	wanted := make(map[string]bool)
-	projection := d.Args().Config.Current().Variants()
+	projection := d.Args().Config.Borrow().Variants()
 	var names im.SliceProjection[string]
 	if !projection.IsNil() {
 		names = projection.Names()
@@ -166,7 +166,7 @@ func (d *Dispatcher) publishReady() {
 	var previous []*supervise.Group
 	d.mu.Lock()
 	for name, current := range d.groups {
-		if current.pending == nil || !current.pending.pool.Current().Ready() {
+		if current.pending == nil || !current.pending.pool.Borrow().Ready() {
 			continue
 		}
 		if current.current != nil {
@@ -200,5 +200,5 @@ func (d *Dispatcher) Process(name, text string) Result {
 	if current == nil {
 		return Result{}
 	}
-	return current.pool.Current().Process(text)
+	return current.pool.Borrow().Process(text)
 }

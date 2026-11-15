@@ -47,17 +47,8 @@ var local atomic.Pointer[LocalSlot]
 var mixed atomic.Pointer[MixedSlot]
 var frozen atomic.Pointer[FrozenSlot]
 
-func Erase(ref WorkerRef) {
-	var value atomic.Value
-	value.Store(ref)
-	var pointer atomic.Pointer[WorkerRef]
-	pointer.Store(&ref)
-	var hidden any = pointer.Load()
-	_ = hidden
-}
-
 func Extract(pointer *atomic.Pointer[WorkerRef]) {
-	service := pointer.Load().Current()
+	service := pointer.Load().Borrow()
 	_ = service
 }
 

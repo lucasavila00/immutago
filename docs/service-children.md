@@ -45,8 +45,8 @@ Create a nested group under the current run:
 group := supervise.StartGroup(p.Children())
 worker, err := supervise.Start[Worker](group, WorkerArgs{ID: 1, Version: 1})
 if err != nil { panic(err) }
-if worker.Current().Ready() {
-    result := worker.Current().Process("Hello")
+if worker.Borrow().Ready() {
+    result := worker.Borrow().Process("Hello")
     if result.Available { println(result.Text.Unsafe()) } // HELLO
 }
 ```
@@ -68,12 +68,12 @@ The [command](../examples/workers/cmd/workers/main.go) starts two variants:
 config, err := supervise.Start[workers.VariantConfig](root, supervise.NoArgs{})
 if err != nil { panic(err) }
 names := im.FreezeSlice([]string{"blue", "green"})
-config.Current().Set(names)
+config.Borrow().Set(names)
 dispatcher, err := supervise.Start[workers.Dispatcher](root, workers.DispatcherArgs{
     Config: config, Workers: 2, Every: time.Millisecond,
 })
 if err != nil { panic(err) }
-dispatcher.Current().Refresh()
+dispatcher.Borrow().Refresh()
 ```
 
 Refresh compares desired names with current groups:
@@ -85,8 +85,8 @@ This change removes blue and keeps green:
 
 ```go
 names = im.FreezeSlice([]string{"green"})
-config.Current().Set(names)
-dispatcher.Current().Refresh()
+config.Borrow().Set(names)
+dispatcher.Borrow().Refresh()
 ```
 
 The dispatcher stages each new version in its own group:

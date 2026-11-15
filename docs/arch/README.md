@@ -13,7 +13,7 @@ The goal is to reduce how much code a reviewer must trace.
 | --- | --- |
 | Immutable fields and collection elements | Type declarations and the im type proof. |
 | Stored Local values and pointers | The im storage rules and their source checks. |
-| Calls through service references | The Current call matcher and result type checks. |
+| Calls through service references | The Borrow call matcher and result type checks. |
 | Service state changes, locks, and input use | The service code and ordinary Go API contracts. |
 
 The checker does not prove full service isolation. Do not add whole-program

@@ -191,7 +191,7 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 		return "immutable method expressions are unsupported"
 	}
 	if refAccessor(selection.Obj()) {
-		return c.matchCurrent(selector)
+		return c.matchBorrow(selector)
 	}
 	if c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
 		return ""

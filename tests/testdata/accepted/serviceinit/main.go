@@ -36,7 +36,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(table.Current().First())
+	fmt.Println(table.Borrow().First())
 	failed, err := supervise.Start[Table](root, 0)
 	_ = failed
 	fmt.Println(err)
@@ -46,7 +46,7 @@ func main() {
 	if err := supervise.StartReserved(root, reserved, 1); err != nil {
 		panic(err)
 	}
-	fmt.Println(reserved.Current().First())
+	fmt.Println(reserved.Borrow().First())
 	<-root.Stop()
 }
 

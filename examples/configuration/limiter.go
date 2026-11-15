@@ -69,7 +69,7 @@ func (l *Limiter) Run(ctx context.Context) {
 
 // Take counts an allowed request using the latest published limit.
 func (l *Limiter) Take() Decision {
-	limit := l.Args().Loader.Current().Limit(l.Args().Key)
+	limit := l.Args().Loader.Borrow().Limit(l.Args().Key)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.used >= limit {
@@ -81,7 +81,7 @@ func (l *Limiter) Take() Decision {
 
 // Usage returns local counters for the current window.
 func (l *Limiter) Usage() Usage {
-	limit := l.Args().Loader.Current().Limit(l.Args().Key)
+	limit := l.Args().Loader.Borrow().Limit(l.Args().Key)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return Usage{Used: l.used, Limit: limit, Window: l.window}

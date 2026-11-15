@@ -36,7 +36,7 @@ func Replace(d *Dispatcher, ref WorkerRef) int {
 	d.Wrapped.Swap(slot)
 	d.Wrapped.CompareAndSwap(slot, nil)
 	d.Wrapped.Store(slot)
-	return loaded.Current().Count() + d.Wrapped.Load().Ref.Current().Count()
+	return loaded.Borrow().Count() + d.Wrapped.Load().Ref.Borrow().Count()
 }
 
 func Empty() *WorkerRef {
@@ -51,5 +51,15 @@ func Callback(ref WorkerRef) int {
 	var current atom.Pointer[func() WorkerRef]
 	produce := func() WorkerRef { return ref }
 	current.Store(&produce)
-	return (*current.Load())().Current().Count()
+	return (*current.Load())().Borrow().Count()
+}
+
+// Interfaces permits the ordinary interface operations of atomic storage.
+func Interfaces(ref WorkerRef) any {
+	var value atom.Value
+	value.Store(ref)
+	var pointer atom.Pointer[WorkerRef]
+	pointer.Store(&ref)
+	var hidden any = pointer.Load()
+	return hidden
 }
