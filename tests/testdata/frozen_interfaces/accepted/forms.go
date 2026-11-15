@@ -66,7 +66,7 @@ func Exercise() float64 {
 	local := current.Load()
 	local.Readers().At(0).Visit()
 	name := local.Readers().At(0).Name()
-	if !name.EqualString("tree") {
+	if !name.Is("tree") {
 		return -2
 	}
 	fromList := api.NewScorerProjection(local.List().At(1))

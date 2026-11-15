@@ -54,7 +54,7 @@ func Quote(catalog CatalogProjection, request Request) Response {
 		response.NoMatch = "destination_not_served"
 		return response
 	}
-	response.Zone = im.ProjectedString(zone).Clone()
+	response.Zone = im.StringOf(zone).Clone()
 	services := catalog.Services()
 	for index := 0; index < services.Len(); index++ {
 		service := NewCarrierServiceProjection(services.AtPointer(index))
@@ -62,7 +62,7 @@ func Quote(catalog CatalogProjection, request Request) Response {
 		if !found {
 			continue
 		}
-		bands := im.ProjectedSlice(rate)
+		bands := im.SliceOf(rate)
 		prices := make([]int64, 0, len(request.Parcels))
 		for _, parcel := range request.Parcels {
 			price := parcelPrice(bands, parcel.WeightGrams)

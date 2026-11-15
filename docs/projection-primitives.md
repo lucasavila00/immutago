@@ -13,14 +13,14 @@ These fixed APIs build the [generated typed projections](projections.md). They u
 | `rawCell.Load()` | Copies T into Projection[T]; reads zero T if the raw slot is empty. |
 | `rawCell.LoadPointer()` | Requires a concrete Frozen record T; returns Projection[*T] without copying T. |
 | `im.CopyRecord(value)` | Requires Projection[T] for a concrete Frozen record T; copies it into a new root and returns Projection[*T]. |
-| `im.Copy(projection)` | Requires Copied T; returns T. |
-| `im.ProjectedString(projection)` | Requires Projection[S] with underlying string S; returns StringProjection. |
-| `im.ProjectedFrozenString(projection)` | Requires Projection[FrozenString]; returns StringProjection. |
-| `im.ProjectedSlice(projection)` | Requires Projection[FrozenSlice[E]]; returns SliceProjection[E]. |
-| `im.ProjectedMap(projection)` | Requires Projection[FrozenMap[K,V]]; returns MapProjection[K,V]. |
+| `im.Value(projection)` | Requires Copied T; returns T. |
+| `im.StringOf(projection)` | Requires Projection[S] with underlying string S; returns StringProjection. |
+| `im.StringOfFrozen(projection)` | Requires Projection[FrozenString]; returns StringProjection. |
+| `im.SliceOf(projection)` | Requires Projection[FrozenSlice[E]]; returns SliceProjection[E]. |
+| `im.MapOf(projection)` | Requires Projection[FrozenMap[K,V]]; returns MapProjection[K,V]. |
 | `im.IsNil(projection)` | Requires a pointer payload; reports nil without exposing the pointer. |
 
-Application code uses the listed Copy and adapter forms. The internal Read
+Application code uses the listed Value and adapter forms. The internal Read
 operation is restricted to verified generated code. UncheckedValue remains
 opaque through a Projection.
 
@@ -30,9 +30,9 @@ opaque through a Projection.
 scores := im.FreezeMap(map[string]int{"alice": 10})
 projection := scores.Projection()
 value, found := projection.Get("alice")
-if found { println(im.Copy(value)) }
+if found { println(im.Value(value)) }
 for key, value := range projection.All() {
-    println(im.ProjectedString(key).Unsafe(), im.Copy(value))
+    println(im.StringOf(key).Unsafe(), im.Value(value))
 }
 ```
 
@@ -42,7 +42,7 @@ for key, value := range projection.All() {
 | At | Byte | Projection[E], by value | — |
 | AtPointer | — | Projection[*E]; E must be a concrete Frozen record | — |
 | Equal | Compare with StringProjection | — | — |
-| EqualString | Compare with native string | — | — |
+| Is | Compare with native string | — | — |
 | Unsafe | Shared native string | — | — |
 | Get | — | — | Projection[V], bool |
 | All | — | Index and Projection[E] | Projection[K] and Projection[V] |
@@ -74,10 +74,10 @@ interfaces, callbacks, closures, user generics, go, or defer.
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `raw.Read().Limit` with `raw im.Projection[*Settings]` | `NewSettingsProjection(raw).Limit()` |
-| `im.ProjectionOf(1).Read()` | `im.Copy(im.ProjectionOf(1))` |
-| `im.Copy(im.ProjectionOf("text"))` | Use `im.ProjectString("text")`; use Unsafe for a shared native string or Clone for independent storage. |
-| `im.Copy(record)` with `record im.Projection[Settings]`, including a record with only numeric fields | Use a generated projection and read its fields. |
-| Save a projection in a global | Clone or Copy the data to keep. |
+| `im.ProjectionOf(1).Read()` | `im.Value(im.ProjectionOf(1))` |
+| `im.Value(im.ProjectionOf("text"))` | Use `im.ProjectString("text")`; use Unsafe for a shared native string or Clone for independent storage. |
+| `im.Value(record)` with `record im.Projection[Settings]`, including a record with only numeric fields | Use a generated projection and read its fields. |
+| Save a projection in a global | Clone or read the data to keep. |
 | Clone a projection of a string-key map | Iterate; Clone each key and copy each value into a new map. |
 | Clone a slice or map projection with Frozen record elements | Read record projections and copy the required fields into new data. |
 | Capture a projection in a closure | Read scalar fields or clone strings first. Pass Copied records to a direct typed function. |

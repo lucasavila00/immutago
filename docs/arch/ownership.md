@@ -8,7 +8,7 @@ Go type and proof category. The same cached obligations serve all consumers.
 | Proof | Consumers |
 | --- | --- |
 | FrozenReason | Frozen fields, shared frozen arguments, Cell[T], Projection[T], ProjectionOf. |
-| CopiedReason | Copied record fields, Copy, and local collection Clone arguments. |
+| CopiedReason | Copied record fields, Value, and local collection Clone arguments. |
 | ReadResultReason | Local fields and service results. |
 | General immutable proof | Marked records and fixed library types, including Local values. |
 
@@ -30,7 +30,7 @@ Local fields and service results both use this boundary.
 | Protected pointers originate from fresh storage | [Source matcher](../../pkg/analyzer/subset_operations.go); reject addresses of reassignable locals. |
 | Local storage and captures cannot escape | Declaration, assignment, container, callback, and closure checks use the recursive Local classification. |
 | Application code cannot call Projection.Read | [Generation checks](../../pkg/analyzer/generation.go) identify the exact current generated token file before source checks. Handwritten Read calls are rejected. |
-| Reads preserve access types | Generated getters return Copied scalars/records or local projections. Copy requires Copied. |
+| Reads preserve access types | Generated getters return Copied scalars/records or local projections. Value requires Copied. |
 
 ## Generated projections
 

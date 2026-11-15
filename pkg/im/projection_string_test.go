@@ -11,7 +11,7 @@ func TestStringProjection(t *testing.T) {
 	type label string
 	parent := strings.Repeat("abcdef", 1024)
 	input := label(parent[100:107])
-	projection := ProjectedString(ProjectionOf(input))
+	projection := StringOf(ProjectionOf(input))
 	if projection.Len() != len(input) || projection.At(3) != input[3] ||
 		unsafe.StringData(projection.value) != unsafe.StringData(string(input)) {
 		t.Fatal("text adapter changed storage or bytes")
@@ -45,7 +45,7 @@ func TestStringProjectionEmpty(t *testing.T) {
 
 // TestStringProjectionBounds checks negative, end, and empty indices.
 func TestStringProjectionBounds(t *testing.T) {
-	for _, projection := range []StringProjection{{}, ProjectedString(ProjectionOf("text"))} {
+	for _, projection := range []StringProjection{{}, StringOf(ProjectionOf("text"))} {
 		for _, index := range []int{-1, projection.Len()} {
 			func() {
 				defer func() {

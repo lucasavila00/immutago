@@ -37,7 +37,7 @@ func read(projection Alias, index int) api.Result {
 	}
 	names := model.Names()
 	for _, value := range names.All() {
-		_ = im.ProjectedFrozenString(value).Clone()
+		_ = im.StringOfFrozen(value).Clone()
 	}
 	entries := model.Entries()
 	entry, ok := entries.Get("name")
@@ -46,13 +46,13 @@ func read(projection Alias, index int) api.Result {
 		score = api.NewEntryProjection(im.CopyRecord(entry)).Score()
 	}
 	for key, value := range entries.All() {
-		_ = im.ProjectedString(key).Len()
+		_ = im.StringOf(key).Len()
 		_ = api.NewEntryProjection(im.CopyRecord(value)).Name().At(0)
 	}
 	byName := model.ByName()
 	for key, value := range byName.All() {
-		_ = im.ProjectedFrozenString(key).Clone()
-		_ = im.Copy(value)
+		_ = im.StringOfFrozen(key).Clone()
+		_ = im.Value(value)
 	}
 	return api.Result{Name: name, Score: score}
 }
@@ -86,7 +86,7 @@ func readZero() {
 func typedWrappers(h *api.Holder) {
 	h.Current.Store(api.Model{})
 	projection := h.Current.Load()
-	_ = projection.Name().EqualString("name")
+	_ = projection.Name().Is("name")
 	typedCell.Store(api.Model{})
 	_ = typedCell.Load().Name().Len()
 	_ = fmt.Sprintf("%s", projection.Name().Unsafe())
@@ -119,7 +119,7 @@ func recordEntries(values im.MapProjection[string, api.Entry], pointers im.MapPr
 	}
 	for key, entry := range pointers.All() {
 		_ = api.NewEntryProjection(key).Score()
-		_ = api.NewEntryProjection(entry).Name().EqualString("name")
+		_ = api.NewEntryProjection(entry).Name().Is("name")
 	}
 	return api.NewEntryProjection(sequence.AtPointer(0)).Score()
 }

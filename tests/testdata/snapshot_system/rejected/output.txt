@@ -1,3 +1,32 @@
+projection_adapters.go:10:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: defer im.StringOfFrozen(frozen)
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+projection_adapters.go:11:37: unsupported immutable operation: closures cannot capture immutable storage
+  source: sequence
+  type: im.Projection[im.FrozenSlice[int]]
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+projection_adapters.go:12:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: boxed any = im.MapOf(mapping)
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+projection_adapters.go:15:12: unsupported immutable operation: bound immutable methods are unsupported
+  source: projection.Is
+  type: func(other string) bool
+  fix: call the method directly (value.Method(...)); do not save or pass its method value
+projection_adapters.go:17:6: unsupported immutable operation: immutable method expressions are unsupported
+  source: im.StringProjection.Is(projection, "text")
+  type: bool
+  fix: call the method on its receiver directly (value.Method(...)); do not call it through the type
+projection_adapters.go:7:14: unsupported immutable operation: immutable callbacks are unsupported
+  source: im.StringOf[string]
+  type: func(value im.Projection[string]) im.StringProjection
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+projection_adapters.go:8:6: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: stringOf(text)
+  type: im.StringProjection
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+projection_adapters.go:9:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go im.StringOf(text)
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 snapshot_categories.go:101:2: immutable field Values: immutable markers are annotations, not data
   owner: rejected.BadMarkers; field type: [2]im.Frozen
   fix: embed the marker in a named struct; use data fields for values
@@ -84,14 +113,14 @@ snapshot_categories.go:44:52: unsupported immutable operation: returning Local p
   source: return &Local{}
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 snapshot_categories.go:47:6: unsupported immutable operation: copied values require bool, numbers, Copied records, arrays, or service references
-  source: im.Copy(projection)
+  source: im.Value(projection)
   type: rejected.Retained
   fix: copy scalar fields, or use a generated local projection
 snapshot_categories.go:47:9: immutable type argument: copied values require bool, numbers, Copied records, arrays, or service references
   type: rejected.Retained
   fix: copy scalar fields, or use a generated local projection
 snapshot_categories.go:48:6: unsupported immutable operation: copied values require bool, numbers, Copied records, arrays, or service references
-  source: im.Copy(text)
+  source: im.Value(text)
   type: im.FrozenString
   fix: copy scalar fields, or use a generated local projection
 snapshot_categories.go:48:9: immutable type argument: copied values require bool, numbers, Copied records, arrays, or service references
@@ -181,7 +210,7 @@ snapshot_categories.go:91:17: service method Numeric must return a service resul
 snapshot_categories.go:92:17: service method NumericArray must return a service result: array element: copied values require bool, numbers, Copied records, arrays, or service references
   result type: [0]rejected.Numeric
 snapshot_categories.go:94:6: unsupported immutable operation: copied values require bool, numbers, Copied records, arrays, or service references
-  source: im.Copy(value)
+  source: im.Value(value)
   type: rejected.Numeric
   fix: copy scalar fields, or use a generated local projection
 snapshot_categories.go:94:9: immutable type argument: copied values require bool, numbers, Copied records, arrays, or service references

@@ -11,8 +11,8 @@ type MapProjection[K comparable, V any] struct {
 	values map[K]V
 }
 
-// ProjectedMap returns a map read projection without copying entries or allocating.
-func ProjectedMap[K comparable, V any](value Projection[FrozenMap[K, V]]) MapProjection[K, V] {
+// MapOf returns a map read projection without copying entries or allocating.
+func MapOf[K comparable, V any](value Projection[FrozenMap[K, V]]) MapProjection[K, V] {
 	return value.value.Projection()
 }
 

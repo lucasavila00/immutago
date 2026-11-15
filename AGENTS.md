@@ -128,7 +128,7 @@ request body when the user requests that issue or pull request.
 
 Use compiler-resolved types and the recursive categories in [type rules](docs/types.md).
 Frozen fields, Cell[T], and Projection[T] use one Frozen proof. Local fields and
-service outputs use one ReadResult proof. Copy and local Clone use Copied.
+service outputs use one ReadResult proof. Value and local Clone use Copied.
 Do not add a service-only field proof or a context-dependent marker meaning.
 Copied permits booleans, numbers, Copied records, unnamed arrays of Copied values,
 and opaque service references. Copied records contain only bool/numeric fields,

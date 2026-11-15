@@ -50,7 +50,7 @@ projection when reading through a Local value. See the complete
 | `frozen.Projection()` | FrozenString, FrozenSlice[E], or FrozenMap[K,V]. |
 | [Generic projection adapters](projection-primitives.md#projection-operations--exhaustive) | A Projection of the matching string, FrozenString, FrozenSlice, or FrozenMap type. |
 | `IsNil(Projection[*T])` | T is a Frozen record. |
-| `Copy(Projection[T])` | T is Copied. |
+| `Value(Projection[T])` | T is Copied. |
 | `CopyRecord(Projection[T])` | T is a concrete Frozen record; returns a projection of a new copied root. |
 | `Cell[T].LoadPointer()`, `SliceProjection[T].AtPointer(i)` | T is a concrete Frozen record; the result is Projection[*T]. |
 | `SliceProjection[E].Clone()` | E is Copied. |
@@ -73,6 +73,6 @@ with only numeric fields still keeps the Frozen rule.
 | `struct { im.Local; Text im.FrozenString }` | Use `im.StringProjection`. |
 | `struct { im.Local; Count FrozenCount }`, where FrozenCount embeds im.Frozen | Use `FrozenCountProjection`, or read its numeric fields into a Local record. |
 | `type Counts [2]int` as protected storage | `type Counts struct { im.Frozen; Values [2]int }`. |
-| `im.Copy(textProjection)` with a string or FrozenString payload | Use the matching [projection adapter](projection-primitives.md#projection-operations--exhaustive), then Unsafe for shared access or Clone for independent storage. |
-| `im.Copy(countProjection)` with `countProjection im.Projection[FrozenCount]` | Use a generated projection, or copy individual numeric fields. |
+| `im.Value(textProjection)` with a string or FrozenString payload | Use the matching [projection adapter](projection-primitives.md#projection-operations--exhaustive), then Unsafe for shared access or Clone for independent storage. |
+| `im.Value(countProjection)` with `countProjection im.Projection[FrozenCount]` | Use a generated projection, or copy individual numeric fields. |
 | Save a Local record in a package variable | Use im.Copied when every field meets its value-only rule, or copy the required data into independent storage. |
