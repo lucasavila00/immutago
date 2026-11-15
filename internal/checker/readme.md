@@ -60,6 +60,14 @@ func IsLibraryType(t types.Type, name string) bool
 
 IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
 
+## func IsProjection
+
+```go
+func IsProjection(t types.Type) bool
+```
+
+IsProjection identifies the fixed local read types.
+
 ## func IsRuntimeType
 
 ```go
@@ -75,14 +83,6 @@ func IsUncheckedValue(t types.Type) bool
 ```
 
 IsUncheckedValue reports whether t is the library's unchecked immutable value wrapper.
-
-## func IsView
-
-```go
-func IsView(t types.Type) bool
-```
-
-IsView identifies the fixed local read types.
 
 ## func Local
 
@@ -164,7 +164,7 @@ Handles reports whether storage or a callable contract contains a service refere
 func (c *Classifier) Locals(t types.Type) bool
 ```
 
-Locals reports local views or records in storage, including through arrays and pointers.
+Locals reports local projections or records in storage, including through arrays and pointers.
 
 ## type Prover
 
@@ -182,7 +182,7 @@ type Prover struct {
 func (p *Prover) CopiedReason(t types.Type) string
 ```
 
-CopiedReason proves that a value can leave a view without a shared data reference. Opaque service references retain their explicit reference contract.
+CopiedReason proves that a value can leave a projection without a shared data reference. Opaque service references retain their explicit reference contract.
 
 ### func \(\*Prover\) FrozenReason
 
@@ -190,7 +190,7 @@ CopiedReason proves that a value can leave a view without a shared data referenc
 func (p *Prover) FrozenReason(t types.Type) string
 ```
 
-FrozenReason proves the shared payload contract used by Cell and View.
+FrozenReason proves the shared payload contract used by Cell and Projection.
 
 ### func \(\*Prover\) ReadResultReason
 

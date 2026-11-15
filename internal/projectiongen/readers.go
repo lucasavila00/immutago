@@ -85,9 +85,11 @@ func (g *generator) collectionReader(typ types.Type, input string) (string, stri
 // writeRecord emits pointer-based accessors and a typed cell for a source record.
 func (g *generator) writeRecord(out *bytes.Buffer, item record) error {
 	source := g.typeName(item.typ)
-	fmt.Fprintf(out, "// %s provides local read access to %s.\ntype %s struct {\nim.Local\nimmutagoProjection im.Projection[%s]\n}\n",
+	fmt.Fprintf(out, "// %s provides local read access to %s.\n"+
+		"type %s struct {\nim.Local\nimmutagoProjection im.Projection[%s]\n}\n",
 		item.name, source, item.name, source)
-	fmt.Fprintf(out, "// %s wraps a checked local projection without copying backing storage.\n", constructorName(item.name))
+	fmt.Fprintf(out, "// %s wraps a checked local projection without copying backing storage.\n",
+		constructorName(item.name))
 	fmt.Fprintf(out, "func %s(value im.Projection[%s]) %s { return %s{immutagoProjection:value} }\n",
 		constructorName(item.name), source, item.name, item.name)
 	fmt.Fprintf(out, "// IsNil reports whether the selected pointer is nil.\n"+

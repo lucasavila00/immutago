@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -19,7 +20,7 @@ func module(t *testing.T, source string) string {
 	dir := t.TempDir()
 	write(t, filepath.Join(dir, "go.mod"), "module example.test/projections\n\ngo 1.27.1\n\n"+
 		"require github.com/lucasavila00/immutago v0.0.0\n"+
-		"replace github.com/lucasavila00/immutago => "+filepath.ToSlash(root)+"\n")
+		"replace github.com/lucasavila00/immutago => "+strconv.Quote(filepath.ToSlash(root))+"\n")
 	write(t, filepath.Join(dir, "main.go"), source)
 	return dir
 }
@@ -44,7 +45,8 @@ func main() {
  current.Store(Settings{Limit:3, Title:"ready", Node:&Node{Name:im.FreezeString("leaf")}, Names:[2]string{"a","b"}})
  projection := current.Load()
  reply := Reply{Settings:projection}
- println(reply.Settings.Limit(), projection.Title().Unsafe(), projection.Node().Name().Unsafe(), projection.Names().At(1).Unsafe())
+ title := projection.Title(); node := projection.Node(); word := projection.Names().At(1)
+ println(reply.Settings.Limit(), title.Unsafe(), node.Name().Unsafe(), word.Unsafe())
 }
 `)
 	first, err := Generate(dir)

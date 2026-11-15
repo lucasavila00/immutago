@@ -32,7 +32,8 @@ func (g *generator) writeArray(out *bytes.Buffer, item array) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "// %s reads a fixed array locally.\ntype %s struct { im.Local; immutagoProjection im.Projection[%s]\n",
+	fmt.Fprintf(out, "// %s reads a fixed array locally.\n"+
+		"type %s struct { im.Local; immutagoProjection im.Projection[%s]\n",
 		item.name, item.name, g.typeName(item.root))
 	for _, saved := range item.indices {
 		fmt.Fprintf(out, "%s int\n", saved)

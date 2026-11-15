@@ -1,6 +1,6 @@
-// Package models polls an HTTP source and serves predictions from its last valid model.
 //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 
+// Package models polls an HTTP source and serves predictions from its last valid model.
 package models
 
 import (

@@ -19,7 +19,7 @@ Call a service:
 
 - Keep the Ref and use ref.Current\(\).Method\(\).
 - Calls run in the caller's goroutine and can overlap with Run and other calls. Synchronize access to mutable fields.
-- Each exported service method returns no result or one service result: a Copied value or a Local value, including views and Local records. This includes promoted methods. Init, Run, and methods supplied by the runtime are exempt. See the complete result rules at https://github.com/lucasavila00/immutago/blob/main/docs/service-results.md.
+- Each exported service method returns no result or one service result: a Copied value or a Local value, including projections and Local records. This includes promoted methods. Init, Run, and methods supplied by the runtime are exempt. See the complete result rules at https://github.com/lucasavila00/immutago/blob/main/docs/service-results.md.
 - Arguments and implementation code follow ordinary Go rules. Uses of im values keep their immutability and pointer rules.
 
 Service methods can give callbacks or globals access to mutable state. Review state changes, locks, saved inputs, and dependency calls in the service code.

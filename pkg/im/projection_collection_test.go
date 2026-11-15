@@ -59,7 +59,8 @@ func TestSliceProjectionEmpty(t *testing.T) {
 func TestMapProjection(t *testing.T) {
 	input := map[int]int{1: 2, 3: 4}
 	projection := Map(ProjectionOf(FreezeMap(input)))
-	if reflect.ValueOf(projection.values).UnsafePointer() != reflect.ValueOf(input).UnsafePointer() || projection.Len() != 2 {
+	if reflect.ValueOf(projection.values).UnsafePointer() != reflect.ValueOf(input).UnsafePointer() ||
+		projection.Len() != 2 {
 		t.Fatal("map adapter changed storage")
 	}
 	if value, found := projection.Get(3); !found || Copy(value) != 4 {

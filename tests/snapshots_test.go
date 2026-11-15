@@ -13,25 +13,13 @@ import (
 
 // packageOutputs assigns complete messages by source path, including generated files.
 func packageOutputs(directory, module, output string) (map[string]string, error) {
-	files := make(map[string]string)
-	messages := make(map[string][]string)
-	err := filepath.WalkDir(directory, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
-			return err
-		}
-		relative, err := filepath.Rel(module, path)
-		if err != nil {
-			return err
-		}
-		pkg := filepath.Dir(path)
-		files[filepath.ToSlash(relative)] = pkg
-		if _, exists := messages[pkg]; !exists {
-			messages[pkg] = nil
-		}
-		return nil
-	})
+	files, err := fixtureSources(directory, module)
 	if err != nil {
 		return nil, err
+	}
+	messages := make(map[string][]string)
+	for _, pkg := range files {
+		messages[pkg] = nil
 	}
 	location := regexp.MustCompile(`^(.+?\.go):[0-9]+:[0-9]+: `)
 	for _, record := range splitDiagnosticRecords(output, false) {
@@ -60,6 +48,23 @@ func packageOutputs(directory, module, output string) (map[string]string, error)
 		}
 	}
 	return result, nil
+}
+
+// fixtureSources indexes each source by its path within the consumer module.
+func fixtureSources(directory, module string) (map[string]string, error) {
+	files := make(map[string]string)
+	err := filepath.WalkDir(directory, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
+			return err
+		}
+		relative, err := filepath.Rel(module, path)
+		if err != nil {
+			return err
+		}
+		files[filepath.ToSlash(relative)] = filepath.Dir(path)
+		return nil
+	})
+	return files, err
 }
 
 // TestPackageOutputs distinguishes repeated generated filenames and retains their errors.
