@@ -49,6 +49,13 @@ Ref's fields private. Copies share one atomic slot; Borrow reads that slot once.
 An interface or generic method can expose the service pointer outside the
 direct-call matcher. This is accepted.
 
+For a fixed runtime method on protected storage, [matchMethod](../../pkg/analyzer/subset_methods.go)
+requires a direct call, no promotion, and an exact receiver type from the
+instantiated signature. The runtime contract replaces the user marked-receiver
+proof. Argument, result, statement, and capture checks still apply. The separate
+Borrow matcher runs first. Thus `route.Worker.IsZero()` can copy a reference
+from a protected field without permitting saved bound methods or service pointers.
+
 A service can still expose its receiver. For a Counter service with a mutable
 count field, this code passes:
 
@@ -74,6 +81,7 @@ The [trusted code list](validation.md#trust-boundary) still applies.
 | Operation | Runtime action |
 | --- | --- |
 | Copy Ref | Copy a pointer to an atomic pointer; all copies select the same current service value. |
+| IsZero | Compare the reference's pointer with nil; no atomic load or allocation. It does not check service readiness. |
 | StartReserved | Create a fresh service, set arguments, call Init, then publish with compare-and-swap. A concurrent start that loses the comparison stops its children before it panics. |
 | Restart | Repeat setup; publish with an atomic store only after success. Failure leaves the previous value available. |
 | Borrow | One atomic load, no allocation. |

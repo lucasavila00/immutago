@@ -4,6 +4,38 @@
 Call an exported service method with `ref.Borrow().Method(args)`.
 Copies select the same service, including after a restart.
 
+## Optional references
+
+The zero `Ref` is the unset value. Use `IsZero` to test an optional reference:
+
+```go
+type optionalRoute struct{ cache supervise.Ref[Counter] }
+
+func optionalCount(r optionalRoute) int {
+    if !r.cache.IsZero() {
+        return r.cache.Borrow().Count()
+    }
+    return 0
+}
+```
+
+`IsZero` does not check service readiness. A reference from `Reserve` is nonzero
+before start, but Borrow panics until initialization succeeds. A reference from
+a successful `Start` stays nonzero after stop. Copies give the same result.
+
+`IsZero` uses ordinary reference call forms. Direct calls also work on a Ref
+field or array element in a Frozen or Local record:
+
+```go
+if !route.Worker.IsZero() {
+    route.Worker.Borrow().Count()
+}
+```
+
+The [im rules](common-forms.md) still apply to protected expressions. Select an
+embedded Ref field explicitly. Copy a reference out before a closure, bound
+method, `go`, or `defer` uses it.
+
 ## Example: select a catalog for a quote
 
 The [shipping HTTP handler](../examples/shipping/http.go) keeps a reference to
@@ -60,7 +92,7 @@ pass the reference independently.
 | `selected.Borrow()` through an interface or type parameter, including method values and expressions | Ordinary Go rules apply: `pointer := selected.Borrow()`, `accessor := selected.Borrow`, `Borrower.Borrow(selected)` where Borrower is the interface type. The result can be stored and used outside the checked call form. |
 
 For direct Ref calls, the checker rejects every other use of `Borrow`, despite
-its Go return type of `*T`. Borrow panics for an empty or unstarted reference.
+its Go return type of `*T`. Borrow panics for a zero or unstarted reference.
 Each call selects the last successfully initialized service; a call in progress
 finishes on that instance.
 Borrow is shared and is not exclusive. No release call is needed.
@@ -85,6 +117,8 @@ calls. Callers must account for restarts when they save a service pointer.
 | `current := ref.Borrow`, `method := ref.Borrow().Method` | Use a closure that captures the reference and makes the direct method call. |
 | `supervise.Ref[Worker].Borrow(ref)` | `ref.Borrow().Method()` |
 | `ref.Borrow().Init()`, `ref.Borrow().Run(ctx)`, `ref.Borrow().Args()` | Initialize through Start; expose needed data through an exported service method. |
+| `check := route.Worker.IsZero`, `go route.Worker.IsZero()`, or `defer route.Worker.IsZero()` where route is a marked object | Copy the field first: `ref := route.Worker`, then use `check := ref.IsZero`, `go ref.IsZero()`, or `defer ref.IsZero()`. |
+| `route.IsZero()` through an embedded Ref in a marked object | Select the field: `route.Ref.IsZero()`. |
 | `wrapper.Borrow()` through an embedded Ref | Select the reference field: `wrapper.Ref.Borrow().Method()`. |
 
 ## What the reference rule does not check

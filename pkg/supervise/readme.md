@@ -135,7 +135,7 @@ type NoArgs struct{}
 
 ## type Ref
 
-Ref is a reference to one service. Copies select the same service, including after a restart. The analyzer requires T to be a concrete struct that embeds Service. References can be stored in immutable fields and returned as service results; the service state can still change. Start returns an initialized reference. Reserve creates one for later startup; a zero Ref is empty and cannot be used in place of Reserve.
+Ref is a reference to one service. Copies select the same service, including after a restart. The analyzer requires T to be a concrete struct that embeds Service. References can be stored in immutable fields and returned as service results; the service state can still change. Start returns an initialized reference. Reserve creates one for later startup; a zero Ref is unset and cannot be used in place of Reserve. Use IsZero to test it.
 
 ```go
 type Ref[T any] struct {
@@ -176,7 +176,15 @@ func (p Ref[T]) Borrow() *T
 
 Borrow selects the last successfully initialized service value with one atomic load. For direct Ref calls, the analyzer accepts only ref.Borrow\(\).Method\(args\). Method must be exported and must not be Init, Run, or a runtime method. Direct calls cannot save the pointer, Borrow method, or selected method. Interface calls can expose the pointer without these source checks. Borrow is shared and is not exclusive. No release call is needed. A call in progress finishes on its selected instance, even after a restart.
 
-Borrow panics for an empty or unstarted reference. It can select a value whose Run has ended. Stop does not invalidate the reference or block later calls.
+Borrow panics for a zero or unstarted reference. It can select a value whose Run has ended. Stop does not invalidate the reference or block later calls.
+
+### func \(Ref\[T\]\) IsZero
+
+```go
+func (p Ref[T]) IsZero() bool
+```
+
+IsZero reports whether the reference is the unset zero Ref. Borrow on a zero Ref panics. IsZero does not check service readiness: a reference from Reserve is nonzero before start, and a started reference stays nonzero after stop.
 
 ## type Service
 
