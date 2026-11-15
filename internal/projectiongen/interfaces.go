@@ -62,7 +62,7 @@ func (g *generator) writeInterface(out *bytes.Buffer, item record) error {
 	return nil
 }
 
-// writeInterfaceMethod uses fresh parameter names and forwards all proved results.
+// writeInterfaceMethod uses fresh parameter names and forwards all declared results.
 func (g *generator) writeInterfaceMethod(out *bytes.Buffer, receiver string, method *types.Func) {
 	signature := method.Type().(*types.Signature)
 	var parameters, arguments []string

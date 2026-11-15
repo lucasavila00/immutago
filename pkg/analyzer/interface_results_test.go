@@ -43,7 +43,8 @@ func(d *Data)Self()(*Data,Reader){return d,d};func f(){var r Reader=&Data{};
 p,s:=r.Self();_=p;_=s;local:=NewReaderProjection(im.ProjectionOf(r));p,s=local.Self()}`},
 		{"ordinary results", `type Input struct{Value any;Callback func()};
 type Reader interface{im.FrozenInterface;Read(Input)(string,any,func(),map[int]int,[][]byte)};
-func(d *Data)Read(input Input)(string,any,func(),map[int]int,[][]byte){return d.Text,input.Value,input.Callback,nil,nil};
+func(d *Data)Read(input Input)(string,any,func(),map[int]int,[][]byte){
+return d.Text,input.Value,input.Callback,nil,nil};
 
 func f(){var r Reader=&Data{};a,b,c,d,e:=r.Read(Input{});_=a;_=b;_=c;_=d;_=e}`},
 		{"defined error result", `type Failure interface{Error()string};
