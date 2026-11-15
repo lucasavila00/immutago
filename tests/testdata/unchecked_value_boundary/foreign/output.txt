@@ -1,44 +1,52 @@
-foreign.go:12:55: im.Trust requires a type that this package declares
+foreign.go:10:72: im.Unwrap requires a type that this package declares
   type: api.Table
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type
-foreign.go:18:68: im.Unwrap requires a type that this package declares
+foreign.go:13:55: im.Trust requires a type that this package declares
+  type: api.Table
+  rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
+  fix: call a function of the package that declares the type
+foreign.go:19:68: im.Unwrap requires a type that this package declares
   type: foreign.Alias
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type
-foreign.go:24:77: im.Unwrap requires a type that this package declares
+foreign.go:25:77: im.Unwrap requires a type that this package declares
   type: api.Table
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type
-foreign.go:27:17: im.Unwrap requires a type that this package declares
+foreign.go:28:17: im.Unwrap requires a type that this package declares
   type: api.Table
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type
-foreign.go:30:18: im.Trust requires a type that this package declares
+foreign.go:31:18: im.Trust requires a type that this package declares
   type: api.Table
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type
-foreign.go:33:68: im.Unwrap requires a type that this package declares
+foreign.go:34:68: im.Unwrap requires a type that this package declares
   type: T
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type
-foreign.go:36:84: im.Unwrap requires a type that this package declares
+foreign.go:37:84: im.Unwrap requires a type that this package declares
   type: api.Box[int]
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type
-foreign.go:42:57: im.Unwrap requires a type that this package declares
+foreign.go:43:57: im.Unwrap requires a type that this package declares
   type: api.Table
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type
-foreign.go:48:56: im.Unwrap requires a type that this package declares
+foreign.go:49:56: im.Unwrap requires a type that this package declares
   type: api.Table
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type
-foreign.go:51:71: im.Unwrap requires a type that this package declares
+foreign.go:52:71: im.Unwrap requires a type that this package declares
   type: api.Table
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type
-foreign.go:9:72: im.Unwrap requires a type that this package declares
+foreign.go:55:68: im.Unwrap requires a type that this package declares
+  type: api.Table
+  rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
+  fix: call a function of the package that declares the type
+foreign.go:58:57: im.Unwrap requires a type that this package declares
   type: api.Table
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type

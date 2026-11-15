@@ -138,7 +138,11 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 		"StringOf", "StringOfFrozen", "SliceOf", "MapOf":
 		return ""
 	case "Value":
-		return c.proofs.CopiedReason(c.pass.TypesInfo.TypeOf(call))
+		typ := c.pass.TypesInfo.TypeOf(call)
+		if reason := c.proofs.FrozenReason(typ); reason != "" {
+			return reason
+		}
+		return c.proofs.ReadResultReason(typ)
 	case "Read":
 		if !c.generatedSource(call) {
 			return "Projection.Read is reserved for verified generated projections"

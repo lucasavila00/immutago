@@ -29,18 +29,14 @@ func (g *generator) readPath(typ, root types.Type, path, stem string, indices []
 		name, constructor, err := g.interfaceReader(typ)
 		return name, constructor + "(im.ProjectionOf(" + expression + "))", err
 	}
-	if g.proofs.CopiedReason(typ) == "" {
+	if g.proofs.ReadResultReason(typ) == "" {
 		return g.typeName(typ), expression, nil
 	}
-	projection := "im.ProjectionOf(" + expression + ")"
 	if basic, ok := typ.Underlying().(*types.Basic); ok && basic.Info()&types.IsString != 0 {
 		return "im.StringProjection", "im.ProjectString(" + expression + ")", nil
 	}
 	if result, expression, ok := g.collectionReader(typ, expression); ok {
 		return result, expression, nil
-	}
-	if checker.IsUncheckedValue(typ) {
-		return "im.Projection[" + g.typeName(typ) + "]", projection, nil
 	}
 	return "", "", fmt.Errorf("%s: no reader for %s", stem, g.typeName(typ))
 }

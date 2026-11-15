@@ -57,14 +57,17 @@ func (p *proof) copiedRecord(result *obligation, t types.Type, structure *types.
 
 // readValue proves the general result category used by Local fields and readers.
 func (p *proof) readValue(result *obligation, t types.Type) {
-	if IsProjection(t) {
+	switch {
+	case IsUncheckedValue(t):
+		p.depend(result, t, "")
+		return
+	case IsProjection(t):
 		args := t.(*types.Named).TypeArgs()
 		for index := 0; index < args.Len(); index++ {
 			p.depend(result, args.At(index), fmt.Sprintf("projection payload %d: ", index+1))
 		}
 		return
-	}
-	if IsLibraryType(t, "Local") {
+	case IsLibraryType(t, "Local"):
 		result.reason = "immutable markers are annotations, not data"
 		return
 	}

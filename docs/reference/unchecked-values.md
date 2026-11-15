@@ -27,14 +27,17 @@ pointer; it does not freeze or copy the regexp.
 
 ## Allowed forms — exhaustive
 
-A persistent handle follows ordinary Go rules. A Projection cannot expose the handle
-or call Unwrap. A marked object that stores it still
+A handle follows ordinary Go rules. It is Frozen and a read result, but not Copied.
+Reading a handle through a projection does not expose its payload pointer. A marked object that stores it still
 follows the [common forms](common-forms.md).
 
 | Allowed form | Example |
 | --- | --- |
 | Use as an allowed stored type in a marked struct, a frozen collection, or ordinary Go | `type Pattern struct { im.Frozen; compiled im.UncheckedValue[compiled] }` |
 | Copy, store, pass, or return the handle in any package | `other := p.compiled` |
+| Use as a service result or Local field | `func (l *Loader) Current() im.UncheckedValue[Model]`; `type Reply struct { im.Local; Model im.UncheckedValue[Model] }` |
+| Read a handle from a generated field or array getter | `handle := modelProjection.Handle()`; `handle := modelProjection.Handles().At(i)` |
+| Read a handle or unnamed array of handles from a primitive projection | `handle := im.Value(projection)`; this also applies to Cell, slice, and map element projections. |
 | Declare a zero handle; Unwrap returns nil | `var value im.UncheckedValue[compiled]` |
 | In the package that declares the named type `T`, wrap a pointer | `value := im.Trust(&compiled{})` |
 | In the package that declares the named type `T`, read the pointer | `value := im.Unwrap(p.compiled)` |

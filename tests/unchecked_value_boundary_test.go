@@ -18,12 +18,16 @@ func TestUncheckedValueBoundary(t *testing.T) {
 	}
 	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
 	for _, mode := range []string{"cli", "vet"} {
-		for _, target := range []string{"api", "valid", "foreign"} {
+		for _, target := range []string{"api", "valid", "foreign", "invalid"} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
 				dir := consumerModule(t, root, "unchecked_value_boundary")
-				output := runBoundary(t, dir, binary, mode, target != "foreign", "./"+target)
+				output := runBoundary(t, dir, binary, mode, target == "api" || target == "valid", "./"+target)
 				checkFixtureSnapshots(t, root, "unchecked_value_boundary/"+target, output)
 			})
 		}
 	}
+	t.Run("runtime", func(t *testing.T) {
+		dir := consumerModule(t, root, "unchecked_value_boundary")
+		runCommand(t, dir, true, "go", "test", "-race", "-count=1", "./valid")
+	})
 }

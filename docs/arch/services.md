@@ -12,7 +12,7 @@ of named and anonymous service structs:
 1. Skip unexported methods, Init, Run, and methods supplied by the runtime.
 2. Match no result, one read result, `error`, or `(read result, error)` with
    `resultValue`. Identify error by compiler type identity; aliases work.
-3. Require the general ReadResult proof for the data result only. It accepts Copied and Local values.
+3. Require the general ReadResult proof for the data result only. It accepts Copied values, Local values, unchecked handles, and unnamed arrays of read results.
    It does not apply another recursive field rule to a returned record.
 
 Start arguments, method parameters, callbacks, and service implementation code

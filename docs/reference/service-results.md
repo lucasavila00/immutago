@@ -16,19 +16,20 @@ ordinary mutable state. The checker does not inspect error origins or payloads.
 General im checks still reject boxing protected storage in an error.
 
 `error` is not a read result or an allowed field in a marked record. A
-[read result](types.md) is Copied or Local:
+[read result](types.md) uses this complete list:
 
 | Read-result types — exhaustive | Example |
 | --- | --- |
 | Copied scalar or unnamed array | `bool`, `int`, `[2]int` |
 | Copied record or unnamed array of Copied records | `Score` with `im.Copied`, `[2]Score` |
+| Unchecked handle or unnamed array of handles | `im.UncheckedValue[Model]`, `[2]im.UncheckedValue[Model]` |
 | Service reference | `supervise.Ref[Worker]` |
 | Local projection | Generated `SettingsProjection`, `im.StringProjection`, `im.MapProjection[string, int]` |
 | Local record or unnamed array of read results | `Usage` with `im.Local` and numeric fields, `[2]im.StringProjection` |
 
 There is no separate field rule for services. Cell[T] and Projection[T] require the
-same Frozen T. The general Copied and Local rules determine whether a type
-is a read result. Frozen records are not read results, even when all fields are
+same Frozen T. The shared read-result rule checks Copied values, Local values, unchecked handles,
+and unnamed arrays recursively. Frozen records are not read results, even when all fields are
 numbers. Use [im.Copied](copied.md) for an independent value record, or im.Local
 for a record that includes projections. Neither marker requires generation.
 
