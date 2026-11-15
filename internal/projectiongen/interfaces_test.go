@@ -68,7 +68,7 @@ type Reader interface { hidden.Reader }
 	write(t, filepath.Join(hidden, "reader.go"), `package hidden
 import "github.com/lucasavila00/immutago/pkg/im"
 type number int
-type Reader interface { im.FrozenInterface; Read() number }
+type Reader interface { im.FrozenInterface; Read() (int, number) }
 `)
 	output, err := Generate(hidden)
 	if err != nil {

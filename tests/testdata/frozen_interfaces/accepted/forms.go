@@ -70,11 +70,70 @@ func Exercise() float64 {
 		return -2
 	}
 	fromList := api.NewScorerProjection(local.List().At(1))
+	var shared api.Scorer
+	shared, found := frozenMap.Get(value)
+	shared, found = frozenMap.Get(value)
+	_ = shared
 	fromMap, found := local.Map().Get(value)
+	fromMap, found = local.Map().Get(value)
+	_, _ = local.Map().Get(value)
 	if !found {
 		return -3
 	}
 	mapReader := api.NewScorerProjection(fromMap)
 	reply := Reply{Scorer: local.Scorer()}
 	return reply.Scorer.Score([]float32{1}) + fromList.Score([]float32{1}) + mapReader.Score([]float32{1})
+}
+
+// ReadResults checks local bindings, direct forwarding, and interface projections.
+func ReadResults(reader api.Reader, buf []byte) (float64, bool, []byte, error) {
+	text, found := reader.Read()
+	var other, ok = reader.Read()
+	text, found = reader.Read()
+	_, _ = reader.Read()
+	_ = text
+	_ = other
+	_ = found
+	_ = ok
+	local := api.NewReaderProjection(im.ProjectionOf(reader))
+	value, found, buf, err := local.Lookup([]byte{7}, buf)
+	var score, present, output, failure = local.Lookup(nil, buf)
+	value, found, buf, err = local.Lookup([]byte{7}, buf)
+	_, _, _, _ = local.Lookup(nil, buf)
+	_ = value
+	_ = found
+	_ = err
+	_ = score
+	_ = present
+	_ = output
+	_ = failure
+	summary, yes, bytes, fail := local.SummaryLookup(api.Bytes(buf))
+	_ = summary
+	_ = yes
+	_ = bytes
+	_ = fail
+	return forwardResults(local.Lookup([]byte{7}, buf))
+}
+
+func forwardResults(value float64, found bool, out []byte, err error) (float64, bool, []byte, error) {
+	return value, found, out, err
+}
+
+// FrozenResults checks tuple copies and declared method results through local projections.
+func FrozenResults(reader api.Reader) {
+	pointer, count := pair()
+	var another, number = pair()
+	pointer, count = pair()
+	_, _ = pair()
+	_ = pointer
+	_ = count
+	_ = another
+	_ = number
+	local := api.NewReaderProjection(im.ProjectionOf(reader))
+	persistent := local.Self()
+	_ = persistent
+	var tree implementation.TreeReader = &implementation.Tree{}
+	treeLocal := implementation.NewTreeReaderProjection(im.ProjectionOf(tree))
+	result := treeLocal.TreePointer()
+	_ = result
 }

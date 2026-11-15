@@ -20,6 +20,11 @@ func NewScorerProjection(value im.Projection[Scorer]) ScorerProjection {
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
 func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Read() == nil }
 
+// Lookup calls the checked interface method with its ordinary Go contract.
+func (v ScorerProjection) Lookup(arg0 []byte) (int, bool, []byte, error) {
+	return v.immutagoProjection.Read().Lookup(arg0)
+}
+
 // Score calls the checked interface method with its ordinary Go contract.
 func (v ScorerProjection) Score() int { return v.immutagoProjection.Read().Score() }
 

@@ -280,8 +280,10 @@ Keep source restrictions and examples there. Keep analysis details in the
   service methods except Init and Run. Runtime methods are exempt. Identify the
   predeclared error type by compiler identity; aliases work. Error values use Go
   contracts without origin checks. Error is not a ReadResult or a marked field type.
-  Direct typed result/error calls can bind two local names or blanks with :=, =,
-  or var. Keep the general im call, write, and transport checks.
+  Direct typed calls can bind all results to local names or blanks with :=, =,
+  or var. Check each result with the normal im type, write, and transport rules.
+  Frozen interface methods use ordinary method result rules; they have no separate
+  result category or count limit. Keep the service signature limit above.
 - Permit service references as stored values and results. Match every direct Ref Borrow
   call as `ref.Borrow().Method(args)` with an exported service method other
   than Init, Run, or a runtime method. Reject all other direct uses of the returned

@@ -1,3 +1,3 @@
 multiple_protected_binding.go:24:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: pointer, value = new(value), Good{X: 2}
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call

@@ -6,6 +6,23 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// TreeReaderProjection provides local method access to TreeReader.
+type TreeReaderProjection struct {
+	im.Local
+	immutagoProjection im.Projection[TreeReader]
+}
+
+// NewTreeReaderProjection wraps a checked local interface projection.
+func NewTreeReaderProjection(value im.Projection[TreeReader]) TreeReaderProjection {
+	return TreeReaderProjection{immutagoProjection: value}
+}
+
+// IsNil reports whether the interface is nil; a stored nil pointer is not nil.
+func (v TreeReaderProjection) IsNil() bool { return v.immutagoProjection.Read() == nil }
+
+// TreePointer calls the checked interface method with its ordinary Go contract.
+func (v TreeReaderProjection) TreePointer() *Tree { return v.immutagoProjection.Read().TreePointer() }
+
 // CountProjection provides local read access to *Count.
 type CountProjection struct {
 	im.Local
@@ -62,6 +79,11 @@ func (v TreeProjection) Weight() float64 {
 // Text reads the Text field.
 func (v TreeProjection) Text() im.StringProjection {
 	return im.ProjectString(v.immutagoProjection.Read().Text)
+}
+
+// Data reads the Data field.
+func (v TreeProjection) Data() im.SliceProjection[byte] {
+	return v.immutagoProjection.Read().Data.Projection()
 }
 
 // TreeCell publishes frozen Tree values. Do not copy it.

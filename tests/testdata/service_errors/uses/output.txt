@@ -9,10 +9,10 @@ uses.go:21:5: unsupported immutable operation: Local values and pointers cannot 
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 uses.go:25:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: Saved, err = api.Read()
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 uses.go:28:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: values[0], err = api.Read()
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 uses.go:35:29: unsupported immutable operation: closures cannot capture immutable storage
   source: value
   type: api.Reply
@@ -27,14 +27,11 @@ uses.go:40:16: unsupported immutable operation: dynamic calls with immutable sto
   fix: call a named, non-generic function directly with a concrete immutable parameter
 uses.go:40:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: value, err := callback()
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 uses.go:46:54: unsupported immutable operation: user generic instantiations with immutable types are unsupported
   source: pair(api.Reply{})
   type: (api.Reply, error)
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
-uses.go:48:40: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: value, ok := wrongPair()
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
-uses.go:50:5: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+uses.go:48:5: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: GlobalPair, GlobalError = api.Read()
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
