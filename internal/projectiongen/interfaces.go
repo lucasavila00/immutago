@@ -69,8 +69,14 @@ func (g *generator) writeInterfaceMethod(out *bytes.Buffer, receiver string, met
 	for index := 0; index < signature.Params().Len(); index++ {
 		parameter := signature.Params().At(index)
 		name := fmt.Sprintf("arg%d", index)
-		parameters = append(parameters, name+" "+g.typeName(parameter.Type()))
-		arguments = append(arguments, name)
+		parameterType := g.typeName(parameter.Type())
+		argument := name
+		if signature.Variadic() && index == signature.Params().Len()-1 {
+			parameterType = "..." + g.typeName(parameter.Type().(*types.Slice).Elem())
+			argument += "..."
+		}
+		parameters = append(parameters, name+" "+parameterType)
+		arguments = append(arguments, argument)
 	}
 	result, prefix := "", ""
 	var results []string
