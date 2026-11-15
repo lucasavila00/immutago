@@ -48,7 +48,7 @@ func TestServiceChildrenInheritReporter(t *testing.T) {
 				if before {
 					ref.Borrow().StartChild(nested)
 				}
-				go parent.serve(context.Background())
+				go parent.serve(context.Background(), context.Background())
 				if !before {
 					synctest.Wait()
 					ref.Borrow().StartChild(nested)

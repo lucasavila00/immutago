@@ -41,6 +41,7 @@ returning when a context ends, require implementation review.
 | `err := supervise.StartReserved(parent, ref, args)` | Initialize a reserved reference. An Init error leaves it unstarted and permits a retry. |
 | Start an already started reservation | Panic. With concurrent starts, the losing attempt stops its staged children and panics. |
 | Start under a stopped group | Init still runs and can succeed; Run does not run. The runtime stops staged children. |
+| Start between group runs | Init runs and publishes a pending value. A temporary halt keeps that value if the group has not launched its watcher. The next group run uses it. A permanent Stop ends pending values. |
 
 Init must not wait for an unstarted peer or child Run. For readiness that depends
 on Run, expose a method such as `Ready() bool`. Init has no cancellation context.
@@ -50,7 +51,8 @@ It must return and must release application resources that it opened if setup fa
 
 | Event | Behavior |
 | --- | --- |
-| Run returns normally | The service ends and its group removes it. |
+| Run returns normally before shutdown starts | The service ends and its group removes it after child cleanup. A later stop request during cleanup does not make that service run again. A child failure detected during cleanup still fails the attempt. |
+| Run returns after shutdown starts | The current run ends. A temporary group restart can start a new value for the same service entry. |
 | Run panics | Wait, create a new struct with the same arguments, call Init, and start Run after setup succeeds. |
 | Restart Init fails | Count a failed attempt. The reference still selects the previous successfully initialized value. |
 | A direct service method panics | The panic stays in its caller's goroutine. A call from Run or restart Init can fail that attempt. |
@@ -93,7 +95,7 @@ permits Ref copies; it does not prove their lifetime.
 
 | Operation | Behavior |
 | --- | --- |
-| `done := root.Stop()` | Request shutdown without waiting. Repeated calls return the same channel. |
+| `done := root.Stop()` | Disable new retries in the subtree and request shutdown without waiting. Repeated calls return the same channel. |
 | `<-root.Stop()` | Wait until all children stop. |
 | `<-group.Stop()` on a nested group | Also wait for removal from the parent. Other groups continue. |
 
@@ -103,6 +105,12 @@ before waiting for Stop. A child or report function must not wait for its own
 group to stop: the group is waiting for that code to finish. A child can call a
 parent during shutdown, but must not wait for a parent method that waits for
 that child's group to stop.
+
+Stop disables retry timers and failure escalation before it stops child Run
+contexts in reverse start order. Older children keep their Run contexts until
+their shutdown turn. An Init that was already admitted can finish; a stopped
+restart does not publish its candidate or call Run. Explicit calls to Start
+keep the stopped-group behavior in the startup table.
 
 ## Failure reports
 

@@ -441,7 +441,7 @@ func TestInitStopDuringRestart(t *testing.T) {
 	})
 }
 
-// TestInitPendingRelaunch initializes a new value if a pending first value was already stopped.
+// TestInitPendingRelaunch preserves a first value that has not run during a temporary halt.
 func TestInitPendingRelaunch(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		parent := &Group{stopped: make(chan struct{})}
@@ -453,14 +453,53 @@ func TestInitPendingRelaunch(t *testing.T) {
 		}
 		before := ref.Borrow()
 		parent.halt()
-		expectInitEnded(t, before)
-		go parent.serve(context.Background())
+		if before.ended {
+			t.Fatal("temporary halt ended a pending first value")
+		}
+		go parent.serve(context.Background(), context.Background())
 		synctest.Wait()
-		if ref.Borrow() == before || ref.Borrow().state != 2 {
-			t.Fatal("parent relaunched an ended candidate")
+		if ref.Borrow() != before || ref.Borrow().state != 1 || attempts.Load() != 1 {
+			t.Fatal("parent replaced a pending first value")
 		}
 		<-parent.Stop()
 	})
+}
+
+// TestInitPendingNestedGroup keeps pending setup on either side of a temporary halt.
+func TestInitPendingNestedGroup(t *testing.T) {
+	for _, after := range []bool{false, true} {
+		synctest.Test(t, func(t *testing.T) {
+			parent := &Group{stopped: make(chan struct{})}
+			if after {
+				parent.halt()
+			}
+			nested := StartGroup(parent)
+			var attempts atomic.Int32
+			hooks := &initHooks{init: func(p *initializing) error {
+				p.state = int(attempts.Add(1))
+				p.Children()
+				return nil
+			}}
+			ref, err := Start[initializing](nested, AssumeConcurrentSafe(hooks))
+			if err != nil {
+				t.Fatal(err)
+			}
+			before := ref.Borrow()
+			if !after {
+				parent.halt()
+			}
+			if before.ended {
+				t.Fatal("temporary halt ended a nested pending value")
+			}
+			go parent.serve(context.Background(), context.Background())
+			synctest.Wait()
+			if ref.Borrow() != before || attempts.Load() != 1 {
+				t.Fatal("temporary halt replaced nested pending setup")
+			}
+			<-parent.Stop()
+			expectInitEnded(t, before)
+		})
+	}
 }
 
 // TestInitStopsStagedGroup checks explicit Stop of a nested group before its parent runs.

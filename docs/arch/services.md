@@ -92,6 +92,28 @@ The [trusted code list](validation.md#trust-boundary) still applies.
 | Run returns or panics | Finish child cleanup before ending or waiting to restart. |
 | Start a child after the run ends | Init can run, but child Run cannot: the child group is stopped. |
 
+The runtime keeps three decisions separate:
+
+- `Service.end` records completion under the service mutex before it waits for
+  children. `Service.halt` uses the same mutex to mark a requested shutdown.
+  The first of these operations determines completed or interrupted. Cleanup
+  can still fail; its panic takes priority over a normal completion result.
+- An internal control context governs retries and escalation. Stop cancels
+  control for the subtree immediately. Each group run has a fresh child control
+  context, and each watcher has a control context that a nested Stop can cancel.
+- Run contexts govern ordered cleanup. Control cancellation does not cancel all
+  Run contexts. The group cancels them one at a time, in reverse start order.
+
+`watch` uses the recorded completion result to remove an entry. It uses current
+control state only to decide whether another attempt or escalation is allowed.
+A nested group's serve return ends one group run; explicit Stop owns removal of
+that group from its parent. Root failure and root Stop use the root mutex to
+choose which terminal operation proceeds.
+
+A child entry with a nil `done` has pending setup and no watcher. A temporary
+halt skips it; permanent Stop cleans it. Once launch sets `done`, the entry has
+an active or ended watcher and follows the normal cleanup and restart rules.
+
 The checker does not establish whether a saved child reference belongs to the
 current parent run. The [child lifetime reference](../reference/services.md#child-lifetimes)
 describes how callers manage these lifetimes.

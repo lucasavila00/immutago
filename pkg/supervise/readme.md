@@ -20,8 +20,8 @@ func StartReserved[T, A any, P interface {
     Init() error
     Run(context.Context)
     bind(A, func(any, []byte))
-    begin(context.Context) context.Context
-    end()
+    begin(context.Context, context.Context) context.Context
+    end() runOutcome
 }](parent *Group, ref Ref[T], args A) error
 ```
 
@@ -91,7 +91,7 @@ StartGroup creates a child group under parent. Use it to stop selected services 
 func (s *Group) Stop() <-chan struct{}
 ```
 
-Stop requests shutdown and returns its completion channel without waiting. Repeated calls return the same channel. The channel closes after all children stop, last started first, and a nested group is removed from its parent.
+Stop prevents new retries in the subtree, then requests ordered shutdown. It returns its completion channel without waiting. Repeated calls return the same channel. The channel closes after all children stop, last started first, and a nested group is removed from its parent.
 
 Run methods must return when their contexts end. Stop does not wait for direct service method calls, and their references remain callable. A Run method can request its own group's stop, but must not wait for that stop to complete.
 
@@ -129,8 +129,8 @@ func Start[T, A any, P interface {
     Init() error
     Run(context.Context)
     bind(A, func(any, []byte))
-    begin(context.Context) context.Context
-    end()
+    begin(context.Context, context.Context) context.Context
+    end() runOutcome
 }](parent *Group, args A) (Ref[T], error)
 ```
 

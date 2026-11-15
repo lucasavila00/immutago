@@ -35,6 +35,7 @@ type Service[A any] struct {
 	args     A
 	report   func(value any, stack []byte)
 	mu       sync.Mutex
+	control  context.Context
 	cancel   context.CancelFunc
 	unwatch  func() bool
 	children *Group
@@ -86,7 +87,9 @@ func (p *Service[A]) serve() {
 	p.done = make(chan struct{})
 	go func() {
 		defer close(p.done)
-		if p.failure, _, p.failed = attempt(context.Background(), p.children.serve, false); p.failed {
+		if p.failure, _, p.failed = attempt(context.Background(), func(ctx context.Context) {
+			p.children.serve(p.control, ctx)
+		}, false); p.failed {
 			p.cancel()
 		}
 	}()
@@ -97,12 +100,13 @@ func (p *Service[A]) bind(args A, report func(any, []byte)) {
 	p.args, p.report = args, report
 }
 
-// begin returns the context of the run and runs the group of the run if it exists.
-// When ctx ends, halt stops the children before the context of the run ends.
-func (p *Service[A]) begin(ctx context.Context) context.Context {
+// begin starts child supervision and returns the context of the run.
+// control limits retries. When ctx ends, halt stops children before it cancels Run.
+func (p *Service[A]) begin(control, ctx context.Context) context.Context {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	run, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	p.control = control
 	p.cancel = cancel
 	p.unwatch = context.AfterFunc(ctx, p.halt)
 	if p.children != nil {
@@ -123,12 +127,17 @@ func (p *Service[A]) halt() {
 	p.cancel()
 }
 
-// end stops the group of the run and waits for it, and panics if a child escalated to it.
-func (p *Service[A]) end() {
+// end records whether shutdown had started, then stops and waits for children.
+// A child failure still fails this attempt, including after a normal Run return.
+func (p *Service[A]) end() runOutcome {
 	if p.unwatch != nil {
 		p.unwatch()
 	}
 	p.mu.Lock()
+	outcome := completed
+	if p.ended {
+		outcome = interrupted
+	}
 	p.ended = true
 	if p.cancel != nil {
 		p.cancel()
@@ -136,7 +145,7 @@ func (p *Service[A]) end() {
 	children, done := p.children, p.done
 	p.mu.Unlock()
 	if children == nil {
-		return
+		return outcome
 	}
 	<-children.Stop()
 	if done != nil {
@@ -145,6 +154,7 @@ func (p *Service[A]) end() {
 	if p.failed {
 		panic(p.failure)
 	}
+	return outcome
 }
 
 // NoArgs supplies an empty start argument. Embed Service[NoArgs] and pass
@@ -170,24 +180,36 @@ func (d ConcurrentSafe[T]) Value() T { return d.value }
 // Create a root with NewRoot or a nested group with StartGroup. The zero value
 // is not usable. A group returned by Service.Children belongs to that service run.
 type Group struct {
-	mu       sync.Mutex
-	children []*child
-	ctx      context.Context
-	failure  chan any
-	stopping bool
-	stopped  chan struct{}
-	parent   *Group
-	entry    *child
-	report   func(value any, stack []byte)
+	mu          sync.Mutex
+	children    []*child
+	ctx         context.Context
+	control     context.Context
+	stopControl context.CancelFunc
+	failure     chan any
+	stopping    bool
+	stopped     chan struct{}
+	parent      *Group
+	entry       *child
+	report      func(value any, stack []byte)
 }
 
-// child is one service or nested group and its current goroutine.
+// child is one service or nested group. A nil done marks pending setup.
+// Temporary halt preserves pending setup; Stop ends it. A started watcher has done.
 type child struct {
-	run   func(context.Context) // nil while a permanent stop waits for the current watcher
-	stop  context.CancelFunc
-	done  chan struct{}
-	group *Group
+	run         func(context.Context, context.Context) runOutcome // nil while a permanent stop waits for the current watcher
+	stop        context.CancelFunc
+	stopControl context.CancelFunc
+	done        chan struct{} // nil until the first watcher starts
+	group       *Group
 }
+
+// runOutcome states whether a child has completed or can run in a later group run.
+type runOutcome uint8
+
+const (
+	interrupted runOutcome = iota
+	completed
+)
 
 // Ref is a reference to one service. Copies select the same service, including
 // after a restart. The analyzer requires T to be a concrete struct that embeds Service.
@@ -243,8 +265,14 @@ func NewRoot(report func(value any, stack []byte)) *Group {
 func root(exit func(any), report func(value any, stack []byte)) *Group {
 	s := &Group{stopped: make(chan struct{}), report: report}
 	go func() {
-		if value, _, failed := attempt(context.Background(), s.serve, false); failed {
-			exit(value)
+		if value, _, failed := attempt(context.Background(), func(ctx context.Context) {
+			s.serve(context.Background(), ctx)
+		}, false); failed {
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			if !s.stopping {
+				exit(value)
+			}
 		}
 	}()
 	return s
@@ -256,7 +284,10 @@ func root(exit func(any), report func(value any, stack []byte)) *Group {
 // closes, the parent has also removed it from the child list.
 func StartGroup(parent *Group) *Group {
 	nested := &Group{stopped: make(chan struct{}), parent: parent, report: parent.report}
-	parent.add(nested.serve, nested.halt, nested)
+	parent.add(func(control, ctx context.Context) runOutcome {
+		nested.serve(control, ctx)
+		return interrupted
+	}, nested.halt, nested)
 	return nested
 }
 
@@ -271,8 +302,8 @@ func Start[T, A any, P interface {
 	Init() error
 	Run(context.Context)
 	bind(A, func(any, []byte))
-	begin(context.Context) context.Context
-	end()
+	begin(context.Context, context.Context) context.Context
+	end() runOutcome
 }](parent *Group, args A) (Ref[T], error) {
 	ref := Reserve[T]()
 	if err := StartReserved[T, A, P](parent, ref, args); err != nil {
@@ -296,8 +327,8 @@ func StartReserved[T, A any, P interface {
 	Init() error
 	Run(context.Context)
 	bind(A, func(any, []byte))
-	begin(context.Context) context.Context
-	end()
+	begin(context.Context, context.Context) context.Context
+	end() runOutcome
 }](parent *Group, ref Ref[T], args A) error {
 	if ref.value.Load() != nil {
 		panic("supervise: Ref already started")
@@ -327,11 +358,11 @@ func StartReserved[T, A any, P interface {
 	}
 	var first atomic.Pointer[T]
 	first.Store(value)
-	parent.add(func(ctx context.Context) {
+	parent.add(func(control, ctx context.Context) (outcome runOutcome) {
 		value := first.Swap(nil)
 		if value == nil {
-			if ctx.Err() != nil {
-				return
+			if control.Err() != nil || ctx.Err() != nil {
+				return interrupted
 			}
 			var err error
 			value, err = create()
@@ -340,12 +371,18 @@ func StartReserved[T, A any, P interface {
 			}
 		}
 		service := P(value)
-		defer service.end()
-		if ctx.Err() != nil {
-			return
+		defer func() {
+			ended := service.end()
+			if outcome == completed {
+				outcome = ended
+			}
+		}()
+		if control.Err() != nil || ctx.Err() != nil {
+			return interrupted
 		}
 		ref.value.Store(value)
-		service.Run(service.begin(ctx))
+		service.Run(service.begin(control, ctx))
+		return completed
 	}, func() {
 		if value := first.Swap(nil); value != nil {
 			P(value).end()
@@ -354,7 +391,8 @@ func StartReserved[T, A any, P interface {
 	return nil
 }
 
-// Stop requests shutdown and returns its completion channel without waiting.
+// Stop prevents new retries in the subtree, then requests ordered shutdown.
+// It returns its completion channel without waiting.
 // Repeated calls return the same channel. The channel closes after all children
 // stop, last started first, and a nested group is removed from its parent.
 //
@@ -366,6 +404,17 @@ func (s *Group) Stop() <-chan struct{} {
 	defer s.mu.Unlock()
 	if !s.stopping {
 		s.stopping = true
+		if s.stopControl != nil {
+			s.stopControl()
+		}
+		if s.parent != nil {
+			s.parent.mu.Lock()
+			stopControl := s.entry.stopControl
+			s.parent.mu.Unlock()
+			if stopControl != nil {
+				stopControl()
+			}
+		}
 		go func() {
 			s.halt()
 			if s.parent != nil {
@@ -380,10 +429,8 @@ func (s *Group) Stop() <-chan struct{} {
 
 // add records a child unless s is stopping and runs it if s is running.
 // stop cleans up a child that has not run; launch replaces it with context cancellation.
-func (s *Group) add(run func(context.Context), stop func(), group *Group) {
-	done := make(chan struct{})
-	close(done)
-	c := &child{run: run, stop: stop, done: done, group: group}
+func (s *Group) add(run func(context.Context, context.Context) runOutcome, stop func(), group *Group) {
+	c := &child{run: run, stop: stop, group: group}
 	if group != nil {
 		group.entry = c
 	}
@@ -411,7 +458,9 @@ func (s *Group) release(c *child) {
 	stop, done := c.stop, c.done
 	s.mu.Unlock()
 	stop()
-	<-done
+	if done != nil {
+		<-done
+	}
 	s.forget(c)
 }
 
@@ -430,25 +479,31 @@ func (s *Group) launch(c *child) {
 		return
 	}
 	ctx, cancel := context.WithCancel(s.ctx)
+	control, stopControl := context.WithCancel(s.control)
 	done := make(chan struct{})
 	c.stop, c.done = cancel, done
+	c.stopControl = stopControl
 	run := c.run
 	go func() {
 		defer close(done)
-		if watch(ctx, run, s.failure, s.report) {
+		defer stopControl()
+		if watch(control, ctx, run, s.failure, s.report) == completed {
 			s.forget(c)
 		}
 	}()
 }
 
-// serve runs one incarnation of s until its parent cancels ctx, s stops, or a child escalates.
-func (s *Group) serve(ctx context.Context) {
+// serve runs one incarnation of s. control governs supervision in the subtree;
+// ctx ends this incarnation. Cancellation of control does not change stop order.
+func (s *Group) serve(control, ctx context.Context) {
 	s.mu.Lock()
-	if s.stopping {
+	if s.stopping || control.Err() != nil {
 		s.mu.Unlock()
 		return
 	}
 	failure := make(chan any, 1)
+	policy, cancelPolicy := context.WithCancel(control)
+	s.control, s.stopControl = policy, cancelPolicy
 	s.ctx, s.failure = context.WithoutCancel(ctx), failure
 	for _, c := range s.children {
 		s.launch(c)
@@ -456,14 +511,22 @@ func (s *Group) serve(ctx context.Context) {
 	s.mu.Unlock()
 	var value any
 	failed := false
-	select {
-	case <-ctx.Done():
-	case <-s.stopped:
-	case value = <-failure:
-		failed = true
+	for {
+		select {
+		case <-ctx.Done():
+		case <-s.stopped:
+		case value = <-failure:
+			if policy.Err() != nil {
+				failure = nil
+				continue
+			}
+			failed = true
+		}
+		break
 	}
 	s.mu.Lock()
 	s.ctx = nil
+	cancelPolicy()
 	s.mu.Unlock()
 	s.halt()
 	if failed {
@@ -481,28 +544,39 @@ func (s *Group) halt() {
 		stop, done := c.stop, c.done
 		permanent := s.stopping
 		s.mu.Unlock()
+		if done == nil && !permanent {
+			continue
+		}
 		if permanent && c.group != nil {
 			<-c.group.Stop()
 		} else {
 			stop()
-			<-done
+			if done != nil {
+				<-done
+			}
 		}
 	}
 }
 
-// watch runs run until it returns or ctx ends, and restarts it after a panic.
-// It reports whether run returned before ctx ended.
-func watch(ctx context.Context, run func(context.Context), failure chan<- any,
+// watch retries failed attempts while control and ctx permit another attempt.
+// A completed result stays completed when cancellation occurs during cleanup.
+func watch(control, ctx context.Context, run func(context.Context, context.Context) runOutcome, failure chan<- any,
 	report func(value any, stack []byte),
-) bool {
+) runOutcome {
 	var restarts []time.Time
 	for {
-		value, stack, failed := attempt(ctx, run, report != nil)
+		outcome := interrupted
+		value, stack, failed := attempt(ctx, func(ctx context.Context) {
+			outcome = run(control, ctx)
+		}, report != nil)
 		if failed && report != nil {
 			report(value, stack)
 		}
-		if !failed || ctx.Err() != nil {
-			return !failed && ctx.Err() == nil
+		if !failed {
+			return outcome
+		}
+		if control.Err() != nil || ctx.Err() != nil {
+			return interrupted
 		}
 		now := time.Now()
 		restarts = slices.DeleteFunc(restarts, func(at time.Time) bool { return now.Sub(at) >= restartWindow })
@@ -511,15 +585,18 @@ func watch(ctx context.Context, run func(context.Context), failure chan<- any,
 			case failure <- value:
 			default:
 			}
-			return false
+			return interrupted
 		}
 		delay := time.NewTimer(time.Second << len(restarts))
 		restarts = append(restarts, now)
 		select {
 		case <-delay.C:
+		case <-control.Done():
+			delay.Stop()
+			return interrupted
 		case <-ctx.Done():
 			delay.Stop()
-			return false
+			return interrupted
 		}
 	}
 }

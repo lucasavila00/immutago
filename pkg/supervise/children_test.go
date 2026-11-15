@@ -16,7 +16,7 @@ import (
 func TestGoexitStopsWatcher(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		root.add(func(context.Context) { runtime.Goexit() }, func() {}, nil)
+		root.add(func(context.Context, context.Context) runOutcome { runtime.Goexit(); return interrupted }, func() {}, nil)
 		synctest.Wait()
 		done := root.Stop()
 		synctest.Wait()
@@ -114,7 +114,7 @@ func TestChildrenDuringHalt(t *testing.T) {
 		<-entered
 		s := p.Children()
 		ran := make(chan struct{})
-		s.add(func(context.Context) { close(ran) }, func() {}, nil)
+		s.add(func(context.Context, context.Context) runOutcome { close(ran); return completed }, func() {}, nil)
 		synctest.Wait()
 		close(resume)
 		<-halted
@@ -415,7 +415,7 @@ func (p *stoppingParent) Run(ctx context.Context) {
 	record("stop parent")
 }
 
-// TestChildEscalatesDuringStop verifies that an escalation during Stop does not block or restart the parent.
+// TestChildEscalatesDuringStop checks that Stop prevents another child attempt while cleanup waits.
 func TestChildEscalatesDuringStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
@@ -427,7 +427,7 @@ func TestChildEscalatesDuringStop(t *testing.T) {
 		synctest.Wait()
 		takeEvents()
 		<-root.Stop()
-		expectEvents(t, "00:00:31", "stop slow", "stop parent")
+		expectEvents(t, "stop slow", "stop parent")
 	})
 }
 

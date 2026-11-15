@@ -13,10 +13,11 @@ func TestStopWaitsForParentEntry(t *testing.T) {
 		parent := NewRoot(nil)
 		nested := &Group{parent: parent, stopped: make(chan struct{})}
 		returned, finish := make(chan struct{}), make(chan struct{})
-		parent.add(func(ctx context.Context) {
-			nested.serve(ctx)
+		parent.add(func(control, ctx context.Context) runOutcome {
+			nested.serve(control, ctx)
 			close(returned)
 			<-finish
+			return interrupted
 		}, nested.halt, nested)
 		synctest.Wait()
 		stopped := nested.Stop()
