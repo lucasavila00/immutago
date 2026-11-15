@@ -30,6 +30,10 @@ func FrozenInterfaceSeal(method *types.Func) bool {
 
 // frozenInterface proves a named contract whose methods return only read results.
 func (p *proof) frozenInterface(result *obligation, t types.Type) {
+	if !FrozenInterface(t) {
+		result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
+		return
+	}
 	named, ok := t.(*types.Named)
 	if !ok || named.TypeParams().Len() != 0 {
 		result.reason = "Frozen interfaces require a named non-generic interface"

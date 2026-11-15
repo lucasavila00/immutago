@@ -151,10 +151,6 @@ func (p *proof) value(result *obligation, t types.Type) {
 		result.reason = "immutable markers are annotations, not data"
 		return
 	}
-	if FrozenInterface(t) {
-		p.frozenInterface(result, t)
-		return
-	}
 	if IsUncheckedValue(t) {
 		return
 	}
@@ -204,6 +200,9 @@ func (p *proof) value(result *obligation, t types.Type) {
 		return
 	case *types.Struct:
 		p.structure(result, t, underlying)
+		return
+	case *types.Interface:
+		p.frozenInterface(result, t)
 		return
 	}
 	result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
