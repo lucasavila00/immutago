@@ -5,5 +5,5 @@ import (
 	"example.com/consumer/model"
 )
 
-func makeValue() *model.Shared { return &model.Shared{} }
-func Leak()                    { logx.Info("callback", makeValue) }
+func makeValue() *model.Snapshot { return &model.Snapshot{} }
+func Leak()                      { logx.Info("callback", makeValue) }

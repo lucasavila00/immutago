@@ -3,22 +3,22 @@ package owner
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
-	im.ByValue
+	im.Snapshot
 	Version string
 	Weights im.FrozenSlice[float64]
 }
 
-type Loader struct{ Current im.Owner[Model] }
+type Loader struct{ Current im.Cell[Model] }
 
-var Current im.Owner[Model]
+var Current im.Cell[Model]
 
-var current im.Owner[Model]
+var current im.Cell[Model]
 
 func Publish(l *Loader, version string, weights []float64) {
 	w := make([]float64, len(weights))
 	copy(w, weights)
 	frozen := im.FreezeSlice(w)
-	l.Current.Store(&Model{Version: version, Weights: frozen})
+	l.Current.Store(Model{Version: version, Weights: frozen})
 }
 
 func Handle(l *Loader, features []float64) float64 {
@@ -26,16 +26,17 @@ func Handle(l *Loader, features []float64) float64 {
 	return Score(m, features)
 }
 
-func Score(m *Model, features []float64) float64 {
+func Score(m im.View[Model], features []float64) float64 {
 	total := 0.0
-	for i, w := range m.Weights.All() {
-		total += w * features[i]
+	weights := im.Slice(im.Select(m, func(value Model) im.FrozenSlice[float64] { return value.Weights }))
+	for i, w := range weights.All() {
+		total += im.Copy(w) * features[i]
 	}
 	return total
 }
 
 func Global() {
-	current.Store(new(Model))
+	current.Store(Model{})
 	m := current.Load()
 	_ = m
 }
@@ -46,5 +47,11 @@ func Background(l *Loader) { go Publish(l, "next", nil) }
 // NewLoader uses the zero holder allocation form.
 func NewLoader() {
 	l := new(Loader)
-	l.Current.Store(new(Model))
+	l.Current.Store(Model{})
+}
+
+// Republish stores an existing snapshot through an independent root copy.
+func Republish(l *Loader) {
+	value := l.Current.Shared()
+	l.Current.Store(value)
 }

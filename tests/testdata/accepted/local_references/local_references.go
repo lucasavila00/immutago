@@ -3,28 +3,26 @@ package local_references
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Local struct {
-	im.ByValue
+	im.Local
 	Value int
 }
-type Snapshot struct {
-	im.Shared
+type LocalRecord struct {
+	im.Local
 	Value Local
 }
 
 func read(value *Local) int       { return value.Value }
 func copyValue(value Local) Local { return value }
-func use() Snapshot {
+func use() LocalRecord {
 	pointer := &Local{Value: 1}
 	number := read(pointer)
 	copied := *pointer
 	copied = Local{Value: number + 1}
 	_ = copyValue(copied)
-	return Snapshot{Value: copied}
+	return LocalRecord{Value: copied}
 }
-func values() im.FrozenSlice[Local] {
-	builder := []Local{{Value: 1}}
-	frozen := im.FreezeSlice(builder)
-	return frozen
+func values() [1]Local {
+	return [1]Local{{Value: 1}}
 }
 
 func allocatedLocal() int {
@@ -49,7 +47,7 @@ func nilReference() bool {
 }
 
 type LocalSnapshot struct {
-	im.ByValue
+	im.Local
 	Value Local
 }
 

@@ -1,6 +1,6 @@
 wrapped_noref_consumer.go:3:8: unsupported dependency example.com/consumer/noref_wrapper: immutability proof failed
-  representative failure: example.com/consumer/invalid_noref/invalid_noref.go:10:5: unsupported immutable operation: global ByValue pointers are unsupported
+  representative failure: example.com/consumer/invalid_noref/invalid_noref.go:10:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
     source: retained *Local
-    fix: keep the ByValue pointer local, or store a value copy
+    fix: use the documented immutable value and reference forms
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/invalid_noref, correct its errors, then rerun immutago on this package

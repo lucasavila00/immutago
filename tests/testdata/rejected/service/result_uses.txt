@@ -1,6 +1,6 @@
-result_uses.go:12:2: unsupported immutable operation: global ByValue pointers are unsupported
+result_uses.go:12:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = pointer
-  fix: keep the ByValue pointer local, or store a value copy
+  fix: use the documented immutable value and reference forms
 result_uses.go:17:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: message.Count = 1
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
@@ -8,6 +8,6 @@ result_uses.go:23:27: unsupported immutable operation: closures cannot capture i
   source: pointer
   type: *service.Reply
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-result_uses.go:7:5: unsupported immutable operation: global ByValue pointers are unsupported
+result_uses.go:7:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved *Reply
-  fix: keep the ByValue pointer local, or store a value copy
+  fix: use the documented immutable value and reference forms

@@ -2,14 +2,14 @@ package review_convergence
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type SharedAliasA = im.Shared
-type SharedAliasB = im.Shared
-type LocalAliasA = im.ByValue
-type LocalAliasB = im.ByValue
+type SnapshotAliasA = im.Snapshot
+type SnapshotAliasB = im.Snapshot
+type LocalAliasA = im.Local
+type LocalAliasB = im.Local
 
-type DuplicateShared struct {
-	SharedAliasA
-	SharedAliasB
+type DuplicateSnapshot struct {
+	SnapshotAliasA
+	SnapshotAliasB
 }
 
 type DuplicateLocal struct {
@@ -18,6 +18,6 @@ type DuplicateLocal struct {
 }
 
 type MixedAliases struct {
-	SharedAliasA
+	SnapshotAliasA
 	LocalAliasA
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type Record struct {
-	im.Shared
+	im.Snapshot
 	Name string
 }
 

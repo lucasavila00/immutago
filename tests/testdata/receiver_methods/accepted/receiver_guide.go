@@ -2,39 +2,39 @@ package accepted
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type SharedPoint struct {
-	im.Shared
+type SnapshotPoint struct {
+	im.Snapshot
 	X int
 }
-type ByValuePoint struct {
-	im.ByValue
+type LocalPoint struct {
+	im.Local
 	X int
 }
 type PointGroup struct {
-	im.Shared
-	SharedPoint
+	im.Snapshot
+	SnapshotPoint
 }
-type Position = SharedPoint
+type Position = SnapshotPoint
 
-func (p SharedPoint) XValue() int  { return p.X }
-func (p *SharedPoint) ReadX() int  { return p.X }
-func (p *ByValuePoint) ReadX() int { return p.X }
-func makePoint() SharedPoint       { return SharedPoint{X: 3} }
+func (p SnapshotPoint) XValue() int { return p.X }
+func (p *SnapshotPoint) ReadX() int { return p.X }
+func (p *LocalPoint) ReadX() int    { return p.X }
+func makePoint() SnapshotPoint      { return SnapshotPoint{X: 3} }
 
 func guide() {
-	point := SharedPoint{X: 3}
-	p := &SharedPoint{X: 3}
+	point := SnapshotPoint{X: 3}
+	p := &SnapshotPoint{X: 3}
 	point.XValue()
-	group := PointGroup{SharedPoint: point}
-	group.SharedPoint.XValue()
+	group := PointGroup{SnapshotPoint: point}
+	group.SnapshotPoint.XValue()
 	p.ReadX()
 	(*p).XValue()
-	SharedPoint{X: 3}.XValue()
-	(&SharedPoint{X: 3}).ReadX()
+	SnapshotPoint{X: 3}.XValue()
+	(&SnapshotPoint{X: 3}).ReadX()
 	makePoint().XValue()
 	(p).ReadX()
 	alias := Position{X: 3}
 	alias.XValue()
-	byValue := &ByValuePoint{X: 3}
+	byValue := &LocalPoint{X: 3}
 	byValue.ReadX()
 }

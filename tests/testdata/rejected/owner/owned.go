@@ -3,26 +3,25 @@ package owner
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
-	im.ByValue
+	im.Snapshot
 	X int
 }
-type Shared struct{ im.Shared }
-type Loader struct{ Current im.Owner[Model] }
-type BadOwner struct {
-	im.Shared
-	Current im.Owner[Model]
+type Local struct{ im.Local }
+type Loader struct{ Current im.Cell[Model] }
+type BadCell struct {
+	im.Snapshot
+	Current im.Cell[Model]
 }
 
-var bad im.Owner[Shared]
-var saved *Model
+var bad im.Cell[Local]
+var saved im.View[Model]
 
 func badUses(l *Loader) {
 	alias := l.Current
 	_ = alias
 	copy := *l
 	_ = copy
-	m := l.Current.Load()
-	l.Current.Store(m)
 	saved = l.Current.Load()
-	l.Current.Load().X = 2
+	m := l.Current.Shared()
+	m.X = 2
 }

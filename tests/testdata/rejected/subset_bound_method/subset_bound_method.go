@@ -2,9 +2,18 @@ package rejected
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type Child struct {im.Shared; X int}
-type Good struct {im.Shared; X,Y int; Child Child; Array [2]int}
-func read(p *Good) int {return p.X}
+type Child struct {
+	im.Snapshot
+	X int
+}
+type Good struct {
+	im.Snapshot
+	X, Y  int
+	Child Child
+	Array [2]int
+}
 
-func (v *Good) Read()int{return v.X}
-func bad(v Good){_=v.Read}
+func read(p *Good) int { return p.X }
+
+func (v *Good) Read() int { return v.X }
+func bad(v Good)          { _ = v.Read }

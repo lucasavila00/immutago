@@ -3,7 +3,7 @@ package bodyless
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Config struct {
-	im.Shared
+	im.Snapshot
 	Count int
 }
 

@@ -7,11 +7,11 @@ import (
 )
 
 type Reply struct {
-	im.ByValue
+	im.Local
 	Count int
 }
-type SharedReply struct {
-	im.Shared
+type SnapshotReply struct {
+	im.Snapshot
 	Count int
 }
 type Counter struct {
@@ -23,8 +23,8 @@ func (*Counter) Pair() (int, bool)             { return 1, true }
 func (*Counter) Map() map[string]int           { return nil }
 func (*Counter) Slice() []int                  { return nil }
 func (*Counter) Interface() error              { return nil }
-func (*Counter) Pointer() *SharedReply         { return &SharedReply{} }
-func (*Counter) ByValuePointer() *Reply        { return nil }
+func (*Counter) Pointer() *SnapshotReply       { return &SnapshotReply{} }
+func (*Counter) LocalPointer() *Reply          { return nil }
 func (*Counter) Write(p *Reply)                { p.Count++ }
 func (*Counter) Capture(p *Reply)              { f := func() int { return p.Count }; _ = f() }
 func (*Counter) Frozen() im.FrozenSlice[[]int] { var result im.FrozenSlice[[]int]; return result }
@@ -45,13 +45,11 @@ type PointerEmbedded struct{ *supervise.Service[int] }
 
 func (*PointerEmbedded) Mutable() []int { return nil }
 
-// The runtime stores arguments, so a ByValue pointer cannot be a start argument.
+// The runtime stores arguments, so a Local pointer cannot be a start argument.
 type StoredPointer struct{ supervise.Service[*Reply] }
 
-func (*Counter) Shared() SharedReply           { return SharedReply{} }
-func (*Counter) SharedArray() [1]SharedReply   { return [1]SharedReply{} }
-func (*Counter) PointerArray() [1]*SharedReply { return [1]*SharedReply{} }
-func (*Counter) List() im.FrozenSlice[int]     { var value im.FrozenSlice[int]; return value }
+func (*Counter) PointerArray() [1]*SnapshotReply { return [1]*SnapshotReply{} }
+func (*Counter) List() im.FrozenSlice[int]       { var value im.FrozenSlice[int]; return value }
 func (*Counter) MapResult() im.FrozenMap[string, int] {
 	var value im.FrozenMap[string, int]
 	return value

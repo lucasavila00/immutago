@@ -3,13 +3,13 @@ package rejected
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
-	im.Shared
+	im.Snapshot
 	Value int
 	Array [2]int
 }
 
 type Bad struct {
-	im.Shared
+	im.Snapshot
 	Children im.FrozenSlice[Bad]
 	Mutable  []int
 }

@@ -4,8 +4,8 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type nilInts []int
 
-type nilShared struct {
-	im.Shared
+type nilSnapshot struct {
+	im.Snapshot
 	N int
 }
 
@@ -19,10 +19,10 @@ func nilBuilders() {
 	_ = im.FreezeMap(scores)
 	var named nilInts
 	_ = im.FreezeSlice(named)
-	var objects []nilShared = nil
-	objects = append(objects, nilShared{N: 2})
+	var objects []nilSnapshot = nil
+	objects = append(objects, nilSnapshot{N: 2})
 	_ = im.FreezeSlice(objects)
 	_ = im.FreezeSlice[int](nil)
 	_ = im.FreezeMap[string, int](nil)
-	_ = im.FreezeSlice[nilShared]((nil))
+	_ = im.FreezeSlice[nilSnapshot]((nil))
 }

@@ -3,7 +3,7 @@ package rejected
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Settings struct {
-	im.ByValue
+	im.Local
 	Limit int
 }
 
@@ -21,7 +21,7 @@ type Ordinary struct{}
 func (o Ordinary) Read(p *Product) int { return p.Price }
 
 type Generic[T any] struct {
-	im.Shared
+	im.Snapshot
 	Value T
 }
 

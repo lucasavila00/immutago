@@ -3,7 +3,7 @@ package review_convergence
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type CapturedValue struct {
-	im.Shared
+	im.Snapshot
 	N int
 }
 

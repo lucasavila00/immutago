@@ -6,7 +6,7 @@ import (
 )
 
 type Record struct {
-	im.Shared
+	im.Snapshot
 	Model   model.Tree
 	Names   im.FrozenSlice[string]
 	Lookups im.FrozenMap[[2]int, im.FrozenSlice[model.Leaf]]
@@ -40,7 +40,7 @@ func Use() {
 	_ = model.Derived{}
 	_ = im.FreezeSlice([][2]string{{"a", "b"}})
 	_ = struct {
-		im.Shared
+		im.Snapshot
 		Value int
 	}{Value: 1}
 }

@@ -3,16 +3,16 @@ package smaller_subset
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Node struct {
-	im.Shared
+	im.Snapshot
 	Value int
 	Next  *Node
 }
 type Local struct {
-	im.ByValue
+	im.Local
 	Value int
 }
 type Box[T ~int | ~string] struct {
-	im.Shared
+	im.Snapshot
 	Value T
 	Next  *Box[T]
 }

@@ -21,14 +21,18 @@ func TestFileCacheRefresh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cache.Current().Text(); got != "initial\n" {
-		t.Fatalf("initial text = %q", got)
+	if got := cache.Current().Text(); got.Clone() != "initial\n" {
+		t.Fatalf("initial text = %q", got.Clone())
 	}
 	if err := os.WriteFile(path, []byte("updated\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	deadline := time.Now().Add(5 * time.Second)
-	for cache.Current().Text() != "updated\n" {
+	for {
+		text := cache.Current().Text()
+		if text.Clone() == "updated\n" {
+			break
+		}
 		if time.Now().After(deadline) {
 			t.Fatal("background refresh did not publish the new text")
 		}

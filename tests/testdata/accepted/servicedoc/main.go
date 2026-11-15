@@ -13,7 +13,7 @@ import (
 
 // FileArgs selects a file and its refresh interval.
 type FileArgs struct {
-	im.Shared
+	im.Snapshot
 	Path  string
 	Every time.Duration
 }
@@ -63,10 +63,10 @@ func (c *FileCache) read() error {
 }
 
 // Text returns the last contents.
-func (c *FileCache) Text() string {
+func (c *FileCache) Text() im.StringView {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.text
+	return im.Text(im.ViewOf(c.text))
 }
 
 // main starts the cache, reads it, and stops its group.
@@ -78,6 +78,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Print(cache.Current().Text())
+	text := cache.Current().Text()
+	fmt.Print(text.Clone())
 	<-root.Stop()
 }

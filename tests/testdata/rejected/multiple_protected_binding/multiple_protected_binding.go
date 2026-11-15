@@ -3,11 +3,11 @@ package rejected
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Child struct {
-	im.Shared
+	im.Snapshot
 	X, Y int
 }
 type Good struct {
-	im.Shared
+	im.Snapshot
 	X, Y  int
 	Child Child
 	Array [2]int

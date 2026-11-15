@@ -1,21 +1,20 @@
-owned.go:13:2: immutable field Current: Owner slots are mutable
-  owner: owner.BadOwner; field type: im.Owner[owner.Model]
+owned.go:13:2: immutable field Current: Cell slots are mutable
+  owner: owner.BadCell; field type: im.Cell[owner.Model]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-owned.go:16:12: Owner requires a concrete, valid ByValue struct
-owned.go:17:5: unsupported immutable operation: global ByValue pointers are unsupported
-  source: saved *Model
-  fix: keep the ByValue pointer local, or store a value copy
-owned.go:20:11: Owner slots and their holders cannot be copied or transported by value
-owned.go:21:6: Owner slots and their holders cannot be copied or transported by value
-owned.go:22:10: Owner slots and their holders cannot be copied or transported by value
-owned.go:22:11: Owner holder pointers require local bindings or direct typed calls
-owned.go:23:6: Owner slots and their holders cannot be copied or transported by value
-owned.go:25:2: Owner.Store requires a fresh ByValue allocation
-owned.go:26:10: Owner.Load requires a single local pointer binding
-owned.go:26:2: unsupported immutable operation: global ByValue pointers are unsupported
+owned.go:16:12: immutable type argument: Snapshot storage cannot contain Local values
+  type: owner.Local
+  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+owned.go:17:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: saved im.View[Model]
+  fix: use the documented immutable value and reference forms
+owned.go:20:11: Cell slots and their holders cannot be copied or transported by value
+owned.go:21:6: Cell slots and their holders cannot be copied or transported by value
+owned.go:22:10: Cell slots and their holders cannot be copied or transported by value
+owned.go:22:11: Cell holder pointers require local bindings or direct typed calls
+owned.go:23:6: Cell slots and their holders cannot be copied or transported by value
+owned.go:24:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = l.Current.Load()
-  fix: keep the ByValue pointer local, or store a value copy
-owned.go:27:2: Owner.Load requires a single local pointer binding
-owned.go:27:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: l.Current.Load().X = 2
+  fix: use the documented immutable value and reference forms
+owned.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: m.X = 2
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

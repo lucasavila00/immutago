@@ -3,11 +3,11 @@ package restricted_boundaries
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Local struct {
-	im.ByValue
+	im.Local
 	Value int
 }
 type Node struct {
-	im.Shared
+	im.Snapshot
 	Value int
 }
 

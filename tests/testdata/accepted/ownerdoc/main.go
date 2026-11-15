@@ -3,23 +3,26 @@ package main
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Config struct {
-	im.ByValue
+	im.Snapshot
+	Ready bool
 	Limit int
 }
 
-var current im.Owner[Config]
+var current im.Cell[Config]
 
 func allowed(used int) bool {
 	config := current.Load()
-	if config == nil {
+	ready := im.Copy(im.Select(config, func(value Config) bool { return value.Ready }))
+	if !ready {
 		return false
 	}
-	return used < config.Limit
+	limit := im.Copy(im.Select(config, func(value Config) int { return value.Limit }))
+	return used < limit
 }
 
 func main() {
-	current.Store(&Config{Limit: 100})
+	current.Store(Config{Ready: true, Limit: 100})
 	println(allowed(80)) // true
-	current.Store(&Config{Limit: 50})
+	current.Store(Config{Ready: true, Limit: 50})
 	println(allowed(80)) // false
 }

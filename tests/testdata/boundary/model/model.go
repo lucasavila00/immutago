@@ -3,15 +3,15 @@ package model
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
-	im.ByValue
+	im.Snapshot
 	Version string
 	Weights im.FrozenSlice[float64]
 }
 
-type Shared struct {
-	im.Shared
+type Snapshot struct {
+	im.Snapshot
 	N int
 }
 
-type SafeOwner = im.Owner[Model]
-type Scalar[T interface{ ~int | SafeOwner }] = int
+type SafeCell = im.Cell[Model]
+type Scalar[T interface{ ~int | SafeCell }] = int

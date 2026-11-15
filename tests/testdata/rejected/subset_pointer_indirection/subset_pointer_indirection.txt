@@ -1,8 +1,8 @@
-subset_pointer_indirection.go:9:12: unsupported immutable operation: pointer indirection is unsupported
+subset_pointer_indirection.go:18:12: unsupported immutable operation: pointer indirection is unsupported
   source: **Good
   type: **rejected.Good
   fix: use a direct pointer to a concrete marked struct
-subset_pointer_indirection.go:9:22: unsupported immutable operation: pointer indirection is unsupported
+subset_pointer_indirection.go:18:26: unsupported immutable operation: pointer indirection is unsupported
   source: p
   type: **rejected.Good
   fix: use a direct pointer to a concrete marked struct
