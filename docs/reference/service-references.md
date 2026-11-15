@@ -38,7 +38,7 @@ method, `go`, or `defer` uses it.
 
 ## Example: select a catalog for a quote
 
-The [shipping HTTP handler](../examples/shipping/http.go) keeps a reference to
+The [shipping HTTP handler](../../examples/shipping/http.go) keeps a reference to
 its catalog loader. Each request selects the current loader, then one catalog:
 
 ```go
@@ -71,7 +71,7 @@ type Server struct { Worker WorkerRef }
 func (*Server) OnFailure(error) {}
 var _ interface{ OnFailure(error) } = (*Server)(nil)
 
-func identity[T any](value T) T { return value }
+func identity[T any](../value T) T { return value }
 func use(ref WorkerRef) {
     copied := identity(ref)
     var selected atomic.Pointer[WorkerRef]

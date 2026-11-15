@@ -31,13 +31,13 @@ Review these together in the service code:
 - Child startup and shutdown.
 
 Service methods can give callbacks or globals access to mutable state; see the
-[callback example](arch/services.md#service-reference-boundary). Review the Go
+[callback example](../arch/services.md#service-reference-boundary). Review the Go
 contracts of callers and dependencies. Use `go test -race` for the accesses your
 tests run.
 
 ## Example: delivery quotes
 
-The [shipping application](../examples/shipping/README.md) quotes delivery prices
+The [shipping application](../../examples/shipping/README.md) quotes delivery prices
 from a catalog file. One Loader service reads the first catalog in Init and
 checks for edits in Run. Invalid edits leave the last valid catalog available.
 
@@ -48,7 +48,7 @@ go run ./examples/shipping/cmd/shipping
 Start its loader with the file path and reload interval:
 
 ```go
-loader, err := supervise.Start[shipping.Loader](root, shipping.Args{
+loader, err := supervise.Start[shipping.Loader](../root, shipping.Args{
     Path: "examples/shipping/catalog.json", Every: time.Second,
 })
 if err != nil { panic(err) }
@@ -64,8 +64,8 @@ response := shipping.Quote(catalog, request)
 
 `Catalog` runs in the caller's goroutine. It loads one generated projection from
 the Cell. A reload can publish a new catalog while this quote finishes with the
-selected version. See the [loader](../examples/shipping/loader.go) and
-[quote calculation](../examples/shipping/quote.go).
+selected version. See the [loader](../../examples/shipping/loader.go) and
+[quote calculation](../../examples/shipping/quote.go).
 
 ## Startup errors and reservations
 
@@ -81,17 +81,17 @@ selected version. See the [loader](../examples/shipping/loader.go) and
 ## Example: mutable dependencies
 
 Start arguments can contain ordinary Go interfaces, clients, loggers, and
-functions. The [search indexer](../examples/search/indexer.go) receives an fs.FS:
+functions. The [search indexer](../../examples/search/indexer.go) receives an fs.FS:
 
 ```go
-indexer, err := supervise.Start[search.Indexer](root, search.IndexerArgs{
+indexer, err := supervise.Start[search.Indexer](../root, search.IndexerArgs{
     Files: os.DirFS("examples/search/documents"), Every: time.Second,
 })
 if err != nil { panic(err) }
 handler := search.HTTPHandler(indexer)
 ```
 
-The [search application](../examples/search/README.md) reads files through that
+The [search application](../../examples/search/README.md) reads files through that
 interface. Its tests supply controlled filesystems to check edits and failed
 scans. Review shared mutable dependencies under their normal Go contracts.
 
@@ -138,6 +138,6 @@ Create groups with NewRoot or StartGroup. A zero Group cannot run. Starting
 under a stopped group still calls Init and can succeed, but Run will not run.
 
 In tests, use
-[`supervisetest.NewRoot(t)`](../pkg/supervise/supervisetest/readme.md). It stops
+[`supervisetest.NewRoot(t)`](../../pkg/supervise/supervisetest/readme.md). It stops
 the tree during cleanup and fails the test if shutdown takes more than five
 seconds.

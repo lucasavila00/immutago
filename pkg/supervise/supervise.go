@@ -14,7 +14,7 @@
 //     a Copied value or a Local value, including projections and Local records.
 //     This includes promoted methods. Init, Run, and methods supplied by
 //     the runtime are exempt. See the complete result rules at
-//     https://github.com/lucasavila00/immutago/blob/main/docs/service-results.md.
+//     https://github.com/lucasavila00/immutago/blob/main/docs/reference/service-results.md.
 //   - Arguments and implementation code follow ordinary Go rules. Uses of im
 //     values keep their immutability and pointer rules.
 //

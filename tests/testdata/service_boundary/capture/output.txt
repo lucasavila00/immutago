@@ -1,4 +1,4 @@
 capture.go:6:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: api.Get().Borrow
   type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md

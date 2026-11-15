@@ -7,7 +7,7 @@ local projections. Local and Copied records need no generation.
 
 ## Generate projections
 
-Add the generator with the [install command](getting-started.md#install).
+Add the generator with the [install command](../guides/getting-started.md#install).
 Declare the record and the generation command in its package:
 
 ```go

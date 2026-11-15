@@ -6,7 +6,7 @@ package im
 // UncheckedValue is an allowed stored type. Any package can store, copy, and pass it.
 // Only the package that declares T can use Trust and Unwrap, so other packages
 // reach the value only through the API of that package.
-// See https://github.com/lucasavila00/immutago/blob/main/docs/unchecked-values.md for the complete forms.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/reference/unchecked-values.md for the complete forms.
 type UncheckedValue[T any] struct {
 	value *T
 }

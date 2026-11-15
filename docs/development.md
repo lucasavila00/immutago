@@ -1,7 +1,7 @@
 # Development
 
 Use the Go version in [go.mod](../go.mod). Run repository commands from the root.
-Read the [rules](rules.md), then change the matcher, proof checks, documentation,
+Read the [rules](reference/rules.md), then change the matcher, proof checks, documentation,
 and accepted/rejected tests together. Each new form needs a rejecting fallback.
 
 For each rule, state its checks and the facts a reviewer can rely on.
@@ -45,5 +45,5 @@ rejections. Consumer-only dependency cases must also pass through CLI and vet.
 The checker requires the exact generation directive and current output in every
 package with source Frozen records. Check changed documentation links
 and run complete examples through the CLI.
-Keep language rules in the guide and implementation facts in architecture.
+Keep language rules in the reference and implementation facts in architecture.
 [Source checks](../scripts/README.md) define comment and size requirements.

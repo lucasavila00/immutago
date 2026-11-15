@@ -34,7 +34,7 @@ A Local value cannot be hidden in persistent storage.
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Fixed im types and functions | `im.FrozenSlice[FrozenPoint]`, `im.FreezeSlice([]FrozenPoint{})` |
-| Fixed supervise APIs with protected values | `supervise.Service[FrozenPoint]`, `supervise.Start[Worker](root, args)`; saved protected arguments must be Frozen values, never Local values. |
+| Fixed supervise APIs with protected values | `supervise.Service[FrozenPoint]`, `supervise.Start[Worker](../root, args)`; saved protected arguments must be Frozen values, never Local values. |
 | User generics without protected storage | `type Plain[T any] struct { Value T }`, used as `Plain[int]` |
 
 | Rejected examples — non-exhaustive | Replacement |
@@ -164,7 +164,7 @@ Use the operations above inside these statement forms:
 | --- | --- |
 | Declare one variable or assign one destination | `var value FrozenPoint`, `value := FrozenPoint{X: 1}`, `value = FrozenPoint{X: 2}` |
 | Change a native builder slot or its Copied fields | `values[0] = value`, `counts[0]++`, `counts[0] += 2`, `scores[0].Value++` |
-| Bind Start results to two local names or blanks with `:=`, `=`, or `var` | `ref, err := supervise.Start[Worker](root, args)`, `var ref, err = supervise.Start[Worker](root, args)` |
+| Bind Start results to two local names or blanks with `:=`, `=`, or `var` | `ref, err := supervise.Start[Worker](../root, args)`, `var ref, err = supervise.Start[Worker](../root, args)` |
 | Bind a map Get call's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze a slice or map in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |

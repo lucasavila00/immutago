@@ -27,7 +27,7 @@ Package selection and state:
 - Type, source-form, and builder checks keep separate state. Tracking a builder
   does not exempt its operations from matching.
 - [Package scope](../../pkg/analyzer/package_scope.go) implements the
-  [package selection rules](../rules.md#package-boundary).
+  [package selection rules](../reference/rules.md#package-boundary).
 - Each selection walk shares a seen set across expression and object roots. The
   runtime-inclusive walk selects service checks; the im-only walk selects source
   and builder checks. Both use the same type traversal. It visits

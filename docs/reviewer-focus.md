@@ -11,7 +11,7 @@ Review every checker or supported-language change against these two requirements
 
 ## 1. Complete allowed forms
 
-The guide must list every allowed Go form with a short example. It must say
+The reference must list every allowed Go form with a short example. It must say
 that unlisted operations are rejected. Rejection examples must include allowed
 replacements and must be identified as non-exhaustive.
 
@@ -37,7 +37,7 @@ exclusivity and consumption are required for both modes.
 
 For each changed form, identify:
 
-1. Its guide entry and Go example.
+1. Its reference entry and Go example.
 2. Its complete matcher and rejecting fallback.
 3. Its type, write, escape, or builder proof checks.
 4. Accepted CLI fixtures and nearby rejected forms, with exact snapshots.
@@ -46,7 +46,7 @@ For each changed form, identify:
 Check implicit conversions and receivers, actual source and destination types,
 new bindings, aliases, parentheses, tuple results, variadic elements, and statement
 evaluation order. Preserve ordinary Go outside protected storage.
-A forbidden form passing is a defect even if the guide does not show that
+A forbidden form passing is a defect even if the reference does not show that
 rejection example. Known negative tests do not replace the matcher review.
 
 For each defect, identify why the operation missed a matcher or passed an
@@ -56,7 +56,7 @@ path and test both allowed and rejected forms. A test for one failing example
 alone is not sufficient.
 
 Check changed links and generated package references. Use hosted CI for full
-validation. For collection changes, also check the [cost contract](performance.md).
+validation. For collection changes, also check the [cost contract](reference/performance.md).
 
 ## Public guide review
 
@@ -64,7 +64,7 @@ Read as a Go developer who has not worked on the checker:
 
 - Name the API before discussing it: `im.Frozen` and `im.Local`, not an unexplained
   “both markers.” Define terms before using them.
-- Use the [glossary](glossary.md) names. Distinguish Local values from Local
+- Use the [glossary](reference/glossary.md) names. Distinguish Local values from Local
   pointers, and service references from Go pointers. A service result is a
   result category, not a marker or a promise of full service isolation.
 - Show what the feature does, when to choose it, and a useful working example.

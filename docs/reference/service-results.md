@@ -42,7 +42,7 @@ numbers or explicit string clones. It cannot keep the returned projection in
 persistent storage.
 
 For a result that combines computed values with projections, use [im.Local](local.md).
-The [search indexer](../examples/search/indexer.go) returns a Local Status with a
+The [search indexer](../../examples/search/indexer.go) returns a Local Status with a
 version number, document count, and local error-text projection. Its Read method
 returns the generated IndexProjection for query processing.
 

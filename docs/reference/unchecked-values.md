@@ -74,6 +74,6 @@ a promoted method cannot expose its pointer.
 | --- | --- |
 | `im.Trust(&engine.Table{})` in a package that does not declare `Table` | Call a function of the package that declares `Table`. |
 | `im.Unwrap(table)` or `read := im.Unwrap[engine.Table]` in another package | Call a function of the declaring package. |
-| `func Wrap[T any](v *T) im.UncheckedValue[T] { return im.Trust(v) }` | Wrap a concrete named type that this package declares. |
+| `func Wrap[T any](../v *T) im.UncheckedValue[T] { return im.Trust(v) }` | Wrap a concrete named type that this package declares. |
 | `im.Trust(&rows)` with `rows []int` | Declare a named type, such as `type rows []int`. |
 | `p.compiled = im.Trust(&compiled{})` on a marked value | Construct a new marked value. |

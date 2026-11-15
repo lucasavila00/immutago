@@ -49,6 +49,6 @@ method body and the original concrete-to-interface conversion keep their ordinar
 Go costs. A Frozen record getter reads only the selected interface field; it
 does not copy the parent record.
 
-The [interface cost fixture](../internal/projectiongen/testdata/interfacecost/README.md)
+The [interface cost fixture](../../internal/projectiongen/testdata/interfacecost/README.md)
 checks representation size and allocations and compares direct and projected
 method calls.

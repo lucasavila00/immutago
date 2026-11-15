@@ -73,7 +73,7 @@ can also save its receiver in a global. Review those operations and the locks
 in the service code. The checker does not prove that service state stays private
 or that concurrent calls are safe.
 
-The checks apply to [selected packages](../rules.md#package-boundary).
+The checks apply to [selected packages](../reference/rules.md#package-boundary).
 The [trusted code list](validation.md#trust-boundary) still applies.
 
 ## Publication and child lifetimes
@@ -91,5 +91,5 @@ The [trusted code list](validation.md#trust-boundary) still applies.
 | Start a child after the run ends | Init can run, but child Run cannot: the child group is stopped. |
 
 The checker does not establish whether a saved child reference belongs to the
-current parent run. The [child service guide](../service-children.md#child-lifetimes)
+current parent run. The [child service guide](../reference/service-children.md#child-lifetimes)
 describes how callers manage these lifetimes.

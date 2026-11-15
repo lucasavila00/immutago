@@ -9,10 +9,10 @@ Treat analyzer changes as production code. Use Go compiler type information.
 The public analyzer is in `pkg/analyzer/`, immutable values are in
 `pkg/im/`, type proofs are in `internal/checker/`, and the CLI is in
 `cmd/immutago/`. End-to-end tests are in `tests/`.
-Read [the contract](docs/rules.md) before analyzer changes.
-Use the [project reference](docs/README.md) to find the current documentation.
-Use the [glossary](docs/glossary.md) for names in guides, comments, and diagnostics.
-Keep supported forms in the guide, implementation choices in the architecture
+Read [the contract](docs/reference/rules.md) before analyzer changes.
+Use the [documentation index](docs/README.md) to find guides, references, and examples.
+Use the [glossary](docs/reference/glossary.md) for names in guides, comments, and diagnostics.
+Keep supported forms in the reference, implementation choices in the architecture
 pages, and validation evidence with the relevant tests and cost documentation.
 
 ## 1. Think Before Coding
@@ -126,7 +126,7 @@ request body when the user requests that issue or pull request.
 
 ## 11. Prove Types Before Accepting Operations
 
-Use compiler-resolved types and the recursive categories in [type rules](docs/types.md).
+Use compiler-resolved types and the recursive categories in [type rules](docs/reference/types.md).
 Frozen fields, Cell[T], and Projection[T] use one Frozen proof. Local fields and
 service outputs use one ReadResult proof. Value and local Clone use Copied.
 Do not add a service-only field proof or a context-dependent marker meaning.
@@ -258,7 +258,7 @@ Before extending a proof or matcher:
 5. If the required feature stays, fix its general rule and data structure. Do not
    add an exception for one spelling or discard required behavior just to pass CI.
 
-Use the [language reference](docs/rules.md) for the complete supported forms.
+Use the [language reference](docs/reference/rules.md) for the complete supported forms.
 Keep source restrictions and examples there. Keep analysis details in the
 [architecture pages](docs/arch/README.md).
 

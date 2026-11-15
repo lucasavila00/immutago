@@ -19,7 +19,7 @@ The analyzer checks:
 
 Direct im or supervise imports, used types, and failed checked dependencies select packages for analysis. Ordinary Go API contracts are trusted. im.UncheckedValue records the declaring package's promise that a value never changes. The checker does not prove this promise.
 
-The complete source forms and package rules are in https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
+The complete source forms and package rules are in https://github.com/lucasavila00/immutago/blob/main/docs/reference/rules.md.
 
 ## Variables
 

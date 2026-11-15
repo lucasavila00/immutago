@@ -13,11 +13,11 @@ child group. A restart creates both again. Choose the parent by the required lif
 ## Example: stop a document index
 
 A nested group lets an application stop an index while other root services
-continue. This uses the [search application's indexer](../examples/search/indexer.go):
+continue. This uses the [search application's indexer](../../examples/search/indexer.go):
 
 ```go
 group := supervise.StartGroup(root)
-indexer, err := supervise.Start[search.Indexer](group, search.IndexerArgs{
+indexer, err := supervise.Start[search.Indexer](../group, search.IndexerArgs{
     Files: os.DirFS("examples/search/documents"), Every: time.Second,
 })
 if err != nil {

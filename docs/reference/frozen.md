@@ -109,7 +109,7 @@ Fresh inputs can go directly into Freeze; the same forms work for maps:
 | --- | --- |
 | make | `frozen := im.FreezeSlice(make([]int, 2))` |
 | Literal | `frozen := im.FreezeSlice([]int{1})` |
-| Bare nil | `frozen := im.FreezeSlice[int](nil)` |
+| Bare nil | `frozen := im.FreezeSlice[int](../nil)` |
 | Clone | `next := im.FreezeSlice(frozen.Clone())` |
 
 | Rejected examples — non-exhaustive | Replacement |
@@ -118,7 +118,7 @@ Fresh inputs can go directly into Freeze; the same forms work for maps:
 | `values[0].Set(2)` with a pointer receiver | `value := values[0]; value.Set(2); values[0] = value` |
 | `values := []int(nil)` or `scores := map[string]int(nil)` | `var values []int` or `var scores map[string]int` |
 | `type Ints []int; values := Ints(nil)` | `type Ints []int; var values Ints` |
-| `im.FreezeSlice([]int(nil))` or `im.FreezeMap(map[string]int(nil))` | `im.FreezeSlice[int](nil)` or `im.FreezeMap[string, int](nil)` |
+| `im.FreezeSlice([]int(nil))` or `im.FreezeMap(map[string]int(nil))` | `im.FreezeSlice[int](../nil)` or `im.FreezeMap[string, int](../nil)` |
 | `update(values)`, `return values` | Edit locally, then freeze and pass/return the frozen value. |
 | `im.FreezeSlice(parameter)` | Construct a local builder first. |
 | `values = append(values, other...)` | Append individual elements. |

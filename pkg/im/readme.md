@@ -45,7 +45,7 @@ Value returns the value from a projection. The checker permits only Copied types
 
 ## type Cell
 
-Cell stores a replaceable Frozen value. Its zero value has no stored value. Load, LoadPointer, LoadShared, and Store are atomic. Readers can keep an earlier projection. The checker proves T and restricts use of the returned local projections. A Cell must not be copied after first use. See https://github.com/lucasavila00/immutago/blob/main/docs/cell.md for the complete forms.
+Cell stores a replaceable Frozen value. Its zero value has no stored value. Load, LoadPointer, LoadShared, and Store are atomic. Readers can keep an earlier projection. The checker proves T and restricts use of the returned local projections. A Cell must not be copied after first use. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/cell.md for the complete forms.
 
 ```go
 type Cell[T any] struct {
@@ -87,7 +87,7 @@ Store publishes a private copy of value. A nonzero\-sized T needs one allocation
 
 ## type Copied
 
-Copied marks a record with bool, numeric, array, or Copied fields. Copying the record copies all its data. Strings and reference fields are rejected. Embed the marker by value. Ordinary copies use normal Go mutation and pointer rules. A field inside protected storage keeps its owner's write and address rules. See https://github.com/lucasavila00/immutago/blob/main/docs/copied.md for the complete forms.
+Copied marks a record with bool, numeric, array, or Copied fields. Copying the record copies all its data. Strings and reference fields are rejected. Embed the marker by value. Ordinary copies use normal Go mutation and pointer rules. A field inside protected storage keeps its owner's write and address rules. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/copied.md for the complete forms.
 
 ```go
 type Copied struct{}
@@ -95,7 +95,7 @@ type Copied struct{}
 
 ## type Frozen
 
-Frozen marks a struct with immutable fields. Values and pointers to that struct can be copied, stored, and returned through the allowed source forms. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/frozen-records.md for the complete forms.
+Frozen marks a struct with immutable fields. Values and pointers to that struct can be copied, stored, and returned through the allowed source forms. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/frozen-records.md for the complete forms.
 
 ```go
 type Frozen struct{}
@@ -103,7 +103,7 @@ type Frozen struct{}
 
 ## type FrozenInterface
 
-FrozenInterface marks an interface implemented by proved Frozen records. Embed it in a named interface. Each conversion needs an immutability proof; the private method alone does not prove the fields of an implementation. Methods have fixed concrete parameters and at most one read result. Generated local projections do not expose the interface. Method implementations keep ordinary Go contracts, including retention of their own Frozen receiver. See https://github.com/lucasavila00/immutago/blob/main/docs/frozen-interfaces.md for the complete forms.
+FrozenInterface marks an interface implemented by proved Frozen records. Embed it in a named interface. Each conversion needs an immutability proof; the private method alone does not prove the fields of an implementation. Methods have fixed concrete parameters and at most one read result. Generated local projections do not expose the interface. Method implementations keep ordinary Go contracts, including retention of their own Frozen receiver. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/frozen-interfaces.md for the complete forms.
 
 ```go
 type FrozenInterface interface {
@@ -303,7 +303,7 @@ Unsafe returns the underlying string without copying or allocating. The caller c
 
 ## type Local
 
-Local marks a struct whose fields follow the local projection rules. The checker restricts storage and transport of the struct and its pointers. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/local.md for the complete forms.
+Local marks a struct whose fields follow the local projection rules. The checker restricts storage and transport of the struct and its pointers. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/local.md for the complete forms.
 
 ```go
 type Local struct{}
@@ -361,7 +361,7 @@ Len returns the number of entries in O\(1\) time without allocations.
 
 ## type Projection
 
-Projection holds a value for local reads. Its zero value contains the zero T. The checker proves T and restricts storage and transport of the projection. Copies copy T by value and share its immutable backing storage. See https://github.com/lucasavila00/immutago/blob/main/docs/projections.md for the complete forms.
+Projection holds a value for local reads. Its zero value contains the zero T. The checker proves T and restricts storage and transport of the projection. Copies copy T by value and share its immutable backing storage. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/projections.md for the complete forms.
 
 ```go
 type Projection[T any] struct {
@@ -537,7 +537,7 @@ Unsafe returns the underlying string without copying or allocating. The checker 
 
 UncheckedValue holds a pointer to data whose immutability the analyzer does not prove. The package that declares T promises never to change the data after Trust.
 
-UncheckedValue is an allowed stored type. Any package can store, copy, and pass it. Only the package that declares T can use Trust and Unwrap, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/unchecked-values.md for the complete forms.
+UncheckedValue is an allowed stored type. Any package can store, copy, and pass it. Only the package that declares T can use Trust and Unwrap, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/unchecked-values.md for the complete forms.
 
 ```go
 type UncheckedValue[T any] struct {
