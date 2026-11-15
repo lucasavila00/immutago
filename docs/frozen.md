@@ -4,14 +4,15 @@ FrozenString, FrozenSlice, and FrozenMap satisfy the [Frozen type rule](types.md
 They can be copied, stored, and returned.
 Their local projections follow the [projection rules](projections.md).
 
-| Data | Stored value | Local projection | Constructor | Projection adapter |
+| Data | Stored value | Local projection | Constructor | Read locally |
 | --- | --- | --- | --- | --- |
-| String | `im.FrozenString` | `im.StringProjection` | `im.FreezeString(text)` | `im.String(projection)` |
-| Slice | `im.FrozenSlice[E]` | `im.SliceProjection[E]` | `im.FreezeSlice(values)` | `im.Slice(projection)` |
-| Map | `im.FrozenMap[K,V]` | `im.MapProjection[K,V]` | `im.FreezeMap(values)` | `im.Map(projection)` |
+| String | `im.FrozenString` | `im.StringProjection` | `im.FreezeString(text)` | `frozen.Projection()` |
+| Slice | `im.FrozenSlice[E]` | `im.SliceProjection[E]` | `im.FreezeSlice(values)` | `frozen.Projection()` |
+| Map | `im.FrozenMap[K,V]` | `im.MapProjection[K,V]` | `im.FreezeMap(values)` | `frozen.Projection()` |
 
-Each adapter takes a Projection of the stored value. Slice elements and map keys and
-values must be Frozen types. Map keys must also be Go-comparable.
+Each Projection method reads the stored value without copying its backing storage.
+Slice elements and map keys and values must be Frozen types. Map keys must also
+be Go-comparable.
 Use the forms below with the [common forms](common-forms.md).
 These lists are complete; unlisted operations are rejected.
 
@@ -25,7 +26,7 @@ independent copy.
 ```go
 text := "standard"
 frozen := im.FreezeString(text)
-projection := im.String(im.ProjectionOf(frozen))
+projection := frozen.Projection()
 println(text, projection.Len(), projection.EqualString("standard"))
 ```
 
@@ -38,14 +39,13 @@ println(text, projection.Len(), projection.EqualString("standard"))
 | Expose the shared native string | `fmt.Sprintf("%s", text.Unsafe())` |
 | Read bytes in a loop | `for i := 0; i < text.Len(); i++ { println(text.At(i)) }` |
 | Copy into independent native string storage | `saved := text.Clone()` |
-| Create a local StringProjection | `projection := im.String(im.ProjectionOf(text))` |
+| Create a local StringProjection | `projection := text.Projection()` |
 
 Equal and EqualString use native string equality without allocating. Clone is
 not needed to compare text. The zero value is empty. At has Go's normal bounds
 panic. Unsafe lets the caller keep the shared bytes; the checker does not track
 the returned native string. There is no substring operation or implicit string
-conversion. For an ordinary
-native string projection, use `im.Text(im.ProjectionOf(source))`.
+conversion. For a native string projection, use `im.ProjectString(source)`.
 
 ## Frozen slices and maps
 
@@ -140,6 +140,7 @@ Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 | Slice element | `value := frozen.At(i)` |
 | Map entry | `value, found := frozen.Get(key)` |
 | Iteration | `for key, value := range frozen.All() { ... }` |
+| Local projection | `projection := frozen.Projection()` |
 | Independent mutable copy | `next := frozen.Clone()` |
 
 - Call methods on a local variable, a struct field, or a named function's result.
@@ -151,6 +152,6 @@ Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `text[0]`, `text[1:]`, or `string(text)` with FrozenString | Use At for a byte, Unsafe for a shared native string, or Clone for independent storage. |
-| Return FrozenString from an exported service method | Return `im.String(im.ProjectionOf(text))`. |
+| Return FrozenString from an exported service method | Return `text.Projection()`. |
 | `read := frozen.At` | `value := frozen.At(0)` |
 | `im.FrozenSlice[int].At(frozen, 0)` | `frozen.At(0)` |

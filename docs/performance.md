@@ -7,8 +7,8 @@
 | ProjectionOf | Copy the Go value T; no copy of its backing storage. |
 | Generated record field or array element projection | Read through the root pointer and indices; no copy of the containing record or array. |
 | Copy | Return a Copied value; arrays have their ordinary value-copy cost. Frozen records are not Copied. |
-| CopyProjection | Copy one record into a new root; one allocation for a record with nonzero size. Backing storage remains shared. |
-| String, Text, Slice, Map adapters | Copy a native handle. |
+| CopyRecord | Copy one record into a new root; one allocation for a record with nonzero size. Backing storage remains shared. |
+| ProjectString, frozen Projection methods, generic projection adapters | Copy a native handle; no backing-storage copy or allocation. |
 | FrozenString.Len/At, StringProjection.Len/At, SliceProjection.Len, MapProjection.Len/Get | Native length, indexing, or map lookup; Get wraps its returned value. |
 | FrozenString.Equal/EqualString, StringProjection.Equal/EqualString | Native string equality; no allocation or byte copy. |
 | FrozenString.Unsafe, StringProjection.Unsafe | Copy the native string handle; no allocation or byte copy. |
@@ -20,7 +20,7 @@
 | Local slice/map Clone | O(n); arguments must be Copied. Service references remain opaque shared handles. |
 | Cell.Store | Copy one T root and publish with an atomic store; one allocation for T with nonzero size. |
 | Generated Cell.Load, raw Cell.LoadPointer | One atomic pointer load; no record copy or allocation. |
-| Raw Cell.Load, Cell.Shared | One atomic load and a T value copy; no backing-storage copy. |
+| Raw Cell.Load, Cell.LoadShared | One atomic load and a T value copy; no backing-storage copy. |
 | Ref.Current | One atomic load; no allocation. |
 
 Large record and array values can cost more to copy than native pointer reads.

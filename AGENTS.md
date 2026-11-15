@@ -150,7 +150,9 @@ calls are rejected, including scalar reads. All normal type, write, capture,
 generic, receiver, and transport checks still apply to generated nodes.
 Generated record and array projections keep the root pointer and indices;
 do not copy parent values during field reads.
-CopyProjection is the explicit root copy for a record value, including a map result.
+CopyRecord is the explicit root copy for a record value, including a map result.
+Use ProjectString for native strings and Projection methods for frozen strings,
+slices, and maps. Keep generic projection adapters in the low-level reference.
 Normal projection reads return Copied values or further projections. StringProjection.Unsafe and
 FrozenString.Unsafe explicitly return a shared native string; trust the caller
 and add no string provenance or lifetime analysis. Native collection builders keep

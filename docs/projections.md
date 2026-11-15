@@ -62,7 +62,7 @@ SettingsProjection has IsNil true. Each Load selects one version for all its fie
 | `var current SettingsCell` | Empty publication slot. |
 | `current.Store(value)` | Publish a Settings value. |
 | `current.Load()` | Read the selected record through SettingsProjection without copying the record. |
-| `current.Shared()` | Read the stored Settings with its shared storage. |
+| `current.LoadShared()` | Read the stored Settings with its shared storage. |
 | `var projection SettingsProjection` or `SettingsProjection{}` | A nil projection. |
 | `projection.IsNil()` | Report whether the projection has a record. |
 | `projection.Field()` | Read the declared field through its generated result type. |
@@ -117,12 +117,12 @@ For a map with Settings values, request the record copy explicitly:
 ```go
 value, found := entries.Get(key)
 if found {
-    item := NewSettingsProjection(im.CopyProjection(value))
+    item := NewSettingsProjection(im.CopyRecord(value))
     println(item.Title().Unsafe())
 }
 ```
 
-CopyProjection copies one record into a new root. It does not copy the strings or
+CopyRecord copies one record into a new root. It does not copy the strings or
 collections that the record refers to. Generated projections do not copy map values
 into roots automatically.
 

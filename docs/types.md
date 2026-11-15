@@ -38,11 +38,12 @@ record or require generated output; im.Local still follows Local transport rules
 | --- | --- |
 | `Cell[T]`, `Projection[T]`, `ProjectionOf(value)` | T is a Frozen type. |
 | `FrozenSlice[E]`, `FrozenMap[K,V]` | Each argument is a Frozen type; keys are also Go-comparable. |
-| `String(projection)`, `Slice(projection)`, `Map(projection)` | Projection of FrozenString, FrozenSlice, or FrozenMap, respectively. |
-| `Text(Projection[S])` | S has underlying type string. |
+| `ProjectString(value)` | A native string type. |
+| `frozen.Projection()` | FrozenString, FrozenSlice[E], or FrozenMap[K,V]. |
+| [Generic projection adapters](projection-primitives.md#projection-operations--exhaustive) | A Projection of the matching string, FrozenString, FrozenSlice, or FrozenMap type. |
 | `IsNil(Projection[*T])` | T is a Frozen record. |
 | `Copy(Projection[T])` | T is Copied. |
-| `CopyProjection(Projection[T])` | T is a concrete Frozen record; returns a projection of a new copied root. |
+| `CopyRecord(Projection[T])` | T is a concrete Frozen record; returns a projection of a new copied root. |
 | `Cell[T].LoadPointer()`, `SliceProjection[T].AtPointer(i)` | T is a concrete Frozen record; the result is Projection[*T]. |
 | `SliceProjection[E].Clone()` | E is Copied. |
 | `MapProjection[K,V].Clone()` | K and V are Copied. |
@@ -62,7 +63,6 @@ projection or an im.Local result, including when all fields are numbers.
 | `struct { im.Local; Text im.FrozenString }` | Use `im.StringProjection`. |
 | `struct { im.Local; Count FrozenCount }`, where FrozenCount embeds im.Frozen | Use `FrozenCountProjection`, or read its numeric fields into a Local record. |
 | `type Counts [2]int` as protected storage | `type Counts struct { im.Frozen; Values [2]int }`. |
-| `im.Copy(textProjection)` with `textProjection im.Projection[string]` | Use `im.Text(textProjection)`, then Unsafe for shared access or Clone for independent storage. |
-| `im.Copy(textProjection)` with `textProjection im.Projection[im.FrozenString]` | Use `im.String(textProjection)`, then Unsafe for shared access or Clone for independent storage. |
+| `im.Copy(textProjection)` with a string or FrozenString payload | Use the matching [projection adapter](projection-primitives.md#projection-operations--exhaustive), then Unsafe for shared access or Clone for independent storage. |
 | `im.Copy(countProjection)` with `countProjection im.Projection[FrozenCount]` | Use a generated projection, or copy individual numeric fields. |
 | Save a Local record in a package variable | Copy the required data into independent storage. |

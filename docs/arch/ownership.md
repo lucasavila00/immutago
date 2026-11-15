@@ -39,7 +39,8 @@ generation.
 [Generated field methods](../../internal/projectiongen/readers.go) use a projection of the
 root pointer and read fields directly. Records and arrays use projections with
 that root and the required indices. Copied scalars and opaque service references
-return directly; string and collection fields use the fixed adapters.
+return directly. Native strings use ProjectString; frozen string, slice, and map
+fields use their Projection methods.
 
 The [generation check](../../pkg/analyzer/generation.go) requires the canonical
 directive and compares normalized output bytes with the generator's current
@@ -53,9 +54,9 @@ Function-local, anonymous, and test-only Frozen declarations are rejected.
 ## Cell capability
 
 [Cell](../../pkg/im/cell.go) stores a private atomic pointer. Store creates a new
-T root. Raw Load returns Projection[T]; LoadPointer returns Projection[*T]; Shared returns T.
+T root. Raw Load returns Projection[T]; LoadPointer returns Projection[*T]; LoadShared returns T.
 The generated Cell.Load uses LoadPointer without a root copy. All reads use the
-same Frozen payload proof. Only code with the Cell has persistent Shared access.
+same Frozen payload proof. Only code with the Cell has LoadShared access.
 A projection cannot recover the Cell or unwrap its payload.
 
 The [slot matcher](../../pkg/analyzer/owner_slot.go) restricts Cells to named

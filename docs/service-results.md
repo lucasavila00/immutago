@@ -46,7 +46,7 @@ returns quota counters in an im.Local Usage record.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
-| `string` | `im.StringProjection` from `im.Text(im.ProjectionOf(text))`. |
+| `string` | `im.StringProjection` from `im.ProjectString(text)`. |
 | `Usage` with `im.Frozen`, even when it has only numeric fields | Use im.Local for the result, or return its generated projection. |
 | `im.Frozen` | Return no result when no data is needed. |
 | `im.FrozenString`, `im.FrozenSlice[E]`, or `im.FrozenMap[K,V]` | The corresponding StringProjection, SliceProjection, or MapProjection. |

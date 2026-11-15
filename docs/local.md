@@ -11,7 +11,7 @@ type Prediction struct {
 }
 
 func prediction(name string, score float64) Prediction {
-    return Prediction{Name: im.Text(im.ProjectionOf(name)), Score: score}
+    return Prediction{Name: im.ProjectString(name), Score: score}
 }
 ```
 

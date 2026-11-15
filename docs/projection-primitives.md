@@ -7,15 +7,17 @@ These fixed APIs build the [generated typed projections](projections.md). They u
 
 | Operation | Requirement and result |
 | --- | --- |
+| `im.ProjectString(value)` | Native string input; returns StringProjection. |
+| `frozen.Projection()` | FrozenString, FrozenSlice[E], or FrozenMap[K,V] receiver; returns StringProjection, SliceProjection[E], or MapProjection[K,V]. |
 | `im.ProjectionOf(value)` | Frozen input; returns Projection[T]. |
 | `rawCell.Load()` | Copies T into Projection[T]; reads zero T if the raw slot is empty. |
 | `rawCell.LoadPointer()` | Requires a concrete Frozen record T; returns Projection[*T] without copying T. |
-| `im.CopyProjection(value)` | Requires Projection[T] for a concrete Frozen record T; copies it into a new root and returns Projection[*T]. |
+| `im.CopyRecord(value)` | Requires Projection[T] for a concrete Frozen record T; copies it into a new root and returns Projection[*T]. |
 | `im.Copy(projection)` | Requires Copied T; returns T. |
-| `im.String(projection)` | Requires FrozenString; returns StringProjection. |
-| `im.Text(projection)` | Requires a string type; returns StringProjection. |
-| `im.Slice(projection)` | Requires FrozenSlice[E]; returns SliceProjection[E]. |
-| `im.Map(projection)` | Requires FrozenMap[K,V]; returns MapProjection[K,V]. |
+| `im.ProjectedString(projection)` | Requires Projection[S] with underlying string S; returns StringProjection. |
+| `im.ProjectedFrozenString(projection)` | Requires Projection[FrozenString]; returns StringProjection. |
+| `im.ProjectedSlice(projection)` | Requires Projection[FrozenSlice[E]]; returns SliceProjection[E]. |
+| `im.ProjectedMap(projection)` | Requires Projection[FrozenMap[K,V]]; returns MapProjection[K,V]. |
 | `im.IsNil(projection)` | Requires a pointer payload; reports nil without exposing the pointer. |
 
 Application code uses the listed Copy and adapter forms. The internal Read
@@ -26,11 +28,11 @@ opaque through a Projection.
 
 ```go
 scores := im.FreezeMap(map[string]int{"alice": 10})
-projection := im.Map(im.ProjectionOf(scores))
+projection := scores.Projection()
 value, found := projection.Get("alice")
 if found { println(im.Copy(value)) }
 for key, value := range projection.All() {
-    println(im.Text(key).Unsafe(), im.Copy(value))
+    println(im.ProjectedString(key).Unsafe(), im.Copy(value))
 }
 ```
 
@@ -73,7 +75,7 @@ interfaces, callbacks, closures, user generics, go, or defer.
 | --- | --- |
 | `raw.Read().Limit` with `raw im.Projection[*Settings]` | `NewSettingsProjection(raw).Limit()` |
 | `im.ProjectionOf(1).Read()` | `im.Copy(im.ProjectionOf(1))` |
-| `im.Copy(im.ProjectionOf("text"))` | Use StringProjection; use Unsafe for a shared native string or Clone for independent storage. |
+| `im.Copy(im.ProjectionOf("text"))` | Use `im.ProjectString("text")`; use Unsafe for a shared native string or Clone for independent storage. |
 | `im.Copy(record)` with `record im.Projection[Settings]`, including a record with only numeric fields | Use a generated projection and read its fields. |
 | Save a projection in a global | Clone or Copy the data to keep. |
 | Clone a projection of a string-key map | Iterate; Clone each key and copy each value into a new map. |

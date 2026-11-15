@@ -24,14 +24,14 @@ func read() SettingsProjection { return settings.Load() }
 | --- | --- |
 | `Store(value)` | Copy T into a new root and publish it atomically. |
 | `Load()` | Return a local typed projection of the selected record without a record copy. |
-| `Shared()` | Copy the selected T with permission to keep its shared storage; return zero T for an empty Cell. |
+| `LoadShared()` | Copy the selected T with permission to keep its shared storage; return zero T for an empty Cell. |
 
 A zero generated Cell returns a nil projection. Use IsNil before reading a projection that
 can be empty. Each load selects one version. Separate loads can select different
 versions.
 
-Code with the Cell can use Shared for trusted model/SDK operations. A Projection has
-no Shared or Unwrap operation. A service must return a read result, not its Cell.
+Code with the Cell can use LoadShared for trusted model/SDK operations. A Projection
+has no LoadShared or Unwrap operation. A service must return a read result, not its Cell.
 
 ## Cell and holder forms — exhaustive
 
@@ -53,7 +53,7 @@ same rules. Service receivers keep their ordinary [service rules](services.md).
 | Call that method through its exact pointer type | `cache.Read()` for `cache *Cache` |
 | Call that method through an addressable holder variable or direct field | `settings.Load()`, `cache.settings.Load()` |
 | Store through a direct raw slot in its own synchronous statement | `raw.Store(next)`, `slot.value.Store(next)` |
-| Read through a direct raw slot in a common statement form | `v := raw.Load()`, `return slot.value.Load()`, `saved := raw.Shared()` |
+| Read through a direct raw slot in a common statement form | `v := raw.Load()`, `return slot.value.Load()`, `saved := raw.LoadShared()` |
 | Alias, package-qualified slot, or parentheses | `type Current = SettingsCell`, `v := config.Current.Load()`, `v := (raw).Load()` |
 
 Raw slots cannot be copied, addressed, returned, passed to helpers, or embedded.
@@ -68,7 +68,7 @@ Load projections inside a closure; do not capture projections loaded outside it.
 | `Store(value)` | Publish a private T root. |
 | `Load()` | Copy T into Projection[T]; read zero T if the slot is empty. |
 | `LoadPointer()` | Return Projection[*T] without copying T; T must be a concrete Frozen record. An empty slot returns a nil pointer projection. |
-| `Shared()` | Copy T for persistent use; read zero T if the slot is empty. |
+| `LoadShared()` | Copy T for persistent use; read zero T if the slot is empty. |
 
 Generated Cell.Load uses the raw LoadPointer method.
 
@@ -82,8 +82,8 @@ Generated Cell.Load uses the raw LoadPointer method.
 | `read := settings.Load` | `projection := settings.Load()` |
 | `go settings.Store(next)` or `defer cache.Read()` | Call synchronously; use `go publish(cache)` for a named publisher. |
 | `im.Cell[LocalResult]` | Store Frozen data; build local projections when reading. |
-| Return `settings.Shared()` from a service | Return `settings.Load()`. |
+| Return `settings.LoadShared()` from a service | Return `settings.Load()`. |
 
 Store allocates one root for T with nonzero size. Generated Load performs one
-atomic load without a record copy or allocation. Shared copies T after one
+atomic load without a record copy or allocation. LoadShared copies T after one
 atomic load; it does not copy collection or string backing storage.
