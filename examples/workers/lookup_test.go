@@ -20,7 +20,7 @@ func TestDispatcherLookup(t *testing.T) {
 		t.Fatal("ready pool was not returned")
 	}
 	result := route.Pool.Current().Process("Hello")
-	if !result.Available || result.Text != "HELLO" {
+	if !result.Available || result.Text.Clone() != "HELLO" {
 		t.Fatal("returned pool did not process the request")
 	}
 	missing := dispatcher.Current().Lookup("missing")

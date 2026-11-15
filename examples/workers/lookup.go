@@ -7,7 +7,7 @@ import (
 
 // PoolRoute gives callers a reference to a selected pool when one is available.
 type PoolRoute struct {
-	im.ByValue
+	im.Snapshot
 	Available bool
 	Pool      supervise.Ref[Pool]
 }

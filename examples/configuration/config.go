@@ -13,7 +13,7 @@ import (
 
 // Config is one immutable version of the request limits.
 type Config struct {
-	im.ByValue
+	im.Snapshot
 	Version int
 	Limits  im.FrozenMap[string, int]
 }
@@ -27,7 +27,7 @@ type LoaderArgs struct {
 // ConfigLoader publishes valid JSON limits and keeps the last valid version on an error.
 type ConfigLoader struct {
 	supervise.Service[LoaderArgs]
-	current im.Owner[Config]
+	current im.Cell[Config]
 	last    string
 	mu      sync.RWMutex
 	problem string
@@ -63,7 +63,7 @@ func (l *ConfigLoader) Run(ctx context.Context) {
 
 // load copies decoded limits into a fresh builder and publishes one immutable version.
 func (l *ConfigLoader) load() error {
-	text := l.Args().Cache.Current().Text()
+	text := l.Args().Cache.Current().Text().Clone()
 	version := l.Version()
 	if version > 0 && text == l.last {
 		return nil
@@ -83,33 +83,27 @@ func (l *ConfigLoader) load() error {
 		limits[name] = limit
 	}
 	frozen := im.FreezeMap(limits)
-	l.current.Store(&Config{Version: version + 1, Limits: frozen})
+	l.current.Store(Config{Version: version + 1, Limits: frozen})
 	l.last = text
 	return nil
 }
 
 // Version returns the last valid configuration version.
 func (l *ConfigLoader) Version() int {
-	config := l.current.Load()
-	if config == nil {
-		return 0
-	}
+	config := l.current.Shared()
 	return config.Version
 }
 
 // Limit returns the current limit for a key; an absent key has a zero limit.
 func (l *ConfigLoader) Limit(key string) int {
-	config := l.current.Load()
-	if config == nil {
-		return 0
-	}
+	config := l.current.Shared()
 	limit, _ := config.Limits.Get(key)
 	return limit
 }
 
 // Problem returns the latest parse error, or an empty string after a valid read.
-func (l *ConfigLoader) Problem() string {
+func (l *ConfigLoader) Problem() im.StringView {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	return l.problem
+	return im.Text(im.ViewOf(l.problem))
 }

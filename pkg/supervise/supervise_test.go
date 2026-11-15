@@ -90,12 +90,12 @@ func (*failing) Run(context.Context) {
 
 // label is the argument of a restarted service.
 type label struct {
-	im.Shared
+	im.Snapshot
 	Name string
 }
 
 // snapshot is a value that a restarted service publishes.
-type snapshot struct{ im.ByValue }
+type snapshot struct{ im.Snapshot }
 
 // restarted is a service that panics on its first run.
 type restarted struct {
@@ -123,7 +123,7 @@ type ping struct{ Service[pingArgs] }
 
 // pingArgs is the argument of a ping.
 type pingArgs struct {
-	im.Shared
+	im.Snapshot
 	Pong Ref[pong]
 }
 
@@ -141,7 +141,7 @@ type pong struct{ Service[pongArgs] }
 
 // pongArgs is the argument of a pong.
 type pongArgs struct {
-	im.Shared
+	im.Snapshot
 	Ping Ref[ping]
 }
 
@@ -537,7 +537,7 @@ func TestAssumeConcurrentSafeValue(t *testing.T) {
 
 // reporterArgs gives a service a trusted function.
 type reporterArgs struct {
-	im.Shared
+	im.Snapshot
 	Report ConcurrentSafe[func(string)]
 }
 

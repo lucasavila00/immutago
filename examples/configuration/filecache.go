@@ -14,7 +14,7 @@ import (
 
 // FileArgs selects a file and its refresh interval.
 type FileArgs struct {
-	im.Shared
+	im.Snapshot
 	Path  string
 	Every time.Duration
 }
@@ -64,8 +64,8 @@ func (c *FileCache) read() error {
 }
 
 // Text returns the last contents.
-func (c *FileCache) Text() string {
+func (c *FileCache) Text() im.StringView {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.text
+	return im.Text(im.ViewOf(c.text))
 }

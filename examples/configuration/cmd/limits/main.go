@@ -59,8 +59,8 @@ func run(path, key string) error {
 			usage := limiter.Current().Usage()
 			fmt.Printf("allowed=%t used=%d limit=%d window=%d\n",
 				decision == configuration.Allowed, usage.Used, usage.Limit, usage.Window)
-			if problem := loader.Current().Problem(); problem != "" {
-				fmt.Println("configuration:", problem)
+			if problem := loader.Current().Problem(); problem.Len() != 0 {
+				fmt.Println("configuration:", problem.Clone())
 			}
 		}
 	}

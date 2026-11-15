@@ -28,7 +28,7 @@ type LimiterArgs struct {
 
 // Usage is a copy of the current counters and limit.
 type Usage struct {
-	im.ByValue
+	im.Snapshot
 	Used   int
 	Limit  int
 	Window int

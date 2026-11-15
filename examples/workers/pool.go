@@ -12,7 +12,7 @@ import (
 
 // PoolArgs sets the worker count and the conversion version for a pool.
 type PoolArgs struct {
-	im.Shared
+	im.Snapshot
 	Workers int
 	Version int
 }
