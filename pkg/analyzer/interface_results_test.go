@@ -74,12 +74,12 @@ func TestInterfaceResultBoundaries(t *testing.T) {
 		{"Frozen slice", `type Bad interface{im.FrozenInterface;Read()[]Data}`, "native slices"},
 		{"Local slice", `type Bad interface{im.FrozenInterface;Read()[]im.StringProjection}`, "native slices"},
 		{"boxing receiver", `type Reader interface{im.FrozenInterface;Read()any};func(d Data)Read()any{return d}`,
-			"boxing immutable"},
+			""},
 		{"capture receiver", `type Reader interface{im.FrozenInterface;Read()func()int};
-func(d Data)Read()func()int{return func()int{return len(d.Text)}}`, "closures cannot capture"},
+func(d Data)Read()func()int{return func()int{return len(d.Text)}}`, ""},
 		{"tuple boxing", `func read()(Data,bool){return Data{},true};
 func f(){var value any;var ok bool;value,ok=read();_=value;_=ok}`,
-			"boxing immutable"},
+			""},
 		{"tuple Local package", `var output im.StringProjection;func f(r Result){output,_,_,_=r.Lookup(nil)}`,
 			"multiple assignments"},
 		{"tuple Freeze", `func read()([]byte,bool){return []byte{1},true};func f(){buf,_:=read();_=im.FreezeSlice(buf)}`,
@@ -90,7 +90,7 @@ func f(){var value any;var ok bool;value,ok=read();_=value;_=ok}`,
 			"multiple assignments"},
 		{"field assignment", `func f(r Result){var output struct{Buf []byte};_,_,output.Buf,_=r.Lookup(nil)}`,
 			"multiple assignments"},
-		{"multiple expressions", `func f(r Result){a,b:=r.Lookup,1;_=a;_=b}`, "bound immutable"},
+		{"multiple expressions", `func f(r Result){a,b:=r.Lookup,1;_=a;_=b}`, "method values require"},
 		{"function variable", `func f(call func()(im.StringProjection,bool,[]byte,error)){_,_,_,_=call()}`, "dynamic calls"},
 		{"unsealed interface", `type Reader interface{Read()(im.StringProjection,bool)};
 func f(r Reader){_,_=r.Read()}`, "dynamic calls"},
@@ -103,7 +103,8 @@ func f(r Reader){_,_=r.Read()}`, "dynamic calls"},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, interfaceResultTypes+test.source); !strings.Contains(got, test.want) {
+			got := checkSource(t, interfaceResultTypes+test.source)
+			if (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})

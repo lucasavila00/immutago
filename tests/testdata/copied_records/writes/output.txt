@@ -71,10 +71,10 @@ copied_writes.go:39:2: unsupported immutable operation: immutable method receive
   source: local.Rows[0].Points[0][0].Set(3)
   type: ()
   fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
-copied_writes.go:40:12: unsupported immutable operation: bound immutable methods are unsupported
+copied_writes.go:40:12: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: stored.Point.Set
   type: func(x int)
-  fix: call the method directly (value.Method(...)); do not save or pass its method value
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
 copied_writes.go:42:19: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &stored.Point
   type: *api.Point

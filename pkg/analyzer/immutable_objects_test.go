@@ -68,40 +68,42 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"Local stored array", `func f(){p:=&Local{};_=[1]*Local{p}}`, "Local"},
 		{"Local stored slice", `func f(){p:=&Local{};values:=[]*Local{p};_=len(values)}`,
 			"containers of Local pointers"},
-		{"Local capture", `func f(){p:=&Local{};_=func()int{return p.X}}`, "closures cannot capture"},
-		{"Local shared asynchronous", `func f(){p:=&Local{};go readLocal(p)}`, "synchronous"},
+		{"Local capture", `func f(){p:=&Local{};_=func()int{return p.X}}`, "closures require"},
+		{"shared capture", `func f(){p:=&Frozen{};_=func()int{return p.X}}`, ""},
+		{"shared asynchronous", `func f(){p:=&Frozen{};go readSnapshot(p)}`, ""},
 		{"mixed markers", `type Mixed struct{im.Frozen;im.Local}`, "cannot embed both"},
 		{"generic marked", `type Box[T any]struct{im.Frozen;X int}`, "user generic declarations"},
 		{"generic body write", `func f[T any](){v:=Frozen{};v.X++}`, "writes to immutable objects"},
 		{
 			"generic collection",
 			`func f[T ~int](v T)im.FrozenSlice[T]{s:=im.FreezeSlice([]T{v});return s}`,
-			"user generic declarations",
+			"type parameters are unsupported in immutable storage",
 		},
-		{"generic instance", `type Box[T any]struct{V T};var value Box[Frozen]`, "user generic instantiations"},
+		{"generic instance", `type Box[T any]struct{V T};var value Box[Frozen]`, "unmarked struct"},
 		{
 			"generic body Local capture",
 			`func f[T any]()func()int{v:=Local{};return func()int{return v.X}}`,
-			"closures cannot capture",
+			"closures require",
 		},
 		{"Local nil builder", `func f(){values:=[]*Local{nil};_=len(values)}`, "Local"},
 		{"Local empty builder", `func f(){var values []*Local;_=len(values)}`, "Local"},
 		{
 			"range interface",
 			`func f(){values:=im.FreezeMap(map[Frozen]int{{}:1});var boxed any;for boxed=range values.All(){};_=boxed}`,
-			"boxing immutable storage",
+			"",
 		},
-		{"Local reference comparison box", `func f(p *Local,boxed any)bool{return p==boxed}`, "boxing immutable storage"},
-		{"value comparison box", `func f(v Frozen,boxed any)bool{return boxed!=v}`, "boxing immutable storage"},
+		{"reference comparison box", `func f(p *Frozen,boxed any)bool{return p==boxed}`, ""},
+		{"value comparison box", `func f(v Frozen,boxed any)bool{return boxed!=v}`, ""},
 		{
 			"tuple callback",
 			`func pair()(Frozen,int){return Frozen{},1};func f(callback func(Frozen,int)){callback(pair())}`,
-			"dynamic calls with immutable storage",
+			"",
 		},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, immutableTestTypes+test.source); !strings.Contains(got, test.want) {
+			got := checkSource(t, immutableTestTypes+test.source)
+			if (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})

@@ -36,7 +36,9 @@ frozen := im.FreezeSlice(values)
 
 [Source matching](../../pkg/analyzer/subset_operations.go) checks the expression
 that creates a value, the operation that uses it, and the complete statement.
-Each has a rejecting fallback.
+Each restricted operation has a rejecting fallback. Persistent Frozen values can
+use ordinary interfaces, generics, callbacks, and captures. Target writes and
+addresses still use the protected-storage checks.
 
 | Compiler information | Why the matcher needs it |
 | --- | --- |
@@ -45,6 +47,7 @@ Each has a rejecting fallback.
 | Instantiated signature and result tuple | Check every argument and result binding, including variadic elements. |
 | Complete generic declaration types and constraints | Classify stored types without treating the record name inside `~*Record` as a stored record. Bodies use normal source checks. |
 | AST parents | Check statement context and operands that Go does not evaluate. |
+| Declared type parameters | Check generic bodies once; no proof of call effects for each type argument. |
 
 Frozen interface conversions also prove the concrete implementation and its
 selected receivers. The private interface seal alone is not that proof.
@@ -73,7 +76,12 @@ Cause links cannot form a cycle. Query order can select a different real cause.
 | Graph | Cache key | Answer propagated to owners |
 | --- | --- | --- |
 | Type proof | Type + Frozen, Copied, or ReadResult | A component failed the requested category. |
-| [Classification](../../internal/checker/classification.go) | Type + query mode | A component needs storage, Local, callback, or service-reference checks. |
+| [Storage classification](../../internal/checker/classification.go) | Type + storage | A component is protected storage or a native builder entry. |
+| Transport classification | Type + transport | A component needs restricted movement; persistent Frozen values stop this walk. |
+| Callback classification | Type + callback | A parameter or result needs restricted transport. |
+| Local and service-reference classification | Type + query | A component contains Local values or service references. |
+
+Classification uses compiler types, including constraint terms and result tuples.
 
 Both graphs finish expansion before propagation. Completed answers belong to
 one package pass; compiler types must remain unchanged.

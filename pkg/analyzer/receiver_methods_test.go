@@ -96,22 +96,21 @@ func f(p *Outer){p.Inc()}`, "Frozen data fields must be named"},
 func f(p *Outer){p.Count.Inc()}`, "concrete non-generic marked receiver"},
 		{"scalar field value", `type Count int;func(c Count)Read()int{return int(c)};
 type Outer struct{im.Frozen;Count Count};func f(p *Outer){_=p.Count.Read()}`, "concrete non-generic marked receiver"},
-		{"bound value", `func f(v Value){callback:=v.Read;_=callback}`, "bound immutable methods"},
-		{"Local bound pointer", `func f(p *Local){callback:=(p.ReadPointer);_=callback}`, "bound immutable methods"},
-		{"Local returned bound method", `func f(p *Local)func()int{return p.ReadPointer}`, "bound immutable methods"},
-		{"Local callback method", `func take(func()int){};func f(p *Local){take(p.ReadPointer)}`, "bound immutable methods"},
-		{"value expression", `func f(v Value){_=Value.Read(v)}`, "immutable method expressions"},
-		{"Local pointer expression", `func f(p *Local){_=(*Local).ReadPointer(p)}`, "immutable method expressions"},
-		{"interface", `func f(v Value){var reader interface{Read()int}=v;_=reader.Read()}`, "boxing immutable"},
-		{"Local dynamic protected argument", `type Reader interface{Read(*Local)int};func f(r Reader,p *Local){_=r.Read(p)}`,
-			"dynamic calls with immutable storage"},
-		{"Local go", `func f(p *Local){go p.ReadPointer()}`, "synchronous"},
-		{"Local defer", `func f(p *Local){defer p.ReadPointer()}`, "synchronous"},
-		{"Local capture", `func f(p *Local){callback:=func()int{return p.ReadPointer()};_=callback}`,
-			"closures cannot capture"},
-		{"Local select", `func f(p *Local,ch chan int){select{case ch<-p.ReadPointer():}}`, "select communication"},
+		{"bound value", `func f(v Value){callback:=v.Read;_=callback}`, ""},
+		{"bound pointer", `func f(p *Local){callback:=(p.ReadPointer);_=callback}`, "method values require"},
+		{"returned bound method", `func f(p *Local)func()int{return p.ReadPointer}`, "method values require"},
+		{"callback method", `func take(func()int){};func f(p *Local){take(p.ReadPointer)}`, "method values require"},
+		{"value expression", `func f(v Value){_=Value.Read(v)}`, ""},
+		{"pointer expression", `func f(p *Local){_=(*Local).ReadPointer(p)}`, "method expressions require"},
+		{"interface", `func f(v Value){var reader interface{Read()int}=v;_=reader.Read()}`, ""},
+		{"dynamic protected argument", `type Reader interface{Read(*Local)int};func f(r Reader,p *Local){_=r.Read(p)}`,
+			"dynamic calls require"},
+		{"go", `func f(p *Local){go p.ReadPointer()}`, "synchronous"},
+		{"defer", `func f(p *Local){defer p.ReadPointer()}`, "synchronous"},
+		{"capture", `func f(p *Local){callback:=func()int{return p.ReadPointer()};_=callback}`, "closures require"},
+		{"select", `func f(p *Local,ch chan int){select{case ch<-p.ReadPointer():}}`, "statement forms"},
 
-		{"variadic boxing", `func(v Value)Use(...any){};func f(v Value){v.Use(v)}`, "boxing immutable"},
+		{"variadic boxing", `func(v Value)Use(...any){};func f(v Value){v.Use(v)}`, ""},
 		{"unproved receiver", `type Bad struct{im.Frozen;X []int};func(b Bad)ReadBad()int{return len(b.X)}`,
 			"concrete non-generic marked receiver"},
 		{"generic receiver", `type Box[T any]struct{im.Frozen;X int};func(b Box[T])Read()int{return b.X}`,
@@ -121,7 +120,8 @@ type Outer struct{im.Frozen;Count Count};func f(p *Outer){_=p.Count.Read()}`, "c
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, receiverTestTypes+test.source); !strings.Contains(got, test.want) {
+			got := checkSource(t, receiverTestTypes+test.source)
+			if (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})
@@ -138,13 +138,14 @@ func TestMarkedMethodBodies(t *testing.T) {
 		{"receiver address", `func(v Value)Address()*Value{return &v}`, "fresh allocation"},
 		{"Local return", `func(p *Local)Self()*Local{return p}`, "returning Local pointers"},
 		{"Local nil result", `func(p *Local)Nothing()*Local{return nil}`, "returning Local pointers"},
-		{"Local capture", `func(p *Local)Later()func()int{return func()int{return p.X}}`, "closures cannot capture"},
+		{"Local capture", `func(p *Local)Later()func()int{return func()int{return p.X}}`, "closures require"},
 		{"Local stored", `func(p *Local)Save(){s:=[]*Local{p};_=len(s)}`, "Local"},
 		{"Local global", `var saved *Local;func(p *Local)Save(){saved=p}`, "package variables"},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, receiverTestTypes+test.source); !strings.Contains(got, test.want) {
+			got := checkSource(t, receiverTestTypes+test.source)
+			if (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})

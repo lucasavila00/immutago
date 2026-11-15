@@ -1,0 +1,18 @@
+forms.go:16:6: unsupported immutable operation: Frozen interface implementation: interface{} is not provably immutable
+  source: value.(api.Reader)
+  type: api.Reader
+  fix: use the documented immutable value and reference forms
+forms.go:17:16: unsupported immutable operation: Frozen interface implementation: interface{} is not provably immutable
+  source: value.(api.Reader)
+  type: (api.Reader, bool)
+  fix: use the documented immutable value and reference forms
+forms.go:22:7: unsupported immutable operation: protected storage is unsupported in type switches
+  source: api.Reader
+  type: api.Reader
+  fix: keep concrete protected types in named function parameters instead of recovering values or references from interfaces
+forms.go:26:50: unsupported immutable operation: Frozen interface implementation: type parameters are unsupported in immutable storage
+  source: return value
+  fix: use the documented immutable value and reference forms
+forms.go:7:6: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
+  source: reader api.Reader = value
+  fix: use the documented immutable value and reference forms

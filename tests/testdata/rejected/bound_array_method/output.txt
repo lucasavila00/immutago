@@ -1,7 +1,7 @@
 bound_array_method.go:12:28: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Values[0] = 1
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-bound_array_method.go:22:12: unsupported immutable operation: bound immutable methods are unsupported
+bound_array_method.go:22:12: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.N.Change
   type: func()
-  fix: call the method directly (value.Method(...)); do not save or pass its method value
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage

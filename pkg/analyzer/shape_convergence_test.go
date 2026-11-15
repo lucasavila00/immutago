@@ -26,7 +26,7 @@ func TestStatementShapeRejects(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Frozen;X,Y int};func read(p *V)int{return p.X};`+tc.source)
+			got := checkSource(t, `type V struct{im.Local;X,Y int};func read(p *V)int{return p.X};`+tc.source)
 			if !strings.Contains(got, "multiple assignments involving protected storage are unsupported") {
 				t.Fatalf("multiple protected bindings accepted: %s", got)
 			}
@@ -60,7 +60,7 @@ func TestStatementShapeAccepts(t *testing.T) {
 func TestProtectedResultCalls(t *testing.T) {
 	cases := []struct{ name, source string }{
 		{"value result", `func f(factory func()V)V{return factory()}`},
-		{"frozen result", `func f(factory func()im.FrozenSlice[int])im.FrozenSlice[int]{return factory()}`},
+		{"frozen result", `func f(factory func()im.SliceProjection[int])im.SliceProjection[int]{return factory()}`},
 		{"tuple result", `func f(factory func()(V,int))(V,int){return factory()}`},
 		{"callback result", `func f(factory func()func()V){_=factory()}`},
 		{"tuple callback result", `func f(factory func()(func()V,int)){factory()}`},
@@ -70,8 +70,8 @@ func TestProtectedResultCalls(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Frozen;X int};`+tc.source)
-			if !strings.Contains(got, "dynamic calls with immutable storage are unsupported") {
+			got := checkSource(t, `type V struct{im.Local;X int};`+tc.source)
+			if !strings.Contains(got, "dynamic calls require ordinary or persistent Frozen parameters and results") {
 				t.Fatalf("unknown protected producer accepted: %s", got)
 			}
 		})
@@ -82,7 +82,7 @@ func TestProtectedResultCalls(t *testing.T) {
 		`type Factory interface{Make()int};func f(factory Factory)int{return factory.Make()}`,
 	} {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type V struct{im.Frozen;X int};`+source); got != "" {
+			if got := checkSource(t, `type V struct{im.Local;X int};`+source); got != "" {
 				t.Fatalf("supported producer rejected: %s", got)
 			}
 		})

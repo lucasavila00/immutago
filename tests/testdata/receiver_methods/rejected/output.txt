@@ -21,22 +21,22 @@ receiver_bodies.go:16:20: unsupported immutable operation: returning Local point
   source: Nil
   type: func() *rejected.Settings
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
-receiver_bodies.go:17:65: unsupported immutable operation: closures cannot capture immutable storage
+receiver_bodies.go:17:65: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: s
   type: *rejected.Settings
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
 receiver_bodies.go:23:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
-receiver_bodies.go:23:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+receiver_bodies.go:23:6: unsupported immutable operation: user generic declarations cannot define Frozen or Local types
   source: Generic
   type: rejected.Generic[T any]
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+  fix: declare a concrete Frozen or Local type without type parameters
 receiver_bodies.go:25:2: immutable field Value: type parameters are unsupported in immutable storage
   owner: rejected.Generic[T any]; field type: T
-  fix: use a concrete type; user generic declarations cannot contain immutable storage
-receiver_bodies.go:28:21: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  fix: use a concrete proved type for this immutable field or element
+receiver_bodies.go:28:21: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
   source: Read
   type: func() T
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
 receiver_calls.go:11:2: Frozen data fields must be named
   field: rejected.Order.Product
   fix: give the field a name, such as Product Product
@@ -67,7 +67,3 @@ receiver_calls.go:35:2: unsupported immutable operation: immutable methods requi
   source: counted.Counter.Inc()
   type: ()
   fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
-receiver_calls.go:38:6: unsupported immutable operation: immutable method expressions are unsupported
-  source: Product.Cost(value)
-  type: int
-  fix: call the method on its receiver directly (value.Method(...)); do not call it through the type

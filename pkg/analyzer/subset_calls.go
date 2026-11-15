@@ -22,7 +22,7 @@ func (c *subsetChecks) calledObject(e ast.Expr) types.Object {
 	return nil
 }
 
-// matchCall accepts exact im APIs, concrete named calls, or calls with only ordinary scalar data.
+// matchCall accepts fixed im APIs, restricted direct calls, and ordinary calls with persistent values.
 func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	object := c.calledObject(call.Fun)
 	if builtin, ok := object.(*types.Builtin); ok {
@@ -56,11 +56,11 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	}
 	function, direct := object.(*types.Func)
 	if !direct {
-		return "dynamic calls with immutable storage are unsupported"
+		return "dynamic calls require ordinary or persistent Frozen parameters and results"
 	}
 	origin := function.Origin().Type().(*types.Signature)
 	if genericSignature(origin) {
-		return "user generic instantiations with immutable types are unsupported"
+		return "user generic instantiations require ordinary or persistent Frozen type arguments"
 	}
 	return ""
 }
@@ -77,6 +77,10 @@ func (c *subsetChecks) matchConversion(call *ast.CallExpr) string {
 			return rule
 		}
 		if checker.FrozenInterface(destination) && source != types.Typ[types.UntypedNil] {
+			return ""
+		}
+		if _, boxed := destination.Underlying().(*types.Interface); boxed &&
+			!checker.FrozenInterface(destination) && !c.queries.Transport(source) {
 			return ""
 		}
 		if c.queries.Contains(source) || c.queries.Contains(destination) {
@@ -115,7 +119,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 			return c.matchCallArguments(call, signature)
 		}
 	}
-	if !c.protectedCallArguments(call) && !c.protectedResult(c.pass.TypesInfo.TypeOf(call)) {
+	if !c.protectedCallArguments(call) && !c.queries.Contains(c.pass.TypesInfo.TypeOf(call)) {
 		return ""
 	}
 	return "protected operation is outside the supported expression forms"
@@ -153,7 +157,7 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 func (c *subsetChecks) matchLibraryMethod(call *ast.CallExpr, method string) string {
 	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 	if !ok || !c.exactCollectionMethod(selector) {
-		return "immutable method expressions are unsupported"
+		return "method expressions require ordinary or persistent Frozen receivers and contracts"
 	}
 	receiver := c.pass.TypesInfo.TypeOf(selector.X)
 	if checker.IsProjection(receiver) && method == "Clone" {
@@ -205,29 +209,29 @@ func (c *subsetChecks) matchArgument(source, destination types.Type) string {
 func (c *subsetChecks) protectedCallArguments(call *ast.CallExpr) bool {
 	for _, argument := range call.Args {
 		typ := c.pass.TypesInfo.TypeOf(argument)
-		if c.protectedResult(typ) || c.queries.Callable(typ) || c.ownedExpression(argument) {
+		if c.queries.Transport(typ) || c.queries.Callable(typ) || c.ownedExpression(argument) {
 			return true
 		}
 	}
 	return false
 }
 
-// matchTransport permits concrete value copies and rejects implicit interface or callback storage.
+// matchTransport proves Frozen interface implementations and rejects restricted value erasure.
 func (c *subsetChecks) matchTransport(source, destination types.Type) string {
 	if checker.FrozenInterface(destination) {
 		return c.matchFrozenInterface(source, destination)
 	}
-	if !c.queries.Contains(source) && !c.queries.Callable(source) {
+	if !c.queries.Transport(source) && !c.queries.Callable(source) {
 		return ""
 	}
 	if destination == nil {
 		return ""
 	}
 	if _, boxed := destination.Underlying().(*types.Interface); boxed {
-		return "boxing immutable storage in interfaces is unsupported"
+		return "ordinary interfaces require ordinary or persistent Frozen values"
 	}
 	if c.queries.Callable(source) {
-		return "immutable callbacks are unsupported"
+		return "callbacks require ordinary or persistent Frozen parameters and results"
 	}
 	return ""
 }

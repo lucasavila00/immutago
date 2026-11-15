@@ -15,8 +15,8 @@ type classificationMode uint8
 
 const (
 	storageMode classificationMode = iota
+	transportMode
 	callableMode
-	constraintMode
 	handleMode
 	localMode
 )
@@ -37,6 +37,10 @@ type classificationNode struct {
 // Contains reports protected object storage, including its holders and containers.
 // Frozen pointer handles and Copied records use ordinary Go storage rules.
 func (c *Classifier) Contains(t types.Type) bool { return c.query(t, storageMode) }
+
+// Transport reports values that need restricted calls, bindings, and captures.
+// Frozen values and pointers can persist. Local values and protected native container uses stay restricted.
+func (c *Classifier) Transport(t types.Type) bool { return c.query(t, transportMode) }
 
 // Callable reports whether t contains a callback contract that carries protected storage.
 func (c *Classifier) Callable(t types.Type) bool { return c.query(t, callableMode) }
@@ -130,9 +134,7 @@ func (c *Classifier) expand(node *classificationNode) {
 		return
 	}
 	switch node.key.mode {
-	case constraintMode:
-		c.constraintEdges(node)
-	case storageMode:
+	case storageMode, transportMode:
 		c.storedValue(node)
 	case callableMode:
 		c.callableEdges(node)
@@ -145,10 +147,13 @@ func (c *Classifier) storedValue(node *classificationNode) {
 		return
 	}
 	if parameter, ok := node.key.typ.(*types.TypeParam); ok {
-		c.connect(node, parameter.Constraint(), constraintMode)
-	} else if IsCollection(node.key.typ) || IsProjection(node.key.typ) ||
-		IsLibraryType(node.key.typ, "Local") || Marked(node.key.typ) {
+		c.connect(node, parameter.Constraint(), node.key.mode)
+	} else if IsProjection(node.key.typ) || IsLibraryType(node.key.typ, "Local") || Local(node.key.typ) {
 		c.mark(node)
+	} else if IsCollection(node.key.typ) || Frozen(node.key.typ) || FrozenInterface(node.key.typ) {
+		if node.key.mode == storageMode {
+			c.mark(node)
+		}
 	} else {
 		c.storageEdges(node)
 	}
@@ -158,23 +163,34 @@ func (c *Classifier) storedValue(node *classificationNode) {
 func (c *Classifier) storageEdges(node *classificationNode) {
 	switch storage := node.key.typ.Underlying().(type) {
 	case *types.Interface:
-		if node.key.mode == storageMode && FrozenInterface(node.key.typ) {
-			c.mark(node)
+		if node.key.mode == localMode {
+			return
+		}
+		for i := 0; i < storage.NumEmbeddeds(); i++ {
+			c.connect(node, storage.EmbeddedType(i), node.key.mode)
+		}
+	case *types.Union:
+		for i := 0; i < storage.Len(); i++ {
+			c.connect(node, storage.Term(i).Type(), node.key.mode)
 		}
 	case *types.Pointer:
-		c.connect(node, storage.Elem(), node.key.mode)
+		c.referenceEdge(node, storage.Elem())
 	case *types.Array:
 		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Slice:
-		c.connect(node, storage.Elem(), node.key.mode)
+		c.referenceEdge(node, storage.Elem())
 	case *types.Map:
-		c.connect(node, storage.Key(), node.key.mode)
-		c.connect(node, storage.Elem(), node.key.mode)
+		c.referenceEdge(node, storage.Key())
+		c.referenceEdge(node, storage.Elem())
 	case *types.Chan:
-		c.connect(node, storage.Elem(), node.key.mode)
+		c.referenceEdge(node, storage.Elem())
 	case *types.Struct:
 		for field := range storage.Fields() {
 			c.connect(node, field.Type(), node.key.mode)
+		}
+	case *types.Tuple:
+		for item := range storage.Variables() {
+			c.connect(node, item.Type(), node.key.mode)
 		}
 	}
 }
@@ -188,24 +204,13 @@ func FrozenPointer(t types.Type) bool {
 	return ok && Frozen(pointer.Elem())
 }
 
-// constraintEdges preserves the separate interface and union traversal of type sets.
-func (c *Classifier) constraintEdges(node *classificationNode) {
-	if FrozenInterface(node.key.typ) {
-		c.mark(node)
-		return
+// referenceEdge keeps Local pointers and protected native container transport restricted.
+func (c *Classifier) referenceEdge(node *classificationNode, element types.Type) {
+	mode := node.key.mode
+	if mode == transportMode {
+		mode = storageMode
 	}
-	switch constraint := node.key.typ.Underlying().(type) {
-	case *types.Interface:
-		for i := 0; i < constraint.NumEmbeddeds(); i++ {
-			c.connect(node, constraint.EmbeddedType(i), constraintMode)
-		}
-	case *types.Union:
-		for i := 0; i < constraint.Len(); i++ {
-			c.connect(node, constraint.Term(i).Type(), storageMode)
-		}
-	default:
-		c.connect(node, node.key.typ, storageMode)
-	}
+	c.connect(node, element, mode)
 }
 
 // callableEdges follows stored components and callable contracts in the current mode.
@@ -215,7 +220,7 @@ func (c *Classifier) callableEdges(node *classificationNode) {
 		for _, tuple := range []*types.Tuple{storage.Params(), storage.Results()} {
 			for item := range tuple.Variables() {
 				if node.key.mode == callableMode {
-					c.connect(node, item.Type(), storageMode)
+					c.connect(node, item.Type(), transportMode)
 				}
 				c.connect(node, item.Type(), node.key.mode)
 			}

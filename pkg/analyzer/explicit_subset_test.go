@@ -10,24 +10,24 @@ func TestExplicitSubsetRejects(t *testing.T) {
 	cases := []struct{ name, source string }{
 		{"promoted method", `type Count int;func(c Count)Read()int{return int(c)}
    type W struct{im.Frozen;Count};func f(){var w W;_=w.Read()}`},
-		{"range protected value", `func empty(yield func(V)bool){};func f(){for v:=range empty{_=v.X}}`},
+		{"range protected value", `func empty(yield func(L)bool){};func f(){for v:=range empty{_=v.X}}`},
 		{"native multiple", `func f(){s:=[]int{1};var x int;s[0],x=2,3;_=x;_=im.FreezeSlice(s)}`},
 		{"protected send", `func f(ch chan int){var v V;ch<-v.X}`},
 		{"range reference", `func empty(yield func(*L)bool){};func f(){for p:=range empty{_=p.X}}`},
 		{"multiple write", `func f(){var v V;v.X,v.X=1,2}`},
-		{"multiple value", `func f(){a,b:=V{},V{};_,_=a,b}`},
+		{"multiple value", `func f(){a,b:=L{},L{};_,_=a,b}`},
 
 		{"Get field destination", `func f(){m:=im.FreezeMap(map[int]V{});var out struct{V V};
 var ok bool;out.V,ok=m.Get(1);_=ok}`},
-		{"Get boxed destination", `func f(){m:=im.FreezeMap(map[int]V{});var value any;
+		{"Get boxed destination", `func f(){frozen:=im.FreezeMap(map[int]V{});m:=frozen.Projection();var value any;
 var ok bool;value,ok=m.Get(1);_=value;_=ok}`},
 		{"nested Freeze return", `func f()im.FrozenSlice[int]{return im.FreezeSlice([]int{1})}`},
 		{"nested Freeze call", `func use(im.FrozenSlice[int]){};func f(){use(im.FreezeSlice([]int{1}))}`},
 		{"nested Freeze chain", `func f(){_=im.FreezeSlice([]int{1}).Len()}`},
 		{"select owner", `func f(ch chan bool){var v V;select{case <-ch:case ch<-(v.X==0):}}`},
 		{"select builder", `func f(ch chan bool){s:=[]bool{true};select{case _,s[0]=<-ch:};_=im.FreezeSlice(s)}`},
-		{"go value", `func use(V){};func f(){go use(V{})}`},
-		{"defer value", `func use(V){};func f(){defer use(V{})}`},
+		{"go value", `func use(L){};func f(){go use(L{})}`},
+		{"defer value", `func use(L){};func f(){defer use(L{})}`},
 		{"type switch", `func f(x any){switch v:=x.(type){case *L:_=v.X}}`},
 	}
 	for _, tc := range cases {

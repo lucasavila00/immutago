@@ -19,8 +19,8 @@ func TestClosureDeclarationScopes(t *testing.T) {
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			got := checkSource(t, `type Value struct{im.Frozen;X int};`+source)
-			if !strings.Contains(got, "closures cannot capture immutable storage") {
+			got := checkSource(t, `type Value struct{im.Local;X int};`+source)
+			if !strings.Contains(got, "closures require ordinary or persistent Frozen captures") {
 				t.Fatalf("capture accepted: %s", got)
 			}
 		})

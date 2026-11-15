@@ -52,10 +52,12 @@ var subsetFixes = map[string]string{
 		"for objects whose pointers must be shared",
 	"global Local pointers are unsupported":        "keep the Local pointer local, or store a Frozen value",
 	"containers of Local pointers are unsupported": "keep Local values in local bindings, or store im.Frozen pointers",
-	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
-		"with concrete immutable types; the fixed im collection APIs remain supported",
-	"user generic instantiations with immutable types are unsupported": "use a non-generic declaration " +
-		"with concrete immutable types; the fixed im collection APIs remain supported",
+	"user generic declarations cannot define Frozen or Local types": "declare a concrete Frozen or Local type " +
+		"without type parameters",
+	"user generic declarations require ordinary or persistent Frozen contracts": "use a non-generic declaration " +
+		"with concrete field and parameter types",
+	"user generic instantiations require ordinary or persistent Frozen type arguments": "use a direct non-generic " +
+		"function with concrete parameter types",
 	"writes to immutable objects are unsupported": "construct a new value and replace the whole variable " +
 		"or mutable holder slot; do not write inside immutable records",
 	"immutable references require fresh allocation": "use &T{...}, new(T), or new(value); " +
@@ -105,19 +107,19 @@ var subsetFixes = map[string]string{
 		"or a fresh pointer for pointer methods; do not rely on implicit dereferences",
 	"Frozen interfaces require concrete Frozen record implementations": "use a proved record that embeds im.Frozen " +
 		"or a pointer to that record",
-	"boxing immutable storage in interfaces is unsupported": "keep the concrete immutable " +
+	"ordinary interfaces require ordinary or persistent Frozen values": "keep the concrete immutable " +
 		"type in parameters, results, and variables instead of using an interface",
-	"immutable interface assertions are unsupported": "keep the concrete immutable " +
+	"interface assertions require ordinary or persistent Frozen values": "keep the concrete immutable " +
 		"type in parameters, results, and variables instead of using an interface",
-	"dynamic calls with immutable storage are unsupported": "call a named, non-generic " +
+	"dynamic calls require ordinary or persistent Frozen parameters and results": "call a named, non-generic " +
 		"function directly with a concrete immutable parameter",
-	"immutable callbacks are unsupported": "call a named, non-generic " +
+	"callbacks require ordinary or persistent Frozen parameters and results": "call a named, non-generic " +
 		"function directly with a concrete immutable parameter",
-	"immutable method expressions are unsupported": "call the method on its receiver directly " +
-		"(value.Method(...)); do not call it through the type",
-	"bound immutable methods are unsupported": "call the method directly " +
+	"method expressions require ordinary or persistent Frozen receivers and contracts": "call the receiver method " +
+		"directly (value.Method(...)); do not call it through the type",
+	"method values require ordinary or persistent Frozen receivers and contracts": "call the method directly " +
 		"(value.Method(...)); do not save or pass its method value",
-	"closures cannot capture immutable storage": "copy scalar data before the closure, or use a named " +
+	"closures require ordinary or persistent Frozen captures": "copy scalar data before the closure, or use a named " +
 		"function with a concrete immutable parameter",
 	"immutable iterators must be consumed by direct range": "write for key, value := range " +
 		"collection.All() { ... }; do not retain or pass the iterator",
@@ -153,7 +155,7 @@ func structuralFix(t types.Type, reason string) string {
 	case strings.Contains(reason, "named array"):
 		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Frozen or im.Local"
 	case strings.Contains(reason, "type parameters"):
-		return "use a concrete type; user generic declarations cannot contain immutable storage"
+		return "use a concrete proved type for this immutable field or element"
 	case strings.Contains(reason, "does not embed"):
 		return "embed im.Frozen or im.Local in the struct and make each field immutable"
 	}

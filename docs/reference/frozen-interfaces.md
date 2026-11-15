@@ -46,7 +46,7 @@ under the ordinary method rules.
 - Use fixed or variadic parameters. Ordinary inputs, including interface and function values,
   follow ordinary Go contracts. Protected inputs also need the
   [common call forms](common-forms.md#statements-and-calls).
-- Method results use the same type, return, and transport rules as ordinary named
+- Method results use the same type and return rules as ordinary named
   functions and concrete methods. There is no interface-specific result category.
 
 | Parameter form — exhaustive | Example |
@@ -61,9 +61,9 @@ Named types, aliases, and named or unnamed parameters use the same rules.
 A variadic parameter follows the native-slice rules for its element type. Native
 slices of protected values remain rejected. Generated methods keep the variadic
 signature and pass the final slice with `...`.
-Implementation methods can retain ordinary inputs. A callback contract
-cannot carry protected storage. An argument cannot box protected data or capture
-it in a closure. These rules also apply to generated projection calls and concrete
+Implementation methods can retain ordinary inputs. Callback contracts and
+closures can carry persistent Frozen values. Local values and projections cannot
+be boxed or captured. These rules also apply to generated projection calls and concrete
 implementation methods. The checker does not infer callback effects.
 
 | Result form — exhaustive | Example |
@@ -75,11 +75,8 @@ implementation methods. The checker does not infer callback effects.
 
 Each result keeps its normal Go and im rules, including aliases and defined
 types. A method can return Frozen data or Local values. Local pointers cannot be
-returned, and method bodies cannot box protected data in ordinary interfaces or
-capture protected object values in closures. Frozen pointer handles can be boxed,
-captured, or stored in ordinary native containers. See the complete
+returned. Local values and projections cannot be boxed or captured. See the complete
 [common forms](common-forms.md#statements-and-calls).
-These lists are complete. Unlisted operations on protected storage are rejected.
 
 ## Values and calls — exhaustive
 
@@ -89,6 +86,9 @@ These lists are complete. Unlisted operations on protected storage are rejected.
 | Convert a proved Frozen record value or pointer | `scorer := Scorer(&Tree{Weight: 2})` |
 | Assign, pass, or return a proved implementation | `var scorer Scorer = &Tree{Weight: 2}`; `use(scorer)`; `return scorer` |
 | Copy or convert between proved Frozen interfaces | `other := scorer`, `other = scorer`, `base := Base(scorer)` |
+| Pass and capture Frozen values | `var boxed any = scorer`, `identity(scorer)`, `read := func() float64 { return scorer.Score(features) }`; see the [complete value forms](common-forms.md#use-frozen-values). |
+| Recover a concrete Frozen value or pointer | `scorer.(*Tree)`, `switch scorer.(type) { case *Tree: }` |
+| Select a method with ordinary or persistent inputs and results | `read := scorer.Score`, `read := Scorer.Score` |
 | Replace the whole interface binding | `scorer = &Tree{Weight: 3}`, `scorer = nil` |
 | Store in Frozen fields, arrays, Cells, or frozen collections | `Model{Scorer: scorer}`, `im.FrozenSlice[Scorer]` |
 | Call a method directly | `score := scorer.Score(features)` |
@@ -98,8 +98,9 @@ These lists are complete. Unlisted operations on protected storage are rejected.
 | Bind several results to local names or blanks with `:=`, `=`, or `var` | `value, found, out := local.Lookup(key, buf)`, `value, found, out = local.Lookup(key, buf)`, `var value, found, out = local.Lookup(key, buf)` |
 | Forward all results to a direct typed call or return | `use(local.Lookup(key, buf))`, `return local.Lookup(key, buf)` |
 
-Use one binding per declaration or assignment, except for the result-call forms
-above. Multiple-result bindings require local names or blanks for every destination.
+Local projections use one binding per declaration or assignment, except for the
+result-call forms above. Their multiple-result bindings require local names or blanks.
+Frozen interface values also use the common value forms.
 Use the common forms for
 statements, builders, fields, return values, and direct named calls. Each
 implementation method must be declared on the exact converted type. Promoted
@@ -142,23 +143,20 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | An inherited method returns a private type from another package | Export the result type in its declaring package. |
 | An implementation with a mutable slice field | Store `im.FrozenSlice[T]` and freeze an exclusive builder. |
 | `Scorer(nil)` | `var scorer Scorer = nil` |
-| `var value any = scorer` | Keep the Scorer type. |
 | `Apply(...im.StringProjection)` | Use a direct `Apply(im.StringProjection)` parameter. |
 | `reader.Apply(local, nil)` with `local im.StringProjection` | Pass `local.Unsafe()`, or declare a direct `im.StringProjection` parameter. |
 | `reader.Apply(nil, func() int { return local.Len() })` | Read `n := local.Len()` before the closure, then return `n`. |
 | `Apply(func() im.StringProjection)` | Call a named function directly, then pass its projection to a direct typed method. |
-| `scorer.(*Tree)` or a type switch | Add an allowed method to Scorer. |
-| `method := scorer.Score` or `Scorer.Score(scorer, features)` | `scorer.Score(features)` |
-| `go scorer.Score(features)` or `defer scorer.Score(features)` | Call synchronously. |
-| Capture scorer or its projection in a closure | Compute an ordinary result before the closure. |
+| `boxed.(Scorer)` with `boxed any` | Add an allowed method, or recover a concrete Frozen record value and convert it to Scorer. |
+| `method := local.Score` with ScorerProjection | `local.Score(features)` |
+| `go local.Score(features)` or `defer local.Score(features)` with ScorerProjection | Call synchronously. |
+| Capture ScorerProjection in a closure | Capture a Scorer value, or compute an ordinary result before the closure. |
 | `Self() *LocalRecord` | Return the Local record value. |
 | `Values() []Tree` | Return `[]*Tree`, a FrozenSlice, or a projection. |
-| `func (t Tree) Value() any { return t }` | Declare a `*Tree` or Scorer result. |
-| `func (t Tree) Callback() func() float64 { return func() float64 { return t.Weight } }` | Copy Weight to an ordinary local before the closure. |
 | `value, outputs[0] = local.Read()` | Bind local names first, then assign the ordinary output separately. |
 | Save ScorerProjection in a package variable or Frozen field | Save a Scorer value from an allowed construction. |
 | `chan Scorer` | Use direct calls with a Scorer parameter. |
 
 A generic `im.Projection[Scorer]` can return its Frozen interface with
 `projection.Unsafe()`. The result keeps the Frozen interface rules above. It
-does not permit interface assertions or other unlisted operations.
+does not remove the implementation proof required for a Frozen interface conversion.

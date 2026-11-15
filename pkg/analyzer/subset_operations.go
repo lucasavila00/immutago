@@ -37,7 +37,12 @@ func (c *subsetChecks) operationExpression(expression ast.Expr) bool {
 			return false
 		}
 	}
-	return c.protectedStorage(expression) || c.protectedResult(c.pass.TypesInfo.TypeOf(expression)) ||
+	if object := c.calledObject(expression); libraryObject(object) {
+		if _, function := object.(*types.Func); function {
+			return true
+		}
+	}
+	return c.protectedStorage(expression) || c.queries.Contains(c.pass.TypesInfo.TypeOf(expression)) ||
 		c.queries.Callable(c.pass.TypesInfo.TypeOf(expression))
 }
 
@@ -73,9 +78,6 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	case *ast.SelectorExpr:
 		return c.matchSelector(source)
 	case *ast.IndexExpr:
-		if _, callable := c.pass.TypesInfo.TypeOf(source).Underlying().(*types.Signature); callable {
-			return c.matchFunctionValue(source)
-		}
 		return c.matchIndex(source)
 	case *ast.IndexListExpr:
 		return c.matchFunctionValue(source)
@@ -95,11 +97,23 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 		}
 		return "slice projections of immutable storage are unsupported"
 	case *ast.TypeAssertExpr:
-		return "immutable interface assertions are unsupported"
+		return c.matchAssertion(source)
 	case *ast.FuncLit:
-		return "immutable callbacks are unsupported"
+		return "callbacks require ordinary or persistent Frozen parameters and results"
 	}
 	return "protected operation is outside the supported expression forms"
+}
+
+// matchAssertion checks known Frozen contracts before recovering a persistent concrete value.
+func (c *subsetChecks) matchAssertion(expression *ast.TypeAssertExpr) string {
+	destination := c.pass.TypesInfo.TypeOf(expression.Type)
+	if checker.FrozenInterface(destination) {
+		return c.matchFrozenInterface(c.pass.TypesInfo.TypeOf(expression.X), destination)
+	}
+	if c.queries.Transport(destination) {
+		return "interface assertions require ordinary or persistent Frozen values"
+	}
+	return ""
 }
 
 // matchIdentifier separates variable reads from direct function and builtin callees.
@@ -127,9 +141,6 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 	case *ast.SelectorExpr:
 		return c.matchSelector(parent)
 	case *ast.IndexExpr:
-		if _, callable := c.pass.TypesInfo.TypeOf(parent).Underlying().(*types.Signature); callable {
-			return c.matchFunctionValue(parent)
-		}
 		return c.matchIndex(parent)
 	case *ast.IndexListExpr:
 		return c.matchFunctionValue(parent)
@@ -157,6 +168,9 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 	case *ast.ValueSpec:
 		return c.matchDeclaration(parent)
 	}
+	if !c.restrictedOperand(expression) {
+		return ""
+	}
 	return "protected operation is outside the supported expression forms"
 }
 
@@ -174,7 +188,10 @@ func (c *subsetChecks) matchFunctionValue(expression ast.Expr) string {
 	if libraryObject(object) && (object.Name() == "FreezeMap" || object.Name() == "FreezeSlice") {
 		return "freeze functions must be called directly"
 	}
-	return "immutable callbacks are unsupported"
+	if !c.queries.Callable(c.pass.TypesInfo.TypeOf(expression)) {
+		return ""
+	}
+	return "callbacks require ordinary or persistent Frozen parameters and results"
 }
 
 // matchSelector distinguishes fields, package variables, and the supported method calls.
@@ -192,8 +209,9 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 		}
 		return ""
 	}
-	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) {
-		return "immutable method expressions are unsupported"
+	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) &&
+		c.queries.Callable(c.pass.TypesInfo.TypeOf(selector)) {
+		return "method expressions require ordinary or persistent Frozen receivers and contracts"
 	}
 	if refAccessor(selection.Obj()) {
 		return c.matchBorrow(selector)
@@ -202,8 +220,9 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 		return ""
 	}
 	if c.exactCollectionMethod(selector) {
-		if c.directCall(selector) == nil {
-			return "bound immutable methods are unsupported"
+		if c.directCall(selector) == nil && (c.queries.Transport(selection.Recv()) ||
+			c.queries.Callable(c.pass.TypesInfo.TypeOf(selector))) {
+			return "method values require ordinary or persistent Frozen receivers and contracts"
 		}
 		return ""
 	}
@@ -262,6 +281,9 @@ func (c *subsetChecks) matchBinary(expression *ast.BinaryExpr) string {
 
 // matchIndex permits value-array reads and native builder reads with concrete map keys.
 func (c *subsetChecks) matchIndex(expression *ast.IndexExpr) string {
+	if _, callable := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Signature); callable {
+		return c.matchFunctionValue(expression)
+	}
 	switch source := c.pass.TypesInfo.TypeOf(expression.X).Underlying().(type) {
 	case *types.Array:
 		return ""

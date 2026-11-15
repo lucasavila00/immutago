@@ -15,4 +15,9 @@ type Frozen struct {
 	N int
 }
 
+type Local struct {
+	im.Local
+	N int
+}
+
 type SafeCell = im.Cell[Model]

@@ -25,6 +25,8 @@ var current im.Cell[Data]
 // TestFrozenPointerStorage accepts ordinary carriers without builder ownership.
 func TestFrozenPointerStorage(t *testing.T) {
 	cases := []string{
+		// Generic calls use ordinary API contracts; this check does not prove their mutation effects.
+		`func f[T any](p *T,v T){*p=v};func g(p *Data){f(p,Data{})}`,
 		`func f(){var s State;s.Current=current.LoadPointer().Unsafe();s.Current=nil;s.Set(&Data{});_=s.Current.N}`,
 		`func f(p *Data){s:=State{Current:p};s.Calls++;copy:=s;copy.Current=nil;_=s.Current.Read()}`,
 		`func f(p *Data)any{s:=&State{Current:p};var boxed any=s;return boxed}`,
@@ -91,7 +93,6 @@ func TestFrozenPointerTargets(t *testing.T) {
 		{`func f[T ~*Data](p T){(*p).Array[0]++}`, "writes to immutable objects"},
 		{`func f[T ~*Data](p T){_= &(*p).N}`, "interior addresses"},
 		{`func f[T ~*Data](p T){(*p).Count.Inc()}`, "immutable methods require"},
-		{`func f[T any](p *T,v T){*p=v};func g(p *Data){f(p,Data{})}`, "user generic"},
 		{`func f(v Data){_= &v}`, "fresh allocation"},
 		{`type Bad struct { Value Data }`, "unmarked struct contains immutable field"},
 		{`type Result struct{im.Local;N int};type Bad struct { Value *Result }`, "unmarked struct"},

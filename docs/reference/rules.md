@@ -98,8 +98,8 @@ The checker checks a package in any of these cases, including its test files:
   immutability trust marker.
 - Importing `unsafe` or `reflect` is allowed; ordinary values use ordinary Go rules.
 - Protected object values need a listed form: `reflect.ValueOf(1)` is allowed,
-  but `reflect.ValueOf(point)` with a Frozen record value fails the interface-boxing rule.
-  Frozen pointer handles and their ordinary carriers use Go transport rules.
+  but `reflect.ValueOf(local)` with a Local record value fails the interface-boxing rule.
+  Frozen values, pointer handles, and their ordinary carriers use the listed Go forms.
   Callers must not give a Frozen pointer to an API that changes its target;
   mutation effects through ordinary interfaces, reflection, or unsafe code are not proved.
 

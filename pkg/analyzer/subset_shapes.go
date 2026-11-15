@@ -67,23 +67,56 @@ func (c *subsetChecks) protectedSelection(selector *ast.SelectorExpr) bool {
 
 // matchStatement finds the complete statement that owns a protected operand.
 func (c *subsetChecks) matchStatement(expression ast.Expr) string {
+	restricted := c.restrictedOperand(expression)
 	for parent := c.parents[expression]; parent != nil; parent = c.parents[parent] {
 		if typ, ok := parent.(ast.Expr); ok && c.pass.TypesInfo.Types[typ].IsType() {
 			return "protected operation is outside the supported statement forms"
 		}
 		if declaration, ok := parent.(*ast.ValueSpec); ok {
+			if restricted && (len(declaration.Names) != 1 || len(declaration.Values) > 1) &&
+				!c.resultDeclaration(declaration) {
+				return "multiple assignments involving protected storage are unsupported"
+			}
 			return c.matchDeclaration(declaration)
 		}
 		statement, ok := parent.(ast.Stmt)
 		if !ok {
 			continue
 		}
-		if clause, ok := c.parents[statement].(*ast.CommClause); ok && clause.Comm == statement {
-			return "protected storage is unsupported in select communication clauses"
+		if restricted {
+			if rule := c.matchRestrictedStatement(statement); rule != "" {
+				return rule
+			}
 		}
 		return c.matchStatementNode(statement)
 	}
 	return "protected operation is outside the supported statement forms"
+}
+
+// restrictedOperand includes Local transport, builders, and fixed Cell operations.
+func (c *subsetChecks) restrictedOperand(expression ast.Expr) bool {
+	typ := c.pass.TypesInfo.TypeOf(expression)
+	if c.queries.Transport(typ) || c.queries.Callable(typ) || c.ownedExpression(expression) {
+		return true
+	}
+	call, ok := ast.Unparen(expression).(*ast.CallExpr)
+	return ok && c.ownedSlotCall(call)
+}
+
+// matchRestrictedStatement keeps the statement boundary for Local, builder, and Cell operations.
+func (c *subsetChecks) matchRestrictedStatement(statement ast.Stmt) string {
+	if clause, ok := c.parents[statement].(*ast.CommClause); ok && clause.Comm == statement {
+		return "protected storage is unsupported in select communication clauses"
+	}
+	switch statement := statement.(type) {
+	case *ast.AssignStmt:
+		if (len(statement.Lhs) != 1 || len(statement.Rhs) != 1) && !c.resultAssignment(statement) {
+			return "multiple assignments involving protected storage are unsupported"
+		}
+	case *ast.GoStmt, *ast.DeferStmt:
+		return "protected storage requires synchronous calls"
+	}
+	return ""
 }
 
 // matchStatementNode lists each complete supported statement and rejects the remaining Go statements.
@@ -105,8 +138,16 @@ func (c *subsetChecks) matchStatementNode(statement ast.Stmt) string {
 		if call, ok := ast.Unparen(statement.X).(*ast.CallExpr); ok {
 			return c.matchCall(call)
 		}
-	case *ast.GoStmt, *ast.DeferStmt:
-		return "protected storage requires synchronous calls"
+		if switched, ok := c.parents[statement].(*ast.TypeSwitchStmt); ok && switched.Assign == statement {
+			if assertion, ok := ast.Unparen(statement.X).(*ast.TypeAssertExpr); ok && assertion.Type == nil &&
+				!c.restrictedOperand(assertion.X) {
+				return ""
+			}
+		}
+	case *ast.GoStmt:
+		return c.matchCall(statement.Call)
+	case *ast.DeferStmt:
+		return c.matchCall(statement.Call)
 	case *ast.CaseClause:
 		if block, ok := c.parents[statement].(*ast.BlockStmt); ok {
 			if parent, ok := c.parents[block].(*ast.SwitchStmt); ok {

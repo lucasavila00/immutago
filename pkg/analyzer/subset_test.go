@@ -10,8 +10,8 @@ func TestSubsetBoundaries(t *testing.T) {
 	cases := []struct{ name, source string }{
 		{"assertion", `func f(x any){_=x.(*L)}`},
 		{"pointer conversion", `func f(p *L){_=(*L)(p)}`},
-		{"tuple box", `func pair()(V,int){return V{},0};func f(){var x any;var n int;x,n=pair();_,_=x,n}`},
-		{"tuple call box", `func pair()(V,int){return V{},0};func sink(any,int){};func f(){sink(pair())}`},
+		{"tuple box", `func pair()(L,int){return L{},0};func f(){var x any;var n int;x,n=pair();_,_=x,n}`},
+		{"tuple call box", `func pair()(L,int){return L{},0};func sink(any,int){};func f(){sink(pair())}`},
 		{"shared child reborrow", `type Parent struct{im.Frozen;Child V};
  func f(){var owner Parent;p:=new(owner);q:=&p.Child;_=q.X}`},
 		{"scalar address", `func f(){var v V; _=&v.X}`},
@@ -20,15 +20,15 @@ func TestSubsetBoundaries(t *testing.T) {
 		{"native channel", `func f(){_=make(chan V)}`},
 		{"values output", `func f(){_=im.FreezeSlice([]V{{}}).Clone()}`},
 		{"indirection", `func f(v **L){}`},
-		{"closure", `func f(){var v V; _=func(){_=v.X}}`},
-		{"box", `func f(){var v V; var x any=v; _=x}`},
-		{"box return", `func f()any{return V{}}`},
+		{"closure", `func f(){var v L; _=func(){_=v.X}}`},
+		{"box", `func f(){var v L; var x any=v; _=x}`},
+		{"box return", `func f()any{return L{}}`},
 		{"generic receiver", `type Box[T ~int]struct{im.Frozen;X T};
  func(b *Box[T])Read()T{return b.X};func f(){var b Box[int];_=b.Read()}`},
-		{"generic", `func read[T any](v *T){};func f(){var v V; read(new(v))}`},
+		{"generic", `func read[T any](v *T){};func f(){var v L; read(new(v))}`},
 		{"dynamic", `func f(read func(*L)){var v L;read(new(v))}`},
-		{"defer", `func read(v *V){};func f(){var v V;defer read(new(v))}`},
-		{"goroutine", `func read(v *V){};func f(){var v V;go read(new(v))}`},
+		{"defer", `func read(v *L){};func f(){var v L;defer read(new(v))}`},
+		{"goroutine", `func read(v *L){};func f(){var v L;go read(new(v))}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -12,4 +12,4 @@ type Good struct {
 	X int
 }
 
-func Number() int { return int(unsafe.Sizeof(Good{})) }
+func Number() int { return int(unsafe.Sizeof(im.StringProjection{})) }

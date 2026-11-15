@@ -13,4 +13,4 @@ type Value struct {
 	X int
 }
 
-func main() { _ = reflect.TypeOf(Value{}) }
+func main() { _ = reflect.TypeOf(im.ProjectString("x")) }

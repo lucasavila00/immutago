@@ -1,28 +1,28 @@
 protected.go:10:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
-protected.go:21:2: immutable field Pointer: unsafe.Pointer is not provably immutable
+protected.go:26:2: immutable field Pointer: unsafe.Pointer is not provably immutable
   owner: protected.UnsafeField; field type: unsafe.Pointer
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-protected.go:34:32: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+protected.go:36:31: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+  source: r.ValueOf(record)
+  type: reflect.Value
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+protected.go:39:31: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: r.TypeOf(record)
   type: reflect.Type
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-protected.go:37:28: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+protected.go:42:28: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
   source: TypeFor
   type: func[T any]() reflect.Type
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
-protected.go:40:19: unsupported immutable operation: native slices of immutable storage are unsupported
+  fix: use a direct non-generic function with concrete parameter types
+protected.go:45:19: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []Record
   type: []protected.Record
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-protected.go:40:35: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+protected.go:45:35: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: r.ValueOf(values)
   type: reflect.Value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-protected.go:40:45: unsupported immutable operation: native slices of immutable storage are unsupported
+protected.go:45:45: unsupported immutable operation: native slices of immutable storage are unsupported
   source: values
   type: []protected.Record
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-protected.go:43:47: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
-  source: r.ValueOf(values)
-  type: reflect.Value
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

@@ -5,5 +5,5 @@ import (
 	"example.com/consumer/model"
 )
 
-func makeValue() model.Frozen { return model.Frozen{} }
-func Leak()                   { logx.Info("callback", makeValue) }
+func makeValue() model.Local { return model.Local{} }
+func Leak()                  { logx.Info("callback", makeValue) }

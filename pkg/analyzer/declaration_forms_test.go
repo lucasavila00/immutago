@@ -11,24 +11,24 @@ func TestDeclaredStorageForms(t *testing.T) {
 		{`var p *im.FrozenSlice[int]`, "concrete marked struct target"},
 		{`func read(*[1]Value){};func f(){read(nil)}`, "concrete marked struct target"},
 		{`func f()(p *[1]Value){return}`, "concrete marked struct target"},
-		{`var callback func(Value)`, "immutable callbacks"},
-		{`func read(callback func(Value)){};func f(){read(nil)}`, "immutable callbacks"},
-		{`func f()(callback func(Value)){return}`, "immutable callbacks"},
-		{`type Holder struct{Callback func(Value)};var holder Holder`, "immutable callbacks"},
-		{`var callbacks chan func(Value)`, "immutable callbacks"},
-		{`var callback *func(Value)`, "immutable callbacks"},
-		{`type Holder struct{Callback func(Value)};func f()(holder Holder){return}`, "immutable callbacks"},
+		{`var callback func(Value)`, "callbacks require"},
+		{`func read(callback func(Value)){};func f(){read(nil)}`, "callbacks require"},
+		{`func f()(callback func(Value)){return}`, "callbacks require"},
+		{`type Holder struct{Callback func(Value)};var holder Holder`, "callbacks require"},
+		{`var callbacks chan func(Value)`, "callbacks require"},
+		{`var callback *func(Value)`, "callbacks require"},
+		{`type Holder struct{Callback func(Value)};func f()(holder Holder){return}`, "callbacks require"},
 		{`type Callback=func(Value);type Holder struct{Next *Holder;Items [1]Callback};var holder Holder`,
-			"immutable callbacks"},
-		{`type Callback=func(Value);var values map[CallbackKey][]Callback;type CallbackKey int`, "immutable callbacks"},
-		{`var callback interface{Read(Value)}`, "immutable callbacks"},
+			"callbacks require"},
+		{`type Callback=func(Value);var values map[CallbackKey][]Callback;type CallbackKey int`, "callbacks require"},
+		{`var callback interface{Read(Value)}`, "callbacks require"},
 		{`type Other Value;func f(value Value)Other{return Other(value)}`, "protected value conversions"},
 		{`type Other im.FrozenSlice[int];func f(value im.FrozenSlice[int])Other{return Other(value)}`,
 			"protected value conversions"},
 	}
 	for _, test := range cases {
 		t.Run(test.source, func(t *testing.T) {
-			got := checkSource(t, `type Value struct{im.Frozen;X int};`+test.source)
+			got := checkSource(t, `type Value struct{im.Local;X int};`+test.source)
 			if !strings.Contains(got, test.want) {
 				t.Fatalf("unsupported declaration or conversion accepted: %s", got)
 			}
@@ -49,7 +49,7 @@ func TestConstantOperandsUseSourceRules(t *testing.T) {
 		`func f(){values:=[]int{1};_=im.FreezeSlice(values);const n=len([1]int{values[99]});_=n}`,
 	}
 	for _, source := range cases {
-		if got := checkSource(t, `type Value struct{im.Frozen;X int};`+source); got == "" {
+		if got := checkSource(t, `type Value struct{im.Local;X int};`+source); got == "" {
 			t.Fatalf("protected constant operand accepted: %s", source)
 		}
 	}
@@ -60,11 +60,11 @@ func TestConstantOperandsUseSourceRules(t *testing.T) {
 		`func f[T any](){var values [len([1]int{})]int;_=values}`,
 		`func f(){values:=[]int{1};const n=len([1]int{values[99]});_=n}`,
 	} {
-		if got := checkSource(t, `type Value struct{im.Frozen;X int};`+source); got != "" {
+		if got := checkSource(t, `type Value struct{im.Local;X int};`+source); got != "" {
 			t.Fatalf("ordinary constant or direct array length rejected: %s", got)
 		}
 	}
-	got := checkSource(t, `type Value struct{im.Frozen;X int};func makeValue()Value{return Value{}};
+	got := checkSource(t, `type Value struct{im.Local;X int};func makeValue()Value{return Value{}};
  func f(){first,second:=len([1]Value{makeValue()}),2;_,_=first,second}`)
 	if !strings.Contains(got, "multiple assignments involving protected storage") {
 		t.Fatalf("evaluated protected construction skipped: %s", got)
