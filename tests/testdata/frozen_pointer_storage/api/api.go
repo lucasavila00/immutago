@@ -28,7 +28,7 @@ type State struct {
 }
 
 func (s *State) Begin(cell *SettingsCell) {
-	s.Settings = cell.LoadSharedPointer()
+	s.Settings = cell.Load().Unsafe()
 	s.Calls++
 }
 
@@ -39,4 +39,4 @@ type Outer struct{ Embedded }
 
 var Raw im.Cell[Settings]
 
-func Current() *Settings { return Raw.LoadSharedPointer() }
+func Current() *Settings { return Raw.LoadPointer().Unsafe() }

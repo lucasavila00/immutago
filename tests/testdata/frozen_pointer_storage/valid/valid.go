@@ -104,3 +104,5 @@ func ChangeCopy(p *api.Settings) api.Count {
 	value.Inc()
 	return count
 }
+
+func BoundedRead[T ~*api.Settings](value T) int { return (*value).Limit }

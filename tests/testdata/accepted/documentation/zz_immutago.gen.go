@@ -20,6 +20,12 @@ func NewArrayLengthHolderProjection(value im.Projection[*ArrayLengthHolder]) Arr
 // IsNil reports whether the selected pointer is nil.
 func (v ArrayLengthHolderProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ArrayLengthHolderProjection) Unsafe() *ArrayLengthHolder {
+	return v.immutagoProjection.Unsafe()
+}
+
 // Values reads the Values field.
 func (v ArrayLengthHolderProjection) Values() ArrayLengthHolderValuesProjection {
 	if im.IsNil(v.immutagoProjection) {
@@ -39,14 +45,6 @@ func (c *ArrayLengthHolderCell) Load() ArrayLengthHolderProjection {
 	return NewArrayLengthHolderProjection(c.value.LoadPointer())
 }
 
-// LoadShared returns the frozen value for persistent use.
-func (c *ArrayLengthHolderCell) LoadShared() ArrayLengthHolder { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ArrayLengthHolderCell) LoadSharedPointer() *ArrayLengthHolder {
-	return c.value.LoadSharedPointer()
-}
-
 // ArrayLengthValueProjection provides local read access to *ArrayLengthValue.
 type ArrayLengthValueProjection struct {
 	im.Local
@@ -61,6 +59,10 @@ func NewArrayLengthValueProjection(value im.Projection[*ArrayLengthValue]) Array
 // IsNil reports whether the selected pointer is nil.
 func (v ArrayLengthValueProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ArrayLengthValueProjection) Unsafe() *ArrayLengthValue { return v.immutagoProjection.Unsafe() }
+
 // ArrayLengthValueCell publishes frozen ArrayLengthValue values. Do not copy it.
 type ArrayLengthValueCell struct{ value im.Cell[ArrayLengthValue] }
 
@@ -70,14 +72,6 @@ func (c *ArrayLengthValueCell) Store(value ArrayLengthValue) { c.value.Store(val
 // Load reads the current value through a local projection.
 func (c *ArrayLengthValueCell) Load() ArrayLengthValueProjection {
 	return NewArrayLengthValueProjection(c.value.LoadPointer())
-}
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ArrayLengthValueCell) LoadShared() ArrayLengthValue { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ArrayLengthValueCell) LoadSharedPointer() *ArrayLengthValue {
-	return c.value.LoadSharedPointer()
 }
 
 // IndexedValueProjection provides local read access to *IndexedValue.
@@ -94,9 +88,13 @@ func NewIndexedValueProjection(value im.Projection[*IndexedValue]) IndexedValueP
 // IsNil reports whether the selected pointer is nil.
 func (v IndexedValueProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v IndexedValueProjection) Unsafe() *IndexedValue { return v.immutagoProjection.Unsafe() }
+
 // Index reads the Index field.
 func (v IndexedValueProjection) Index() int {
-	return v.immutagoProjection.Read().Index
+	return v.immutagoProjection.Unsafe().Index
 }
 
 // IndexedValueCell publishes frozen IndexedValue values. Do not copy it.
@@ -109,12 +107,6 @@ func (c *IndexedValueCell) Store(value IndexedValue) { c.value.Store(value) }
 func (c *IndexedValueCell) Load() IndexedValueProjection {
 	return NewIndexedValueProjection(c.value.LoadPointer())
 }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *IndexedValueCell) LoadShared() IndexedValue { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *IndexedValueCell) LoadSharedPointer() *IndexedValue { return c.value.LoadSharedPointer() }
 
 // PointProjection provides local read access to *Point.
 type PointProjection struct {
@@ -130,14 +122,18 @@ func NewPointProjection(value im.Projection[*Point]) PointProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v PointProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v PointProjection) Unsafe() *Point { return v.immutagoProjection.Unsafe() }
+
 // X reads the X field.
 func (v PointProjection) X() int {
-	return v.immutagoProjection.Read().X
+	return v.immutagoProjection.Unsafe().X
 }
 
 // Y reads the Y field.
 func (v PointProjection) Y() int {
-	return v.immutagoProjection.Read().Y
+	return v.immutagoProjection.Unsafe().Y
 }
 
 // PointCell publishes frozen Point values. Do not copy it.
@@ -148,12 +144,6 @@ func (c *PointCell) Store(value Point) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *PointCell) Load() PointProjection { return NewPointProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *PointCell) LoadShared() Point { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *PointCell) LoadSharedPointer() *Point { return c.value.LoadSharedPointer() }
 
 // PointArrayProjection provides local read access to *PointArray.
 type PointArrayProjection struct {
@@ -168,6 +158,10 @@ func NewPointArrayProjection(value im.Projection[*PointArray]) PointArrayProject
 
 // IsNil reports whether the selected pointer is nil.
 func (v PointArrayProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
+
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v PointArrayProjection) Unsafe() *PointArray { return v.immutagoProjection.Unsafe() }
 
 // Values reads the Values field.
 func (v PointArrayProjection) Values() PointArrayValuesProjection {
@@ -188,12 +182,6 @@ func (c *PointArrayCell) Load() PointArrayProjection {
 	return NewPointArrayProjection(c.value.LoadPointer())
 }
 
-// LoadShared returns the frozen value for persistent use.
-func (c *PointArrayCell) LoadShared() PointArray { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *PointArrayCell) LoadSharedPointer() *PointArray { return c.value.LoadSharedPointer() }
-
 // ShapeProjection provides local read access to *Shape.
 type ShapeProjection struct {
 	im.Local
@@ -208,14 +196,18 @@ func NewShapeProjection(value im.Projection[*Shape]) ShapeProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ShapeProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ShapeProjection) Unsafe() *Shape { return v.immutagoProjection.Unsafe() }
+
 // Point reads the Point field.
 func (v ShapeProjection) Point() PointProjection {
-	return NewPointProjection(im.ProjectionOf(&v.immutagoProjection.Read().Point))
+	return NewPointProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Point))
 }
 
 // Items reads the Items field.
 func (v ShapeProjection) Items() im.SliceProjection[int] {
-	return v.immutagoProjection.Read().Items.Projection()
+	return v.immutagoProjection.Unsafe().Items.Projection()
 }
 
 // ShapeCell publishes frozen Shape values. Do not copy it.
@@ -226,12 +218,6 @@ func (c *ShapeCell) Store(value Shape) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ShapeCell) Load() ShapeProjection { return NewShapeProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ShapeCell) LoadShared() Shape { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ShapeCell) LoadSharedPointer() *Shape { return c.value.LoadSharedPointer() }
 
 // UserProjection provides local read access to *User.
 type UserProjection struct {
@@ -247,14 +233,18 @@ func NewUserProjection(value im.Projection[*User]) UserProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v UserProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v UserProjection) Unsafe() *User { return v.immutagoProjection.Unsafe() }
+
 // Name reads the Name field.
 func (v UserProjection) Name() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Name)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Name)
 }
 
 // Scores reads the Scores field.
 func (v UserProjection) Scores() im.MapProjection[string, int] {
-	return v.immutagoProjection.Read().Scores.Projection()
+	return v.immutagoProjection.Unsafe().Scores.Projection()
 }
 
 // UserCell publishes frozen User values. Do not copy it.
@@ -265,12 +255,6 @@ func (c *UserCell) Store(value User) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *UserCell) Load() UserProjection { return NewUserProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *UserCell) LoadShared() User { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *UserCell) LoadSharedPointer() *User { return c.value.LoadSharedPointer() }
 
 // nilSnapshotProjection provides local read access to *nilSnapshot.
 type nilSnapshotProjection struct {
@@ -286,9 +270,13 @@ func newNilSnapshotProjection(value im.Projection[*nilSnapshot]) nilSnapshotProj
 // IsNil reports whether the selected pointer is nil.
 func (v nilSnapshotProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v nilSnapshotProjection) Unsafe() *nilSnapshot { return v.immutagoProjection.Unsafe() }
+
 // N reads the N field.
 func (v nilSnapshotProjection) N() int {
-	return v.immutagoProjection.Read().N
+	return v.immutagoProjection.Unsafe().N
 }
 
 // nilSnapshotCell publishes frozen nilSnapshot values. Do not copy it.
@@ -302,12 +290,6 @@ func (c *nilSnapshotCell) Load() nilSnapshotProjection {
 	return newNilSnapshotProjection(c.value.LoadPointer())
 }
 
-// LoadShared returns the frozen value for persistent use.
-func (c *nilSnapshotCell) LoadShared() nilSnapshot { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *nilSnapshotCell) LoadSharedPointer() *nilSnapshot { return c.value.LoadSharedPointer() }
-
 // ArrayLengthHolderValuesProjection reads a fixed array locally.
 type ArrayLengthHolderValuesProjection struct {
 	im.Local
@@ -319,7 +301,7 @@ func (v ArrayLengthHolderValuesProjection) Len() int { return 1 }
 
 // At reads the element at index.
 func (v ArrayLengthHolderValuesProjection) At(index0 int) int {
-	return v.immutagoProjection.Read().Values[index0]
+	return v.immutagoProjection.Unsafe().Values[index0]
 }
 
 // PointArrayValuesProjection reads a fixed array locally.
@@ -333,5 +315,5 @@ func (v PointArrayValuesProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v PointArrayValuesProjection) At(index0 int) PointProjection {
-	return NewPointProjection(im.ProjectionOf(&v.immutagoProjection.Read().Values[index0]))
+	return NewPointProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Values[index0]))
 }

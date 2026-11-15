@@ -20,14 +20,18 @@ func NewModelProjection(value im.Projection[*Model]) ModelProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ModelProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ModelProjection) Unsafe() *Model { return v.immutagoProjection.Unsafe() }
+
 // Version reads the Version field.
 func (v ModelProjection) Version() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Version)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Version)
 }
 
 // Weights reads the Weights field.
 func (v ModelProjection) Weights() im.SliceProjection[float64] {
-	return v.immutagoProjection.Read().Weights.Projection()
+	return v.immutagoProjection.Unsafe().Weights.Projection()
 }
 
 // ModelCell publishes frozen Model values. Do not copy it.
@@ -38,9 +42,3 @@ func (c *ModelCell) Store(value Model) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ModelCell) Load() ModelProjection { return NewModelProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ModelCell) LoadShared() Model { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ModelCell) LoadSharedPointer() *Model { return c.value.LoadSharedPointer() }

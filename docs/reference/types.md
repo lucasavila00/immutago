@@ -61,7 +61,7 @@ projection when reading through a Local value. See the complete
 | `Value(Projection[T])` | T is both Frozen and a read result: Copied, UncheckedValue, or an unnamed array of these values. |
 | `CopyRecord(Projection[T])` | T is a concrete Frozen record; returns a projection of a new copied root. |
 | `Cell[T].LoadPointer()`, `SliceProjection[T].AtPointer(i)` | T is a concrete Frozen record; the result is Projection[*T]. |
-| `Cell[T].LoadSharedPointer()` | T is a concrete Frozen record; the result is a persistent *T. |
+| `Projection[T].Unsafe()` | T uses the same Frozen proof; the result is T with its shared storage. |
 | `SliceProjection[E].Clone()` | E is Copied. |
 | `MapProjection[K,V].Clone()` | K and V are Copied. |
 | Exported service method data result | Read result; the [result signatures](service-results.md) also permit an error. |

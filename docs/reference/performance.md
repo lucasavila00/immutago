@@ -20,7 +20,7 @@
 | Local slice/map Clone | O(n); arguments must be Copied. Service references remain opaque shared handles. |
 | Cell.Store | Copy one T root and publish with an atomic store; one allocation for T with nonzero size. |
 | Generated Cell.Load, raw Cell.LoadPointer | One atomic pointer load; no record copy or allocation. |
-| Raw Cell.Load, Cell.LoadShared | One atomic load and a T value copy; no backing-storage copy. |
+| Raw Cell.Load | One atomic load and a T value copy; no backing-storage copy. |
 | Ref.Borrow | One atomic load; no allocation. |
 | Ref.IsZero | Compare the stored pointer with nil; no atomic load or allocation. |
 

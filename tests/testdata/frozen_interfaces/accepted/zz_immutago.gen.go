@@ -21,9 +21,13 @@ func NewModelProjection(value im.Projection[*Model]) ModelProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ModelProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ModelProjection) Unsafe() *Model { return v.immutagoProjection.Unsafe() }
+
 // Scorer reads the Scorer field.
 func (v ModelProjection) Scorer() api.ScorerProjection {
-	return api.NewScorerProjection(im.ProjectionOf(v.immutagoProjection.Read().Scorer))
+	return api.NewScorerProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Scorer))
 }
 
 // Readers reads the Readers field.
@@ -36,12 +40,12 @@ func (v ModelProjection) Readers() ModelReadersProjection {
 
 // List reads the List field.
 func (v ModelProjection) List() im.SliceProjection[api.Scorer] {
-	return v.immutagoProjection.Read().List.Projection()
+	return v.immutagoProjection.Unsafe().List.Projection()
 }
 
 // Map reads the Map field.
 func (v ModelProjection) Map() im.MapProjection[api.Scorer, api.Scorer] {
-	return v.immutagoProjection.Read().Map.Projection()
+	return v.immutagoProjection.Unsafe().Map.Projection()
 }
 
 // ModelCell publishes frozen Model values. Do not copy it.
@@ -52,12 +56,6 @@ func (c *ModelCell) Store(value Model) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ModelCell) Load() ModelProjection { return NewModelProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ModelCell) LoadShared() Model { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ModelCell) LoadSharedPointer() *Model { return c.value.LoadSharedPointer() }
 
 // ModelReadersProjection reads a fixed array locally.
 type ModelReadersProjection struct {
@@ -70,5 +68,5 @@ func (v ModelReadersProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v ModelReadersProjection) At(index0 int) api.ReaderProjection {
-	return api.NewReaderProjection(im.ProjectionOf(v.immutagoProjection.Read().Readers[index0]))
+	return api.NewReaderProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Readers[index0]))
 }

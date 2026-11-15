@@ -20,14 +20,18 @@ func NewMapsProjection(value im.Projection[*Maps]) MapsProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v MapsProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v MapsProjection) Unsafe() *Maps { return v.immutagoProjection.Unsafe() }
+
 // First reads the First field.
 func (v MapsProjection) First() im.MapProjection[string, int] {
-	return v.immutagoProjection.Read().First.Projection()
+	return v.immutagoProjection.Unsafe().First.Projection()
 }
 
 // Second reads the Second field.
 func (v MapsProjection) Second() im.MapProjection[string, int] {
-	return v.immutagoProjection.Read().Second.Projection()
+	return v.immutagoProjection.Unsafe().Second.Projection()
 }
 
 // MapsCell publishes frozen Maps values. Do not copy it.
@@ -38,12 +42,6 @@ func (c *MapsCell) Store(value Maps) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *MapsCell) Load() MapsProjection { return NewMapsProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *MapsCell) LoadShared() Maps { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *MapsCell) LoadSharedPointer() *Maps { return c.value.LoadSharedPointer() }
 
 // SlicesProjection provides local read access to *Slices.
 type SlicesProjection struct {
@@ -59,14 +57,18 @@ func NewSlicesProjection(value im.Projection[*Slices]) SlicesProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v SlicesProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v SlicesProjection) Unsafe() *Slices { return v.immutagoProjection.Unsafe() }
+
 // First reads the First field.
 func (v SlicesProjection) First() im.SliceProjection[int] {
-	return v.immutagoProjection.Read().First.Projection()
+	return v.immutagoProjection.Unsafe().First.Projection()
 }
 
 // Second reads the Second field.
 func (v SlicesProjection) Second() im.SliceProjection[int] {
-	return v.immutagoProjection.Read().Second.Projection()
+	return v.immutagoProjection.Unsafe().Second.Projection()
 }
 
 // SlicesCell publishes frozen Slices values. Do not copy it.
@@ -77,12 +79,6 @@ func (c *SlicesCell) Store(value Slices) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *SlicesCell) Load() SlicesProjection { return NewSlicesProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *SlicesCell) LoadShared() Slices { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *SlicesCell) LoadSharedPointer() *Slices { return c.value.LoadSharedPointer() }
 
 // ValueProjection provides local read access to *Value.
 type ValueProjection struct {
@@ -98,9 +94,13 @@ func NewValueProjection(value im.Projection[*Value]) ValueProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ValueProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ValueProjection) Unsafe() *Value { return v.immutagoProjection.Unsafe() }
+
 // X reads the X field.
 func (v ValueProjection) X() int {
-	return v.immutagoProjection.Read().X
+	return v.immutagoProjection.Unsafe().X
 }
 
 // ValueCell publishes frozen Value values. Do not copy it.
@@ -111,9 +111,3 @@ func (c *ValueCell) Store(value Value) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ValueCell) Load() ValueProjection { return NewValueProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ValueCell) LoadShared() Value { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ValueCell) LoadSharedPointer() *Value { return c.value.LoadSharedPointer() }

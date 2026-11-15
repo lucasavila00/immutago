@@ -18,8 +18,8 @@ var scalar im.Cell[int]
 var copied im.Cell[[2]int]
 
 func BadLoads() {
-	_ = scalar.LoadSharedPointer()
-	_ = copied.LoadSharedPointer()
+	_ = scalar.LoadPointer().Unsafe()
+	_ = copied.LoadPointer().Unsafe()
 }
 
 func Writes(state *api.State, values []*api.Settings, versions map[string]*api.Settings) {

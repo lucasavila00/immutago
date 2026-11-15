@@ -21,9 +21,13 @@ func NewSnapshotProjection(value im.Projection[*Snapshot]) SnapshotProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v SnapshotProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v SnapshotProjection) Unsafe() *Snapshot { return v.immutagoProjection.Unsafe() }
+
 // Point reads the Point field.
 func (v SnapshotProjection) Point() api.Point {
-	return v.immutagoProjection.Read().Point
+	return v.immutagoProjection.Unsafe().Point
 }
 
 // Points reads the Points field.
@@ -36,12 +40,12 @@ func (v SnapshotProjection) Points() SnapshotPointsProjection {
 
 // Score reads the Score field.
 func (v SnapshotProjection) Score() api.Score {
-	return v.immutagoProjection.Read().Score
+	return v.immutagoProjection.Unsafe().Score
 }
 
 // Summary reads the Summary field.
 func (v SnapshotProjection) Summary() api.Summary {
-	return v.immutagoProjection.Read().Summary
+	return v.immutagoProjection.Unsafe().Summary
 }
 
 // SnapshotCell publishes frozen Snapshot values. Do not copy it.
@@ -52,12 +56,6 @@ func (c *SnapshotCell) Store(value Snapshot) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *SnapshotCell) Load() SnapshotProjection { return NewSnapshotProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *SnapshotCell) LoadShared() Snapshot { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *SnapshotCell) LoadSharedPointer() *Snapshot { return c.value.LoadSharedPointer() }
 
 // SnapshotPointsProjection reads a fixed array locally.
 type SnapshotPointsProjection struct {
@@ -70,5 +68,5 @@ func (v SnapshotPointsProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v SnapshotPointsProjection) At(index0 int) api.Point {
-	return v.immutagoProjection.Read().Points[index0]
+	return v.immutagoProjection.Unsafe().Points[index0]
 }

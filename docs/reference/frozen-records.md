@@ -34,7 +34,7 @@ promoted method can take an implicit field address, including through an interfa
 | Store or return a fresh Frozen pointer | `return &Settings{Limit: 100}` |
 | Publish through a Cell | `cell.Store(settings)` |
 | Read through a generated Cell | `projection := cell.Load()` |
-| Keep the selected root without a record copy | `saved := cell.LoadSharedPointer()` |
+| Keep the selected root without a record copy | `saved := cell.Load().Unsafe()` |
 
 Use the [common source forms](common-forms.md) for statements, calls, methods,
 and pointer construction. The [projection generator](projections.md) generates
@@ -52,7 +52,7 @@ type requestState struct {
 }
 
 func (s *requestState) begin(cell *SettingsCell) {
-    s.settings = cell.LoadSharedPointer()
+    s.settings = cell.Load().Unsafe()
     s.calls++
 }
 ```

@@ -149,16 +149,17 @@ Frozen records embed only their marker; all data fields must be named.
 Frozen and Local fields are immutable from construction. Local values cannot
 enter persistent storage, including through nested records or arrays. Local
 pointers stay local or pass to direct typed calls; never store or return them.
-Ordinary protected pointers originate from fresh storage or Cell.LoadSharedPointer. Fixed projection APIs
+Ordinary protected pointers originate from fresh storage or projection Unsafe. Fixed projection APIs
 and verified generated getters can select record addresses inside frozen storage.
 Do not add mutable construction, loan tracking, string provenance, or runtime
 ownership state.
 
-Generated getters read fields directly. Permit im.Projection.Read and interior
-Frozen-record addresses only in the exact current generated file. Verify its
-normalized bytes and physical token file before source checks. Handwritten Read
-calls are rejected, including scalar reads. All normal type, write, capture,
-generic, receiver, and transport checks still apply to generated nodes.
+Generated getters read fields directly. Permit interior Frozen-record addresses
+only in the exact current generated file. Verify its normalized bytes and physical
+token file before source checks. Projection.Unsafe returns its Frozen payload;
+generated record projection Unsafe returns the selected pointer without a copy.
+The caller controls retention and must not change its target. All normal type,
+write, capture, generic, receiver, and transport checks still apply to generated nodes.
 Generated record and array projections keep the root pointer and indices;
 do not copy parent values during field reads.
 CopyRecord is the explicit root copy for a record value, including a map result.
@@ -179,8 +180,8 @@ Every package with user-declared Frozen records must have this directive:
 Declare Frozen records as named package-scope types in non-test Go files.
 Reject function-local, anonymous, and test-only Frozen declarations.
 Keep the exact current `zz_immutago.gen.go` output. Frozen records get typed
-projections and Cells. Local and Copied records need no generation. Keep the two
-generated-only operations above separate from the normal checks; do not skip
+projections and Cells. Local and Copied records need no generation. Keep the
+generated-only address operation above separate from the normal checks; do not skip
 analysis of a generated file.
 
 Test supported and rejected forms through the real CLI with diagnostic snapshots.

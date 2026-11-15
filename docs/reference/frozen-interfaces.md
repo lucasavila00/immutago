@@ -152,5 +152,8 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | `func (t Tree) Callback() func() float64 { return func() float64 { return t.Weight } }` | Copy Weight to an ordinary local before the closure. |
 | `value, outputs[0] = local.Read()` | Bind local names first, then assign the ordinary output separately. |
 | Save ScorerProjection in a package variable or Frozen field | Save a Scorer value from an allowed construction. |
-| Read the raw payload with `projection.Read()` | Use the generated method. |
 | `chan Scorer` | Use direct calls with a Scorer parameter. |
+
+A generic `im.Projection[Scorer]` can return its Frozen interface with
+`projection.Unsafe()`. The result keeps the Frozen interface rules above. It
+does not permit interface assertions or other unlisted operations.

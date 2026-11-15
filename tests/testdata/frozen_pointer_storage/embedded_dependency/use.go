@@ -7,4 +7,4 @@ import (
 
 var Cell im.Cell[embedded.Numeric]
 
-func Read() *embedded.Numeric { return Cell.LoadSharedPointer() }
+func Read() *embedded.Numeric { return Cell.LoadPointer().Unsafe() }

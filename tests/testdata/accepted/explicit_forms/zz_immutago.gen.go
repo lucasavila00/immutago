@@ -20,9 +20,13 @@ func NewGoodProjection(value im.Projection[*Good]) GoodProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v GoodProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v GoodProjection) Unsafe() *Good { return v.immutagoProjection.Unsafe() }
+
 // X reads the X field.
 func (v GoodProjection) X() int {
-	return v.immutagoProjection.Read().X
+	return v.immutagoProjection.Unsafe().X
 }
 
 // GoodCell publishes frozen Good values. Do not copy it.
@@ -33,12 +37,6 @@ func (c *GoodCell) Store(value Good) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *GoodCell) Load() GoodProjection { return NewGoodProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *GoodCell) LoadShared() Good { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *GoodCell) LoadSharedPointer() *Good { return c.value.LoadSharedPointer() }
 
 // ParentProjection provides local read access to *Parent.
 type ParentProjection struct {
@@ -54,14 +52,18 @@ func NewParentProjection(value im.Projection[*Parent]) ParentProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ParentProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ParentProjection) Unsafe() *Parent { return v.immutagoProjection.Unsafe() }
+
 // Child reads the Child field.
 func (v ParentProjection) Child() GoodProjection {
-	return NewGoodProjection(im.ProjectionOf(&v.immutagoProjection.Read().Child))
+	return NewGoodProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Child))
 }
 
 // Other reads the Other field.
 func (v ParentProjection) Other() int {
-	return v.immutagoProjection.Read().Other
+	return v.immutagoProjection.Unsafe().Other
 }
 
 // ParentCell publishes frozen Parent values. Do not copy it.
@@ -72,9 +74,3 @@ func (c *ParentCell) Store(value Parent) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ParentCell) Load() ParentProjection { return NewParentProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ParentCell) LoadShared() Parent { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ParentCell) LoadSharedPointer() *Parent { return c.value.LoadSharedPointer() }

@@ -20,9 +20,13 @@ func NewDerivedProjection(value im.Projection[*Derived]) DerivedProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v DerivedProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v DerivedProjection) Unsafe() *Derived { return v.immutagoProjection.Unsafe() }
+
 // Value reads the Value field.
 func (v DerivedProjection) Value() int {
-	return v.immutagoProjection.Read().Value
+	return v.immutagoProjection.Unsafe().Value
 }
 
 // Array reads the Array field.
@@ -42,12 +46,6 @@ func (c *DerivedCell) Store(value Derived) { c.value.Store(value) }
 // Load reads the current value through a local projection.
 func (c *DerivedCell) Load() DerivedProjection { return NewDerivedProjection(c.value.LoadPointer()) }
 
-// LoadShared returns the frozen value for persistent use.
-func (c *DerivedCell) LoadShared() Derived { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *DerivedCell) LoadSharedPointer() *Derived { return c.value.LoadSharedPointer() }
-
 // GoodProjection provides local read access to *Good.
 type GoodProjection struct {
 	im.Local
@@ -62,9 +60,13 @@ func NewGoodProjection(value im.Projection[*Good]) GoodProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v GoodProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v GoodProjection) Unsafe() *Good { return v.immutagoProjection.Unsafe() }
+
 // Value reads the Value field.
 func (v GoodProjection) Value() int {
-	return v.immutagoProjection.Read().Value
+	return v.immutagoProjection.Unsafe().Value
 }
 
 // Array reads the Array field.
@@ -84,12 +86,6 @@ func (c *GoodCell) Store(value Good) { c.value.Store(value) }
 // Load reads the current value through a local projection.
 func (c *GoodCell) Load() GoodProjection { return NewGoodProjection(c.value.LoadPointer()) }
 
-// LoadShared returns the frozen value for persistent use.
-func (c *GoodCell) LoadShared() Good { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *GoodCell) LoadSharedPointer() *Good { return c.value.LoadSharedPointer() }
-
 // DerivedArrayProjection reads a fixed array locally.
 type DerivedArrayProjection struct {
 	im.Local
@@ -101,7 +97,7 @@ func (v DerivedArrayProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v DerivedArrayProjection) At(index0 int) int {
-	return v.immutagoProjection.Read().Array[index0]
+	return v.immutagoProjection.Unsafe().Array[index0]
 }
 
 // GoodArrayProjection reads a fixed array locally.
@@ -115,5 +111,5 @@ func (v GoodArrayProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v GoodArrayProjection) At(index0 int) int {
-	return v.immutagoProjection.Read().Array[index0]
+	return v.immutagoProjection.Unsafe().Array[index0]
 }

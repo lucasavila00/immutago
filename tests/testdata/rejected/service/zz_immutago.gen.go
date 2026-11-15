@@ -20,9 +20,13 @@ func NewSnapshotReplyProjection(value im.Projection[*SnapshotReply]) SnapshotRep
 // IsNil reports whether the selected pointer is nil.
 func (v SnapshotReplyProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v SnapshotReplyProjection) Unsafe() *SnapshotReply { return v.immutagoProjection.Unsafe() }
+
 // Count reads the Count field.
 func (v SnapshotReplyProjection) Count() int {
-	return v.immutagoProjection.Read().Count
+	return v.immutagoProjection.Unsafe().Count
 }
 
 // SnapshotReplyCell publishes frozen SnapshotReply values. Do not copy it.
@@ -35,9 +39,3 @@ func (c *SnapshotReplyCell) Store(value SnapshotReply) { c.value.Store(value) }
 func (c *SnapshotReplyCell) Load() SnapshotReplyProjection {
 	return NewSnapshotReplyProjection(c.value.LoadPointer())
 }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *SnapshotReplyCell) LoadShared() SnapshotReply { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *SnapshotReplyCell) LoadSharedPointer() *SnapshotReply { return c.value.LoadSharedPointer() }

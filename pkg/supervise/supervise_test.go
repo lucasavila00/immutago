@@ -108,7 +108,7 @@ type restarted struct {
 func (r *restarted) Run(ctx context.Context) {
 	r.runs++
 	record(r.Args().Name)
-	if r.runs != 1 || r.latest.LoadShared() != nil {
+	if r.runs != 1 || r.latest.Load().Unsafe() != nil {
 		record("old state")
 	}
 	r.latest.Store(&snapshot{})

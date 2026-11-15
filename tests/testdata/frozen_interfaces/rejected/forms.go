@@ -37,10 +37,9 @@ func forms(s api.Scorer, local api.ScorerProjection) {
 	}
 }
 
-func identity[T any](v T) T                          { return v }
-func raw(local im.Projection[api.Scorer]) api.Scorer { return local.Read() }
+func identity[T any](v T) T { return v }
 func rawPointer(local im.Projection[api.Scorer]) *implementation.Tree {
-	return local.Read().(*implementation.Tree)
+	return local.Unsafe().(*implementation.Tree)
 }
 func many(...api.Scorer)    {}
 func boxed(...any)          {}

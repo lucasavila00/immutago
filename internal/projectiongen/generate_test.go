@@ -83,6 +83,7 @@ func TestGenerateRejects(t *testing.T) {
 		`type Bad struct { im.Frozen; Data []int }`,
 		`type Good struct { im.Frozen; N int }; type GoodProjection struct{}`,
 		`type Bad struct { im.Frozen; Local int }`,
+		`type Bad struct { im.Frozen; Unsafe int }`,
 	} {
 		dir := module(t, "package example\nimport \"github.com/lucasavila00/immutago/pkg/im\"\n"+source)
 		if _, err := Generate(dir); err == nil {

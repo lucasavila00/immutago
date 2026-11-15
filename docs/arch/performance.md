@@ -19,7 +19,7 @@ costs changed and measure the affected operation.
 | Generated field read | Read through a retained root pointer. Nested record and array readers retain the root and indices instead of copying parent records. |
 | CopyRecord | Make an explicit private root copy. A retained nonzero-sized root needs heap storage; the compiler can eliminate an allocation for local use. |
 | Cell.Store | Publish a private root copy through an atomic pointer; a nonzero-sized T needs one allocation. Backing storage remains shared. |
-| Cell.Load and LoadShared | Copy T by value. No backing-storage copy. |
+| Raw Cell.Load | Copy T by value. No backing-storage copy. |
 | Cell.LoadPointer and generated Cell.Load | Load the root pointer without copying T. |
 | Ref.Borrow | One atomic load from the shared reference slot. No allocation. |
 

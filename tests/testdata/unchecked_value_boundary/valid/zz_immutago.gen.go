@@ -21,9 +21,13 @@ func NewModelProjection(value im.Projection[*Model]) ModelProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ModelProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ModelProjection) Unsafe() *Model { return v.immutagoProjection.Unsafe() }
+
 // Table reads the Table field.
 func (v ModelProjection) Table() im.UncheckedValue[api.Table] {
-	return v.immutagoProjection.Read().Table
+	return v.immutagoProjection.Unsafe().Table
 }
 
 // Models reads the Models field.
@@ -42,12 +46,6 @@ func (c *ModelCell) Store(value Model) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ModelCell) Load() ModelProjection { return NewModelProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ModelCell) LoadShared() Model { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ModelCell) LoadSharedPointer() *Model { return c.value.LoadSharedPointer() }
 
 // ModelModelsProjection reads a fixed array locally.
 type ModelModelsProjection struct {
@@ -82,5 +80,5 @@ func (v ModelModelsElementProjection) Len() int { return 1 }
 // At reads the element at index.
 func (v ModelModelsElementProjection) At(index1 int) Handle {
 	index0 := v.index0
-	return v.immutagoProjection.Read().Models[index0][index1]
+	return v.immutagoProjection.Unsafe().Models[index0][index1]
 }

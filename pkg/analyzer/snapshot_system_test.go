@@ -67,6 +67,8 @@ func TestSnapshotCategories(t *testing.T) {
 			"Frozen storage cannot contain Local values"},
 		{`type Result struct{im.Local; Text im.StringProjection};func f(){_=im.ProjectionOf(Result{})}`,
 			"Frozen storage cannot contain Local values"},
+		{`type Result struct{im.Local; N int};func f(){_=im.Projection[Result]{}.Unsafe()}`,
+			"Frozen storage cannot contain Local values"},
 		{`type Result struct{im.Local; Text im.StringProjection};type Data struct{im.Frozen; Result Result}`,
 			"Frozen storage cannot contain Local values"},
 		{`type Result struct{im.Local; Text im.StringProjection};var saved Result`, "package variables"},

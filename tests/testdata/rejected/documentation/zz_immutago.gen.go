@@ -20,9 +20,13 @@ func NewPointProjection(value im.Projection[*Point]) PointProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v PointProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v PointProjection) Unsafe() *Point { return v.immutagoProjection.Unsafe() }
+
 // X reads the X field.
 func (v PointProjection) X() int {
-	return v.immutagoProjection.Read().X
+	return v.immutagoProjection.Unsafe().X
 }
 
 // PointCell publishes frozen Point values. Do not copy it.
@@ -33,12 +37,6 @@ func (c *PointCell) Store(value Point) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *PointCell) Load() PointProjection { return NewPointProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *PointCell) LoadShared() Point { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *PointCell) LoadSharedPointer() *Point { return c.value.LoadSharedPointer() }
 
 // PointArrayProjection provides local read access to *PointArray.
 type PointArrayProjection struct {
@@ -53,6 +51,10 @@ func NewPointArrayProjection(value im.Projection[*PointArray]) PointArrayProject
 
 // IsNil reports whether the selected pointer is nil.
 func (v PointArrayProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
+
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v PointArrayProjection) Unsafe() *PointArray { return v.immutagoProjection.Unsafe() }
 
 // Values reads the Values field.
 func (v PointArrayProjection) Values() PointArrayValuesProjection {
@@ -73,12 +75,6 @@ func (c *PointArrayCell) Load() PointArrayProjection {
 	return NewPointArrayProjection(c.value.LoadPointer())
 }
 
-// LoadShared returns the frozen value for persistent use.
-func (c *PointArrayCell) LoadShared() PointArray { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *PointArrayCell) LoadSharedPointer() *PointArray { return c.value.LoadSharedPointer() }
-
 // nilSnapshotProjection provides local read access to *nilSnapshot.
 type nilSnapshotProjection struct {
 	im.Local
@@ -93,6 +89,10 @@ func newNilSnapshotProjection(value im.Projection[*nilSnapshot]) nilSnapshotProj
 // IsNil reports whether the selected pointer is nil.
 func (v nilSnapshotProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v nilSnapshotProjection) Unsafe() *nilSnapshot { return v.immutagoProjection.Unsafe() }
+
 // nilSnapshotCell publishes frozen nilSnapshot values. Do not copy it.
 type nilSnapshotCell struct{ value im.Cell[nilSnapshot] }
 
@@ -103,12 +103,6 @@ func (c *nilSnapshotCell) Store(value nilSnapshot) { c.value.Store(value) }
 func (c *nilSnapshotCell) Load() nilSnapshotProjection {
 	return newNilSnapshotProjection(c.value.LoadPointer())
 }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *nilSnapshotCell) LoadShared() nilSnapshot { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *nilSnapshotCell) LoadSharedPointer() *nilSnapshot { return c.value.LoadSharedPointer() }
 
 // PointArrayValuesProjection reads a fixed array locally.
 type PointArrayValuesProjection struct {
@@ -121,5 +115,5 @@ func (v PointArrayValuesProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v PointArrayValuesProjection) At(index0 int) PointProjection {
-	return NewPointProjection(im.ProjectionOf(&v.immutagoProjection.Read().Values[index0]))
+	return NewPointProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Values[index0]))
 }

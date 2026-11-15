@@ -69,22 +69,6 @@ func (c *Cell[T]) LoadPointer() Projection[*T]
 
 LoadPointer returns a local pointer projection without copying T or allocating. It returns a nil pointer projection before Store. The checker requires a Frozen record T.
 
-### func \(\*Cell\[T\]\) LoadShared
-
-```go
-func (c *Cell[T]) LoadShared() T
-```
-
-LoadShared returns the current Frozen value for persistent use. It copies T by value without copying backing storage or allocating. If no value was stored, it returns the zero T.
-
-### func \(\*Cell\[T\]\) LoadSharedPointer
-
-```go
-func (c *Cell[T]) LoadSharedPointer() *T
-```
-
-LoadSharedPointer returns the current root for persistent use without a copy or allocation. It returns nil before Store. The checker requires a concrete Frozen record T.
-
 ### func \(\*Cell\[T\]\) Store
 
 ```go
@@ -393,13 +377,13 @@ func ProjectionOf[T any](value T) Projection[T]
 
 ProjectionOf returns a local projection of value. It copies T by value without copying backing storage or allocating. Run immutago to enforce the local projection rules.
 
-### func \(Projection\[T\]\) Read
+### func \(Projection\[T\]\) Unsafe
 
 ```go
-func (p Projection[T]) Read() T
+func (p Projection[T]) Unsafe() T
 ```
 
-Read supplies direct field access to generated accessors without copying backing storage. Application code uses the generated projection methods. The checker controls Read access.
+Unsafe returns the selected Frozen value for use outside the local projection. It copies T by value without copying backing storage or allocating. A pointer result is the same pointer. The caller controls retention and must not change its target through reflection, unsafe code, or another API.
 
 ## type SliceProjection
 

@@ -55,39 +55,3 @@ func Capture(value valid.Serving) func() valid.Handle {
 func CaptureProjection(value valid.ModelProjection) func() valid.Handle {
 	return func() valid.Handle { return value.Table() }
 }
-
-// Raw cannot bypass the generated-only Read rule.
-func Raw(value im.Projection[valid.Handle]) valid.Handle { return value.Read() }
-
-// Clone still requires Copied elements.
-func Clone(value im.SliceProjection[valid.Handle]) []valid.Handle { return value.Clone() }
-
-// CloneMap still requires Copied values.
-func CloneMap(value im.MapProjection[int, valid.Handle]) map[int]valid.Handle { return value.Clone() }
-
-// FrozenRecord cannot be extracted by Value.
-func FrozenRecord(value im.Projection[Snapshot]) Snapshot { return im.Value(value) }
-
-// FrozenPointer cannot be extracted by Value.
-func FrozenPointer(value im.Projection[*Snapshot]) *Snapshot { return im.Value(value) }
-
-// FrozenInterface cannot be extracted by Value.
-func FrozenInterface(value im.Projection[Scorer]) Scorer { return im.Value(value) }
-
-// Local cannot be extracted by Value because its payload is not Frozen.
-func Local(value im.Projection[valid.Serving]) valid.Serving { return im.Value(value) }
-
-// String cannot be extracted by Value.
-func String(value im.Projection[string]) string { return im.Value(value) }
-
-// Collection cannot be extracted by Value.
-func Collection(value im.Projection[im.FrozenSlice[int]]) im.FrozenSlice[int] { return im.Value(value) }
-
-// Marker cannot be a projection payload or a Value result.
-func Marker(value im.Projection[im.Copied]) im.Copied { return im.Value(value) }
-
-// Write cannot replace a handle inside a Local owner.
-func Write(value valid.Serving) { value.Model = valid.Handle{} }
-
-// Address cannot expose the storage of a handle inside a Local owner.
-func Address(value valid.Serving) *valid.Handle { return &value.Model }

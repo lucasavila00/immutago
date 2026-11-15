@@ -21,6 +21,10 @@ func NewNamedIntsProjection(value im.Projection[*NamedInts]) NamedIntsProjection
 // IsNil reports whether the selected pointer is nil.
 func (v NamedIntsProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v NamedIntsProjection) Unsafe() *NamedInts { return v.immutagoProjection.Unsafe() }
+
 // Values reads the Values field.
 func (v NamedIntsProjection) Values() NamedIntsValuesProjection {
 	if im.IsNil(v.immutagoProjection) {
@@ -40,12 +44,6 @@ func (c *NamedIntsCell) Load() NamedIntsProjection {
 	return NewNamedIntsProjection(c.value.LoadPointer())
 }
 
-// LoadShared returns the frozen value for persistent use.
-func (c *NamedIntsCell) LoadShared() NamedInts { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *NamedIntsCell) LoadSharedPointer() *NamedInts { return c.value.LoadSharedPointer() }
-
 // RecordProjection provides local read access to *Record.
 type RecordProjection struct {
 	im.Local
@@ -60,24 +58,28 @@ func NewRecordProjection(value im.Projection[*Record]) RecordProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v RecordProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v RecordProjection) Unsafe() *Record { return v.immutagoProjection.Unsafe() }
+
 // Model reads the Model field.
 func (v RecordProjection) Model() model.TreeProjection {
-	return model.NewTreeProjection(im.ProjectionOf(&v.immutagoProjection.Read().Model))
+	return model.NewTreeProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Model))
 }
 
 // Names reads the Names field.
 func (v RecordProjection) Names() im.SliceProjection[string] {
-	return v.immutagoProjection.Read().Names.Projection()
+	return v.immutagoProjection.Unsafe().Names.Projection()
 }
 
 // Lookups reads the Lookups field.
 func (v RecordProjection) Lookups() im.MapProjection[[2]int, im.FrozenSlice[model.Leaf]] {
-	return v.immutagoProjection.Read().Lookups.Projection()
+	return v.immutagoProjection.Unsafe().Lookups.Projection()
 }
 
 // Count reads the Count field.
 func (v RecordProjection) Count() model.CountBoxProjection {
-	return model.NewCountBoxProjection(im.ProjectionOf(&v.immutagoProjection.Read().Count))
+	return model.NewCountBoxProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Count))
 }
 
 // RecordCell publishes frozen Record values. Do not copy it.
@@ -88,12 +90,6 @@ func (c *RecordCell) Store(value Record) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *RecordCell) Load() RecordProjection { return NewRecordProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *RecordCell) LoadShared() Record { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *RecordCell) LoadSharedPointer() *Record { return c.value.LoadSharedPointer() }
 
 // ScalarProjection provides local read access to *Scalar.
 type ScalarProjection struct {
@@ -109,9 +105,13 @@ func NewScalarProjection(value im.Projection[*Scalar]) ScalarProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ScalarProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ScalarProjection) Unsafe() *Scalar { return v.immutagoProjection.Unsafe() }
+
 // Value reads the Value field.
 func (v ScalarProjection) Value() int {
-	return v.immutagoProjection.Read().Value
+	return v.immutagoProjection.Unsafe().Value
 }
 
 // ScalarCell publishes frozen Scalar values. Do not copy it.
@@ -122,12 +122,6 @@ func (c *ScalarCell) Store(value Scalar) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ScalarCell) Load() ScalarProjection { return NewScalarProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ScalarCell) LoadShared() Scalar { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ScalarCell) LoadSharedPointer() *Scalar { return c.value.LoadSharedPointer() }
 
 // NamedIntsValuesProjection reads a fixed array locally.
 type NamedIntsValuesProjection struct {
@@ -140,5 +134,5 @@ func (v NamedIntsValuesProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v NamedIntsValuesProjection) At(index0 int) int {
-	return v.immutagoProjection.Read().Values[index0]
+	return v.immutagoProjection.Unsafe().Values[index0]
 }

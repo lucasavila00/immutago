@@ -53,6 +53,9 @@ func TestFrozenPointerStorage(t *testing.T) {
 		`func f(s *State){score:=s.Current.Score;score.Inc()}`,
 		`func f(){a:=[]*Data{{N:1}};_=a[0].N}`,
 		`func get[T ~*Data](p T)int{return (*p).N};func f(p *Data)int{return get(p)}`,
+		`type Bound interface{~*Alias};type Box[T Bound]struct{Current T}
+func get[T Bound](p T)T{var zero T;p=zero;return p};func f(p Pointer){_=get(p);_=Box[Pointer]{Current:p}}`,
+		`func get[T ~*Data](p T)T{p=nil;return p};func f(p Pointer){_=get(p)}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
@@ -85,6 +88,9 @@ func TestFrozenPointerTargets(t *testing.T) {
 		{`func f(s *State){slot:=&s.Current;(**slot).N++}`, "writes to immutable objects"},
 		{`func f[T ~*Data](p T){(*p).N++}`, "writes to immutable objects"},
 		{`func f[T ~*Data](p T){*p=Data{}}`, "writes to immutable objects"},
+		{`func f[T ~*Data](p T){(*p).Array[0]++}`, "writes to immutable objects"},
+		{`func f[T ~*Data](p T){_= &(*p).N}`, "interior addresses"},
+		{`func f[T ~*Data](p T){(*p).Count.Inc()}`, "immutable methods require"},
 		{`func f[T any](p *T,v T){*p=v};func g(p *Data){f(p,Data{})}`, "user generic"},
 		{`func f(v Data){_= &v}`, "fresh allocation"},
 		{`type Bad struct { Value Data }`, "unmarked struct contains immutable field"},

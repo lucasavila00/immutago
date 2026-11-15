@@ -20,9 +20,13 @@ func NewBoxProjection(value im.Projection[*Box]) BoxProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v BoxProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v BoxProjection) Unsafe() *Box { return v.immutagoProjection.Unsafe() }
+
 // Table reads the Table field.
 func (v BoxProjection) Table() im.UncheckedValue[Table] {
-	return v.immutagoProjection.Read().Table
+	return v.immutagoProjection.Unsafe().Table
 }
 
 // BoxCell publishes frozen Box values. Do not copy it.
@@ -33,9 +37,3 @@ func (c *BoxCell) Store(value Box) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *BoxCell) Load() BoxProjection { return NewBoxProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *BoxCell) LoadShared() Box { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *BoxCell) LoadSharedPointer() *Box { return c.value.LoadSharedPointer() }

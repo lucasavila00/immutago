@@ -20,9 +20,13 @@ func NewCountBoxProjection(value im.Projection[*CountBox]) CountBoxProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v CountBoxProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v CountBoxProjection) Unsafe() *CountBox { return v.immutagoProjection.Unsafe() }
+
 // Value reads the Value field.
 func (v CountBoxProjection) Value() int {
-	return v.immutagoProjection.Read().Value
+	return v.immutagoProjection.Unsafe().Value
 }
 
 // CountBoxCell publishes frozen CountBox values. Do not copy it.
@@ -33,12 +37,6 @@ func (c *CountBoxCell) Store(value CountBox) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *CountBoxCell) Load() CountBoxProjection { return NewCountBoxProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *CountBoxCell) LoadShared() CountBox { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *CountBoxCell) LoadSharedPointer() *CountBox { return c.value.LoadSharedPointer() }
 
 // DerivedProjection provides local read access to *Derived.
 type DerivedProjection struct {
@@ -54,14 +52,18 @@ func NewDerivedProjection(value im.Projection[*Derived]) DerivedProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v DerivedProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v DerivedProjection) Unsafe() *Derived { return v.immutagoProjection.Unsafe() }
+
 // Name reads the Name field.
 func (v DerivedProjection) Name() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Name)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Name)
 }
 
 // Count reads the Count field.
 func (v DerivedProjection) Count() Number {
-	return v.immutagoProjection.Read().Count
+	return v.immutagoProjection.Unsafe().Count
 }
 
 // Flags reads the Flags field.
@@ -74,27 +76,27 @@ func (v DerivedProjection) Flags() DerivedFlagsProjection {
 
 // Small reads the Small field.
 func (v DerivedProjection) Small() int8 {
-	return v.immutagoProjection.Read().Small
+	return v.immutagoProjection.Unsafe().Small
 }
 
 // Unsigned reads the Unsigned field.
 func (v DerivedProjection) Unsigned() uint64 {
-	return v.immutagoProjection.Read().Unsigned
+	return v.immutagoProjection.Unsafe().Unsigned
 }
 
 // Address reads the Address field.
 func (v DerivedProjection) Address() uintptr {
-	return v.immutagoProjection.Read().Address
+	return v.immutagoProjection.Unsafe().Address
 }
 
 // Float reads the Float field.
 func (v DerivedProjection) Float() float64 {
-	return v.immutagoProjection.Read().Float
+	return v.immutagoProjection.Unsafe().Float
 }
 
 // Complex reads the Complex field.
 func (v DerivedProjection) Complex() complex128 {
-	return v.immutagoProjection.Read().Complex
+	return v.immutagoProjection.Unsafe().Complex
 }
 
 // DerivedCell publishes frozen Derived values. Do not copy it.
@@ -105,12 +107,6 @@ func (c *DerivedCell) Store(value Derived) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *DerivedCell) Load() DerivedProjection { return NewDerivedProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *DerivedCell) LoadShared() Derived { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *DerivedCell) LoadSharedPointer() *Derived { return c.value.LoadSharedPointer() }
 
 // LeafProjection provides local read access to *Leaf.
 type LeafProjection struct {
@@ -126,14 +122,18 @@ func NewLeafProjection(value im.Projection[*Leaf]) LeafProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v LeafProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v LeafProjection) Unsafe() *Leaf { return v.immutagoProjection.Unsafe() }
+
 // Name reads the Name field.
 func (v LeafProjection) Name() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Name)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Name)
 }
 
 // Count reads the Count field.
 func (v LeafProjection) Count() Number {
-	return v.immutagoProjection.Read().Count
+	return v.immutagoProjection.Unsafe().Count
 }
 
 // Flags reads the Flags field.
@@ -146,27 +146,27 @@ func (v LeafProjection) Flags() LeafFlagsProjection {
 
 // Small reads the Small field.
 func (v LeafProjection) Small() int8 {
-	return v.immutagoProjection.Read().Small
+	return v.immutagoProjection.Unsafe().Small
 }
 
 // Unsigned reads the Unsigned field.
 func (v LeafProjection) Unsigned() uint64 {
-	return v.immutagoProjection.Read().Unsigned
+	return v.immutagoProjection.Unsafe().Unsigned
 }
 
 // Address reads the Address field.
 func (v LeafProjection) Address() uintptr {
-	return v.immutagoProjection.Read().Address
+	return v.immutagoProjection.Unsafe().Address
 }
 
 // Float reads the Float field.
 func (v LeafProjection) Float() float64 {
-	return v.immutagoProjection.Read().Float
+	return v.immutagoProjection.Unsafe().Float
 }
 
 // Complex reads the Complex field.
 func (v LeafProjection) Complex() complex128 {
-	return v.immutagoProjection.Read().Complex
+	return v.immutagoProjection.Unsafe().Complex
 }
 
 // LeafCell publishes frozen Leaf values. Do not copy it.
@@ -177,12 +177,6 @@ func (c *LeafCell) Store(value Leaf) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *LeafCell) Load() LeafProjection { return NewLeafProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *LeafCell) LoadShared() Leaf { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *LeafCell) LoadSharedPointer() *Leaf { return c.value.LoadSharedPointer() }
 
 // TreeProjection provides local read access to *Tree.
 type TreeProjection struct {
@@ -198,19 +192,23 @@ func NewTreeProjection(value im.Projection[*Tree]) TreeProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v TreeProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v TreeProjection) Unsafe() *Tree { return v.immutagoProjection.Unsafe() }
+
 // Leaf reads the Leaf field.
 func (v TreeProjection) Leaf() LeafProjection {
-	return NewLeafProjection(im.ProjectionOf(&v.immutagoProjection.Read().Leaf))
+	return NewLeafProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Leaf))
 }
 
 // Children reads the Children field.
 func (v TreeProjection) Children() im.SliceProjection[Tree] {
-	return v.immutagoProjection.Read().Children.Projection()
+	return v.immutagoProjection.Unsafe().Children.Projection()
 }
 
 // Index reads the Index field.
 func (v TreeProjection) Index() im.MapProjection[string, Tree] {
-	return v.immutagoProjection.Read().Index.Projection()
+	return v.immutagoProjection.Unsafe().Index.Projection()
 }
 
 // TreeCell publishes frozen Tree values. Do not copy it.
@@ -221,12 +219,6 @@ func (c *TreeCell) Store(value Tree) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *TreeCell) Load() TreeProjection { return NewTreeProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *TreeCell) LoadShared() Tree { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *TreeCell) LoadSharedPointer() *Tree { return c.value.LoadSharedPointer() }
 
 // DerivedFlagsProjection reads a fixed array locally.
 type DerivedFlagsProjection struct {
@@ -239,7 +231,7 @@ func (v DerivedFlagsProjection) Len() int { return 3 }
 
 // At reads the element at index.
 func (v DerivedFlagsProjection) At(index0 int) bool {
-	return v.immutagoProjection.Read().Flags[index0]
+	return v.immutagoProjection.Unsafe().Flags[index0]
 }
 
 // LeafFlagsProjection reads a fixed array locally.
@@ -253,5 +245,5 @@ func (v LeafFlagsProjection) Len() int { return 3 }
 
 // At reads the element at index.
 func (v LeafFlagsProjection) At(index0 int) bool {
-	return v.immutagoProjection.Read().Flags[index0]
+	return v.immutagoProjection.Unsafe().Flags[index0]
 }

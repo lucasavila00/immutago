@@ -20,14 +20,18 @@ func NewBandProjection(value im.Projection[*Band]) BandProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v BandProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v BandProjection) Unsafe() *Band { return v.immutagoProjection.Unsafe() }
+
 // UpToGrams reads the UpToGrams field.
 func (v BandProjection) UpToGrams() int64 {
-	return v.immutagoProjection.Read().UpToGrams
+	return v.immutagoProjection.Unsafe().UpToGrams
 }
 
 // PriceCents reads the PriceCents field.
 func (v BandProjection) PriceCents() int64 {
-	return v.immutagoProjection.Read().PriceCents
+	return v.immutagoProjection.Unsafe().PriceCents
 }
 
 // BandCell publishes frozen Band values. Do not copy it.
@@ -38,12 +42,6 @@ func (c *BandCell) Store(value Band) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *BandCell) Load() BandProjection { return NewBandProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *BandCell) LoadShared() Band { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *BandCell) LoadSharedPointer() *Band { return c.value.LoadSharedPointer() }
 
 // CarrierServiceProjection provides local read access to *CarrierService.
 type CarrierServiceProjection struct {
@@ -59,29 +57,33 @@ func NewCarrierServiceProjection(value im.Projection[*CarrierService]) CarrierSe
 // IsNil reports whether the selected pointer is nil.
 func (v CarrierServiceProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v CarrierServiceProjection) Unsafe() *CarrierService { return v.immutagoProjection.Unsafe() }
+
 // ID reads the ID field.
 func (v CarrierServiceProjection) ID() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().ID)
+	return im.ProjectString(v.immutagoProjection.Unsafe().ID)
 }
 
 // Carrier reads the Carrier field.
 func (v CarrierServiceProjection) Carrier() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Carrier)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Carrier)
 }
 
 // Name reads the Name field.
 func (v CarrierServiceProjection) Name() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Name)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Name)
 }
 
 // DeliveryDays reads the DeliveryDays field.
 func (v CarrierServiceProjection) DeliveryDays() int {
-	return v.immutagoProjection.Read().DeliveryDays
+	return v.immutagoProjection.Unsafe().DeliveryDays
 }
 
 // Rates reads the Rates field.
 func (v CarrierServiceProjection) Rates() im.MapProjection[string, im.FrozenSlice[Band]] {
-	return v.immutagoProjection.Read().Rates.Projection()
+	return v.immutagoProjection.Unsafe().Rates.Projection()
 }
 
 // CarrierServiceCell publishes frozen CarrierService values. Do not copy it.
@@ -94,12 +96,6 @@ func (c *CarrierServiceCell) Store(value CarrierService) { c.value.Store(value) 
 func (c *CarrierServiceCell) Load() CarrierServiceProjection {
 	return NewCarrierServiceProjection(c.value.LoadPointer())
 }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *CarrierServiceCell) LoadShared() CarrierService { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *CarrierServiceCell) LoadSharedPointer() *CarrierService { return c.value.LoadSharedPointer() }
 
 // CatalogProjection provides local read access to *Catalog.
 type CatalogProjection struct {
@@ -115,24 +111,28 @@ func NewCatalogProjection(value im.Projection[*Catalog]) CatalogProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v CatalogProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v CatalogProjection) Unsafe() *Catalog { return v.immutagoProjection.Unsafe() }
+
 // Version reads the Version field.
 func (v CatalogProjection) Version() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Version)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Version)
 }
 
 // Currency reads the Currency field.
 func (v CatalogProjection) Currency() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Currency)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Currency)
 }
 
 // Destinations reads the Destinations field.
 func (v CatalogProjection) Destinations() im.MapProjection[string, string] {
-	return v.immutagoProjection.Read().Destinations.Projection()
+	return v.immutagoProjection.Unsafe().Destinations.Projection()
 }
 
 // Services reads the Services field.
 func (v CatalogProjection) Services() im.SliceProjection[CarrierService] {
-	return v.immutagoProjection.Read().Services.Projection()
+	return v.immutagoProjection.Unsafe().Services.Projection()
 }
 
 // CatalogCell publishes frozen Catalog values. Do not copy it.
@@ -143,9 +143,3 @@ func (c *CatalogCell) Store(value Catalog) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *CatalogCell) Load() CatalogProjection { return NewCatalogProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *CatalogCell) LoadShared() Catalog { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *CatalogCell) LoadSharedPointer() *Catalog { return c.value.LoadSharedPointer() }

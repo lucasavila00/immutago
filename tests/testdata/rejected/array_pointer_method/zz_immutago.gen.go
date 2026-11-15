@@ -20,6 +20,10 @@ func NewCountProjection(value im.Projection[*Count]) CountProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v CountProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v CountProjection) Unsafe() *Count { return v.immutagoProjection.Unsafe() }
+
 // Values reads the Values field.
 func (v CountProjection) Values() CountValuesProjection {
 	if im.IsNil(v.immutagoProjection) {
@@ -37,12 +41,6 @@ func (c *CountCell) Store(value Count) { c.value.Store(value) }
 // Load reads the current value through a local projection.
 func (c *CountCell) Load() CountProjection { return NewCountProjection(c.value.LoadPointer()) }
 
-// LoadShared returns the frozen value for persistent use.
-func (c *CountCell) LoadShared() Count { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *CountCell) LoadSharedPointer() *Count { return c.value.LoadSharedPointer() }
-
 // ValueProjection provides local read access to *Value.
 type ValueProjection struct {
 	im.Local
@@ -57,9 +55,13 @@ func NewValueProjection(value im.Projection[*Value]) ValueProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ValueProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ValueProjection) Unsafe() *Value { return v.immutagoProjection.Unsafe() }
+
 // N reads the N field.
 func (v ValueProjection) N() CountProjection {
-	return NewCountProjection(im.ProjectionOf(&v.immutagoProjection.Read().N))
+	return NewCountProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().N))
 }
 
 // ValueCell publishes frozen Value values. Do not copy it.
@@ -70,12 +72,6 @@ func (c *ValueCell) Store(value Value) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ValueCell) Load() ValueProjection { return NewValueProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ValueCell) LoadShared() Value { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ValueCell) LoadSharedPointer() *Value { return c.value.LoadSharedPointer() }
 
 // CountValuesProjection reads a fixed array locally.
 type CountValuesProjection struct {
@@ -88,5 +84,5 @@ func (v CountValuesProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v CountValuesProjection) At(index0 int) int {
-	return v.immutagoProjection.Read().Values[index0]
+	return v.immutagoProjection.Unsafe().Values[index0]
 }

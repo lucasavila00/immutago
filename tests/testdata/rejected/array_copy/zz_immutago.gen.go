@@ -20,6 +20,10 @@ func NewGoodProjection(value im.Projection[*Good]) GoodProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v GoodProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v GoodProjection) Unsafe() *Good { return v.immutagoProjection.Unsafe() }
+
 // Array reads the Array field.
 func (v GoodProjection) Array() GoodArrayProjection {
 	if im.IsNil(v.immutagoProjection) {
@@ -37,12 +41,6 @@ func (c *GoodCell) Store(value Good) { c.value.Store(value) }
 // Load reads the current value through a local projection.
 func (c *GoodCell) Load() GoodProjection { return NewGoodProjection(c.value.LoadPointer()) }
 
-// LoadShared returns the frozen value for persistent use.
-func (c *GoodCell) LoadShared() Good { return c.value.LoadShared() }
-
-// LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *GoodCell) LoadSharedPointer() *Good { return c.value.LoadSharedPointer() }
-
 // GoodArrayProjection reads a fixed array locally.
 type GoodArrayProjection struct {
 	im.Local
@@ -54,5 +52,5 @@ func (v GoodArrayProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v GoodArrayProjection) At(index0 int) int {
-	return v.immutagoProjection.Read().Array[index0]
+	return v.immutagoProjection.Unsafe().Array[index0]
 }
