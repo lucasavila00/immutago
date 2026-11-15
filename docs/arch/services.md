@@ -100,11 +100,11 @@ describes how callers manage these lifetimes.
 
 The group stores children in a doubly linked list under its mutex. Each child
 holds its own links. Add and removal take constant time; removal clears both
-links. Each halt call copies the list in reverse insertion order while holding
-the mutex. It then uses this snapshot to stop children outside the mutex.
-Concurrent removal does not change the snapshot or its order.
+links. Stop closes admission, then selects the last child under the mutex and waits
+for it outside the mutex. It repeats until the list is empty. No new entries
+can appear during shutdown, so no snapshot is needed.
 [Registry tests](../../pkg/supervise/registry_test.go) check removal, allocation,
-and snapshot order.
+and shutdown order.
 
 ## Lifetime and retry ownership
 

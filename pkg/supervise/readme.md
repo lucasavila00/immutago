@@ -6,34 +6,13 @@
 import "github.com/lucasavila00/immutago/pkg/supervise"
 ```
 
-Package supervise manages background services and restarts them after a panic.
+Package supervise runs services with independent retries and owned child lifetimes.
 
-Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\) error. Start initializes the service and returns Ref\[T\]. Call ref.Borrow\(\).Method\(args\) to select the current service after any restart. Calls run in the caller's goroutine; review shared fields, locks, saved inputs, and dependency calls in the service code. The checker validates exported results and direct Borrow calls.
-
-The service guide is at https://github.com/lucasavila00/immutago/blob/main/docs/guides/services.md. The complete source rules and runtime behavior are at https://github.com/lucasavila00/immutago/blob/main/docs/reference/services.md.
-
-## func StartReserved
-
-```go
-func StartReserved[T, A any, P interface {
-    *T
-    Init() error
-    Run(context.Context)
-    bind(A, func(any, []byte))
-    begin(context.Context) context.Context
-    end()
-}](parent *Group, ref Ref[T], args A) error
-```
-
-StartReserved starts a reference from Reserve under parent. It sets args on a fresh T and calls Init before publishing T or starting Run. An Init error leaves ref unstarted, so the caller can retry. An Init panic reaches the caller.
-
-Each restart repeats setup on a fresh value with the same args. Failed setup keeps the previous value in ref. If parent has stopped, Init still runs but Run does not. The runtime stops children created by a value that will not run.
-
-A zero Ref panics with "supervise: StartReserved needs a Ref from Reserve". Starting an already started reference panics. If concurrent starts compete, the one that loses publication stops its staged children and panics.
+Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\) error. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. Groups control lifetime and stop order. They do not restart services together.
 
 ## type ConcurrentSafe
 
-ConcurrentSafe carries a caller's promise that its value is safe for concurrent use. The wrapper adds no synchronization and has no special checker rule. Ordinary service arguments can hold T directly.
+ConcurrentSafe records a caller's promise that its value supports concurrent use. It adds no synchronization or checker rule. Ordinary arguments can hold T directly.
 
 ```go
 type ConcurrentSafe[T any] struct {
@@ -47,7 +26,7 @@ type ConcurrentSafe[T any] struct {
 func AssumeConcurrentSafe[T any](v T) ConcurrentSafe[T]
 ```
 
-AssumeConcurrentSafe records the caller's promise that concurrent use of v is safe. It adds no checking, synchronization, or immutability to v.
+AssumeConcurrentSafe records the caller's promise about concurrent use of v.
 
 ### func \(ConcurrentSafe\[T\]\) Value
 
@@ -55,11 +34,39 @@ AssumeConcurrentSafe records the caller's promise that concurrent use of v is sa
 func (d ConcurrentSafe[T]) Value() T
 ```
 
-Value reads the wrapped dependency. A zero ConcurrentSafe value contains the zero value of T.
+Value returns the wrapped dependency. The zero wrapper contains the zero T.
+
+## type Failure
+
+Failure identifies the service whose terminal failure stopped the root. Value is its last panic value, restart Init error, or a runtime.Goexit error. Stack is captured in that service's goroutine. Groups pass the same failure to the root without wrapping it or applying another retry limit.
+
+```go
+type Failure struct {
+    Service string
+    Value   any
+    Stack   []byte
+}
+```
+
+### func \(\*Failure\) Error
+
+```go
+func (f *Failure) Error() string
+```
+
+Error names the service and its terminal failure.
+
+### func \(\*Failure\) Unwrap
+
+```go
+func (f *Failure) Unwrap() error
+```
+
+Unwrap returns the original failure when it is an error.
 
 ## type Group
 
-Group manages the lifetime and restart rules of its child services and groups. Create a root with NewRoot or a nested group with StartGroup. The zero value is not usable. A group returned by Service.Children belongs to that service run.
+Group owns an ordered set of service lifetimes and nested groups. It activates at most once and stops at most once. The zero value is not usable.
 
 ```go
 type Group struct {
@@ -70,12 +77,10 @@ type Group struct {
 ### func NewRoot
 
 ```go
-func NewRoot(report func(value any, stack []byte)) *Group
+func NewRoot(report func(any, []byte)) *Group
 ```
 
-NewRoot creates a running root group. A failure that reaches this group panics and ends the program.
-
-If report is non\-nil, it receives each recovered panic or restart Init error and a stack before the restart delay. Child groups use the same function. Reports for different children can overlap. The group waits for report to return, and a panic in report is not recovered. Do not wait for that group to stop inside report.
+NewRoot creates an active lifetime group. An exhausted service or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered panic or restart Init error with its original stack. Reports can overlap, must return, and must not wait for their group to stop.
 
 ### func StartGroup
 
@@ -83,7 +88,7 @@ If report is non\-nil, it receives each recovered panic or restart Init error an
 func StartGroup(parent *Group) *Group
 ```
 
-StartGroup creates a child group under parent. Use it to stop selected services together or restart them together when a child passes its restart limit. A stopped parent returns a stopped group. When this group's Stop channel closes, the parent has also removed it from the child list.
+StartGroup creates a lifetime group for selective shutdown. It does not add a restart budget. An exhausted failure goes directly to the root. A stopped parent returns a stopped group.
 
 ### func \(\*Group\) Stop
 
@@ -91,13 +96,11 @@ StartGroup creates a child group under parent. Use it to stop selected services 
 func (s *Group) Stop() <-chan struct{}
 ```
 
-Stop requests shutdown and returns its completion channel without waiting. Repeated calls return the same channel. The channel closes after all children stop, last started first, and a nested group is removed from its parent.
-
-Run methods must return when their contexts end. Stop does not wait for direct service method calls, and their references remain callable. A Run method can request its own group's stop, but must not wait for that stop to complete.
+Stop prevents new retries in the subtree and requests ordered shutdown. It returns the same completion channel on every call. Shutdown waits for children in reverse start order, then removes a nested group from its parent. It does not wait for ordinary direct method calls. A service can request its group's stop, but must not wait for that group from its own Run.
 
 ## type NoArgs
 
-NoArgs supplies an empty start argument. Embed Service\[NoArgs\] and pass NoArgs\{\} to Start when the service needs no arguments.
+NoArgs supplies empty start arguments.
 
 ```go
 type NoArgs struct{}
@@ -105,21 +108,13 @@ type NoArgs struct{}
 
 ## type Ref
 
-Ref is a reference to one service. Copies select the same service, including after a restart. The analyzer requires T to be a concrete struct that embeds Service. References can be stored in immutable fields and returned as service results; the service state can still change. Start returns an initialized reference. Reserve creates one for later startup; a zero Ref is unset and cannot be used in place of Reserve. Use IsZero to test it.
+Ref selects the latest initialized service value. Copies share one atomic slot. Stop does not invalidate a reference or wait for direct service method calls.
 
 ```go
 type Ref[T any] struct {
     // contains filtered or unexported fields
 }
 ```
-
-### func Reserve
-
-```go
-func Reserve[T any]() Ref[T]
-```
-
-Reserve creates a reference that StartReserved can initialize later. Use it to connect services whose start arguments need each other's references. Borrow panics until initialization succeeds.
 
 ### func Start
 
@@ -128,15 +123,13 @@ func Start[T, A any, P interface {
     *T
     Init() error
     Run(context.Context)
-    bind(A, func(any, []byte))
+    bind(A, *Group)
     begin(context.Context) context.Context
     end()
 }](parent *Group, args A) (Ref[T], error)
 ```
 
-Start creates T with args, calls Init, and returns its reference after setup succeeds. Run then runs under parent. Only T must be written as a type argument.
-
-An Init error returns an empty Ref and that error. An Init panic reaches the caller. If parent has stopped, setup still runs but Run does not. Start uses Reserve and StartReserved; their initialization and restart rules apply.
+Start creates T, calls Init in the caller, and publishes the initialized value. A first Init error returns a zero Ref and the error; a first Init panic reaches the caller. The runtime stops staged children in both cases. If parent is stopped, Init can still finish, but Run cannot start. Stop waits for registered children, not an initial Init that has not registered yet.
 
 ### func \(Ref\[T\]\) Borrow
 
@@ -144,9 +137,7 @@ An Init error returns an empty Ref and that error. An Init panic reaches the cal
 func (p Ref[T]) Borrow() *T
 ```
 
-Borrow selects the last successfully initialized service value with one atomic load. For direct Ref calls, the analyzer accepts only ref.Borrow\(\).Method\(args\). Method must be exported and must not be Init, Run, or a runtime method. Direct calls cannot save the pointer, Borrow method, or selected method. Interface calls can expose the pointer without these source checks. Borrow is shared and is not exclusive. No release call is needed. A call in progress finishes on its selected instance, even after a restart.
-
-Borrow panics with "supervise: zero Ref" for a zero reference, or with "supervise: Ref not started" for an unstarted reservation. It can select a value whose Run has ended. Stop does not invalidate the reference or block later calls.
+Borrow selects the latest initialized value with one atomic load. Calls can finish on an older value after a retry. Borrow is shared, not exclusive. A zero reference panics with "supervise: zero Ref".
 
 ### func \(Ref\[T\]\) IsZero
 
@@ -154,11 +145,11 @@ Borrow panics with "supervise: zero Ref" for a zero reference, or with "supervis
 func (p Ref[T]) IsZero() bool
 ```
 
-IsZero reports whether the reference is the unset zero Ref. Borrow on a zero Ref panics. IsZero does not check service readiness: a reference from Reserve is nonzero before start, and a started reference stays nonzero after stop.
+IsZero reports whether this reference is unset.
 
 ## type Service
 
-Service supplies the arguments and child group of a supervised service. Embed Service\[A\] to supply start arguments and runtime methods; add Run\(context.Context\) for background work. Start and StartReserved create and initialize each service value. Call an exported service method with ref.Borrow\(\).Method\(args\).
+Service supplies start arguments and the children owned by one service attempt. Embed it by value. Start creates and initializes each fresh service value.
 
 ```go
 type Service[A any] struct {
@@ -172,7 +163,7 @@ type Service[A any] struct {
 func (p *Service[A]) Args() A
 ```
 
-Args reads the start arguments of this service value. Each restart receives the same arguments.
+Args returns the arguments supplied to Start. Every retry receives the same arguments.
 
 ### func \(\*Service\[A\]\) Children
 
@@ -180,11 +171,7 @@ Args reads the start arguments of this service value. Each restart receives the 
 func (p *Service[A]) Children() *Group
 ```
 
-Children returns the group owned by this service run. Use it as the parent of Start, StartReserved, or StartGroup. The runtime stops it when this run ends. To stop selected children separately, create a nested group.
-
-Each run has a separate child group. Children created before Run begins wait for that run. Failed setup stops them without running them. On stop, the runtime waits for children, last started first, before it cancels this service's Run context. A return or panic from Run also stops the children before the run ends.
-
-A child that passes its restart limit fails this run. After the run ends, Children returns a stopped group; later starts can initialize but cannot run.
+Children returns the group owned by this service attempt. Its services wait until the parent Run starts. The runtime stops and waits for these children before it replaces the parent. A later attempt owns a new group. After this attempt ends, Children returns a stopped group.
 
 ### func \(\*Service\[A\]\) Init
 
@@ -192,6 +179,6 @@ A child that passes its restart limit fails this run. After the run ends, Childr
 func (*Service[A]) Init() error
 ```
 
-Init supplies successful empty setup when the service does not declare Init. The runtime calls Init on each fresh value before Borrow or Run can use it. A declared Init must release any application resources it opened before returning an error; the runtime stops staged children.
+Init supplies empty setup when the service does not declare Init. A declared Init must release application resources if it fails. The runtime stops children created by that setup attempt.
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

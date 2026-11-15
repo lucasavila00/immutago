@@ -27,6 +27,8 @@ returning when a context ends, require implementation review.
 | Rejected examples — non-exhaustive | Allowed replacement |
 | --- | --- |
 | `type Worker struct { *supervise.Service[Args] }` | Embed `supervise.Service[Args]` as a value. |
+| `type Pointer = *supervise.Service[Args]`; `type Worker struct { Pointer }` | Alias `supervise.Service[Args]` without `*`. |
+| `type Worker struct { *Base }` where Base embeds Service | Embed `Base` as a value. |
 | `supervise.Ref[int]` | Use a concrete service struct as the type argument. |
 | `func (s *Worker) Name() string` | Return `im.StringProjection`; see [service results](service-results.md). |
 | Save a Local projection in start arguments | Supply Frozen data and create a projection when reading. |
@@ -37,11 +39,13 @@ returning when a context ends, require implementation review.
 | --- | --- |
 | Direct value embedding | `type Worker struct { supervise.Service[Args] }` |
 | Alias to a value type | `type Base = supervise.Service[Args]`; `type Worker struct { Base }` |
+| Alias to a service struct | `type Alias = Worker` |
+| Defined struct with the same value fields | `type Another Worker`; declare its own Run method. |
+| Anonymous struct with value embedding | `type Anonymous = struct { Worker }` |
 | Value embedding through another struct | `type Base struct { supervise.Service[Args] }`; `type Worker struct { Base }` |
 
 Every field on the selected path to the runtime methods must be a value field.
-The same rule applies to anonymous structs and aliases to service structs.
-Other fields follow ordinary Go rules.
+Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
 
 ## Startup
 
@@ -116,7 +120,9 @@ Stop does not wait for requests already using the old reference.
 | Stop is requested | Prevent new retries in that subtree immediately; cancel running services in reverse start order. |
 | Restart Init is already running when Stop is requested | Let Init finish, stop its children, and discard the replacement without publishing it or calling Run. |
 
-Run must return when its context ends. Stop cannot force Run or Init to return
+Stop does not interrupt work already admitted. Registered work must finish
+before the completion channel closes. Run must return when its context ends.
+Stop cannot force Run or Init to return
 and does not wait for direct method calls. Release locks that children need
 before waiting for Stop. A child or report function must not wait for its own
 group to stop: the group is waiting for that code to finish. A child can call a
