@@ -19,7 +19,7 @@ result_uses.go:12:2: unsupported immutable operation: Local values and pointers 
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 result_uses.go:17:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: message.Count = 1
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 result_uses.go:23:27: unsupported immutable operation: closures cannot capture immutable storage
   source: pointer
   type: *service.Reply
@@ -44,7 +44,7 @@ results.go:27:17: unsupported immutable operation: returning Local pointers is u
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 results.go:28:50: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Count++
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 results.go:29:75: unsupported immutable operation: closures cannot capture immutable storage
   source: p
   type: *service.Reply

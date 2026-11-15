@@ -30,7 +30,7 @@ effect analysis to make that claim.
 | [internal/checker](../../internal/checker/proof.go) | Prove each field, key, and element type. |
 | [internal/freeze](../../internal/freeze/freeze.go) | Require one native builder handle and reject use after Freeze. |
 | [internal/freeze/flow](../../internal/freeze/flow/graph.go) | Supply the builder solver's graph and set operations. |
-| [pkg/im](../../pkg/im/marker.go) | Define `im.Frozen`, `im.Local`, and the trusted native storage wrappers. |
+| [pkg/im](../../pkg/im/marker.go) | Define `im.Frozen`, `im.Local`, `im.Copied`, and the trusted native storage wrappers. |
 | [pkg/supervise](../../pkg/supervise/supervise.go) | Define `Service`, service references, and the trusted group runtime. |
 | [tests](../../tests/cli_test.go) | Run consumer fixtures through the command and vet driver. |
 

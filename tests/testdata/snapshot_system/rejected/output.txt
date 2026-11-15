@@ -143,7 +143,7 @@ snapshot_categories.go:62:26: unsupported immutable operation: closures cannot c
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
 snapshot_categories.go:67:61: unsupported immutable operation: writes to immutable objects are unsupported
   source: value.Text = im.StringProjection{}
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 snapshot_categories.go:68:61: unsupported immutable operation: immutable callbacks are unsupported
   source: all := projection.All()
   fix: call a named, non-generic function directly with a concrete immutable parameter
@@ -291,7 +291,7 @@ snapshot_projection.go:24:7: unsupported immutable operation: Projection.Read is
   fix: use the generated field accessor
 snapshot_projection.go:25:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: projection.Read().Name = "changed"
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 snapshot_projection.go:26:9: unsupported immutable operation: bound immutable methods are unsupported
   source: projection.Read
   type: func() *rejected.Data

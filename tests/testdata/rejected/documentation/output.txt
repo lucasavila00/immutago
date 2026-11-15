@@ -37,10 +37,10 @@ reference_forms.go:15:47: unsupported immutable operation: immutable references 
   fix: allocate a concrete struct that embeds im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses
 reference_forms.go:18:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Values[0].X = 1
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 reference_forms.go:22:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: values[0].X = 1
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 reference_forms.go:32:34: unsupported immutable operation: closures cannot capture immutable storage
   source: point
   type: *docrejected.LocalPoint

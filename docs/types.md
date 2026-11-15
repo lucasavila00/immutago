@@ -4,7 +4,7 @@ These categories define fields, Cells, projections, and service results.
 
 | Category — exhaustive | Types |
 | --- | --- |
-| Frozen | Booleans, numbers, native strings, FrozenString, unnamed arrays of Frozen values, Frozen records, pointers to Frozen records, FrozenSlice/FrozenMap with Frozen arguments, UncheckedValue handles, and service references. |
+| Frozen | Booleans, numbers, native strings, FrozenString, unnamed arrays of Frozen values, Frozen and Copied records, pointers to Frozen records, FrozenSlice/FrozenMap with Frozen arguments, UncheckedValue handles, and service references. |
 | Copied | Booleans, numbers, Copied records, service references, and unnamed arrays of Copied values. |
 | Local | Projection, StringProjection, SliceProjection, MapProjection, Local records, and unnamed arrays whose elements are Local. |
 | Read result | Copied or Local. |

@@ -46,10 +46,10 @@ local_reference_escape.go:31:34: unsupported immutable operation: closures canno
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
 local_reference_escape.go:36:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: value.Value = 2
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 local_reference_escape.go:38:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: pointer.Value = 2
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 local_reference_escape.go:44:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go readLocal(value)
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer

@@ -3,6 +3,7 @@ package checker
 import (
 	"go/token"
 	"go/types"
+	"slices"
 	"testing"
 )
 
@@ -34,14 +35,10 @@ func TestCopiedRecordCategories(t *testing.T) {
 		{bad, false, false, false},
 		{badArray, false, false, false},
 	}
-	for _, reverse := range []bool{false, true} {
+	for range 2 {
 		var proofs Prover
 		var queries Classifier
-		for index := range cases {
-			if reverse {
-				index = len(cases) - index - 1
-			}
-			test := cases[index]
+		for _, test := range cases {
 			if got := proofs.FrozenReason(test.typ) == ""; got != test.frozen {
 				t.Errorf("Frozen(%s)=%v; want %v", test.typ, got, test.frozen)
 			}
@@ -58,5 +55,6 @@ func TestCopiedRecordCategories(t *testing.T) {
 				t.Errorf("Retained(%s)=%v; want %v", test.typ, got, test.retained)
 			}
 		}
+		slices.Reverse(cases)
 	}
 }

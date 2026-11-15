@@ -84,7 +84,7 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	case *ast.CallExpr:
 		return c.matchCall(source)
 	case *ast.StarExpr:
-		if c.protectedReference(c.pass.TypesInfo.TypeOf(source.X)) || !c.protectedRoot(source.X) {
+		if c.readablePointer(source.X) {
 			return ""
 		}
 	case *ast.UnaryExpr:
@@ -134,8 +134,7 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 	case *ast.IndexListExpr:
 		return c.matchFunctionValue(parent)
 	case *ast.StarExpr:
-		if parent.X == expression && (c.protectedReference(c.pass.TypesInfo.TypeOf(expression)) ||
-			!c.protectedRoot(expression)) {
+		if parent.X == expression && c.readablePointer(expression) {
 			return ""
 		}
 	case *ast.UnaryExpr:
@@ -159,6 +158,11 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 		return c.matchDeclaration(parent)
 	}
 	return "protected operation is outside the supported expression forms"
+}
+
+// readablePointer permits checked protected pointers and ordinary holder pointers.
+func (c *subsetChecks) readablePointer(expression ast.Expr) bool {
+	return c.protectedReference(c.pass.TypesInfo.TypeOf(expression)) || !c.protectedRoot(expression)
 }
 
 // matchFunctionValue permits protected functions only as direct callees.
@@ -209,7 +213,7 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 // matchUnary permits fresh marked allocations and ordinary scalar operations.
 func (c *subsetChecks) matchUnary(expression *ast.UnaryExpr) string {
 	if expression.Op == token.AND {
-		if !c.protectedRoot(expression.X) {
+		if !c.protectedStorage(expression.X) {
 			return ""
 		}
 		if c.generatedSource(expression) {

@@ -137,17 +137,22 @@ func (c *Classifier) expand(node *classificationNode) {
 	case constraintMode:
 		c.constraintEdges(node)
 	case storageMode, retainedMode:
-		if parameter, ok := node.key.typ.(*types.TypeParam); ok {
-			c.connect(node, parameter.Constraint(), constraintMode)
-		} else if IsCollection(node.key.typ) || IsProjection(node.key.typ) ||
-			IsLibraryType(node.key.typ, "Local") || Marked(node.key.typ) ||
-			(node.key.mode == storageMode && Copied(node.key.typ)) {
-			c.mark(node)
-		} else {
-			c.storageEdges(node)
-		}
+		c.storedValue(node)
 	case callableMode:
 		c.callableEdges(node)
+	}
+}
+
+// storedValue separates value transport from the immutable contents of a holder.
+func (c *Classifier) storedValue(node *classificationNode) {
+	if parameter, ok := node.key.typ.(*types.TypeParam); ok {
+		c.connect(node, parameter.Constraint(), constraintMode)
+	} else if IsCollection(node.key.typ) || IsProjection(node.key.typ) ||
+		IsLibraryType(node.key.typ, "Local") || Marked(node.key.typ) ||
+		(node.key.mode == storageMode && Copied(node.key.typ)) {
+		c.mark(node)
+	} else {
+		c.storageEdges(node)
 	}
 }
 

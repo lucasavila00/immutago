@@ -58,7 +58,7 @@ Unlisted operations on Copied storage are rejected.
 
 | Allowed form | Example |
 | --- | --- |
-| Named, local, or anonymous record declaration; marker or record alias | `type Alias = Score`, `struct { im.Copied; N int }` |
+| Named, local, or anonymous record declaration; defined record or alias | `type Other Score`, `type Alias = Score`, `struct { im.Copied; N int }` |
 | Zero value, literal, copy, whole variable replacement, or discard | `var score Score`, `score := Score{Value: 1}`, `other := score`, `score = Score{Value: 2}`, `_ = score` |
 | Field or array-element read; comparable value equality | `value := score.Value`, `flag := score.Flags[0]`, `same := score == other` |
 | Store by value in an ordinary struct, array, native slice, or native map | `requestState{Result: score}`, `[2]Score{score}`, `[]Score{score}`, `map[int]Score{1: score}` |
