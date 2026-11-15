@@ -1,6 +1,7 @@
 package im
 
 import (
+	"reflect"
 	"sync"
 	"testing"
 )
@@ -29,6 +30,11 @@ func TestCellZero(t *testing.T) {
 	var pointer Cell[*testChild]
 	if !IsNil(pointer.Load()) || pointer.Load().Unsafe() != nil {
 		t.Fatal("zero pointer cell is not nil")
+	}
+	pointer.Store(&testChild{Number: 1})
+	pointer.Store(nil)
+	if !IsNil(pointer.Load()) || pointer.Load().Unsafe() != nil {
+		t.Fatal("stored nil pointer changed")
 	}
 	var record Cell[testFrozen]
 	if record.Load().Unsafe().Number != 0 {
@@ -104,3 +110,17 @@ func TestCellUnsafePointer(t *testing.T) {
 }
 
 var sharedPointerSink *testFrozen
+
+// TestCellPublicAPI keeps publication separate from projection extraction.
+func TestCellPublicAPI(t *testing.T) {
+	typ := reflect.TypeFor[*Cell[int]]()
+	want := []string{"Load", "LoadPointer", "Store"}
+	if typ.NumMethod() != len(want) {
+		t.Fatal("Cell has an unexpected method")
+	}
+	for index, name := range want {
+		if typ.Method(index).Name != name {
+			t.Fatalf("Cell method = %s; want %s", typ.Method(index).Name, name)
+		}
+	}
+}

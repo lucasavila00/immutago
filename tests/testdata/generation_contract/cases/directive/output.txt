@@ -1,17 +1,1 @@
 schema.go:7:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
-zz_immutago.gen.go:25:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *contract.Data
-  fix: use the generated field accessor
-zz_immutago.gen.go:30:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *contract.Data
-  fix: use the generated field accessor
-zz_immutago.gen.go:43:26: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *contract.Data
-  fix: use the generated field accessor
-zz_immutago.gen.go:72:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *contract.Data
-  fix: use the generated field accessor

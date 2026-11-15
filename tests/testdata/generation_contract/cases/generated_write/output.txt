@@ -1,20 +1,4 @@
-zz_immutago.gen.go:25:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *contract.Data
-  fix: use the generated field accessor
-zz_immutago.gen.go:30:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *contract.Data
-  fix: use the generated field accessor
 zz_immutago.gen.go:3:1: zz_immutago.gen.go is stale; run go generate in this package
-zz_immutago.gen.go:43:26: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *contract.Data
-  fix: use the generated field accessor
-zz_immutago.gen.go:72:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *contract.Data
-  fix: use the generated field accessor
-zz_immutago.gen.go:75:38: unsupported immutable operation: writes to immutable objects are unsupported
-  source: value.immutagoProjection.Read().Number = 1
+zz_immutago.gen.go:73:38: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.immutagoProjection.Unsafe().Number = 1
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
