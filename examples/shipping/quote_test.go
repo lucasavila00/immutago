@@ -4,6 +4,8 @@ import (
 	"math"
 	"reflect"
 	"testing"
+
+	"github.com/lucasavila00/immutago/pkg/im"
 )
 
 // TestMultiParcelQuote checks the complete offer data for two parcels.
@@ -118,4 +120,21 @@ func sampleCatalog(t *testing.T) CatalogProjection {
 		t.Fatal(err)
 	}
 	return loader.Catalog()
+}
+
+// TestBandCopy leaves the published catalog unchanged when a caller changes its numeric copy.
+func TestBandCopy(t *testing.T) {
+	catalog := sampleCatalog(t)
+	service := NewCarrierServiceProjection(catalog.Services().AtPointer(0))
+	value, found := service.Rates().Get("domestic")
+	if !found {
+		t.Fatal("missing sample rates")
+	}
+	bands := im.SliceOf(value)
+	band := im.Value(bands.At(0))
+	price := band.PriceCents
+	band.PriceCents++
+	if im.Value(bands.At(0)).PriceCents != price {
+		t.Fatal("copy changed the published band")
+	}
 }

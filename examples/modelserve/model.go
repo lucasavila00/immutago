@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"math"
 	"sync"
 	"time"
 
@@ -77,11 +78,19 @@ func (s *Model) Run(ctx context.Context) {
 // Read selects the coefficients used for one complete prediction.
 func (s *Model) Read() ParametersProjection { return s.current.Load() }
 
-// Problem reports the last ordinary file error.
-func (s *Model) Problem() im.StringProjection {
+// ServiceStatus reads one model version and its current file error together.
+type ServiceStatus struct {
+	im.Local
+	Version im.StringProjection
+	Problem im.StringProjection
+}
+
+// Status selects the version and file error under the same publication lock.
+func (s *Model) Status() ServiceStatus {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return im.ProjectString(s.problem)
+	model := s.current.Load()
+	return ServiceStatus{Version: model.Version(), Problem: im.ProjectString(s.problem)}
 }
 
 // reload validates all coefficients before it publishes them together.
@@ -119,7 +128,10 @@ type Prediction struct {
 }
 
 // Predict uses the selected coefficients even if their service has stopped.
-func Predict(model ParametersProjection, input Features) Prediction {
-	return Prediction{Version: model.Version().Unsafe(),
-		Estimate: model.Base() + input.Area*model.PerSquareMeter() + float64(input.Rooms)*model.PerRoom()}
+func Predict(model ParametersProjection, input Features) (Prediction, error) {
+	estimate := model.Base() + input.Area*model.PerSquareMeter() + float64(input.Rooms)*model.PerRoom()
+	if math.IsInf(estimate, 0) || math.IsNaN(estimate) {
+		return Prediction{}, fmt.Errorf("model estimate is not finite")
+	}
+	return Prediction{Version: model.Version().Unsafe(), Estimate: estimate}, nil
 }

@@ -75,6 +75,10 @@ for work that must end with that run. A restart creates a new service value and
 child group, so create those children again. Other services keep running.
 Groups control shutdown only; they do not restart.
 
+The [model-serving example](../../examples/modelserve/README.md) applies these
+lifetimes to primary and challenger models. It publishes replacements before
+retiring old model groups and keeps in-flight requests on their selected data.
+
 The [runtime reference](../reference/services.md) defines child shutdown order,
 restart limits and failure reports. In tests,
 [`supervisetest.NewRoot(t)`](../../pkg/supervise/supervisetest/readme.md) stops the

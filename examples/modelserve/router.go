@@ -90,9 +90,8 @@ func (r *Router) Status() map[string]ArmStatus {
 		if err != nil {
 			continue
 		}
-		model := selected.switcher.Borrow().Read()
-		problem := selected.switcher.Borrow().Status()
-		result[name] = ArmStatus{Version: model.Version().Unsafe(), Problem: problem.Unsafe()}
+		status := selected.switcher.Borrow().Status()
+		result[name] = ArmStatus{Version: status.Version.Unsafe(), Problem: status.Problem.Unsafe()}
 	}
 	return result
 }

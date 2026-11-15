@@ -136,3 +136,20 @@ func runQuery(t *testing.T, files fs.FS, text, limit string) Response {
 	current.Store(buildIndex(documents, 1))
 	return searchIndex(current.Load(), request)
 }
+
+// TestPostingCopy leaves the published index unchanged when a caller changes its numeric copy.
+func TestPostingCopy(t *testing.T) {
+	var current IndexCell
+	current.Store(buildIndex([]sourceDocument{{path: "one.md", title: "One", body: "example"}}, 1))
+	value, found := current.Load().Terms().Get("example")
+	if !found {
+		t.Fatal("missing posting")
+	}
+	postings := im.SliceOf(value)
+	posting := im.Value(postings.At(0))
+	score := posting.Score
+	posting.Score++
+	if im.Value(postings.At(0)).Score != score {
+		t.Fatal("copy changed the published posting")
+	}
+}

@@ -23,7 +23,12 @@ func HTTPHandler(router *Router) http.Handler {
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
 			return
 		}
-		writeJSON(w, http.StatusOK, Predict(model, input))
+		prediction, err := Predict(model, input)
+		if err != nil {
+			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, prediction)
 	})
 	mux.HandleFunc("GET /status", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, router.Status())

@@ -70,14 +70,15 @@ func (s *Switcher) Read() ParametersProjection {
 }
 
 // Status reports errors from either the manifest or the selected model file.
-func (s *Switcher) Status() im.StringProjection {
+func (s *Switcher) Status() ServiceStatus {
 	s.mu.RLock()
 	problem, model := s.problem, s.current.model
 	s.mu.RUnlock()
+	status := model.Borrow().Status()
 	if problem != "" {
-		return im.ProjectString(problem)
+		return ServiceStatus{Version: status.Version, Problem: im.ProjectString(problem)}
 	}
-	return model.Borrow().Problem()
+	return status
 }
 
 // reload starts a valid replacement before it changes the request route.

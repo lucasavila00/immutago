@@ -92,8 +92,10 @@ edits must appear together.
 5. [main.go](cmd/search/main.go): supply `os.DirFS`, start the service, and stop
    the HTTP server and service group on an interrupt.
 
-`Index`, `Document`, and `Posting` are Frozen records. The generated
-[projections](zz_immutago.gen.go) read their fields directly. `Indexer.Read`
+`Index` and `Document` are Frozen records. Their generated
+[projections](zz_immutago.gen.go) read fields directly. Numeric `Posting` records
+use `im.Copied`; `im.Value(postings.At(i))` returns an independent value with
+direct field access. `Indexer.Read`
 returns `IndexProjection`; its root stays fixed throughout a query, including
 when another version is published. The query keeps that projection local and does
 not capture it. `Status` is a Local result with copied counts and an error

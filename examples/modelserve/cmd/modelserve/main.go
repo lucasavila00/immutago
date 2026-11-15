@@ -48,19 +48,20 @@ func run(ctx context.Context, directory, address string, every time.Duration) er
 	go func() { done <- server.Serve(listener) }()
 	logger.Printf("model serving: http://%s/status", listener.Addr())
 	select {
-	case err := <-done:
-		return err
+	case err = <-done:
 	case <-ctx.Done():
-		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := server.Shutdown(shutdown); err != nil {
-			_ = server.Close()
-			return err
-		}
-		err := <-done
-		if errors.Is(err, http.ErrServerClosed) {
-			return nil
-		}
-		return err
 	}
+	shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if shutdownErr := server.Shutdown(shutdown); shutdownErr != nil {
+		_ = server.Close()
+		return shutdownErr
+	}
+	if err == nil {
+		err = <-done
+	}
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
+	}
+	return err
 }

@@ -8,8 +8,9 @@ behavior. They run in the repository's Go module without an external service.
 | --- | --- |
 | [Delivery quotes](shipping/README.md) | Price a shipment of several parcels, compare carrier services, and apply changes to zones and weight bands. |
 | [Document search](search/README.md) | Search a directory of Markdown documents, rank results, and update the index when files change. |
+| [Model serving](modelserve/README.md) | Compare primary and challenger models, replace versions, and stop selected service subtrees. |
 
-Run either command from the repository root:
+Run a command from the repository root:
 
 ```sh
 go run ./examples/shipping/cmd/shipping
@@ -19,14 +20,20 @@ go run ./examples/shipping/cmd/shipping
 go run ./examples/search/cmd/search
 ```
 
-Shipping listens on `127.0.0.1:8080`; search listens on `127.0.0.1:8081`.
+```sh
+go run ./examples/modelserve/cmd/modelserve
+```
+
+Shipping listens on `127.0.0.1:8080`, search on `127.0.0.1:8081`, and model serving
+on `127.0.0.1:8082`.
 Each README gives a request to send from another terminal and a change to try
 while the application runs. Press Ctrl+C to stop.
 
 Read an application's HTTP handler first, then follow its calculation and loader.
-Each request selects one complete immutable version. One supervised service per
-application builds and publishes replacements. Failed updates leave the last
-valid data available to requests.
+Each request selects one complete immutable version. Shipping and search each use
+one supervised loader. Model serving uses nested switchers and model services,
+with dynamic challenger arms. Failed file updates leave the last valid data
+available to requests.
 
 Use the [language reference](../docs/reference/rules.md) for exact API forms. The application tests check
 prices, search results, failed updates, concurrent reads, and shutdown. Checker
