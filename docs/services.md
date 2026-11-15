@@ -95,7 +95,7 @@ apply to callers and dependencies.
 
 ## Startup errors and reservations
 
-- Only the runtime calls Init and Run. Use the default Init when no setup is needed.
+- Start and restarts call Init and Run. Use the default Init when no setup is needed.
 - A first Init error makes Start return an empty Ref and that error.
 - A first Init panic reaches the Start caller.
 - To pass a reference before startup: `ref := supervise.Reserve[T]()`, then
