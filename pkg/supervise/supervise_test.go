@@ -101,14 +101,14 @@ type snapshot struct{ im.Snapshot }
 type restarted struct {
 	Service[label]
 	runs   int
-	latest im.Owner[snapshot]
+	latest im.Cell[*snapshot]
 }
 
 // Run records the arguments and the state of the value, and panics on the first failure.
 func (r *restarted) Run(ctx context.Context) {
 	r.runs++
 	record(r.Args().Name)
-	if r.runs != 1 || r.latest.Load() != nil {
+	if r.runs != 1 || r.latest.Shared() != nil {
 		record("old state")
 	}
 	r.latest.Store(&snapshot{})
