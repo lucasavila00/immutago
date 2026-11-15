@@ -35,67 +35,37 @@ Service methods can give callbacks or globals access to mutable state; see the
 contracts of callers and dependencies. Use `go test -race` for the accesses your
 tests run.
 
-## Example: a file cache
+## Example: delivery quotes
 
-This cache reads a file before startup succeeds. It then refreshes the contents
-at the configured interval. Calls to `Text` return a local string projection without reading the file again.
-
-The [configuration project](../examples/configuration/README.md) runs this
-[FileCache](../examples/configuration/filecache.go), a JSON configuration loader,
-and a request limiter. Run it from the repository root:
+The [shipping application](../examples/shipping/README.md) quotes delivery prices
+from a catalog file. One Loader service reads the first catalog in Init and
+checks for edits in Run. Invalid edits leave the last valid catalog available.
 
 ```sh
-go run ./examples/configuration/cmd/limits
+go run ./examples/shipping/cmd/shipping
 ```
 
-The command reads [limits.json](../examples/configuration/limits.json). Edit a
-limit while it runs and observe the changed request decisions. Press Ctrl+C to
-stop the group. Its file cache starts with these arguments:
+Start its loader with the file path and reload interval:
 
 ```go
-cache, err := supervise.Start[configuration.FileCache](root, configuration.FileArgs{
-    Path: path, Every: 100 * time.Millisecond,
+loader, err := supervise.Start[shipping.Loader](root, shipping.Args{
+    Path: "examples/shipping/catalog.json", Every: time.Second,
 })
 if err != nil { panic(err) }
-fmt.Print(cache.Borrow().Text().Unsafe())
 ```
 
-The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and
-`path`. FileCache loads in Init, polls in Run, and protects its text with a mutex.
-
-1. `Start[FileCache]` creates the cache, sets its arguments, and calls `Init`.
-2. After Init succeeds, Start returns `Ref[FileCache]` and schedules Run in a
-   goroutine. Run might not have started when Start returns.
-3. `cache.Borrow().Text()` runs in the caller's goroutine. The mutex protects
-   concurrent reads and refreshes. Keep `cache` to select the current service after a restart.
-4. A later file-read error makes Run panic. The group waits, then creates a
-   replacement with the same arguments. Calls use the old cache until the new
-   Init succeeds; calls already in progress finish on the old cache.
-
-## Example: a loader and limiter
-
-A reference can be a field of another service's arguments. The
-[limiter](../examples/configuration/limiter.go) takes a reference to a
-[configuration loader](../examples/configuration/config.go).
-With those types, start both in one group:
+For each request, the HTTP handler selects one catalog and calculates all parcel
+prices from it:
 
 ```go
-group := supervise.StartGroup(root)
-loader, err := supervise.Start[configuration.ConfigLoader](group, configuration.LoaderArgs{
-    Cache: cache, Every: 100 * time.Millisecond,
-})
-if err != nil { panic(err) }
-limiter, err := supervise.Start[configuration.Limiter](group, configuration.LimiterArgs{
-    Loader: loader, Key: "api", Window: time.Second,
-})
-if err != nil { panic(err) }
-decision := limiter.Borrow().Take()
+catalog := loader.Borrow().Catalog()
+response := shipping.Quote(catalog, request)
 ```
 
-The loader parses the initial limits in Init. The limiter reads the current
-limit through its reference and resets its request count every Window.
-Wait on `<-group.Stop()` to stop both services. Use [child groups](service-children.md) when a service must
-create or remove related work while it runs.
+`Catalog` runs in the caller's goroutine. It loads one generated projection from
+the Cell. A reload can publish a new catalog while this quote finishes with the
+selected version. See the [loader](../examples/shipping/loader.go) and
+[quote calculation](../examples/shipping/quote.go).
 
 ## Startup errors and reservations
 
@@ -108,26 +78,22 @@ create or remove related work while it runs.
 - Init must not call an unstarted peer. For readiness that depends on Run,
   expose a method such as `Ready() bool`.
 
-The [startup and retry example](../examples/configuration/README.md#startup-and-retry) shows errors and a retry.
-
 ## Example: mutable dependencies
 
-Pass ordinary Go fields for a logger, client, or factory. The
-[model service](../examples/models/fetcher.go) receives:
+Start arguments can contain ordinary Go interfaces, clients, loggers, and
+functions. The [search indexer](../examples/search/indexer.go) receives an fs.FS:
 
 ```go
-type FetcherArgs struct {
-    URL      string
-    Every    time.Duration
-    Log      *slog.Logger
-    Client   *http.Client
-    NewStore func(name string) Store
-}
+indexer, err := supervise.Start[search.Indexer](root, search.IndexerArgs{
+    Files: os.DirFS("examples/search/documents"), Every: time.Second,
+})
+if err != nil { panic(err) }
+handler := search.HTTPHandler(indexer)
 ```
 
-The [model project](../examples/models/README.md) downloads a model, saves it
-through the factory's store, and serves predictions during refreshes.
-Review the concurrency contract of each shared dependency in the service code.
+The [search application](../examples/search/README.md) reads files through that
+interface. Its tests supply controlled filesystems to check edits and failed
+scans. Review shared mutable dependencies under their normal Go contracts.
 
 ## Failure and shutdown
 

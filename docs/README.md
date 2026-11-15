@@ -36,7 +36,7 @@ for terms such as Frozen, local projection, and builder.
 - [Checker reference](rules.md): allowed source forms, trust promises, and which packages are checked.
 - [Glossary](glossary.md): names used by the guides, API references, and checker.
 - [Operation costs](performance.md): im collections, `im.Cell`, and `supervise.Ref.Borrow`.
-- [Runnable projects](../examples/README.md): configuration, worker groups, and HTTP models using both packages.
+- [Runnable projects](../examples/README.md): small Go applications with commands and tests.
 
 ## Maintainers
 
