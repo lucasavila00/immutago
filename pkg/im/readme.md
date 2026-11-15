@@ -41,7 +41,7 @@ Unwrap returns the wrapped pointer, or nil for the zero UncheckedValue. Only the
 func Value[T any](value Projection[T]) T
 ```
 
-Value returns the value from a projection. The checker permits only Copied types, including opaque service references. Value does not allocate.
+Value returns the value from a projection. The checker requires a Frozen read result: a Copied value, an UncheckedValue handle, or an unnamed array of these values. Value does not allocate.
 
 ## type Cell
 
@@ -537,7 +537,7 @@ Unsafe returns the underlying string without copying or allocating. The checker 
 
 UncheckedValue holds a pointer to data whose immutability the analyzer does not prove. The package that declares T promises never to change the data after Trust.
 
-UncheckedValue is an allowed stored type. Any package can store, copy, and pass it. Only the package that declares T can use Trust and Unwrap, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/unchecked-values.md for the complete forms.
+UncheckedValue is Frozen and a read result, but not Copied. Any package can store, copy, pass, and return the handle. Only the package that declares T can use Trust and Unwrap, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/unchecked-values.md for the complete forms.
 
 ```go
 type UncheckedValue[T any] struct {

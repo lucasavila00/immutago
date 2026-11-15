@@ -21,8 +21,8 @@ func NewBoxProjection(value im.Projection[*Box]) BoxProjection {
 func (v BoxProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
 // Table reads the Table field.
-func (v BoxProjection) Table() im.Projection[im.UncheckedValue[Table]] {
-	return im.ProjectionOf(v.immutagoProjection.Read().Table)
+func (v BoxProjection) Table() im.UncheckedValue[Table] {
+	return v.immutagoProjection.Read().Table
 }
 
 // BoxCell publishes frozen Box values. Do not copy it.

@@ -11,7 +11,7 @@ These fixed APIs build the [generated typed projections](projections.md). They u
 | `frozen.Projection()` | FrozenString, FrozenSlice[E], or FrozenMap[K,V] receiver; returns StringProjection, SliceProjection[E], or MapProjection[K,V]. |
 | `im.ProjectionOf(value)` | Frozen input; returns Projection[T]. |
 | `im.CopyRecord(value)` | Requires Projection[T] for a concrete Frozen record T; copies it into a new root and returns Projection[*T]. |
-| `im.Value(projection)` | Requires Copied T; returns T. |
+| `im.Value(projection)` | T must be Frozen and a read result: Copied, UncheckedValue, or an unnamed array of these values; returns T. |
 | `im.StringOf(projection)` | Requires Projection[S] with underlying string S; returns StringProjection. |
 | `im.StringOfFrozen(projection)` | Requires Projection[FrozenString]; returns StringProjection. |
 | `im.SliceOf(projection)` | Requires Projection[FrozenSlice[E]]; returns SliceProjection[E]. |
@@ -19,8 +19,8 @@ These fixed APIs build the [generated typed projections](projections.md). They u
 | `im.IsNil(projection)` | Requires Projection[*T] for a Frozen record T; reports nil without exposing the pointer. |
 
 Application code uses the listed Value and adapter forms. The internal Read
-operation is restricted to verified generated code. UncheckedValue remains
-opaque through a Projection. Raw slot reads use the [Cell methods](cell.md#raw-cell-methods--exhaustive).
+operation is restricted to verified generated code. Value can return an
+UncheckedValue handle; only its declaring package can Unwrap the payload. Raw slot reads use the [Cell methods](cell.md#raw-cell-methods--exhaustive).
 
 ## Collection projections — exhaustive
 

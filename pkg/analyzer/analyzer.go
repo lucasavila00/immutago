@@ -108,8 +108,8 @@ func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance
 	for i := 0; i < instance.TypeArgs.Len(); i++ {
 		argument := instance.TypeArgs.At(i)
 		reason := c.proofs.FrozenReason(argument)
-		if obj.Name() == "Value" {
-			reason = c.proofs.CopiedReason(argument)
+		if obj.Name() == "Value" && reason == "" {
+			reason = c.proofs.ReadResultReason(argument)
 		}
 		if reason != "" {
 			c.report(ident.Pos(), fmt.Sprintf("immutable type argument: %s\n  type: %s\n  fix: %s",
