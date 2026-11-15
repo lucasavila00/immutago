@@ -43,7 +43,9 @@ func (c *ProjectionValueCell) Load() ProjectionValueProjection {
 func (c *ProjectionValueCell) LoadShared() ProjectionValue { return c.value.LoadShared() }
 
 // LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ProjectionValueCell) LoadSharedPointer() *ProjectionValue { return c.value.LoadSharedPointer() }
+func (c *ProjectionValueCell) LoadSharedPointer() *ProjectionValue {
+	return c.value.LoadSharedPointer()
+}
 
 // ValueProjection provides local read access to *Value.
 type ValueProjection struct {

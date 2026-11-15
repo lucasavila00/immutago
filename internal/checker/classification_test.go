@@ -14,13 +14,10 @@ func opaqueStorage(t types.Type) bool {
 
 // classificationStorageOracle retains the original storage walk without shared query state.
 func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
-	if t == nil || seen[t] {
+	if t == nil || seen[t] || FrozenPointer(t) {
 		return false
 	}
 	seen[t] = true
-	if FrozenPointer(t) {
-		return false
-	}
 	if parameter, ok := types.Unalias(t).(*types.TypeParam); ok {
 		return classificationConstraintOracle(parameter.Constraint(), seen)
 	}

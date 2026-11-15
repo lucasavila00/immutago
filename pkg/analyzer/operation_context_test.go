@@ -8,12 +8,12 @@ import (
 // TestClosureDeclarationScopes checks captures without using declaration order.
 func TestClosureDeclarationScopes(t *testing.T) {
 	cases := []string{
-		`var read=func()int{return value.X};var value=&Value{X:1}`,
-		`var value=&Value{X:1};var read=func()int{return value.X}`,
-		`func f(){value:=&Value{};_=func()int{return value.X}}`,
-		`func f(){_=func(){value:=&Value{};_=func()int{return value.X}}}`,
-		`var value=&Value{};var read=func()int{return len([1]Value{*value})}`,
-		`func f(value *Value)func()int{return func()int{return len([1]Value{*value})}}`,
+		`var read=func()int{return value.X};var value=Value{X:1}`,
+		`var value=Value{X:1};var read=func()int{return value.X}`,
+		`func f(){value:=Value{};_=func()int{return value.X}}`,
+		`func f(){_=func(){value:=Value{};_=func()int{return value.X}}}`,
+		`var value=Value{};var read=func()int{return len([1]Value{value})}`,
+		`func f(value Value)func()int{return func()int{return len([1]Value{value})}}`,
 		`type Local struct{im.Local};func f(local *Local)func()int{
  return func()int{return len([1]*Local{local})}}`,
 	}

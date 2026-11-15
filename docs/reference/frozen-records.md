@@ -72,6 +72,7 @@ The pointer slot can change; the Frozen object cannot. The checker checks typed
 target operations, including after a type assertion or a generic call. Ordinary
 Go API contracts apply to dependencies. No pointer provenance or runtime ownership
 state is added.
+Protected value arguments and results keep their own im rules.
 
 Writes through the pointer remain rejected, including promoted fields from an
 embedded `*Settings`. A Frozen record stored by value still needs a marked owner.

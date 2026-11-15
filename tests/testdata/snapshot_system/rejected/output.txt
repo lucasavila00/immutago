@@ -233,7 +233,6 @@ snapshot_holders.go:16:6: unsupported immutable operation: user generic declarat
   source: copySlot
   type: func[T rejected.ConstraintAlias](value T) T
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
-snapshot_holders.go:18:6: defined pointer types are unsupported in protected storage; use a pointer alias
 snapshot_holders.go:21:10: Cell slots and their holders cannot be copied or transported by value
 snapshot_holders.go:22:6: Cell slots and their holders cannot be copied or transported by value
 snapshot_holders.go:23:14: Cell slots and their holders cannot be copied or transported by value
@@ -310,10 +309,10 @@ snapshot_projection.go:23:6: immutable collection: projection payload 1: stored 
 snapshot_projection.go:23:9: immutable type argument: stored pointers require a concrete marked struct target
   type: *[2]string
   fix: replace the pointer field or argument with an owned immutable value
-snapshot_projection.go:24:6: unsupported immutable operation: pointer indirection is unsupported
+snapshot_projection.go:24:6: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &projection.Read().Next
   type: **rejected.Data
-  fix: use a direct pointer to a concrete marked struct
+  fix: copy the field into a local; do not take a pointer into immutable storage
 snapshot_projection.go:24:7: unsupported immutable operation: Projection.Read is reserved for verified generated projections
   source: projection.Read()
   type: *rejected.Data
@@ -325,14 +324,10 @@ snapshot_projection.go:26:9: unsupported immutable operation: bound immutable me
   source: projection.Read
   type: func() *rejected.Data
   fix: call the method directly (value.Method(...)); do not save or pass its method value
-snapshot_projection.go:27:6: unsupported immutable operation: immutable callbacks are unsupported
-  source: raw
-  type: func() *rejected.Data
-  fix: call a named, non-generic function directly with a concrete immutable parameter
-snapshot_projection.go:28:6: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+snapshot_projection.go:28:6: unsupported immutable operation: immutable method expressions are unsupported
   source: im.Projection[*Data].Read(projection)
   type: *rejected.Data
-  fix: use the generated field accessor
+  fix: call the method on its receiver directly (value.Method(...)); do not call it through the type
 snapshot_projection.go:29:6: unsupported immutable operation: Projection.Read is reserved for verified generated projections
   source: scalar.Read()
   type: int

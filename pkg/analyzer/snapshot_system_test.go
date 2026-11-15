@@ -72,7 +72,7 @@ func TestSnapshotCategories(t *testing.T) {
 		{`type Result struct{im.Local; Text im.StringProjection};var saved Result`, "package variables"},
 		{`var values [0]im.Projection[string]`, "package variables"},
 		{`var marker im.Local`, "package variables"},
-		{`type Data struct{im.Frozen};type Pointer *Data`, "defined pointer types"},
+		{`type Data struct{im.Local};type Pointer *Data`, "defined pointer types"},
 		{`func f(){_=im.Value(im.ProjectionOf("text"))}`, "copied values require"},
 		{`func f(){frozen:=im.FreezeMap(map[string]int{});projection:=frozen.Projection()
 copy:=projection.Clone();_=copy}`,

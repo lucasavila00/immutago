@@ -8,7 +8,9 @@ import (
 const frozenPointerStorageTypes = `
 type Count int
 func (c *Count) Inc(){*c++}
-type Data struct { im.Frozen; N int; Count Count; Array [2]int }
+type Score struct { im.Copied; N int }
+func(s *Score) Inc(){s.N++}
+type Data struct { im.Frozen; N int; Count Count; Score Score; Array [2]int }
 func (d *Data) Read()int{return d.N}
 func (d Data) Value()int{return d.N}
 type Alias = Data
@@ -48,6 +50,8 @@ func TestFrozenPointerStorage(t *testing.T) {
 		`func f(p *Data){ch:=make(chan *Data,1);ch<-p;q,ok:=<-ch;_=ok;_=q.N}`,
 		`func f(p *Data){var box any=p;switch v:=box.(type){case *Data:_=v.N}}`,
 		`type P *Data;func f(p P){q:=(*Data)(p);_=q.N;_=p.N}`,
+		`func f(s *State){score:=s.Current.Score;score.Inc()}`,
+		`func f(){a:=[]*Data{{N:1}};_=a[0].N}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
@@ -72,6 +76,8 @@ func TestFrozenPointerTargets(t *testing.T) {
 		{`func f(s *Outer){_= &s.N}`, "interior addresses"},
 		{`func f(s *State){s.Current.Count.Inc()}`, "immutable methods require"},
 		{`func f(s *Outer){s.Count.Inc()}`, "immutable methods require"},
+		{`func f(s *State){s.Current.Score.Inc()}`, "receivers must match"},
+		{`func f(s *Outer){s.Score.Inc()}`, "receivers must match"},
 		{`func f(p *Data){var box any=p;q:=box.(*Data);q.N++}`, "writes to immutable objects"},
 		{`type P *Data;func f(p P){p.N++}`, "writes to immutable objects"},
 		{`type P *Data;func f(p P){_= &p.N}`, "interior addresses"},

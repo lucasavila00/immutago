@@ -63,10 +63,6 @@ smaller_subset.go:26:65: unsupported immutable operation: immutable references r
   source: p
   type: *im.FrozenSlice[int]
   fix: allocate a concrete struct that embeds im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses
-smaller_subset.go:29:29: unsupported immutable operation: closures cannot capture immutable storage
-  source: shared
-  type: *smaller_subset.Node
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
 smaller_subset.go:33:29: unsupported immutable operation: closures cannot capture immutable storage
   source: value
   type: smaller_subset.Node
@@ -75,14 +71,4 @@ smaller_subset.go:37:29: unsupported immutable operation: closures cannot captur
   source: value
   type: smaller_subset.Local
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-smaller_subset.go:42:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: go readNode(shared)
-  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-smaller_subset.go:43:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: defer readNode(shared)
-  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-smaller_subset.go:47:21: unsupported immutable operation: reference operation is outside the supported allowlist
-  source: {Value: 1}
-  type: *smaller_subset.Node
-  fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Frozen pointers can be stored or returned
 smaller_subset.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

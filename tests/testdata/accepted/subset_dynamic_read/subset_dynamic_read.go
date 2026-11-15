@@ -1,6 +1,6 @@
 //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 
-package rejected
+package accepted
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
@@ -17,4 +17,4 @@ type Good struct {
 
 func read(p *Good) int { return p.X }
 
-func bad(v Good) { p := new(v); _ = func() int { return p.X } }
+func allowed(v Good, f func(*Good)) { f(new(v)) }

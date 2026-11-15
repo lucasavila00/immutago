@@ -8,8 +8,8 @@ import (
 // TestSubsetBoundaries checks the transports excluded by the immutable reference contract.
 func TestSubsetBoundaries(t *testing.T) {
 	cases := []struct{ name, source string }{
-		{"assertion", `func f(x any){_=x.(*V)}`},
-		{"pointer conversion", `func f(p *V){_=(*V)(p)}`},
+		{"assertion", `func f(x any){_=x.(*L)}`},
+		{"pointer conversion", `func f(p *L){_=(*L)(p)}`},
 		{"tuple box", `func pair()(V,int){return V{},0};func f(){var x any;var n int;x,n=pair();_,_=x,n}`},
 		{"tuple call box", `func pair()(V,int){return V{},0};func sink(any,int){};func f(){sink(pair())}`},
 		{"shared child reborrow", `type Parent struct{im.Frozen;Child V};
@@ -19,20 +19,20 @@ func TestSubsetBoundaries(t *testing.T) {
 		{"native map", `func f(){_=map[int]V{0:{}}}`},
 		{"native channel", `func f(){_=make(chan V)}`},
 		{"values output", `func f(){_=im.FreezeSlice([]V{{}}).Clone()}`},
-		{"indirection", `func f(v **V){}`},
+		{"indirection", `func f(v **L){}`},
 		{"closure", `func f(){var v V; _=func(){_=v.X}}`},
 		{"box", `func f(){var v V; var x any=v; _=x}`},
 		{"box return", `func f()any{return V{}}`},
 		{"generic receiver", `type Box[T ~int]struct{im.Frozen;X T};
  func(b *Box[T])Read()T{return b.X};func f(){var b Box[int];_=b.Read()}`},
 		{"generic", `func read[T any](v *T){};func f(){var v V; read(new(v))}`},
-		{"dynamic", `func f(read func(*V)){var v V;read(new(v))}`},
+		{"dynamic", `func f(read func(*L)){var v L;read(new(v))}`},
 		{"defer", `func read(v *V){};func f(){var v V;defer read(new(v))}`},
 		{"goroutine", `func read(v *V){};func f(){var v V;go read(new(v))}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Frozen;X int};`+tc.source)
+			got := checkSource(t, `type V struct{im.Frozen;X int};type L struct{im.Local;X int};`+tc.source)
 			if !strings.Contains(got, "\n  source: ") || !strings.Contains(got, "\n  fix: ") {
 				t.Fatalf("missing actionable diagnostic context: %s", got)
 			}

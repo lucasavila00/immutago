@@ -14,10 +14,10 @@ forms.go:16:18: service method Raw must return a service result: copied values r
 forms.go:19:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
   source: ordinary any = s
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-forms.go:21:6: unsupported immutable operation: immutable interface assertions are unsupported
+forms.go:21:6: unsupported immutable operation: protected operation is outside the supported expression forms
   source: s.(*implementation.Tree)
   type: *implementation.Tree
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+  fix: use a documented concrete value, pointer, reader, or builder operation
 forms.go:22:6: unsupported immutable operation: immutable method expressions are unsupported
   source: api.Scorer.Score(s, nil)
   type: float64
@@ -64,18 +64,14 @@ forms.go:34:6: unsupported immutable operation: user generic instantiations with
 forms.go:35:9: unsupported immutable operation: protected operation is outside the supported expression forms
   source: s.(type)
   fix: use a documented concrete value, pointer, reader, or builder operation
-forms.go:36:7: unsupported immutable operation: protected storage is unsupported in type switches
-  source: *implementation.Tree
-  type: *implementation.Tree
-  fix: keep concrete protected types in named function parameters instead of recovering values or references from interfaces
 forms.go:41:63: unsupported immutable operation: Projection.Read is reserved for verified generated projections
   source: local.Read()
   type: api.Scorer
   fix: use the generated field accessor
-forms.go:43:9: unsupported immutable operation: immutable interface assertions are unsupported
-  source: local.Read().(*implementation.Tree)
-  type: *implementation.Tree
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+forms.go:43:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: local.Read()
+  type: api.Scorer
+  fix: use the generated field accessor
 forms.go:45:11: unsupported immutable operation: native slices of immutable storage are unsupported
   source: ...api.Scorer
   type: []api.Scorer

@@ -15,6 +15,9 @@ func readLocal(value *Local) int { if value == nil { return 0 }; return value.X 
 // TestImmutableObjectForms checks fresh construction, binding replacement, and the two reference modes.
 func TestImmutableObjectForms(t *testing.T) {
 	cases := []string{
+		`func f(){p:=&Frozen{};_=func()int{return p.X}}`,
+		`func f(){p:=&Frozen{};go readSnapshot(p)}`,
+		`func f(p *Frozen,boxed any)bool{return p==boxed}`,
 		`type Reader int;func(Reader)Read(p *Frozen)int{return p.X};func f(){p:=&Frozen{};_=Reader(0).Read(p)}`,
 		`type Reader int;func(Reader)Make()*Frozen{return &Frozen{}};func f(){_=Reader(0).Make()}`,
 
@@ -63,8 +66,7 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"Local stored slice", `func f(){p:=&Local{};values:=[]*Local{p};_=len(values)}`,
 			"containers of Local pointers"},
 		{"Local capture", `func f(){p:=&Local{};_=func()int{return p.X}}`, "closures cannot capture"},
-		{"shared capture", `func f(){p:=&Frozen{};_=func()int{return p.X}}`, "closures cannot capture"},
-		{"shared asynchronous", `func f(){p:=&Frozen{};go readSnapshot(p)}`, "synchronous"},
+		{"Local shared asynchronous", `func f(){p:=&Local{};go readLocal(p)}`, "synchronous"},
 		{"mixed markers", `type Mixed struct{im.Frozen;im.Local}`, "cannot embed both"},
 		{"generic marked", `type Box[T any]struct{im.Frozen;X int}`, "user generic declarations"},
 		{"generic local", `func f[T any](){v:=Frozen{};_=v}`, "user generic declarations"},
@@ -86,7 +88,7 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 			`func f(){values:=im.FreezeMap(map[Frozen]int{{}:1});var boxed any;for boxed=range values.All(){};_=boxed}`,
 			"boxing immutable storage",
 		},
-		{"reference comparison box", `func f(p *Frozen,boxed any)bool{return p==boxed}`, "boxing immutable storage"},
+		{"Local reference comparison box", `func f(p *Local,boxed any)bool{return p==boxed}`, "boxing immutable storage"},
 		{"value comparison box", `func f(v Frozen,boxed any)bool{return boxed!=v}`, "boxing immutable storage"},
 		{
 			"tuple callback",

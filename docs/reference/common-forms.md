@@ -104,7 +104,6 @@ Local pointers use only the direct-call forms below and cannot escape.
 | `&point.X` | Read or copy the scalar. |
 | `new(im.FrozenSlice[int])` | Pass the frozen wrapper by value. |
 | `&[2]FrozenPoint{}` | Put the array in a marked struct. |
-| `[]*FrozenPoint{{X: 1}}` | Use explicit allocation: `[]*FrozenPoint{&FrozenPoint{X: 1}}`. |
 | `(*LocalPoint)(nil)` | `var p *LocalPoint = nil` |
 
 ## Methods

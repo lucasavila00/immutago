@@ -43,7 +43,9 @@ func (c *ArrayLengthHolderCell) Load() ArrayLengthHolderProjection {
 func (c *ArrayLengthHolderCell) LoadShared() ArrayLengthHolder { return c.value.LoadShared() }
 
 // LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ArrayLengthHolderCell) LoadSharedPointer() *ArrayLengthHolder { return c.value.LoadSharedPointer() }
+func (c *ArrayLengthHolderCell) LoadSharedPointer() *ArrayLengthHolder {
+	return c.value.LoadSharedPointer()
+}
 
 // ArrayLengthValueProjection provides local read access to *ArrayLengthValue.
 type ArrayLengthValueProjection struct {
@@ -74,7 +76,9 @@ func (c *ArrayLengthValueCell) Load() ArrayLengthValueProjection {
 func (c *ArrayLengthValueCell) LoadShared() ArrayLengthValue { return c.value.LoadShared() }
 
 // LoadSharedPointer returns the frozen root for persistent use without a copy.
-func (c *ArrayLengthValueCell) LoadSharedPointer() *ArrayLengthValue { return c.value.LoadSharedPointer() }
+func (c *ArrayLengthValueCell) LoadSharedPointer() *ArrayLengthValue {
+	return c.value.LoadSharedPointer()
+}
 
 // IndexedValueProjection provides local read access to *IndexedValue.
 type IndexedValueProjection struct {

@@ -2,10 +2,6 @@ invalid.go:10:6: cannot generate typed projections: Mutable: Values: []int is no
 invalid.go:12:2: immutable field Values: []int is not provably immutable
   owner: invalid.Mutable; field type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable
-invalid.go:15:19: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
-  source: Score
-  type: func([]float32) float64
-  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
 invalid.go:15:9: unsupported immutable operation: Values: []int is not provably immutable
   source: *Mutable
   type: *invalid.Mutable

@@ -47,7 +47,7 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	protected := c.queries.Callable(signature) || c.protectedCallArguments(call)
 	if selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok {
 		if selection := c.pass.TypesInfo.Selections[selector]; selection != nil && selection.Kind() != types.FieldVal &&
-			(protected || c.protectedStorage(selector.X)) {
+			(protected || c.protectedStorage(selector.X) || c.protectedSelection(selector)) {
 			return c.matchMethod(selector)
 		}
 	}
