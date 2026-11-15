@@ -1,73 +1,121 @@
-# Validation
+# Validation and trust boundary
 
-## Trust boundary
+The analyzer's guarantee depends on checked source forms and reviewed runtime
+contracts. Tests must check both: a matcher can accept an unsafe operation even
+when the runtime behaves correctly, and a runtime can copy or expose storage
+even when a matcher accepts only the intended calls.
 
-| Trusted source | Scope |
-| --- | --- |
-| Go compiler, runtime, and standard library | Compiler types, runtime behavior, and standard APIs. |
-| Fixed im and supervise implementations | Collection storage, Cell, and service runtime. |
-| Canonical projection generator | Read and interior Frozen-record addresses in its exact verified output; all normal source checks still apply. |
-| Ordinary packages outside the [package boundary](../reference/rules.md#package-boundary) | Go API contracts, including immutable strings and no hidden writes to protected memory. |
-| `im.Trust` | The declaring package's immutability promise. |
+## What the implementation trusts
 
-[Toolchain detection](../../pkg/analyzer/toolchain.go):
+The compiler supplies resolved types, object identities, method selections, and
+valid Go syntax. The Go runtime and standard library supply their documented
+behavior. The fixed im and supervise packages are trusted implementations:
+the analyzer skips their source and checks callers against their contracts.
 
-- Recognizes standard-library source under the active `go env GOROOT`.
-- Skips generated `.test` main packages with the compiler-checked standard
-  internal test dependency.
-- Checks user test packages.
+The projection generator has two specific permissions in its exact verified
+output: calling Projection.Read and taking interior Frozen-record addresses.
+The analyzer computes expected output and checks the physical token file before
+it grants those permissions. It still checks the generated file's normal types,
+writes, captures, receivers, generics, and transport.
 
-Enforcement:
+Ordinary APIs outside protected operations must obey Go contracts. For example,
+an ordinary string helper must not change the bytes behind a string. The
+analyzer does not prove scalar origins, all unsafe memory effects, or service
+method effects. Reflection and unsafe calls that involve protected storage must
+pass the normal source matcher; they do not get a general exemption.
 
-- Run the analyzer for each build configuration; `go build` adds no checks.
-- Unsafe and reflection operations use the normal source-form checks.
-- Scalar origins and arbitrary unsafe memory effects are not proved; ordinary
-  helpers must obey Go API contracts, including string immutability.
-- Packages that import or use im reject cgo. Functions whose signatures contain
-  im types other than Copied require Go bodies. Copied data, service references,
-  and ordinary types keep Go rules. Packages that use only supervise receive
-  result and reference checks.
-- There are no suppression directives. [UncheckedValue](../reference/unchecked-values.md)
-  records the declaring package's immutability promise.
-- Checked dependency failures reach consumers through package facts.
-- Freeze has no runtime fallback when the analyzer is omitted.
+`im.UncheckedValue[T]` is an explicit package promise. Its declaring package
+uses Trust to wrap the value and Unwrap to access it, and promises that the
+payload never changes. The checker treats the handle as opaque; it does not
+prove that promise. There are no suppression directives.
 
-## Test map
+## Where checks run
 
-| Evidence | Source |
-| --- | --- |
-| Generator startup, repeatable output, Frozen records, and changed fields | [Generator tests](../../internal/projectiongen/generate_test.go) |
-| Frozen, Copied, ReadResult, and recursive marker proofs | [Category tests](../../internal/checker/categories_test.go), [type tests](../../internal/checker/types_test.go), [marker tests](../../internal/checker/markers_test.go) |
-| Copied declarations, decoders, ordinary mutation and calls, protected owners, service results, and dependency failures | [Copied proof tests](../../internal/checker/copied_test.go), [source checks](../../pkg/analyzer/copied_test.go), [ordinary Go checks](../../pkg/analyzer/copied_mutable_test.go), [CLI and vet tests](../../tests/copied_records_test.go) |
-| Copied layout, allocation counts, and native/projection copy costs | [Runtime tests and benchmark](../../pkg/im/copied_test.go) |
-| Immutable writes and pointer escape rules | [Object tests](../../pkg/analyzer/immutable_objects_test.go), [escape tests](../../pkg/analyzer/escape_test.go) |
-| Complete allowed shapes and nearby rejections | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go) |
-| Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
-| Storage reuse, clone independence, identity, and allocation counts | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [iterator tests](../../pkg/im/iterator_test.go) |
-| Generated field reads without record copies | [Generated projection cost fixture](../../internal/projectiongen/testdata/readcost/README.md) |
-| Service result types and ordinary service code | [Service tests](../../pkg/analyzer/service_test.go), [CLI fixtures](../../tests/testdata/accepted/service) |
-| Service targets, direct Borrow call forms, and ordinary Go transport | [Reference tests](../../pkg/analyzer/service_handles_test.go), [CLI fixtures](../../tests/testdata/accepted/service/handles.go), [rejected forms](../../tests/testdata/rejected/service/handles.go) |
-| Startup errors, publication, and failed setup cleanup | [runtime tests](../../pkg/supervise/init_test.go), [CLI fixture](../../tests/testdata/accepted/serviceinit/main.go) |
-| Application calculations and reloads | [Shipping quotes](../../examples/shipping/quote_test.go), [catalog reloads](../../examples/shipping/loader_test.go), [search ranking](../../examples/search/query_test.go), [index updates](../../examples/search/indexer_test.go) |
-| CLI source coverage for file refresh and child pools | [File-cache fixture](../../tests/testdata/accepted/servicedoc/main.go), [refresh test](../../tests/testdata/accepted/servicedoc/main_test.go) |
-| UncheckedValue handles: declaring-package wrap and read, and storage as an allowed type | [UncheckedValue tests](../../pkg/analyzer/unchecked_value_test.go), [CLI fixtures](../../tests/testdata/accepted/uncheckedvalue) |
-| Independent retries, terminal failures, child lifetimes, stop order, and the test helper | [Runtime tests](../../pkg/supervise/supervise_test.go), [helper tests](../../pkg/supervise/supervisetest/supervisetest_test.go) |
-| Consumer-only dependency failures | [Dependency tests](../../pkg/analyzer/dependencies_test.go), [graph and gob tests](../../pkg/analyzer/dependencies_graph_test.go), [CLI fixtures](../../tests/cli_test.go) |
+A normal Go build does not run immutago. Run the analyzer for each relevant
+build configuration, including its tags, target, and selected files. Freeze
+has no runtime alias check or consume flag if the analyzer is omitted.
 
-The CLI harness builds the shipped command and loads independent consumer
-modules. It checks diagnostics, source positions, JSON output, compiler errors,
-and vet integration. Each fixture package has one `output.txt` for combined
-stdout and stderr. Source and generated Go files stay separate; see the
-[snapshot workflow](../development.md#diagnostic-snapshots).
+Direct imports and used API types select packages. A failed checked dependency
+also selects its consumers through package facts. Packages that use only
+supervise get service result and reference checks. Packages that import or use
+im also get type, generated-file, source, and builder checks. The full selection
+algorithm is in [package_scope.go](../../pkg/analyzer/package_scope.go).
 
-## Hosted checks
+[Toolchain detection](../../pkg/analyzer/toolchain.go) skips standard-library
+files under the active toolchain's GOROOT source directory and generated test
+main packages identified by their internal test dependency. It does not skip
+user tests. In im packages, cgo is rejected, and functions with protected im
+signatures require Go bodies. Ordinary Copied signatures and service references
+keep Go rules. These restrictions make relevant operations visible to source
+checks; they do not claim to inspect every dependency effect.
 
-[GitHub Actions](../../.github/workflows/ci.yml) runs lint and formatting,
-generated documentation checks, the command build, and repository self-analysis
-on Linux. It runs `go test -race -count=1 ./...` on Linux, macOS, and Windows.
-Use local tests to debug specific failures and hosted CI for full validation.
+## From a defect to regression evidence
 
-These tests provide regression evidence, not a formal proof of the checker.
-A supported form needs both a complete matcher and accepted/rejected test
-coverage. [Collection benchmarks](../../pkg/im/benchmark_test.go) measure the
-cost contract; the CI workflow does not run benchmarks.
+Start with a small program that reproduces the wrong decision. Identify the
+missing type classification, incomplete shape match, or incorrect builder
+state. Test the class of operation, including nearby declarations, nil or zero
+forms, aliases, nested storage, tuples, and variadic arguments where relevant.
+An accepted example needs a corresponding allowed form in the language
+reference. A rejected example needs an ordinary replacement when one exists.
+
+Use the test layer that can expose the defect, then keep end-to-end evidence:
+
+| Layer | What it establishes | Useful source |
+| --- | --- | --- |
+| Type proof | Recursive category acceptance, cycles, query order, and a terminating real failure cause. | [Prover tests](../../internal/checker/prover_test.go), [category tests](../../internal/checker/categories_test.go). |
+| Source matching | Exact accepted shapes and rejection of nearby shapes, including implicit receiver operations. | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go). |
+| Builder analysis | Exclusive handle use, evaluation order, branch joins, loop resets, and consumption. | [Freeze tests](../../internal/freeze/freeze_test.go). |
+| Generation | Fresh generation, stale-file rejection, bootstrap type names, and repeatable compiler-checked output. | [Generator tests](../../internal/projectiongen/generate_test.go), [CLI generation tests](../../tests/generation_test.go). |
+| Dependency facts | Original-cause selection, forwarding through wrappers, and exact serialization. | [Graph tests](../../pkg/analyzer/dependencies_graph_test.go). |
+| Runtime data | Shared storage after Freeze, independent Clone slots, atomic publication, representation, and allocation counts. | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [Cell tests](../../pkg/im/cell_test.go). |
+| Service runtime | Initial setup failures, publication, independent retries, child cleanup, stop order, and registry removal. | [Init tests](../../pkg/supervise/init_test.go), [runtime tests](../../pkg/supervise/supervise_test.go), [registry tests](../../pkg/supervise/registry_test.go). |
+| Real consumer | Driver behavior, selected packages, source positions, diagnostic text, JSON, and vet facts. | [CLI harness](../../tests/cli_test.go), [boundary tests](../../tests/boundary_test.go). |
+
+[Classification tests](../../internal/checker/classification_test.go) and
+[scaling tests](../../pkg/analyzer/type_scaling_test.go) compare recursive walks
+with independent results. Runtime examples such as [shipping quotes](../../examples/shipping/quote_test.go)
+and [search queries](../../examples/search/query_test.go) check application
+behavior beyond isolated operations. No test layer alone establishes the full
+supported-language contract.
+
+### CLI fixtures and snapshots
+
+The CLI harness builds the shipped command, copies fixtures into an independent
+consumer module, and resolves the library to the checkout. It disables workspace
+mode. Tests run accepted and rejected programs through the command and vet
+driver, including consumers selected without directly running the failed
+origin package.
+
+Each fixture package has one `output.txt` for combined stdout and stderr. The
+harness normalizes machine paths and line endings, then sorts complete
+diagnostic records without separating their context lines. Source files and
+`zz_immutago.gen.go` stay separate. A compiler failure is distinct from an
+analyzer rejection; the harness also checks invalid Go and JSON output.
+
+Inspect changed diagnostics before updating a snapshot. For one fixture group:
+
+```sh
+go test ./tests -run '^TestCLI/documentation$' -count=1 -update-snapshots
+```
+
+Run the same target without the update flag to verify the saved result. Keep
+the target as narrow as the failure permits. [The development guide](../development.md#diagnostic-snapshots)
+describes the snapshot files and commands. A snapshot proves that the saved
+program produced the saved result; it does not prove that all forbidden forms
+are rejected.
+
+## Hosted validation
+
+[CI](../../.github/workflows/ci.yml) runs on pull requests and main pushes.
+The Linux checks job runs source checks, lint and formatting, generated reference
+checks, command builds, and repository self-analysis. Test jobs run
+`go test -race -count=1 ./...` on Linux, macOS, and Windows. `make docs-check`
+checks generated API references; changed prose and local links also need review.
+Benchmarks run separately and are not part of routine CI.
+
+Use local tests for a specific failure and hosted CI for full validation. Before
+accepting a checker change, trace each changed allowed form through its complete
+reference entry, matcher, ownership checks, accepted fixture, rejected nearby
+forms, and diagnostic snapshot. A forbidden form that passes is a defect even
+if no existing rejection test lists it. Tests are regression evidence, not a
+formal proof of the checker.
