@@ -95,3 +95,11 @@ The [trusted code list](validation.md#trust-boundary) still applies.
 The checker does not establish whether a saved child reference belongs to the
 current parent run. The [child lifetime reference](../reference/services.md#child-lifetimes)
 describes how callers manage these lifetimes.
+
+The group stores children in a doubly linked list under its mutex. Each child
+holds its own links. Add and removal take constant time; removal clears both
+links. Each halt call copies the list in reverse insertion order while holding
+the mutex. It then uses this snapshot to stop children outside the mutex.
+Concurrent removal does not change the snapshot or its order.
+[Registry tests](../../pkg/supervise/registry_test.go) check removal, allocation,
+and snapshot order.

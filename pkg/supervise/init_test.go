@@ -180,13 +180,13 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	if runs.Load() != 0 {
 		t.Fatal("a staged child ran after failed Init")
 	}
-	retained := len(nested.children)
+	retained := nested.children.count
 	late, lateErr := Start[initializing](nested, AssumeConcurrentSafe(child))
 	if lateErr != nil {
 		t.Fatal(lateErr)
 	}
 	expectInitEnded(t, late.Borrow())
-	if len(nested.children) != retained {
+	if nested.children.count != retained {
 		t.Error("failed Init left a nested group that retains late children")
 	}
 	<-nested.Stop()
@@ -245,8 +245,8 @@ func TestInitConcurrentStarts(t *testing.T) {
 			loser = second
 		}
 		expectInitEnded(t, loser)
-		if len(parent.children) != 1 {
-			t.Fatalf("parent has %d entries, want 1", len(parent.children))
+		if parent.children.count != 1 {
+			t.Fatalf("parent has %d entries, want 1", parent.children.count)
 		}
 		<-parent.Stop()
 		expectInitEnded(t, ref.Borrow())
@@ -505,7 +505,7 @@ func TestInitUnderStoppedGroups(t *testing.T) {
 				t.Fatal(err)
 			}
 			expectInitEnded(t, ref.Borrow())
-			if len(group.children) != 0 {
+			if group.children.count != 0 {
 				t.Fatal("group under a stopped parent retains a late candidate")
 			}
 			<-group.Stop()

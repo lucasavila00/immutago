@@ -171,7 +171,7 @@ func (d ConcurrentSafe[T]) Value() T { return d.value }
 // is not usable. A group returned by Service.Children belongs to that service run.
 type Group struct {
 	mu       sync.Mutex
-	children []*child
+	children childList
 	ctx      context.Context
 	failure  chan any
 	stopping bool
@@ -181,12 +181,20 @@ type Group struct {
 	report   func(value any, stack []byte)
 }
 
+// childList keeps active entries in insertion order. Group.mu protects the links.
+type childList struct {
+	first, last *child
+	count       int
+}
+
 // child is one service or nested group and its current goroutine.
 type child struct {
 	run   func(context.Context) // nil while a permanent stop waits for the current watcher
 	stop  context.CancelFunc
 	done  chan struct{}
 	group *Group
+	prev  *child
+	next  *child
 }
 
 // Ref is a reference to one service. Copies select the same service, including
@@ -407,7 +415,14 @@ func (s *Group) add(run func(context.Context), stop func(), group *Group) {
 		return
 	}
 	defer s.mu.Unlock()
-	s.children = append(s.children, c)
+	c.prev = s.children.last
+	if c.prev == nil {
+		s.children.first = c
+	} else {
+		c.prev.next = c
+	}
+	s.children.last = c
+	s.children.count++
 	if s.ctx != nil {
 		s.launch(c)
 	}
@@ -429,8 +444,20 @@ func (s *Group) forget(c *child) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	c.run = nil
-	// Keep the child order stable for any halt already reading a snapshot.
-	s.children = slices.DeleteFunc(slices.Clone(s.children), func(other *child) bool { return other == c })
+	if c.prev != nil {
+		c.prev.next = c.next
+	} else if s.children.first == c {
+		s.children.first = c.next
+	} else {
+		return
+	}
+	if c.next != nil {
+		c.next.prev = c.prev
+	} else {
+		s.children.last = c.prev
+	}
+	s.children.count--
+	c.prev, c.next = nil, nil
 }
 
 // launch runs c in a new goroutine. The caller holds s.mu.
@@ -459,7 +486,7 @@ func (s *Group) serve(ctx context.Context) {
 	}
 	failure := make(chan any, 1)
 	s.ctx, s.failure = context.WithoutCancel(ctx), failure
-	for _, c := range s.children {
+	for c := s.children.first; c != nil; c = c.next {
 		s.launch(c)
 	}
 	s.mu.Unlock()
@@ -483,9 +510,12 @@ func (s *Group) serve(ctx context.Context) {
 // halt stops the children of s one at a time, last started first.
 func (s *Group) halt() {
 	s.mu.Lock()
-	children := s.children
+	children := make([]*child, 0, s.children.count)
+	for c := s.children.last; c != nil; c = c.prev {
+		children = append(children, c)
+	}
 	s.mu.Unlock()
-	for _, c := range slices.Backward(children) {
+	for _, c := range children {
 		s.mu.Lock()
 		stop, done := c.stop, c.done
 		permanent := s.stopping

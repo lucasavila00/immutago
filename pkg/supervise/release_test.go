@@ -59,7 +59,7 @@ func TestStopDuringRestartDelay(t *testing.T) {
 			t.Errorf("Stop waited for a restart timer: %v", delay)
 		}
 		parent.mu.Lock()
-		remaining := len(parent.children)
+		remaining := parent.children.count
 		parent.mu.Unlock()
 		if remaining != 0 {
 			t.Errorf("parent retains %d children after nested Stop", remaining)
@@ -75,7 +75,7 @@ func TestStopBeforeParentStart(t *testing.T) {
 		parent := &Group{stopped: make(chan struct{})}
 		nested := StartGroup(parent)
 		<-nested.Stop()
-		if len(parent.children) != 0 || nested.parent != nil || nested.entry != nil {
+		if parent.children.count != 0 || nested.parent != nil || nested.entry != nil {
 			t.Error("unstarted group was not released")
 		}
 		<-parent.Stop()
@@ -114,7 +114,7 @@ func TestStartAfterStopDoesNotRetainChildren(t *testing.T) {
 		}
 		nested := StartGroup(parent)
 		parent.mu.Lock()
-		remaining := len(parent.children)
+		remaining := parent.children.count
 		parent.mu.Unlock()
 		if remaining != 0 {
 			t.Errorf("stopped group retains %d new children", remaining)
