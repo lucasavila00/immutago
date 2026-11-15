@@ -37,6 +37,10 @@ func diagnosticType(t types.Type) string {
 
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
+	"copied values require bool, numbers, arrays, or service references": "copy scalar fields, or use " +
+		"a generated local projection",
+	"immutable markers are annotations, not data": "embed the marker in a named struct; " +
+		"use data fields for values",
 	"protected operation is outside the supported expression forms": "use a documented concrete value, pointer, " +
 		"reader, or builder operation",
 	"protected value conversions are unsupported": "construct the destination marked value from copied fields; " +
@@ -126,11 +130,11 @@ var subsetFixes = map[string]string{
 
 // subsetFix gives a supported replacement for each rejected operation.
 func subsetFix(rule string) string {
-	if strings.Contains(rule, "service reference") || strings.Contains(rule, "Ref requires") {
-		return "keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md"
-	}
 	if fix, ok := subsetFixes[rule]; ok {
 		return fix
+	}
+	if strings.Contains(rule, "service reference") || strings.Contains(rule, "Ref requires") {
+		return "keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md"
 	}
 	return "use the documented immutable value and reference forms"
 }
@@ -140,8 +144,10 @@ func structuralFix(t types.Type, reason string) string {
 	switch {
 	case strings.Contains(reason, "cannot contain Local"):
 		return "store Frozen data; keep its Projection or Local result in local bindings"
-	case strings.Contains(reason, "Copied values"):
-		return "use a local projection for reads, or copy the required data explicitly"
+	case strings.Contains(reason, "copied values require"):
+		return "copy scalar fields, or use a generated local projection"
+	case strings.Contains(reason, "markers are annotations"):
+		return "embed the marker in a named struct; use data fields for values"
 	case strings.Contains(reason, "named array"):
 		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Frozen or im.Local"
 	case strings.Contains(reason, "type parameters"):

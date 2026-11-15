@@ -22,8 +22,7 @@ func (p *Prover) FrozenReason(t types.Type) string {
 	return p.render(p.graph.categoryNode(t, frozenCategory))
 }
 
-// CopiedReason proves that a value can leave a projection without a shared data reference.
-// Opaque service references retain their explicit reference contract.
+// CopiedReason proves bool, numbers, unnamed arrays of these values, or opaque service references.
 func (p *Prover) CopiedReason(t types.Type) string {
 	return p.render(p.graph.categoryNode(t, copiedCategory))
 }

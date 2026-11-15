@@ -15,6 +15,11 @@ type Point struct {
 	X, Y int
 }
 
+type PointResult struct {
+	im.Local
+	X, Y int
+}
+
 type Entry struct {
 	im.Frozen
 	Name  im.FrozenString
@@ -57,7 +62,7 @@ type Catalog struct {
 func (s *Catalog) Run(ctx context.Context)       { <-ctx.Done() }
 func (s *Catalog) Frozen() im.Projection[*Model] { return s.state.LoadPointer() }
 func (s *Catalog) Count() int                    { return 2 }
-func (s *Catalog) Origin() Point                 { return Point{X: 1} }
+func (s *Catalog) Origin() PointResult           { return PointResult{X: 1} }
 func (s *Catalog) Result() Result {
 	projection := s.state.LoadPointer()
 	name := NewModelProjection(projection).Name()

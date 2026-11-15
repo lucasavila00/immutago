@@ -77,3 +77,26 @@ func returnLocalBuilder(value im.StringProjection) []im.StringProjection {
 	values := []im.StringProjection{value}
 	return values
 }
+
+// Numeric records remain Frozen data even when their fields contain no references.
+type Numeric struct {
+	im.Frozen
+	Number int
+}
+type BadNumericResult struct {
+	im.Local
+	Value Numeric
+}
+
+func (*Service) Numeric() Numeric         { return Numeric{} }
+func (*Service) NumericArray() [0]Numeric { return [0]Numeric{} }
+func copyNumeric(value im.Projection[Numeric], values im.SliceProjection[Numeric], entries im.MapProjection[Numeric, int]) {
+	_ = im.Copy(value)
+	_ = values.Clone()
+	_ = entries.Clone()
+}
+
+type BadMarkers struct {
+	im.Frozen
+	Values [2]im.Frozen
+}

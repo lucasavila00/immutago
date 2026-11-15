@@ -31,7 +31,7 @@ _=im.Text(projection.At(0)).Clone()
 for _,value:=range projection.All(){_=im.Text(value).Len()}}`,
 		`func f(){frozen:=im.FreezeSlice([]int{1});projection:=im.Slice(im.ProjectionOf(frozen))
 copy:=projection.Clone();copy[0]=2}`,
-		`type Data struct{im.Frozen; N int};func f(){value:=im.Copy(im.ProjectionOf(Data{N:3}));_=value.N}`,
+		`func f(){values:=im.Copy(im.ProjectionOf([2]int{1,2}));_=values[0]}`,
 		`type Data struct{im.Frozen; Text im.FrozenString};var cell im.Cell[Data]
 func f(){text:="text";cell.Store(Data{Text:im.FreezeString(text)});_=text
 projection:=NewDataProjection(cell.LoadPointer()).Text();_=projection.At(0);_=projection.Clone()}`,
@@ -57,11 +57,11 @@ func f(){cell.Store(Data{Raw:im.Trust(&raw{values:[]int{1}})});value:=cell.Share
 // TestSnapshotCategories rejects the same invalid payload in each consuming API.
 func TestSnapshotCategories(t *testing.T) {
 	cases := []struct{ source, want string }{
-		{`type Result struct{im.Local; Name string}`, "Copied values cannot contain shared data references"},
-		{`type Result struct{im.Local; Values im.FrozenSlice[int]}`, "Copied values cannot contain shared data references"},
-		{`type Result struct{im.Local; Text im.FrozenString}`, "Copied values cannot contain shared data references"},
+		{`type Result struct{im.Local; Name string}`, "copied values require"},
+		{`type Result struct{im.Local; Values im.FrozenSlice[int]}`, "copied values require"},
+		{`type Result struct{im.Local; Text im.FrozenString}`, "copied values require"},
 		{`func f(){_=im.Copy(im.ProjectionOf(im.FreezeString("text")))}`,
-			"Copied values cannot contain shared data references"},
+			"copied values require"},
 		{`type Result struct{im.Local; Text im.StringProjection};var cell im.Cell[Result]`,
 			"Frozen storage cannot contain Local values"},
 		{`type Result struct{im.Local; Text im.StringProjection};func f(){_=im.ProjectionOf(Result{})}`,
@@ -72,15 +72,15 @@ func TestSnapshotCategories(t *testing.T) {
 		{`var values [0]im.Projection[string]`, "package variables"},
 		{`var marker im.Local`, "package variables"},
 		{`type Data struct{im.Frozen};type Pointer *Data`, "defined pointer types"},
-		{`func f(){_=im.Copy(im.ProjectionOf("text"))}`, "Copied values cannot contain shared data references"},
+		{`func f(){_=im.Copy(im.ProjectionOf("text"))}`, "copied values require"},
 		{`func f(){frozen:=im.FreezeMap(map[string]int{});projection:=im.Map(im.ProjectionOf(frozen))
 copy:=projection.Clone();_=copy}`,
-			"Copied values cannot contain shared data references"},
+			"copied values require"},
 		{`func f(){frozen:=im.FreezeSlice([]int{1});projection:=im.Slice(im.ProjectionOf(frozen))
 all:=projection.All();_=all}`,
 			"direct range"},
 		{`func f(){projection:=im.ProjectionOf("text");var boxed any=projection;_=boxed}`, "boxing immutable storage"},
-		{`type Data struct{im.Frozen;N int};func f(){projection:=im.ProjectionOf(Data{});go im.Copy(projection)}`,
+		{`func f(){projection:=im.ProjectionOf(1);go im.Copy(projection)}`,
 			"synchronous"},
 	}
 	for _, test := range cases {
@@ -131,7 +131,7 @@ func TestSnapshotServiceResults(t *testing.T) {
 		source string
 		reject bool
 	}{
-		{`type Data struct{im.Frozen;N int};func(*Counter) Data()Data{return Data{}}`, false},
+		{`type Data struct{im.Frozen;N int};func(*Counter) Data()Data{return Data{}}`, true},
 		{`type Data struct{im.Frozen;Name string}
 func(*Counter) Data()im.Projection[Data]{return im.ProjectionOf(Data{})}`, false},
 		{`type Data struct{im.Frozen;Name string};func(*Counter) Data()Data{return Data{}}`, true},
@@ -187,5 +187,52 @@ func f(value im.Projection[*Route]){`
 		if got := checkSource(t, source); !strings.Contains(got, "reserved for verified generated") {
 			t.Fatal(got)
 		}
+	}
+}
+
+// TestCopiedRecordBoundary applies one value rule to every consumer of copied data.
+func TestCopiedRecordBoundary(t *testing.T) {
+	const record = `type Count struct{im.Frozen;N int};type Alias=Count;`
+	for _, source := range []string{
+		`func f(){_=im.Copy(im.ProjectionOf(Count{N:1}))}`,
+		`func f(){_=im.Copy(im.ProjectionOf([0]Alias{}))}`,
+		`type Reply struct{im.Local;Count Count}`,
+		`type Reply struct{im.Local;Counts [0]Alias}`,
+		`func f(v im.SliceProjection[Count]){copy:=v.Clone();_=copy}`,
+		`func f(v im.MapProjection[int,Count]){copy:=v.Clone();_=copy}`,
+		`func f(v im.MapProjection[Count,int]){copy:=v.Clone();_=copy}`,
+	} {
+		if got := checkSource(t, record+source); !strings.Contains(got, "copied values require") {
+			t.Fatal(got)
+		}
+	}
+	for _, source := range []string{
+		`type Reply struct{im.Local;N int};type Outer struct{im.Local;Value Reply}`,
+		`var cell im.Cell[Count];func f(){cell.Store(Count{});_=NewCountProjection(cell.LoadPointer()).N()}`,
+		`func f(v im.SliceProjection[[2]int]){_=v.Clone()}`,
+		`func f(v im.MapProjection[[2]int,int]){_=v.Clone()}`,
+	} {
+		if got := checkSource(t, record+source); got != "" {
+			t.Fatal(got)
+		}
+	}
+}
+
+// TestMarkersAreAnnotations keeps marker aliases usable only as embedded annotations in checked data.
+func TestMarkersAreAnnotations(t *testing.T) {
+	for _, source := range []string{
+		`type Data struct{im.Frozen;Markers [2]im.Frozen}`,
+		`type Data struct{im.Local;Markers [2]im.Local}`,
+		`var cell im.Cell[im.Frozen]`,
+		`func f(){_=im.ProjectionOf(im.Frozen{})}`,
+		`func f(){_=im.FreezeSlice([]im.Frozen{{}})}`,
+	} {
+		if got := checkSource(t, source); !strings.Contains(got, "markers are annotations") {
+			t.Fatal(got)
+		}
+	}
+	if got := checkSource(t, `type FrozenMark=im.Frozen;type LocalMark=im.Local
+ type Data struct{FrozenMark;N int};type Reply struct{LocalMark;N int}`); got != "" {
+		t.Fatal(got)
 	}
 }

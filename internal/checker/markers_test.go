@@ -20,7 +20,7 @@ func TestMarkerReferenceProofs(t *testing.T) {
 	for _, value := range []types.Type{
 		shared, local, types.NewPointer(shared), types.NewArray(local, 2), sliceType(t, slice, shared),
 		markedType("Parent", sharedMarker, types.NewField(token.NoPos, nil, "Child", shared, false)),
-		markedType("Reader", localMarker, types.NewField(token.NoPos, nil, "Child", shared, false)),
+		markedType("Reader", localMarker, types.NewField(token.NoPos, nil, "Child", local, false)),
 	} {
 		if reason := Reason(value); reason != "" {
 			t.Errorf("immutable value %s rejected: %s", value, reason)
@@ -33,6 +33,7 @@ func TestMarkerReferenceProofs(t *testing.T) {
 		markedType("Bad", sharedMarker, types.NewField(token.NoPos, nil, "Child", types.NewPointer(local), false)),
 		markedType("BadValue", sharedMarker, types.NewField(token.NoPos, nil, "Child", local, false)),
 		markedType("BadReader", localMarker, types.NewField(token.NoPos, nil, "Child", types.NewPointer(shared), false)),
+		markedType("BadReaderValue", localMarker, types.NewField(token.NoPos, nil, "Child", shared, false)),
 	} {
 		if reason := Reason(value); reason == "" {
 			t.Errorf("stored local reference %s: %s", value, reason)

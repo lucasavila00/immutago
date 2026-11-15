@@ -54,3 +54,7 @@ func (*Counter) MapResult() im.FrozenMap[string, int] {
 	var value im.FrozenMap[string, int]
 	return value
 }
+
+func (*Counter) FrozenRecord() SnapshotReply   { return SnapshotReply{} }
+func (*Counter) FrozenArray() [1]SnapshotReply { return [1]SnapshotReply{} }
+func (*Counter) Marker() im.Local              { return im.Local{} }

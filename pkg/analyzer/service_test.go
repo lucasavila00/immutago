@@ -19,18 +19,18 @@ func TestServiceResults(t *testing.T) {
 		reject       bool
 	}{
 		{"scalar", `func(c *Counter) Count() int { return c.count }`, false},
-		{"byValue value", `func(c *Counter) Read() Reply { return Reply{Count:c.count} }`, false},
-		{"copied value", `func(c *Counter) Read() SnapshotReply { return SnapshotReply{Count:c.count} }`, false},
+		{"local value", `func(c *Counter) Read() Reply { return Reply{Count:c.count} }`, false},
+		{"frozen value", `func(c *Counter) Read() SnapshotReply { return SnapshotReply{Count:c.count} }`, true},
 		{"array", `func(*Counter) Read() [2]int { return [2]int{} }`, false},
 		{"frozen", `func(*Counter) Read() im.FrozenSlice[int] { frozen:=im.FreezeSlice([]int{1}); return frozen }`, true},
 		{"frozen map",
 			`func(*Counter) Read() im.FrozenMap[string,int]{var value im.FrozenMap[string,int];return value}`, true},
-		{"copied array", `func(*Counter) Read() [2]SnapshotReply{return [2]SnapshotReply{}}`, false},
+		{"frozen array", `func(*Counter) Read() [2]SnapshotReply{return [2]SnapshotReply{}}`, true},
 		{"pointer array", `func(*Counter) Read() [2]*SnapshotReply{return [2]*SnapshotReply{}}`, true},
 		{"frozen field", `type Page struct{im.Local;Values im.FrozenSlice[int]}
 func(*Counter) Read() Page{return Page{}}`, true},
 		{"shared field", `type Page struct{im.Local;Value SnapshotReply}
-func(*Counter) Read() Page{return Page{}}`, false},
+func(*Counter) Read() Page{return Page{}}`, true},
 		{"alias", `type Result = Reply;func(*Counter) Read() Result{return Result{}}`, false},
 		{"nested array", `func(*Counter) Read() [2][2]Reply{return [2][2]Reply{}}`, false},
 		{"defined scalar", `type Count int; func(*Counter) Read() Count{return 1}`, false},

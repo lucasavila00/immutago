@@ -131,8 +131,8 @@ func TestSnapshotProofGraph(t *testing.T) {
 	}
 	p := &proof{nodes: make(map[types.Type]*obligation)}
 	p.node(current)
-	if len(p.nodes) != 47 {
-		t.Fatalf("built %d obligations; want 47", len(p.nodes))
+	if len(p.nodes) != 46 {
+		t.Fatalf("built %d data obligations; want 46", len(p.nodes))
 	}
 	if reason := Reason(current); reason != "" {
 		t.Fatal(reason)

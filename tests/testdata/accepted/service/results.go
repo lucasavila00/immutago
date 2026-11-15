@@ -72,9 +72,6 @@ type StoredSnapshot struct {
 	supervise.Service[*SnapshotReply]
 }
 
-func (*Counter) Ack() im.Local { return im.Local{} }
+func (*Counter) Ack() {}
 
 func (c *Counter) Update() { c.count++ }
-
-func (*Counter) Frozen() SnapshotReply           { return SnapshotReply{} }
-func (*Counter) SnapshotArray() [1]SnapshotReply { return [1]SnapshotReply{} }

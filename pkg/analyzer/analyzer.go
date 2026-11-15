@@ -230,6 +230,9 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 				"\n  fix: embed im.Frozen or im.Local; remove the marker field name or pointer")
 			continue
 		}
+		if field.Embedded() && markerType(ft) {
+			continue
+		}
 		if marked {
 			if reason := proveField(ft); reason != "" {
 				c.report(fieldPos, "immutable field "+field.Name()+": "+reason+

@@ -147,7 +147,11 @@ func (p *proof) value(result *obligation, t types.Type) {
 		result.reason = "Frozen storage cannot contain Local values"
 		return
 	}
-	if IsLibraryType(t, "Frozen") || IsUncheckedValue(t) {
+	if IsLibraryType(t, "Frozen") {
+		result.reason = "immutable markers are annotations, not data"
+		return
+	}
+	if IsUncheckedValue(t) {
 		return
 	}
 	if IsRuntimeType(t, "Ref") {
@@ -224,6 +228,9 @@ func (p *proof) structure(result *obligation, t types.Type, structure *types.Str
 		return
 	}
 	for field := range structure.Fields() {
+		if field.Embedded() && IsLibraryType(field.Type(), "Frozen") {
+			continue
+		}
 		p.depend(result, field.Type(), field.Name()+": ")
 	}
 }

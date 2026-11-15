@@ -16,7 +16,7 @@ const (
 // copiedValue excludes retained data through the same recursive rule for every use.
 func (p *proof) copiedValue(result *obligation, t types.Type) {
 	p.depend(result, t, "")
-	if IsLibraryType(t, "Frozen") || IsRuntimeType(t, "Ref") {
+	if IsRuntimeType(t, "Ref") {
 		return
 	}
 	switch value := t.Underlying().(type) {
@@ -29,15 +29,8 @@ func (p *proof) copiedValue(result *obligation, t types.Type) {
 			p.dependCategory(result, value.Elem(), "array element: ", copiedCategory)
 			return
 		}
-	case *types.Struct:
-		if Frozen(t) {
-			for field := range value.Fields() {
-				p.dependCategory(result, field.Type(), field.Name()+": ", copiedCategory)
-			}
-			return
-		}
 	}
-	result.reason = "Copied values cannot contain shared data references"
+	result.reason = "copied values require bool, numbers, arrays, or service references"
 }
 
 // readValue proves the general result category used by Local fields and readers.
@@ -50,6 +43,7 @@ func (p *proof) readValue(result *obligation, t types.Type) {
 		return
 	}
 	if IsLibraryType(t, "Local") {
+		result.reason = "immutable markers are annotations, not data"
 		return
 	}
 	switch value := t.Underlying().(type) {
@@ -65,6 +59,9 @@ func (p *proof) readValue(result *obligation, t types.Type) {
 				return
 			}
 			for field := range value.Fields() {
+				if field.Embedded() && IsLibraryType(field.Type(), "Local") {
+					continue
+				}
 				p.dependCategory(result, field.Type(), field.Name()+": ", readCategory)
 			}
 			return
