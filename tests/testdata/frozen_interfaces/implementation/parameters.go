@@ -34,4 +34,5 @@ func (t *Tree) Aliased(value api.ReaderAlias, callback api.CallbackAlias) int {
 }
 
 func (t *Tree) ReadLocal(value im.StringProjection) int { return int(t.Weight) + value.Len() }
+func (t *Tree) WithScorer(value api.Scorer) int         { return int(t.Weight + value.Score(nil)) }
 func (c Count) Number() int                             { return c.N }

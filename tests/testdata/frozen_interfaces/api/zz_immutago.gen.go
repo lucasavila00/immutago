@@ -40,6 +40,11 @@ func (v InputReaderProjection) ReadLocal(arg0 im.StringProjection) int {
 	return v.immutagoProjection.Read().ReadLocal(arg0)
 }
 
+// WithScorer calls the checked interface method with its ordinary Go contract.
+func (v InputReaderProjection) WithScorer(arg0 Scorer) int {
+	return v.immutagoProjection.Read().WithScorer(arg0)
+}
+
 // ReaderProjection provides local method access to Reader.
 type ReaderProjection struct {
 	im.Local

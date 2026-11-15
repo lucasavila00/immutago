@@ -52,12 +52,11 @@ under the ordinary method rules.
 | Parameter form — exhaustive | Example |
 | --- | --- |
 | No parameters | `Visit()` |
-| Fixed parameters with ordinary Go types, including interfaces and functions | `Score([]float32) float64`, `Apply(any, func() int) int`, `Read(interface{ Number() int }) int` |
-| Named types and aliases in fixed parameters | `Apply(Value, Callback) int`, where `type Value = any` and `type Callback func() int` |
-| Fixed protected parameters under the common call forms | `Read(im.StringProjection) int`, `Read(*LocalRecord) int` |
-| Named parameters in these forms | `Apply(value any, callback func() int) int` |
+| Fixed parameters with ordinary Go types, including interfaces and functions | `Score([]float32) float64`, `Apply(value any, callback func() int) int`, `Read(interface{ Number() int }) int` |
+| Fixed protected parameters under the common call forms | `Read(im.StringProjection) int`, `Read(*LocalRecord) int`, `WithScorer(Scorer) int` |
 
-An ordinary interface or callback can retain ordinary inputs. A callback contract
+Named types, aliases, and named or unnamed parameters use the same rules.
+Implementation methods can retain ordinary inputs. A callback contract
 cannot carry protected storage. An argument cannot box protected data or capture
 it in a closure. These rules also apply to generated projection calls and concrete
 implementation methods. The checker does not infer callback effects.

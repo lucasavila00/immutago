@@ -8,6 +8,7 @@ type InputReader interface {
 	Named(NumberReader, Callback) int
 	Aliased(ReaderAlias, CallbackAlias) int
 	ReadLocal(im.StringProjection) int
+	WithScorer(Scorer) int
 }
 
 type NumberReader interface{ Number() int }
