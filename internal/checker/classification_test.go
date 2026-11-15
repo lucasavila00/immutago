@@ -28,7 +28,6 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 	if IsCollection(t) || IsProjection(t) || Marked(t) || FrozenInterface(t) || IsLibraryType(t, "Local") {
 		return true
 	}
-	var components []types.Type
 	switch u := t.Underlying().(type) {
 	case *types.Pointer:
 		return classificationStorageOracle(u.Elem(), seen)
@@ -42,16 +41,8 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 		return classificationStorageOracle(u.Elem(), seen)
 	case *types.Interface, *types.Union:
 		return classificationConstraintOracle(t, seen)
-	case *types.Tuple:
-		for item := range u.Variables() {
-			components = append(components, item.Type())
-		}
-	case *types.Struct:
-		for field := range u.Fields() {
-			components = append(components, field.Type())
-		}
 	}
-	return slices.ContainsFunc(components, func(component types.Type) bool {
+	return slices.ContainsFunc(classificationComponents(t), func(component types.Type) bool {
 		return classificationStorageOracle(component, seen)
 	})
 }
@@ -143,7 +134,6 @@ func classificationTransportOracle(t types.Type, seen map[types.Type]bool) bool 
 	if parameter, ok := types.Unalias(t).(*types.TypeParam); ok {
 		return classificationTransportOracle(parameter.Constraint(), seen)
 	}
-	var components []types.Type
 	switch storage := t.Underlying().(type) {
 	case *types.Pointer:
 		return classificationStorageOracle(storage.Elem(), make(map[types.Type]bool))
@@ -156,6 +146,16 @@ func classificationTransportOracle(t types.Type, seen map[types.Type]bool) bool 
 		return classificationStorageOracle(storage.Elem(), make(map[types.Type]bool))
 	case *types.Array:
 		return classificationTransportOracle(storage.Elem(), seen)
+	}
+	return slices.ContainsFunc(classificationComponents(t), func(component types.Type) bool {
+		return classificationTransportOracle(component, seen)
+	})
+}
+
+// classificationComponents lists inline fields, results, and constraint terms for both oracle walks.
+func classificationComponents(t types.Type) []types.Type {
+	var components []types.Type
+	switch storage := t.Underlying().(type) {
 	case *types.Struct:
 		for field := range storage.Fields() {
 			components = append(components, field.Type())
@@ -173,9 +173,7 @@ func classificationTransportOracle(t types.Type, seen map[types.Type]bool) bool 
 			components = append(components, item.Type())
 		}
 	}
-	return slices.ContainsFunc(components, func(component types.Type) bool {
-		return classificationTransportOracle(component, seen)
-	})
+	return components
 }
 
 // classificationSignature constructs a concrete function type with one parameter.
