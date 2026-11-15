@@ -7,7 +7,7 @@ import (
 
 // TestGenericAliasBoundaries checks that protected instantiations cannot hide behind generic wrappers.
 func TestGenericAliasBoundaries(t *testing.T) {
-	const prefix = `type Value struct { im.Frozen; N int }
+	const prefix = `type Value struct { im.Local; N int }
  `
 	cases := []struct{ name, source, want string }{
 		{"wrapper", `type Box[T any] struct { V T }
@@ -28,7 +28,7 @@ func TestGenericAliasBoundaries(t *testing.T) {
 
 // TestGenericPointerBoundary rejects protected generic reference construction.
 func TestGenericPointerBoundary(t *testing.T) {
-	const prefix = `type Value struct { im.Frozen; N int }
+	const prefix = `type Value struct { im.Local; N int }
  `
 	cases := []string{
 		`func box[T any](v T) any { return &v }; var _ = box(Value{})`,

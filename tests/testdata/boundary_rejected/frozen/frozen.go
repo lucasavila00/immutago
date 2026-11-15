@@ -8,5 +8,5 @@ import (
 func Leak() {
 	values := []float64{1}
 	frozen := im.FreezeSlice(values)
-	logx.Info("weights", frozen)
+	logx.Info("weights", frozen.Projection())
 }

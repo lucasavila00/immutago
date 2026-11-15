@@ -67,36 +67,36 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"shared asynchronous", `func f(){p:=&Frozen{};go readSnapshot(p)}`, "synchronous"},
 		{"mixed markers", `type Mixed struct{im.Frozen;im.Local}`, "cannot embed both"},
 		{"generic marked", `type Box[T any]struct{im.Frozen;X int}`, "user generic declarations"},
-		{"generic local", `func f[T any](){v:=Frozen{};_=v}`, "user generic declarations"},
+		{"generic local", `func f[T any](){v:=Frozen{};_=v}`, ""},
 		{
 			"generic collection",
 			`func f[T ~int](v T)im.FrozenSlice[T]{s:=im.FreezeSlice([]T{v});return s}`,
 			"user generic declarations",
 		},
-		{"generic instance", `type Box[T any]struct{V T};var value Box[Frozen]`, "user generic instantiations"},
+		{"generic instance", `type Box[T any]struct{V T};var value Box[Frozen]`, "unmarked struct"},
 		{
 			"generic receiver body",
 			`type Box[T any]struct{V T};func(b Box[T])Read()int{v:=Frozen{};return v.X}`,
-			"user generic declarations",
+			"",
 		},
 		{"Local nil builder", `func f(){values:=[]*Local{nil};_=len(values)}`, "Local"},
 		{"Local empty builder", `func f(){var values []*Local;_=len(values)}`, "Local"},
 		{
 			"range interface",
 			`func f(){values:=im.FreezeMap(map[Frozen]int{{}:1});var boxed any;for boxed=range values.All(){};_=boxed}`,
-			"boxing immutable storage",
+			"",
 		},
 		{"reference comparison box", `func f(p *Frozen,boxed any)bool{return p==boxed}`, "boxing immutable storage"},
-		{"value comparison box", `func f(v Frozen,boxed any)bool{return boxed!=v}`, "boxing immutable storage"},
+		{"value comparison box", `func f(v Frozen,boxed any)bool{return boxed!=v}`, ""},
 		{
 			"tuple callback",
 			`func pair()(Frozen,int){return Frozen{},1};func f(callback func(Frozen,int)){callback(pair())}`,
-			"dynamic calls with immutable storage",
+			"",
 		},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, immutableTestTypes+test.source); !strings.Contains(got, test.want) {
+			if got := checkSource(t, immutableTestTypes+test.source); (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})

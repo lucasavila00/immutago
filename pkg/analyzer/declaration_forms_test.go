@@ -28,7 +28,7 @@ func TestDeclaredStorageForms(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.source, func(t *testing.T) {
-			got := checkSource(t, `type Value struct{im.Frozen;X int};`+test.source)
+			got := checkSource(t, `type Value struct{im.Local;X int};`+test.source)
 			if !strings.Contains(got, test.want) {
 				t.Fatalf("unsupported declaration or conversion accepted: %s", got)
 			}
@@ -49,7 +49,7 @@ func TestConstantOperandsUseSourceRules(t *testing.T) {
 		`func f(){values:=[]int{1};_=im.FreezeSlice(values);const n=len([1]int{values[99]});_=n}`,
 	}
 	for _, source := range cases {
-		if got := checkSource(t, `type Value struct{im.Frozen;X int};`+source); got == "" {
+		if got := checkSource(t, `type Value struct{im.Local;X int};`+source); got == "" {
 			t.Fatalf("protected constant operand accepted: %s", source)
 		}
 	}
@@ -60,11 +60,11 @@ func TestConstantOperandsUseSourceRules(t *testing.T) {
 		`func f[T any](){var values [len([1]int{})]int;_=values}`,
 		`func f(){values:=[]int{1};const n=len([1]int{values[99]});_=n}`,
 	} {
-		if got := checkSource(t, `type Value struct{im.Frozen;X int};`+source); got != "" {
+		if got := checkSource(t, `type Value struct{im.Local;X int};`+source); got != "" {
 			t.Fatalf("ordinary constant or direct array length rejected: %s", got)
 		}
 	}
-	got := checkSource(t, `type Value struct{im.Frozen;X int};func makeValue()Value{return Value{}};
+	got := checkSource(t, `type Value struct{im.Local;X int};func makeValue()Value{return Value{}};
  func f(){first,second:=len([1]Value{makeValue()}),2;_,_=first,second}`)
 	if !strings.Contains(got, "multiple assignments involving protected storage") {
 		t.Fatalf("evaluated protected construction skipped: %s", got)

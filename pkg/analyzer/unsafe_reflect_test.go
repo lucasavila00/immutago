@@ -56,19 +56,19 @@ func f(v Value) { _ = unsafe.Pointer(&v.N) }`, "interior addresses of protected 
 		{"reflection value", `import r "reflect"
 type Value struct { im.Frozen; N int }
 func f(p *Value) { r.ValueOf(p).Elem().FieldByName("N").SetInt(1) }`, "boxing immutable storage"},
-		{"reflection type", "import `reflect`\n" + `type Value struct { im.Frozen; N int }
+		{"reflection type", "import `reflect`\n" + `type Value struct { im.Local; N int }
 func f(v Value) { _ = reflect.TypeOf(v) }`, "boxing immutable storage"},
 		{"reflection callback", `import "reflect"
 type Value struct { im.Frozen; N int }
 func f(p *Value) { inspect := reflect.ValueOf; _ = inspect(p) }`, "boxing immutable storage"},
 		{"reflection generic", `import "reflect"
-type Value struct { im.Frozen; N int }
+type Value struct { im.Local; N int }
 var value = reflect.TypeFor[Value]()`, "user generic instantiations"},
 		{"reflection container", `import "reflect"
 type Value struct { im.Frozen; N int }
 func f(values []Value) { reflect.ValueOf(values).Index(0).FieldByName("N").SetInt(1) }`, "boxing immutable storage"},
 		{"frozen reflection", `import "reflect"
-func f(values im.FrozenSlice[int]) { _ = reflect.ValueOf(values) }`, "boxing immutable storage"},
+func f(values im.SliceProjection[int]) { _ = reflect.ValueOf(values) }`, "boxing immutable storage"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

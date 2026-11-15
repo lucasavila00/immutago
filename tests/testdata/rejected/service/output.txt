@@ -17,10 +17,6 @@ interfaces.go:17:45: unsupported immutable operation: boxing immutable storage i
   source: any(route)
   type: any
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-iszero.go:13:64: unsupported immutable operation: bound immutable methods are unsupported
-  source: route.Worker.IsZero
-  type: func() bool
-  fix: call the method directly (value.Method(...)); do not save or pass its method value
 iszero.go:16:30: unsupported immutable operation: closures cannot capture immutable storage
   source: route
   type: service.ZeroRoute

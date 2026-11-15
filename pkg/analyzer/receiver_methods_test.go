@@ -84,21 +84,21 @@ func f(p *Outer){p.Inc()}`, "promoted immutable"},
 func f(p *Outer){p.Count.Inc()}`, "concrete non-generic marked receiver"},
 		{"scalar field value", `type Count int;func(c Count)Read()int{return int(c)};
 type Outer struct{im.Frozen;Count};func f(p *Outer){_=p.Count.Read()}`, "concrete non-generic marked receiver"},
-		{"bound value", `func f(v Value){callback:=v.Read;_=callback}`, "bound immutable methods"},
+		{"bound value", `func f(v Value){callback:=v.Read;_=callback}`, ""},
 		{"bound pointer", `func f(p *Value){callback:=(p.ReadPointer);_=callback}`, "bound immutable methods"},
 		{"returned bound method", `func f(p *Value)func()int{return p.ReadPointer}`, "bound immutable methods"},
 		{"callback method", `func take(func()int){};func f(p *Value){take(p.ReadPointer)}`, "bound immutable methods"},
-		{"value expression", `func f(v Value){_=Value.Read(v)}`, "immutable method expressions"},
+		{"value expression", `func f(v Value){_=Value.Read(v)}`, ""},
 		{"pointer expression", `func f(p *Value){_=(*Value).ReadPointer(p)}`, "immutable method expressions"},
-		{"interface", `func f(v Value){var reader interface{Read()int}=v;_=reader.Read()}`, "boxing immutable"},
+		{"interface", `func f(v Value){var reader interface{Read()int}=v;_=reader.Read()}`, ""},
 		{"dynamic protected argument", `type Reader interface{Read(*Value)int};func f(r Reader,p *Value){_=r.Read(p)}`,
 			"dynamic calls with immutable storage"},
 		{"go", `func f(p *Value){go p.ReadPointer()}`, "synchronous"},
 		{"defer", `func f(p *Value){defer p.ReadPointer()}`, "synchronous"},
 		{"capture", `func f(p *Value){callback:=func()int{return p.ReadPointer()};_=callback}`, "closures cannot capture"},
-		{"select", `func f(p *Value,ch chan int){select{case ch<-p.ReadPointer():}}`, "select communication"},
+		{"select", `func f(p *Value,ch chan int){select{case ch<-p.ReadPointer():}}`, "statement forms"},
 
-		{"variadic boxing", `func(v Value)Use(...any){};func f(v Value){v.Use(v)}`, "boxing immutable"},
+		{"variadic boxing", `func(v Value)Use(...any){};func f(v Value){v.Use(v)}`, ""},
 		{"unproved receiver", `type Bad struct{im.Frozen;X []int};func(b Bad)ReadBad()int{return len(b.X)}`,
 			"concrete non-generic marked receiver"},
 		{"generic receiver", `type Box[T any]struct{im.Frozen;X int};func(b Box[T])Read()int{return b.X}`,
@@ -108,7 +108,7 @@ type Outer struct{im.Frozen;Count};func f(p *Outer){_=p.Count.Read()}`, "concret
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, receiverTestTypes+test.source); !strings.Contains(got, test.want) {
+			if got := checkSource(t, receiverTestTypes+test.source); (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})
@@ -131,7 +131,7 @@ func TestMarkedMethodBodies(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, receiverTestTypes+test.source); !strings.Contains(got, test.want) {
+			if got := checkSource(t, receiverTestTypes+test.source); (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})

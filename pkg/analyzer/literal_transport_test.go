@@ -23,7 +23,7 @@ func TestLiteralTransportRejects(t *testing.T) {
 		{"nested literal", `func f(v V){_=[][]any{[]any{v}}}`},
 		{"elided slice", `func f(v V){_=[][]any{{v}}}`},
 		{"elided struct", `type Holder struct{Value any};func f(v V){_=map[int]Holder{1:{Value:v}}}`},
-		{"frozen value", `func f(v im.FrozenSlice[int]){_=[]any{v}}`},
+		{"frozen value", `func f(v im.SliceProjection[int]){_=[]any{v}}`},
 		{"callback slice", `func makeValue()V{return V{}};func f(){_=[]func()V{makeValue}}`},
 		{"callback field", `type Holder struct{Make func()V};func makeValue()V{return V{}};
    func f(){_=Holder{Make:makeValue}}`},
@@ -33,7 +33,7 @@ func TestLiteralTransportRejects(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Frozen;X int};`+test.source)
+			got := checkSource(t, `type V struct{im.Local;X int};`+test.source)
 			if !strings.Contains(got, "boxing immutable storage") && !strings.Contains(got, "immutable callbacks") &&
 				!strings.Contains(got, "protected composite literals require a concrete storage type") {
 				t.Fatalf("literal transport accepted: %s", got)

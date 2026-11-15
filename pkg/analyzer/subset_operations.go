@@ -37,6 +37,11 @@ func (c *subsetChecks) operationExpression(expression ast.Expr) bool {
 			return false
 		}
 	}
+	if object := c.calledObject(expression); libraryObject(object) {
+		if _, function := object.(*types.Func); function {
+			return true
+		}
+	}
 	return c.protectedStorage(expression) || c.queries.Contains(c.pass.TypesInfo.TypeOf(expression)) ||
 		c.queries.Callable(c.pass.TypesInfo.TypeOf(expression))
 }
@@ -73,9 +78,6 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	case *ast.SelectorExpr:
 		return c.matchSelector(source)
 	case *ast.IndexExpr:
-		if _, callable := c.pass.TypesInfo.TypeOf(source).Underlying().(*types.Signature); callable {
-			return c.matchFunctionValue(source)
-		}
 		return c.matchIndex(source)
 	case *ast.IndexListExpr:
 		return c.matchFunctionValue(source)
@@ -95,17 +97,23 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 		}
 		return "slice projections of immutable storage are unsupported"
 	case *ast.TypeAssertExpr:
-		if checker.FrozenInterface(c.pass.TypesInfo.TypeOf(source.Type)) {
-			return c.matchFrozenInterface(c.pass.TypesInfo.TypeOf(source.X), c.pass.TypesInfo.TypeOf(source.Type))
-		}
-		if !c.queries.Transport(c.pass.TypesInfo.TypeOf(expression)) {
-			return ""
-		}
-		return "immutable interface assertions are unsupported"
+		return c.matchAssertion(source)
 	case *ast.FuncLit:
 		return "immutable callbacks are unsupported"
 	}
 	return "protected operation is outside the supported expression forms"
+}
+
+// matchAssertion checks known Frozen contracts before recovering a persistent concrete value.
+func (c *subsetChecks) matchAssertion(expression *ast.TypeAssertExpr) string {
+	destination := c.pass.TypesInfo.TypeOf(expression.Type)
+	if checker.FrozenInterface(destination) {
+		return c.matchFrozenInterface(c.pass.TypesInfo.TypeOf(expression.X), destination)
+	}
+	if c.queries.Transport(destination) {
+		return "immutable interface assertions are unsupported"
+	}
+	return ""
 }
 
 // matchIdentifier separates variable reads from direct function and builtin callees.
@@ -133,9 +141,6 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 	case *ast.SelectorExpr:
 		return c.matchSelector(parent)
 	case *ast.IndexExpr:
-		if _, callable := c.pass.TypesInfo.TypeOf(parent).Underlying().(*types.Signature); callable {
-			return c.matchFunctionValue(parent)
-		}
 		return c.matchIndex(parent)
 	case *ast.IndexListExpr:
 		return c.matchFunctionValue(parent)
@@ -163,8 +168,7 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 	case *ast.ValueSpec:
 		return c.matchDeclaration(parent)
 	}
-	if !c.queries.Transport(c.pass.TypesInfo.TypeOf(expression)) &&
-		!c.queries.Callable(c.pass.TypesInfo.TypeOf(expression)) && !c.ownedExpression(expression) {
+	if !c.restrictedOperand(expression) {
 		return ""
 	}
 	return "protected operation is outside the supported expression forms"
@@ -277,6 +281,9 @@ func (c *subsetChecks) matchBinary(expression *ast.BinaryExpr) string {
 
 // matchIndex permits value-array reads and native builder reads with concrete map keys.
 func (c *subsetChecks) matchIndex(expression *ast.IndexExpr) string {
+	if _, callable := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Signature); callable {
+		return c.matchFunctionValue(expression)
+	}
 	switch source := c.pass.TypesInfo.TypeOf(expression.X).Underlying().(type) {
 	case *types.Array:
 		return ""

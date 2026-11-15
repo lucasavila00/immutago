@@ -71,7 +71,8 @@ func (c *subsetChecks) valueDeclaration(declaration *ast.ValueSpec) {
 func (c *subsetChecks) typeSwitchDeclaration(declaration *ast.TypeSwitchStmt) {
 	for _, node := range declaration.Body.List {
 		for _, expression := range node.(*ast.CaseClause).List {
-			if c.queries.Transport(c.pass.TypesInfo.TypeOf(expression)) || checker.FrozenInterface(c.pass.TypesInfo.TypeOf(expression)) {
+			typ := c.pass.TypesInfo.TypeOf(expression)
+			if c.queries.Transport(typ) || checker.FrozenInterface(typ) {
 				c.report(expression, "protected storage is unsupported in type switches")
 			}
 		}
@@ -137,14 +138,8 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 	if group, ok := c.parents[declaration].(*ast.GenDecl); ok && group.Tok != token.VAR {
 		return "protected operation is outside the supported statement forms"
 	}
-	if len(declaration.Names) != 1 || len(declaration.Values) > 1 {
-		names := make([]ast.Expr, len(declaration.Names))
-		for index, name := range declaration.Names {
-			names[index] = name
-		}
-		if !c.resultDeclaration(declaration) && (c.restrictedBindings(names) || c.restrictedBindings(declaration.Values)) {
-			return "multiple assignments involving protected storage are unsupported"
-		}
+	if !c.declarationShape(declaration) {
+		return "multiple assignments involving protected storage are unsupported"
 	}
 	for _, name := range declaration.Names {
 		variable := c.pass.TypesInfo.Defs[name]
@@ -176,11 +171,26 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 	return ""
 }
 
+// declarationShape permits ordinary bindings or the listed restricted result forms.
+func (c *subsetChecks) declarationShape(declaration *ast.ValueSpec) bool {
+	if len(declaration.Names) == 1 && len(declaration.Values) <= 1 || c.resultDeclaration(declaration) {
+		return true
+	}
+	if c.restrictedBindings(declaration.Values) {
+		return false
+	}
+	for _, name := range declaration.Names {
+		if c.restrictedOperand(name) {
+			return false
+		}
+	}
+	return true
+}
+
 // restrictedBindings keeps the complete Local, pointer, and builder binding forms.
 func (c *subsetChecks) restrictedBindings(expressions []ast.Expr) bool {
 	for _, expression := range expressions {
-		typ := c.pass.TypesInfo.TypeOf(expression)
-		if c.queries.Transport(typ) || c.queries.Callable(typ) || c.ownedExpression(expression) {
+		if c.restrictedOperand(expression) {
 			return true
 		}
 	}

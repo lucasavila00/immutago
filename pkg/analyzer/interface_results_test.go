@@ -74,7 +74,7 @@ func TestInterfaceResultBoundaries(t *testing.T) {
 func(d *Data)Read()func()int{return func()int{return len(d.Text)}}`, "closures cannot capture"},
 		{"tuple boxing", `func read()(Data,bool){return Data{},true};
 func f(){var value any;var ok bool;value,ok=read();_=value;_=ok}`,
-			"boxing immutable"},
+			""},
 		{"tuple Local package", `var output im.StringProjection;func f(r Result){output,_,_,_=r.Lookup(nil)}`,
 			"multiple assignments"},
 		{"tuple Freeze", `func read()([]byte,bool){return []byte{1},true};func f(){buf,_:=read();_=im.FreezeSlice(buf)}`,
@@ -98,7 +98,7 @@ func f(r Reader){_,_=r.Read()}`, "dynamic calls"},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, interfaceResultTypes+test.source); !strings.Contains(got, test.want) {
+			if got := checkSource(t, interfaceResultTypes+test.source); (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})

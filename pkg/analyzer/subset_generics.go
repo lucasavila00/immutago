@@ -40,6 +40,10 @@ func (c *subsetChecks) genericStorage(name *ast.Ident) {
 			declared = append(declared, definition.RecvTypeParams().At(parameter))
 		}
 	case *types.Named:
+		if checker.Marked(definition) || checker.FrozenInterface(definition) {
+			c.report(name, "user generic declarations with immutable storage are unsupported")
+			return
+		}
 		parameters = definition.TypeParams()
 	case *types.Alias:
 		parameters = definition.TypeParams()

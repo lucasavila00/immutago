@@ -21,20 +21,12 @@ smaller_subset.go:19:32: immutable type argument: type parameters are unsupporte
 smaller_subset.go:19:6: immutable collection: type argument 1: type parameters are unsupported in immutable storage
   type: smaller_subset.GenericAlias[T ~int]
   fix: use a concrete type; user generic declarations cannot contain immutable storage
-smaller_subset.go:19:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
-  source: GenericAlias
-  type: smaller_subset.GenericAlias[T ~int]
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
 smaller_subset.go:21:36: immutable collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete type; user generic declarations cannot contain immutable storage
 smaller_subset.go:21:39: immutable type argument: type parameters are unsupported in immutable storage
   type: T
   fix: use a concrete type; user generic declarations cannot contain immutable storage
-smaller_subset.go:21:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
-  source: genericBuild
-  type: func[T ~int](value T) im.FrozenSlice[T]
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
 smaller_subset.go:22:12: immutable collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete type; user generic declarations cannot contain immutable storage
@@ -66,10 +58,6 @@ smaller_subset.go:26:65: unsupported immutable operation: immutable references r
 smaller_subset.go:29:29: unsupported immutable operation: closures cannot capture immutable storage
   source: shared
   type: *smaller_subset.Node
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-smaller_subset.go:33:29: unsupported immutable operation: closures cannot capture immutable storage
-  source: value
-  type: smaller_subset.Node
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
 smaller_subset.go:37:29: unsupported immutable operation: closures cannot capture immutable storage
   source: value

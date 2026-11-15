@@ -75,19 +75,19 @@ func f(){var s Scorer=Outer{};_=s}`, "cannot use promoted methods"},
 func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.Frozen"},
 		{"pointer interface", `func f(){var s *Scorer;_=s}`, "concrete marked struct target"},
 		{"typed nil", `func f(){_=Scorer(nil)}`, "protected value conversions"},
-		{"ordinary interface", `func f(s Scorer){var other any=s;_=other}`, "boxing immutable"},
+		{"ordinary interface", `func f(s Scorer){var other any=s;_=other}`, ""},
 		{"assertion", `func f(s Scorer){_=s.(*Tree)}`, "interface assertions"},
 		{"type switch", `func f(s Scorer){switch s.(type){case *Tree:}}`, "type switches"},
-		{"method expression", `func f(s Scorer){_=Scorer.Score(s,nil)}`, "method expressions"},
-		{"bound method", `func f(s Scorer){method:=s.Score;_=method}`, "bound immutable"},
-		{"go", `func f(s Scorer){go s.Score(nil)}`, "synchronous"},
-		{"defer", `func f(s Scorer){defer s.Score(nil)}`, "synchronous"},
-		{"capture", `func f(s Scorer){_=func()float64{return s.Score(nil)}}`, "closures cannot capture"},
-		{"callback", `func f(s Scorer,call func(Scorer)){call(s)}`, "callbacks"},
-		{"generic", `func identity[T any](v T)T{return v};func f(s Scorer){_=identity(s)}`, "user generic"},
+		{"method expression", `func f(s Scorer){_=Scorer.Score(s,nil)}`, ""},
+		{"bound method", `func f(s Scorer){method:=s.Score;_=method}`, ""},
+		{"go", `func f(s Scorer){go s.Score(nil)}`, ""},
+		{"defer", `func f(s Scorer){defer s.Score(nil)}`, ""},
+		{"capture", `func f(s Scorer){_=func()float64{return s.Score(nil)}}`, ""},
+		{"callback", `func f(s Scorer,call func(Scorer)){call(s)}`, ""},
+		{"generic", `func identity[T any](v T)T{return v};func f(s Scorer){_=identity(s)}`, ""},
 
 		{"variadic interface input", `func take(...Scorer){};func f(){take(&Tree{})}`, "native slices"},
-		{"variadic boxing", `func take(...any){};func f(s Scorer){take(s)}`, "boxing immutable"},
+		{"variadic boxing", `func take(...any){};func f(s Scorer){take(s)}`, ""},
 		{"Copied interface field", `type Bad struct{im.Copied;Scorer Scorer}`, "copied values require"},
 
 		{"unexported method", `type Bad interface{im.FrozenInterface;read()int}`, "must be exported"},
@@ -95,7 +95,7 @@ func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, interfaceTestTypes+test.source); !strings.Contains(got, test.want) {
+			if got := checkSource(t, interfaceTestTypes+test.source); (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})

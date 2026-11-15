@@ -43,10 +43,6 @@ atomic.go:38:12: unmarked struct contains immutable field _; embed an immutable 
   owner: atomic.Pointer[serviceatomic.FrozenSlot]; field type: [0]*serviceatomic.FrozenSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-atomic.go:38:19: unsupported immutable operation: user generic instantiations with immutable types are unsupported
-  source: Pointer
-  type: atomic.Pointer[T any]
-  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
 atomic.go:38:5: unmarked struct contains immutable field _; embed an immutable marker
   owner: atomic.Pointer[serviceatomic.FrozenSlot]; field type: [0]*serviceatomic.FrozenSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof

@@ -1,4 +1,4 @@
-subset_bound_method.go:21:33: unsupported immutable operation: bound immutable methods are unsupported
+subset_bound_method.go:21:33: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: v.Read
   type: func() int
-  fix: call the method directly (value.Method(...)); do not save or pass its method value
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage

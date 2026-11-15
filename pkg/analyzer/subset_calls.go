@@ -22,7 +22,7 @@ func (c *subsetChecks) calledObject(e ast.Expr) types.Object {
 	return nil
 }
 
-// matchCall accepts exact im APIs, concrete named calls, or calls with only ordinary scalar data.
+// matchCall accepts fixed im APIs, restricted direct calls, and ordinary calls with persistent values.
 func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	object := c.calledObject(call.Fun)
 	if builtin, ok := object.(*types.Builtin); ok {
@@ -79,7 +79,8 @@ func (c *subsetChecks) matchConversion(call *ast.CallExpr) string {
 		if checker.FrozenInterface(destination) && source != types.Typ[types.UntypedNil] {
 			return ""
 		}
-		if _, boxed := destination.Underlying().(*types.Interface); boxed && !c.queries.Transport(source) {
+		if _, boxed := destination.Underlying().(*types.Interface); boxed &&
+			!checker.FrozenInterface(destination) && !c.queries.Transport(source) {
 			return ""
 		}
 		if c.queries.Contains(source) || c.queries.Contains(destination) {
@@ -220,7 +221,7 @@ func (c *subsetChecks) protectedCallArguments(call *ast.CallExpr) bool {
 	return false
 }
 
-// matchTransport permits concrete value copies and rejects implicit interface or callback storage.
+// matchTransport proves Frozen interface implementations and rejects restricted value erasure.
 func (c *subsetChecks) matchTransport(source, destination types.Type) string {
 	if checker.FrozenInterface(destination) {
 		return c.matchFrozenInterface(source, destination)

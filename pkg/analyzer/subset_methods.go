@@ -32,6 +32,9 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	if c.directCall(selector) == nil && restricted {
 		return "bound immutable methods are unsupported"
 	}
+	if _, parameter := types.Unalias(selection.Recv()).(*types.TypeParam); parameter && !restricted {
+		return ""
+	}
 	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
 		if checker.FrozenInterface(selection.Recv()) {
 			return c.matchFrozenInterfaceMethod(selector)

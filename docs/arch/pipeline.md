@@ -36,7 +36,9 @@ frozen := im.FreezeSlice(values)
 
 [Source matching](../../pkg/analyzer/subset_operations.go) checks the expression
 that creates a value, the operation that uses it, and the complete statement.
-Each has a rejecting fallback.
+Each restricted operation has a rejecting fallback. Persistent Frozen values can
+use ordinary interfaces, generics, callbacks, and captures. Target writes and
+addresses still use the protected-storage checks.
 
 | Compiler information | Why the matcher needs it |
 | --- | --- |
@@ -72,7 +74,12 @@ Cause links cannot form a cycle. Query order can select a different real cause.
 | Graph | Cache key | Answer propagated to owners |
 | --- | --- | --- |
 | Type proof | Type + Frozen, Copied, or ReadResult | A component failed the requested category. |
-| [Classification](../../internal/checker/classification.go) | Type + query mode | A component needs storage, Local, callback, or service-reference checks. |
+| [Classification](../../internal/checker/classification.go) | Type + query mode | A component needs storage, transport, Local, callback, or service-reference checks. |
+
+The storage query identifies protected fields and native builder entries. The
+transport query stops at persistent Frozen values. Callback contracts use the
+transport query for their parameters and results. Both queries share the same
+recursive graph and compiler types, including constraint terms and tuples.
 
 Both graphs finish expansion before propagation. Completed answers belong to
 one package pass; compiler types must remain unchanged.

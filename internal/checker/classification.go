@@ -39,7 +39,7 @@ type classificationNode struct {
 func (c *Classifier) Contains(t types.Type) bool { return c.query(t, storageMode) }
 
 // Transport reports values that need restricted calls, bindings, and captures.
-// Frozen values can persist; Local values, protected pointers, and native containers cannot.
+// Frozen values can persist. Local values and protected pointer or native container uses stay restricted.
 func (c *Classifier) Transport(t types.Type) bool { return c.query(t, transportMode) }
 
 // Callable reports whether t contains a callback contract that carries protected storage.
@@ -160,6 +160,9 @@ func (c *Classifier) storedValue(node *classificationNode) {
 func (c *Classifier) storageEdges(node *classificationNode) {
 	switch storage := node.key.typ.Underlying().(type) {
 	case *types.Interface:
+		if node.key.mode == localMode {
+			return
+		}
 		for i := 0; i < storage.NumEmbeddeds(); i++ {
 			c.connect(node, storage.EmbeddedType(i), node.key.mode)
 		}

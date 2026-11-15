@@ -7,6 +7,6 @@ subset_generic_read.go:20:6: unsupported immutable operation: user generic decla
   type: func[T rejected.Good](p *T)
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
 subset_generic_read.go:21:34: unsupported immutable operation: user generic instantiations with immutable types are unsupported
-  source: readGeneric
-  type: func(p *rejected.Good)
+  source: readGeneric(new(v))
+  type: ()
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported

@@ -35,12 +35,51 @@ A Local value cannot be hidden in persistent storage.
 | --- | --- |
 | Fixed im types and functions | `im.FrozenSlice[FrozenPoint]`, `im.FreezeSlice([]FrozenPoint{})` |
 | Fixed supervise APIs with protected values | `supervise.Service[FrozenPoint]`, `supervise.Start[Worker](root, args)`; saved protected arguments must be Frozen values, never Local values. |
-| User generics without protected storage | `type Plain[T any] struct { Value T }`, used as `Plain[int]` |
+| User generics with ordinary or persistent Frozen parameters, results, and constraints | `identity(text)`, `identity[im.FrozenString](text)`, `func keep[T FrozenPoint](value T) T { return value }` |
+| Generic function and method bodies | `func read[T any](value T) int { text := im.FreezeString("x"); return text.Len() }`; each operation keeps its normal source rules. |
+| Ordinary generic types | `type Plain[T any] struct { Value T }`, used as `Plain[int]`; instantiated fields still need their normal field proofs. |
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `type Box[T any] struct { im.Frozen; Value T }` | `type Box struct { im.Frozen; Value FrozenPoint }` |
-| `Plain[FrozenPoint]` or `identity(point)` with generic `identity` | Use a concrete marked struct or copy `point` directly. |
+| `Plain[FrozenPoint]` stores a Frozen field in an unmarked record | Use a concrete Frozen record for this stored field. |
+| `identity(local)` with a Local record or projection | Copy it directly, or use a direct function with a concrete parameter. |
+| `func use[T LocalPoint](value T)` | Use `func use(value LocalPoint)`. |
+| `T{point}` with `T ~[]any` | Construct `[]any{point}` first, then convert it to T. |
+| Convert a type parameter to a Frozen interface inside a generic body | Convert the concrete implementation to that Frozen interface before the generic call. |
+
+## Persistent Frozen value transport
+
+Frozen records, FrozenString, FrozenSlice, FrozenMap, Frozen interfaces, and
+unnamed arrays of these values can persist. Aliases keep these forms. Pointers
+use the separate [pointer forms](#common-pointer-forms). Local values and
+projections do not use this table.
+
+| Allowed forms — exhaustive | Example |
+| --- | --- |
+| Put a value in an ordinary interface by assignment, argument, result, comparison, or explicit conversion | `var boxed any = text`, `useAny(text)`, `return text`, `boxed == text`, `any(text)` |
+| Use ordinary interface fields and collection entries | `struct{ Value any }{text}`, `[]any{text}`, `map[any]any{point: text}` |
+| Recover a concrete Frozen value with an assertion or type switch | `text := boxed.(im.FrozenString)`, `text, ok := boxed.(im.FrozenString)`, `switch value := boxed.(type) { case FrozenPoint: use(value) }` |
+| Use an ordinary function or interface method with persistent inputs and results | `callback(text)`, `factory.Read()`, `value, ok := callback()` |
+| Use a user generic function, with inferred or explicit type arguments | `identity(text)`, `identity[im.FrozenString](text)` |
+| Capture local or package values in closures | `read := func() int { return text.Len() }` |
+| Select a method value or method expression with ordinary or persistent inputs and results | `read := text.Len`, `read := FrozenPoint.XValue`, `read := Scorer.Score` |
+| Bind or replace several values, including callback results | `a, b := point, other`, `a, b = b, a`, `var a, b = callback()` |
+| Call with go or defer when operands use these persistent forms | `go use(text)`, `defer text.Len()` |
+| Save or call an iterator that yields persistent values | `items := frozen.All()`, `for value := range items { use(value) }` |
+
+Each field and collection argument still needs its type proof. Fields inside a
+Frozen record stay read-only, including inside a closure or generic body. A
+conversion to a Frozen interface still proves the concrete implementation and
+its exact method receivers. An assertion from `any` to a Frozen interface cannot
+supply that proof; recover a proved concrete record first.
+
+Generic bodies are checked with their declared compiler types. Ordinary APIs,
+including generic helpers, use Go contracts. The checker does not prove their
+effects for each type argument. Callers must not use an ordinary mutating helper
+on a Frozen target.
+
+This list is complete. Unlisted operations on protected storage are rejected.
 
 ## Construction and scalar reads
 
@@ -68,9 +107,9 @@ p = &FrozenPoint{X: 2} // q still observes X == 1.
 
 - After `x := point.X`, `x` is an ordinary integer; you can change it or capture it.
 - The read of `point.X` still needs a listed statement form.
-- Frozen and Local copies, protected pointers, and frozen collections keep their rules.
-- Constant expressions follow the same rules. Use `count := len(points)` before
-  a closure, then capture `count`; do not read `points` inside the closure.
+- Frozen values use the transport table above. Local values and protected pointers keep their restricted forms.
+- Constant expressions follow the same rules. For a Local array, compute
+  `count := len(points)` before a closure, then capture `count`. Frozen arrays can be captured.
 
 ## Common pointer forms
 
@@ -144,7 +183,7 @@ forms on this page.
 | Struct with `im.Local` | Its value stays Local. Its pointer can only be used in local direct calls. |
 | Frozen or Local record | Cannot change protected fields or have generic receivers. |
 | Copied field inside a protected owner | Exact value-receiver calls copy the field. Pointer-receiver calls that address the field are rejected. |
-| Ordinary concrete receiver with protected inputs or results | Direct, non-generic calls. The protected inputs and results keep their im rules. |
+| Ordinary concrete receiver with Local inputs or results | Direct, non-generic calls. Local inputs and results keep their im rules. Persistent values use the transport table. |
 | Fixed library type | Listed API forms. |
 
 | Rejected examples — non-exhaustive | Replacement |
@@ -153,7 +192,7 @@ forms on this page.
 | `p.XValue()` adds an implicit dereference | `(*p).XValue()` |
 | `group.XValue()` selects a method from an embedded FrozenPoint | `group.FrozenPoint.XValue()` |
 | `p.Counter.Inc()` calls a method on a protected scalar field | Copy the scalar first: `count := p.Counter; count.Inc()`. |
-| `read := p.ReadX` or `(*FrozenPoint).ReadX(p)` | `p.ReadX()` |
+| `read := p.ReadX` or `(*FrozenPoint).ReadX(p)` | `p.ReadX()`; persistent value receivers also permit the method forms above. |
 | `go p.ReadX()` or `defer p.ReadX()` | `p.ReadX()` |
 
 ## Statements and calls
@@ -176,8 +215,9 @@ Use the operations above inside these statement forms:
 | Assign one existing writable loop target, using the assignment rules above | `for i = range count { ... }`, `for a[point.X] = range a { ... }` |
 | Use checked operations in a select case body | `case <-ready: values[0] = value` |
 
-- Assignments and declarations have one destination, except for the result-call
-  forms above. Returns can have several results.
+- Local, pointer, and builder assignments have one destination, except for the
+  result-call forms above. Persistent Frozen values also use the transport table.
+  Returns can have several results.
 - Fixed calls such as FrozenMap.Get, MapProjection.Get, and supervise.Start use
   the same result binding forms. For example, `value, found = frozen.Get(key)`
   can reuse local names, and `var ref, err = supervise.Start[Worker](root, args)`
@@ -188,13 +228,13 @@ Use the operations above inside these statement forms:
   are allowed, including reused locals in `:=`. Aliases and parentheses keep
   these forms. For example, `point, found := makePair()` can bind a Frozen record,
   and `pointer, found := find()` can bind a Frozen pointer. An assignment cannot
-  box either result in `any` or store a Local value in persistent storage.
+  store a Local value in persistent storage. Persistent Frozen results can be boxed in `any`.
 - The [service result signatures](service-results.md) still limit service methods
   to at most one data result and an optional error. Result binding does not change
   a method's declared API contract. Calls with only ordinary values keep Go rules.
 - Blocks, `break`, and `continue` follow ordinary Go rules.
-- Named functions need the exact parameter type, such as `func read(p *FrozenPoint) int`.
-  Call directly, without `go` or `defer`.
+- Local values and protected pointers need the exact parameter type, such as
+  `func read(p *LocalPoint) int`. Call directly, without `go` or `defer`.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
@@ -208,7 +248,7 @@ Use the operations above inside these statement forms:
 | `case <-watch(im.FreezeSlice(values)):` | Freeze and compute the channel before the select; receive from the channel variable. |
 | `var value any = p` | Use a concrete `*FrozenPoint` variable. |
 | `callback(p)` through a function variable with protected arguments | Use a direct named function. |
-| `callback := func() int { return point.X }` | `x := point.X; callback := func() int { return x }` |
+| `callback := func() int { return local.X }` with LocalPoint | `x := local.X; callback := func() int { return x }` |
 | `func() int { return len([1]*LocalPoint{p}) }` | Use `1`, or compute an ordinary length before the closure. |
 | `const n = len([1]FrozenPoint{})`, `[len([1]FrozenPoint{})]int` | Use `const n = 1`, `[1]int`, or `n := len(points)` outside type syntax. |
 | `go read(p)` or `defer read(p)` | Call `read(p)` synchronously. |

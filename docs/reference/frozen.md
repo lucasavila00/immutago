@@ -116,12 +116,12 @@ Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 - Call methods on a local variable, a struct field, or a named function's result.
 - Pass frozen collections to functions by value.
 - Parentheses around a call or range expression are allowed.
-- For iterators with protected values, use direct `range frozen.All()`.
-- Other iterators, such as those over `int` or `[2]int`, use ordinary Go rules.
+- Iterators of persistent Frozen values use the [transport forms](common-forms.md#persistent-frozen-value-transport).
+- Iterators of protected pointers still require direct `range frozen.All()`.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `text[0]`, `text[1:]`, or `string(text)` with FrozenString | Use At for a byte, Unsafe for a shared native string, or Clone for independent storage. |
 | Return FrozenString from an exported service method | Return `text.Projection()`. |
-| `read := frozen.At` | `value := frozen.At(0)` |
-| `im.FrozenSlice[int].At(frozen, 0)` | `frozen.At(0)` |
+| `read := local.At` with SliceProjection | `value := local.At(0)` |
+| `im.SliceProjection[int].At(local, 0)` | `local.At(0)` |
