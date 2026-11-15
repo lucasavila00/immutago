@@ -15,6 +15,9 @@ func readLocal(value *Local) int { if value == nil { return 0 }; return value.X 
 // TestImmutableObjectForms checks fresh construction, binding replacement, and the two reference modes.
 func TestImmutableObjectForms(t *testing.T) {
 	cases := []string{
+		`type Reader int;func(Reader)Read(p *Shared)int{return p.X};func f(){p:=&Shared{};_=Reader(0).Read(p)}`,
+		`type Reader int;func(Reader)Make()*Shared{return &Shared{}};func f(){_=Reader(0).Make()}`,
+
 		`func f()*Shared { p:=&Shared{X:1}; q:=p; p=&Shared{X:2}; _=p; return q }`,
 		`var global *Shared;func f(){global=&Shared{X:1};global=nil}`,
 		`var global Shared;func f(){global=Shared{X:1}}`,
@@ -82,16 +85,6 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 			"range interface",
 			`func f(){values:=im.FreezeMap(map[Shared]int{{}:1});var boxed any;for boxed=range values.All(){};_=boxed}`,
 			"boxing immutable storage",
-		},
-		{
-			"method parameter",
-			`type Reader int;func(Reader)Read(p *Shared)int{return p.X};func f(){p:=&Shared{};_=Reader(0).Read(p)}`,
-			"immutable methods require a concrete non-generic marked receiver",
-		},
-		{
-			"method result",
-			`type Reader int;func(Reader)Make()*Shared{return &Shared{}};func f(){_=Reader(0).Make()}`,
-			"immutable methods require a concrete non-generic marked receiver",
 		},
 		{"reference comparison box", `func f(p *Shared,boxed any)bool{return p==boxed}`, "boxing immutable storage"},
 		{"value comparison box", `func f(v Shared,boxed any)bool{return boxed!=v}`, "boxing immutable storage"},

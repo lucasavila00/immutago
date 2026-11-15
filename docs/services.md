@@ -52,7 +52,7 @@ The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and
 | --- | --- |
 | Start arguments | Embed `supervise.Service[A]`; read `p.Args()` in a service method. |
 | No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
-| Start arguments | Any Go type. The service must synchronize shared mutable data. |
+| Start arguments | Ordinary Go types, or stored im values. A Scoped pointer cannot be saved as an argument. Synchronize shared mutable data. |
 | Exported method result | Exactly one [Scoped result](scoped-results.md): an immutable value, such as an integer, a marked struct, or a frozen collection. Init and Run are excluded. |
 | Method inputs | Ordinary Go types, including interfaces, callbacks, pointers, slices, maps, and channels. Protected values follow the [common source rules](common-forms.md). |
 | Return a list | `im.FrozenSlice[string]`. |

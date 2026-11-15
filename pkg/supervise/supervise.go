@@ -19,9 +19,6 @@
 // Review state changes, locks, saved inputs, and dependency calls in the service
 // code. Immutable results do not prove service isolation.
 //
-// Review state changes, locks, saved inputs, and dependency calls in the service
-// code. Immutable results do not prove service isolation.
-//
 // # Groups and shutdown
 //
 //   - NewRoot creates an application group; StartGroup creates a nested group.
@@ -234,8 +231,8 @@ type Ref[T any] struct {
 }
 
 // Current selects the last successfully initialized service value with one
-// atomic load. Use the result only for a direct synchronous call of an exported
-// method other than Init or Run; do not save the pointer.
+// atomic load. A saved pointer keeps selecting that value after a restart;
+// call Current again to select the replacement.
 //
 // Current panics for an empty or unstarted reference. It can return a value whose
 // Run has ended. Stop does not invalidate the reference or block later calls.

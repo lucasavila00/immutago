@@ -25,10 +25,6 @@ receiver_bodies.go:17:65: unsupported immutable operation: closures cannot captu
   source: s
   type: *rejected.Settings
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-receiver_bodies.go:21:19: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
-  source: Read
-  type: func(p *rejected.Product) int
-  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
 receiver_bodies.go:23:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
   source: Generic
   type: rejected.Generic[T any]

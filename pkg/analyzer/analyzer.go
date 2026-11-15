@@ -78,9 +78,13 @@ func run(pass *analysis.Pass) (any, error) {
 	return nil, nil
 }
 
-// checkLibraryArguments proves type arguments outside unchecked dependency payloads.
+// checkLibraryArguments proves im type arguments and protected runtime storage.
 func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance) {
 	obj := c.pass.TypesInfo.Uses[ident]
+	if runtimeObject(obj) && obj.Name() == "Service" {
+		c.checkServiceStorage(ident, instance.TypeArgs.At(0))
+		return
+	}
 	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
 		return
 	}

@@ -87,7 +87,9 @@ and Current pointers follow ordinary Go rules. Actual im data still passes
 through its type proofs, source matcher, and Freeze checks.
 
 The classifier treats `Service[A]` as runtime storage, so a service can receive
-im values through its start arguments. `Ref[T]` is an ordinary mutable handle,
+im values through its start arguments. When A contains im data, its stored-value
+proof must pass; this prevents retaining a Scoped pointer. Ordinary A types need
+no immutable proof. `Ref[T]` is an ordinary mutable handle,
 not an immutable stored type. Runtime calls remain fixed library operations.
 
 ### Publication and child lifetimes

@@ -45,3 +45,6 @@ type Promoted struct {
 type PointerEmbedded struct{ *supervise.Service[int] }
 
 func (*PointerEmbedded) Mutable() []int { return nil }
+
+// The runtime stores arguments, so a Scoped pointer cannot be a start argument.
+type StoredPointer struct{ supervise.Service[*Reply] }

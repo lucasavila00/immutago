@@ -56,3 +56,9 @@ func use(ref supervise.Ref[Counter]) {
 // User embedding and promoted methods use the same result contract.
 type Other struct{ *Counter }
 type Alias = Counter
+
+// Immutable values and Shared pointers can be stored as start arguments.
+type StoredValue struct{ supervise.Service[Reply] }
+type StoredShared struct {
+	supervise.Service[*SharedReply]
+}

@@ -47,3 +47,5 @@ results.go:39:16: service method Mutable must return a Scoped result: []int is n
   result type: []int
 results.go:47:25: service method Mutable must return a Scoped result: []int is not provably immutable
   result type: []int
+results.go:50:38: stored im argument: Scoped pointers cannot be stored
+  fix: pass an immutable value or a Shared pointer; Scoped pointers cannot be stored

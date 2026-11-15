@@ -31,6 +31,9 @@ func(r *Reader) Read(p *Reply) Reply{return Reply{Count:p.Count+r.count}}
 func use(){r:=&Reader{};p:=&Reply{};_=r.Read(p)}`, false},
 		{"interface receiver", `type Reader interface{Read(*Reply) Reply}
 func use(r Reader,p *Reply){_=r.Read(p)}`, true},
+		{"stored scoped pointer", `type Stored struct{supervise.Service[*Reply]}`, true},
+		{"stored scoped value", `type Stored struct{supervise.Service[Reply]}`, false},
+		{"stored shared pointer", `type Stored struct{supervise.Service[*SharedReply]}`, false},
 		{"zero results", `func(*Counter) Update() {}`, true},
 		{"two results", `func(*Counter) Read()(int,int){return 1,2}`, true},
 		{"mutable result", `func(*Counter) Read() map[string]int {return nil}`, true},

@@ -101,7 +101,8 @@ func libraryTypeComponents(t types.Type, seen map[types.Type]bool, includeRuntim
 // libraryTypeMetadata retains alias and phantom generic contracts before their underlying types erase them.
 func libraryTypeMetadata(name *types.TypeName, parameters *types.TypeParamList,
 	arguments *types.TypeList, seen map[types.Type]bool, includeRuntime bool) bool {
-	if pkg := name.Pkg(); pkg != nil && (pkg.Path() == checker.LibraryPath || (includeRuntime && pkg.Path() == checker.RuntimePath)) {
+	if pkg := name.Pkg(); pkg != nil &&
+		(pkg.Path() == checker.LibraryPath || (includeRuntime && pkg.Path() == checker.RuntimePath)) {
 		return true
 	}
 	if libraryTypeParameters(parameters, seen, includeRuntime) {
@@ -130,8 +131,10 @@ func librarySignature(signature *types.Signature, seen map[types.Type]bool, incl
 	if receiver := signature.Recv(); receiver != nil && usesLibraryType(receiver.Type(), seen, includeRuntime) {
 		return true
 	}
-	return usesLibraryType(signature.Params(), seen, includeRuntime) || usesLibraryType(signature.Results(), seen, includeRuntime) ||
-		libraryTypeParameters(signature.TypeParams(), seen, includeRuntime) || libraryTypeParameters(signature.RecvTypeParams(), seen, includeRuntime)
+	return usesLibraryType(signature.Params(), seen, includeRuntime) ||
+		usesLibraryType(signature.Results(), seen, includeRuntime) ||
+		libraryTypeParameters(signature.TypeParams(), seen, includeRuntime) ||
+		libraryTypeParameters(signature.RecvTypeParams(), seen, includeRuntime)
 }
 
 // libraryTypeParameters checks constraints even when a generic parameter has no stored field.

@@ -1,0 +1,5 @@
+use.go:3:8: unsupported dependency example.com/consumer/invalidapi: immutability proof failed
+  representative failure: example.com/consumer/invalidapi/api.go:7:17: service method Values must return a Scoped result: []int is not provably immutable
+    result type: []int
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/invalidapi, correct its errors, then rerun immutago on this package

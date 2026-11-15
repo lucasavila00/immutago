@@ -33,7 +33,7 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
 		return "dynamic calls with immutable storage are unsupported"
 	}
-	if !c.queries.Contains(c.pass.TypesInfo.TypeOf(selector.X)) {
+	if !c.protectedStorage(selector.X) {
 		signature := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
 		if genericSignature(signature) && !runtimeObject(selection.Obj()) {
 			return "user generic instantiations with immutable types are unsupported"

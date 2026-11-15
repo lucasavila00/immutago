@@ -50,3 +50,14 @@ func (c *checks) visitService(node ast.Node) bool {
 	}
 	return true
 }
+
+// checkServiceStorage applies im storage rules when the runtime saves protected arguments.
+func (c *checks) checkServiceStorage(name *ast.Ident, argument types.Type) {
+	if !c.queries.Contains(argument) && !c.queries.Callable(argument) {
+		return
+	}
+	if reason := c.proofs.Reason(argument); reason != "" {
+		c.report(name.Pos(), "stored im argument: "+reason+
+			"\n  fix: pass an immutable value or a Shared pointer; Scoped pointers cannot be stored")
+	}
+}

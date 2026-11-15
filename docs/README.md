@@ -10,6 +10,7 @@
 | Replace a pointer while readers use the previous object | [Owner](owner.md) |
 | Build read-only slices and maps | [Frozen collections](frozen.md) |
 | Wrap data whose immutability your package promises | [Unchecked immutable values](unchecked-values.md) |
+| Choose an immutable return type | [Scoped results](scoped-results.md) |
 | Look up allowed Go forms | [Common source forms](common-forms.md) |
 | Look up signatures and zero values | [im API](../pkg/im/readme.md) |
 
@@ -19,7 +20,7 @@
 | --- | --- |
 | Start a service and understand restarts | [Supervised services](services.md) |
 | Create and replace groups of workers | [Child services](service-children.md) |
-| Supply a logger, client, or other safe concurrent dependency | [Concurrent dependencies](services.md#concurrent-dependencies) |
+| Supply a logger, client, or other safe concurrent dependency | [Mutable dependencies](services.md#mutable-dependencies) |
 | Check method result types | [Scoped results](scoped-results.md) |
 | Look up signatures and lifecycle behavior | [supervise API](../pkg/supervise/readme.md) |
 
