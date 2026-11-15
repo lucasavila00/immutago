@@ -40,9 +40,9 @@ numbers or explicit string clones. It cannot keep the returned projection in
 persistent storage.
 
 For a result that combines computed values with projections, use [im.Local](local.md).
-The [model service](../examples/models/fetcher.go) returns a name projection and a score
-from one selected model. The [configuration service](../examples/configuration/limiter.go)
-returns quota counters in an im.Local Usage record.
+The [search indexer](../examples/search/indexer.go) returns a Local Status with a
+version number, document count, and local error-text projection. Its Read method
+returns the generated IndexProjection for query processing.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |

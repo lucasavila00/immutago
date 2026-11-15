@@ -7,41 +7,40 @@ Use it when your package supplies immutable data that does not fit the checked f
 - Only the package that declares `T` can wrap it with `im.Trust` or read it with `im.Unwrap`.
 - Other packages can keep the handle and call your functions to read the data.
 
-## Example: a prediction model
+## Example: a compiled regular expression
+
+A package can expose matching without exposing the mutable regexp object:
 
 ```go
-type baked struct { weights []float64 }
+package pattern
 
-type Model struct {
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
+import (
+    "regexp"
+
+    "github.com/lucasavila00/immutago/pkg/im"
+)
+
+type compiled struct { re *regexp.Regexp }
+
+type Pattern struct {
     im.Frozen
-    Name   string
-    engine im.UncheckedValue[baked]
+    compiled im.UncheckedValue[compiled]
 }
 
-func Load(name string, weights []float64) *Model {
-    return &Model{Name: name, engine: im.Trust(&baked{weights: slices.Clone(weights)})}
+func MustCompile(expression string) *Pattern {
+    re := regexp.MustCompile(expression)
+    return &Pattern{compiled: im.Trust(&compiled{re: re})}
 }
 
-func Predict(m *Model, features im.FrozenSlice[float64]) float64 {
-    b := im.Unwrap(m.engine)
-    if features.Len() != len(b.weights) {
-        panic("feature count does not match model")
-    }
-    var score float64
-    for i, weight := range b.weights {
-        score += weight * features.At(i)
-    }
-    return score
+func Match(p *Pattern, text string) bool {
+    return im.Unwrap(p.compiled).re.MatchString(text)
 }
 ```
 
-Load copies the input with `slices.Clone`, so later changes by the caller do not
-change the trusted object. `im.Trust` itself does not copy or freeze the data.
-
-The [model package](../examples/models/model/model.go) owns the trusted pointer.
-The [HTTP service](../examples/models/fetcher.go) uses its public prediction API.
-Run the [model project](../examples/models/README.md) to load models and make
-predictions while new model versions arrive. Each published model stays unchanged.
+This package never changes or returns the compiled regexp. Trust stores its
+pointer; it does not freeze or copy the regexp.
 
 ## Allowed forms — exhaustive
 
@@ -51,15 +50,15 @@ follows the [common forms](common-forms.md).
 
 | Allowed form | Example |
 | --- | --- |
-| Use as an allowed stored type in a marked struct, a frozen collection, or ordinary Go | `type Model struct { im.Frozen; engine im.UncheckedValue[baked] }` |
-| Copy, store, pass, or return the handle in any package | `other := m.engine` |
-| Declare a zero handle; Unwrap returns nil | `var engine im.UncheckedValue[baked]` |
-| In the package that declares the named type `T`, wrap a pointer | `engine := im.Trust(&baked{})` |
-| In the package that declares the named type `T`, read the pointer | `b := im.Unwrap(m.engine)` |
-| In that package, use either function as a function value | `read := im.Unwrap[baked]`; `b := read(engine)` |
+| Use as an allowed stored type in a marked struct, a frozen collection, or ordinary Go | `type Pattern struct { im.Frozen; compiled im.UncheckedValue[compiled] }` |
+| Copy, store, pass, or return the handle in any package | `other := p.compiled` |
+| Declare a zero handle; Unwrap returns nil | `var value im.UncheckedValue[compiled]` |
+| In the package that declares the named type `T`, wrap a pointer | `value := im.Trust(&compiled{})` |
+| In the package that declares the named type `T`, read the pointer | `value := im.Unwrap(p.compiled)` |
+| In that package, use either function as a function value | `read := im.Unwrap[compiled]`; `value := read(p.compiled)` |
 
 Aliases resolve to the original type and package. An instance of a named type,
-such as `baked[int]`, belongs to the package that declares `baked`. Parentheses
+such as `table[int]`, belongs to the package that declares `baked`. Parentheses
 preserve the forms above. `UncheckedValue` has no methods; an interface call or
 a promoted method cannot expose its pointer.
 
@@ -77,4 +76,4 @@ a promoted method cannot expose its pointer.
 | `im.Unwrap(table)` or `read := im.Unwrap[engine.Table]` in another package | Call a function of the declaring package. |
 | `func Wrap[T any](v *T) im.UncheckedValue[T] { return im.Trust(v) }` | Wrap a concrete named type that this package declares. |
 | `im.Trust(&rows)` with `rows []int` | Declare a named type, such as `type rows []int`. |
-| `m.engine = im.Trust(&baked{})` on a marked value | Construct a new marked value. |
+| `p.compiled = im.Trust(&compiled{})` on a marked value | Construct a new marked value. |

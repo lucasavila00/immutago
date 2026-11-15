@@ -5,8 +5,8 @@ independent consumer modules with a local module replacement. It checks CLI,
 vet, JSON, compiler errors, dependency failures, and runtime output.
 
 Accepted fixtures cover the [allowed forms](../docs/rules.md). Rejected fixtures
-cover nearby unsupported forms. Each source has an exact sibling `.txt`
-snapshot; accepted snapshots are empty. The harness removes machine paths and
+cover nearby unsupported forms. Each fixture package has one `output.txt` snapshot for combined stdout and
+stderr; accepted snapshots are empty. The harness removes machine paths and
 driver headings, then sorts complete messages without separating context lines.
 
 Consumer-only dependency tests require failures to propagate through imports,

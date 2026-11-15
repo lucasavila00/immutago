@@ -10,102 +10,38 @@ child group. A restart creates both again. Choose the parent by the required lif
 | A group from `supervise.StartGroup(parent)` | Services that must be stopped together or restarted together after a child exceeds its restart limit. |
 | `p.Children()` inside a service method | Work that must stop when that run of `p` ends. |
 
-## Example: build a worker pool in Init
+## Example: stop a document index
 
-Use Init when all children can be created from the start arguments. The
-[worker project](../examples/workers/README.md) creates a
-[pool](../examples/workers/pool.go) of queued
-[text workers](../examples/workers/worker.go). This part of `Pool.Init` starts
-the children and keeps their service references:
+A nested group lets an application stop an index while other root services
+continue. This uses the [search application's indexer](../examples/search/indexer.go):
 
 ```go
-children := p.Children()
-for id := range p.Args().Workers {
-    worker, err := supervise.Start[Worker](children, WorkerArgs{
-        ID: id, Version: p.Args().Version,
-    })
-    if err != nil { return err }
-    p.workers = append(p.workers, worker)
-}
-```
-
-- Child Init runs during Start. Child Run waits until the pool's Run begins.
-- Pool.Ready reports when every worker's job loop has started.
-- Failed pool Init stops its children. Init must not wait for work from child Run.
-- The runtime stops this child group when the parent run ends.
-- For children you can stop yourself, create a nested group.
-- For work chosen after setup, start children from Run, as the dispatcher does below.
-- A restart creates a new parent struct and child group; Init or Run rebuilds the children.
-
-## Example: stop one worker group
-
-Create a nested group under the current run:
-
-```go
-group := supervise.StartGroup(p.Children())
-worker, err := supervise.Start[Worker](group, WorkerArgs{ID: 1, Version: 1})
-if err != nil { panic(err) }
-if worker.Current().Ready() {
-    result := worker.Current().Process("Hello")
-    if result.Available { println(result.Text.Unsafe()) } // HELLO
-}
-```
-
-- StartGroup returns an ordinary `*supervise.Group`; keep it in a field or map.
-- `<-group.Stop()` stops its children and removes it from the parent.
-- The parent and its other groups continue.
-- Release shared-state locks before waiting for Stop. A child may need a parent
-  method that takes the same lock to finish shutdown.
-
-## Example: change worker groups from configuration
-
-The [dispatcher](../examples/workers/dispatcher.go) applies this pattern to
-configuration changes. Its [configuration service](../examples/workers/config.go)
-stores the desired variant names. Each variant gets a group with a worker pool.
-The [command](../examples/workers/cmd/workers/main.go) starts two variants:
-
-```go
-config, err := supervise.Start[workers.VariantConfig](root, supervise.NoArgs{})
-if err != nil { panic(err) }
-names := im.FreezeSlice([]string{"blue", "green"})
-config.Current().Set(names)
-dispatcher, err := supervise.Start[workers.Dispatcher](root, workers.DispatcherArgs{
-    Config: config, Workers: 2, Every: time.Millisecond,
+group := supervise.StartGroup(root)
+indexer, err := supervise.Start[search.Indexer](group, search.IndexerArgs{
+    Files: os.DirFS("examples/search/documents"), Every: time.Second,
 })
-if err != nil { panic(err) }
-dispatcher.Current().Refresh()
+if err != nil {
+    <-group.Stop()
+    panic(err)
+}
+handler := search.HTTPHandler(indexer)
 ```
 
-Refresh compares desired names with current groups:
-
-- New name: call `supervise.StartGroup(d.Children())`.
-- Removed name: delete the saved group, release the mutex, then wait for Stop.
-
-This change removes blue and keeps green:
+Use handler for the index's HTTP requests. To remove that work, stop accepting
+new requests and wait for the group:
 
 ```go
-names = im.FreezeSlice([]string{"green"})
-config.Current().Set(names)
-dispatcher.Current().Refresh()
+<-group.Stop()
 ```
 
-The dispatcher stages each new version in its own group:
-
-- `Load("blue", 2)` starts a lowercase worker pool for blue.
-- Refresh switches pools only after the candidate's Ready method returns true.
-- The previous group stops after the switch; green keeps running.
-- Failed setup leaves the previous version available.
-- Requests for a pending or current version do nothing.
-
-The command waits for each version before it sends a job. Run the whole sequence:
-
-```sh
-go run ./examples/workers/cmd/workers
-```
-
-On restart, the dispatcher reads the configuration again and creates version-1
-pools. This example does not persist version requests. Keep rebuild data in
-start arguments or a longer-lived service; old mutable fields are not copied.
+- Use `p.Children()` instead of root when the group belongs to one run of a parent service.
+- Child Init runs during Start. A child created during parent Init waits for the
+  parent's Run before its own Run can begin. Init must not wait for child Run.
+- A parent restart creates a new child group. Create its children again from
+  Init or Run; do not reuse the previous run's group.
+- Stop removes a nested group from its parent. Other groups continue.
+- Release shared-state locks before waiting for Stop; a child may need those
+  locks to finish.
 
 ## Child lifetimes
 
