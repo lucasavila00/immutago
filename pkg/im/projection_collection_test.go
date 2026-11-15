@@ -38,7 +38,8 @@ func TestSliceProjectionEmpty(t *testing.T) {
 	input := make([]int, 1024)
 	projection := Slice(ProjectionOf(FreezeSlice(input[512:512])))
 	clone := projection.Clone()
-	if clone == nil || len(clone) != 0 || cap(clone) != 0 || unsafe.SliceData(clone) == unsafe.SliceData(projection.values) {
+	if clone == nil || len(clone) != 0 || cap(clone) != 0 ||
+		unsafe.SliceData(clone) == unsafe.SliceData(projection.values) {
 		t.Fatal("empty clone retained backing storage or lost nil distinction")
 	}
 	for _, current := range []SliceProjection[int]{zero, Slice(ProjectionOf(FreezeSlice([]int{1})))} {
