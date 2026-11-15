@@ -281,7 +281,9 @@ Keep source restrictions and examples there. Keep analysis details in the
 - Permit service references as stored values and results. Match every direct Ref Borrow
   call as `ref.Borrow().Method(args)` with an exported service method other
   than Init, Run, or a runtime method. Reject all other direct uses of the returned
-  pointer. Interface conversion is allowed and can expose the service pointer. Keep the reference proof in [service architecture](docs/arch/services.md).
+  pointer. Ordinary reference storage, conversions, interfaces, generics, and bodyless
+  functions use Go rules. Indirect calls may expose the service pointer. Do not
+  add a service-reference transport matcher. Keep the reference proof in [service architecture](docs/arch/services.md).
 - Trust ordinary Go API contracts. Use the documented package selection rules;
   do not add string taint analysis or whole-program service effect analysis.
 
