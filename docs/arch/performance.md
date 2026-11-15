@@ -1,81 +1,121 @@
-# Performance checks
+# Runtime costs and performance checks
 
-## Check costs
+Immutago removes repeated data copies by sharing proved immutable storage.
+That choice moves work to construction, explicit Clone operations, root
+publication, and analysis. A performance review must identify which of those
+costs changed and measure the affected operation.
 
-| Evidence | What it measures |
+## Runtime cost model
+
+| Operation | Work done by the current representation |
 | --- | --- |
-| [Collection benchmarks](../../pkg/im/benchmark_test.go) | Native Go versus im operations. Run `make bench`. |
-| [Generated projection benchmarks](../../internal/projectiongen/testdata/readcost/README.md) | Generated scalar and array reads versus native atomic pointer reads for 8 KiB and 64 KiB records. |
-| [Projection benchmarks](../../pkg/im/projection_benchmark_test.go) | Native handles, string operations, field selection, and projection allocations. |
-| [Cell benchmarks](../../pkg/im/cell_test.go) | Slot loads. |
-| [Service benchmarks](../../pkg/supervise/supervise_test.go) | Ref.Borrow. |
-| [Allocation tests](../../pkg/im/iterator_test.go) | Construction separately from Freeze, reads, and direct iteration. |
-| Slice and map tests | Storage reuse and Clone independence. |
+| FreezeSlice or FreezeMap | Copy a native handle into a private wrapper. No entry copy or runtime ownership check. Native builder construction has its own cost. |
+| FreezeString | Keep the native immutable string. No byte copy or consumption of the input string. |
+| Frozen collection read or iteration | Read native storage. Copy returned or yielded elements by value, without copying the collection. |
+| Collection Clone | Allocate independent native collection slots and copy keys and values. Referenced immutable objects remain shared. |
+| String Clone | Copy bytes into independent native string storage. The empty result needs no allocation. |
+| ProjectionOf | Copy its T into a projection. No backing-storage copy. T can be a root pointer or a larger value. |
+| SliceProjection.AtPointer | Select a Frozen record element by address without copying it. Map lookup has no corresponding addressable slot. |
+| Generated field read | Read through a retained root pointer. Nested record and array readers retain the root and indices instead of copying parent records. |
+| CopyRecord | Make an explicit private root copy. A retained nonzero-sized root needs heap storage; the compiler can eliminate an allocation for local use. |
+| Cell.Store | Publish a private root copy through an atomic pointer; a nonzero-sized T needs one allocation. Backing storage remains shared. |
+| Cell.Load and LoadShared | Copy T by value. No backing-storage copy. |
+| Cell.LoadPointer and generated Cell.Load | Load the root pointer without copying T. |
+| Ref.Borrow | One atomic load from the shared reference slot. No allocation. |
 
-For a cost change:
+These are representation costs, not a claim that every call has identical
+machine code to native Go. Inlining, bounds checks, root size, escape analysis,
+and call context can affect the result. A non-allocating large record copy can
+still cost much more than a pointer load.
 
-1. Compare native and im functions with the same observable result.
-2. Check inlining, bounds checks, and heap escapes. Inspect machine code if costs differ.
-3. Test local use and returns from helpers. Allocation counts alone do not prove zero overhead.
-4. Compare Clone with a native container copy, not an in-place edit.
+[Collection benchmarks](../../pkg/im/benchmark_test.go) compare native and im
+operations. [Projection benchmarks](../../pkg/im/projection_benchmark_test.go)
+measure local reads and field selection. [Generated read benchmarks](../../internal/projectiongen/testdata/readcost/README.md)
+compare scalar and array reads from 8 KiB and 64 KiB records with native atomic
+pointer reads. [Iterator tests](../../pkg/im/iterator_test.go) separate
+construction allocations from Freeze and direct iteration. Slice and map tests
+check storage identity and Clone independence, which timing alone cannot show.
 
-## Checker costs
+For a runtime change, compare operations with the same observable result.
+Compare Clone with a native container copy. Measure construction separately
+from reads. Check both local use and helper returns, since escape analysis can
+change at that boundary. If the result differs, inspect compiler inlining,
+heap escapes, bounds checks, and, when needed, machine code.
 
-`make bench-core` measures type proofs, builder flow, source matching, and the
-package pass at increasing sizes. Parsing and Go type checking are outside the
-timed loop. Stress tests compare results with independent reachability calculations.
+## Analyzer cost model
 
-| Cases | Coverage |
+The analyzer retains caches for one package pass. They trade pass memory for
+repeated type and storage queries. They must not become shared mutable state
+between concurrent passes.
+
+| Structure | Work and retained data |
 | --- | --- |
-| [Storage projections](../../pkg/analyzer/projection_test.go) | Increasing selector/index/dereference/parenthesis depth. Each query visits each step at most once. |
-| [Classification stress tests](../../internal/checker/classification_test.go) | Cycles, query order, aliases, marker identity, constraints, callback storage; independent storage and callback walks. |
-| [Classification benchmarks](../../internal/checker/classification_benchmark_test.go) | Repeated queries at 16, 64, and 256 types. |
-| [Ordinary type graphs](../../pkg/analyzer/type_scaling_test.go) | Full pass over connected unmarked structs and interfaces at 8, 16, 32, and 64 types. |
-| [Slot queries](../../pkg/analyzer/slot_scaling_test.go) | Value-linked cycles at 512, 1024, and 2048 types in ordinary and checked packages. |
-| [Marked graphs](../../pkg/analyzer/proof_scaling_test.go) | Full pass over marked types and frozen collections, with valid and many-invalid-root cases. |
-| [Proof queries](../../internal/checker/prover_test.go) | Reused validity versus independent reachability; cause paths versus compiler type components. |
+| Package selection | One seen set across local type roots. It follows used contracts instead of scanning the import graph's implementations. |
+| Classification | One node per reached type and query mode, with reverse edges. Expand before propagating positive answers so cycles do not cache false negatives. |
+| Type proof | One obligation per type and category. Reuse completed proofs; propagate failure through reverse edges. Keep one real cause per invalid node. |
+| Failure rendering | Follow retained cause labels and cache requested messages. Empty pointer and array labels do not add message-chain work. |
+| Storage query | Walk one selector/index/dereference/parenthesis chain for that query. Preserve the owner and builder context rather than restarting a recursive search at every step. |
+| Cell queries | Cache completed slot results, including negative results for visited types. Reuse them through holder wrappers. |
+| Builder flow | Dense owner IDs and input/output bitsets per event. Repeated reverse-postorder passes continue until consumed sets stop changing. |
 
-Cache costs:
+Type graphs and rendered messages stay in memory until the pass ends. A bound
+on one cache does not describe all compiler-type inspection or the complete
+analyzer. In particular, flow cost depends on events, owners, graph edges, and
+iterations. Do not infer full-pass complexity from a smaller diff or one timing.
 
-- Classification expands each reachable type and mode once per cache; reverse
-  edges propagate positive results through cycles.
-- Completed negative slot queries cache every visited type. Wrappers reuse
-  those results.
-- Each proof obligation expands once; failure edges are processed a bounded
-  number of times. Empty pointer/array labels add no rendering chain.
-- Rendering follows retained message size; repeated queries reuse the message.
-- Graphs and messages stay in memory until the pass ends.
-- These bounds exclude other compiler-type inspection and the full analyzer pass.
-  Structural and source checks run only in selected packages.
+`make bench-core` runs the `BenchmarkCore` cases in checker, freeze, and
+analyzer packages. Parsing and Go type checking are outside the timed core
+loops. The cases increase type graph size, invalid proof roots, selector depth,
+slot graphs, or builder count so repeated traversal is visible. Relevant tests
+also check the answer: [proof queries](../../internal/checker/prover_test.go),
+[classification](../../internal/checker/classification_test.go),
+[storage chains](../../pkg/analyzer/projection_test.go), and
+[ordinary type graphs](../../pkg/analyzer/type_scaling_test.go).
 
-Run [Core performance](../../.github/workflows/core-performance.yml) manually:
+## Dependency facts and driver memory
 
-- Compare the same cases and Go version before and after a change.
-- Artifacts include repeated samples, CPU/allocation profiles, binary, and runner data.
-- Profiles can include setup; benchmark allocation counts exclude it.
-- Timing alone is not a pass/fail gate.
+A failed package exports one original cause: package, portable source location,
+and exact diagnostic message, plus a relevance bit. Importers forward that
+cause, not the complete list of failures or import paths. This bounds the fact
+payload independently of the number of failures behind it. It does not make
+the analysis driver's import graph free.
 
-## Dependency fact costs
+Let P be the number of failed packages, E the number of direct invalid import
+edges, and B the largest fact size, including path and diagnostic lengths.
+Serialized fact payload is O(P × B). Reading facts across direct import edges
+can require O(E × B) bytes. The CLI driver's inherited fact maps can retain
+O(P²) pointers. These bounds exclude other driver state and compiler work.
+Messages are not truncated, so B is not a fixed byte constant.
 
-A failed package exports one cause (origin package, location, exact message) and
-one relevance bit. Consumer reports name that cause and the origin to check;
-direct package diagnostics remain complete.
+[Dependency graph tests](../../pkg/analyzer/dependencies_graph_test.go) check
+cause selection, exact gob round trips, and fact size on deep, wide, and dense
+graphs. A consumer-only test must still report the original cause when wrappers
+hide the leaf from the driver's selected output.
 
-| Quantity | Cost |
-| --- | --- |
-| P failed packages, largest fact B bytes | O(P × B) serialized payload. |
-| E direct invalid import edges | O(E × B) bytes read by vet. |
-| CLI driver's inherited fact maps | Can hold O(P²) pointers. |
+## How to check a performance change
 
-B includes diagnostic and path lengths; messages are not truncated. These bounds
-cover fact payloads, not all driver data or import-graph work.
+First keep a reproduction that produces the reported cost. Check its result
+before measuring: a faster analyzer that skips required checks is a defect.
+Choose the benchmark for the suspected structure, then compare the same cases
+at baseline and changed revisions with the same Go version and runner setup.
+Record repeated samples, allocation counts, and profiles when the cost needs
+explanation. Keep the reproduction, revisions, environment, and before/after
+measurements in the pull request.
 
-Run [Dependency performance](../../.github/workflows/dependency-performance.yml)
-manually with a baseline revision:
+Use these hosted workflows for full measurements:
 
-- Fresh vet facts on dense graphs; record total/largest fact size, time, peak memory, and profiles.
-- Ordinary graphs without im imports must pass both drivers.
-- Checked graphs import im and contain 50 invalid immutable fields per package;
-  consumers report one cause.
-- [Graph tests](../../pkg/analyzer/dependencies_graph_test.go) check cause selection,
-  exact gob round trips, and constant fact size across deep, wide, and dense graphs.
+- [Core performance](../../.github/workflows/core-performance.yml) runs repeated
+  core benchmark samples and profiles large proof, builder, matcher, type, and
+  slot cases. Artifacts contain the binary, CPU and allocation profiles,
+  benchmark output, and environment. Run it on both revisions for a comparison.
+- [Dependency performance](../../.github/workflows/dependency-performance.yml)
+  accepts a baseline revision. It measures fact operations and complete dense
+  modules through CLI and vet, with separate fresh caches for each case. It
+  records total and largest fact sizes, elapsed time, peak memory, diagnostics,
+  and profiles. Ordinary graphs must pass both drivers; checked graphs have
+  known invalid-field and consumer-cause counts.
+
+Profiles can include setup even when benchmark allocation counts exclude it.
+Inspect that difference before attributing a cost to the timed core operation.
+Hosted timing is evidence, not a fixed pass/fail threshold. Routine CI runs
+correctness tests, not these benchmarks.
