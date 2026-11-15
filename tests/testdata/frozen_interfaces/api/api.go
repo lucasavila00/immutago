@@ -14,7 +14,7 @@ type Reader interface {
 	Name() im.StringProjection
 	Summary() Summary
 	Visit()
-	Lookup(key, buf []byte) (float64, bool, []byte, error)
+	Lookup(key, buf []byte) (value float64, found bool, out []byte, err error)
 	Read() (im.StringProjection, bool)
 	SummaryLookup(Buffer) (Summary, bool, Buffer, Failure)
 	Clone() []byte

@@ -56,16 +56,11 @@ under the ordinary method rules.
 | Several results, with any result order | `Lookup(key, buf []byte) (float64, bool, []byte, error)`, `Self() (*Tree, Scorer)` |
 | Named results in either result form | `Lookup([]byte) (value float64, found bool)` |
 
-Each result keeps its normal Go and im rules. This includes ordinary values,
-Frozen values and pointers, Frozen interfaces, and Local values. Local pointers
-cannot be returned. Type aliases and defined ordinary result types use their
-normal rules. Native strings, buffers, errors, ordinary interfaces, and ordinary
-callbacks do not need a new result proof. For example, `Text() string`,
-`Failure() error`, `Value() any`, and `Callback() func()` are allowed signatures.
-Their method bodies still cannot box protected data in an ordinary interface or
-capture protected storage in a closure. See the complete
+Each result keeps its normal Go and im rules, including aliases and defined
+types. A method can return Frozen data or Local values. Local pointers cannot be
+returned, and method bodies cannot box protected data in ordinary interfaces or
+capture protected storage in closures. See the complete
 [common forms](common-forms.md#statements-and-calls).
-
 These lists are complete. Unlisted operations on protected storage are rejected.
 
 ## Values and calls — exhaustive
@@ -105,13 +100,10 @@ variable. A declared method can return that receiver as a Frozen pointer or inte
 The returned value keeps its Frozen storage rules.
 The checker does not infer method effects.
 
-A slice result uses ordinary Go ownership. It can return a caller buffer such as
-`buf[:n]`, a fresh slice, or an independent `Clone()` result. The checker does not
-track which argument supplied it. The implementation's normal body checks still
-reject native slices in Frozen fields and use of a builder after Freeze. An ordinary slice
-result does not expose frozen backing storage through an allowed source operation. Ordinary inputs, errors, and dependency calls retain
-Go contracts; this rule does not prove method isolation.
-
+A slice result can return a caller buffer such as `buf[:n]`, a fresh slice, or an
+independent `Clone()` result. No argument-origin analysis is required. Normal
+body checks still reject native slices in Frozen fields and use of a builder
+after Freeze. Ordinary inputs, results, and dependency calls use Go contracts.
 ```go
 type Tables interface {
     im.FrozenInterface

@@ -44,9 +44,6 @@ explicit_statements.go:65:10: use of consumed owned container values: Freeze tra
 explicit_statements.go:65:7: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: _, values["first"] = <-ready
   fix: use one protected destination, or local names for all results of one direct typed call
-explicit_statements.go:67:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: _, _ = frozen.Get("first")
-  fix: use one protected destination, or local names for all results of one direct typed call
 explicit_statements.go:71:9: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeMap(values)
   type: im.FrozenMap[string, int]

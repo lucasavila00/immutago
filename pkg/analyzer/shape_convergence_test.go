@@ -34,7 +34,7 @@ func TestStatementShapeRejects(t *testing.T) {
 	}
 }
 
-// TestStatementShapeAccepts checks single bindings, fresh Get results, and range value copies.
+// TestStatementShapeAccepts checks single bindings, Get results, and range value copies.
 func TestStatementShapeAccepts(t *testing.T) {
 	cases := []string{
 		`func pair()(V,int){return V{},0};func f(){v,n:=pair();_=v;_=n}`,

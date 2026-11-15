@@ -47,3 +47,13 @@ func frozenWrite() {
 	pointer := local.TreePointer()
 	pointer.Weight = 2
 }
+
+func mapDestinations(values im.FrozenMap[int, api.Scorer]) {
+	var boxed any
+	var found bool
+	boxed, found = values.Get(0)
+	_ = boxed
+	_ = found
+	var output [1]api.Scorer
+	output[0], found = values.Get(0)
+}

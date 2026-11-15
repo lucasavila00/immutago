@@ -36,7 +36,7 @@ func (g *generator) interfaceReader(typ types.Type) (string, string, error) {
 	return qualifier + projection, qualifier + constructorName(projection), nil
 }
 
-// writeInterface forwards checked methods without returning the persistent interface.
+// writeInterface forwards declared methods through a local interface projection.
 func (g *generator) writeInterface(out *bytes.Buffer, item record) error {
 	source := g.typeName(item.typ)
 	fmt.Fprintf(out, "// %s provides local method access to %s.\n"+

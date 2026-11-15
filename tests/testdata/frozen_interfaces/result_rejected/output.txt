@@ -15,7 +15,7 @@ forms.go:21:2: unsupported immutable operation: boxing immutable storage in inte
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 forms.go:24:6: unsupported immutable operation: bound immutable methods are unsupported
   source: r.Lookup
-  type: func(key []byte, buf []byte) (float64, bool, []byte, error)
+  type: func(key []byte, buf []byte) (value float64, found bool, out []byte, err error)
   fix: call the method directly (value.Method(...)); do not save or pass its method value
 forms.go:25:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go r.Lookup(nil, nil)
@@ -43,3 +43,9 @@ forms.go:40:9: unsupported owned container values: copying, rebinding, slicing, 
 forms.go:48:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: pointer.Weight = 2
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+forms.go:54:2: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: boxed, found = values.Get(0)
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+forms.go:58:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: output[0], found = values.Get(0)
+  fix: use one protected destination, or local names for all results of one direct typed call

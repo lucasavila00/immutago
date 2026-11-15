@@ -340,19 +340,6 @@ func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 	return false
 }
 
-// getCall permits the native two-result map read without admitting arbitrary multiple assignments.
-func (c *subsetChecks) getCall(values []ast.Expr) bool {
-	if len(values) != 1 {
-		return false
-	}
-	call, ok := ast.Unparen(values[0]).(*ast.CallExpr)
-	if !ok {
-		return false
-	}
-	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
-	return ok && selector.Sel.Name == "Get" && c.exactCollectionMethod(selector)
-}
-
 // resultCall accepts only the direct result bindings listed in the source contract.
 func (c *subsetChecks) resultCall(values []ast.Expr, count int) bool {
 	if len(values) != 1 {
@@ -370,13 +357,12 @@ func (c *subsetChecks) resultCall(values []ast.Expr, count int) bool {
 	return ok && count > 1 && signature.Results().Len() == count
 }
 
-// resultAssignment requires new locals for Get and permits reused locals for other result calls.
+// resultAssignment permits local names or blanks for every direct call result.
 func (c *subsetChecks) resultAssignment(statement *ast.AssignStmt) bool {
 	if !c.resultCall(statement.Rhs, len(statement.Lhs)) {
 		return false
 	}
-	fresh := c.getCall(statement.Rhs)
-	if statement.Tok != token.DEFINE && (fresh || statement.Tok != token.ASSIGN) {
+	if statement.Tok != token.DEFINE && statement.Tok != token.ASSIGN {
 		return false
 	}
 	for _, left := range statement.Lhs {
@@ -388,7 +374,7 @@ func (c *subsetChecks) resultAssignment(statement *ast.AssignStmt) bool {
 			continue
 		}
 		variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var)
-		if !ok || variable.Parent() == c.pass.Pkg.Scope() || fresh && c.pass.TypesInfo.Defs[name] == nil {
+		if !ok || variable.Parent() == c.pass.Pkg.Scope() {
 			return false
 		}
 	}

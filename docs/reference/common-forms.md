@@ -164,9 +164,7 @@ Use the operations above inside these statement forms:
 | --- | --- |
 | Declare one variable or assign one destination | `var value FrozenPoint`, `value := FrozenPoint{X: 1}`, `value = FrozenPoint{X: 2}` |
 | Change a native builder slot or its Copied fields | `values[0] = value`, `counts[0]++`, `counts[0] += 2`, `scores[0].Value++` |
-| Bind Start results to two local names or blanks with `:=`, `=`, or `var` | `ref, err := supervise.Start[Worker](root, args)`, `var ref, err = supervise.Start[Worker](root, args)` |
 | Bind several results from a direct named function, concrete method, or proved Frozen interface method to local names or blanks | `value, found, out := reader.Lookup(key, buf)`, `value, found, out = read()`, `var value, found, out = read()` |
-| Bind a map Get call's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze a slice or map in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |
 | Call a method in the list above | `n := p.ReadX()` |
@@ -180,9 +178,10 @@ Use the operations above inside these statement forms:
 
 - Assignments and declarations have one destination, except for the result-call
   forms above. Returns can have several results.
-- FrozenMap.Get and MapProjection.Get permit two new local names or blanks.
-- Calls to `supervise.Start` with protected arguments use these statement forms.
-  Calls with only ordinary arguments use ordinary Go binding rules.
+- Fixed calls such as FrozenMap.Get, MapProjection.Get, and supervise.Start use
+  the same result binding forms. For example, `value, found = frozen.Get(key)`
+  can reuse local names, and `var ref, err = supervise.Start[Worker](root, args)`
+  can declare the results.
 - Multiple-result bindings require one direct typed call that supplies all results.
   Each result uses the same type, write, and transport checks as a single result.
   All destinations must be local names or blanks. The `:=`, `=`, and `var` forms

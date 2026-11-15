@@ -60,7 +60,9 @@ Function-local, anonymous, and test-only Frozen declarations are rejected.
 T root. Raw Load returns Projection[T]; LoadPointer returns Projection[*T]; LoadShared returns T.
 The generated Cell.Load uses LoadPointer without a root copy. All reads use the
 same Frozen payload proof. Only code with the Cell has LoadShared access.
-A projection cannot recover the Cell or unwrap its payload.
+Projection APIs do not return the owning Cell. A generated Frozen interface
+projection has no raw payload getter, but a declared method can return its Frozen
+receiver or other values under the ordinary method rules.
 
 The [slot matcher](../../pkg/analyzer/owner_slot.go) restricts Cells to named
 slots and direct calls. Named holder fields can contain other holders. Holder

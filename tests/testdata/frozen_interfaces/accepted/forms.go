@@ -70,7 +70,13 @@ func Exercise() float64 {
 		return -2
 	}
 	fromList := api.NewScorerProjection(local.List().At(1))
+	var shared api.Scorer
+	shared, found := frozenMap.Get(value)
+	shared, found = frozenMap.Get(value)
+	_ = shared
 	fromMap, found := local.Map().Get(value)
+	fromMap, found = local.Map().Get(value)
+	_, _ = local.Map().Get(value)
 	if !found {
 		return -3
 	}
