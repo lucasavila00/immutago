@@ -305,10 +305,10 @@ func StartReserved[T, A any, P interface {
 	begin(context.Context) context.Context
 	end()
 }](parent *Group, ref Ref[T], args A) error {
-	if ref.value == nil {
+	switch {
+	case ref.value == nil:
 		panic("supervise: StartReserved needs a Ref from Reserve")
-	}
-	if ref.value.Load() != nil {
+	case ref.value.Load() != nil:
 		panic("supervise: Ref already started")
 	}
 	create := func() (*T, error) {
