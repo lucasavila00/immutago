@@ -17,36 +17,40 @@ interfaces.go:17:45: unsupported immutable operation: boxing immutable storage i
   source: any(route)
   type: any
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-iszero.go:13:51: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
-  source: route.Worker.IsZero()
-  type: bool
-  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
-iszero.go:15:64: unsupported immutable operation: bound immutable methods are unsupported
+iszero.go:13:64: unsupported immutable operation: bound immutable methods are unsupported
   source: route.Worker.IsZero
   type: func() bool
   fix: call the method directly (value.Method(...)); do not save or pass its method value
-iszero.go:18:30: unsupported immutable operation: closures cannot capture immutable storage
+iszero.go:16:30: unsupported immutable operation: closures cannot capture immutable storage
   source: route
   type: service.ZeroRoute
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-iszero.go:22:2: unsupported immutable operation: protected storage requires synchronous calls
+iszero.go:20:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go route.Worker.IsZero()
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-iszero.go:22:5: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
-  source: route.Worker.IsZero()
-  type: bool
-  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
-iszero.go:23:2: unsupported immutable operation: protected storage requires synchronous calls
+iszero.go:21:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer route.Worker.IsZero()
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-iszero.go:23:8: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
-  source: route.Worker.IsZero()
-  type: bool
-  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
-iszero.go:28:14: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
+iszero.go:26:14: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *service.Counter
   fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
+iszero.go:36:58: unsupported immutable operation: promoted immutable methods are unsupported
+  source: route.IsZero()
+  type: bool
+  fix: name the embedded field explicitly and call a method allowed on that field; copy scalar fields to ordinary locals before calling their methods
+iszero.go:38:57: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
+  source: route.Worker.Borrow
+  type: func() *service.Counter
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
+iszero.go:49:50: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
+  source: status.Status.IsZero()
+  type: bool
+  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
+iszero.go:51:53: unsupported immutable operation: scalar interior addresses are unsupported
+  source: &route.Worker
+  type: *supervise.Ref[service.Counter]
+  fix: copy the scalar field into a local; do not take a pointer into immutable storage
 result_uses.go:12:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = pointer
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it

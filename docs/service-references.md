@@ -23,16 +23,18 @@ func optionalCount(r optionalRoute) int {
 before start, but Borrow panics until initialization succeeds. A reference from
 a successful `Start` stays nonzero after stop. Copies give the same result.
 
-`IsZero` uses ordinary reference call forms. The [im rules](common-forms.md) still
-apply to protected expressions. Copy a reference field from a marked object
-before calling `IsZero`:
+`IsZero` uses ordinary reference call forms. Direct calls also work on a Ref
+field or array element in a Frozen or Local record:
 
 ```go
-ref := route.Worker
-if !ref.IsZero() {
-    ref.Borrow().Count()
+if !route.Worker.IsZero() {
+    route.Worker.Borrow().Count()
 }
 ```
+
+The [im rules](common-forms.md) still apply to protected expressions. Select an
+embedded Ref field explicitly. Copy a reference out before a closure, bound
+method, `go`, or `defer` uses it.
 
 ## Example: select a catalog for a quote
 
@@ -115,7 +117,8 @@ calls. Callers must account for restarts when they save a service pointer.
 | `current := ref.Borrow`, `method := ref.Borrow().Method` | Use a closure that captures the reference and makes the direct method call. |
 | `supervise.Ref[Worker].Borrow(ref)` | `ref.Borrow().Method()` |
 | `ref.Borrow().Init()`, `ref.Borrow().Run(ctx)`, `ref.Borrow().Args()` | Initialize through Start; expose needed data through an exported service method. |
-| `route.Worker.IsZero()` where route is a marked object | Copy the field first: `ref := route.Worker; ref.IsZero()`. |
+| `check := route.Worker.IsZero`, `go route.Worker.IsZero()`, or `defer route.Worker.IsZero()` where route is a marked object | Copy the field first: `ref := route.Worker`, then use `check := ref.IsZero`, `go ref.IsZero()`, or `defer ref.IsZero()`. |
+| `route.IsZero()` through an embedded Ref in a marked object | Select the field: `route.Ref.IsZero()`. |
 | `wrapper.Borrow()` through an embedded Ref | Select the reference field: `wrapper.Ref.Borrow().Method()`. |
 
 ## What the reference rule does not check

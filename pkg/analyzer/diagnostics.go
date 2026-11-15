@@ -78,7 +78,7 @@ var subsetFixes = map[string]string{
 	"immutable methods require a concrete non-generic marked receiver": "declare the method on a proved " +
 		"marked struct or its pointer, or use a named function with concrete parameters",
 	"promoted immutable methods are unsupported": "name the embedded field explicitly and call a method " +
-		"declared on its marked type; copy scalar fields to ordinary locals before calling their methods",
+		"allowed on that field; copy scalar fields to ordinary locals before calling their methods",
 	"immutable method receivers must match their declared type exactly": "use an existing pointer for a pointer " +
 		"receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage",
 	"multiple assignments involving protected storage are unsupported": "write one protected " +

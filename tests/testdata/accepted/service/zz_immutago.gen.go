@@ -6,6 +6,47 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// FrozenRouteProjection provides local read access to *FrozenRoute.
+type FrozenRouteProjection struct {
+	im.Local
+	immutagoProjection im.Projection[*FrozenRoute]
+}
+
+// NewFrozenRouteProjection wraps a checked local projection without copying backing storage.
+func NewFrozenRouteProjection(value im.Projection[*FrozenRoute]) FrozenRouteProjection {
+	return FrozenRouteProjection{immutagoProjection: value}
+}
+
+// IsNil reports whether the selected pointer is nil.
+func (v FrozenRouteProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
+
+// Worker reads the Worker field.
+func (v FrozenRouteProjection) Worker() CounterRef {
+	return v.immutagoProjection.Read().Worker
+}
+
+// Workers reads the Workers field.
+func (v FrozenRouteProjection) Workers() FrozenRouteWorkersProjection {
+	if im.IsNil(v.immutagoProjection) {
+		panic("nil frozen record")
+	}
+	return FrozenRouteWorkersProjection{immutagoProjection: v.immutagoProjection}
+}
+
+// FrozenRouteCell publishes frozen FrozenRoute values. Do not copy it.
+type FrozenRouteCell struct{ value im.Cell[FrozenRoute] }
+
+// Store publishes value.
+func (c *FrozenRouteCell) Store(value FrozenRoute) { c.value.Store(value) }
+
+// Load reads the current value through a local projection.
+func (c *FrozenRouteCell) Load() FrozenRouteProjection {
+	return NewFrozenRouteProjection(c.value.LoadPointer())
+}
+
+// LoadShared returns the frozen value for persistent use.
+func (c *FrozenRouteCell) LoadShared() FrozenRoute { return c.value.LoadShared() }
+
 // SnapshotReplyProjection provides local read access to *SnapshotReply.
 type SnapshotReplyProjection struct {
 	im.Local
@@ -38,3 +79,39 @@ func (c *SnapshotReplyCell) Load() SnapshotReplyProjection {
 
 // LoadShared returns the frozen value for persistent use.
 func (c *SnapshotReplyCell) LoadShared() SnapshotReply { return c.value.LoadShared() }
+
+// FrozenRouteWorkersProjection reads a fixed array locally.
+type FrozenRouteWorkersProjection struct {
+	im.Local
+	immutagoProjection im.Projection[*FrozenRoute]
+}
+
+// Len returns the array length.
+func (v FrozenRouteWorkersProjection) Len() int { return 1 }
+
+// At reads the element at index.
+func (v FrozenRouteWorkersProjection) At(index0 int) FrozenRouteWorkersElementProjection {
+	if im.IsNil(v.immutagoProjection) {
+		panic("nil frozen record")
+	}
+	if index0 < 0 || index0 >= 1 {
+		panic("array index out of range")
+	}
+	return FrozenRouteWorkersElementProjection{immutagoProjection: v.immutagoProjection, index0: index0}
+}
+
+// FrozenRouteWorkersElementProjection reads a fixed array locally.
+type FrozenRouteWorkersElementProjection struct {
+	im.Local
+	immutagoProjection im.Projection[*FrozenRoute]
+	index0             int
+}
+
+// Len returns the array length.
+func (v FrozenRouteWorkersElementProjection) Len() int { return 2 }
+
+// At reads the element at index.
+func (v FrozenRouteWorkersElementProjection) At(index1 int) CounterRef {
+	index0 := v.index0
+	return v.immutagoProjection.Read().Workers[index0][index1]
+}

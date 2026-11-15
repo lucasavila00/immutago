@@ -10,8 +10,6 @@ type ZeroRoute struct {
 	Worker supervise.Ref[Counter]
 }
 
-func protectedZero(route ZeroRoute) bool { return route.Worker.IsZero() }
-
 func protectedZeroMethod(route ZeroRoute) func() bool { return route.Worker.IsZero }
 
 func capturedZero(route ZeroRoute) func() bool {
@@ -29,3 +27,25 @@ func guardedBorrow(ref supervise.Ref[Counter]) {
 		_ = pointer
 	}
 }
+
+type EmbeddedZeroRoute struct {
+	im.Local
+	supervise.Ref[Counter]
+}
+
+func promotedZero(route EmbeddedZeroRoute) bool { return route.IsZero() }
+
+func protectedBorrow(route ZeroRoute) *Counter { return route.Worker.Borrow() }
+
+type Status int
+
+func (s Status) IsZero() bool { return s == 0 }
+
+type MarkedStatus struct {
+	im.Local
+	Status
+}
+
+func userZero(status MarkedStatus) bool { return status.Status.IsZero() }
+
+func addressedZero(route *ZeroRoute) bool { return (&route.Worker).IsZero() }
