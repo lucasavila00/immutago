@@ -23,6 +23,8 @@ Call a service:
 - Method inputs follow ordinary Go rules. Protected values keep their immutability and pointer rules.
 - Start arguments can also use ConcurrentSafe. The caller promises safe concurrent use; the analyzer does not prove this promise.
 
+Review state changes, locks, saved inputs, and dependency calls in the service code. Immutable results do not prove service isolation.
+
 ### Groups and shutdown
 
 - NewRoot creates an application group; StartGroup creates a nested group.

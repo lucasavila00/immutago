@@ -3,6 +3,19 @@
 Immutago combines compiler type proofs, source-form checks, and native builder
 consumption checks. The analyzer adds no runtime state.
 
+## Local review
+
+The goal is to reduce how much code a reviewer must trace.
+
+| Concern | Where to check it |
+| --- | --- |
+| Immutable fields and collection elements | Type declarations and the im type proof. |
+| Saved Scoped pointers | The im pointer rules and their source checks. |
+| Service state changes, locks, and input use | The service code and ordinary Go API contracts. |
+
+The checker does not prove full service isolation. Do not add whole-program
+effect analysis to make that claim.
+
 ## Code map
 
 | Source | Responsibility |

@@ -2,6 +2,13 @@
 
 Review every checker or supported-language change against these two requirements.
 
+## Local review
+
+- State what the rule checks and which code a reviewer no longer needs to trace.
+- Review service state changes, locks, saved inputs, and dependency calls in the
+  service code. Ordinary Go contracts still apply.
+- Do not claim full service isolation from immutable result types.
+
 ## 1. Complete allowed forms
 
 The guide must list every allowed Go form with a short example. It must say
