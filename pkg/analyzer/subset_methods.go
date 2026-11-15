@@ -21,8 +21,8 @@ func (c *subsetChecks) markedMethodReceiver(signature *types.Signature) bool {
 		c.proofs.Reason(named) == ""
 }
 
-// matchMethod requires direct concrete calls for protected arguments and results.
-// Protected receivers require an exact, non-promoted marked or runtime receiver.
+// matchMethod checks receiver shapes and restricted calls.
+// Persistent receivers also permit method values and expressions with the same shape.
 func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	selection := c.pass.TypesInfo.Selections[selector]
 	restricted := c.queries.Transport(selection.Recv()) || c.queries.Callable(c.pass.TypesInfo.TypeOf(selector))
@@ -38,9 +38,6 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
 		if checker.FrozenInterface(selection.Recv()) {
 			return c.matchFrozenInterfaceMethod(selector)
-		}
-		if !restricted {
-			return ""
 		}
 		return "dynamic calls with immutable storage are unsupported"
 	}

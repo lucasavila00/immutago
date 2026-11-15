@@ -74,12 +74,8 @@ conversion to a Frozen interface still proves the concrete implementation and
 its exact method receivers. An assertion from `any` to a Frozen interface cannot
 supply that proof; recover a proved concrete record first.
 
-Generic bodies are checked with their declared compiler types. Ordinary APIs,
-including generic helpers, use Go contracts. The checker does not prove their
-effects for each type argument. Callers must not use an ordinary mutating helper
-on a Frozen target.
-
-This list is complete. Unlisted operations on protected storage are rejected.
+Generic helpers use ordinary Go contracts. Do not pass a Frozen pointer to a
+helper that changes its target.
 
 ## Construction and scalar reads
 

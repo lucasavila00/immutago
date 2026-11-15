@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/token"
 	"go/types"
+	"slices"
 	"testing"
 )
 
@@ -50,12 +51,9 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 			components = append(components, field.Type())
 		}
 	}
-	for _, component := range components {
-		if classificationStorageOracle(component, seen) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(components, func(component types.Type) bool {
+		return classificationStorageOracle(component, seen)
+	})
 }
 
 // classificationConstraintOracle follows the original type-parameter constraint rules.
@@ -175,12 +173,9 @@ func classificationTransportOracle(t types.Type, seen map[types.Type]bool) bool 
 			components = append(components, item.Type())
 		}
 	}
-	for _, component := range components {
-		if classificationTransportOracle(component, seen) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(components, func(component types.Type) bool {
+		return classificationTransportOracle(component, seen)
+	})
 }
 
 // classificationSignature constructs a concrete function type with one parameter.

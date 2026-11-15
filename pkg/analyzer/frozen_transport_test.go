@@ -14,8 +14,9 @@ func identity[T any](value T) T { return value }
 func (value Data) Len() int { return value.Text.Len() }
 `
 	for name, source := range map[string]string{
-		"interface": `func use(s im.FrozenString) { var boxed any = s; _ = boxed.(im.FrozenString) }`,
-		"generic":   `func use(s im.FrozenString) { _ = identity(s) }`,
+		"ordinary interface": `type Factory interface{Make()Data};func use(factory Factory)Data{return factory.Make()}`,
+		"interface":          `func use(s im.FrozenString) { var boxed any = s; _ = boxed.(im.FrozenString) }`,
+		"generic":            `func use(s im.FrozenString) { _ = identity(s) }`,
 		"generic body": `func use[T any](value T, s im.FrozenString) T { var boxed any = s; _ = boxed;
    return value }`,
 		"capture":  `func use(s im.FrozenString) func() int { return func() int { return s.Len() } }`,

@@ -77,7 +77,6 @@ Each result keeps its normal Go and im rules, including aliases and defined
 types. A method can return Frozen data or Local values. Local pointers cannot be
 returned. Local values and projections cannot be boxed or captured. See the complete
 [common forms](common-forms.md#statements-and-calls).
-These lists are complete. Unlisted operations on protected storage are rejected.
 
 ## Values and calls — exhaustive
 
