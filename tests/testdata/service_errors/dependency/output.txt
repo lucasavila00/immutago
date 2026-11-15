@@ -1,0 +1,4 @@
+dependency.go:3:8: unsupported dependency example.com/consumer/signatures: immutability proof failed
+  representative failure: example.com/consumer/signatures/signatures.go:15:14: service method Pair must return no value, one read result, error, or (read result, error)
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/signatures, correct its errors, then rerun immutago on this package

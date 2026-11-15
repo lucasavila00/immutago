@@ -17,7 +17,7 @@ can be empty. Each load selects one version. Separate loads can select different
 versions.
 
 Code with the Cell can use LoadShared when it needs a persistent Frozen value. A Projection
-has no LoadShared or Unwrap operation. A service must return a read result, not its Cell.
+has no LoadShared or Unwrap operation. Service data results require a read result, not a Cell.
 
 ## Cell and holder forms — exhaustive
 

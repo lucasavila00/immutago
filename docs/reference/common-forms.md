@@ -165,6 +165,7 @@ Use the operations above inside these statement forms:
 | Declare one variable or assign one destination | `var value FrozenPoint`, `value := FrozenPoint{X: 1}`, `value = FrozenPoint{X: 2}` |
 | Change a native builder slot or its Copied fields | `values[0] = value`, `counts[0]++`, `counts[0] += 2`, `scores[0].Value++` |
 | Bind Start results to two local names or blanks with `:=`, `=`, or `var` | `ref, err := supervise.Start[Worker](root, args)`, `var ref, err = supervise.Start[Worker](root, args)` |
+| Bind `(read result, error)` from a direct named function or concrete method to two local names or blanks | `value, err := ref.Borrow().Read()`, `value, err = read()`, `var value, err = read()` |
 | Bind a map Get call's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze a slice or map in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |
@@ -177,18 +178,20 @@ Use the operations above inside these statement forms:
 | Assign one existing writable loop target, using the assignment rules above | `for i = range count { ... }`, `for a[point.X] = range a { ... }` |
 | Use checked operations in a select case body | `case <-ready: values[0] = value` |
 
-- Assignments and declarations have one destination, including package variables.
-  Returns can have several results.
+- Assignments and declarations have one destination, except for the result-pair
+  forms above. Returns can have several results.
 - FrozenMap.Get and MapProjection.Get permit two new local names or blanks.
 - Calls to `supervise.Start` with protected arguments use these statement forms.
   Calls with only ordinary arguments use ordinary Go binding rules.
+- Result/error bindings use the [service result signature](service-results.md),
+  including direct typed helper calls. Calls with only ordinary values keep Go rules.
 - Blocks, `break`, and `continue` follow ordinary Go rules.
 - Named functions need the exact parameter type, such as `func read(p *FrozenPoint) int`.
   Call directly, without `go` or `defer`.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
-| `point, found := makePair()` | Return a marked result struct and bind it to one variable. |
+| `point, found := makePair()` returning `(FrozenPoint, bool)` | Return a marked result struct and bind it to one variable. |
 | `value, p = FrozenPoint{}, &FrozenPoint{}` | Use two statements. |
 | `Other(point)` where `type Other FrozenPoint` | Construct `Other{X: point.X}`. |
 | `OtherFrozen(frozen)` where `type OtherFrozen im.FrozenSlice[int]` | Keep the frozen type; use `Clone` for mutable storage. |

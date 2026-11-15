@@ -13,7 +13,7 @@ other calls. Use the [service guide](../guides/services.md) for a walkthrough.
 | Background work | `*Worker` supplies `Run(context.Context)`. |
 | Start arguments | `s.Args()` reads A. The runtime saves the same arguments for each restart. Ordinary Go types are allowed; protected arguments require [Frozen types](types.md). |
 | No arguments | Embed `supervise.Service[supervise.NoArgs]` and pass `supervise.NoArgs{}` to Start. |
-| Exported methods | Return no result or one [read result](service-results.md), including promoted methods. Init, Run, and runtime methods are exempt. |
+| Exported methods | Use the [service result signatures](service-results.md), including promoted methods. Init, Run, and runtime methods are exempt. |
 | Fields, inputs, closures, goroutines, and construction | Ordinary Go rules; uses of protected data keep the [im source rules](common-forms.md). |
 | Reference calls | Use the complete [service-reference forms](service-references.md). |
 

@@ -49,3 +49,7 @@ Keep fixture filenames unique and rejected source valid Go. Each rejection must
 test its intended rule, not an unrelated invalid constructor. Do not format the
 raw-string import fixture: gofmt changes its source form. The bodyless-function
 fixture needs its empty assembly file so Go can load it before analyzer checks.
+
+`TestServiceErrors` checks service error signatures, protected result/error
+bindings, ordinary saved errors, and rejected signatures and Local uses through
+the CLI and vet driver.

@@ -8,8 +8,9 @@ to the resolved `supervise.Service` type, including aliases and pointers.
 of named and anonymous service structs:
 
 1. Skip unexported methods, Init, Run, and methods supplied by the runtime.
-2. Accept no result or one result, including for promoted methods.
-3. Require the general ReadResult proof. It accepts Copied and Local values.
+2. Match no result, one read result, `error`, or `(read result, error)` with
+   `resultValue`. Identify error by compiler type identity; aliases work.
+3. Require the general ReadResult proof for the data result only. It accepts Copied and Local values.
    It does not apply another recursive field rule to a returned record.
 
 Start arguments, method parameters, callbacks, and service implementation code
@@ -26,8 +27,9 @@ use the fixed library operations.
 The source matcher accepts the fixed Start result forms when arguments contain
 protected storage, including two local result bindings and a matching named
 function return. Calls with only ordinary arguments use ordinary Go binding
-rules. The `Init` error result does not permit `error` in other exported service
-method signatures. [CLI fixtures](../../tests/testdata/accepted/serviceinit/main.go)
+rules. The same pair matcher permits direct typed calls returning `(read result, error)`.
+It checks each destination and result with the existing write and transport rules.
+Errors use ordinary Go contracts; their origins and payloads are not analyzed. [CLI fixtures](../../tests/testdata/accepted/serviceinit/main.go)
 and [runtime tests](../../pkg/supervise/init_test.go) check these rules.
 
 ## Service reference boundary
@@ -39,7 +41,7 @@ method uses ordinary mutable data.
 | --- | --- | --- |
 | `Ref[T]` | T is a concrete struct that embeds `supervise.Service`. The check does not inspect T's mutable fields. | [refTargetReason](../../internal/checker/proof.go) |
 | `ref.Borrow().Method(args)` | Borrow's result is the receiver of this direct call. Method is exported and is not Init, Run, or a runtime method. Promoted methods are allowed; promoted Borrow calls are rejected. | [matchBorrow](../../pkg/analyzer/service_handles.go) |
-| Service method result | No result or one service result, including for promoted methods. | [checkServiceResults](../../pkg/analyzer/service.go) |
+| Service method result | The four result signatures, including for promoted methods. | [checkServiceResults](../../pkg/analyzer/service.go) |
 | Reference fields in marked objects | Reject field writes after construction. | [matchWrite](../../pkg/analyzer/subset_writes.go) |
 
 These checks use compiler-resolved types. Reference storage and transport follow

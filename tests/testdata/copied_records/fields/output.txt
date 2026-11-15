@@ -9,7 +9,7 @@ copied_fields.go:106:16: service method Unmarked must return a service result: c
   result type: struct{N int}
 copied_fields.go:107:16: service method Marker must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: im.Copied
-copied_fields.go:109:16: service method Pair must return no value or one service result
+copied_fields.go:109:16: service method Pair must return no value, one read result, error, or (read result, error)
 copied_fields.go:13:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
   type: fields.BadString
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field

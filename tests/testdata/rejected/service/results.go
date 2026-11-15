@@ -22,7 +22,7 @@ func (*Counter) Run(context.Context)           {}
 func (*Counter) Pair() (int, bool)             { return 1, true }
 func (*Counter) Map() map[string]int           { return nil }
 func (*Counter) Slice() []int                  { return nil }
-func (*Counter) Interface() error              { return nil }
+func (*Counter) Interface() any                { return nil }
 func (*Counter) Pointer() *SnapshotReply       { return &SnapshotReply{} }
 func (*Counter) LocalPointer() *Reply          { return nil }
 func (*Counter) Write(p *Reply)                { p.Count++ }

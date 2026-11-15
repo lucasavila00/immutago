@@ -1,0 +1,2 @@
+shadow.go:14:16: service method Restart must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: shadow.error

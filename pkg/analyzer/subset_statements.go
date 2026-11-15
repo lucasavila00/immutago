@@ -129,7 +129,7 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	return "Local values and pointers cannot be stored in package variables"
 }
 
-// matchDeclaration accepts one binding or an exact two-result Get or Start call.
+// matchDeclaration accepts one binding or a documented two-result call.
 func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 	if group, ok := c.parents[declaration].(*ast.GenDecl); ok && group.Tok != token.VAR {
 		return "protected operation is outside the supported statement forms"
@@ -366,10 +366,21 @@ func (c *subsetChecks) pairCall(values []ast.Expr) bool {
 		return false
 	}
 	object := c.calledObject(call.Fun)
-	return runtimeObject(object) && object.Name() == "Start"
+	if runtimeObject(object) && object.Name() == "Start" {
+		return true
+	}
+	if _, direct := object.(*types.Func); !direct {
+		return false
+	}
+	signature, ok := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
+	if !ok || signature.Results().Len() != 2 {
+		return false
+	}
+	result, valid := resultValue(signature.Results())
+	return valid && result != nil && c.proofs.ReadResultReason(result) == ""
 }
 
-// pairAssignment requires new locals for Get and permits reused locals for Start.
+// pairAssignment requires new locals for Get and allows reused locals for other result pairs.
 func (c *subsetChecks) pairAssignment(statement *ast.AssignStmt) bool {
 	if len(statement.Lhs) != 2 || !c.pairCall(statement.Rhs) {
 		return false
@@ -394,7 +405,7 @@ func (c *subsetChecks) pairAssignment(statement *ast.AssignStmt) bool {
 	return true
 }
 
-// pairDeclaration accepts two new local variables for a direct Get or Start call.
+// pairDeclaration accepts two new local variables for a documented result pair.
 func (c *subsetChecks) pairDeclaration(statement *ast.ValueSpec) bool {
 	if len(statement.Names) != 2 || !c.pairCall(statement.Values) {
 		return false
