@@ -3,6 +3,7 @@ package im
 // View holds a value for local reads. Its zero value contains the zero T.
 // The checker proves T and restricts storage and transport of the view.
 // Copies copy T by value and share its immutable backing storage.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/views.md for the complete forms.
 type View[T any] struct {
 	value T
 }

@@ -6,6 +6,7 @@ import "sync/atomic"
 // Load, Shared, and Store are atomic. Readers can continue to use an earlier value.
 // The checker proves T and restricts use of the views returned by Load.
 // A Cell must not be copied after first use.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/cell.md for the complete forms.
 type Cell[T any] struct {
 	value atomic.Pointer[T]
 }

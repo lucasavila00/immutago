@@ -15,9 +15,11 @@ package im
 // Snapshot marks a struct with immutable fields. Values and pointers to that
 // struct can be copied, stored, and returned through the allowed source forms.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/snapshots.md for the complete forms.
 type Snapshot struct{}
 
 // Local marks a struct whose fields follow the local view rules.
 // The checker restricts storage and transport of the struct and its pointers.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/local.md for the complete forms.
 type Local struct{}
