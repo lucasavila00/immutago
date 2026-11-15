@@ -233,7 +233,6 @@ snapshot_holders.go:16:6: unsupported immutable operation: user generic declarat
   source: copySlot
   type: func[T rejected.ConstraintAlias](value T) T
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
-snapshot_holders.go:18:6: defined pointer types are unsupported in protected storage; use a pointer alias
 snapshot_holders.go:21:10: Cell slots and their holders cannot be copied or transported by value
 snapshot_holders.go:22:6: Cell slots and their holders cannot be copied or transported by value
 snapshot_holders.go:23:14: Cell slots and their holders cannot be copied or transported by value
@@ -256,88 +255,48 @@ snapshot_holders.go:32:2: unsupported immutable operation: protected storage req
 snapshot_holders.go:33:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer typedCell.Load()
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-snapshot_projection.go:17:6: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: projection.Read()
-  type: *rejected.Data
-  fix: use the generated field accessor
-snapshot_projection.go:18:6: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: projection.Read()
-  type: *rejected.Data
-  fix: use the generated field accessor
-snapshot_projection.go:19:6: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: projection.Read()
-  type: *rejected.Data
-  fix: use the generated field accessor
-snapshot_projection.go:20:15: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: projection.Read()
-  type: *rejected.Data
-  fix: use the generated field accessor
-snapshot_projection.go:21:11: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: projection.Read()
-  type: *rejected.Data
-  fix: use the generated field accessor
-snapshot_projection.go:22:22: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: projection.Read()
-  type: *rejected.Data
-  fix: use the generated field accessor
-snapshot_projection.go:23:22: unsupported immutable operation: interior addresses of protected storage are unsupported
-  source: &projection.Read().Names
+snapshot_projection.go:17:22: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &projection.Unsafe().Names
   type: *[2]string
   fix: copy the field into a local; do not take a pointer into immutable storage
-snapshot_projection.go:23:23: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: projection.Read()
-  type: *rejected.Data
-  fix: use the generated field accessor
-snapshot_projection.go:23:6: immutable collection: projection payload 1: stored pointers require a concrete marked struct target
+snapshot_projection.go:17:6: immutable collection: projection payload 1: stored pointers require a concrete marked struct target
   type: im.Projection[*[2]string]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-snapshot_projection.go:23:9: immutable type argument: stored pointers require a concrete marked struct target
+snapshot_projection.go:17:9: immutable type argument: stored pointers require a concrete marked struct target
   type: *[2]string
   fix: replace the pointer field or argument with an owned immutable value
-snapshot_projection.go:24:6: unsupported immutable operation: pointer indirection is unsupported
-  source: &projection.Read().Next
+snapshot_projection.go:18:6: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &projection.Unsafe().Next
   type: **rejected.Data
-  fix: use a direct pointer to a concrete marked struct
-snapshot_projection.go:24:7: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: projection.Read()
-  type: *rejected.Data
-  fix: use the generated field accessor
-snapshot_projection.go:25:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: projection.Read().Name = "changed"
+  fix: copy the field into a local; do not take a pointer into immutable storage
+snapshot_projection.go:19:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: projection.Unsafe().Name = "changed"
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-snapshot_projection.go:26:9: unsupported immutable operation: bound immutable methods are unsupported
-  source: projection.Read
+snapshot_projection.go:20:9: unsupported immutable operation: bound immutable methods are unsupported
+  source: projection.Unsafe
   type: func() *rejected.Data
   fix: call the method directly (value.Method(...)); do not save or pass its method value
-snapshot_projection.go:27:6: unsupported immutable operation: immutable callbacks are unsupported
-  source: raw
-  type: func() *rejected.Data
-  fix: call a named, non-generic function directly with a concrete immutable parameter
-snapshot_projection.go:28:6: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: im.Projection[*Data].Read(projection)
+snapshot_projection.go:22:6: unsupported immutable operation: immutable method expressions are unsupported
+  source: im.Projection[*Data].Unsafe(projection)
   type: *rejected.Data
-  fix: use the generated field accessor
-snapshot_projection.go:29:6: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: scalar.Read()
-  type: int
-  fix: use the generated field accessor
-snapshot_projection.go:35:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: go integerCell.LoadShared()
+  fix: call the method on its receiver directly (value.Method(...)); do not call it through the type
+snapshot_projection.go:28:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go integerCell.Load().Unsafe()
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-snapshot_projection.go:36:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: defer stringCell.LoadShared()
+snapshot_projection.go:29:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: defer stringCell.Load().Unsafe()
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-snapshot_projection.go:37:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: go identity(stringCell.LoadShared())
+snapshot_projection.go:30:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go identity(stringCell.Load().Unsafe())
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-snapshot_projection.go:38:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: defer identity(stringCell.LoadShared())
+snapshot_projection.go:31:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: defer identity(stringCell.Load().Unsafe())
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-snapshot_projection.go:39:2: unsupported immutable operation: protected storage requires synchronous calls
+snapshot_projection.go:32:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go integerCell.Load()
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-snapshot_projection.go:40:2: unsupported immutable operation: protected storage requires synchronous calls
+snapshot_projection.go:33:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer stringCell.Load()
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
-snapshot_projection.go:41:5: Cell.Store requires a direct synchronous statement
-snapshot_projection.go:42:8: Cell.Store requires a direct synchronous statement
+snapshot_projection.go:34:5: Cell.Store requires a direct synchronous statement
+snapshot_projection.go:35:8: Cell.Store requires a direct synchronous statement

@@ -15,7 +15,7 @@ func (g *generator) readPath(typ, root types.Type, path, stem string, indices []
 	if fixed, ok := typ.Underlying().(*types.Array); ok {
 		return g.arrayReader(fixed, root, path, stem, indices)
 	}
-	expression := "v.immutagoProjection.Read()" + strings.TrimPrefix(path, "value")
+	expression := "v.immutagoProjection.Unsafe()" + strings.TrimPrefix(path, "value")
 	selected := typ
 	if checker.Frozen(typ) {
 		selected = types.NewPointer(typ)
@@ -94,13 +94,17 @@ func (g *generator) writeRecord(out *bytes.Buffer, item record) error {
 		constructorName(item.name), source, item.name, item.name)
 	fmt.Fprintf(out, "// IsNil reports whether the selected pointer is nil.\n"+
 		"func (v %s) IsNil() bool { return im.IsNil(v.immutagoProjection) }\n", item.name)
+	fmt.Fprintf(out, "// Unsafe returns the selected pointer without a record copy or allocation.\n"+
+		"// The caller controls retention and must not change the target.\n"+
+		"func (v %s) Unsafe() %s { return v.immutagoProjection.Unsafe() }\n", item.name, source)
 	target := types.Unalias(item.typ).(*types.Pointer).Elem()
 	structure := target.Underlying().(*types.Struct)
 	for field := range structure.Fields() {
 		if field.Name() == "_" || checker.IsLibraryType(field.Type(), "Frozen") {
 			continue
 		}
-		if field.Name() == "Local" || field.Name() == "immutagoProjection" || field.Name() == "IsNil" {
+		if field.Name() == "Local" || field.Name() == "immutagoProjection" ||
+			field.Name() == "IsNil" || field.Name() == "Unsafe" {
 			return fmt.Errorf("%s.%s conflicts with a generated projection member", source, field.Name())
 		}
 		if err := g.writeField(out, item, field); err != nil {
@@ -138,8 +142,6 @@ func (g *generator) writeCell(out *bytes.Buffer, item record) {
 	fmt.Fprintf(out, "// Load reads the current value through a local projection.\n"+
 		"func (c *%sCell) Load() %s { return %s(c.value.LoadPointer()) }\n",
 		stem, item.name, constructorName(item.name))
-	fmt.Fprintf(out, "// LoadShared returns the frozen value for persistent use.\n"+
-		"func (c *%sCell) LoadShared() %s { return c.value.LoadShared() }\n", stem, source)
 }
 
 // constructorName preserves the source type's exported or unexported visibility.

@@ -20,14 +20,18 @@ func NewOrderProjection(value im.Projection[*Order]) OrderProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v OrderProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v OrderProjection) Unsafe() *Order { return v.immutagoProjection.Unsafe() }
+
 // Product reads the Product field.
 func (v OrderProjection) Product() ProductProjection {
-	return NewProductProjection(im.ProjectionOf(&v.immutagoProjection.Read().Product))
+	return NewProductProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Product))
 }
 
 // Pointer reads the Pointer field.
 func (v OrderProjection) Pointer() ProductProjection {
-	return NewProductProjection(im.ProjectionOf(v.immutagoProjection.Read().Pointer))
+	return NewProductProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Pointer))
 }
 
 // OrderCell publishes frozen Order values. Do not copy it.
@@ -38,9 +42,6 @@ func (c *OrderCell) Store(value Order) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *OrderCell) Load() OrderProjection { return NewOrderProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *OrderCell) LoadShared() Order { return c.value.LoadShared() }
 
 // PointGroupProjection provides local read access to *PointGroup.
 type PointGroupProjection struct {
@@ -56,9 +57,13 @@ func NewPointGroupProjection(value im.Projection[*PointGroup]) PointGroupProject
 // IsNil reports whether the selected pointer is nil.
 func (v PointGroupProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v PointGroupProjection) Unsafe() *PointGroup { return v.immutagoProjection.Unsafe() }
+
 // SnapshotPoint reads the SnapshotPoint field.
 func (v PointGroupProjection) SnapshotPoint() SnapshotPointProjection {
-	return NewSnapshotPointProjection(im.ProjectionOf(&v.immutagoProjection.Read().SnapshotPoint))
+	return NewSnapshotPointProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().SnapshotPoint))
 }
 
 // PointGroupCell publishes frozen PointGroup values. Do not copy it.
@@ -71,9 +76,6 @@ func (c *PointGroupCell) Store(value PointGroup) { c.value.Store(value) }
 func (c *PointGroupCell) Load() PointGroupProjection {
 	return NewPointGroupProjection(c.value.LoadPointer())
 }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *PointGroupCell) LoadShared() PointGroup { return c.value.LoadShared() }
 
 // ProductProjection provides local read access to *Product.
 type ProductProjection struct {
@@ -89,9 +91,13 @@ func NewProductProjection(value im.Projection[*Product]) ProductProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ProductProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ProductProjection) Unsafe() *Product { return v.immutagoProjection.Unsafe() }
+
 // Price reads the Price field.
 func (v ProductProjection) Price() int {
-	return v.immutagoProjection.Read().Price
+	return v.immutagoProjection.Unsafe().Price
 }
 
 // ProductCell publishes frozen Product values. Do not copy it.
@@ -102,9 +108,6 @@ func (c *ProductCell) Store(value Product) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ProductCell) Load() ProductProjection { return NewProductProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ProductCell) LoadShared() Product { return c.value.LoadShared() }
 
 // SnapshotPointProjection provides local read access to *SnapshotPoint.
 type SnapshotPointProjection struct {
@@ -120,9 +123,13 @@ func NewSnapshotPointProjection(value im.Projection[*SnapshotPoint]) SnapshotPoi
 // IsNil reports whether the selected pointer is nil.
 func (v SnapshotPointProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v SnapshotPointProjection) Unsafe() *SnapshotPoint { return v.immutagoProjection.Unsafe() }
+
 // X reads the X field.
 func (v SnapshotPointProjection) X() int {
-	return v.immutagoProjection.Read().X
+	return v.immutagoProjection.Unsafe().X
 }
 
 // SnapshotPointCell publishes frozen SnapshotPoint values. Do not copy it.
@@ -135,6 +142,3 @@ func (c *SnapshotPointCell) Store(value SnapshotPoint) { c.value.Store(value) }
 func (c *SnapshotPointCell) Load() SnapshotPointProjection {
 	return NewSnapshotPointProjection(c.value.LoadPointer())
 }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *SnapshotPointCell) LoadShared() SnapshotPoint { return c.value.LoadShared() }

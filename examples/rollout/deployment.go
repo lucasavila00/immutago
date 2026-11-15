@@ -64,7 +64,7 @@ func (d *Deployment) Run(ctx context.Context) {
 }
 
 // Read returns the latest complete sum as independent numeric data.
-func (d *Deployment) Read() Totals { return d.current.LoadShared() }
+func (d *Deployment) Read() Totals { return im.Value(d.current.Load()) }
 
 // combine replaces the sum instead of adding deltas, so reader replay cannot double-count.
 func (d *Deployment) combine() bool {
@@ -72,7 +72,7 @@ func (d *Deployment) combine() bool {
 	for _, reader := range d.readers {
 		total.add(reader.Borrow().Read())
 	}
-	if total == d.current.LoadShared() {
+	if total == im.Value(d.current.Load()) {
 		return false
 	}
 	d.current.Store(total)

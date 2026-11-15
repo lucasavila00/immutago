@@ -60,7 +60,7 @@ func Exercise() float64 {
 	frozenMap := im.FreezeMap(entries)
 	current.Store(Model{Scorer: reader, Readers: [2]api.Reader{reader}, List: list, Map: frozenMap})
 	slot.Store(value)
-	_ = slot.LoadShared().Score(nil)
+	_ = slot.Load().Unsafe().Score(nil)
 	fromSlot := api.NewScorerProjection(slot.Load())
 	_ = fromSlot.Score(nil)
 	local := current.Load()
@@ -137,3 +137,5 @@ func FrozenResults(reader api.Reader) {
 	result := treeLocal.TreePointer()
 	_ = result
 }
+
+func raw(local im.Projection[api.Scorer]) api.Scorer { return local.Unsafe() }

@@ -13,7 +13,7 @@ func TestPointerProjections(t *testing.T) {
 	}
 	cell.Store(testFrozen{Number: 3, Array: [2]int{4, 5}})
 	first := cell.LoadPointer()
-	if first.value != cell.value.Load() || first.Read().Number != 3 {
+	if first.value != cell.value.Load() || first.Unsafe().Number != 3 {
 		t.Fatal("pointer read changed the stored root")
 	}
 	cell.Store(testFrozen{Number: 9})
@@ -47,8 +47,8 @@ func TestPointerProjectionAllocations(t *testing.T) {
 	values := SliceOf(ProjectionOf(FreezeSlice([]testChild{{Number: 4}})))
 	if got := testing.AllocsPerRun(100, func() {
 		pointerProjectionSink = cell.LoadPointer()
-		pointerNumberSink = pointerProjectionSink.Read().Number
-		pointerNumberSink += values.AtPointer(0).Read().Number
+		pointerNumberSink = pointerProjectionSink.Unsafe().Number
+		pointerNumberSink += values.AtPointer(0).Unsafe().Number
 	}); got != 0 {
 		t.Fatalf("pointer reads allocated %g times; want 0", got)
 	}
@@ -77,7 +77,7 @@ func BenchmarkPointerProjectionRead(b *testing.B) {
 	b.Run("Projection", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
-			pointerNumberSink = cell.LoadPointer().Read().Number
+			pointerNumberSink = cell.LoadPointer().Unsafe().Number
 		}
 	})
 }

@@ -34,8 +34,8 @@ type classificationNode struct {
 	value bool
 }
 
-// Contains reports protected storage, including its holders and containers.
-// Copied records use ordinary Go storage rules.
+// Contains reports protected object storage, including its holders and containers.
+// Frozen pointer handles and Copied records use ordinary Go storage rules.
 func (c *Classifier) Contains(t types.Type) bool { return c.query(t, storageMode) }
 
 // Callable reports whether t contains a callback contract that carries protected storage.
@@ -141,6 +141,9 @@ func (c *Classifier) expand(node *classificationNode) {
 
 // storedValue identifies types whose storage needs protected operation checks.
 func (c *Classifier) storedValue(node *classificationNode) {
+	if FrozenPointer(node.key.typ) {
+		return
+	}
 	if parameter, ok := node.key.typ.(*types.TypeParam); ok {
 		c.connect(node, parameter.Constraint(), constraintMode)
 	} else if IsCollection(node.key.typ) || IsProjection(node.key.typ) ||
@@ -174,6 +177,15 @@ func (c *Classifier) storageEdges(node *classificationNode) {
 			c.connect(node, field.Type(), node.key.mode)
 		}
 	}
+}
+
+// FrozenPointer identifies a pointer to a Frozen record by its resolved target type.
+func FrozenPointer(t types.Type) bool {
+	if t == nil {
+		return false
+	}
+	pointer, ok := t.Underlying().(*types.Pointer)
+	return ok && Frozen(pointer.Elem())
 }
 
 // constraintEdges preserves the separate interface and union traversal of type sets.

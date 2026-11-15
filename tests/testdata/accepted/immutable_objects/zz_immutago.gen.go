@@ -20,14 +20,18 @@ func NewHolderProjection(value im.Projection[*Holder]) HolderProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v HolderProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v HolderProjection) Unsafe() *Holder { return v.immutagoProjection.Unsafe() }
+
 // Node reads the Node field.
 func (v HolderProjection) Node() NodeProjection {
-	return NewNodeProjection(im.ProjectionOf(v.immutagoProjection.Read().Node))
+	return NewNodeProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Node))
 }
 
 // Items reads the Items field.
 func (v HolderProjection) Items() im.SliceProjection[*Node] {
-	return v.immutagoProjection.Read().Items.Projection()
+	return v.immutagoProjection.Unsafe().Items.Projection()
 }
 
 // HolderCell publishes frozen Holder values. Do not copy it.
@@ -38,9 +42,6 @@ func (c *HolderCell) Store(value Holder) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *HolderCell) Load() HolderProjection { return NewHolderProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *HolderCell) LoadShared() Holder { return c.value.LoadShared() }
 
 // NodeProjection provides local read access to *Node.
 type NodeProjection struct {
@@ -56,14 +57,18 @@ func NewNodeProjection(value im.Projection[*Node]) NodeProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v NodeProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v NodeProjection) Unsafe() *Node { return v.immutagoProjection.Unsafe() }
+
 // Value reads the Value field.
 func (v NodeProjection) Value() int {
-	return v.immutagoProjection.Read().Value
+	return v.immutagoProjection.Unsafe().Value
 }
 
 // Next reads the Next field.
 func (v NodeProjection) Next() NodeProjection {
-	return NewNodeProjection(im.ProjectionOf(v.immutagoProjection.Read().Next))
+	return NewNodeProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Next))
 }
 
 // NodeCell publishes frozen Node values. Do not copy it.
@@ -74,6 +79,3 @@ func (c *NodeCell) Store(value Node) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *NodeCell) Load() NodeProjection { return NewNodeProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *NodeCell) LoadShared() Node { return c.value.LoadShared() }

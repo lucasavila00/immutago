@@ -18,15 +18,15 @@ func NewScorerProjection(value im.Projection[Scorer]) ScorerProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Read() == nil }
+func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
 
 // Lookup calls the checked interface method with its ordinary Go contract.
 func (v ScorerProjection) Lookup(arg0 []byte) (int, bool, []byte, error) {
-	return v.immutagoProjection.Read().Lookup(arg0)
+	return v.immutagoProjection.Unsafe().Lookup(arg0)
 }
 
 // Score calls the checked interface method with its ordinary Go contract.
-func (v ScorerProjection) Score() int { return v.immutagoProjection.Read().Score() }
+func (v ScorerProjection) Score() int { return v.immutagoProjection.Unsafe().Score() }
 
 // ModelProjection provides local read access to *Model.
 type ModelProjection struct {
@@ -42,9 +42,13 @@ func NewModelProjection(value im.Projection[*Model]) ModelProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ModelProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ModelProjection) Unsafe() *Model { return v.immutagoProjection.Unsafe() }
+
 // Value reads the Value field.
 func (v ModelProjection) Value() ScorerProjection {
-	return NewScorerProjection(im.ProjectionOf(v.immutagoProjection.Read().Value))
+	return NewScorerProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Value))
 }
 
 // ModelCell publishes frozen Model values. Do not copy it.
@@ -55,9 +59,6 @@ func (c *ModelCell) Store(value Model) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ModelCell) Load() ModelProjection { return NewModelProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ModelCell) LoadShared() Model { return c.value.LoadShared() }
 
 // NumberProjection provides local read access to *Number.
 type NumberProjection struct {
@@ -73,9 +74,13 @@ func NewNumberProjection(value im.Projection[*Number]) NumberProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v NumberProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v NumberProjection) Unsafe() *Number { return v.immutagoProjection.Unsafe() }
+
 // N reads the N field.
 func (v NumberProjection) N() int {
-	return v.immutagoProjection.Read().N
+	return v.immutagoProjection.Unsafe().N
 }
 
 // NumberCell publishes frozen Number values. Do not copy it.
@@ -86,6 +91,3 @@ func (c *NumberCell) Store(value Number) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *NumberCell) Load() NumberProjection { return NewNumberProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *NumberCell) LoadShared() Number { return c.value.LoadShared() }

@@ -12,7 +12,7 @@ package's AST and compiler type information.
 | Select | Inspect direct imports, used types, and dependency facts. | Skip unrelated packages; select service checks or full im checks. |
 | Read failures | Report failures saved by direct dependencies. | Retain their original causes for this package's fact. |
 | Check declarations | Prove im types; check service embedding and method results. | Shared type proof cache and local diagnostics. |
-| Verify generation | Compare the generated file with current compiler types. | Exact file identity for two generated-only operations. |
+| Verify generation | Compare the generated file with current compiler types. | Exact file identity for generated interior record addresses. |
 | Check references and builders | Match direct Borrow calls; check native builder aliases and consumption. | Builder variable identities for source checks. |
 | Match source | Check complete operations on protected storage. | Diagnostics for every unmatched form. |
 | Export failure | Select one local or imported cause if the package failed. | A package fact for importers. |
@@ -43,6 +43,7 @@ Each has a rejecting fallback.
 | Function and type identity | Aliases and shadowed names must not change which API is called. |
 | Declared receiver and selected method | Detect implicit addresses, dereferences, and promoted methods. |
 | Instantiated signature and result tuple | Check every argument and result binding, including variadic elements. |
+| Complete generic declaration types and constraints | Classify stored types without treating the record name inside `~*Record` as a stored record. Bodies use normal source checks. |
 | AST parents | Check statement context and operands that Go does not evaluate. |
 
 Frozen interface conversions also prove the concrete implementation and its

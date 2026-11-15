@@ -20,9 +20,13 @@ func NewGoodProjection(value im.Projection[*Good]) GoodProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v GoodProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v GoodProjection) Unsafe() *Good { return v.immutagoProjection.Unsafe() }
+
 // Counter reads the Counter field.
 func (v GoodProjection) Counter() Counter {
-	return v.immutagoProjection.Read().Counter
+	return v.immutagoProjection.Unsafe().Counter
 }
 
 // GoodCell publishes frozen Good values. Do not copy it.
@@ -33,6 +37,3 @@ func (c *GoodCell) Store(value Good) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *GoodCell) Load() GoodProjection { return NewGoodProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *GoodCell) LoadShared() Good { return c.value.LoadShared() }

@@ -1,12 +1,4 @@
-receiver_rejectedconsumer.go:10:12: unsupported immutable operation: bound immutable methods are unsupported
-  source: pointer.ReadCost
-  type: func() int
-  fix: call the method directly (value.Method(...)); do not save or pass its method value
 receiver_rejectedconsumer.go:8:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.ReadCost()
-  type: int
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
-receiver_rejectedconsumer.go:9:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
-  source: pointer.Cost()
   type: int
   fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage

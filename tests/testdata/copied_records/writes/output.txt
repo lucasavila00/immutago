@@ -106,14 +106,6 @@ copied_writes.go:84:6: immutable collection: projection payload 1: stored pointe
 copied_writes.go:85:6: immutable collection: projection payload 1: stored pointers require a concrete marked struct target
   type: im.Projection[*api.Point]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-copied_writes.go:86:6: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: value.Read()
-  type: api.Point
-  fix: use the generated field accessor
-copied_writes.go:87:6: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: values.At(0).Read()
-  type: api.Point
-  fix: use the generated field accessor
 copied_writes.go:95:12: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &stored.Point.X
   type: *int

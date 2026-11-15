@@ -20,19 +20,23 @@ func NewPolicySnapshotProjection(value im.Projection[*PolicySnapshot]) PolicySna
 // IsNil reports whether the selected pointer is nil.
 func (v PolicySnapshotProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v PolicySnapshotProjection) Unsafe() *PolicySnapshot { return v.immutagoProjection.Unsafe() }
+
 // Version reads the Version field.
 func (v PolicySnapshotProjection) Version() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Version)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Version)
 }
 
 // Limits reads the Limits field.
 func (v PolicySnapshotProjection) Limits() Limits {
-	return v.immutagoProjection.Read().Limits
+	return v.immutagoProjection.Unsafe().Limits
 }
 
 // Problem reads the Problem field.
 func (v PolicySnapshotProjection) Problem() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Problem)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Problem)
 }
 
 // PolicySnapshotCell publishes frozen PolicySnapshot values. Do not copy it.
@@ -45,9 +49,6 @@ func (c *PolicySnapshotCell) Store(value PolicySnapshot) { c.value.Store(value) 
 func (c *PolicySnapshotCell) Load() PolicySnapshotProjection {
 	return NewPolicySnapshotProjection(c.value.LoadPointer())
 }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *PolicySnapshotCell) LoadShared() PolicySnapshot { return c.value.LoadShared() }
 
 // ReleaseProjection provides local read access to *Release.
 type ReleaseProjection struct {
@@ -63,19 +64,23 @@ func NewReleaseProjection(value im.Projection[*Release]) ReleaseProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ReleaseProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ReleaseProjection) Unsafe() *Release { return v.immutagoProjection.Unsafe() }
+
 // Version reads the Version field.
 func (v ReleaseProjection) Version() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Version)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Version)
 }
 
 // Replicas reads the Replicas field.
 func (v ReleaseProjection) Replicas() int {
-	return v.immutagoProjection.Read().Replicas
+	return v.immutagoProjection.Unsafe().Replicas
 }
 
 // Totals reads the Totals field.
 func (v ReleaseProjection) Totals() Totals {
-	return v.immutagoProjection.Read().Totals
+	return v.immutagoProjection.Unsafe().Totals
 }
 
 // ReleaseCell publishes frozen Release values. Do not copy it.
@@ -86,9 +91,6 @@ func (c *ReleaseCell) Store(value Release) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ReleaseCell) Load() ReleaseProjection { return NewReleaseProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ReleaseCell) LoadShared() Release { return c.value.LoadShared() }
 
 // ReportProjection provides local read access to *Report.
 type ReportProjection struct {
@@ -104,39 +106,43 @@ func NewReportProjection(value im.Projection[*Report]) ReportProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ReportProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ReportProjection) Unsafe() *Report { return v.immutagoProjection.Unsafe() }
+
 // Primary reads the Primary field.
 func (v ReportProjection) Primary() ReleaseProjection {
-	return NewReleaseProjection(im.ProjectionOf(&v.immutagoProjection.Read().Primary))
+	return NewReleaseProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Primary))
 }
 
 // Candidate reads the Candidate field.
 func (v ReportProjection) Candidate() ReleaseProjection {
-	return NewReleaseProjection(im.ProjectionOf(v.immutagoProjection.Read().Candidate))
+	return NewReleaseProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Candidate))
 }
 
 // Verdict reads the Verdict field.
 func (v ReportProjection) Verdict() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Verdict)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Verdict)
 }
 
 // Reason reads the Reason field.
 func (v ReportProjection) Reason() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Reason)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Reason)
 }
 
 // Problem reads the Problem field.
 func (v ReportProjection) Problem() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Problem)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Problem)
 }
 
 // PolicyVersion reads the PolicyVersion field.
 func (v ReportProjection) PolicyVersion() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().PolicyVersion)
+	return im.ProjectString(v.immutagoProjection.Unsafe().PolicyVersion)
 }
 
 // PolicyProblem reads the PolicyProblem field.
 func (v ReportProjection) PolicyProblem() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().PolicyProblem)
+	return im.ProjectString(v.immutagoProjection.Unsafe().PolicyProblem)
 }
 
 // ReportCell publishes frozen Report values. Do not copy it.
@@ -147,6 +153,3 @@ func (c *ReportCell) Store(value Report) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ReportCell) Load() ReportProjection { return NewReportProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ReportCell) LoadShared() Report { return c.value.LoadShared() }

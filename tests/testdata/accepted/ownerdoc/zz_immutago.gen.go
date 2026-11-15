@@ -20,14 +20,18 @@ func NewConfigProjection(value im.Projection[*Config]) ConfigProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ConfigProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ConfigProjection) Unsafe() *Config { return v.immutagoProjection.Unsafe() }
+
 // Ready reads the Ready field.
 func (v ConfigProjection) Ready() bool {
-	return v.immutagoProjection.Read().Ready
+	return v.immutagoProjection.Unsafe().Ready
 }
 
 // Limit reads the Limit field.
 func (v ConfigProjection) Limit() int {
-	return v.immutagoProjection.Read().Limit
+	return v.immutagoProjection.Unsafe().Limit
 }
 
 // ConfigCell publishes frozen Config values. Do not copy it.
@@ -38,6 +42,3 @@ func (c *ConfigCell) Store(value Config) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ConfigCell) Load() ConfigProjection { return NewConfigProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ConfigCell) LoadShared() Config { return c.value.LoadShared() }

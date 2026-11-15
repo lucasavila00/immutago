@@ -56,9 +56,6 @@ func CaptureProjection(value valid.ModelProjection) func() valid.Handle {
 	return func() valid.Handle { return value.Table() }
 }
 
-// Raw cannot bypass the generated-only Read rule.
-func Raw(value im.Projection[valid.Handle]) valid.Handle { return value.Read() }
-
 // Clone still requires Copied elements.
 func Clone(value im.SliceProjection[valid.Handle]) []valid.Handle { return value.Clone() }
 
@@ -91,3 +88,6 @@ func Write(value valid.Serving) { value.Model = valid.Handle{} }
 
 // Address cannot expose the storage of a handle inside a Local owner.
 func Address(value valid.Serving) *valid.Handle { return &value.Model }
+
+// LocalUnsafe still requires a Frozen projection payload.
+func LocalUnsafe(value im.Projection[valid.Serving]) valid.Serving { return value.Unsafe() }

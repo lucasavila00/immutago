@@ -13,7 +13,7 @@ type Settings struct {
 }
 type Order struct {
 	im.Frozen
-	Product
+	Product Product
 	Pointer *Product
 }
 

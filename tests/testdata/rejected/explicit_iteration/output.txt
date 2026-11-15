@@ -1,14 +1,6 @@
-explicit_iteration.go:12:28: unsupported immutable operation: immutable callbacks are unsupported
-  source: func(*Good) bool
-  type: func(*explicit_iteration.Good) bool
-  fix: call a named, non-generic function directly with a concrete immutable parameter
 explicit_iteration.go:13:26: unsupported immutable operation: immutable callbacks are unsupported
   source: func(Good) bool
   type: func(explicit_iteration.Good) bool
-  fix: call a named, non-generic function directly with a concrete immutable parameter
-explicit_iteration.go:15:23: unsupported immutable operation: immutable callbacks are unsupported
-  source: pointerIterator
-  type: func(yield func(*explicit_iteration.Good) bool)
   fix: call a named, non-generic function directly with a concrete immutable parameter
 explicit_iteration.go:20:21: unsupported immutable operation: immutable callbacks are unsupported
   source: valueIterator

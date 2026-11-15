@@ -54,6 +54,6 @@ func NewLoader() {
 
 // Republish stores an existing snapshot through an independent root copy.
 func Republish(l *Loader) {
-	value := l.Current.LoadShared()
+	value := l.Current.Load().Unsafe()
 	l.Current.Store(value)
 }

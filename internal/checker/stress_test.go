@@ -137,8 +137,8 @@ func TestStressAliasMarkerPolicy(t *testing.T) {
 		if got, want := Reason(stored) != "", marker == local; got != want {
 			t.Fatalf("%s pointer rejection=%t, want %t", marker.Obj().Name(), got, want)
 		}
-		if !Contains(stored) {
-			t.Fatal("alias pointer array hides protected storage")
+		if got, want := Contains(stored), marker == local; got != want {
+			t.Fatalf("%s pointer array protected=%t, want %t", marker.Obj().Name(), got, want)
 		}
 	}
 }

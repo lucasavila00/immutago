@@ -1,23 +1,7 @@
 protected.go:10:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
-protected.go:16:2: unmarked struct contains immutable field current; embed an immutable marker
-  owner: protected.Cache; field type: *protected.Record
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
 protected.go:21:2: immutable field Pointer: unsafe.Pointer is not provably immutable
   owner: protected.UnsafeField; field type: unsafe.Pointer
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-protected.go:25:36: unsupported immutable operation: protected value conversions are unsupported
-  source: u.Pointer(record)
-  type: unsafe.Pointer
-  fix: construct the destination marked value from copied fields; keep frozen collections in their original im type
-protected.go:28:52: unsupported immutable operation: shared pointer conversions are unsupported
-  source: (*Record)(value)
-  type: *protected.Record
-  fix: keep the original pointer type; copy the value first if a different owned value type is required
-protected.go:31:32: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
-  source: r.ValueOf(record)
-  type: reflect.Value
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 protected.go:34:32: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
   source: r.TypeOf(record)
   type: reflect.Type

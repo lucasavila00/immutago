@@ -68,6 +68,14 @@ func FrozenInterfaceSeal(method *types.Func) bool
 
 FrozenInterfaceSeal identifies the private method supplied by im.Frozen.
 
+## func FrozenPointer
+
+```go
+func FrozenPointer(t types.Type) bool
+```
+
+FrozenPointer identifies a pointer to a Frozen record by its resolved target type.
+
 ## func IsCollection
 
 ```go
@@ -180,7 +188,7 @@ Callable reports whether t contains a callback contract that carries protected s
 func (c *Classifier) Contains(t types.Type) bool
 ```
 
-Contains reports protected storage, including its holders and containers. Copied records use ordinary Go storage rules.
+Contains reports protected object storage, including its holders and containers. Frozen pointer handles and Copied records use ordinary Go storage rules.
 
 ### func \(\*Classifier\) Handles
 

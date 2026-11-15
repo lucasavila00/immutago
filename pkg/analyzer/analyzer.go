@@ -274,6 +274,12 @@ func (c *checks) checkFieldMarker(pos token.Pos, owner types.Type, field *types.
 			"\n  fix: embed im.Frozen, im.Local, or im.Copied; remove the marker field name or pointer")
 		return pos, false
 	}
+	if checker.Frozen(owner) && field.Embedded() && !markerType(field.Type()) {
+		c.report(pos, "Frozen data fields must be named\n  field: "+diagnosticType(owner)+"."+field.Name()+
+			"\n  fix: give the field a name, such as "+field.Name()+" "+
+			types.TypeString(field.Type(), types.RelativeTo(c.pass.Pkg)))
+		return pos, false
+	}
 	return pos, !field.Embedded() || !markerType(field.Type())
 }
 

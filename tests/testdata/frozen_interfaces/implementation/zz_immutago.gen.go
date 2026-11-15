@@ -18,10 +18,10 @@ func NewTreeReaderProjection(value im.Projection[TreeReader]) TreeReaderProjecti
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v TreeReaderProjection) IsNil() bool { return v.immutagoProjection.Read() == nil }
+func (v TreeReaderProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
 
 // TreePointer calls the checked interface method with its ordinary Go contract.
-func (v TreeReaderProjection) TreePointer() *Tree { return v.immutagoProjection.Read().TreePointer() }
+func (v TreeReaderProjection) TreePointer() *Tree { return v.immutagoProjection.Unsafe().TreePointer() }
 
 // CountProjection provides local read access to *Count.
 type CountProjection struct {
@@ -37,9 +37,13 @@ func NewCountProjection(value im.Projection[*Count]) CountProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v CountProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v CountProjection) Unsafe() *Count { return v.immutagoProjection.Unsafe() }
+
 // N reads the N field.
 func (v CountProjection) N() int {
-	return v.immutagoProjection.Read().N
+	return v.immutagoProjection.Unsafe().N
 }
 
 // CountCell publishes frozen Count values. Do not copy it.
@@ -50,9 +54,6 @@ func (c *CountCell) Store(value Count) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *CountCell) Load() CountProjection { return NewCountProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *CountCell) LoadShared() Count { return c.value.LoadShared() }
 
 // TreeProjection provides local read access to *Tree.
 type TreeProjection struct {
@@ -68,19 +69,23 @@ func NewTreeProjection(value im.Projection[*Tree]) TreeProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v TreeProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v TreeProjection) Unsafe() *Tree { return v.immutagoProjection.Unsafe() }
+
 // Weight reads the Weight field.
 func (v TreeProjection) Weight() float64 {
-	return v.immutagoProjection.Read().Weight
+	return v.immutagoProjection.Unsafe().Weight
 }
 
 // Text reads the Text field.
 func (v TreeProjection) Text() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Text)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Text)
 }
 
 // Data reads the Data field.
 func (v TreeProjection) Data() im.SliceProjection[byte] {
-	return v.immutagoProjection.Read().Data.Projection()
+	return v.immutagoProjection.Unsafe().Data.Projection()
 }
 
 // TreeCell publishes frozen Tree values. Do not copy it.
@@ -91,6 +96,3 @@ func (c *TreeCell) Store(value Tree) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *TreeCell) Load() TreeProjection { return NewTreeProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *TreeCell) LoadShared() Tree { return c.value.LoadShared() }

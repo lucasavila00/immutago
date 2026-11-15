@@ -20,9 +20,13 @@ func NewFrozenRouteProjection(value im.Projection[*FrozenRoute]) FrozenRouteProj
 // IsNil reports whether the selected pointer is nil.
 func (v FrozenRouteProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v FrozenRouteProjection) Unsafe() *FrozenRoute { return v.immutagoProjection.Unsafe() }
+
 // Worker reads the Worker field.
 func (v FrozenRouteProjection) Worker() CounterRef {
-	return v.immutagoProjection.Read().Worker
+	return v.immutagoProjection.Unsafe().Worker
 }
 
 // Workers reads the Workers field.
@@ -44,9 +48,6 @@ func (c *FrozenRouteCell) Load() FrozenRouteProjection {
 	return NewFrozenRouteProjection(c.value.LoadPointer())
 }
 
-// LoadShared returns the frozen value for persistent use.
-func (c *FrozenRouteCell) LoadShared() FrozenRoute { return c.value.LoadShared() }
-
 // SnapshotReplyProjection provides local read access to *SnapshotReply.
 type SnapshotReplyProjection struct {
 	im.Local
@@ -61,9 +62,13 @@ func NewSnapshotReplyProjection(value im.Projection[*SnapshotReply]) SnapshotRep
 // IsNil reports whether the selected pointer is nil.
 func (v SnapshotReplyProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v SnapshotReplyProjection) Unsafe() *SnapshotReply { return v.immutagoProjection.Unsafe() }
+
 // Count reads the Count field.
 func (v SnapshotReplyProjection) Count() int {
-	return v.immutagoProjection.Read().Count
+	return v.immutagoProjection.Unsafe().Count
 }
 
 // SnapshotReplyCell publishes frozen SnapshotReply values. Do not copy it.
@@ -76,9 +81,6 @@ func (c *SnapshotReplyCell) Store(value SnapshotReply) { c.value.Store(value) }
 func (c *SnapshotReplyCell) Load() SnapshotReplyProjection {
 	return NewSnapshotReplyProjection(c.value.LoadPointer())
 }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *SnapshotReplyCell) LoadShared() SnapshotReply { return c.value.LoadShared() }
 
 // FrozenRouteWorkersProjection reads a fixed array locally.
 type FrozenRouteWorkersProjection struct {
@@ -113,5 +115,5 @@ func (v FrozenRouteWorkersElementProjection) Len() int { return 2 }
 // At reads the element at index.
 func (v FrozenRouteWorkersElementProjection) At(index1 int) CounterRef {
 	index0 := v.index0
-	return v.immutagoProjection.Read().Workers[index0][index1]
+	return v.immutagoProjection.Unsafe().Workers[index0][index1]
 }

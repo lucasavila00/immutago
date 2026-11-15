@@ -46,7 +46,7 @@ func (g *generator) writeInterface(out *bytes.Buffer, item record) error {
 		"func %s(value im.Projection[%s]) %s { return %s{immutagoProjection:value} }\n",
 		constructorName(item.name), constructorName(item.name), source, item.name, item.name)
 	fmt.Fprintf(out, "// IsNil reports whether the interface is nil; a stored nil pointer is not nil.\n"+
-		"func (v %s) IsNil() bool { return v.immutagoProjection.Read() == nil }\n", item.name)
+		"func (v %s) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }\n", item.name)
 	if g.bootstrap {
 		return nil
 	}
@@ -92,7 +92,7 @@ func (g *generator) writeInterfaceMethod(out *bytes.Buffer, receiver string, met
 		prefix = "return "
 	}
 	fmt.Fprintf(out, "// %s calls the checked interface method with its ordinary Go contract.\n"+
-		"func (v %s) %s(%s)%s { %sv.immutagoProjection.Read().%s(%s) }\n",
+		"func (v %s) %s(%s)%s { %sv.immutagoProjection.Unsafe().%s(%s) }\n",
 		method.Name(), receiver, method.Name(), strings.Join(parameters, ", "), result, prefix,
 		method.Name(), strings.Join(arguments, ", "))
 }

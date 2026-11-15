@@ -146,12 +146,15 @@ func (c *subsetChecks) protectedReference(t types.Type) bool {
 
 // protectedRoot follows selectors and indices to detect protected owners.
 func (c *subsetChecks) protectedRoot(e ast.Expr) bool {
+	if c.pass.TypesInfo.Types[e].IsType() {
+		return false
+	}
 	if c.queries.Contains(c.pass.TypesInfo.TypeOf(e)) {
 		return true
 	}
 	switch x := e.(type) {
 	case *ast.SelectorExpr:
-		return c.protectedRoot(x.X)
+		return c.protectedSelection(x) || c.protectedRoot(x.X)
 	case *ast.IndexExpr:
 		return c.protectedRoot(x.X)
 	case *ast.ParenExpr:

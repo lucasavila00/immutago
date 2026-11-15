@@ -11,7 +11,8 @@ func (c *subsetChecks) matchWrite(destination ast.Expr) string {
 		if c.pass.TypesInfo.Selections[target] == nil {
 			return ""
 		}
-		if !c.protectedRoot(target.X) && !c.queries.Contains(c.pass.TypesInfo.TypeOf(target)) {
+		if !c.protectedSelection(target) && !c.protectedRoot(target.X) &&
+			!c.queries.Contains(c.pass.TypesInfo.TypeOf(target)) {
 			return ""
 		}
 	case *ast.IndexExpr:

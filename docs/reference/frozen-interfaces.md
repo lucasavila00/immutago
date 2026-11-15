@@ -76,7 +76,8 @@ implementation methods. The checker does not infer callback effects.
 Each result keeps its normal Go and im rules, including aliases and defined
 types. A method can return Frozen data or Local values. Local pointers cannot be
 returned, and method bodies cannot box protected data in ordinary interfaces or
-capture protected storage in closures. See the complete
+capture protected object values in closures. Frozen pointer handles can be boxed,
+captured, or stored in ordinary native containers. See the complete
 [common forms](common-forms.md#statements-and-calls).
 These lists are complete. Unlisted operations on protected storage are rejected.
 
@@ -151,10 +152,13 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | `go scorer.Score(features)` or `defer scorer.Score(features)` | Call synchronously. |
 | Capture scorer or its projection in a closure | Compute an ordinary result before the closure. |
 | `Self() *LocalRecord` | Return the Local record value. |
-| `Values() []*Tree` | Return a FrozenSlice or a projection; native containers cannot hold protected data outside the builder forms. |
-| `func (t *Tree) Value() any { return t }` | Declare a `*Tree` or Scorer result. |
-| `func (t *Tree) Callback() func() float64 { return func() float64 { return t.Weight } }` | Copy Weight to an ordinary local before the closure. |
+| `Values() []Tree` | Return `[]*Tree`, a FrozenSlice, or a projection. |
+| `func (t Tree) Value() any { return t }` | Declare a `*Tree` or Scorer result. |
+| `func (t Tree) Callback() func() float64 { return func() float64 { return t.Weight } }` | Copy Weight to an ordinary local before the closure. |
 | `value, outputs[0] = local.Read()` | Bind local names first, then assign the ordinary output separately. |
 | Save ScorerProjection in a package variable or Frozen field | Save a Scorer value from an allowed construction. |
-| Read the raw payload with `projection.Read()` | Use the generated method. |
 | `chan Scorer` | Use direct calls with a Scorer parameter. |
+
+A generic `im.Projection[Scorer]` can return its Frozen interface with
+`projection.Unsafe()`. The result keeps the Frozen interface rules above. It
+does not permit interface assertions or other unlisted operations.

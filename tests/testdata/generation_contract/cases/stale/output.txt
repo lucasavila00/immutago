@@ -1,13 +1,1 @@
-zz_immutago.gen.go:25:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *contract.Data
-  fix: use the generated field accessor
-zz_immutago.gen.go:38:26: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *contract.Data
-  fix: use the generated field accessor
 zz_immutago.gen.go:3:1: zz_immutago.gen.go is stale; run go generate in this package
-zz_immutago.gen.go:64:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *contract.Data
-  fix: use the generated field accessor

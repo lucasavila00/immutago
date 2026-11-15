@@ -20,9 +20,13 @@ func NewRecordProjection(value im.Projection[*Record]) RecordProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v RecordProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v RecordProjection) Unsafe() *Record { return v.immutagoProjection.Unsafe() }
+
 // Name reads the Name field.
 func (v RecordProjection) Name() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Name)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Name)
 }
 
 // RecordCell publishes frozen Record values. Do not copy it.
@@ -33,6 +37,3 @@ func (c *RecordCell) Store(value Record) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *RecordCell) Load() RecordProjection { return NewRecordProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *RecordCell) LoadShared() Record { return c.value.LoadShared() }

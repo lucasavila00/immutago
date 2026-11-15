@@ -20,9 +20,13 @@ func NewValueProjection(value im.Projection[*Value]) ValueProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ValueProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ValueProjection) Unsafe() *Value { return v.immutagoProjection.Unsafe() }
+
 // N reads the N field.
 func (v ValueProjection) N() int {
-	return v.immutagoProjection.Read().N
+	return v.immutagoProjection.Unsafe().N
 }
 
 // ValueCell publishes frozen Value values. Do not copy it.
@@ -33,6 +37,3 @@ func (c *ValueCell) Store(value Value) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ValueCell) Load() ValueProjection { return NewValueProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *ValueCell) LoadShared() Value { return c.value.LoadShared() }

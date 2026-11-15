@@ -20,19 +20,23 @@ func NewDocumentProjection(value im.Projection[*Document]) DocumentProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v DocumentProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v DocumentProjection) Unsafe() *Document { return v.immutagoProjection.Unsafe() }
+
 // Path reads the Path field.
 func (v DocumentProjection) Path() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Path)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Path)
 }
 
 // Title reads the Title field.
 func (v DocumentProjection) Title() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Title)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Title)
 }
 
 // Body reads the Body field.
 func (v DocumentProjection) Body() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Read().Body)
+	return im.ProjectString(v.immutagoProjection.Unsafe().Body)
 }
 
 // DocumentCell publishes frozen Document values. Do not copy it.
@@ -43,9 +47,6 @@ func (c *DocumentCell) Store(value Document) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *DocumentCell) Load() DocumentProjection { return NewDocumentProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *DocumentCell) LoadShared() Document { return c.value.LoadShared() }
 
 // IndexProjection provides local read access to *Index.
 type IndexProjection struct {
@@ -61,19 +62,23 @@ func NewIndexProjection(value im.Projection[*Index]) IndexProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v IndexProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v IndexProjection) Unsafe() *Index { return v.immutagoProjection.Unsafe() }
+
 // Version reads the Version field.
 func (v IndexProjection) Version() int {
-	return v.immutagoProjection.Read().Version
+	return v.immutagoProjection.Unsafe().Version
 }
 
 // Documents reads the Documents field.
 func (v IndexProjection) Documents() im.SliceProjection[Document] {
-	return v.immutagoProjection.Read().Documents.Projection()
+	return v.immutagoProjection.Unsafe().Documents.Projection()
 }
 
 // Terms reads the Terms field.
 func (v IndexProjection) Terms() im.MapProjection[string, im.FrozenSlice[Posting]] {
-	return v.immutagoProjection.Read().Terms.Projection()
+	return v.immutagoProjection.Unsafe().Terms.Projection()
 }
 
 // IndexCell publishes frozen Index values. Do not copy it.
@@ -84,6 +89,3 @@ func (c *IndexCell) Store(value Index) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *IndexCell) Load() IndexProjection { return NewIndexProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *IndexCell) LoadShared() Index { return c.value.LoadShared() }

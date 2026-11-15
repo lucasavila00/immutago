@@ -44,11 +44,15 @@ Assume `record` is Frozen and its `Totals` field is Copied:
 
 | Operation | Storage being changed | Decision |
 | --- | --- | --- |
+| `state.Record = selected` | An ordinary Frozen pointer slot. | Permit pointer replacement; retain the target's rules. |
 | `record.Totals.Count++` | A field inside `record`. | Reject the protected write. |
 | `copy := record.Totals; copy.Count++` | An ordinary independent copy. | Use Go mutation rules. |
 
 A method's implicit pointer receiver can change the same field. The checker
 therefore examines the declared receiver before accepting an ordinary method call.
+Frozen data fields need names, so Go cannot promote a mutating field method
+to the Frozen record. Pointer handles and their ordinary containers use Go
+transport rules; selections and dereferences still identify the protected target.
 [Pointer and placement rules](../reference/rules.md) supply the complete source forms.
 
 ## Cell publication and retained readers
@@ -66,7 +70,8 @@ viewB ───────┘
 | [Cell.Store](../../pkg/im/cell.go) | A private copy of T behind `atomic.Pointer[T]`; referenced frozen storage stays shared. |
 | Generated Cell.Load | A Local reader around `Projection[*T]`; no copy of T. |
 | Raw Cell.Load | `Projection[T]` containing a copy of T; no copy of backing storage. |
-| Cell.LoadShared | A copy of T for persistent use; no copy of backing storage. |
+| Generated projection.Unsafe | The selected *T; no record copy, allocation, or second Cell load. |
+| Raw Projection.Unsafe | T by value; referenced storage stays shared. |
 | A retained reader | Its pointer keeps the selected value reachable for Go's garbage collector. |
 
 Cell source checks prevent copies of the atomic slot. The cached slot query follows
@@ -81,7 +86,7 @@ For a Frozen Rates record with a frozen integer slice, the getter reads directly
 
 ```go
 func (v RatesProjection) Values() im.SliceProjection[int] {
-    return v.immutagoProjection.Read().Values.Projection()
+    return v.immutagoProjection.Unsafe().Values.Projection()
 }
 ```
 
@@ -102,7 +107,7 @@ getters and indexed array readers.
 1. Generate expected bytes from the current types.
 2. Compare the complete `zz_immutago.gen.go` after CRLF normalization.
 3. Record its physical token file, unaffected by line directives.
-4. Permit `Projection.Read` and interior Frozen-record addresses only in that file.
+4. Permit interior Frozen-record addresses only in that file.
 
 The verified file still passes all other source checks.
 See the [projection reference](../reference/projections.md) for generated declarations

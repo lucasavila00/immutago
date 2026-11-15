@@ -1,4 +1,0 @@
-pointer_wrapper.go:13:18: unmarked struct contains immutable field Value; embed an immutable marker
-  owner: rejected.Bad; field type: *rejected.Good
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
