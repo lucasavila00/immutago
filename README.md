@@ -10,7 +10,7 @@ review service state changes and locks in the service code.
 | Install the checker and run a first program | [Get started](docs/guides/getting-started.md) |
 | Learn the APIs | [Guides](docs/README.md#guides) |
 | Look up exact rules and signatures | [Reference](docs/README.md#reference) |
-| Run a complete application | [Delivery quotes and document search](examples/README.md) |
+| Run a complete application | [Delivery quotes, document search, and a live release gate](examples/README.md) |
 | Change the checker or runtime | [Maintainer documentation](docs/README.md#maintainers) |
 
 [Install the checker](docs/guides/getting-started.md#install), then run `immutago ./...`.

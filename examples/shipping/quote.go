@@ -114,9 +114,9 @@ func validateRequest(request Request) error {
 // parcelPrice finds the first inclusive weight band, or returns -1 if none fits.
 func parcelPrice(bands im.SliceProjection[Band], weight int64) int64 {
 	for index := 0; index < bands.Len(); index++ {
-		band := NewBandProjection(bands.AtPointer(index))
-		if weight <= band.UpToGrams() {
-			return band.PriceCents()
+		band := im.Value(bands.At(index))
+		if weight <= band.UpToGrams {
+			return band.PriceCents
 		}
 	}
 	return -1

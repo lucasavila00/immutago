@@ -72,7 +72,7 @@ func (s *requestState) begin(cell *SettingsCell) {
 | Read the selected object | `n := s.Settings.Limit`, `n := versions[key].Limit` |
 | Bind or return several pointers | `p, ok := versions[key]`, `p, q := pair()` |
 | Box, assert, or pass through a pool | `var value any = p`, `value.(*Settings)`, `pool.Put(state)` |
-| Use generics, callbacks, or closures | `identity(p)`, `callback(p)`, `func() { use(p) }` |
+| Use generics, callbacks, or closures | `identity(p)`, `callback(p)`, `func() { use(p) }`, `func read[T ~*Settings](p T) int { return (*p).Limit }` |
 | Use methods, method values, and method expressions | `p.Read()`, `read := p.Read`, `(*Settings).Read(p)` |
 | Use go, defer, channels, or select | `go use(p)`, `defer use(p)`, `ready <- p` |
 | Use aliases or defined pointer types | `type Pointer = *Settings`, `type Selected *Settings` |

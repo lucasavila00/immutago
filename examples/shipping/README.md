@@ -104,7 +104,9 @@ connections and stops the catalog loader.
 | [loader.go](loader.go) | Load before startup, poll the file, and publish complete catalogs. |
 | [cmd/shipping/main.go](cmd/shipping/main.go) | Start the service and HTTP server; handle shutdown. |
 
-The catalog contains Frozen records and collections. `CatalogCell` publishes a
+The catalog contains Frozen records and collections. Numeric weight bands use
+`im.Copied`; `im.Value(bands.At(i))` returns an independent value with direct field
+access. `CatalogCell` publishes a
 whole replacement. `CatalogProjection` lets a quote keep one selected version.
 The response copies the text it needs into ordinary Go data for JSON encoding.
 The only supervised service is the catalog loader.
