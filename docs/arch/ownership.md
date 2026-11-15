@@ -45,6 +45,8 @@ For either marker, the checker requires:
 - Immutable fields, including nested fields and array elements.
 - Immutable targets for stored pointers, so another pointer cannot change them.
 - Allowed key and element types in frozen collections.
+- No local frozen views in Shared fields, persistent frozen collections, or
+  Owner state. A ByValue value containing a view keeps local transport rules.
 - No writes to those fields through another pointer or a receiver method.
 
 One type has one pointer policy. Owner requires a ByValue type. Use separate
@@ -59,7 +61,8 @@ the supported forms.
 - [im.Owner](../../pkg/im/owner.go) is a mutable `atomic.Pointer` slot, allowed
   as a package variable or a direct named field of an unmarked struct.
 - The [slot matcher](../../pkg/analyzer/owner_slot.go) checks the type argument,
-  receiver, direct call, fresh Store input, and local Load binding.
+  receiver, direct call, fresh Store input, and local Load binding. The type
+  argument must contain no local frozen views.
 - The holder check rejects copies of slots and their containing structs. It
   also checks holder pointer uses. A closure can access a slot; a loaded pointer
   still has the ByValue capture restriction.
@@ -96,7 +99,51 @@ graph traversal.
 
 ## Runtime representation
 
-- [FrozenSlice](../../pkg/im/slice.go) and [FrozenMap](../../pkg/im/map.go) hold private native handles.
-- Freeze copies the handle; the analyzer enforces exclusive use and consumption.
+- [FrozenSlice](../../pkg/im/slice.go), [FrozenMap](../../pkg/im/map.go), and their
+  [local slice](../../pkg/im/by_value_slice.go) and [map](../../pkg/im/by_value_map.go)
+  views hold private native handles.
+- All four slice/map Freeze functions copy the handle; the analyzer enforces
+  exclusive use and consumption. Shared `.ByValue()` copies the same handle.
 - Reads and [iteration](../../pkg/im/iterator.go) use the native storage directly.
-- Clone copies slots, not referenced objects. Those objects remain safe to share because they are immutable.
+- Shared Clone copies slots, not referenced objects. Local Clone rejects nested
+  views; local map Clone also copies exact FrozenString key bytes. Ref entries
+  remain shared service handles.
+
+## Frozen string storage
+
+[FrozenString](../../pkg/im/string.go) and
+[FrozenByValueString](../../pkg/im/by_value_string.go) hold private native strings.
+Both Freeze functions wrap the input without copying or consuming it.
+`ByValue` changes the wrapper type without copying bytes. `Clone` uses
+`strings.Clone` for independent bytes. There is no native view or substring API.
+
+The [type proof](../../internal/checker/proof.go) accepts the exact library type
+and rejects native string kinds in each proved field and collection type argument.
+The classifier includes both families in protected storage. The source matcher
+checks concrete transport, statement context, and direct library calls. String
+Freeze is a non-consuming direct call; methods use exact library receivers.
+
+## Local view proof
+
+[Classifier.Views](../../internal/checker/classification.go) follows stored type
+components and marks local frozen types. The restriction reaches every containing
+ByValue record and array. It does not depend on where a value was produced.
+
+`Classifier.Retains` identifies data that can escape through a read: pointers,
+native strings, shared frozen handles, and unchecked payloads. Local views have
+their own transport rule. Service references retain their separate handle contract.
+
+| Operation | Required check |
+| --- | --- |
+| Local collection type | Prove each argument immutable and reject shared data references. Permit exact FrozenString map keys as a separate lookup-only case. |
+| Shared field or collection entry | Reject local views at any depth. |
+| View or containing value | Match local binding, direct concrete call, result, or local builder forms; reject persistent destinations. |
+| Local `All` | Require direct range. Reject maps with FrozenString keys, which would yield shared keys. |
+| Local `Clone` | Reject type arguments that contain local views. Runtime map Clone copies exact FrozenString key bytes. |
+
+These checks use compiler type identity, including aliases. There is no string
+origin analysis, implicit element conversion, generic recursive Clone, or
+runtime ownership state. The [local view guide](../local-views.md) lists the
+complete supported forms. [Source tests](../../pkg/analyzer/frozen_views_test.go)
+cover local transport and read restrictions. [Runtime tests](../../pkg/im/by_value_test.go)
+cover storage reuse and independent copies.

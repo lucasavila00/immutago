@@ -33,6 +33,12 @@ admit field, element, or pointer-target writes.
 Check `Shared` sharing and `ByValue` pointer escape separately. Builder
 exclusivity and consumption are required for both modes.
 
+For local frozen views, trace the complete containing type through fields and
+arrays. Check package storage, Owner, service arguments, collection entries,
+direct calls, and results. Check data returned by At, Get, and All, not only
+the view handle. Confirm the text-key and nested Clone restrictions against
+the [local view lists](local-views.md).
+
 ## Required evidence
 
 For each changed form, identify:

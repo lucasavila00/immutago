@@ -10,8 +10,9 @@ Three services turn a JSON file into a request quota:
 
 The services use `supervise.Ref` to call each other. Calls run in the caller's
 goroutine. Each service protects its own mutable fields.
-Their [service results](../../docs/service-results.md) are strings, integer
-decisions, or the read-only `Usage` struct. Callers can keep these values.
+Their [service results](../../docs/service-results.md) are local string views,
+integer decisions, or the read-only `Usage` struct. Callers can keep the scalar
+values. Use `Clone` for independent text that can be saved.
 
 ## Run
 
@@ -44,7 +45,7 @@ can read the reference. A failed Init leaves a reserved reference available:
 
 ```go
 cache := supervise.Reserve[configuration.FileCache]()
-args := configuration.FileArgs{Path: path, Every: time.Second}
+args := configuration.FileArgs{Path: im.FreezeString(path), Every: time.Second}
 err := supervise.StartReserved(root, cache, args)
 if errors.Is(err, os.ErrNotExist) {
     if err := os.WriteFile(path, []byte(`{"api":3}`), 0600); err != nil {
@@ -72,5 +73,5 @@ Repository CI runs these checks.
 
 JSON decoding uses an ordinary Go map. ConfigLoader copies its scalar entries
 into a fresh builder before Freeze, so no decoder alias can change a published
-configuration. Each successful reload costs one map copy; reads use the frozen
-map directly.
+configuration. Each successful reload costs one map copy; keys are wrapped
+without copying their bytes. Limit reads use the stored frozen map directly.

@@ -8,6 +8,8 @@
 | [Owner benchmarks](../../pkg/im/owner_test.go) | Slot loads. |
 | [Service benchmarks](../../pkg/supervise/supervise_test.go) | Ref.Current. |
 | [Allocation tests](../../pkg/im/iterator_test.go) | Construction separately from Freeze, reads, and direct iteration. |
+| [Frozen string tests and benchmarks](../../pkg/im/string_test.go) | Source storage reuse, copy-out independence, empty substrings, and escaping Clone allocations. |
+| [Local view tests](../../pkg/im/by_value_test.go) and [benchmarks](../../pkg/im/by_value_benchmark_test.go) | Zero-copy Freeze and views, direct reads and range, independent Clone storage, and text-key copies. |
 | Slice and map tests | Storage reuse and Clone independence. |
 
 For a cost change:

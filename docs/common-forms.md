@@ -3,7 +3,8 @@
 These forms apply to:
 
 - Structs that embed `im.Shared` or `im.ByValue`.
-- `im.FrozenSlice` and `im.FrozenMap` values.
+- Shared frozen slices, maps, and strings.
+- Local frozen views and marked values that contain them.
 
 Combine them with each type's forms. [Owner](owner.md) has its own forms.
 The [glossary](glossary.md) defines marked structs, protected storage, and builders.
@@ -20,24 +21,34 @@ type ByValuePoint struct { im.ByValue; X int }
 type SharedLink struct { im.Shared; P *SharedPoint }
 ```
 
-Use the types below for struct fields and frozen collection keys and elements.
-They also apply to each nested field, key, and element.
+Use the types below for struct fields and shared frozen collection keys and
+elements. They also apply to each nested field, key, and element. Local frozen
+collections use the smaller [view type list](local-views.md#type-arguments--exhaustive).
+Unlisted protected types and operations are rejected.
 
 | Allowed forms — exhaustive | Example |
 | --- | --- |
-| Scalar: boolean, integer, floating-point, complex, or string | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
-| Defined scalar | `type Count int` |
+| Scalar: boolean, integer, floating-point, or complex | `bool`, `int`, `uintptr`, `float64`, `complex128` |
+| Defined type with one of those scalar kinds | `type Count int` |
+| Shared frozen string | `im.FrozenString` |
 | Empty marker value | `im.Shared`, `im.ByValue` |
 | Unnamed array of allowed elements | `[2]int`, `[2]SharedPoint` |
 | Struct with one embedded marker and allowed fields | `SharedPoint`, `ByValuePoint` above |
 | Embedded marker alias | `type Mark = im.Shared; type Value struct { Mark; X int }` |
-| Nested marked value, with either marker on the parent or child | `type LocalParent struct { im.ByValue; Child ByValuePoint }`, `type SharedParent struct { im.Shared; Child ByValuePoint }` |
+| Nested marked value, with either marker when the child contains no local view | `type LocalParent struct { im.ByValue; Child ByValuePoint }`, `type SharedParent struct { im.Shared; Child ByValuePoint }` |
 | Pointer to a concrete Shared struct | `*SharedPoint` |
 | Recursive marked struct | `type SharedNode struct { im.Shared; Next *SharedNode }` |
-| Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
+| Shared frozen collection of allowed types, without local views | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[im.FrozenString, *SharedPoint]` |
+| Local frozen view or containing value, in a ByValue field or local unnamed array only | `type Result struct { im.ByValue; Text im.FrozenByValueString }` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
 | Unchecked immutable value | `im.UncheckedValue[baked]`; see [Unchecked immutable values](unchecked-values.md). |
 | Service reference | `supervise.Ref[Worker]`; see [service references](service-references.md). |
+
+A ByValue value can contain shared data for persistent state, or local views
+for a local result. When any field contains a view, the entire value has the
+[local transport rules](local-views.md#transport--exhaustive). This includes
+nested fields and array elements. Neither a Shared object nor a shared frozen
+collection can contain such a value.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
@@ -48,6 +59,8 @@ They also apply to each nested field, key, and element.
 | `type Bad struct { Children []SharedPoint }` | `type Good struct { im.Shared; Children im.FrozenSlice[SharedPoint] }` |
 | `type Bad struct { im.Shared; P *ByValuePoint }` | Store `ByValuePoint` by value, or use `*SharedPoint` for sharing. |
 | `type Bad struct { im.ByValue; P *ByValuePoint }` | `type Good struct { im.ByValue; P ByValuePoint }` |
+| `type Bad struct { im.Shared; Text string }` | Use `Text im.FrozenString`. |
+| `type Bad struct { im.Shared; Text im.FrozenByValueString }` | Use `im.ByValue` for a local record, or store a shared string. |
 | `type Counts [2]int` as a stored type | `type Counts struct { im.Shared; Values [2]int }` |
 
 ### Generics
@@ -55,7 +68,7 @@ They also apply to each nested field, key, and element.
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Fixed im types and functions | `im.FrozenSlice[SharedPoint]`, `im.FreezeSlice([]SharedPoint{})` |
-| Fixed supervise APIs with protected values | `supervise.Service[ByValuePoint]`, `supervise.Start[Worker](root, args)`; saved arguments must use the stored types above. |
+| Fixed supervise APIs with protected values | `supervise.Service[ByValuePoint]`, `supervise.Start[Worker](root, args)`; saved arguments must use the stored types above and contain no local views. |
 | User generics without protected storage | `type Plain[T any] struct { Value T }`, used as `Plain[int]` |
 
 | Rejected examples — non-exhaustive | Replacement |
@@ -82,12 +95,13 @@ p = &SharedPoint{X: 2} // q still observes X == 1.
 | Compare comparable values or arrays with `==` or `!=` | `same := point == other`, `same := points == otherPoints` |
 | Array length and capacity | `len(points)`, `cap(points)` |
 | Scalar unary `+`, `-`, `!`, `^`; scalar binary operators and conversions | `-point.X`, `point.X + 1`, `int64(point.X)` |
-| Use scalar reads in literals or indices; index or slice strings | `[]int{point.X}`, `a[point.X]`, `user.Name[1:]` |
+| Use scalar reads in literals or indices | `[]int{point.X}`, `a[point.X]` |
 | Pass scalar reads to ordinary calls, including builtins, function variables, interface methods, and generics | `callback(point.X)`, `identity(point.X)` |
 
 - After `x := point.X`, `x` is an ordinary integer; you can change it or capture it.
 - The read of `point.X` still needs a listed statement form.
-- Copies of marked values, pointers, and frozen collections keep their rules.
+- Copies of marked values, pointers, frozen strings, and frozen collections keep their rules.
+  Reading a local view from a field or element keeps the local restriction.
 - Constant expressions follow the same rules. Use `count := len(points)` before
   a closure, then capture `count`; do not read `points` inside the closure.
 
@@ -182,7 +196,7 @@ Use the operations above inside these statement forms:
 | Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
 | Bind Start results to two local names or blanks with `:=`, `=`, or `var` | `ref, err := supervise.Start[Worker](root, args)`, `var ref, err = supervise.Start[Worker](root, args)` |
 | Bind a map reader's two results to new locals | `value, found := frozen.Get(key)` |
-| Freeze in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
+| Freeze a slice or map in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |
 | Call a method in the list above | `n := p.ReadX()` |
 | Return values or `Shared` pointers, including multiple results | `return point`, `return p, true` |
@@ -193,9 +207,10 @@ Use the operations above inside these statement forms:
 | Assign one existing writable loop target, using the assignment rules above | `for i = range count { ... }`, `for a[point.X] = range a { ... }` |
 | Use checked operations in a select case body | `case <-ready: values[0] = value` |
 
-- Assignments and declarations have one destination, including package variables.
+- Assignments and declarations have one destination. Local views and values
+  containing them cannot be package variables.
   Returns can have several results.
-- `FrozenMap.Get` permits two new local names or blanks.
+- `FrozenMap.Get` and `FrozenByValueMap.Get` permit two new local names or blanks.
 - Calls to `supervise.Start` with protected arguments use these statement forms.
   Calls with only ordinary arguments use ordinary Go binding rules.
 - Blocks, `break`, and `continue` follow ordinary Go rules.

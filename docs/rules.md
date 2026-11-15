@@ -11,7 +11,9 @@ Use this reference to check which Go forms Immutago accepts. The
 | [Shared](shared.md) | Store or return pointers to immutable objects. |
 | [ByValue](by-value.md) | Keep immutable value copies and use pointers for local reads. |
 | [Owner](owner.md) | Publish a new ByValue object and read the current one. |
-| [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
+| [Frozen collections](frozen.md) | Choose shared storage or a local view; build and freeze slices and maps. |
+| [Frozen strings](frozen-strings.md) | Wrap text without a copy; read bytes or make an independent copy. |
+| [Local frozen views](local-views.md) | Read storage without a persistent handle; check nested field and element rules. |
 | [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
 
 ## Service forms (`supervise`)

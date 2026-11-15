@@ -40,6 +40,8 @@ package can unwrap the pointer. The service publishes each model in a new
 `snapshot` struct with `im.ByValue`. Each prediction reads one snapshot for the
 whole calculation. The returned `Prediction` is a [service result](../../docs/service-results.md)
 with its model name and score from that same version.
+The name is a local string view, so the Prediction value stays local. Callers
+can save `prediction.Name.Clone()` and the scalar score as independent data.
 
 Check this project and run its tests:
 

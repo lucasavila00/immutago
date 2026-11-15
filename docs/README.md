@@ -11,6 +11,8 @@ for terms such as ByValue object, service reference, and builder.
 | Copy immutable values while restricting their pointers | [ByValue](by-value.md) |
 | Replace a pointer while readers use the previous object | [Owner](owner.md) |
 | Build read-only slices and maps | [Frozen collections](frozen.md) |
+| Store text or return a text view | [Frozen strings](frozen-strings.md) |
+| Read slices, maps, and strings through local views | [Local frozen views](local-views.md) |
 | Wrap data whose immutability your package promises | [Unchecked immutable values](unchecked-values.md) |
 | Look up allowed Go forms | [Common source forms](common-forms.md) |
 | Look up signatures and zero values | [im API](../pkg/im/readme.md) |

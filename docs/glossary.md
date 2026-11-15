@@ -7,10 +7,12 @@
 | **Immutable object** | An object whose fields cannot change after construction. See [common forms](common-forms.md). |
 | **Marker; marked struct** | `im.Shared` or `im.ByValue`, embedded by value; a struct with one of these markers and allowed field types. See [stored types](common-forms.md#markers-and-stored-types). |
 | **Shared object** | A read-only struct with `im.Shared`. Callers can keep its values and pointers. See [Shared](shared.md). |
-| **ByValue object** | A read-only struct with `im.ByValue`. Callers keep value copies and use pointers only through the [local pointer forms](by-value.md). |
+| **ByValue object** | A read-only struct with `im.ByValue`. Its pointers use the [local pointer forms](by-value.md). A value containing a local frozen view also has the view's storage limits. |
 | **Builder** | A local Go slice or map whose storage is checked for exclusive use. See [build before freezing](frozen.md#build-before-freezing). |
-| **Freeze** | `im.FreezeSlice` or `im.FreezeMap` transfers a builder's storage to a frozen collection without copying entries. See [frozen collections](frozen.md). |
-| **Frozen collection; Clone** | A read-only `im.FrozenSlice` or `im.FrozenMap`; its `Clone` method makes an independent mutable slice or map with the same entries. See [collection reads](frozen.md#reads-and-clone). |
+| **Freeze** | Slice and map Freeze functions transfer a builder's storage without copying entries. String Freeze functions wrap immutable bytes without copying or consuming the input. See [frozen families](frozen.md). |
+| **Shared frozen value** | An `im.FrozenSlice`, `im.FrozenMap`, or `im.FrozenString`. Copies share storage and can be saved. See [frozen families](frozen.md). |
+| **Local frozen view** | An `im.FrozenByValueSlice`, `im.FrozenByValueMap`, or `im.FrozenByValueString`. Copies share storage and keep the [local transport rules](local-views.md#transport--exhaustive). |
+| **Clone** | A method that copies native container storage or string bytes. Shared collection entries are copied by value. Local map Clone also copies frozen text keys; nested local views require explicit copies. See [costs](performance.md). |
 | **Owner slot; Owner holder** | An `im.Owner[T]` package variable or named field; an unmarked struct that contains such a field. See [Owner](owner.md). |
 | **Unchecked immutable value** | An `im.UncheckedValue[T]` handle. The package that declares `T` promises that the wrapped data never changes. See [unchecked values](unchecked-values.md). |
 
@@ -29,7 +31,7 @@
 
 | Term | Meaning |
 | --- | --- |
-| **Protected storage** | Marked objects and their fields, frozen collections, and arrays containing them. The [source rules](common-forms.md) check operations on this storage and its pointers. |
+| **Protected storage** | Marked objects and their fields, both frozen families, and arrays containing them. The [source rules](common-forms.md) check operations on this storage and its pointers. |
 | **Consumed builder** | A builder after Freeze. Further uses of its original slice or map are rejected. See [frozen collections](frozen.md). |
 | **Checked package** | A package selected for im checks, service result checks, or dependency failure reports. See the [package boundary](rules.md#package-boundary). |
 | **Allowed form; matcher** | A documented Go expression or statement shape; the analyzer code that checks its syntax, resolved types, and context. See the [analysis pipeline](arch/pipeline.md#source-forms-and-dependency-failures). |

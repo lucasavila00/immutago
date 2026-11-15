@@ -16,7 +16,7 @@ goroutine; the runtime does not queue them.
 | Item | Rule |
 | --- | --- |
 | Init and Run | `*T` must provide `Init() error` and `Run(context.Context)`. Embedded `Service[A]` supplies a default Init and the runtime methods. |
-| Start arguments | Read them with `s.Args()`. The runtime saves them for each restart. Ordinary Go types are allowed; protected data must satisfy the [stored-type rules](common-forms.md#markers-and-stored-types). |
+| Start arguments | Read them with `s.Args()`. The runtime saves them for each restart. Ordinary Go types are allowed; protected data must satisfy the [stored-type rules](common-forms.md#markers-and-stored-types) and contain no local frozen views. |
 | No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
 | Exported service method result | Return no result or one [service result](service-results.md). This includes promoted methods. Init, Run, and methods supplied by the runtime are exempt. |
 | Fields, method parameters, closures, and goroutines | Ordinary Go rules. Synchronize shared mutable data. Uses of protected values follow the [im rules](common-forms.md). |
@@ -55,10 +55,10 @@ stop the group. Its file cache starts with these arguments:
 
 ```go
 cache, err := supervise.Start[configuration.FileCache](root, configuration.FileArgs{
-    Path: path, Every: 100 * time.Millisecond,
+    Path: im.FreezeString(path), Every: 100 * time.Millisecond,
 })
 if err != nil { panic(err) }
-fmt.Print(cache.Current().Text())
+fmt.Print(cache.Current().Text().Clone())
 ```
 
 The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and

@@ -15,15 +15,46 @@ This rule applies to service methods. Ordinary functions and methods use the
 | No result | `func (c *Counter) Pause() { c.paused.Store(true) }` |
 | One allowed result | `func (l *Limiter) Usage() Usage` |
 
+## Result types — exhaustive
+
+Unlisted result types are rejected. Each nested field and array element must
+also pass the rules below.
+
+| Type | Example |
+| --- | --- |
+| Boolean, integer, floating-point, or complex scalar | `bool`, `int`, `float64`, `complex128` |
+| Defined type with one of those scalar kinds | `type Count int` |
+| Service reference | `supervise.Ref[Worker]`; see [service references](service-references.md). |
+| Empty ByValue marker value | `im.ByValue` |
+| Struct with `im.ByValue`, immutable fields, and no shared data references | `Usage` below |
+| Local frozen view with allowed type arguments | `im.FrozenByValueString`, `im.FrozenByValueSlice[int]`, `im.FrozenByValueMap[im.FrozenString, int]` |
+| Unnamed array whose elements use this result list | `[2]int`, `[2]Usage`, `[2]im.FrozenByValueString` |
+| Alias of an allowed type | `type Response = Usage` |
+
+A result struct's fields must pass the [stored-type proof](common-forms.md#markers-and-stored-types).
+They must not contain native strings, shared frozen handles, pointers, or
+`im.UncheckedValue` at any depth. Local frozen views have their own
+[type argument list](local-views.md#type-arguments--exhaustive). Service references
+remain a separate allowed handle category; callers can keep them.
+
+A ByValue record that contains a view stays local as a whole. The caller may
+read, copy locally, pass directly, or return it, but cannot save the record in
+persistent storage. Reading a field keeps its original type and rules. See
+[local transport](local-views.md#transport--exhaustive).
+
+A service result is a return type category. It is not a marker or a promise
+of service isolation. Start arguments, mutable method inputs, and service
+implementation code follow the [service contract](services.md#service-contract).
+
 ## Example: quota results
 
 Examples from the [configuration project](../examples/configuration/README.md):
 
 | Method | Result |
 | --- | --- |
-| `FileCache.Text() string` | The last file contents. |
+| `FileCache.Text() im.FrozenByValueString` | A local view of the last file contents. |
 | `Limiter.Take() Decision` | An integer type with the request decision. |
-| `Limiter.Usage() Usage` | A struct with `im.ByValue` and the current counts. |
+| `Limiter.Usage() Usage` | A ByValue struct with the current counts. |
 
 ```go
 type Usage struct {
@@ -34,59 +65,48 @@ type Usage struct {
 }
 ```
 
-Callers receive a value they can keep. Returning Usage does not return a pointer
-to the limiter's mutable counters.
-
-## Result types — exhaustive
-
-| Type | Example |
-| --- | --- |
-| Scalar: boolean, integer, floating-point, complex, or string | `bool`, `int`, `float64`, `complex128`, `string` |
-| Defined scalar | `type Count int` |
-| Service reference | `supervise.Ref[Worker]`; see [service references](service-references.md). |
-| Empty ByValue marker value | `im.ByValue` |
-| Struct with `im.ByValue` and proved immutable fields | `Usage` |
-| Unnamed array whose elements use this type list | `[2]int`, `[2]Usage`, `[2][3]Usage` |
-| Alias of an allowed type | `type Response = Usage` |
-
-A service result is a category of return types, not an im marker. A returned
-integer is an ordinary Go value: callers can change it. A returned ByValue value
-keeps its read-only fields and [pointer rules](by-value.md).
-
-Fields of a ByValue struct follow the [stored-type rules](common-forms.md#markers-and-stored-types).
-They can contain frozen collections, Shared values, Shared pointers, and service references.
-For example, return a ByValue struct with a frozen map field when callers need
-a collection. The frozen map is not an allowed service result on its own.
-
-Start arguments and method parameters follow the [service contract](services.md#service-contract).
-The result rule does not prove service isolation or restrict ordinary mutable inputs.
+Callers can keep the scalar Usage value. It has no references to the limiter's
+mutable counters. To keep independent file text, call `cache.Current().Text().Clone()`.
 
 ## Return related data together
 
-Return related fields together when they describe one version. The
-[model service](../examples/models/fetcher.go) reads one published model for
-both its name and prediction:
+The [model service](../examples/models/fetcher.go) reads one published model
+for both its name and prediction:
 
 ```go
+type Prediction struct {
+    im.ByValue
+    Name  im.FrozenByValueString
+    Score float64
+}
+
 func (f *Fetcher) Predict(features im.FrozenSlice[float64]) Prediction {
     current := f.current.Load()
-    return Prediction{Name: current.Model.Name, Score: model.Predict(current.Model, features)}
+    return Prediction{Name: current.Model.Name.ByValue(), Score: model.Predict(current.Model, features)}
 }
 ```
 
-The caller can keep the Prediction after the service publishes a new model.
-The single Load keeps the name and score consistent with the same model.
+The name view and score describe the same model version. Prediction stays local
+because Name is a view. A caller can save `prediction.Name.Clone()` and
+`prediction.Score` as independent data.
+
+Internal ByValue state can still contain shared frozen data or Shared pointers
+and can be published through [Owner](owner.md). Such a state type is not a
+service result. Build a result with scalar fields and local views instead.
 
 ## Rejected examples — non-exhaustive
 
 | Result | Use instead |
 | --- | --- |
+| `string`, a defined string type, or `im.FrozenString` | Return `im.FrozenByValueString`. |
 | `*Usage` | Declare a value result such as `Read() Usage`; return `*p`. |
-| `[]int`, `map[string]int`, or a frozen collection | Put a frozen collection in a struct with `im.ByValue` and return that struct. |
-| `error`, `any`, or another interface | Return a struct with `im.ByValue` and the information the caller needs. |
-| `(int, bool)` | Return a struct with `im.ByValue` and fields for both values. |
-| An unmarked struct, Shared struct or pointer, or `im.UncheckedValue[T]` | Return a struct with `im.ByValue` and allowed fields. |
-| `type Counts [2]int` | Return `[2]int`, or a struct with `im.ByValue` and an array field. |
+| `[]int` or `im.FrozenSlice[int]` | Return `im.FrozenByValueSlice[int]`. |
+| `map[string]int` or `im.FrozenMap[im.FrozenString, int]` | Return `im.FrozenByValueMap[im.FrozenString, int]`. |
+| A ByValue struct with a shared frozen field or Shared pointer | Return a separate ByValue result with local views or scalar copies. |
+| `error`, `any`, or another interface | Return a ByValue struct with the information the caller needs. |
+| `(int, bool)` | Return a ByValue struct with fields for both values. |
+| An unmarked struct, Shared struct, or `im.UncheckedValue[T]` | Return a ByValue struct with allowed fields. |
+| `type Counts [2]int` | Return `[2]int`, or a ByValue struct with an array field. |
 
 ByValue pointers cannot be saved, returned, or captured. See
 [ByValue objects](by-value.md) for their use inside a function.

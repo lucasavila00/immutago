@@ -43,16 +43,19 @@ Package selection and state:
 ## Type proof
 
 [Type predicates](../../internal/checker/types.go) resolve aliases and identify
-`im.Shared`, `im.ByValue`, and frozen collections by package path and named type.
+`im.Shared`, `im.ByValue`, and both frozen families by package path and named type.
 
 The per-pass [classifier](../../internal/checker/classification.go) answers
-whether a type contains protected storage, callbacks, or service references:
+whether a type contains protected storage, callbacks, service references,
+local views, or shared data references:
 
 | Query | Edges followed |
 | --- | --- |
 | Storage | Fields and containers. |
 | Callback | Storage edges, interface methods, function parameters and results. |
 | Service reference | Fields, containers, interface methods, function parameters and results. |
+| Local view | Stored components; marks each local frozen wrapper. |
+| Shared data reference | Stored components; marks pointers, native strings, shared frozen wrappers, and unchecked payloads. Local views and service references have separate rules. |
 | Type-parameter constraint | Separate traversal mode. |
 
 It expands all reachable edges before propagating positive results backwards.
@@ -79,6 +82,10 @@ Failure messages:
 The proof applies to Shared and ByValue structs. Stored pointers require a
 Shared target. Type parameters fail; [generic checks](../../pkg/analyzer/subset_generics.go)
 retain the fixed im APIs and reject user generics with protected storage.
+Shared fields and shared frozen entries cannot contain local views. Local
+collection reads cannot yield shared data references, except the explicit
+FrozenString map-key form whose `All` is rejected. Service results apply the
+shared-data query after the immutable proof. See [storage proofs](ownership.md#local-view-proof).
 
 ## Source forms and dependency failures
 

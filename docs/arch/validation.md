@@ -39,6 +39,8 @@ Enforcement:
 | Complete allowed shapes and nearby rejections | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go) |
 | Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
 | Storage reuse, clone independence, identity, and allocation counts | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [iterator tests](../../pkg/im/iterator_test.go) |
+| String storage reuse, local view reads, and independent copies | [String tests](../../pkg/im/string_test.go), [local view tests](../../pkg/im/by_value_test.go) |
+| Recursive local view transport, result types, and entry restrictions | [View source tests](../../pkg/analyzer/frozen_views_test.go), [string source tests](../../pkg/analyzer/frozen_string_test.go) |
 | Service result types and ordinary service code | [Service tests](../../pkg/analyzer/service_test.go), [CLI fixtures](../../tests/testdata/accepted/service) |
 | Service reference storage, Current call forms, and concrete transport | [Reference tests](../../pkg/analyzer/service_handles_test.go), [CLI fixtures](../../tests/testdata/accepted/service/handles.go), [rejected forms](../../tests/testdata/rejected/service/handles.go) |
 | Startup errors, publication, and failed setup cleanup | [runtime tests](../../pkg/supervise/init_test.go), [CLI fixture](../../tests/testdata/accepted/serviceinit/main.go) |

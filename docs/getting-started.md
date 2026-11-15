@@ -23,16 +23,16 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type User struct {
     im.Shared
-    Name   string
-    Scores im.FrozenMap[string, int]
+    Name   im.FrozenString
+    Scores im.FrozenMap[im.FrozenString, int]
 }
 
 func main() {
-    scores := map[string]int{"go": 10}
+    scores := map[im.FrozenString]int{im.FreezeString("go"): 10}
     frozen := im.FreezeMap(scores)
-    user := &User{Name: "alice", Scores: frozen}
-    score, _ := user.Scores.Get("go")
-    println(user.Name, score)
+    user := &User{Name: im.FreezeString("alice"), Scores: frozen}
+    score, _ := user.Scores.Get(im.FreezeString("go"))
+    println(user.Name.Clone(), score)
 }
 ```
 
@@ -49,9 +49,11 @@ The program prints `alice 10`.
   permits sharing the object's pointer.
 - `FreezeMap` reuses the Go map without copying its entries. After this call,
   read through the frozen map, not `scores`.
+- `FreezeString` wraps string bytes without a copy. `Clone` copies those bytes
+  to a native string for printing.
 - `Get` returns the score and whether the key exists.
 
-For example, adding `user.Name = "bob"` makes `immutago ./...` report a write
+For example, adding `user.Name = im.FreezeString("bob")` makes `immutago ./...` report a write
 to an immutable object. See the [checker reference](rules.md) for the allowed forms.
 
 ## Check in CI

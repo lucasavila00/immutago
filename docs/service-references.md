@@ -33,7 +33,7 @@ The examples use `WorkerRef`, an alias of `supervise.Ref[Worker]`.
 | Copy or assign references, including multiple bindings and tuple results | `next := ref`, `first, second := ref, ref`, `ref, ok := workers[name]` |
 | Pass or return references with concrete types, including variadic arguments | `use(ref)`, `useAll(ref, next)`, `useAll(workers...)`, `return ref` |
 | Store references in variables, struct fields, arrays, slices, maps, or channels | `var current WorkerRef`, `struct{ Worker WorkerRef }{ref}`, `[2]WorkerRef{ref}`, `[]WorkerRef{ref}`, `map[string]WorkerRef{"blue": ref}`, `make(chan WorkerRef)` |
-| Store references in marked fields or frozen collections | `type Route struct { im.ByValue; Worker WorkerRef }`, `im.FrozenSlice[WorkerRef]`, `im.FrozenMap[string, WorkerRef]` |
+| Store references in marked fields or frozen collections | `type Route struct { im.ByValue; Worker WorkerRef }`, `im.FrozenSlice[WorkerRef]`, `im.FrozenMap[im.FrozenString, WorkerRef]` |
 | Read or update ordinary reference storage; take an address or dereference a pointer | `ref := route.Worker`, `workers[name] = ref`, `p := &ref`, `next := *p` |
 | Index or slice native storage | `workers[0]`, `workers[1:]` |
 | Compare references or use them in a switch | `ref == next`, `ref != next`, `switch ref { case next: use(ref) }` |

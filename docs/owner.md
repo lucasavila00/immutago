@@ -9,13 +9,18 @@ an unmarked struct with a named Owner field. Neither can be copied.
 
 | Runtime operation | Checker rule |
 | --- | --- |
-| `Store` replaces the pointer without copying the object | T must embed `im.ByValue`; supply a new object. |
+| `Store` replaces the pointer without copying the object | T must embed `im.ByValue` and contain no local frozen views; supply a new object. |
 | `Load` returns the current pointer, or nil before the first Store | Read through a local pointer; do not store it in a field or global, capture it, or return it. |
 | Readers can keep using an old pointer after Store replaces it | The old object stays read-only. |
 
 Go's garbage collector keeps loaded objects alive while readers use them.
 Load and Store can run in different goroutines. Use one Load when several reads
 must use the same version.
+
+Owner state can contain shared frozen strings, slices, maps, and Shared pointers.
+To expose that data as a service result, return scalar fields and local views
+in a separate ByValue result type. A state type that contains shared data
+references is not a [service result](service-results.md).
 
 ## Example: a current request limit
 
@@ -87,6 +92,7 @@ func start() {
 | Rejected form | Replacement |
 | --- | --- |
 | `im.Owner[SharedConfig]`, where SharedConfig embeds `im.Shared` | Use `im.Owner[Config]` with `im.ByValue`. |
+| `im.Owner[Result]`, where any Result field contains a local frozen view | Store shared frozen data in a separate ByValue state type. |
 | `copy := state.Current` or `copy := *state` | Pass the struct pointer; do not copy the atomic pointer or its containing struct. |
 | `current.Store(config)` | `current.Store(&Config{Limit: config.Limit})` |
 | `return current.Load()` | `config := current.Load(); return *config` with a Config result. |

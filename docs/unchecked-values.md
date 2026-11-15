@@ -6,6 +6,8 @@ Use it when your package supplies immutable data that does not fit the checked f
 - Your package promises not to change the data; the checker does not prove this.
 - Only the package that declares `T` can wrap it with `im.Trust` or read it with `im.Unwrap`.
 - Other packages can keep the handle and call your functions to read the data.
+- The payload must contain no local frozen views. Trust promises immutability;
+  it does not remove local transport restrictions.
 
 ## Example: a prediction model
 
@@ -14,12 +16,12 @@ type baked struct { weights []float64 }
 
 type Model struct {
     im.Shared
-    Name   string
+    Name   im.FrozenString
     engine im.UncheckedValue[baked]
 }
 
 func Load(name string, weights []float64) *Model {
-    return &Model{Name: name, engine: im.Trust(&baked{weights: slices.Clone(weights)})}
+    return &Model{Name: im.FreezeString(name), engine: im.Trust(&baked{weights: slices.Clone(weights)})}
 }
 
 func Predict(m *Model, features im.FrozenSlice[float64]) float64 {
@@ -50,7 +52,7 @@ follows the [common forms](common-forms.md).
 
 | Allowed form | Example |
 | --- | --- |
-| Use as an allowed stored type in a marked struct, a frozen collection, or ordinary Go | `type Model struct { im.Shared; engine im.UncheckedValue[baked] }` |
+| Use as an allowed stored type in a marked struct, a shared frozen collection, or ordinary Go | `type Model struct { im.Shared; engine im.UncheckedValue[baked] }` |
 | Copy, store, pass, or return the handle in any package | `other := m.engine` |
 | Declare a zero handle; Unwrap returns nil | `var engine im.UncheckedValue[baked]` |
 | In the package that declares the named type `T`, wrap a pointer | `engine := im.Trust(&baked{})` |
@@ -77,3 +79,5 @@ a promoted method cannot expose its pointer.
 | `func Wrap[T any](v *T) im.UncheckedValue[T] { return im.Trust(v) }` | Wrap a concrete named type that this package declares. |
 | `im.Trust(&rows)` with `rows []int` | Declare a named type, such as `type rows []int`. |
 | `m.engine = im.Trust(&baked{})` on a marked value | Construct a new marked value. |
+| Wrap a payload that contains a local frozen view | Clone the required data before constructing the payload. |
+| Return UncheckedValue from an exported service method, directly or in a record | Return allowed scalar data or local views. |

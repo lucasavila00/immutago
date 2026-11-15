@@ -10,9 +10,11 @@ of named and anonymous service structs:
 1. Skip unexported methods, Init, Run, and methods supplied by the runtime.
 2. Accept no result or one result, including for promoted methods.
 3. Match the [service result types](../service-results.md#result-types--exhaustive).
-   Prove scalars and ByValue structs with the immutable type proof. Check each
-   array element type. For `Ref[T]`, require a concrete service struct as T.
-   Fields of a ByValue struct use the ordinary stored-type rules.
+   Prove numeric and boolean scalars, ByValue structs, and local frozen views
+   with the immutable type proof. Check each array element type. Reject shared
+   data references inside ByValue results through `Classifier.Retains`.
+   For `Ref[T]`, require a concrete service struct as T; Ref is a separate handle
+   category and does not expose immutable service state.
 
 Start arguments, method parameters, callbacks, and service implementation code
 follow ordinary Go rules. Current calls use the service reference matcher.
@@ -20,10 +22,17 @@ Protected data passes through the im type proofs, source matcher, and Freeze che
 
 The classifier treats `Service[A]` as runtime storage, so a service can receive
 im values through its start arguments. When A contains im data, its stored-value
-proof must pass; this prevents retaining a ByValue pointer. Ordinary A types need
-no immutable proof. `Ref[T]` is an allowed stored type. Its proof checks that T
+proof must pass and it must contain no local views. This prevents saved ByValue
+pointers and local views. Ordinary A types need no immutable proof.
+`Ref[T]` is an allowed stored type. Its proof checks that T
 is a service without inspecting that service's mutable state. Runtime calls
 use the fixed library operations.
+
+Internal ByValue state may contain shared frozen data and Shared pointers.
+Owner can publish that state, but an exported service method cannot return it.
+The method can construct a result from scalar reads and local views. A local
+view remains restricted when returned; the ordinary source matcher checks its
+caller destinations. No service-specific lifetime or effect analysis is needed.
 
 The source matcher accepts the fixed Start result forms when arguments contain
 protected storage, including two local result bindings and a matching named

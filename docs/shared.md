@@ -19,7 +19,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type Product struct {
     im.Shared
-    Name string
+    Name im.FrozenString
     Price int
 }
 
@@ -30,7 +30,7 @@ type Order struct {
 }
 
 func product() *Product {
-    return &Product{Name: "coffee", Price: 8}
+    return &Product{Name: im.FreezeString("coffee"), Price: 8}
 }
 
 func main() {

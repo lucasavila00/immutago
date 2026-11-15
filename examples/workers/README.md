@@ -25,7 +25,7 @@ green v1: STILL RUNNING
 | --- | --- |
 | [Worker](worker.go) | Receive jobs on a Go channel and return converted text. |
 | [Pool](pool.go) | Create child workers during Init and distribute requests among them. |
-| [Configuration](config.go) | Publish immutable variant-name snapshots through `im.Owner`. |
+| [Configuration](config.go) | Publish shared variant names through `im.Owner`; return local views in snapshots. |
 | [Dispatcher](dispatcher.go) | Poll configuration, stage new versions, and stop old or removed groups. |
 | [Lookup](lookup.go) | Return a pool reference in a PoolRoute value so callers can call the selected pool. |
 | [Command](cmd/workers/main.go) | Start two variants, replace blue, remove blue, and read green. |
@@ -53,7 +53,9 @@ arguments use ordinary Go structs; job channels stay inside each worker.
 `Set` has no result. Methods that return data use the
 [service result types](../../docs/service-results.md): a scalar, a `Result`
 struct for a job, or a `VariantSet` struct for the configured names. Both structs
-embed `im.ByValue`; callers can keep their values.
+embed `im.ByValue` and contain local views. The whole result stays local;
+callers use `Clone` to keep independent text. VariantSet builds O(n) string-view
+headers from the stored names without copying string bytes.
 
 ## Example: call a selected pool
 
@@ -61,7 +63,7 @@ embed `im.ByValue`; callers can keep their values.
 route := dispatcher.Current().Lookup("blue")
 if route.Available {
     result := route.Pool.Current().Process("Hello World")
-    fmt.Println(result.Text)
+    fmt.Println(result.Text.Clone())
 }
 ```
 
