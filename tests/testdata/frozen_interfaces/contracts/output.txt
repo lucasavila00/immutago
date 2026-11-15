@@ -3,13 +3,21 @@ contracts.go:11:6: unsupported immutable operation: returning Local pointers is 
   type: func() (int, *contracts.Local)
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 contracts.go:13:6: immutable interface: Frozen interface methods require fixed parameters
-  fix: use exported methods with fixed concrete parameters
-contracts.go:17:6: immutable interface: Frozen interface parameters require concrete types
-  fix: use exported methods with fixed concrete parameters
-contracts.go:21:6: immutable interface: Frozen interface parameters require concrete types
-  fix: use exported methods with fixed concrete parameters
+  fix: use exported methods with fixed parameters
+contracts.go:19:7: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() im.StringProjection
+  type: func() im.StringProjection
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+contracts.go:23:21: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() im.StringProjection
+  type: func() im.StringProjection
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+contracts.go:23:6: unsupported immutable operation: immutable callbacks are unsupported
+  source: interface{ Read() im.StringProjection }
+  type: interface{Read() im.StringProjection}
+  fix: call a named, non-generic function directly with a concrete immutable parameter
 contracts.go:25:6: immutable interface: Frozen interface methods must be exported
-  fix: use exported methods with fixed concrete parameters
+  fix: use exported methods with fixed parameters
 contracts.go:5:6: Frozen interfaces require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 contracts.go:7:9: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []im.StringProjection

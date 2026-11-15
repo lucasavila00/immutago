@@ -100,8 +100,11 @@ declared on that exact source type; promoted methods and implicit dereferences
 fail. The private im seal is the only promoted-method exception. A conversion
 between proved Frozen interfaces keeps the earlier concrete proof.
 
-Named interface proofs require exported methods and fixed concrete parameters.
-They do not prove method result types as stored fields. Method results use the
+Named interface proofs require exported methods and fixed parameters.
+Ordinary interface and callback inputs use Go contracts. The shared argument
+transport checks reject protected boxing and callback transport. Callback
+classification, closure checks, and generic checks also apply to these inputs.
+These proofs do not check method result types as stored fields. Method results use the
 same source type and transport checks as ordinary functions. A direct typed call
 can bind all its results to local names or blanks. One shared matcher requires a
 single call and the exact compiler-resolved destination count; each component
