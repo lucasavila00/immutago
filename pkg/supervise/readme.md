@@ -174,7 +174,7 @@ An Init error returns an empty Ref and that error. An Init panic reaches the cal
 func (p Ref[T]) Borrow() *T
 ```
 
-Borrow selects the last successfully initialized service value with one atomic load. For direct Ref calls, the analyzer accepts only ref.Borrow\(\).Method\(args\). Method must be exported and must not be Init, Run, or a runtime method. Direct calls cannot save the pointer, Borrow method, or selected method. Interface calls can expose the pointer without these source checks. Borrow is shared, not exclusive. Nothing is returned or released. A call in progress finishes on its selected instance, even after a restart.
+Borrow selects the last successfully initialized service value with one atomic load. For direct Ref calls, the analyzer accepts only ref.Borrow\(\).Method\(args\). Method must be exported and must not be Init, Run, or a runtime method. Direct calls cannot save the pointer, Borrow method, or selected method. Interface calls can expose the pointer without these source checks. Borrow is shared and is not exclusive. No release call is needed. A call in progress finishes on its selected instance, even after a restart.
 
 Borrow panics for an empty or unstarted reference. It can select a value whose Run has ended. Stop does not invalidate the reference or block later calls.
 

@@ -113,7 +113,7 @@ For direct Ref calls, the checker rejects every other use of `Borrow`, despite
 its Go return type of `*T`. Borrow panics for an empty or unstarted reference.
 Each call selects the last successfully initialized service; a call in progress
 finishes on that instance.
-Borrow is shared, not exclusive. Nothing is returned or released.
+Borrow is shared and is not exclusive. No release call is needed.
 
 Interface conversion can expose the service pointer outside this checked call
 form. This is accepted, including when an embedded Ref promotes Borrow:
@@ -123,8 +123,8 @@ var selected interface{ Borrow() *Worker } = ref
 pointer := selected.Borrow()
 ```
 
-The direct Ref call rule does not apply to this interface call. Review any saved
-service pointers and their use across restarts in the service code.
+The direct Ref call rule does not apply to this interface call. Callers must
+account for restarts when they save a service pointer.
 
 ## Rejected examples — non-exhaustive
 

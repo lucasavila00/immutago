@@ -240,7 +240,7 @@ type Ref[T any] struct {
 // Method must be exported and must not be Init, Run, or a runtime method.
 // Direct calls cannot save the pointer, Borrow method, or selected method.
 // Interface calls can expose the pointer without these source checks.
-// Borrow is shared, not exclusive. Nothing is returned or released.
+// Borrow is shared and is not exclusive. No release call is needed.
 // A call in progress finishes on its selected instance, even after a restart.
 //
 // Borrow panics for an empty or unstarted reference. It can select a value whose
