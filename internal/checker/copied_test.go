@@ -51,6 +51,9 @@ func TestCopiedRecordCategories(t *testing.T) {
 			if got := proofs.ReadResultReason(test.typ) == ""; got != test.copied {
 				t.Errorf("ReadResult(%s)=%v; want %v", test.typ, got, test.copied)
 			}
+			if got := queries.Callable(classificationSignature(test.typ)); got != test.protected {
+				t.Errorf("Callable(func(%s))=%v; want %v", test.typ, got, test.protected)
+			}
 			if got := queries.Contains(test.typ); got != test.protected {
 				t.Errorf("Contains(%s)=%v; want %v", test.typ, got, test.protected)
 			}

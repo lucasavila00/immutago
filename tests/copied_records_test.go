@@ -23,7 +23,8 @@ func TestCopiedRecords(t *testing.T) {
 		} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
 				dir := consumerModule(t, root, "copied_records")
-				accepted := target == "api" || target == "accepted" || target == "frozen" || target == "transport" || target == "bodyless"
+				accepted := target == "api" || target == "accepted" || target == "frozen" ||
+					target == "transport" || target == "bodyless"
 				output := runBoundary(t, dir, binary, mode, accepted, "./"+target)
 				checkFixtureSnapshots(t, root, "copied_records/"+target, output)
 			})

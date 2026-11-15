@@ -15,6 +15,10 @@ func TestInterfaceReads(t *testing.T) {
 	if summary.Count != 3 {
 		t.Fatal(summary.Count)
 	}
+	summary.Count++
+	if current.Load().Readers().At(0).Summary().Count != 3 {
+		t.Fatal("changing a copied result changed its Frozen implementation")
+	}
 	if implementation.Saved == nil {
 		t.Fatal("method did not retain its receiver")
 	}

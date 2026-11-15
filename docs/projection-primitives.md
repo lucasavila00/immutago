@@ -80,7 +80,7 @@ interfaces, callbacks, closures, user generics, go, or defer.
 | Save a projection in a global | Clone or Copy the data to keep. |
 | Clone a projection of a string-key map | Iterate; Clone each key and copy each value into a new map. |
 | Clone a slice or map projection with Frozen record elements | Read record projections and copy the required fields into new data. |
-| Capture a projection in a closure | Read scalar fields or clone strings first. Pass Copied records to a direct typed function. |
+| Capture a projection in a closure | Read numeric fields or Copied records, or clone strings, before the closure. |
 
 Projection creation copies T, not its backing storage. Large records therefore have
 ordinary Go value-copy costs. Native strings and FrozenString can share source

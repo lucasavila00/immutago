@@ -74,7 +74,8 @@ func libraryTypeComponents(t types.Type, seen map[types.Type]bool, includeRuntim
 	case *types.Slice:
 		return usesLibraryType(value.Elem(), seen, includeRuntime, includeCopied)
 	case *types.Map:
-		return usesLibraryType(value.Key(), seen, includeRuntime, includeCopied) || usesLibraryType(value.Elem(), seen, includeRuntime, includeCopied)
+		return usesLibraryType(value.Key(), seen, includeRuntime, includeCopied) ||
+			usesLibraryType(value.Elem(), seen, includeRuntime, includeCopied)
 	case *types.Chan:
 		return usesLibraryType(value.Elem(), seen, includeRuntime, includeCopied)
 	case *types.Struct:
@@ -130,7 +131,8 @@ func libraryTuple(value *types.Tuple, seen map[types.Type]bool, includeRuntime, 
 
 // librarySignature checks the used receiver, parameters, results, and generic constraints.
 func librarySignature(signature *types.Signature, seen map[types.Type]bool, includeRuntime, includeCopied bool) bool {
-	if receiver := signature.Recv(); receiver != nil && usesLibraryType(receiver.Type(), seen, includeRuntime, includeCopied) {
+	if receiver := signature.Recv(); receiver != nil &&
+		usesLibraryType(receiver.Type(), seen, includeRuntime, includeCopied) {
 		return true
 	}
 	return usesLibraryType(signature.Params(), seen, includeRuntime, includeCopied) ||
@@ -140,7 +142,8 @@ func librarySignature(signature *types.Signature, seen map[types.Type]bool, incl
 }
 
 // libraryTypeParameters checks constraints even when a generic parameter has no stored field.
-func libraryTypeParameters(parameters *types.TypeParamList, seen map[types.Type]bool, includeRuntime, includeCopied bool) bool {
+func libraryTypeParameters(parameters *types.TypeParamList, seen map[types.Type]bool,
+	includeRuntime, includeCopied bool) bool {
 	for i := 0; i < parameters.Len(); i++ {
 		if usesLibraryType(parameters.At(i).Constraint(), seen, includeRuntime, includeCopied) {
 			return true

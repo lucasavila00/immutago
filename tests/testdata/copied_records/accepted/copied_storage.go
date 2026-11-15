@@ -63,7 +63,7 @@ func Store(value api.Summary) State {
 func NativeStorage(value api.Point) int {
 	values := []api.Point{value}
 	alias := values
-	alias[0] = api.Point{X: 2}
+	alias[0].Set(2)
 	values = append(values, value)
 	part := values[1:]
 	array := [2]api.Point{value}

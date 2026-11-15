@@ -66,7 +66,7 @@ p = &FrozenPoint{X: 2} // q still observes X == 1.
 
 - After `x := point.X`, `x` is an ordinary integer; you can change it or capture it.
 - The read of `point.X` still needs a listed statement form.
-- Copies of marked values, pointers, and frozen collections keep their rules.
+- Frozen and Local copies, protected pointers, and frozen collections keep their rules.
 - Constant expressions follow the same rules. Use `count := len(points)` before
   a closure, then capture `count`; do not read `points` inside the closure.
 
@@ -160,7 +160,7 @@ Use the operations above inside these statement forms:
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Declare one variable or assign one destination | `var value FrozenPoint`, `value := FrozenPoint{X: 1}`, `value = FrozenPoint{X: 2}` |
-| Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
+| Change a native builder slot or its Copied fields | `values[0] = value`, `counts[0]++`, `counts[0] += 2`, `scores[0].Value++` |
 | Bind Start results to two local names or blanks with `:=`, `=`, or `var` | `ref, err := supervise.Start[Worker](root, args)`, `var ref, err = supervise.Start[Worker](root, args)` |
 | Bind a map Get call's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze a slice or map in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
