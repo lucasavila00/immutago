@@ -169,7 +169,7 @@ type caller struct{ Service[Ref[asker]] }
 // Run calls Ask on the parent until ctx ends.
 func (c *caller) Run(ctx context.Context) {
 	for ctx.Err() == nil {
-		c.Args().Current().Ask()
+		c.Args().Borrow().Ask()
 		time.Sleep(time.Millisecond)
 	}
 	record("stop caller")
@@ -290,27 +290,27 @@ func TestChildrenChangeDuringRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
 		ref, _ := Start[router](root, NoArgs{})
-		ref.Current().Add("a")
+		ref.Borrow().Add("a")
 		synctest.Wait()
 		expectEvents(t, "start a")
 		for range 100 {
-			ref.Current().Add("old")
+			ref.Borrow().Add("old")
 			synctest.Wait()
-			ref.Current().Remove("old")
+			ref.Borrow().Remove("old")
 			expectEvents(t, "start old", "stop old")
 		}
-		if entries := ref.Current().entries(); entries != 1 {
+		if entries := ref.Borrow().entries(); entries != 1 {
 			t.Fatalf("group of the run has %d entries after the removals, want 1", entries)
 		}
-		ref.Current().Add("b")
-		ref.Current().Add("c")
+		ref.Borrow().Add("b")
+		ref.Borrow().Add("c")
 		synctest.Wait()
 		expectStarted(t, "start b", "start c")
-		ref.Current().Remove("b")
+		ref.Borrow().Remove("b")
 		expectEvents(t, "stop b")
 		<-root.Stop()
 		expectEvents(t, "stop c", "stop a")
-		ref.Current().Add("late")
+		ref.Borrow().Add("late")
 		synctest.Wait()
 		expectEvents(t)
 	})
@@ -322,7 +322,7 @@ func TestChildrenOfServiceThatDoesNotRun(t *testing.T) {
 		root := NewRoot(nil)
 		<-root.Stop()
 		ref, _ := Start[router](root, NoArgs{})
-		ref.Current().Add("a")
+		ref.Borrow().Add("a")
 		synctest.Wait()
 		expectEvents(t)
 	})
@@ -471,7 +471,7 @@ func TestMethodsRaceStop(t *testing.T) {
 		var callers sync.WaitGroup
 		callers.Go(func() {
 			for range 200 {
-				ref.Current().Add("x")
+				ref.Borrow().Add("x")
 			}
 		})
 		<-root.Stop()

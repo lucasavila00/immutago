@@ -21,7 +21,7 @@
 | Cell.Store | Copy one T root and publish with an atomic store; one allocation for T with nonzero size. |
 | Generated Cell.Load, raw Cell.LoadPointer | One atomic pointer load; no record copy or allocation. |
 | Raw Cell.Load, Cell.LoadShared | One atomic load and a T value copy; no backing-storage copy. |
-| Ref.Current | One atomic load; no allocation. |
+| Ref.Borrow | One atomic load; no allocation. |
 
 Large record and array values can cost more to copy than native pointer reads.
 Do not describe these copies as free. The wrapper APIs add no automatic deep

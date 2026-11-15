@@ -12,18 +12,18 @@ func TestDispatcherLookup(t *testing.T) {
 	root := supervisetest.NewRoot(t)
 	_, dispatcher := startDispatcher(t, root, time.Hour)
 	await(t, func() bool {
-		dispatcher.Current().Refresh()
-		return dispatcher.Current().Version("blue") == 1
+		dispatcher.Borrow().Refresh()
+		return dispatcher.Borrow().Version("blue") == 1
 	})
-	route := dispatcher.Current().Lookup("blue")
+	route := dispatcher.Borrow().Lookup("blue")
 	if !route.Available {
 		t.Fatal("ready pool was not returned")
 	}
-	result := route.Pool.Current().Process("Hello")
+	result := route.Pool.Borrow().Process("Hello")
 	if !result.Available || !result.Text.EqualString("HELLO") {
 		t.Fatal("returned pool did not process the request")
 	}
-	missing := dispatcher.Current().Lookup("missing")
+	missing := dispatcher.Borrow().Lookup("missing")
 	if missing.Available {
 		t.Fatal("unknown variant returned a pool")
 	}

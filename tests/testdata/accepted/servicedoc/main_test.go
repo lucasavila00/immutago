@@ -21,7 +21,7 @@ func TestFileCacheRefresh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cache.Current().Text(); !got.EqualString("initial\n") {
+	if got := cache.Borrow().Text(); !got.EqualString("initial\n") {
 		t.Fatalf("initial text = %q", got.Unsafe())
 	}
 	if err := os.WriteFile(path, []byte("updated\n"), 0600); err != nil {
@@ -29,7 +29,7 @@ func TestFileCacheRefresh(t *testing.T) {
 	}
 	deadline := time.Now().Add(5 * time.Second)
 	for {
-		text := cache.Current().Text()
+		text := cache.Borrow().Text()
 		if text.EqualString("updated\n") {
 			break
 		}

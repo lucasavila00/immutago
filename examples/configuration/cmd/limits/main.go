@@ -55,11 +55,11 @@ func run(path, key string) error {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			decision := limiter.Current().Take()
-			usage := limiter.Current().Usage()
+			decision := limiter.Borrow().Take()
+			usage := limiter.Borrow().Usage()
 			fmt.Printf("allowed=%t used=%d limit=%d window=%d\n",
 				decision == configuration.Allowed, usage.Used, usage.Limit, usage.Window)
-			if problem := loader.Current().Problem(); problem.Len() != 0 {
+			if problem := loader.Borrow().Problem(); problem.Len() != 0 {
 				fmt.Println("configuration:", problem.Unsafe())
 			}
 		}

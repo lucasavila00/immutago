@@ -10,11 +10,11 @@ func Count(root *supervise.Group) int {
 	if err != nil {
 		panic(err)
 	}
-	counter.Current().Update()
-	return counter.Current().Read().Count
+	counter.Borrow().Update()
+	return counter.Borrow().Read().Count
 }
 
 func route(pool supervise.Ref[service.Pool]) int {
-	selected := pool.Current().Route("worker")
-	return selected.Worker.Current().Count()
+	selected := pool.Borrow().Route("worker")
+	return selected.Worker.Borrow().Count()
 }

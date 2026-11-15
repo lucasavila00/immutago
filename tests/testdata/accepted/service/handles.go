@@ -28,4 +28,4 @@ type Route struct {
 
 func (p *Pool) Route(name string) Route { return Route{Worker: p.Worker(name)} }
 
-func UseRoute(route Route) int { return route.Worker.Current().Count() }
+func UseRoute(route Route) int { return route.Worker.Borrow().Count() }

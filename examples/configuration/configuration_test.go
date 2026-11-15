@@ -21,27 +21,27 @@ func TestLiveLimits(t *testing.T) {
 		t.Fatal(err)
 	}
 	for range 2 {
-		if limiter.Current().Take() != Allowed {
+		if limiter.Borrow().Take() != Allowed {
 			t.Fatal("initial quota was not available after Start")
 		}
 	}
-	if limiter.Current().Take() != Limited {
+	if limiter.Borrow().Take() != Limited {
 		t.Fatal("third request exceeded the initial quota")
 	}
-	before := limiter.Current().Usage()
+	before := limiter.Borrow().Usage()
 	writeLimits(t, path, `{"api":`)
-	waitFor(t, func() bool { return loader.Current().Problem().Len() != 0 })
-	if loader.Current().Limit("api") != 2 || loader.Current().Version() != 1 {
+	waitFor(t, func() bool { return loader.Borrow().Problem().Len() != 0 })
+	if loader.Borrow().Limit("api") != 2 || loader.Borrow().Version() != 1 {
 		t.Fatal("invalid configuration replaced the last valid limits")
 	}
 	writeLimits(t, path, `{"api":4}`)
-	waitFor(t, func() bool { return loader.Current().Limit("api") == 4 })
+	waitFor(t, func() bool { return loader.Borrow().Limit("api") == 4 })
 	for range 2 {
-		if limiter.Current().Take() != Allowed {
+		if limiter.Borrow().Take() != Allowed {
 			t.Fatal("reloaded quota was not available in the same window")
 		}
 	}
-	if limiter.Current().Take() != Limited {
+	if limiter.Borrow().Take() != Limited {
 		t.Fatal("request exceeded the reloaded quota")
 	}
 	if before.Used != 2 || before.Limit != 2 {
@@ -61,12 +61,12 @@ func TestLimiterWindow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if limiter.Current().Take() != Allowed {
+	if limiter.Borrow().Take() != Allowed {
 		t.Fatal("the initial quota was not available")
 	}
-	window := limiter.Current().Usage().Window
-	waitFor(t, func() bool { return limiter.Current().Usage().Window > window })
-	if limiter.Current().Take() != Allowed {
+	window := limiter.Borrow().Usage().Window
+	waitFor(t, func() bool { return limiter.Borrow().Usage().Window > window })
+	if limiter.Borrow().Take() != Allowed {
 		t.Fatal("the timer did not restore the quota")
 	}
 }
@@ -83,7 +83,7 @@ func TestConcurrentRequests(t *testing.T) {
 	}
 	results := make(chan bool, 40)
 	for range 40 {
-		go func() { results <- limiter.Current().Take() == Allowed }()
+		go func() { results <- limiter.Borrow().Take() == Allowed }()
 	}
 	accepted := 0
 	for range 40 {
@@ -109,7 +109,7 @@ func TestStartReservedRetry(t *testing.T) {
 	if err := supervise.StartReserved(root, cache, FileArgs{Path: path, Every: time.Millisecond}); err != nil {
 		t.Fatal(err)
 	}
-	if got := cache.Current().Text(); !got.EqualString(`{"api":3}`) {
+	if got := cache.Borrow().Text(); !got.EqualString(`{"api":3}`) {
 		t.Fatalf("initial contents = %q", got.Unsafe())
 	}
 }

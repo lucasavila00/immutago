@@ -95,7 +95,7 @@ const testRuntime = `package supervise
  func StartGroup(parent *Group) *Group { return nil }
  func (s *Group) Stop() <-chan struct{} { return nil }
  type Ref[T any] struct { value *T }
- func (p Ref[T]) Current() *T { return p.value }
+ func (p Ref[T]) Borrow() *T { return p.value }
  func Reserve[T any]() Ref[T] { return Ref[T]{} }
  func Start[T, A any, P interface{ *T; Run(context.Context); Init() error; bind(A) }](
   parent *Group, args A) (Ref[T], error) {

@@ -1,7 +1,7 @@
 # Service references
 
 `supervise.Ref[T]` identifies one service. Copy, store, or return the reference.
-Call an exported service method with `ref.Current().Method(args)`.
+Call an exported service method with `ref.Borrow().Method(args)`.
 Copies select the same service, including after a restart.
 
 ## Example: call a selected pool
@@ -10,9 +10,9 @@ The [worker project](../examples/workers/README.md) returns a pool reference ins
 a service result:
 
 ```go
-route := dispatcher.Current().Lookup("blue")
+route := dispatcher.Borrow().Lookup("blue")
 if route.Available {
-    result := route.Pool.Current().Process("Hello World")
+    result := route.Pool.Borrow().Process("Hello World")
     fmt.Println(result.Text.Unsafe())
 }
 ```
@@ -42,11 +42,16 @@ The examples use `WorkerRef`, an alias of `supervise.Ref[Worker]`.
 | Read native container sizes | `len(workers)`, `cap(workers)` |
 | Send, receive, or close a concrete channel | `ch <- ref`, `ref := <-ch`, `close(ch)` |
 | Copy, pass, or call callbacks with concrete reference parameters and results | `func use(ref WorkerRef, call func(WorkerRef)) { call(ref) }`, `next := produce; ref := next()` where produce has type `func() WorkerRef` |
-| Copy, pass, or return an interface with concrete reference parameters or results; keep the same interface type | `type Producer interface { Worker() WorkerRef }`, `type Consumer interface { Use(WorkerRef) }`, `next := producer` |
-| Call these interface methods | `producer.Worker().Current().Method()`, `consumer.Use(ref)` |
-| Capture a reference in a closure | `call := func() { ref.Current().Method() }` |
-| Call an exported service method directly, including in go or defer | `ref.Current().Method()`, `go ref.Current().Method()`, `defer ref.Current().Method()` |
-| Add parentheses to a direct call | `((ref.Current)()).Method()` |
+| Copy, pass, or return an interface with concrete reference parameters or results | `type Producer interface { Worker() WorkerRef }`, `type Consumer interface { Use(WorkerRef) }`, `next := producer` |
+| Convert a reference or any value that contains references to an interface, explicitly or implicitly | `var value any = ref`, `any(ref)`, `consume(ref)` where consume takes any, `return ref` from a function that returns any, `struct{ Value any }{ref}` |
+| Convert holders, embedded references, native containers, or callbacks to interfaces | `any(struct{ Worker WorkerRef }{ref})`, `any(struct{ WorkerRef }{ref})`, `any([]WorkerRef{ref})`, `any(func() WorkerRef { return ref })` |
+| Convert between interfaces, including different reference method contracts | `var value any = producer`, `Producer(value.(Producer))` |
+| Recover a reference or a value that contains references from an interface | `ref := value.(WorkerRef)`, `ref, ok := value.(WorkerRef)`, `switch ref := value.(type) { case WorkerRef: use(ref) }` |
+| Use interface destinations in native storage, comparisons, switches, and range bindings | `ch <- ref` where ch has type chan any, `map[any]any{ref: ref}`, `ref == value`, `switch value { case ref: use(ref) }`, `for _, value = range workers { use(value) }` where value has type any |
+| Call these interface methods | `producer.Worker().Borrow().Method()`, `consumer.Use(ref)` |
+| Capture a reference in a closure | `call := func() { ref.Borrow().Method() }` |
+| Call an exported service method directly, including in go or defer | `ref.Borrow().Method()`, `go ref.Borrow().Method()`, `defer ref.Borrow().Method()` |
+| Add parentheses to a direct call | `((ref.Borrow)()).Method()` |
 
 Fixed `im` and `supervise` generic APIs are allowed. User generic type arguments
 cannot contain references, including in fields, interfaces, or callback types.
@@ -64,34 +69,44 @@ before a closure, go, or defer uses it:
 
 ```go
 pool := route.Pool
-go pool.Current().Process("Hello")
+go pool.Borrow().Process("Hello")
 ```
 
-## Current calls — exhaustive
+## Borrow calls — exhaustive
 
 | Form | Rule |
 | --- | --- |
-| `ref.Current().Method(args)` | Method is an exported service method, including a promoted method, other than Init, Run, or a method supplied by the runtime. It returns no result or one [service result](service-results.md). |
+| `ref.Borrow().Method(args)` | Method is an exported service method, including a promoted method, other than Init, Run, or a method supplied by the runtime. It returns no result or one [service result](service-results.md). |
 
-The checker rejects every other use of `Current`, despite its Go return type
-of `*T`. Current panics for an empty or unstarted reference. Each call selects the
+For direct Ref calls, the checker rejects every other use of `Borrow`, despite
+its Go return type of `*T`. Borrow panics for an empty or unstarted reference. Each call selects the
 last successfully initialized service; a call in progress finishes on that instance.
+Borrow is shared, not exclusive. Nothing is returned or released.
+
+Interface conversion can expose the service pointer outside this checked call
+form. This is accepted, including when an embedded Ref promotes Borrow:
+
+```go
+var selected interface{ Borrow() *Worker } = ref
+pointer := selected.Borrow()
+```
+
+The direct Ref call rule does not apply to this interface call. Review any saved
+service pointers and their use across restarts in the service code.
 
 ## Rejected examples — non-exhaustive
 
 | Rejected | Use instead |
 | --- | --- |
-| `worker := ref.Current()` | Keep `ref`; call `ref.Current().Method()` each time. |
-| `ref.Current().Count`, `*ref.Current() = Worker{}` | Add an exported service method for the operation. |
-| `current := ref.Current`, `method := ref.Current().Method` | Use a closure that captures the reference and makes the direct method call. |
-| `supervise.Ref[Worker].Current(ref)` | `ref.Current().Method()` |
-| `ref.Current().Init()`, `ref.Current().Run(ctx)`, `ref.Current().Args()` | Initialize through Start; expose needed data through an exported service method. |
+| `worker := ref.Borrow()` | Keep `ref`; call `ref.Borrow().Method()` each time. |
+| `ref.Borrow().Count`, `*ref.Borrow() = Worker{}` | Add an exported service method for the operation. |
+| `current := ref.Borrow`, `method := ref.Borrow().Method` | Use a closure that captures the reference and makes the direct method call. |
+| `supervise.Ref[Worker].Borrow(ref)` | `ref.Borrow().Method()` |
+| `ref.Borrow().Init()`, `ref.Borrow().Run(ctx)`, `ref.Borrow().Args()` | Initialize through Start; expose needed data through an exported service method. |
 | `func read(WorkerRef) int` without a body | Supply a Go body so its reference use can be checked. |
-| `var value any = ref`, `identity(ref)` with generic identity | Use a concrete `supervise.Ref[Worker]` parameter. |
-| `WorkerRef(other)`, `value.(WorkerRef)` | Copy a value that already has type `WorkerRef`. |
-| `var value any = produce` where produce returns WorkerRef | Keep the callback's concrete function type. |
-| `var value any = producer` | Keep the exact `Producer` interface type. |
-| `wrapper.Current()` through an embedded Ref | Select the reference field: `wrapper.Ref.Current().Method()`. |
+| `identity(ref)` with generic identity | Use a concrete `supervise.Ref[Worker]` parameter, or first convert to an interface. |
+| `WorkerRef(other)` where other has a different defined concrete type | Use a reference type alias and copy the value. |
+| `wrapper.Borrow()` through an embedded Ref | Select the reference field: `wrapper.Ref.Borrow().Method()`. |
 
 ## What the reference rule does not check
 

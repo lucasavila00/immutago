@@ -7,7 +7,7 @@
 //   - Start calls Init, returns Ref[T], and schedules Run in a managed goroutine.
 //
 // Call a service:
-//   - Keep the Ref and use ref.Current().Method().
+//   - Keep the Ref and use ref.Borrow().Method().
 //   - Calls run in the caller's goroutine and can overlap with Run and other calls.
 //     Synchronize access to mutable fields.
 //   - Each exported service method returns no result or one service result:
@@ -41,7 +41,7 @@
 //     to the parent group. The parent restarts that group under the same rules.
 //     Failure at the root panics and ends the program.
 //   - NewRoot can report recovered panics and restart Init errors before each delay.
-//   - Current selects the last published value, even during delays and after stop.
+//   - Borrow selects the last published value, even during delays and after stop.
 //     Calls in progress finish on their selected value.
 //   - A direct call's panic stays in its goroutine. Calls from Run or a restart
 //     Init can fail that attempt. The first Init panic reaches the Start caller.
@@ -66,7 +66,7 @@ const (
 // Embed Service[A] to supply start arguments and runtime methods; add
 // Run(context.Context) for background work. Start and StartReserved create and
 // initialize each service value.
-// Call an exported service method with ref.Current().Method(args).
+// Call an exported service method with ref.Borrow().Method(args).
 type Service[A any] struct {
 	args     A
 	report   func(value any, stack []byte)
@@ -85,7 +85,7 @@ type Service[A any] struct {
 func (p *Service[A]) Args() A { return p.args }
 
 // Init supplies successful empty setup when the service does not declare Init.
-// The runtime calls Init on each fresh value before Current or Run can use it.
+// The runtime calls Init on each fresh value before Borrow or Run can use it.
 // A declared Init must release any application resources it opened before
 // returning an error; the runtime stops staged children.
 func (*Service[A]) Init() error { return nil }
@@ -235,15 +235,17 @@ type Ref[T any] struct {
 	value *atomic.Pointer[T]
 }
 
-// Current selects the last successfully initialized service value with one atomic load.
-// The analyzer accepts only ref.Current().Method(args). Method must be an
-// exported service method other than Init, Run, or a runtime method. The analyzer
-// rejects saving the pointer, the Current method, or the selected method.
+// Borrow selects the last successfully initialized service value with one atomic load.
+// For direct Ref calls, the analyzer accepts only ref.Borrow().Method(args).
+// Method must be exported and must not be Init, Run, or a runtime method.
+// Direct calls cannot save the pointer, Borrow method, or selected method.
+// Interface calls can expose the pointer without these source checks.
+// Borrow is shared, not exclusive. Nothing is returned or released.
 // A call in progress finishes on its selected instance, even after a restart.
 //
-// Current panics for an empty or unstarted reference. It can select a value whose
+// Borrow panics for an empty or unstarted reference. It can select a value whose
 // Run has ended. Stop does not invalidate the reference or block later calls.
-func (p Ref[T]) Current() *T {
+func (p Ref[T]) Borrow() *T {
 	value := p.value.Load()
 	if value == nil {
 		panic("supervise: Ref not started")
@@ -253,7 +255,7 @@ func (p Ref[T]) Current() *T {
 
 // Reserve creates a reference that StartReserved can initialize later. Use it
 // to connect services whose start arguments need each other's references.
-// Current panics until initialization succeeds.
+// Borrow panics until initialization succeeds.
 func Reserve[T any]() Ref[T] { return Ref[T]{value: new(atomic.Pointer[T])} }
 
 // NewRoot creates a running root group. A failure that reaches this group

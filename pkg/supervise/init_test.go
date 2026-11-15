@@ -52,7 +52,7 @@ func expectInitEnded(t *testing.T, p *initializing) {
 	}
 }
 
-// TestInitBeforePublication keeps Current and Run unavailable until Init succeeds.
+// TestInitBeforePublication keeps Borrow and Run unavailable until Init succeeds.
 func TestInitBeforePublication(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
@@ -71,7 +71,7 @@ func TestInitBeforePublication(t *testing.T) {
 		}
 		go func() { result <- StartReserved(root, ref, AssumeConcurrentSafe(hooks)) }()
 		<-entered
-		expectPanic(t, "supervise: Ref not started", func() { ref.Current() })
+		expectPanic(t, "supervise: Ref not started", func() { ref.Borrow() })
 		select {
 		case <-ran:
 			t.Fatal("Run started before Init returned")
@@ -81,8 +81,8 @@ func TestInitBeforePublication(t *testing.T) {
 		if err := <-result; err != nil {
 			t.Fatal(err)
 		}
-		if ref.Current().state != 17 || <-ran != 17 {
-			t.Fatal("Init state was not published to Current and Run")
+		if ref.Borrow().state != 17 || <-ran != 17 {
+			t.Fatal("Init state was not published to Borrow and Run")
 		}
 		<-root.Stop()
 	})
@@ -101,12 +101,12 @@ func TestInitErrorAndRetry(t *testing.T) {
 		if err := StartReserved(root, ref, AssumeConcurrentSafe(hooks)); err != failure {
 			t.Fatalf("StartReserved error = %v", err)
 		}
-		expectPanic(t, "supervise: Ref not started", func() { ref.Current() })
+		expectPanic(t, "supervise: Ref not started", func() { ref.Borrow() })
 		hooks.init = func(p *initializing) error { p.state = 3; return nil }
 		if err := StartReserved(root, ref, AssumeConcurrentSafe(hooks)); err != nil {
 			t.Fatal(err)
 		}
-		if ref.Current().state != 3 {
+		if ref.Borrow().state != 3 {
 			t.Fatal("retry did not publish its initialized value")
 		}
 		<-root.Stop()
@@ -170,7 +170,7 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	if mode == "Goexit" && (err != nil || panicValue != nil) {
 		t.Fatalf("Goexit became an error or panic: %v, %v", err, panicValue)
 	}
-	expectPanic(t, "supervise: Ref not started", func() { ref.Current() })
+	expectPanic(t, "supervise: Ref not started", func() { ref.Borrow() })
 	for _, candidate := range candidates {
 		expectInitEnded(t, candidate)
 	}
@@ -182,7 +182,7 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	if lateErr != nil {
 		t.Fatal(lateErr)
 	}
-	expectInitEnded(t, late.Current())
+	expectInitEnded(t, late.Borrow())
 	if len(nested.children) != retained {
 		t.Error("failed Init left a nested group that retains late children")
 	}
@@ -238,7 +238,7 @@ func TestInitConcurrentStarts(t *testing.T) {
 			t.Fatalf("concurrent results = %v, %v", a, b)
 		}
 		loser := first
-		if ref.Current() == first {
+		if ref.Borrow() == first {
 			loser = second
 		}
 		expectInitEnded(t, loser)
@@ -246,7 +246,7 @@ func TestInitConcurrentStarts(t *testing.T) {
 			t.Fatalf("parent has %d entries, want 1", len(parent.children))
 		}
 		<-parent.Stop()
-		expectInitEnded(t, ref.Current())
+		expectInitEnded(t, ref.Borrow())
 	})
 }
 
@@ -280,21 +280,21 @@ func TestInitRestartFailures(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		before := ref.Current()
+		before := ref.Borrow()
 		if value := <-reports; value != "first run" {
 			t.Fatalf("first failure = %v", value)
 		}
 		time.Sleep(time.Second)
-		if value := <-reports; value != failure || ref.Current() != before {
-			t.Fatalf("Init error = %v; Ref changed = %t", value, ref.Current() != before)
+		if value := <-reports; value != failure || ref.Borrow() != before {
+			t.Fatalf("Init error = %v; Ref changed = %t", value, ref.Borrow() != before)
 		}
 		time.Sleep(2 * time.Second)
-		if value := <-reports; value != panicValue || ref.Current() != before {
-			t.Fatalf("Init panic = %v; Ref changed = %t", value, ref.Current() != before)
+		if value := <-reports; value != panicValue || ref.Borrow() != before {
+			t.Fatalf("Init panic = %v; Ref changed = %t", value, ref.Borrow() != before)
 		}
 		time.Sleep(4 * time.Second)
 		synctest.Wait()
-		if ref.Current() == before || ref.Current().state != 4 || attempts.Load() != 4 {
+		if ref.Borrow() == before || ref.Borrow().state != 4 || attempts.Load() != 4 {
 			t.Fatal("successful restart did not publish its initialized value")
 		}
 		<-root.Stop()
@@ -321,9 +321,9 @@ func TestInitRestartErrorsEscalate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		before := ref.Current()
+		before := ref.Borrow()
 		time.Sleep(31 * time.Second)
-		if value := <-escalated; value != failure || attempts.Load() != 6 || ref.Current() != before {
+		if value := <-escalated; value != failure || attempts.Load() != 6 || ref.Borrow() != before {
 			t.Fatalf("escalation = %v, attempts = %d", value, attempts.Load())
 		}
 		<-parent.Stop()
@@ -351,12 +351,12 @@ func TestInitRestartGoexit(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		before := ref.Current()
+		before := ref.Borrow()
 		time.Sleep(time.Second)
 		candidate := <-candidates
 		synctest.Wait()
 		expectInitEnded(t, candidate)
-		if ref.Current() != before {
+		if ref.Borrow() != before {
 			t.Fatal("Goexit published its candidate")
 		}
 		<-root.Stop()
@@ -384,12 +384,12 @@ func TestInitStopBeforePublication(t *testing.T) {
 		go func() { result <- StartReserved(root, ref, AssumeConcurrentSafe(hooks)) }()
 		candidate := <-entered
 		<-root.Stop()
-		expectPanic(t, "supervise: Ref not started", func() { ref.Current() })
+		expectPanic(t, "supervise: Ref not started", func() { ref.Borrow() })
 		close(release)
 		if err := <-result; err != nil {
 			t.Fatal(err)
 		}
-		if ref.Current() != candidate || runs.Load() != 0 {
+		if ref.Borrow() != candidate || runs.Load() != 0 {
 			t.Fatal("first Init did not keep the stopped-parent start contract")
 		}
 		expectInitEnded(t, candidate)
@@ -419,7 +419,7 @@ func TestInitStopDuringRestart(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		before := ref.Current()
+		before := ref.Borrow()
 		time.Sleep(time.Second)
 		candidate := <-entered
 		stopped := root.Stop()
@@ -431,7 +431,7 @@ func TestInitStopDuringRestart(t *testing.T) {
 		}
 		close(release)
 		<-stopped
-		if ref.Current() != before || runs.Load() != 1 {
+		if ref.Borrow() != before || runs.Load() != 1 {
 			t.Fatal("stopped restart published or ran its candidate")
 		}
 		expectInitEnded(t, candidate)
@@ -448,12 +448,12 @@ func TestInitPendingRelaunch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		before := ref.Current()
+		before := ref.Borrow()
 		parent.halt()
 		expectInitEnded(t, before)
 		go parent.serve(context.Background())
 		synctest.Wait()
-		if ref.Current() == before || ref.Current().state != 2 {
+		if ref.Borrow() == before || ref.Borrow().state != 2 {
 			t.Fatal("parent relaunched an ended candidate")
 		}
 		<-parent.Stop()
@@ -501,7 +501,7 @@ func TestInitUnderStoppedGroups(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			expectInitEnded(t, ref.Current())
+			expectInitEnded(t, ref.Borrow())
 			if len(group.children) != 0 {
 				t.Fatal("group under a stopped parent retains a late candidate")
 			}

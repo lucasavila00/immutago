@@ -5,15 +5,10 @@ package service
 import "github.com/lucasavila00/immutago/pkg/supervise"
 
 func extract(ref supervise.Ref[Counter]) {
-	current := ref.Current
+	current := ref.Borrow
 	_ = current()
-	pointer := ref.Current()
+	pointer := ref.Borrow()
 	*pointer = Counter{}
 }
 
-func erase(ref supervise.Ref[Counter]) {
-	var hidden any = ref
-	_ = hidden
-}
-
-func overwrite(ref supervise.Ref[Counter]) { *ref.Current() = Counter{} }
+func overwrite(ref supervise.Ref[Counter]) { *ref.Borrow() = Counter{} }
