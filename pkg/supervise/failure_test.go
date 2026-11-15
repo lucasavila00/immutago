@@ -17,12 +17,24 @@ type failureLeaf struct{ Service[error] }
 // Run fails on each attempt.
 func (s *failureLeaf) Run(context.Context) { panic(s.Args()) }
 
-// failureParent owns a child that always fails.
-type failureParent struct{ Service[error] }
+// failureTreeArgs sets the parent depth above one failing leaf.
+type failureTreeArgs struct {
+	depth int
+	cause error
+}
+
+// failureParent owns another parent or the failing leaf.
+type failureParent struct{ Service[failureTreeArgs] }
 
 // Init creates the child before its parent starts running.
 func (s *failureParent) Init() error {
-	_, err := Start[failureLeaf](s.Children(), s.Args())
+	args := s.Args()
+	if args.depth > 0 {
+		args.depth--
+		_, err := Start[failureParent](s.Children(), args)
+		return err
+	}
+	_, err := Start[failureLeaf](s.Children(), args.cause)
 	return err
 }
 
@@ -71,7 +83,7 @@ func checkFailureOrigin(t *testing.T, shape string, reporting bool) {
 	}
 	var err error
 	if shape == "service" {
-		_, err = Start[failureParent](parent, cause)
+		_, err = Start[failureParent](parent, failureTreeArgs{depth: 3, cause: cause})
 	} else {
 		_, err = Start[failureLeaf](parent, cause)
 	}
