@@ -1,7 +1,7 @@
 # Storage and ownership
 
-`FreezeSlice` and `FreezeMap` retain native handles. The analyzer must remove
-mutable aliases before the runtime shares that storage.
+`FreezeSlice` and `FreezeMap` retain native handles. The analyzer requires one
+mutable builder handle before the runtime shares that storage.
 
 ## From a native builder to frozen storage
 
@@ -97,7 +97,7 @@ getters and indexed array readers.
 [The analyzer verifies the output](../../pkg/analyzer/generation.go) before source checks:
 
 1. Generate expected bytes from the current types.
-2. Compare the complete file after CRLF normalization.
+2. Compare the complete `zz_immutago.gen.go` after CRLF normalization.
 3. Record its physical token file, unaffected by line directives.
 4. Permit `Projection.Read` and interior Frozen-record addresses only in that file.
 
