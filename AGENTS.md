@@ -130,6 +130,10 @@ Use compiler-resolved types and the recursive categories in [type rules](docs/ty
 Frozen fields, Cell[T], and Projection[T] use one Frozen proof. Local fields and
 service outputs use one ReadResult proof. Copy and local Clone use Copied.
 Do not add a service-only field proof or a context-dependent marker meaning.
+Copied permits only booleans, numbers, unnamed arrays of Copied values, and
+opaque service references. Frozen records and the Frozen marker are not Copied,
+even when their fields contain only numbers. Struct results require Local or a
+generated projection.
 
 Frozen and Local fields are immutable from construction. Local values cannot
 enter persistent storage, including through nested records or arrays. Local

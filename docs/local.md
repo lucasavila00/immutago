@@ -16,7 +16,9 @@ func prediction(name string, score float64) Prediction {
 ```
 
 Its fields must be [read results](types.md). Copying the record keeps the local
-restriction. It does not copy the name bytes.
+restriction. It does not copy the name bytes. A Frozen record is not a read
+result, even when all its fields are numbers. Use its generated projection or
+copy its numeric fields into a Local record.
 
 | Allowed forms — exhaustive | Example |
 | --- | --- |

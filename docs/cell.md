@@ -82,7 +82,7 @@ Generated Cell.Load uses the raw LoadPointer method.
 | `read := settings.Load` | `projection := settings.Load()` |
 | `go settings.Store(next)` or `defer cache.Read()` | Call synchronously; use `go publish(cache)` for a named publisher. |
 | `im.Cell[LocalResult]` | Store Frozen data; build local projections when reading. |
-| Return `settings.Shared()` from a service when it contains a string | Return `settings.Load()`. |
+| Return `settings.Shared()` from a service | Return `settings.Load()`. |
 
 Store allocates one root for T with nonzero size. Generated Load performs one
 atomic load without a record copy or allocation. Shared copies T after one

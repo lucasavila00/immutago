@@ -75,7 +75,7 @@ IsNil, and immutagoProjection conflict with generated members and are rejected.
 
 | Field type | Generated result |
 | --- | --- |
-| Copied scalar, marker, or service reference | The field's own type, such as `int` or `supervise.Ref[Worker]`. |
+| Copied scalar or service reference | The field's own type, such as `int` or `supervise.Ref[Worker]`. |
 | Native string or FrozenString | `im.StringProjection`. |
 | FrozenSlice[E] | `im.SliceProjection[E]`. |
 | FrozenMap[K,V] | `im.MapProjection[K,V]`. |
@@ -83,8 +83,8 @@ IsNil, and immutagoProjection conflict with generated members and are rejected.
 | Unnamed array | A typed projection with Len and At; At uses this same result table. |
 | UncheckedValue[T] | Opaque `im.Projection[im.UncheckedValue[T]]`. |
 
-Record and array fields return projections even when their types are Copied. A
-field read does not copy the containing record or array. Reading a field through
+Record and array fields return projections, including arrays of Copied values.
+A field read does not copy the containing record or array. Reading a field through
 a nil projection panics. Array At panics if the index is out of range.
 
 Cell placement follows the [Cell rules](cell.md). Generated code uses the

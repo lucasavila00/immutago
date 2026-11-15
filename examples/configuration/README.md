@@ -11,8 +11,8 @@ Three services turn a JSON file into a request quota:
 The services use `supervise.Ref` to call each other. Calls run in the caller's
 goroutine. Each service protects its own mutable fields.
 Their [service results](../../docs/service-results.md) are local string projections,
-integer decisions, or the Copied `Usage` record. Callers can keep copied values;
-Clone gives independent text bytes.
+integer decisions, or the Local `Usage` record. Callers can keep its numeric
+fields; Clone gives independent text bytes.
 
 ## Run
 

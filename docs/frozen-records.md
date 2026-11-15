@@ -33,4 +33,4 @@ SettingsProjection and SettingsCell from this declaration.
 | --- | --- |
 | `settings.Limit = 200` | Construct another Settings value. |
 | `p := &settings` | `p := new(settings)`; copy into fresh storage. |
-| Return Settings from a service when it contains string storage | Return SettingsProjection. |
+| Return Settings from a service, including a record with only numeric fields | Return SettingsProjection or an im.Local result. |

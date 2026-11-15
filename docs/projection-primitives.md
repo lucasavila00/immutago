@@ -74,8 +74,10 @@ interfaces, callbacks, closures, user generics, go, or defer.
 | `raw.Read().Limit` with `raw im.Projection[*Settings]` | `NewSettingsProjection(raw).Limit()` |
 | `im.ProjectionOf(1).Read()` | `im.Copy(im.ProjectionOf(1))` |
 | `im.Copy(im.ProjectionOf("text"))` | Use StringProjection; use Unsafe for a shared native string or Clone for independent storage. |
+| `im.Copy(record)` with `record im.Projection[Settings]`, including a record with only numeric fields | Use a generated projection and read its fields. |
 | Save a projection in a global | Clone or Copy the data to keep. |
 | Clone a projection of a string-key map | Iterate; Clone each key and copy each value into a new map. |
+| Clone a slice or map projection with Frozen record elements | Read record projections and copy the required fields into new data. |
 | Capture a projection in a closure | Extract Copied fields or independent copies first. |
 
 Projection creation copies T, not its backing storage. Large records therefore have

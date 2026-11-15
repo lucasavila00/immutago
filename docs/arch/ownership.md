@@ -15,6 +15,9 @@ Go type and proof category. The same cached obligations serve all consumers.
 Frozen and Local markers set one field rule each. API names and service
 context do not change those rules. Ordinary functions can return shared
 Frozen values; APIs that require read results accept only Copied or Local types.
+Copied contains booleans, numbers, unnamed arrays of Copied values, and opaque
+service references. It excludes Frozen records and the Frozen marker. Local
+fields and service results both use this boundary.
 
 ## Source matching
 
