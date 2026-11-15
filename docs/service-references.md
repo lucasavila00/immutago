@@ -9,8 +9,13 @@ Copies select the same service, including after a restart.
 The zero `Ref` is the unset value. Use `IsZero` to test an optional reference:
 
 ```go
-if !r.cache.IsZero() {
-    r.cache.Borrow().Get(key)
+type optionalRoute struct{ cache supervise.Ref[Counter] }
+
+func optionalCount(r optionalRoute) int {
+    if !r.cache.IsZero() {
+        return r.cache.Borrow().Count()
+    }
+    return 0
 }
 ```
 
@@ -153,6 +158,7 @@ account for restarts when they save a service pointer.
 | `current := ref.Borrow`, `method := ref.Borrow().Method` | Use a closure that captures the reference and makes the direct method call. |
 | `supervise.Ref[Worker].Borrow(ref)` | `ref.Borrow().Method()` |
 | `ref.Borrow().Init()`, `ref.Borrow().Run(ctx)`, `ref.Borrow().Args()` | Initialize through Start; expose needed data through an exported service method. |
+| `route.Worker.IsZero()` where route is a marked object | Copy the field first: `ref := route.Worker; ref.IsZero()`. |
 | `func read(WorkerRef) int` without a body | Supply a Go body so its reference use can be checked. |
 | `identity(ref)` with generic identity | Use a concrete `supervise.Ref[Worker]` parameter, or pass `identity(any(ref))`. |
 | `WorkerRef(other)` where other has a different defined concrete type | Use a reference type alias and copy the value. |
