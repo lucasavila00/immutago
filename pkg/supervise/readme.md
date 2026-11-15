@@ -19,10 +19,10 @@ Call a service:
 
 - Keep the Ref and use ref.Current\(\).Method\(\).
 - Calls run in the caller's goroutine and can overlap with Run and other calls. Synchronize access to mutable fields.
-- Each exported user method except Init and Run returns nothing or one Scoped result: a primitive, an array of compatible values, or a struct with im.Scoped. This includes promoted user methods. The runtime's own methods are exempt. The analyzer rejects top\-level pointers and mutable result types.
+- Each exported user method except Init and Run returns nothing or one Scoped result: a scalar, a Ref, an im.Scoped struct with immutable fields, or an unnamed array of allowed result types. This includes promoted user methods. The runtime's own methods are exempt. Other result types are rejected.
 - Arguments and implementation code follow ordinary Go rules. Uses of im values keep their immutability and pointer rules.
 
-Review state changes, locks, saved inputs, and dependency calls in the service code. Immutable results do not prove service isolation.
+Service methods can give callbacks or globals access to mutable state. Review state changes, locks, saved inputs, and dependency calls in the service code.
 
 ### Groups and shutdown
 
@@ -135,7 +135,7 @@ type NoArgs struct{}
 
 ## type Ref
 
-Ref is a typed reference to the current value of one service. Copies refer to the same service, including after its restart replaces the value. Start returns an initialized reference. Reserve creates one for later startup; a zero Ref is empty and cannot be used in place of Reserve.
+Ref is a handle to one service. Copies select the same service, including after a restart. The analyzer requires T to be a concrete struct that embeds Service. Handles can be stored in immutable fields and returned as Scoped results; the service state can still change. Start returns an initialized handle. Reserve creates one for later startup; a zero Ref is empty and cannot be used in place of Reserve.
 
 ```go
 type Ref[T any] struct {
@@ -174,13 +174,13 @@ An Init error returns an empty Ref and that error. An Init panic reaches the cal
 func (p Ref[T]) Current() *T
 ```
 
-Current selects the last successfully initialized service value with one atomic load. A saved pointer keeps selecting that value after a restart; call Current again to select the replacement.
+Current selects the last successfully initialized service value with one atomic load. The analyzer accepts only ref.Current\(\).Message\(args\). Message must be an exported user method other than Init or Run. The analyzer rejects saving the pointer, the Current method, or the message method. A call in progress finishes on its selected instance, even after a restart.
 
 Current panics for an empty or unstarted reference. It can return a value whose Run has ended. Stop does not invalidate the reference or block later calls.
 
 ## type Service
 
-Service supplies the arguments and child group of a supervised service. Embed Service\[A\] to supply start arguments and runtime methods; add Run\(context.Context\) for background work. Start and StartReserved create and initialize each service value. Ref.Current selects the current value; a saved pointer keeps that value.
+Service supplies the arguments and child group of a supervised service. Embed Service\[A\] to supply start arguments and runtime methods; add Run\(context.Context\) for background work. Start and StartReserved create and initialize each service value. Call a message with ref.Current\(\).Message\(args\).
 
 ```go
 type Service[A any] struct {
