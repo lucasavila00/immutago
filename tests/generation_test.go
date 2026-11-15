@@ -53,7 +53,10 @@ func TestGenerationContract(t *testing.T) {
 	for _, test := range []struct{ name, source string }{
 		{"generated_write", `func illegal(value DataProjection) { value.immutagoProjection.Unsafe().Number = 1 }`},
 		{"generated_string", `func illegal(value DataProjection) string { return value.immutagoProjection.Unsafe().Text }`},
-		{"generated_slice", `func illegal(value DataProjection) []int { return value.immutagoProjection.Unsafe().Values[:] }`},
+		{
+			"generated_slice",
+			`func illegal(value DataProjection) []int { return value.immutagoProjection.Unsafe().Values[:] }`,
+		},
 		{"generated_address", `func illegal(value DataProjection) *int { return &value.immutagoProjection.Unsafe().Number }`},
 	} {
 		writeFile(t, outputPath, string(generated)+"\n"+test.source+"\n")

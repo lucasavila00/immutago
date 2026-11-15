@@ -103,7 +103,8 @@ func (g *generator) writeRecord(out *bytes.Buffer, item record) error {
 		if field.Name() == "_" || checker.IsLibraryType(field.Type(), "Frozen") {
 			continue
 		}
-		if field.Name() == "Local" || field.Name() == "immutagoProjection" || field.Name() == "IsNil" || field.Name() == "Unsafe" {
+		if field.Name() == "Local" || field.Name() == "immutagoProjection" ||
+			field.Name() == "IsNil" || field.Name() == "Unsafe" {
 			return fmt.Errorf("%s.%s conflicts with a generated projection member", source, field.Name())
 		}
 		if err := g.writeField(out, item, field); err != nil {
