@@ -38,7 +38,7 @@ func (r *Reader) Init() error {
 	}
 	defer func() { _ = file.Close() }()
 	scan := logScan{}
-	if err := scan.read(bufio.NewReader(file), args); err != nil {
+	if err := scan.read(context.Background(), bufio.NewReader(file), args); err != nil {
 		return err
 	}
 	r.current.Store(scan.totals)
@@ -62,7 +62,10 @@ func (r *Reader) Run(ctx context.Context) {
 	scan := logScan{}
 	notify(args.Updates)
 	for {
-		if err := scan.read(stream, args); err != nil {
+		if err := scan.read(ctx, stream, args); err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			panic(fmt.Errorf("read %s: %w", args.Path, err))
 		}
 		if scan.totals != r.current.LoadShared() {
@@ -88,8 +91,11 @@ type logScan struct {
 }
 
 // read consumes complete rows through the current end of the append-only stream.
-func (s *logScan) read(reader *bufio.Reader, args ReaderArgs) error {
+func (s *logScan) read(ctx context.Context, reader *bufio.Reader, args ReaderArgs) error {
 	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		part, err := reader.ReadString('\n')
 		s.partial += part
 		if err != nil {
