@@ -28,7 +28,7 @@ func FrozenInterfaceSeal(method *types.Func) bool {
 	return method.Pkg() != nil && method.Pkg().Path() == LibraryPath && method.Name() == "immutagoFrozen"
 }
 
-// frozenInterface proves a named contract with exported methods and fixed inputs.
+// frozenInterface proves a named contract with exported methods.
 func (p *proof) frozenInterface(result *obligation, t types.Type) {
 	if !FrozenInterface(t) {
 		result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
@@ -54,11 +54,6 @@ func (p *proof) frozenInterface(result *obligation, t types.Type) {
 		}
 		if !method.Exported() {
 			result.reason = "Frozen interface methods must be exported"
-			return
-		}
-		signature := method.Type().(*types.Signature)
-		if signature.Variadic() {
-			result.reason = "Frozen interface methods require fixed parameters"
 			return
 		}
 	}
