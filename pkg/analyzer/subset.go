@@ -146,12 +146,6 @@ func libraryObject(obj types.Object) bool {
 	return obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == checker.LibraryPath
 }
 
-// stringType permits immutable string slices even when the string belongs to a marked owner.
-func stringType(t types.Type) bool {
-	basic, ok := t.Underlying().(*types.Basic)
-	return ok && basic.Info()&types.IsString != 0
-}
-
 // subsetContainer checks the three native container forms excluded from immutable storage.
 func (c *subsetChecks) subsetContainer(t types.Type) string {
 	switch u := t.(type) {

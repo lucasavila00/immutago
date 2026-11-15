@@ -15,7 +15,7 @@ func nilBuilders() {
 	values = append(values, 1)
 	frozen := im.FreezeSlice(values)
 	println(frozen.At(0))
-	var scores map[string]int = nil
+	var scores map[int]int = nil
 	_ = im.FreezeMap(scores)
 	var named nilInts
 	_ = im.FreezeSlice(named)
@@ -23,6 +23,6 @@ func nilBuilders() {
 	objects = append(objects, nilShared{N: 2})
 	_ = im.FreezeSlice(objects)
 	_ = im.FreezeSlice[int](nil)
-	_ = im.FreezeMap[string, int](nil)
+	_ = im.FreezeMap[int, int](nil)
 	_ = im.FreezeSlice[nilShared]((nil))
 }

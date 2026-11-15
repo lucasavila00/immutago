@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	names := im.FreezeSlice([]string{"blue", "green"})
+	names := im.FreezeSlice([]im.FrozenString{im.FreezeString("blue"), im.FreezeString("green")})
 	config.Current().Set(names)
 	dispatcher, err := supervise.Start[workers.Dispatcher](root, workers.DispatcherArgs{
 		Config: config, Workers: 2, Every: time.Millisecond,
@@ -28,21 +28,21 @@ func main() {
 	dispatcher.Current().Refresh()
 	waitVersion(dispatcher, "blue", 1)
 	first := dispatcher.Current().Process("blue", "Hello World")
-	fmt.Printf("blue v%d: %s\n", first.Version, first.Text)
+	fmt.Printf("blue v%d: %s\n", first.Version, first.Text.Clone())
 	if !dispatcher.Current().Load("blue", 2) {
 		panic("version 2 did not start")
 	}
 	waitVersion(dispatcher, "blue", 2)
 	next := dispatcher.Current().Process("blue", "Hello World")
-	fmt.Printf("blue v%d: %s\n", next.Version, next.Text)
-	names = im.FreezeSlice([]string{"green"})
+	fmt.Printf("blue v%d: %s\n", next.Version, next.Text.Clone())
+	names = im.FreezeSlice([]im.FrozenString{im.FreezeString("green")})
 	config.Current().Set(names)
 	dispatcher.Current().Refresh()
 	removed := dispatcher.Current().Process("blue", "unused")
 	fmt.Printf("blue removed: %t\n", !removed.Available)
 	waitVersion(dispatcher, "green", 1)
 	remaining := dispatcher.Current().Process("green", "Still Running")
-	fmt.Printf("green v%d: %s\n", remaining.Version, remaining.Text)
+	fmt.Printf("green v%d: %s\n", remaining.Version, remaining.Text.Clone())
 	<-root.Stop()
 }
 

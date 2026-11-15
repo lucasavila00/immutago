@@ -73,7 +73,8 @@ func (d *Dispatcher) Refresh() int {
 	}
 	wanted := make(map[string]bool)
 	snapshot := d.Args().Config.Current().Snapshot()
-	for _, name := range snapshot.Names.All() {
+	for _, frozenName := range snapshot.Names.All() {
+		name := frozenName.Clone()
 		wanted[name] = true
 		d.mu.Lock()
 		_, exists := d.groups[name]

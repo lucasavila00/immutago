@@ -12,11 +12,11 @@ func TestNilBuilderForms(t *testing.T) {
 		name, declarations, target, freeze string
 	}{
 		{"slice", "", "[]int", "FreezeSlice"},
-		{"map", "", "map[string]int", "FreezeMap"},
+		{"map", "", "map[int]int", "FreezeMap"},
 		{"named slice", "type Ints []int", "Ints", "FreezeSlice"},
-		{"named map", "type Scores map[string]int", "Scores", "FreezeMap"},
+		{"named map", "type Scores map[int]int", "Scores", "FreezeMap"},
 		{"alias slice", "type Ints = []int", "Ints", "FreezeSlice"},
-		{"alias map", "type Scores = map[string]int", "Scores", "FreezeMap"},
+		{"alias map", "type Scores = map[int]int", "Scores", "FreezeMap"},
 		{"generic scalar slice", "type List[T any] []T", "List[int]", "FreezeSlice"},
 		{"marked values", "type V struct{ im.Shared }", "[]V", "FreezeSlice"},
 		{"shared pointers", "type V struct{ im.Shared }", "[]*V", "FreezeSlice"},

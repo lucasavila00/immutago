@@ -31,12 +31,12 @@ type Listing struct {
 }
 type Table struct {
 	im.Scoped
-	Values im.FrozenMap[string, int]
+	Values im.FrozenMap[int, int]
 }
 
 func (*Counter) List() Listing { frozen := im.FreezeSlice([]int{1, 2}); return Listing{Values: frozen} }
 func (*Counter) Table() Table {
-	frozen := im.FreezeMap(map[string]int{"a": 1})
+	frozen := im.FreezeMap(map[int]int{1: 1})
 	return Table{Values: frozen}
 }
 func (c *Counter) Input(callback func(int), values map[string]int) int {

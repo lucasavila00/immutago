@@ -11,9 +11,9 @@ func Iterate() int {
 	for index, value := range values.All() {
 		total += index + int(value.Count)
 	}
-	mapping := im.FreezeMap(map[string]model.Leaf{"first": {Count: 4}})
+	mapping := im.FreezeMap(map[im.FrozenString]model.Leaf{im.FreezeString("first"): {Count: 4}})
 	for key, value := range mapping.All() {
-		total += len(key) + int(value.Count)
+		total += key.Len() + int(value.Count)
 	}
 	return total
 }

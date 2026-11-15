@@ -20,7 +20,7 @@ type WorkerArgs struct {
 // Result records a completed job. Available is false if the worker has stopped.
 type Result struct {
 	im.Scoped
-	Text      string
+	Text      im.FrozenString
 	Worker    int
 	Version   int
 	Available bool
@@ -98,7 +98,7 @@ func (w *Worker) Process(text string) Result {
 	}
 	select {
 	case result := <-reply:
-		return Result{Text: result, Worker: w.Args().ID, Version: w.Args().Version, Available: true}
+		return Result{Text: im.FreezeString(result), Worker: w.Args().ID, Version: w.Args().Version, Available: true}
 	case <-w.stopped:
 		return Result{}
 	}

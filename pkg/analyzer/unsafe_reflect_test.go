@@ -25,11 +25,11 @@ func ordinary(v reflect.Value) { _ = v.UnsafePointer() }`},
 type Value struct { im.Shared; N int }
 var ordinary = reflect.TypeFor[int]()`},
 		{"scalar read", `import "unsafe"
-type Value struct { im.Shared; Name string }
-func ordinary(v Value) *byte { return unsafe.StringData(v.Name) }`},
+type Value struct { im.Shared; Name im.FrozenString }
+func ordinary(v Value) *byte { return unsafe.StringData(v.Name.Clone()) }`},
 		{"copied string", `import "unsafe"
-type Value struct { im.Shared; Name string }
-func ordinary(v Value) *byte { s := v.Name; return unsafe.StringData(s) }`},
+type Value struct { im.Shared; Name im.FrozenString }
+func ordinary(v Value) *byte { s := v.Name.Clone(); return unsafe.StringData(s) }`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

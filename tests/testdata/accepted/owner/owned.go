@@ -4,7 +4,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
 	im.Scoped
-	Version string
+	Version im.FrozenString
 	Weights im.FrozenSlice[float64]
 }
 
@@ -18,7 +18,7 @@ func Publish(l *Loader, version string, weights []float64) {
 	w := make([]float64, len(weights))
 	copy(w, weights)
 	frozen := im.FreezeSlice(w)
-	l.Current.Store(&Model{Version: version, Weights: frozen})
+	l.Current.Store(&Model{Version: im.FreezeString(version), Weights: frozen})
 }
 
 func Handle(l *Loader, features []float64) float64 {

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/lucasavila00/immutago/examples/configuration"
+	"github.com/lucasavila00/immutago/pkg/im"
 	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
@@ -29,7 +30,7 @@ func run(path, key string) error {
 	root := supervise.NewRoot(func(value any, _ []byte) { log.Print(value) })
 	defer func() { <-root.Stop() }()
 	cache, err := supervise.Start[configuration.FileCache](root, configuration.FileArgs{
-		Path: path, Every: 100 * time.Millisecond,
+		Path: im.FreezeString(path), Every: 100 * time.Millisecond,
 	})
 	if err != nil {
 		return err
@@ -59,7 +60,7 @@ func run(path, key string) error {
 			usage := limiter.Current().Usage()
 			fmt.Printf("allowed=%t used=%d limit=%d window=%d\n",
 				decision == configuration.Allowed, usage.Used, usage.Limit, usage.Window)
-			if problem := loader.Current().Problem(); problem != "" {
+			if problem := loader.Current().Problem().Clone(); problem != "" {
 				fmt.Println("configuration:", problem)
 			}
 		}
