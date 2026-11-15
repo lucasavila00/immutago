@@ -6,42 +6,6 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
-// BandProjection provides local read access to *Band.
-type BandProjection struct {
-	im.Local
-	immutagoProjection im.Projection[*Band]
-}
-
-// NewBandProjection wraps a checked local projection without copying backing storage.
-func NewBandProjection(value im.Projection[*Band]) BandProjection {
-	return BandProjection{immutagoProjection: value}
-}
-
-// IsNil reports whether the selected pointer is nil.
-func (v BandProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
-
-// UpToGrams reads the UpToGrams field.
-func (v BandProjection) UpToGrams() int64 {
-	return v.immutagoProjection.Read().UpToGrams
-}
-
-// PriceCents reads the PriceCents field.
-func (v BandProjection) PriceCents() int64 {
-	return v.immutagoProjection.Read().PriceCents
-}
-
-// BandCell publishes frozen Band values. Do not copy it.
-type BandCell struct{ value im.Cell[Band] }
-
-// Store publishes value.
-func (c *BandCell) Store(value Band) { c.value.Store(value) }
-
-// Load reads the current value through a local projection.
-func (c *BandCell) Load() BandProjection { return NewBandProjection(c.value.LoadPointer()) }
-
-// LoadShared returns the frozen value for persistent use.
-func (c *BandCell) LoadShared() Band { return c.value.LoadShared() }
-
 // CarrierServiceProjection provides local read access to *CarrierService.
 type CarrierServiceProjection struct {
 	im.Local
