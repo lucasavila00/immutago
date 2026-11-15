@@ -1,0 +1,37 @@
+uses.go:14:38: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: return LocalError{}
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+uses.go:18:2: immutable field Err: copied values require bool, numbers, Copied records, arrays, or service references
+  owner: uses.WithError; field type: error
+  fix: copy scalar fields, or use a generated local projection
+uses.go:21:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: Saved api.Reply
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+uses.go:25:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: Saved, err = api.Read()
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+uses.go:28:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: values[0], err = api.Read()
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+uses.go:35:29: unsupported immutable operation: closures cannot capture immutable storage
+  source: value
+  type: api.Reply
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+uses.go:39:14: unsupported immutable operation: immutable callbacks are unsupported
+  source: api.Read
+  type: func() (api.Reply, error)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+uses.go:40:16: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: callback()
+  type: (api.Reply, error)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+uses.go:40:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: value, err := callback()
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+uses.go:46:54: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: pair(api.Reply{})
+  type: (api.Reply, error)
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+uses.go:48:40: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: value, ok := wrongPair()
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start

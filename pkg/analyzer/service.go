@@ -24,18 +24,35 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 			at = method.Pos()
 		}
 		signature := methods.At(i).Type().(*types.Signature)
-		if signature.Results().Len() == 0 {
+		result, valid := resultValue(signature.Results())
+		if !valid {
+			c.report(at, "service method "+method.Name()+
+				" must return no value, one read result, error, or (read result, error)")
 			continue
 		}
-		if signature.Results().Len() != 1 {
-			c.report(at, "service method "+method.Name()+" must return no value or one service result")
+		if result == nil {
 			continue
 		}
-		result := signature.Results().At(0).Type()
 		if reason := c.proofs.ReadResultReason(result); reason != "" {
 			c.report(at, "service method "+method.Name()+" must return a service result: "+reason+
 				"\n  result type: "+diagnosticType(result))
 		}
+	}
+}
+
+// resultValue separates an optional error from zero or one data result.
+func resultValue(results *types.Tuple) (types.Type, bool) {
+	count := results.Len()
+	if count > 0 && types.Identical(types.Unalias(results.At(count-1).Type()), types.Universe.Lookup("error").Type()) {
+		count--
+	}
+	switch count {
+	case 0:
+		return nil, true
+	case 1:
+		return results.At(0).Type(), true
+	default:
+		return nil, false
 	}
 }
 
