@@ -73,8 +73,11 @@ func (d *Dispatcher) Refresh() int {
 		return 0
 	}
 	wanted := make(map[string]bool)
-	snapshot := d.Args().Config.Current().Snapshot()
-	names := im.Slice(im.Select(snapshot, func(s VariantSet) im.FrozenSlice[string] { return s.Names }))
+	view := d.Args().Config.Current().Variants()
+	var names im.SliceView[string]
+	if !view.IsNil() {
+		names = view.Names()
+	}
 	for _, item := range names.All() {
 		name := im.Text(item).Clone()
 		wanted[name] = true

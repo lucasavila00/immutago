@@ -51,7 +51,7 @@ func run(ctx context.Context, url, cache string) error {
 	defer ticker.Stop()
 	for {
 		prediction := fetcher.Current().Predict(features)
-		fmt.Printf("%s: score %.0f\n", prediction.Name.Clone(), prediction.Score)
+		fmt.Printf("%s: score %.0f\n", prediction.Name.Unsafe(), prediction.Score)
 		select {
 		case <-ctx.Done():
 			return nil

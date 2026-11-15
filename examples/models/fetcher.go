@@ -1,4 +1,6 @@
 // Package models polls an HTTP source and serves predictions from its last valid model.
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package models
 
 import (
@@ -47,7 +49,7 @@ type document struct {
 type Fetcher struct {
 	supervise.Service[FetcherArgs]
 	store   Store
-	current im.Cell[snapshot]
+	current snapshotCell
 }
 
 // Init creates the document store and loads the first model before callers can predict.

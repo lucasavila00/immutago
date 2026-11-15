@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package configuration
 
 import (
@@ -27,7 +29,7 @@ type LoaderArgs struct {
 // ConfigLoader publishes valid JSON limits and keeps the last valid version on an error.
 type ConfigLoader struct {
 	supervise.Service[LoaderArgs]
-	current im.Cell[Config]
+	current ConfigCell
 	last    string
 	mu      sync.RWMutex
 	problem string
@@ -63,11 +65,12 @@ func (l *ConfigLoader) Run(ctx context.Context) {
 
 // load copies decoded limits into a fresh builder and publishes one immutable version.
 func (l *ConfigLoader) load() error {
-	text := l.Args().Cache.Current().Text().Clone()
+	view := l.Args().Cache.Current().Text()
 	version := l.Version()
-	if version > 0 && text == l.last {
+	if version > 0 && view.EqualString(l.last) {
 		return nil
 	}
+	text := view.Clone()
 	var decoded map[string]int
 	if err := json.Unmarshal([]byte(text), &decoded); err != nil {
 		return err

@@ -60,7 +60,7 @@ func run(path, key string) error {
 			fmt.Printf("allowed=%t used=%d limit=%d window=%d\n",
 				decision == configuration.Allowed, usage.Used, usage.Limit, usage.Window)
 			if problem := loader.Current().Problem(); problem.Len() != 0 {
-				fmt.Println("configuration:", problem.Clone())
+				fmt.Println("configuration:", problem.Unsafe())
 			}
 		}
 	}

@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package workers
 
 import (
@@ -16,7 +18,7 @@ type VariantSet struct {
 // VariantConfig keeps configuration outside the dispatcher that consumes it.
 type VariantConfig struct {
 	supervise.Service[supervise.NoArgs]
-	current im.Cell[VariantSet]
+	current VariantSetCell
 }
 
 // Run keeps the configuration service available until shutdown.
@@ -27,7 +29,7 @@ func (c *VariantConfig) Set(names im.FrozenSlice[string]) {
 	c.current.Store(VariantSet{Names: names})
 }
 
-// Snapshot returns a local view of the current variant set.
-func (c *VariantConfig) Snapshot() im.View[VariantSet] {
+// Variants returns a local view of the current variant set.
+func (c *VariantConfig) Variants() VariantSetView {
 	return c.current.Load()
 }

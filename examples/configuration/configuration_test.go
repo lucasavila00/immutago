@@ -109,8 +109,8 @@ func TestStartReservedRetry(t *testing.T) {
 	if err := supervise.StartReserved(root, cache, FileArgs{Path: path, Every: time.Millisecond}); err != nil {
 		t.Fatal(err)
 	}
-	if got := cache.Current().Text().Clone(); got != `{"api":3}` {
-		t.Fatalf("initial contents = %q", got)
+	if got := cache.Current().Text(); !got.EqualString(`{"api":3}`) {
+		t.Fatalf("initial contents = %q", got.Unsafe())
 	}
 }
 

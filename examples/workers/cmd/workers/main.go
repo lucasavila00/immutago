@@ -28,13 +28,13 @@ func main() {
 	dispatcher.Current().Refresh()
 	waitVersion(dispatcher, "blue", 1)
 	first := dispatcher.Current().Process("blue", "Hello World")
-	fmt.Printf("blue v%d: %s\n", first.Version, first.Text.Clone())
+	fmt.Printf("blue v%d: %s\n", first.Version, first.Text.Unsafe())
 	if !dispatcher.Current().Load("blue", 2) {
 		panic("version 2 did not start")
 	}
 	waitVersion(dispatcher, "blue", 2)
 	next := dispatcher.Current().Process("blue", "Hello World")
-	fmt.Printf("blue v%d: %s\n", next.Version, next.Text.Clone())
+	fmt.Printf("blue v%d: %s\n", next.Version, next.Text.Unsafe())
 	names = im.FreezeSlice([]string{"green"})
 	config.Current().Set(names)
 	dispatcher.Current().Refresh()
@@ -42,7 +42,7 @@ func main() {
 	fmt.Printf("blue removed: %t\n", !removed.Available)
 	waitVersion(dispatcher, "green", 1)
 	remaining := dispatcher.Current().Process("green", "Still Running")
-	fmt.Printf("green v%d: %s\n", remaining.Version, remaining.Text.Clone())
+	fmt.Printf("green v%d: %s\n", remaining.Version, remaining.Text.Unsafe())
 	<-root.Stop()
 }
 

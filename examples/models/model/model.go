@@ -1,4 +1,6 @@
 // Package model supplies immutable linear prediction models.
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package model
 
 import (
