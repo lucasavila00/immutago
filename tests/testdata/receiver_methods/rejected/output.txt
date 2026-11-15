@@ -48,7 +48,7 @@ receiver_calls.go:32:6: unsupported immutable operation: immutable method receiv
 receiver_calls.go:33:6: unsupported immutable operation: promoted immutable methods are unsupported
   source: order.Cost()
   type: int
-  fix: name the embedded field explicitly and call a method declared on its marked type; copy scalar fields to ordinary locals before calling their methods
+  fix: name the embedded field explicitly and call a method allowed on that field; copy scalar fields to ordinary locals before calling their methods
 receiver_calls.go:34:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: order.Product.ReadCost()
   type: int
@@ -56,7 +56,7 @@ receiver_calls.go:34:6: unsupported immutable operation: immutable method receiv
 receiver_calls.go:35:2: unsupported immutable operation: promoted immutable methods are unsupported
   source: counted.Inc()
   type: ()
-  fix: name the embedded field explicitly and call a method declared on its marked type; copy scalar fields to ordinary locals before calling their methods
+  fix: name the embedded field explicitly and call a method allowed on that field; copy scalar fields to ordinary locals before calling their methods
 receiver_calls.go:36:2: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
   source: counted.Counter.Inc()
   type: ()

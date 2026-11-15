@@ -132,6 +132,7 @@ forms on this page.
 | Pointer receiver on a marked struct | `func (p *LocalPoint) ReadX() int { return p.X }` |
 | Direct call on a value or pointer of the declared receiver type | `point.XValue()`, `p.ReadX()`, `(*p).XValue()` |
 | Explicit field or element as receiver | `group.FrozenPoint.XValue()`, `points[i].XValue()` |
+| Direct fixed supervise method on a protected field or element | `route.Worker.IsZero()`, `route.Workers[i].IsZero()` for Ref fields and elements; the [service-reference rules](service-references.md) apply. |
 | Constructed value, new pointer, or direct call result as receiver | `FrozenPoint{X: 3}.XValue()`, `(&FrozenPoint{X: 3}).ReadX()`, `makePoint().XValue()` |
 | Direct method on an ordinary concrete receiver with protected inputs or results | `reader.Read(p)` with `func (r *Reader) Read(p *LocalPoint) int`; `r` can have an ordinary mutable type. |
 | Direct call through a proved Frozen interface | `scorer.Score(features)`; use the [complete interface rules](frozen-interfaces.md). |

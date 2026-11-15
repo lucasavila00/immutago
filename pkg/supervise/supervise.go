@@ -230,10 +230,15 @@ type child struct {
 // References can be stored in immutable fields and returned as service results;
 // the service state can still change.
 // Start returns an initialized reference. Reserve creates one for later startup;
-// a zero Ref is empty and cannot be used in place of Reserve.
+// a zero Ref is unset and cannot be used in place of Reserve. Use IsZero to test it.
 type Ref[T any] struct {
 	value *atomic.Pointer[T]
 }
+
+// IsZero reports whether the reference is the unset zero Ref. Borrow on a zero
+// Ref panics. IsZero does not check service readiness: a reference from Reserve
+// is nonzero before start, and a started reference stays nonzero after stop.
+func (p Ref[T]) IsZero() bool { return p.value == nil }
 
 // Borrow selects the last successfully initialized service value with one atomic load.
 // For direct Ref calls, the analyzer accepts only ref.Borrow().Method(args).
@@ -243,7 +248,7 @@ type Ref[T any] struct {
 // Borrow is shared and is not exclusive. No release call is needed.
 // A call in progress finishes on its selected instance, even after a restart.
 //
-// Borrow panics for an empty or unstarted reference. It can select a value whose
+// Borrow panics for a zero or unstarted reference. It can select a value whose
 // Run has ended. Stop does not invalidate the reference or block later calls.
 func (p Ref[T]) Borrow() *T {
 	value := p.value.Load()
