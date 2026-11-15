@@ -19,6 +19,7 @@ type Point struct {
 }
 
 type Alias = Point
+type Named Point
 type Counts uint32
 type Summary struct {
 	im.Copied

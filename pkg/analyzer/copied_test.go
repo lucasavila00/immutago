@@ -22,6 +22,7 @@ func TestCopiedForms(t *testing.T) {
 	cases := []string{
 		`var saved Score; func f(){saved=Score{N:1};saved=Score{N:2}}`,
 		`type Alias=Score;type Mark=im.Copied;type Other struct{Mark;Value Alias};var value Other`,
+		`type Other Score;func f(){_=Other{N:1}}`,
 		`func f(){type LocalScore struct{im.Copied;N int};_=LocalScore{N:1};_=struct{im.Copied;N int}{N:1}}`,
 		`func f(){var h Holder;h.Score=Score{N:1};h.Other++;h.Score=Score{N:2};s:=h.Score;s=Score{N:s.N+1};_=s}`,
 		`func f(){h:=&Holder{};h.Score=Score{N:1};h.Other++;v:=*h;*h=Holder{Score:v.Score}}`,
@@ -91,6 +92,8 @@ func TestCopiedRejectedForms(t *testing.T) {
 		{`func f(h Holder){_=&h.Score}`, "pointers to Copied records"},
 		{`func f(s Score){_=&s.N}`, "scalar interior addresses"},
 		{`func(s *Score)Change(){s.N++}`, "pointers to Copied records"},
+		{`type Number int;func(n *Number)Inc(){*n++};type Count struct{im.Copied;N Number};` +
+			`func f(v Count){v.N.Inc()}`, "immutable methods require"},
 		{`type Embedded struct{Score};func f(s Embedded){_=s.Read()}`, "promoted immutable methods"},
 		{`func f(s Score){var value any=s;_=value}`, "boxing immutable storage"},
 		{`func f(h Holder){var value any=&h;_=value}`, "boxing immutable storage"},
@@ -103,6 +106,7 @@ func TestCopiedRejectedForms(t *testing.T) {
 		{`func f(s Score){defer readScore(s)}`, "synchronous calls"},
 		{`func f(s Score){s,other:=s,s;_,_=s,other}`, "multiple assignments"},
 		{`type Worker struct{supervise.Service[supervise.NoArgs]};func(w *Worker)Last()*Score{return nil}`, "service result"},
+		{`type Worker struct{supervise.Service[supervise.NoArgs]};func(w *Worker)Last()Holder{return Holder{}}`, "service result"},
 		{`type Counts [2]int;type Bad struct{im.Copied;N Counts}`, "Copied record:"},
 		{`type Bad[T any]struct{im.Copied;N T}`, "Copied record:"},
 		{`type Bad struct{Marker im.Copied}`, "markers must be embedded by value"},

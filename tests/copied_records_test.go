@@ -18,7 +18,9 @@ func TestCopiedRecords(t *testing.T) {
 	}
 	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
 	for _, mode := range []string{"cli", "vet"} {
-		for _, target := range []string{"api", "accepted", "frozen", "fields", "writes", "transport", "badapi", "dependency"} {
+		for _, target := range []string{
+			"api", "accepted", "frozen", "fields", "writes", "transport", "badapi", "dependency",
+		} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
 				dir := consumerModule(t, root, "copied_records")
 				accepted := target == "api" || target == "accepted" || target == "frozen"

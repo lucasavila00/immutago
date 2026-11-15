@@ -21,9 +21,12 @@ type requestState struct {
     Attempts int
 }
 
-state := requestState{Result: scorer.Last()}
-state.Attempts++
-state.Result = Score{Value: 3} // Replace the complete stored value.
+func request(scorer *Scorer) requestState {
+    state := requestState{Result: scorer.Last()}
+    state.Attempts++
+    state.Result = Score{Value: 3} // Replace the complete stored value.
+    return state
+}
 ```
 
 A copy includes every data field. It shares no field storage with the source.

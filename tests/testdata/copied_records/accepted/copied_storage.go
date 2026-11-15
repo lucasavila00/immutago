@@ -34,6 +34,17 @@ func (s *Scorer) Points() [2]api.Point                { return [2]api.Point{s.st
 func (s *Scorer) Reply() Reply                        { return Reply{Score: s.state.Result, Point: s.state.Point} }
 func (s *Scorer) Snapshot() frozen.SnapshotProjection { return s.current.Load() }
 
+func LastReference(reference supervise.Ref[Scorer]) api.Score {
+	return reference.Current().Last()
+}
+
+func Request(scorer *Scorer) State {
+	state := State{Result: scorer.Last()}
+	state.Attempts++
+	state.Result = api.NewScore(3)
+	return state
+}
+
 func (s *State) Replace(value api.Point) {
 	s.Point = value
 	s.Attempts++
@@ -69,6 +80,7 @@ func NativeStorage(value api.Point) int {
 }
 
 func LocalDeclaration() int {
+	_ = api.Named{X: 1}
 	type Count struct {
 		im.Copied
 		N int
