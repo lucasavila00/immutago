@@ -69,8 +69,11 @@ viewB ───────┘
 | Cell.LoadShared | A copy of T for persistent use; no copy of backing storage. |
 | A retained reader | Its pointer keeps the selected value reachable for Go's garbage collector. |
 
-Cell source checks prevent copies of the atomic slot. Readers need no registration
-or runtime ownership flag.
+Cell source checks prevent copies of the atomic slot. The cached slot query follows
+value fields and containers, and stops at pointers. Holder pointers use ordinary Go
+transport. A holder value can select a field, form an address, or select a pointer
+method without a copy. The checker also checks resolved method receivers to reject
+implicit value copies. Readers need no registration or runtime ownership flag.
 
 ## Generated projections
 

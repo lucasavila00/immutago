@@ -32,7 +32,7 @@ forms.go:26:81: unsupported immutable operation: dynamic calls require ordinary 
 forms.go:27:6: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
   source: localGeneric
   type: func[T rejected.View](value T) any
-  fix: use a direct non-generic function with concrete parameter types
+  fix: use a non-generic declaration with concrete field and parameter types
 forms.go:27:81: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: return value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

@@ -33,6 +33,9 @@ func TestImmutableObjectForms(t *testing.T) {
 		`func f(){values:=[]Frozen{{X:1}};values[0]=Frozen{X:2};_=im.FreezeSlice(values)}`,
 		`type Box[T any]struct{V T};func f(){_=Box[int]{V:1}}`,
 		`func copyScalar[T any](v T)T{return v};func f(v Frozen){_=copyScalar(v.X)}`,
+		`func f[T any](){v:=Frozen{};_=v}`,
+		`func f[T any](){v:=Local{};_=v}`,
+		`type Box[T any]struct{V T};func(b Box[T])Read()int{v:=Frozen{};return v.X}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
@@ -67,7 +70,7 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"shared asynchronous", `func f(){p:=&Frozen{};go readSnapshot(p)}`, "synchronous"},
 		{"mixed markers", `type Mixed struct{im.Frozen;im.Local}`, "cannot embed both"},
 		{"generic marked", `type Box[T any]struct{im.Frozen;X int}`, "user generic declarations"},
-		{"generic local", `func f[T any](){v:=Frozen{};_=v}`, ""},
+		{"generic body write", `func f[T any](){v:=Frozen{};v.X++}`, "writes to immutable objects"},
 		{
 			"generic collection",
 			`func f[T ~int](v T)im.FrozenSlice[T]{s:=im.FreezeSlice([]T{v});return s}`,
@@ -75,9 +78,9 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		},
 		{"generic instance", `type Box[T any]struct{V T};var value Box[Frozen]`, "unmarked struct"},
 		{
-			"generic receiver body",
-			`type Box[T any]struct{V T};func(b Box[T])Read()int{v:=Frozen{};return v.X}`,
-			"",
+			"generic body Local capture",
+			`func f[T any]()func()int{v:=Local{};return func()int{return v.X}}`,
+			"closures require",
 		},
 		{"Local nil builder", `func f(){values:=[]*Local{nil};_=len(values)}`, "Local"},
 		{"Local empty builder", `func f(){var values []*Local;_=len(values)}`, "Local"},

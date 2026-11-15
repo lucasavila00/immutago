@@ -13,10 +13,10 @@ func TestStopWaitsForParentEntry(t *testing.T) {
 		parent := NewRoot(nil)
 		nested := StartGroup(parent)
 		entered, release := make(chan struct{}), make(chan struct{})
-		_, err := Start[initializing](nested, AssumeConcurrentSafe(&initHooks{
+		_, err := Start[initializing](nested, &initHooks{
 			init: func(*initializing) error { return nil },
 			run:  func(_ *initializing, ctx context.Context) { <-ctx.Done(); close(entered); <-release },
-		}))
+		})
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -47,8 +47,6 @@ var subsetFixes = map[string]string{
 	"Local values and pointers cannot be stored in package variables": "keep Local values in local bindings; " +
 		"copy the required data into Frozen values before saving it",
 	"Projection.Read is reserved for verified generated projections": "use the generated field accessor",
-	"Cell holder methods require a direct concrete pointer receiver": "call a direct pointer method " +
-		"on the holder variable or its named field",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
 		"im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses",
 	"returning Local pointers is unsupported": "return a Local value copy, or use im.Frozen " +
@@ -59,8 +57,8 @@ var subsetFixes = map[string]string{
 	"containers of Local pointers are unsupported": "keep Local values in local bindings, or store im.Frozen pointers",
 	"user generic declarations cannot define Frozen or Local types": "declare a concrete Frozen or Local type " +
 		"without type parameters",
-	"user generic declarations require ordinary or persistent Frozen contracts": "use a direct non-generic function " +
-		"with concrete parameter types",
+	"user generic declarations require ordinary or persistent Frozen contracts": "use a non-generic declaration " +
+		"with concrete field and parameter types",
 	"user generic instantiations require ordinary or persistent Frozen type arguments": "use a direct non-generic " +
 		"function with concrete parameter types",
 	"writes to immutable objects are unsupported": "construct a new value and replace the whole variable " +

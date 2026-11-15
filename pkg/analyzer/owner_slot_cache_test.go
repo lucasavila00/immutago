@@ -44,6 +44,9 @@ func TestSlotCacheQueryOrder(t *testing.T) {
  type Mixed struct{ Plain []Empty; Next []A }
  type Alias = A
  type Pointer *A
+ type Shared struct{ Child *A; Next *Shared }
+ type SharedAlias = Shared
+ type PointerContract interface{ Take(*A) *B }
  type Contract interface{ Take(A) }
  type Union interface{ ~int|A }
  type ConstraintAlias = Union
@@ -54,7 +57,8 @@ func TestSlotCacheQueryOrder(t *testing.T) {
 		want bool
 	}{
 		{"A", true}, {"B", true}, {"Empty", false}, {"Mixed", true}, {"Alias", true},
-		{"Pointer", false}, {"Contract", true}, {"Union", true}, {"ConstraintAlias", true},
+		{"Pointer", false}, {"Shared", false}, {"SharedAlias", false}, {"PointerContract", false},
+		{"Contract", true}, {"Union", true}, {"ConstraintAlias", true},
 		{"OrdinaryContract", false}, {"Callback", true},
 	}
 	for start := range queries {

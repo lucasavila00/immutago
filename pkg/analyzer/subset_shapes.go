@@ -65,21 +65,14 @@ func (c *subsetChecks) matchStatement(expression ast.Expr) string {
 	return "protected operation is outside the supported statement forms"
 }
 
-// restrictedOperand includes Local transport, builders, and fixed Cell or holder operations.
+// restrictedOperand includes Local transport, builders, and fixed Cell operations.
 func (c *subsetChecks) restrictedOperand(expression ast.Expr) bool {
 	typ := c.pass.TypesInfo.TypeOf(expression)
 	if c.queries.Transport(typ) || c.queries.Callable(typ) || c.ownedExpression(expression) {
 		return true
 	}
 	call, ok := ast.Unparen(expression).(*ast.CallExpr)
-	if !ok {
-		return false
-	}
-	if c.ownedSlotCall(call) {
-		return true
-	}
-	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
-	return ok && c.holderMethod(selector) != nil
+	return ok && c.ownedSlotCall(call)
 }
 
 // matchRestrictedStatement keeps the statement boundary for Local, builder, and Cell operations.

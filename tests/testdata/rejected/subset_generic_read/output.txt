@@ -5,7 +5,7 @@ subset_generic_read.go:20:28: unsupported immutable operation: immutable referen
 subset_generic_read.go:20:6: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
   source: readGeneric
   type: func[T rejected.Good](p *T)
-  fix: use a direct non-generic function with concrete parameter types
+  fix: use a non-generic declaration with concrete field and parameter types
 subset_generic_read.go:21:34: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
   source: readGeneric(new(v))
   type: ()
