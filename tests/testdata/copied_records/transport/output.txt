@@ -44,7 +44,7 @@ copied_transport.go:27:2: unsupported immutable operation: multiple assignments 
 copied_transport.go:30:49: unsupported immutable operation: promoted immutable methods are unsupported
   source: value.Sum
   type: func() int
-  fix: name the embedded field explicitly and call a method declared on its marked type; copy scalar fields to ordinary locals before calling their methods
+  fix: name the embedded field explicitly and call a method allowed on that field; copy scalar fields to ordinary locals before calling their methods
 copied_transport.go:31:52: unsupported immutable operation: bound immutable methods are unsupported
   source: value.Sum
   type: func() int

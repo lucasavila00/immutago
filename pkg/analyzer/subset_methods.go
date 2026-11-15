@@ -22,7 +22,7 @@ func (c *subsetChecks) markedMethodReceiver(signature *types.Signature) bool {
 }
 
 // matchMethod requires direct concrete calls for protected arguments and results.
-// Protected receivers also require an exact, non-promoted immutable receiver.
+// Protected receivers require an exact, non-promoted marked or runtime receiver.
 func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection.Kind() != types.MethodVal {
@@ -47,7 +47,9 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	if len(selection.Index()) != 1 {
 		return "promoted immutable methods are unsupported"
 	}
-	if !c.markedMethodReceiver(signature) {
+	if runtimeObject(selection.Obj()) {
+		signature = selection.Obj().Type().(*types.Signature)
+	} else if !c.markedMethodReceiver(signature) {
 		return "immutable methods require a concrete non-generic marked receiver"
 	}
 	if !types.Identical(c.pass.TypesInfo.TypeOf(selector.X), signature.Recv().Type()) {
