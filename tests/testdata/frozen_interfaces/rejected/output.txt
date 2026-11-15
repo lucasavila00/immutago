@@ -94,3 +94,63 @@ forms.go:60:6: immutable collection: copied values require bool, numbers, Copied
 forms.go:60:9: immutable type argument: Frozen storage cannot contain Local values
   type: api.ScorerProjection
   fix: store Frozen data; keep its Projection or Local result in local bindings
+parameters.go:11:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: reader.Apply(text, nil)
+  type: int
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+parameters.go:12:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: tree.Apply(text, nil)
+  type: int
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+parameters.go:13:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: local.Apply(text, nil)
+  type: int
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+parameters.go:14:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: local.Apply([1]im.StringProjection{text}, nil)
+  type: int
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+parameters.go:15:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: reader.Named(implementation.Count{N: 1}, nil)
+  type: int
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+parameters.go:16:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: local.Aliased(implementation.Count{N: 1}, nil)
+  type: int
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+parameters.go:17:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: local.Apply(localPair())
+  type: int
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+parameters.go:28:44: unsupported immutable operation: closures cannot capture immutable storage
+  source: text
+  type: im.StringProjection
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+parameters.go:29:43: unsupported immutable operation: closures cannot capture immutable storage
+  source: text
+  type: im.StringProjection
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+parameters.go:30:19: unsupported immutable operation: immutable callbacks are unsupported
+  source: protectedInput
+  type: func() im.StringProjection
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+parameters.go:30:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: reader.Apply(protectedInput, nil)
+  type: int
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+parameters.go:31:18: unsupported immutable operation: immutable callbacks are unsupported
+  source: protectedInput
+  type: func() im.StringProjection
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+parameters.go:31:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: local.Apply(protectedInput, nil)
+  type: int
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+parameters.go:32:19: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: identity(text)
+  type: im.StringProjection
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+parameters.go:32:6: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: reader.Apply(identity(text), nil)
+  type: int
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
