@@ -35,7 +35,7 @@ func (s *Scorer) Reply() Reply                        { return Reply{Score: s.st
 func (s *Scorer) Snapshot() frozen.SnapshotProjection { return s.current.Load() }
 
 func LastReference(reference supervise.Ref[Scorer]) api.Score {
-	return reference.Current().Last()
+	return reference.Borrow().Last()
 }
 
 func Request(scorer *Scorer) State {
