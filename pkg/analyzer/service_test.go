@@ -23,7 +23,8 @@ func TestServiceResults(t *testing.T) {
 		{"shared value", `func(c *Counter) Read() SharedReply { return SharedReply{Count:c.count} }`, true},
 		{"array", `func(*Counter) Read() [2]int { return [2]int{} }`, false},
 		{"frozen", `func(*Counter) Read() im.FrozenSlice[int] { frozen:=im.FreezeSlice([]int{1}); return frozen }`, true},
-		{"frozen map", `func(*Counter) Read() im.FrozenMap[string,int]{var value im.FrozenMap[string,int];return value}`, true},
+		{"frozen map",
+			`func(*Counter) Read() im.FrozenMap[string,int]{var value im.FrozenMap[string,int];return value}`, true},
 		{"shared array", `func(*Counter) Read() [2]SharedReply{return [2]SharedReply{}}`, true},
 		{"pointer array", `func(*Counter) Read() [2]*SharedReply{return [2]*SharedReply{}}`, true},
 		{"frozen field", `type Page struct{im.Scoped;Values im.FrozenSlice[int]}

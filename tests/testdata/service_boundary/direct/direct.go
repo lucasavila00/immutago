@@ -2,8 +2,9 @@ package direct
 
 import (
 	"context"
-	"github.com/lucasavila00/immutago/pkg/supervise"
 	"sync/atomic"
+
+	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
 // Counter is a service without any im contract.
