@@ -3,6 +3,7 @@
 `supervise.Ref[T]` identifies a service. Copy, store, or return the handle; call
 its exported message methods with `ref.Current().Method(args)`.
 A restart changes the service instance, not the handle's identity.
+A Ref field fixes which service the object names; it does not freeze that service's state.
 
 ## Example: call a selected pool
 
@@ -31,13 +32,23 @@ Use a started handle: Current panics for an empty or unstarted handle.
 | Store handles in variables, fields, arrays, native containers, or frozen collections | `map[string]supervise.Ref[Worker]`, `Route{Worker: worker}` |
 | Read, address, index, slice, range over, or update ordinary handle storage | `workers[name] = worker`, `for _, worker := range workers { use(worker) }` |
 | Use native container operations | `append(workers, worker)`, `delete(workers, name)`, `ch <- worker`, `<-ch` |
+| Keep a typed producer interface | `type Producer interface { Worker() supervise.Ref[Worker] }`; call `producer.Worker().Current().Message()`. |
 | Capture handles or pass them through concrete callbacks | `func() { worker.Current().Resize(image) }` |
 | Call a message directly; parentheses, go, and defer are allowed | `worker.Current().Resize(image)` |
 
 `T` must embed `supervise.Service`. Fixed `im` and `supervise` generic APIs are
-allowed. User generics, type conversions, and interfaces cannot transport
-handles, including inside other types. Marked fields and frozen collection
-storage retain their usual write restrictions.
+allowed. User generic type arguments cannot contain handles, including in fields
+or callback signatures. A generic helper can still declare a concrete Ref
+parameter: `func use[T any](worker supervise.Ref[Worker], value T)`.
+Handle type conversions are rejected. Ref values cannot enter interfaces. A callback or producer
+interface that mentions Ref must keep its exact type; do not erase it to `any`
+or another interface. Marked objects and frozen collections keep all im rules.
+Copy a handle to a local before capturing it or using it in go or defer:
+
+```go
+worker := route.Worker
+go worker.Current().Process("Hello")
+```
 
 ## Current view — exhaustive
 
@@ -58,6 +69,7 @@ ordinary Go rules.
 | `current := ref.Current`, `method := ref.Current().Message` | Use a closure that captures the handle and makes the direct message call. |
 | `supervise.Ref[Worker].Current(ref)` | `ref.Current().Message()` |
 | `ref.Current().Init()`, `ref.Current().Args()` | Initialize through Start; expose needed data through a message. |
+| A bodyless function that receives or returns handles | Supply a Go body so its handle use can be checked. |
 | `var value any = ref`, `identity(ref)` with generic identity | Use a concrete `supervise.Ref[Worker]` parameter. |
 | `wrapper.Current()` through an embedded Ref | Select the handle field: `wrapper.Ref.Current().Message()`. |
 

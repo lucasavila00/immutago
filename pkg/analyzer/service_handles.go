@@ -10,35 +10,37 @@ import (
 // checkHandles checks the accessor and each use of stored handles in all selected packages.
 func (c *subsetChecks) checkHandles() {
 	for _, file := range c.pass.Files {
-		ast.Inspect(file, func(node ast.Node) bool {
-			if statement, ok := node.(*ast.TypeSwitchStmt); ok {
-				c.handleTypeSwitch(statement)
-			}
-			if name, ok := node.(*ast.Ident); ok {
-				c.handleInstance(name)
-			}
-			if selector, ok := node.(*ast.SelectorExpr); ok {
-				if selection := c.pass.TypesInfo.Selections[selector]; selection != nil && refAccessor(selection.Obj()) {
-					if rule := c.matchCurrent(selector); rule != "" {
-						c.report(selector, rule)
-					}
-				}
-			}
-			expression, ok := node.(ast.Expr)
-			if !ok || !c.handleOperand(expression) {
-				return true
-			}
-			if typ := c.pass.TypesInfo.TypeOf(expression); checker.IsRuntimeType(typ, "Ref") {
-				if reason := c.proofs.Reason(typ); reason != "" {
-					c.report(expression, reason)
-				}
-			}
-			if rule := c.matchHandleUse(expression); rule != "" {
-				c.report(expression, rule)
-			}
-			return true
-		})
+		ast.Inspect(file, c.visitHandle)
 	}
+}
+
+// visitHandle checks type instances, accessors, and the consumer of each handle operand.
+func (c *subsetChecks) visitHandle(node ast.Node) bool {
+	switch node := node.(type) {
+	case *ast.TypeSwitchStmt:
+		c.handleTypeSwitch(node)
+	case *ast.Ident:
+		c.handleInstance(node)
+	case *ast.SelectorExpr:
+		if selection := c.pass.TypesInfo.Selections[node]; selection != nil && refAccessor(selection.Obj()) {
+			if rule := c.matchCurrent(node); rule != "" {
+				c.report(node, rule)
+			}
+		}
+	}
+	expression, ok := node.(ast.Expr)
+	if !ok || !c.handleOperand(expression) {
+		return true
+	}
+	if typ := c.pass.TypesInfo.TypeOf(expression); checker.IsRuntimeType(typ, "Ref") {
+		if reason := c.proofs.Reason(typ); reason != "" {
+			c.report(expression, reason)
+		}
+	}
+	if rule := c.matchHandleUse(expression); rule != "" {
+		c.report(expression, rule)
+	}
+	return true
 }
 
 // refAccessor identifies the runtime accessor even through aliases and promoted methods.
@@ -52,7 +54,8 @@ func refAccessor(object types.Object) bool {
 
 // matchCurrent accepts only a direct exported message call on the selected service.
 func (c *subsetChecks) matchCurrent(selector *ast.SelectorExpr) string {
-	const rejected = "use a service handle only as ref.Current().Message(args); do not extract the accessor or service pointer"
+	const rejected = "use a service handle only as ref.Current().Message(args); " +
+		"do not extract the accessor or service pointer"
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection == nil || selection.Kind() != types.MethodVal || len(selection.Index()) != 1 {
 		return rejected
@@ -105,13 +108,18 @@ func (c *subsetChecks) handleInstance(name *ast.Ident) {
 	if !ok {
 		return
 	}
-	object := c.pass.TypesInfo.ObjectOf(name)
+	if checker.IsRuntimeType(instance.Type, "Ref") {
+		if reason := c.proofs.Reason(instance.Type); reason != "" {
+			c.report(name, reason)
+		}
+	}
+	object := c.pass.TypesInfo.Uses[name]
 	if runtimeObject(object) || libraryObject(object) {
 		return
 	}
 	for i := 0; i < instance.TypeArgs.Len(); i++ {
 		if c.queries.Handles(instance.TypeArgs.At(i)) {
-			c.report(name, "user generics cannot transport service handles; use concrete Ref parameters and storage")
+			c.report(name, "user generic type arguments cannot contain service handles; use concrete Ref parameters and storage")
 			return
 		}
 	}

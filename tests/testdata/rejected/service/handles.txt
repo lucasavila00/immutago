@@ -1,16 +1,16 @@
 handles.go:13:19: unsupported immutable operation: service handles cannot enter interfaces; keep the concrete Ref type
   source: ref
   type: supervise.Ref[service.Counter]
-  fix: use the documented immutable value and reference forms
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-handles.md
 handles.go:17:47: unsupported immutable operation: use a service handle only as ref.Current().Message(args); do not extract the accessor or service pointer
   source: ref.Current
   type: func() *service.Counter
-  fix: use the documented immutable value and reference forms
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-handles.md
 handles.go:6:13: unsupported immutable operation: use a service handle only as ref.Current().Message(args); do not extract the accessor or service pointer
   source: ref.Current
   type: func() *service.Counter
-  fix: use the documented immutable value and reference forms
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-handles.md
 handles.go:8:13: unsupported immutable operation: use a service handle only as ref.Current().Message(args); do not extract the accessor or service pointer
   source: ref.Current
   type: func() *service.Counter
-  fix: use the documented immutable value and reference forms
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-handles.md

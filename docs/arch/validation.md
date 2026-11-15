@@ -23,7 +23,7 @@ Enforcement:
 - Scalar origins and arbitrary unsafe memory effects are not proved; ordinary
   helpers must obey Go API contracts, including string immutability.
 - Packages that import or use im reject cgo. Bodyless functions with im
-  signatures also fail. Service-only packages receive result and handle checks.
+  or handle signatures also fail. Service-only packages receive result and handle checks.
 - There are no suppression directives. [UncheckedValue](../unchecked-values.md)
   records the declaring package's immutability promise.
 - Checked dependency failures reach consumers through package facts.
@@ -38,6 +38,7 @@ Enforcement:
 | Complete allowed shapes and nearby rejections | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go) |
 | Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
 | Storage reuse, clone independence, identity, and allocation counts | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [iterator tests](../../pkg/im/iterator_test.go) |
+| Method-only handle access and concrete transport | [Handle tests](../../pkg/analyzer/service_handles_test.go), [CLI/vet fixtures](../../tests/testdata/service_boundary) |
 | Scoped results and ordinary service code | [Service tests](../../pkg/analyzer/service_test.go), [CLI fixtures](../../tests/testdata/accepted/service) |
 | Startup errors, publication, and failed setup cleanup | [runtime tests](../../pkg/supervise/init_test.go), [CLI fixture](../../tests/testdata/accepted/serviceinit/main.go) |
 | Guide projects and their runtime interactions | [Configuration tests](../../examples/configuration/configuration_test.go), [worker tests](../../examples/workers/workers_test.go), [model tests](../../examples/models/fetcher_test.go) |

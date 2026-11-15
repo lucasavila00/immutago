@@ -104,16 +104,25 @@ The [handle matcher](../../pkg/analyzer/service_handles.go) and
 3. The selected message must be an exported user method other than Init or Run.
    Service result checks prove its declared result, including promoted methods.
 4. Concrete handle transport retains the method identity. Interface boxing,
-   recovery, conversions, promoted accessors, and user generic instantiations
-   with handles fail. The cached handle classifier follows native containers and
-   fields, including cycles, so a wrapper cannot hide a Ref from these checks.
-5. Marked fields containing handles still use the im write checks. Accepting Ref
+   recovery, conversions, promoted accessors, and handle-bearing type arguments
+   in user generic instantiations fail. Concrete Ref parameters in generic code
+   retain the same accessor checks. Typed producer interfaces and callbacks can retain their
+   exact contracts; they cannot erase a Ref-bearing signature into another
+   interface. The cached handle classifier follows native containers, fields,
+   and callable contracts, including cycles, so a wrapper or iterator cannot hide
+   a Ref from these checks.
+5. Functions whose signatures carry handles require Go bodies, so their
+   accessor and transport operations can be checked. Unrelated assembly APIs
+   remain ordinary Go contracts.
+6. Marked fields containing handles still use the im write checks. Accepting Ref
    does not make an immutable object's handle field assignable.
 
 This proves method-only access **through checked handles**. It does not prove
 that service state is immutable, that calls are serialized, or that a service
 cannot expose state deliberately through a callback, global, or ordinary input.
-Review those operations in the service implementation.
+Review those operations in the service implementation. For example, a method
+that calls `callback(serviceReceiver)` deliberately grants the callback direct
+access; the handle rule does not prove that method safe.
 
 The argument assumes all relevant packages pass the checker and ordinary Go API
 contracts hold. The fixed runtime and im implementations are trusted. Unsafe

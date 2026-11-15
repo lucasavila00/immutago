@@ -138,11 +138,7 @@ func (c *checks) visit(node ast.Node) bool {
 			c.checkLibraryArguments(n, instance)
 		}
 	case *ast.FuncDecl:
-		if n.Body == nil && usesLibraryType(c.pass.TypesInfo.Defs[n.Name].Type(), make(map[types.Type]bool), false) {
-			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
-				"provide a Go implementation so writes and pointer transport can be checked")
-		}
-
+		c.checkFunctionBody(n)
 	case *ast.TypeSpec:
 		if obj := c.pass.TypesInfo.Defs[n.Name]; obj != nil {
 			c.checkType(n.Pos(), obj.Type())
@@ -158,6 +154,22 @@ func (c *checks) visit(node ast.Node) bool {
 		}
 	}
 	return true
+}
+
+// checkFunctionBody requires source for immutable operations and handle transport.
+func (c *checks) checkFunctionBody(declaration *ast.FuncDecl) {
+	if declaration.Body != nil {
+		return
+	}
+	signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)
+	handles := c.queries.Handles(signature)
+	if receiver := signature.Recv(); receiver != nil {
+		handles = handles || c.queries.Handles(receiver.Type())
+	}
+	if handles || usesLibraryType(signature, make(map[types.Type]bool), false) {
+		c.report(declaration.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
+			"provide a Go implementation so writes and pointer transport can be checked")
+	}
 }
 
 // checkType proves collection arguments and named struct fields.

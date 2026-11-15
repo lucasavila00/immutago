@@ -118,7 +118,7 @@ Shared reports the presence of an embedded im.Shared value, not type validity.
 
 ## type Classifier
 
-Classifier caches protected storage and callback queries for one analysis pass. Its zero value is ready for use. Types must not change after their first query. A Classifier must not be used by concurrent passes.
+Classifier caches protected storage, callback, and service handle queries for one analysis pass. Its zero value is ready for use. Types must not change after their first query. A Classifier must not be used by concurrent passes.
 
 ```go
 type Classifier struct {
@@ -148,7 +148,7 @@ Contains reports whether t stores a marked value or sealed collection.
 func (c *Classifier) Handles(t types.Type) bool
 ```
 
-Handles reports whether t stores a service handle, including through native containers.
+Handles reports whether storage or a callable contract contains a service handle.
 
 ## type Prover
 

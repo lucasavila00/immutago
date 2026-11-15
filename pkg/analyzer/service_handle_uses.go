@@ -8,11 +8,17 @@ import (
 
 // matchHandleUse lists consumers that preserve the concrete handle and its accessor checks.
 func (c *subsetChecks) matchHandleUse(expression ast.Expr) string {
+	if call, ok := expression.(*ast.CallExpr); ok && c.pass.TypesInfo.Types[call.Fun].IsType() {
+		return c.handleCall(call)
+	}
 	if _, assertion := expression.(*ast.TypeAssertExpr); assertion {
 		return "service handles cannot be recovered from interfaces; use a concrete Ref type"
 	}
+	if statement, ok := c.parents[expression].(ast.Stmt); ok {
+		return c.handleStatement(statement)
+	}
 	switch parent := c.parents[expression].(type) {
-	case *ast.ParenExpr, *ast.SelectorExpr, *ast.StarExpr, *ast.SliceExpr, *ast.ExprStmt:
+	case *ast.ParenExpr, *ast.SelectorExpr, *ast.StarExpr, *ast.SliceExpr, *ast.IndexListExpr:
 		return ""
 	case *ast.UnaryExpr:
 		if parent.Op == token.AND || parent.Op == token.ARROW {
@@ -25,16 +31,12 @@ func (c *subsetChecks) matchHandleUse(expression ast.Expr) string {
 		if storage, ok := c.pass.TypesInfo.TypeOf(parent.X).Underlying().(*types.Map); ok {
 			return c.matchTransport(c.pass.TypesInfo.TypeOf(expression), storage.Key())
 		}
-	case *ast.AssignStmt:
-		return c.handleBindings(parent.Rhs, parent.Lhs)
 	case *ast.ValueSpec:
 		destinations := make([]ast.Expr, len(parent.Names))
 		for i, name := range parent.Names {
 			destinations[i] = name
 		}
 		return c.handleBindings(parent.Values, destinations)
-	case *ast.ReturnStmt:
-		return c.matchReturn(parent)
 	case *ast.CallExpr:
 		return c.handleCall(parent)
 	case *ast.CompositeLit:
@@ -45,6 +47,19 @@ func (c *subsetChecks) matchHandleUse(expression ast.Expr) string {
 		}
 	case *ast.BinaryExpr:
 		return c.matchBinary(parent)
+	}
+	return "service handle operation is outside the allowed concrete copy, storage, and call forms"
+}
+
+// handleStatement checks concrete copies and each implicit statement conversion.
+func (c *subsetChecks) handleStatement(statement ast.Stmt) string {
+	switch parent := statement.(type) {
+	case *ast.ExprStmt, *ast.GoStmt, *ast.DeferStmt:
+		return ""
+	case *ast.AssignStmt:
+		return c.handleBindings(parent.Rhs, parent.Lhs)
+	case *ast.ReturnStmt:
+		return c.matchReturn(parent)
 	case *ast.SwitchStmt:
 		return c.matchSwitch(parent)
 	case *ast.CaseClause:

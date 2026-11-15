@@ -46,10 +46,13 @@ func runtimeObject(object types.Object) bool {
 
 // visitService checks method results in packages that do not use im data.
 func (c *checks) visitService(node ast.Node) bool {
-	if declaration, ok := node.(*ast.TypeSpec); ok {
+	switch declaration := node.(type) {
+	case *ast.TypeSpec:
 		if object := c.pass.TypesInfo.Defs[declaration.Name]; object != nil {
 			c.checkServiceResults(declaration.Name.Pos(), object.Type())
 		}
+	case *ast.FuncDecl:
+		c.checkFunctionBody(declaration)
 	}
 	return true
 }

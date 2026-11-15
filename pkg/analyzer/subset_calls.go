@@ -189,7 +189,7 @@ func (c *subsetChecks) protectedCallArguments(call *ast.CallExpr) bool {
 
 // matchTransport permits concrete value copies and rejects implicit interface or callback storage.
 func (c *subsetChecks) matchTransport(source, destination types.Type) string {
-	if destination != nil && c.queries.Handles(source) {
+	if destination != nil && c.queries.Handles(source) && !types.Identical(source, destination) {
 		if _, boxed := destination.Underlying().(*types.Interface); boxed {
 			return "service handles cannot enter interfaces; keep the concrete Ref type"
 		}

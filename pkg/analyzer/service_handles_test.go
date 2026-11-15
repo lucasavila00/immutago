@@ -22,8 +22,29 @@ func use(r *SharedRoute) int{return r.Worker.Current().Count()}`},
 return v.Current().Count()}`},
 		{"multiple copy", `func use(r Handle){a,b:=r,r;a,b=b,a;_,_=a,b}`},
 		{"closure", `func use(r Handle){f:=func(){r.Current().Count()};go f();defer r.Current().Count()}`},
+		{"discarded message result", `func(*Counter) Worker()Handle{return Handle{}}
+func use(r Handle){go r.Current().Worker();defer r.Current().Worker()}`},
 		{"channel", `func use(r Handle,ch chan Handle){ch<-r;other:=<-ch;other.Current().Count()}`},
 		{"concrete callback", `func use(r Handle,f func(Handle)){f(r)}`},
+		{"concrete generic parameter", `func use[T any](r Handle,v T)Handle{return r}
+func call(r Handle){use(r,1).Current().Count()}`},
+		{"concrete generic field", `type Box[T any]struct{Worker Handle;Value T}
+func use(r Handle){box:=Box[int]{Worker:r};box.Worker.Current().Count()}`},
+		{"concrete generic alias", `type Alias[T any]=Handle;func use(r Alias[int]){r.Current().Count()}`},
+		{"unrelated bodyless function", `func cpuID()uint64`},
+		{"callback result", `func use(f func()Handle)int{next:=f;return next().Current().Count()}`},
+		{"concrete iterator", `func use(r Handle){
+for next:=range func(yield func(Handle)bool){yield(r)}{next.Current().Count()}}`},
+		{"producer interface", `type Producer interface{Worker()Handle}
+func pass(p Producer)Producer{return p}
+func use(p Producer)int{next:=p;return pass(next).Worker().Current().Count()}`},
+		{"native operations", `func use(r Handle){rs:=make([]Handle,1);rs=append(rs,r);copy(rs,rs);clear(rs)
+m:=make(map[Handle]int);m[r]=1;delete(m,r);_=len(rs);_=cap(rs)}`},
+		{"service handle state", `type Pool struct{supervise.Service[Handle];Workers map[string]Handle}
+func(p *Pool) Update(r Handle){p.Workers["x"]=r;self:=p;f:=func(){self.Workers["y"]=r};f()
+p.Args().Current().Count()}`},
+		{"service callback", `func(c *Counter) Visit(f func(*Counter)){f(c)}
+func use(r Handle){r.Current().Visit(func(c *Counter){c.count++})}`},
 		{"frozen field", `type Routes struct{im.Scoped;Workers im.FrozenSlice[Handle]}
 func use(r Routes)int{return r.Workers.At(0).Current().Count()}`},
 		{"implementation", `func(c *Counter) Add(){self:=c;f:=func(){self.count++};f()}`},
@@ -64,12 +85,31 @@ func use(r Handle){consume(pair(r))}`},
 		{"interface range", `func use(rs []Handle){var v any;for _,v=range rs{_=v}}`},
 		{"nested interface", `type Wrapper struct{Value Handle};func use(r Handle){var v any=Wrapper{r};_=v}`},
 		{"conversion", `type Copy Handle;func use(r Handle){_=Copy(r)}`},
+		{"conversion result", `type Copy Handle;func use(){_=Handle(Copy{})}`},
+		{"nil conversion", `func use(){_=(*Handle)(nil)}`},
+		{"nil container conversion", `func use(){_=[]Handle(nil)}`},
 		{"assertion", `func use(v any)Handle{return v.(Handle)}`},
+		{"callback boxing", `func use(r Handle){var v any=func()Handle{return r};_=v}`},
+		{"callback assertion", `func use(v any){_=v.(func()Handle)}`},
+		{"callback generic", `func keep[T any](v T)T{return v}
+func use(r Handle){_=keep(func()Handle{return r})}`},
+		{"iterator boxing", `func use(r Handle){var v any
+for v=range func(yield func(Handle)bool){yield(r)}{_=v}}`},
+		{"producer boxing", `type Producer interface{Worker()Handle};func use(p Producer){var v any=p;_=v}`},
+		{"producer assertion", `type Producer interface{Worker()Handle};func use(v any){_=v.(Producer)}`},
 		{"generic", `func get[T interface{Current()*Counter}](r T)*Counter{return r.Current()}
 func use(r Handle){_=get(r)}`},
 		{"type switch", `func use(v any){switch r:=v.(type){case Handle:r.Current().Count()}}`},
 		{"nonservice", `func use(){var ref supervise.Ref[int];_=ref}`},
+		{"unused nonservice", `var ref supervise.Ref[int]`},
+		{"nonservice alias", `type Wrong = supervise.Ref[int]`},
+		{"nonservice parameter", `func use(supervise.Ref[int]){}`},
+		{"bodyless parameter", `func leak(Handle)any`},
+		{"bodyless result", `func leak()Handle`},
+		{"bodyless callback", `func leak(func()Handle)any`},
+		{"bodyless receiver", `type Wrapper struct{Worker Handle};func(Wrapper) leak()any`},
 		{"generic wrapper", `type Box[T any] struct{Value T};func use(r Handle){_=Box[Handle]{r}}`},
+		{"generic alias", `type Alias[T any]=Handle;var ref Alias[Handle]`},
 		{"promoted accessor", `type Wrapper struct{Handle};func use(r Wrapper){r.Current().Count()}`},
 		{"protected field write", `func use(r *Route,h Handle){r.Worker=h}`},
 		{"pointer field", `type Bad struct{im.Scoped;Worker *Handle}`},

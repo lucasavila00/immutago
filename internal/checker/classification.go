@@ -2,7 +2,7 @@ package checker
 
 import "go/types"
 
-// Classifier caches protected storage and callback queries for one analysis pass.
+// Classifier caches protected storage, callback, and service handle queries for one analysis pass.
 // Its zero value is ready for use. Types must not change after their first query.
 // A Classifier must not be used by concurrent passes.
 type Classifier struct {
@@ -20,7 +20,7 @@ const (
 	handleMode
 )
 
-// classificationKey keeps storage, callback, and constraint walks separate.
+// classificationKey keeps each traversal mode separate.
 type classificationKey struct {
 	typ  types.Type
 	mode classificationMode
@@ -39,7 +39,7 @@ func (c *Classifier) Contains(t types.Type) bool { return c.query(t, storageMode
 // Callable reports whether t contains a callback contract that carries protected storage.
 func (c *Classifier) Callable(t types.Type) bool { return c.query(t, callableMode) }
 
-// Handles reports whether t stores a service handle, including through native containers.
+// Handles reports whether storage or a callable contract contains a service handle.
 func (c *Classifier) Handles(t types.Type) bool { return c.query(t, handleMode) }
 
 // query completes all reachable edges before propagating positive results through cycles.
@@ -109,7 +109,7 @@ func (c *Classifier) expand(node *classificationNode) {
 		return
 	}
 	if node.key.mode == handleMode {
-		c.storageEdges(node)
+		c.callableEdges(node)
 		return
 	}
 	if IsLibraryType(node.key.typ, "Owner") || IsRuntimeType(node.key.typ, ServiceMarker) ||
@@ -169,34 +169,36 @@ func (c *Classifier) constraintEdges(node *classificationNode) {
 	}
 }
 
-// callableEdges follows nested callback contracts without treating a marked value as a callback.
+// callableEdges follows stored components and callable contracts in the current mode.
 func (c *Classifier) callableEdges(node *classificationNode) {
 	switch storage := node.key.typ.Underlying().(type) {
 	case *types.Signature:
 		for _, tuple := range []*types.Tuple{storage.Params(), storage.Results()} {
 			for item := range tuple.Variables() {
-				c.connect(node, item.Type(), storageMode)
-				c.connect(node, item.Type(), callableMode)
+				if node.key.mode == callableMode {
+					c.connect(node, item.Type(), storageMode)
+				}
+				c.connect(node, item.Type(), node.key.mode)
 			}
 		}
 	case *types.Interface:
 		for method := range storage.Methods() {
-			c.connect(node, method.Type(), callableMode)
+			c.connect(node, method.Type(), node.key.mode)
 		}
 	case *types.Pointer:
-		c.connect(node, storage.Elem(), callableMode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Array:
-		c.connect(node, storage.Elem(), callableMode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Slice:
-		c.connect(node, storage.Elem(), callableMode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Map:
-		c.connect(node, storage.Key(), callableMode)
-		c.connect(node, storage.Elem(), callableMode)
+		c.connect(node, storage.Key(), node.key.mode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Chan:
-		c.connect(node, storage.Elem(), callableMode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Struct:
 		for field := range storage.Fields() {
-			c.connect(node, field.Type(), callableMode)
+			c.connect(node, field.Type(), node.key.mode)
 		}
 	}
 }

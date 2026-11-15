@@ -60,5 +60,6 @@ func (p *Prover) ScopedResultReason(t types.Type) string {
 	case *types.Pointer:
 		return "a Scoped result must be a value, not a pointer"
 	}
-	return "Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped"
+	return "Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, " +
+		"or a struct with im.Scoped"
 }
