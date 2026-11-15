@@ -3,6 +3,7 @@
 These forms apply to:
 
 - Structs that embed `im.Frozen` or `im.Local`.
+- Named interfaces that embed [im.FrozenInterface](frozen-interfaces.md).
 - `im.FrozenString`, `im.FrozenSlice`, `im.FrozenMap`, and local read projections.
 
 Combine them with each type's forms. [Cell](cell.md) has its own forms.
@@ -127,6 +128,7 @@ forms on this page.
 | Explicit field or element as receiver | `group.FrozenPoint.XValue()`, `points[i].XValue()` |
 | Constructed value, new pointer, or direct call result as receiver | `FrozenPoint{X: 3}.XValue()`, `(&FrozenPoint{X: 3}).ReadX()`, `makePoint().XValue()` |
 | Direct method on an ordinary concrete receiver with protected inputs or results | `reader.Read(p)` with `func (r *Reader) Read(p *LocalPoint) int`; `r` can have an ordinary mutable type. |
+| Direct call through a proved Frozen interface | `scorer.Score(features)`; use the [complete interface rules](frozen-interfaces.md). |
 | Alias or parentheses in these forms | `type Position = FrozenPoint`, `(p).ReadX()` |
 
 | Method receiver | Body rules |

@@ -138,7 +138,14 @@ func (c *subsetChecks) generationDirective(position token.Pos) bool {
 		count += c.generationCommands(file)
 	}
 	if count != 1 {
-		c.pass.Reportf(position, "Frozen records require exactly one package directive: %s", projectiongen.Directive)
+		kind := "Frozen records"
+		for _, object := range c.pass.TypesInfo.Defs {
+			if object != nil && object.Pos() == position && checker.FrozenInterface(object.Type()) {
+				kind = "Frozen interfaces"
+				break
+			}
+		}
+		c.pass.Reportf(position, "%s require exactly one package directive: %s", kind, projectiongen.Directive)
 		return false
 	}
 	return true

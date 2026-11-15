@@ -43,6 +43,9 @@ func (g *generator) writeInterface(out *bytes.Buffer, item record) error {
 		constructorName(item.name), constructorName(item.name), source, item.name, item.name)
 	fmt.Fprintf(out, "// IsNil reports whether the interface is nil; a stored nil pointer is not nil.\n"+
 		"func (v %s) IsNil() bool { return v.immutagoProjection.Read() == nil }\n", item.name)
+	if g.bootstrap {
+		return nil
+	}
 	for method := range item.typ.Underlying().(*types.Interface).Methods() {
 		if checker.FrozenInterfaceSeal(method) {
 			continue

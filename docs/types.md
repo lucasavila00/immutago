@@ -4,7 +4,7 @@ These categories define fields, Cells, projections, and service results.
 
 | Category — exhaustive | Types |
 | --- | --- |
-| Frozen | Booleans, numbers, native strings, FrozenString, unnamed arrays of Frozen values, Frozen records, pointers to Frozen records, FrozenSlice/FrozenMap with Frozen arguments, UncheckedValue handles, and service references. |
+| Frozen | Booleans, numbers, native strings, FrozenString, unnamed arrays of Frozen values, Frozen records, pointers to Frozen records, [Frozen interfaces](frozen-interfaces.md), FrozenSlice/FrozenMap with Frozen arguments, UncheckedValue handles, and service references. |
 | Copied | Booleans, numbers, service references, and unnamed arrays of Copied values. |
 | Local | Projection, StringProjection, SliceProjection, MapProjection, Local records, and unnamed arrays whose elements are Local. |
 | Read result | Copied or Local. |
@@ -29,8 +29,13 @@ Frozen, Copied, or read-result payload types.
 - Set fields at construction. Later field, element, or dereference writes fail.
 - Each nested record needs its own marker. Unmarked structs cannot own
   protected data.
-- Native containers, interfaces, functions, and Local values are not Frozen fields.
+- Native containers, unmarked interfaces, functions, and Local values are not Frozen fields.
 - A Cell is mutable storage, not a Frozen value or read result.
+
+Embed `im.FrozenInterface` in a named interface to permit proved Frozen record
+implementations. It is a Frozen type, not a read result. Use its generated local
+projection when reading through a Local value. See the complete
+[interface forms](frozen-interfaces.md).
 
 ## API requirements — exhaustive
 

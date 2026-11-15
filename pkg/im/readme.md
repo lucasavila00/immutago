@@ -92,6 +92,16 @@ Frozen marks a struct with immutable fields. Values and pointers to that struct 
 type Frozen struct{}
 ```
 
+## type FrozenInterface
+
+FrozenInterface marks an interface implemented by proved Frozen records. Embed it in a named interface. Each conversion needs an immutability proof; the private method alone does not prove the fields of an implementation. Methods have fixed concrete parameters and at most one read result. Generated local projections do not expose the interface. Method implementations keep ordinary Go contracts, including retention of their own Frozen receiver. See https://github.com/lucasavila00/immutago/blob/main/docs/frozen-interfaces.md for the complete forms.
+
+```go
+type FrozenInterface interface {
+    // contains filtered or unexported methods
+}
+```
+
 ## type FrozenMap
 
 FrozenMap is a read\-only map. Its zero value is empty. K and V must be immutable. Copies share the same read\-only entries.

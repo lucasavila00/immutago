@@ -9,6 +9,7 @@ for terms such as Frozen, local projection, and builder.
 | --- | --- |
 | Understand the type categories and fields | [Type rules](types.md) |
 | Declare immutable stored data | [Frozen records](frozen-records.md) |
+| Store polymorphic Frozen data | [Frozen interfaces](frozen-interfaces.md) |
 | Combine local projections and copied results | [Local records](local.md) |
 | Generate typed field projections and read local projections | [Typed projections](projections.md) |
 | Publish the current Frozen atomically | [Cells](cell.md) |

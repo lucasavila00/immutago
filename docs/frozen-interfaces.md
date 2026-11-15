@@ -36,7 +36,8 @@ payload cannot leave that local projection.
 - Embed `im.FrozenInterface`, directly or through another Frozen interface.
 - Aliases keep the interface identity. An interface can embed other interfaces
   when its complete method set meets these rules.
-- Declare only exported methods, apart from the private im seal.
+- Declare only exported methods, apart from the private im seal. Method names
+  Local and IsNil conflict with generated members and are rejected.
 - Use fixed concrete parameters. Interface and function parameters are rejected.
   Ordinary inputs such as `[]float32` follow ordinary Go contracts. Protected
   inputs also need the [common call forms](common-forms.md#statements-and-calls).
@@ -72,8 +73,10 @@ interface itself. Calling a method on a nil interface has Go's usual panic.
 
 Frozen interfaces can be service inputs and persistent Frozen fields. Exported
 service methods return their generated local projection, not the persistent
-interface. Methods retain the normal body checks and ordinary Go input
-contracts; this feature does not prove purity or whole-program isolation.
+interface. Methods retain the normal body checks and ordinary Go input contracts. For
+example, an implementation can save its own Frozen receiver in a package
+variable. A caller of its local projection cannot extract that receiver.
+The checker does not infer method effects.
 
 ## Rejected examples — non-exhaustive
 
