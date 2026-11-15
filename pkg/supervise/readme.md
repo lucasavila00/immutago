@@ -29,7 +29,7 @@ StartReserved starts a reference from Reserve under parent. It sets args on a fr
 
 Each restart repeats setup on a fresh value with the same args. Failed setup keeps the previous value in ref. If parent has stopped, Init still runs but Run does not. The runtime stops children created by a value that will not run.
 
-Starting an already started reference panics. If concurrent starts compete, the one that loses publication stops its staged children and panics.
+A zero Ref panics with "supervise: StartReserved needs a Ref from Reserve". Starting an already started reference panics. If concurrent starts compete, the one that loses publication stops its staged children and panics.
 
 ## type ConcurrentSafe
 
@@ -146,7 +146,7 @@ func (p Ref[T]) Borrow() *T
 
 Borrow selects the last successfully initialized service value with one atomic load. For direct Ref calls, the analyzer accepts only ref.Borrow\(\).Method\(args\). Method must be exported and must not be Init, Run, or a runtime method. Direct calls cannot save the pointer, Borrow method, or selected method. Interface calls can expose the pointer without these source checks. Borrow is shared and is not exclusive. No release call is needed. A call in progress finishes on its selected instance, even after a restart.
 
-Borrow panics for a zero or unstarted reference. It can select a value whose Run has ended. Stop does not invalidate the reference or block later calls.
+Borrow panics with "supervise: zero Ref" for a zero reference, or with "supervise: Ref not started" for an unstarted reservation. It can select a value whose Run has ended. Stop does not invalidate the reference or block later calls.
 
 ### func \(Ref\[T\]\) IsZero
 

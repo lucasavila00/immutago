@@ -44,13 +44,20 @@ func TestRefIsZero(t *testing.T) {
 
 // TestZeroRefBorrowPanics checks that an unset reference has no service to select.
 func TestZeroRefBorrowPanics(t *testing.T) {
-	defer func() {
-		if recover() == nil {
-			t.Fatal("Borrow on a zero Ref did not panic")
-		}
-	}()
 	var ref Ref[counter]
-	ref.Borrow()
+	expectPanic(t, "supervise: zero Ref", func() { ref.Borrow() })
+}
+
+// TestZeroRefStartReservedPanics checks that startup requires a reserved reference.
+func TestZeroRefStartReservedPanics(t *testing.T) {
+	root := NewRoot(nil)
+	defer func() { <-root.Stop() }()
+	var ref Ref[counter]
+	expectPanic(t, "supervise: StartReserved needs a Ref from Reserve", func() {
+		if err := StartReserved(root, ref, NoArgs{}); err != nil {
+			t.Fatal(err)
+		}
+	})
 }
 
 // TestRefIsZeroAllocations checks both results without service access.
