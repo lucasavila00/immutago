@@ -20,7 +20,7 @@ type Counter struct {
 
 func (*Counter) Run(context.Context)           {}
 func (*Counter) Pair() (int, bool)             { return 1, true }
-func (*Counter) Map() map[string]int           { return nil }
+func (*Counter) Map() map[int]int              { return nil }
 func (*Counter) Slice() []int                  { return nil }
 func (*Counter) Interface() error              { return nil }
 func (*Counter) Pointer() *SharedReply         { return &SharedReply{} }
@@ -52,7 +52,7 @@ func (*Counter) Shared() SharedReply           { return SharedReply{} }
 func (*Counter) SharedArray() [1]SharedReply   { return [1]SharedReply{} }
 func (*Counter) PointerArray() [1]*SharedReply { return [1]*SharedReply{} }
 func (*Counter) List() im.FrozenSlice[int]     { var value im.FrozenSlice[int]; return value }
-func (*Counter) MapResult() im.FrozenMap[string, int] {
-	var value im.FrozenMap[string, int]
+func (*Counter) MapResult() im.FrozenMap[int, int] {
+	var value im.FrozenMap[int, int]
 	return value
 }

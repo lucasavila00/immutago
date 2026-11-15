@@ -1,6 +1,6 @@
 # Scoped results
 
-A handler can return nothing or one **Scoped result**: a primitive, an array of
+A handler can return nothing or one **Scoped result**: a primitive, a frozen string, an array of
 Scoped results, or a struct with `im.Scoped`.
 
 ## Example: quota results
@@ -9,7 +9,7 @@ Examples from the [configuration project](../examples/configuration/README.md):
 
 | Method | Result |
 | --- | --- |
-| `FileCache.Text() string` | The last file contents. |
+| `FileCache.Text() im.FrozenString` | The last file contents. |
 | `Limiter.Take() Decision` | An integer type with the request decision. |
 | `Limiter.Usage() Usage` | A struct with `im.Scoped` and the current counts. |
 
@@ -29,7 +29,8 @@ to the limiter's mutable counters.
 
 | Type | Example |
 | --- | --- |
-| Boolean, integer, floating-point, complex, or string value | `bool`, `int`, `float64`, `string` |
+| Boolean, integer, floating-point, or complex value | `bool`, `int`, `float64`, `complex128` |
+| Frozen string | `im.FrozenString`; see [Frozen strings](frozen-strings.md). |
 | Defined scalar | `type Count int` |
 | Empty Scoped marker value | `im.Scoped` |
 | Struct with `im.Scoped` and proved immutable fields | `Usage` |
@@ -61,8 +62,9 @@ argument: a Scoped value can be saved, but a Scoped pointer cannot.
 
 | Result | Use instead |
 | --- | --- |
+| `string`, a defined string type, or an array of native strings | Return `im.FrozenString`, or an array of frozen strings. |
 | `*Usage` | Declare a value result such as `Read() Usage`; return `*p`. |
-| `[]int`, `map[string]int`, or a frozen collection | Put a frozen collection in a struct with `im.Scoped` and return that struct. |
+| `[]int`, `map[string]int`, or a frozen slice or map | Put a frozen collection in a struct with `im.Scoped` and return that struct. |
 | `error`, `any`, or another interface | Return a struct with `im.Scoped` and the information the caller needs. |
 | `(int, bool)` | Return a struct with `im.Scoped` and fields for both values. |
 | An unmarked struct, Shared struct or pointer, or `im.UncheckedValue[T]` | Return a struct with `im.Scoped` and allowed fields. |

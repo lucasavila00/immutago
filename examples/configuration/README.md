@@ -42,7 +42,7 @@ can read the reference. A failed Init leaves a reserved reference available:
 
 ```go
 cache := supervise.Reserve[configuration.FileCache]()
-args := configuration.FileArgs{Path: path, Every: time.Second}
+args := configuration.FileArgs{Path: im.FreezeString(path), Every: time.Second}
 err := supervise.StartReserved(root, cache, args)
 if errors.Is(err, os.ErrNotExist) {
     if err := os.WriteFile(path, []byte(`{"api":3}`), 0600); err != nil {

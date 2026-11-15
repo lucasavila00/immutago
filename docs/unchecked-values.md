@@ -14,12 +14,12 @@ type baked struct { weights []float64 }
 
 type Model struct {
     im.Shared
-    Name   string
+    Name   im.FrozenString
     engine im.UncheckedValue[baked]
 }
 
 func Load(name string, weights []float64) *Model {
-    return &Model{Name: name, engine: im.Trust(&baked{weights: slices.Clone(weights)})}
+    return &Model{Name: im.FreezeString(name), engine: im.Trust(&baked{weights: slices.Clone(weights)})}
 }
 
 func Predict(m *Model, features im.FrozenSlice[float64]) float64 {

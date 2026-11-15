@@ -74,7 +74,7 @@ to the resolved `supervise.Service` type, including aliases and pointers.
 
 1. Skip unexported methods, Init, Run, and methods from the fixed runtime.
 2. Accept no result or one result, including for promoted user methods.
-3. Use `Prover.ScopedResultReason` to match primitives, unnamed arrays of Scoped
+3. Use `Prover.ScopedResultReason` to match primitives, frozen strings, unnamed arrays of Scoped
    results, and structs with im.Scoped. Prove scalars and Scoped structs with
    the existing immutable type proof; check each array element type recursively.
    Fields of a Scoped struct use the ordinary stored-type rules.
@@ -146,3 +146,23 @@ graph traversal.
 - Freeze copies the handle; the analyzer enforces exclusive use and consumption.
 - Reads and [iteration](../../pkg/im/iterator.go) use the native storage directly.
 - Clone copies slots, not referenced objects. Those objects remain safe to share because they are immutable.
+
+## Frozen string storage
+
+[FrozenString](../../pkg/im/string.go) holds a private native string.
+`FreezeString` and `Clone` use `strings.Clone` to copy bytes. Neither operation
+exposes a view into its input storage. Strings have no builder consumption state.
+
+The [type proof](../../internal/checker/proof.go) accepts the exact library type
+and rejects native string kinds in each proved field and collection type argument.
+The classifier includes FrozenString in protected storage. The existing source
+matcher checks its concrete transport, statement context, and direct library
+calls. `FreezeString` is a non-consuming direct call; `Len`, `At`, and `Clone`
+use the exact library receiver matcher.
+
+The [CLI fixtures](../../tests/testdata/accepted/frozen_string/strings.go) cover
+construction, reads, collections, and service results.
+[Rejected fixtures](../../tests/testdata/rejected/frozen_string/storage.go) cover
+recursive native string storage; [service-only fixtures](../../tests/testdata/service_boundary/strings/strings.go)
+check results without an im import. [Runtime tests](../../pkg/im/string_test.go)
+check input and output storage independence, empty substrings, and allocations.

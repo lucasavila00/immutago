@@ -4,7 +4,7 @@ typed_nil_boundaries.go:11:2: unsupported immutable operation: native builders r
   fix: declare one fresh local builder; use values = append(values, element) to extend it
 typed_nil_boundaries.go:13:6: cannot freeze scores: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 typed_nil_boundaries.go:13:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
-  source: scores = map[string]int(nil)
+  source: scores = map[int]int(nil)
   fix: declare one fresh local builder; use values = append(values, element) to extend it
 typed_nil_boundaries.go:15:6: cannot freeze named: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 typed_nil_boundaries.go:15:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle

@@ -3,7 +3,7 @@
 These forms apply to:
 
 - Structs that embed `im.Shared` or `im.Scoped`.
-- `im.FrozenSlice` and `im.FrozenMap` values.
+- `im.FrozenString`, `im.FrozenSlice`, and `im.FrozenMap` values.
 
 Combine them with each type's forms. [Owner](owner.md) has its own forms.
 
@@ -24,7 +24,8 @@ They also apply to each nested field, key, and element.
 
 | Allowed forms — exhaustive | Example |
 | --- | --- |
-| Boolean, integer, float, complex, or string | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
+| Boolean, integer, float, or complex | `bool`, `int`, `uintptr`, `float64`, `complex128` |
+| Frozen string | `im.FrozenString`; see [Frozen strings](frozen-strings.md). |
 | Defined scalar | `type Count int` |
 | Empty marker value | `im.Shared`, `im.Scoped` |
 | Unnamed array of allowed elements | `[2]int`, `[2]SharedPoint` |
@@ -33,12 +34,13 @@ They also apply to each nested field, key, and element.
 | Nested marked value, with either marker on the parent or child | `type LocalParent struct { im.Scoped; Child ScopedPoint }`, `type SharedParent struct { im.Shared; Child ScopedPoint }` |
 | Pointer to a concrete Shared struct | `*SharedPoint` |
 | Recursive marked struct | `type SharedNode struct { im.Shared; Next *SharedNode }` |
-| Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
+| Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[im.FrozenString, *SharedPoint]` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
 | Trusted handle | `im.UncheckedValue[baked]`; see [Unchecked immutable values](unchecked-values.md). |
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
+| `type Bad struct { im.Shared; Text string }` | `type Good struct { im.Shared; Text im.FrozenString }` |
 | `type Bad struct { Mark im.Shared }` | `type Good struct { im.Shared }` |
 | `type Bad struct { *im.Shared }` | Embed `im.Shared` by value. |
 | `type Bad struct { im.Shared; im.Scoped }` | Embed one marker. |
@@ -80,12 +82,12 @@ p = &SharedPoint{X: 2} // q still observes X == 1.
 | Compare comparable values or arrays with `==` or `!=` | `same := point == other`, `same := points == otherPoints` |
 | Array length and capacity | `len(points)`, `cap(points)` |
 | Scalar unary `+`, `-`, `!`, `^`; scalar binary operators and conversions | `-point.X`, `point.X + 1`, `int64(point.X)` |
-| Use scalar reads in literals or indices; index or slice strings | `[]int{point.X}`, `a[point.X]`, `user.Name[1:]` |
+| Use scalar reads in literals or indices | `[]int{point.X}`, `a[point.X]` |
 | Pass scalar reads to ordinary calls, including builtins, function variables, interface methods, and generics | `callback(point.X)`, `identity(point.X)` |
 
 - After `x := point.X`, `x` is an ordinary integer; you can change it or capture it.
 - The read of `point.X` still needs a listed statement form.
-- Copies of marked values, pointers, and frozen collections keep their rules.
+- Copies of marked values, pointers, frozen strings, and frozen collections keep their rules.
 - Constant expressions follow the same rules. Use `count := len(points)` before
   a closure, then capture `count`; do not read `points` inside the closure.
 
@@ -180,7 +182,7 @@ Use the operations above inside these statement forms:
 | Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
 | Bind Start results to two local names or blanks with `:=`, `=`, or `var` | `ref, err := supervise.Start[Worker](root, args)`, `var ref, err = supervise.Start[Worker](root, args)` |
 | Bind a map reader's two results to new locals | `value, found := frozen.Get(key)` |
-| Freeze in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
+| Freeze a slice or map in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |
 | Call a method in the list above | `n := p.ReadX()` |
 | Return values or `Shared` pointers, including multiple results | `return point`, `return p, true` |

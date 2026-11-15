@@ -8,6 +8,7 @@
 | Store or return pointers to read-only objects | [Shared](shared.md) |
 | Prevent functions from keeping object pointers | [Scoped](scoped.md) |
 | Replace a pointer while readers use the previous object | [Owner](owner.md) |
+| Store text without substring views | [Frozen strings](frozen-strings.md) |
 | Build read-only slices and maps | [Frozen collections](frozen.md) |
 | Wrap data whose immutability your package promises | [Unchecked immutable values](unchecked-values.md) |
 | Choose an immutable return type | [Scoped results](scoped-results.md) |

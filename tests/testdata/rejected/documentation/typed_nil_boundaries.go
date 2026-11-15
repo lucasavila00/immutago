@@ -10,7 +10,7 @@ type nilShared struct{ im.Shared }
 func convertedNilDeclarations() {
 	values := []int(nil)
 	_ = im.FreezeSlice(values)
-	var scores = map[string]int(nil)
+	var scores = map[int]int(nil)
 	_ = im.FreezeMap(scores)
 	var named nilInts = nilInts(nil)
 	_ = im.FreezeSlice(named)
@@ -23,7 +23,7 @@ func convertedNilDeclarations() {
 // convertedNilInputs must pass bare nil with explicit type arguments to Freeze.
 func convertedNilInputs() {
 	_ = im.FreezeSlice([]int(nil))
-	_ = im.FreezeMap(map[string]int(nil))
+	_ = im.FreezeMap(map[int]int(nil))
 	_ = im.FreezeSlice(nilInts(nil))
 	_ = im.FreezeSlice((nilIntsAlias)((nil)))
 	_ = im.FreezeSlice([]nilShared(nil))

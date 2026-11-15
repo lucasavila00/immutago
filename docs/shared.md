@@ -18,7 +18,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type Product struct {
     im.Shared
-    Name string
+    Name im.FrozenString
     Price int
 }
 

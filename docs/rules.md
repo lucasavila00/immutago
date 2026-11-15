@@ -8,6 +8,7 @@
 | [Shared](shared.md) | Store or return pointers to immutable objects. |
 | [Scoped](scoped.md) | Keep pointers local; use functions and methods that do not save them. |
 | [Owner](owner.md) | Publish a new Scoped object and read the current one. |
+| [Frozen strings](frozen-strings.md) | Copy native text into read-only storage without substring views. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
 | [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
 

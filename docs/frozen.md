@@ -20,15 +20,16 @@ package main
 import "github.com/lucasavila00/immutago/pkg/im"
 
 func main() {
-    scores := map[string]int{"alice": 10}
+    alice := im.FreezeString("alice")
+    scores := map[im.FrozenString]int{alice: 10}
     frozen := im.FreezeMap(scores)
 
     next := frozen.Clone()
-    next["alice"] = 20
+    next[alice] = 20
     updated := im.FreezeMap(next)
 
-    oldScore, _ := frozen.Get("alice")
-    newScore, _ := updated.Get("alice")
+    oldScore, _ := frozen.Get(alice)
+    newScore, _ := updated.Get(alice)
     println(oldScore, newScore) // 10 20
 }
 ```
@@ -43,7 +44,7 @@ slice or map; pointer elements still point to the same read-only objects.
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Declare from make, literal, zero, or Clone | `values := make([]int, 2)`, `values := []int{1}`, `var values []int`, `values := frozen.Clone()` |
-| Initialize with bare `nil` | `var values []int = nil`, `var scores map[string]int = nil` |
+| Initialize with bare `nil` | `var values []int = nil`, `var scores map[int]int = nil` |
 | Read or replace an element | `x := values[i]`, `values[i] = x`, `scores[key] = x` |
 | Read length or slice capacity | `len(values)`, `cap(values)` |
 | Append individual elements to the same variable | `values = append(values, 1, 2)` |
@@ -68,9 +69,9 @@ Fresh inputs can go directly into Freeze; the same forms work for maps:
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `alias := values`, `values[1:]`, `&values[0]` | Read/copy elements; use Clone for independent mutable storage. |
-| `values := []int(nil)` or `scores := map[string]int(nil)` | `var values []int` or `var scores map[string]int` |
+| `values := []int(nil)` or `scores := map[int]int(nil)` | `var values []int` or `var scores map[int]int` |
 | `type Ints []int; values := Ints(nil)` | `type Ints []int; var values Ints` |
-| `im.FreezeSlice([]int(nil))` or `im.FreezeMap(map[string]int(nil))` | `im.FreezeSlice[int](nil)` or `im.FreezeMap[string, int](nil)` |
+| `im.FreezeSlice([]int(nil))` or `im.FreezeMap(map[int]int(nil))` | `im.FreezeSlice[int](nil)` or `im.FreezeMap[int, int](nil)` |
 | `update(values)`, `return values` | Edit locally, then freeze and pass/return the frozen value. |
 | `im.FreezeSlice(parameter)` | Construct a local builder first. |
 | `values = append(values, other...)` | Append individual elements. |
