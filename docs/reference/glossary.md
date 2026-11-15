@@ -20,5 +20,5 @@
 | Service method | A declared or promoted method on a service. Exported methods have the [result signature rule](service-results.md). |
 | Service reference | `supervise.Ref[T]`; each Borrow call selects the current service after any restart. |
 | Service run | One service value's background execution and child group. |
-| Group; child | A `supervise.Group` manages services and nested groups; each is a child of its parent group. |
+| Group; child | A `supervise.Group` owns services and nested groups and stops them in reverse start order. Each is a child of its parent group. Groups do not restart. |
 | Allowed form; matcher | A documented source shape; the checker code that validates its syntax, resolved types, and context. |

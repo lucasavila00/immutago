@@ -50,7 +50,7 @@ Borrow selects the current service after any restart. Catalog runs in the
 request's goroutine and loads a projection from the Cell. That projection fixes
 the catalog version for the quote. Keep the reference for later requests and
 select again. The [reference rules](../reference/service-references.md) cover
-optional references, reservations, and direct Borrow calls.
+optional references and direct Borrow calls.
 
 ## Review shared state and inputs
 
@@ -72,9 +72,10 @@ calls. See [service results](../reference/service-results.md) for the full list.
 The example has one service under the root. Use `supervise.StartGroup(parent)`
 when several services must stop together. Inside a service, use `s.Children()`
 for work that must end with that run. A restart creates a new service value and
-child group, so create those children again.
+child group, so create those children again. Other services keep running.
+Groups control shutdown only; they do not restart.
 
 The [runtime reference](../reference/services.md) defines child shutdown order,
-restart limits, failure reports, and reserved startup. In tests,
+restart limits and failure reports. In tests,
 [`supervisetest.NewRoot(t)`](../../pkg/supervise/supervisetest/readme.md) stops the
 tree during cleanup and fails if shutdown takes more than five seconds.

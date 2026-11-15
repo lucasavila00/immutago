@@ -149,6 +149,7 @@ func (c *checks) visit(node ast.Node) bool {
 			c.checkServiceResults(n.Name.Pos(), obj.Type())
 		}
 	case *ast.StructType:
+		c.checkServiceEmbedding(n.Pos(), c.pass.TypesInfo.TypeOf(n))
 		c.checkStruct(n.Pos(), c.pass.TypesInfo.TypeOf(n))
 		c.checkServiceResults(n.Pos(), c.pass.TypesInfo.TypeOf(n))
 	}

@@ -7,37 +7,39 @@ import (
 	"time"
 )
 
-// TestStopWaitsForParentEntry keeps both Stop channels open until the child watcher finishes.
+// TestStopWaitsForParentEntry keeps a nested entry until its child cleanup ends.
 func TestStopWaitsForParentEntry(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		parent := NewRoot(nil)
-		nested := &Group{parent: parent, stopped: make(chan struct{})}
-		returned, finish := make(chan struct{}), make(chan struct{})
-		parent.add(func(ctx context.Context) {
-			nested.serve(ctx)
-			close(returned)
-			<-finish
-		}, nested.halt, nested)
+		nested := StartGroup(parent)
+		entered, release := make(chan struct{}), make(chan struct{})
+		_, err := Start[initializing](nested, AssumeConcurrentSafe(&initHooks{
+			init: func(*initializing) error { return nil },
+			run:  func(_ *initializing, ctx context.Context) { <-ctx.Done(); close(entered); <-release },
+		}))
+		if err != nil {
+			t.Fatal(err)
+		}
 		synctest.Wait()
 		stopped := nested.Stop()
-		<-returned
-		select {
-		case <-stopped:
-			t.Error("nested Stop completed before its parent entry finished")
-		default:
-		}
+		<-entered
 		parentStopped := parent.Stop()
 		synctest.Wait()
 		select {
-		case <-parentStopped:
-			t.Error("parent Stop skipped a child whose watcher is still running")
+		case <-stopped:
+			t.Error("nested Stop completed before cleanup")
 		default:
 		}
-		close(finish)
+		select {
+		case <-parentStopped:
+			t.Error("parent Stop completed before nested cleanup")
+		default:
+		}
+		close(release)
 		<-stopped
 		<-parentStopped
 		if nested.parent != nil || nested.entry != nil {
-			t.Error("stopped group keeps its parent links")
+			t.Error("stopped group keeps parent links")
 		}
 	})
 }
@@ -51,7 +53,7 @@ func TestStopDuringRestartDelay(t *testing.T) {
 		if _, err := Start[failing](nested, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(31 * time.Second)
+		time.Sleep(time.Second / 2)
 		synctest.Wait()
 		before := time.Now()
 		<-nested.Stop()
@@ -59,7 +61,7 @@ func TestStopDuringRestartDelay(t *testing.T) {
 			t.Errorf("Stop waited for a restart timer: %v", delay)
 		}
 		parent.mu.Lock()
-		remaining := len(parent.children)
+		remaining := parent.children.count
 		parent.mu.Unlock()
 		if remaining != 0 {
 			t.Errorf("parent retains %d children after nested Stop", remaining)
@@ -72,10 +74,11 @@ func TestStopDuringRestartDelay(t *testing.T) {
 // TestStopBeforeParentStart removes an entry that the parent has not launched yet.
 func TestStopBeforeParentStart(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		parent := &Group{stopped: make(chan struct{})}
+		parent := newGroup(nil, false)
+		parent.root = parent
 		nested := StartGroup(parent)
 		<-nested.Stop()
-		if len(parent.children) != 0 || nested.parent != nil || nested.entry != nil {
+		if parent.children.count != 0 || nested.parent != nil || nested.entry != nil {
 			t.Error("unstarted group was not released")
 		}
 		<-parent.Stop()
@@ -114,7 +117,7 @@ func TestStartAfterStopDoesNotRetainChildren(t *testing.T) {
 		}
 		nested := StartGroup(parent)
 		parent.mu.Lock()
-		remaining := len(parent.children)
+		remaining := parent.children.count
 		parent.mu.Unlock()
 		if remaining != 0 {
 			t.Errorf("stopped group retains %d new children", remaining)

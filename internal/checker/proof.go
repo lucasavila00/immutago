@@ -218,7 +218,7 @@ func refTargetReason(target types.Type) string {
 	if _, concrete := target.Underlying().(*types.Struct); !concrete || !Service(target) {
 		return "Ref requires a concrete struct that embeds supervise.Service"
 	}
-	return ""
+	return ServiceEmbeddingReason(target)
 }
 
 // structure requires one marker and checks every stored field.

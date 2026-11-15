@@ -110,7 +110,7 @@ results.go:34:17: service method Struct must return a service result: copied val
   result type: service.Unmarked
 results.go:38:16: service method Mutable must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: []int
-results.go:46:25: service method Mutable must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+results.go:46:23: service method Mutable must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: []int
 results.go:49:38: stored im argument: Frozen storage cannot contain Local values
   fix: pass an immutable value or a Frozen pointer; Local pointers cannot be stored
