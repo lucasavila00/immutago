@@ -126,9 +126,6 @@ var subsetFixes = map[string]string{
 
 // subsetFix gives a supported replacement for each rejected operation.
 func subsetFix(rule string) string {
-	if strings.HasPrefix(rule, "pointers to Copied records") {
-		return "pass or return the Copied value; replace the whole stored value when needed"
-	}
 	if strings.Contains(rule, "copied values require") {
 		return "copy scalar fields, or use a generated local projection"
 	}

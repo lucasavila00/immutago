@@ -49,7 +49,7 @@ func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 	if genericSignature(signature) {
 		c.genericStorage(declaration, declaration.Name)
 	}
-	if signature.Recv() != nil && c.immutableObject(signature.Recv().Type()) && !c.markedMethodReceiver(signature) {
+	if signature.Recv() != nil && c.queries.Contains(signature.Recv().Type()) && !c.markedMethodReceiver(signature) {
 		c.report(declaration.Name, "immutable methods require a concrete non-generic marked receiver")
 	}
 }

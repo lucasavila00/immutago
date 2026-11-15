@@ -122,7 +122,7 @@ func embedsMarker(t types.Type, name string) bool {
 	return false
 }
 
-// Contains reports whether a type stores a marked value or sealed collection.
+// Contains reports Frozen or Local storage, including its holders and containers.
 // It runs one query; use Classifier to reuse results across queries.
 func Contains(t types.Type) bool {
 	var classifier Classifier

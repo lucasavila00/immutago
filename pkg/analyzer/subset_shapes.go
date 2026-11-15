@@ -16,7 +16,7 @@ func (c *subsetChecks) statementOperation(expression ast.Expr) ast.Node {
 // protectedStorage includes native builders and scalar projections of protected owners.
 func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 	for expression != nil {
-		if c.immutableObject(c.pass.TypesInfo.TypeOf(expression)) {
+		if c.queries.Contains(c.pass.TypesInfo.TypeOf(expression)) {
 			return true
 		}
 		switch node := expression.(type) {

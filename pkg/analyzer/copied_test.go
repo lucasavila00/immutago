@@ -17,7 +17,7 @@ type Reply struct { im.Local; Score Score }
 func readScore(s Score) int { return s.N }
 `
 
-// TestCopiedForms checks immutable values in mutable holders and all shared result proofs.
+// TestCopiedForms checks value copies in mutable holders and all shared result proofs.
 func TestCopiedForms(t *testing.T) {
 	cases := []string{
 		`var saved Score; func f(){saved=Score{N:1};saved=Score{N:2}}`,
@@ -76,35 +76,8 @@ func TestCopiedRejectedFields(t *testing.T) {
 // TestCopiedRejectedForms checks writes, aliases, transport, and the protected owner path.
 func TestCopiedRejectedForms(t *testing.T) {
 	cases := []struct{ source, want string }{
-		{`func f(){s:=Score{};s.N=2}`, "writes to immutable objects"},
-		{`func f(){s:=Score{};s.Flags[0]=true}`, "writes to immutable objects"},
-		{`func f(){p:=Pair{};p.Rest[0]=Score{}}`, "writes to immutable objects"},
-		{`func f(){h:=Holder{};h.Score.N++}`, "writes to immutable objects"},
-		{`func f(){values:=[]Score{{}};values[0].N++}`, "writes to immutable objects"},
-		{`func f(){values:=[2]Score{};values[0].Flags[0]=true}`, "writes to immutable objects"},
 		{`func f(v Snapshot){v.Score=Score{}}`, "writes to immutable objects"},
 		{`func f(v Reply){v.Score.N++}`, "writes to immutable objects"},
-		{`var pointer *Score`, "pointers to Copied records"},
-		{`type Pointer=*Score;var pointer Pointer`, "pointers to Copied records"},
-		{`type Pointer *Score;var pointer Pointer`, "pointers to Copied records"},
-		{`func f(){_=new(Score);_=&Score{}}`, "pointers to Copied records"},
-		{`func f(s Score){_=&s}`, "pointers to Copied records"},
-		{`func f(h Holder){_=&h.Score}`, "pointers to Copied records"},
-		{`func f(s Score){_=&s.N}`, "scalar interior addresses"},
-		{`func(s *Score)Change(){s.N++}`, "pointers to Copied records"},
-		{`type Number int;func(n *Number)Inc(){*n++};type Count struct{im.Copied;N Number};` +
-			`func f(v Count){v.N.Inc()}`, "immutable methods require"},
-		{`type Embedded struct{Score};func f(s Embedded){_=s.Read()}`, "promoted immutable methods"},
-		{`func f(s Score){var value any=s;_=value}`, "boxing immutable storage"},
-		{`func f(h Holder){var value any=&h;_=value}`, "boxing immutable storage"},
-		{`func identity[T any](v T)T{return v};func f(s Score){_=identity(s)}`, "user generic instantiations"},
-		{`func identity[T any](v T)T{return v};func f(s []Score){_=identity(s)}`, "user generic instantiations"},
-		{`func f(s Score){_=func()int{return s.N}}`, "closures cannot capture"},
-		{`func f(s Score){_=func()int{return len([1]Score{s})}}`, "closures cannot capture"},
-		{`func f(s Score){callback:=readScore;_=callback(s)}`, "immutable callbacks"},
-		{`func f(s Score){go readScore(s)}`, "synchronous calls"},
-		{`func f(s Score){defer readScore(s)}`, "synchronous calls"},
-		{`func f(s Score){s,other:=s,s;_,_=s,other}`, "multiple assignments"},
 		{`type Worker struct{supervise.Service[supervise.NoArgs]};` +
 			`func(w *Worker)Last()*Score{return nil}`, "service result"},
 		{`type Worker struct{supervise.Service[supervise.NoArgs]};` +

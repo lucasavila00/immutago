@@ -2,10 +2,12 @@
 
 These forms apply to:
 
-- Structs that embed `im.Frozen`, `im.Local`, or `im.Copied`.
+- Structs that embed `im.Frozen` or `im.Local`.
 - `im.FrozenString`, `im.FrozenSlice`, `im.FrozenMap`, and local read projections.
 
 Combine them with each type's forms. [Cell](cell.md) has its own forms.
+Ordinary [Copied values](copied.md) and their ordinary holders use all Go forms.
+Copied data inside protected storage keeps the owner's rules on this page.
 The [glossary](glossary.md) defines marked structs, protected storage, and builders.
 
 ## Markers and stored types
@@ -136,7 +138,7 @@ forms on this page.
 | Struct with `im.Frozen` | Same checks as named functions; can return its pointer. |
 | Struct with `im.Local` | Its value stays Local. Its pointer can only be used in local direct calls. |
 | Every marked struct | Cannot change protected fields or have generic receivers. |
-| Struct with `im.Copied` | Value receivers only; no pointers to the record. |
+| Copied field inside a protected owner | Exact value-receiver calls copy the field. Pointer-receiver calls that address the field are rejected. |
 | Ordinary concrete receiver with protected inputs or results | Direct, non-generic calls. The protected inputs and results keep their im rules. |
 | Fixed library type | Listed API forms. |
 
@@ -156,7 +158,6 @@ Use the operations above inside these statement forms:
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Declare one variable or assign one destination | `var value FrozenPoint`, `value := FrozenPoint{X: 1}`, `value = FrozenPoint{X: 2}` |
-| Replace a Copied field or element in an ordinary mutable holder | `state.Score = score`, `scores[0] = score`; the [Copied forms](copied.md) list native container operations. |
 | Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
 | Bind Start results to two local names or blanks with `:=`, `=`, or `var` | `ref, err := supervise.Start[Worker](root, args)`, `var ref, err = supervise.Start[Worker](root, args)` |
 | Bind a map Get call's two results to new locals | `value, found := frozen.Get(key)` |

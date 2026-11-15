@@ -19,7 +19,6 @@ const (
 	constraintMode
 	handleMode
 	localMode
-	retainedMode
 )
 
 // classificationKey keeps each traversal mode separate.
@@ -35,12 +34,9 @@ type classificationNode struct {
 	value bool
 }
 
-// Contains reports whether t stores a marked value or sealed collection.
+// Contains reports Frozen or Local storage, including its holders and containers.
+// Copied records use ordinary Go storage rules.
 func (c *Classifier) Contains(t types.Type) bool { return c.query(t, storageMode) }
-
-// Retained reports protected storage that cannot enter an ordinary mutable holder.
-// Copied records are checked by value and do not make their holders immutable.
-func (c *Classifier) Retained(t types.Type) bool { return c.query(t, retainedMode) }
 
 // Callable reports whether t contains a callback contract that carries protected storage.
 func (c *Classifier) Callable(t types.Type) bool { return c.query(t, callableMode) }
@@ -136,20 +132,19 @@ func (c *Classifier) expand(node *classificationNode) {
 	switch node.key.mode {
 	case constraintMode:
 		c.constraintEdges(node)
-	case storageMode, retainedMode:
+	case storageMode:
 		c.storedValue(node)
 	case callableMode:
 		c.callableEdges(node)
 	}
 }
 
-// storedValue separates value transport from the immutable contents of a holder.
+// storedValue identifies types whose storage needs protected operation checks.
 func (c *Classifier) storedValue(node *classificationNode) {
 	if parameter, ok := node.key.typ.(*types.TypeParam); ok {
 		c.connect(node, parameter.Constraint(), constraintMode)
 	} else if IsCollection(node.key.typ) || IsProjection(node.key.typ) ||
-		IsLibraryType(node.key.typ, "Local") || Marked(node.key.typ) ||
-		(node.key.mode == storageMode && Copied(node.key.typ)) {
+		IsLibraryType(node.key.typ, "Local") || Marked(node.key.typ) {
 		c.mark(node)
 	} else {
 		c.storageEdges(node)
