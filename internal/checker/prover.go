@@ -39,11 +39,27 @@ func (p *Prover) Reason(t types.Type) string {
 	return reason
 }
 
-// ScopedResultReason proves an immutable result returned by value.
-// A returned pointer has its own identity and does not satisfy this result contract.
+// ScopedResultReason accepts scalars, arrays of Scoped results, and proved Scoped structs.
+// Fields of a Scoped struct use the ordinary immutable storage proof.
 func (p *Prover) ScopedResultReason(t types.Type) string {
 	if _, pointer := types.Unalias(t).Underlying().(*types.Pointer); pointer {
 		return "a Scoped result must be a value, not a pointer"
 	}
-	return p.Reason(t)
+	if reason := p.Reason(t); reason != "" {
+		return reason
+	}
+	switch value := t.Underlying().(type) {
+	case *types.Basic:
+		return ""
+	case *types.Array:
+		if reason := p.ScopedResultReason(value.Elem()); reason != "" {
+			return "array element: " + reason
+		}
+		return ""
+	case *types.Struct:
+		if Scoped(t) || IsLibraryType(t, "Scoped") {
+			return ""
+		}
+	}
+	return "struct results must embed im.Scoped"
 }

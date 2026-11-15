@@ -24,8 +24,11 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 			at = method.Pos()
 		}
 		signature := methods.At(i).Type().(*types.Signature)
+		if signature.Results().Len() == 0 {
+			continue
+		}
 		if signature.Results().Len() != 1 {
-			c.report(at, "service method "+method.Name()+" must return exactly one Scoped result")
+			c.report(at, "service method "+method.Name()+" must return no value or one Scoped result")
 			continue
 		}
 		result := signature.Results().At(0).Type()

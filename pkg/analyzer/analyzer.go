@@ -5,7 +5,7 @@
 //   - Allowed construction, reads, calls, and assignments; no protected field writes.
 //   - Shared pointer storage and Scoped pointer retention.
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
-//   - Exactly one Scoped result for each exported user service method except Init
+//   - No result or one Scoped result for each exported user service method except Init
 //     and Run, including promoted user methods. Runtime methods are exempt.
 //
 // Direct im or supervise imports, used types, and failed checked dependencies

@@ -22,18 +22,16 @@ type VariantConfig struct {
 // Run keeps the configuration service available until shutdown.
 func (*VariantConfig) Run(ctx context.Context) { <-ctx.Done() }
 
-// Set publishes the requested names and returns their count.
-func (c *VariantConfig) Set(names im.FrozenSlice[string]) int {
+// Set publishes the requested names.
+func (c *VariantConfig) Set(names im.FrozenSlice[string]) {
 	c.current.Store(&VariantSet{Names: names})
-	return names.Len()
 }
 
-// Names reads the current names, or an empty collection before the first Set.
-func (c *VariantConfig) Names() im.FrozenSlice[string] {
+// Snapshot returns the current variant set, or its zero value before the first Set.
+func (c *VariantConfig) Snapshot() VariantSet {
 	current := c.current.Load()
 	if current == nil {
-		var none im.FrozenSlice[string]
-		return none
+		return VariantSet{}
 	}
-	return current.Names
+	return *current
 }

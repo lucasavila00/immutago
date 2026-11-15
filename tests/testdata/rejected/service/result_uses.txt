@@ -1,0 +1,13 @@
+result_uses.go:12:2: unsupported immutable operation: global Scoped pointers are unsupported
+  source: saved = pointer
+  fix: keep the Scoped pointer local, or store a value copy
+result_uses.go:17:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: message.Count = 1
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+result_uses.go:23:27: unsupported immutable operation: closures cannot capture immutable storage
+  source: pointer
+  type: *service.Reply
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+result_uses.go:7:5: unsupported immutable operation: global Scoped pointers are unsupported
+  source: saved *Reply
+  fix: keep the Scoped pointer local, or store a value copy

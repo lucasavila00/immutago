@@ -13,7 +13,7 @@ The [entry point](../../pkg/analyzer/analyzer.go) runs these stages:
 3. Return for ordinary packages.
 4. Reject cgo in packages that import or use im; report one source error.
 5. Report checked dependency failures and record local diagnostics.
-6. Check the single Scoped result of exported service methods.
+6. Check that exported service methods return nothing or one Scoped result.
 7. For packages that import or use im, check field types and im type arguments,
    prove native builder ownership, and match protected source forms.
 8. Export failures for importers.

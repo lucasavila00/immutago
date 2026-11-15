@@ -240,7 +240,7 @@ Keep source restrictions and examples there. Keep analysis details in the
 - Walk each storage selector/index chain once. Keep one storage classifier and
   one Owner/source context.
 - Pass the builder owner ID and consume/reset flags directly to the bitset solver.
-- Require exactly one Scoped result from each exported user service method
+- Allow no result or one Scoped result from each exported user service method
   except Init and Run. Runtime methods are exempt. Other service code follows
   ordinary Go rules; im operations use their general checks.
 - Trust ordinary Go API contracts. Use the documented package selection rules;
