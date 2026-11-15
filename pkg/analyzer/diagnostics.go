@@ -51,7 +51,7 @@ var subsetFixes = map[string]string{
 		"im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses",
 	"returning Local pointers is unsupported": "return a Local value copy, or use im.Frozen " +
 		"for objects whose pointers must be shared",
-	"global Local pointers are unsupported": "keep the Local pointer local, or store a Frozen value",
+	"global Local pointers are unsupported":        "keep the Local pointer local, or store a Frozen value",
 	"containers of Local pointers are unsupported": "keep Local values in local bindings, or store im.Frozen pointers",
 	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",
