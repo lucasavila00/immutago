@@ -143,3 +143,17 @@ func BenchmarkStringByValue(b *testing.B) {
 		byValueStringSink = frozen.ByValue()
 	}
 }
+
+// TestEmptyStringClone drops any source pointer in an empty substring.
+func TestEmptyStringClone(t *testing.T) {
+	parent := strings.Repeat("x", 1024)
+	empty := parent[512:512]
+	for _, clone := range []string{FreezeString(empty).Clone(), FreezeByValueString(empty).Clone()} {
+		if clone != "" {
+			t.Fatal("empty substring clone changed the value")
+		}
+		if source := unsafe.StringData(empty); source != nil && unsafe.StringData(clone) == source {
+			t.Fatal("empty substring clone retained the source pointer")
+		}
+	}
+}

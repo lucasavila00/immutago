@@ -216,23 +216,20 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		if field.Pkg() == c.pass.Pkg && field.Pos().IsValid() {
 			fieldPos = field.Pos()
 		}
-		if invalidMarkerField(field) {
+		switch {
+		case invalidMarkerField(field):
 			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
 				"\n  fix: embed im.Shared or im.ByValue; remove the marker field name or pointer")
-			continue
-		}
-		if checker.Shared(t) && c.queries.Views(ft) {
+		case checker.Shared(t) && c.queries.Views(ft):
 			c.report(fieldPos, "Shared fields cannot contain local frozen views")
-			continue
-		}
-		if marked {
+		case marked:
 			if reason := c.proofs.Reason(ft); reason != "" {
 				c.report(fieldPos, "immutable field "+field.Name()+": "+reason+
 					"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 					"\n  fix: "+structuralFix(ft, reason))
 				continue
 			}
-		} else if c.queries.Contains(ft) {
+		case c.queries.Contains(ft):
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+

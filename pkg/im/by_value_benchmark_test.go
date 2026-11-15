@@ -1,6 +1,7 @@
 package im
 
 import (
+	"maps"
 	"strings"
 	"testing"
 )
@@ -109,12 +110,31 @@ func BenchmarkByValueSliceClone(b *testing.B) {
 	}
 }
 
-// BenchmarkByValueMapClone measures explicit storage copying from a local map view.
+// BenchmarkByValueMapClone compares local Clone with the same native map copy.
 func BenchmarkByValueMapClone(b *testing.B) {
-	view := FreezeByValueMap(map[int]int{1: 2, 3: 4})
-	b.ReportAllocs()
-	for b.Loop() {
-		benchmarkMapClone = view.Clone()
+	for _, size := range []struct {
+		name  string
+		count int
+	}{{"small", 2}, {"large", 1024}} {
+		input := make(map[int]int, size.count)
+		for index := range size.count {
+			input[index] = index
+		}
+		view := FreezeByValueMap(input)
+		b.Run(size.name, func(b *testing.B) {
+			b.Run("view", func(b *testing.B) {
+				b.ReportAllocs()
+				for b.Loop() {
+					benchmarkMapClone = view.Clone()
+				}
+			})
+			b.Run("native", func(b *testing.B) {
+				b.ReportAllocs()
+				for b.Loop() {
+					benchmarkMapClone = maps.Clone(input)
+				}
+			})
+		})
 	}
 }
 

@@ -33,7 +33,8 @@ func TestLocalViewClassification(t *testing.T) {
 		{markedType("Plain", shared, types.NewField(token.NoPos, nil, "N", types.Typ[types.Int], false)), false, false},
 	}
 	for _, test := range cases {
-		if views, retains := queries.Views(test.typ), queries.Retains(test.typ); views != test.views || retains != test.retains {
+		views, retains := queries.Views(test.typ), queries.Retains(test.typ)
+		if views != test.views || retains != test.retains {
 			t.Errorf("%s: Views=%v Retains=%v; want %v %v", test.typ, views, retains, test.views, test.retains)
 		}
 	}

@@ -2,6 +2,7 @@ package im
 
 import (
 	"iter"
+	"maps"
 	"strings"
 )
 
@@ -32,17 +33,19 @@ func (m FrozenByValueMap[K, V]) Get(key K) (V, bool) {
 // It copies entries by value and copies the bytes of FrozenString keys.
 // Cost is O(n) plus the copied key bytes. The checker rejects Clone for local views in entries.
 func (m FrozenByValueMap[K, V]) Clone() map[K]V {
-	if m.values == nil {
+	textKeys, text := any(m.values).(map[FrozenString]V)
+	if !text {
+		return maps.Clone(m.values)
+	}
+	if textKeys == nil {
 		return nil
 	}
-	values := make(map[K]V, len(m.values))
-	for key, value := range m.values {
-		if text, ok := any(key).(FrozenString); ok {
-			key = any(FrozenString{value: strings.Clone(text.value)}).(K)
-		}
+	values := make(map[FrozenString]V, len(textKeys))
+	for key, value := range textKeys {
+		key.value = strings.Clone(key.value)
 		values[key] = value
 	}
-	return values
+	return any(values).(map[K]V)
 }
 
 // All returns an iterator over key-value pairs in unspecified order.

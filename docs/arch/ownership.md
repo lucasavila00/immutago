@@ -10,7 +10,7 @@
 
 For [im.UncheckedValue](../../pkg/im/unchecked_value.go):
 
-- The type proof accepts the handle without inspecting its payload.
+- The type proof accepts the handle without proving payload immutability; it rejects payloads that contain local frozen views.
 - A handle field in a marked object is still read-only.
 - [Trust and Unwrap](../../pkg/analyzer/unchecked_value.go) require the package
   that declares T, resolved through aliases and function values.

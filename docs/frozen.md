@@ -134,7 +134,7 @@ Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 | Independent mutable copy | `next := frozen.Clone()` |
 | Local read view with the same type arguments | `view := frozen.ByValue()` |
 
-- Call methods on a local variable, a struct field, or a named function's result.
+- Use a receiver from the complete list below.
 - Pass frozen collections to functions by value.
 - Parentheses around a call or range expression are allowed.
 - For iterators with protected values, use direct `range frozen.All()`.
@@ -144,6 +144,24 @@ Zero frozen values are empty: `var values im.FrozenSlice[int]` or
   is rejected. Use the [text-view builder](local-views.md#example-a-list-of-text-views).
 - Shared Clone copies container slots. Pointers and nested shared frozen values
   still refer to the same immutable data. It does not make a recursive copy.
+
+### Frozen method receivers — exhaustive
+
+This list applies to all six frozen types. The receiver must keep its exact
+library type; its construction and statement must use the common allowed forms.
+
+| Receiver | Example |
+| --- | --- |
+| Variable | `text.Len()`; shared values can also use package variables. |
+| Field | `record.Text.Clone()` |
+| Unnamed array or checked native builder element | `texts[0].Clone()`, `lookup[key].Len()` |
+| Empty frozen literal | `(im.FrozenString{}).Len()`, `(im.FrozenSlice[int]{}).Len()` |
+| Result of an allowed direct call | `readText().Len()`, `texts.At(0).Clone()`, `frozen.ByValue().Len()` |
+| Parenthesized receiver | `(text).Len()` |
+
+Slice and map Freeze still require their own binding. Thus
+`im.FreezeSlice(values).Len()` is rejected; write
+`frozen := im.FreezeSlice(values)` and then `frozen.Len()`.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |

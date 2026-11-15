@@ -40,3 +40,26 @@ func NestedClone(text Text) {
 	other := mapping.Clone()
 	_ = other
 }
+
+type RetainedKey struct {
+	im.Shared
+	Text im.FrozenString
+}
+
+// Keys permits only the exact string wrapper, not arrays or containing records.
+func Keys() {
+	_ = im.FreezeByValueMap(map[[1]im.FrozenString]int{})
+	_ = im.FreezeByValueMap(map[[0]im.FrozenString]int{})
+	_ = im.FreezeByValueMap(map[RetainedKey]int{})
+}
+
+// SharedPoint is valid inside a ByValue result, but not as the result itself.
+func (*Service) SharedPoint() Shared    { return Shared{} }
+func (*Service) SharedArray() [1]Shared { return [1]Shared{} }
+
+// LocalKeyClone cannot keep the local key through a shallow native map copy.
+func LocalKeyClone(key Text) {
+	values := im.FreezeByValueMap(map[Text]int{key: 1})
+	copy := values.Clone()
+	_ = copy
+}

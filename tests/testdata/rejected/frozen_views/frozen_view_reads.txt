@@ -26,6 +26,24 @@ frozen_view_reads.go:40:11: unsupported immutable operation: Clone cannot copy n
   type: map[int]localviews.Text
   fix: read each nested view and Clone its data into a new builder
 frozen_view_reads.go:41:6: unsupported owned container other: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+frozen_view_reads.go:51:6: immutable collection: type argument 1: local frozen reads cannot expose shared data references
+  type: im.FrozenByValueMap[[1]im.FrozenString, int]
+  fix: use scalar fields or local frozen views for elements and values; only map keys can use im.FrozenString
+frozen_view_reads.go:52:6: immutable collection: type argument 1: local frozen reads cannot expose shared data references
+  type: im.FrozenByValueMap[[0]im.FrozenString, int]
+  fix: use scalar fields or local frozen views for elements and values; only map keys can use im.FrozenString
+frozen_view_reads.go:53:6: immutable collection: type argument 1: local frozen reads cannot expose shared data references
+  type: im.FrozenByValueMap[localviews.RetainedKey, int]
+  fix: use scalar fields or local frozen views for elements and values; only map keys can use im.FrozenString
+frozen_view_reads.go:57:17: service method SharedPoint must return a service result: service results require a scalar, a local frozen view, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
+  result type: localviews.Shared
+frozen_view_reads.go:58:17: service method SharedArray must return a service result: array element: service results require a scalar, a local frozen view, supervise.Ref, an unnamed array of service results, or a struct with im.ByValue
+  result type: [1]localviews.Shared
+frozen_view_reads.go:63:10: unsupported immutable operation: Clone cannot copy nested local views; copy their data explicitly
+  source: values.Clone()
+  type: map[localviews.Text]int
+  fix: read each nested view and Clone its data into a new builder
+frozen_view_reads.go:64:6: unsupported owned container copy: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 frozen_view_reads.go:8:6: immutable collection: type argument 1: local frozen reads cannot expose shared data references
   type: im.FrozenByValueSlice[im.FrozenString]
   fix: use scalar fields or local frozen views for elements and values; only map keys can use im.FrozenString

@@ -150,3 +150,17 @@ func TestByValueIteration(t *testing.T) {
 		t.Fatal("empty map view yielded an entry")
 	}
 }
+
+// TestEmptySliceClone drops the backing allocation for both frozen families.
+func TestEmptySliceClone(t *testing.T) {
+	backing := make([]int, 1024)
+	empty := backing[:0]
+	for _, clone := range [][]int{FreezeSlice(empty).Clone(), FreezeByValueSlice(empty).Clone()} {
+		if clone == nil || len(clone) != 0 {
+			t.Fatal("empty clone lost the non-nil empty value")
+		}
+		if unsafe.SliceData(clone) == unsafe.SliceData(backing) {
+			t.Fatalf("empty clone retained the source allocation at %p", unsafe.SliceData(backing))
+		}
+	}
+}

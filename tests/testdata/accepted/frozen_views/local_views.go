@@ -8,6 +8,7 @@ import (
 )
 
 type Text = im.FrozenByValueString
+type Key = im.FrozenString
 
 type Reply struct {
 	im.ByValue
@@ -55,7 +56,7 @@ func Forms(native string) {
 	_ = emptyMap.Len()
 
 	key := im.FreezeString("score")
-	scores := im.FreezeMap(map[im.FrozenString]int{key: 5})
+	scores := im.FreezeMap(map[Key]int{key: 5})
 	scoreView := scores.ByValue()
 	score, found := scoreView.Get(im.FreezeString(native))
 	_ = score
@@ -101,4 +102,45 @@ func References(ref supervise.Ref[Service]) {
 	values := im.FreezeByValueSlice([]supervise.Ref[Service]{ref})
 	result := values.At(0)
 	_ = result.Current().Text().Clone()
+}
+
+// Point is a copied field type, but is not a direct service result type.
+type Point struct {
+	im.Shared
+	X int
+}
+type Points struct {
+	im.ByValue
+	Point Point
+	Pair  [2]Point
+}
+
+func (*Service) Points() Points { return Points{} }
+
+// Receivers checks literals, array elements, builder elements, and call results.
+func Receivers() {
+	_ = (im.FrozenByValueString{}).Len()
+	_ = (im.FrozenSlice[int]{}).Len()
+	_ = TextValue("text").Len()
+	text := TextValue("text")
+	values := []Text{text}
+	_ = values[0].Clone()
+	lookup := map[int]Text{1: text}
+	_ = lookup[1].Len()
+	frozen := im.FreezeByValueSlice(values)
+	_ = frozen.At(0).Clone()
+	_ = im.FreezeString("text").ByValue().Len()
+}
+
+// LocalKeys can be read and iterated because each returned key remains a view.
+func LocalKeys() {
+	key := TextValue("key")
+	values := im.FreezeByValueMap(map[Text]int{key: 1})
+	value, found := values.Get(key)
+	_ = value
+	_ = found
+	for key, value := range values.All() {
+		_ = key.Clone()
+		_ = value
+	}
 }

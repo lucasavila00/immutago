@@ -15,7 +15,8 @@ or a proof of service isolation.
 
 ## Supported operations — exhaustive
 
-Unlisted protected operations are rejected. All methods must use direct calls.
+Unlisted protected operations are rejected. All methods must use direct calls
+with an allowed [frozen receiver](frozen.md#frozen-method-receivers--exhaustive).
 
 | Operation | `FrozenByValueSlice[T]` | `FrozenByValueMap[K, V]` | `FrozenByValueString` |
 | --- | --- | --- | --- |
@@ -57,6 +58,12 @@ A struct with a local view field must use `im.ByValue`. Shared pointers,
 shared frozen values, native strings, and `im.UncheckedValue` are not allowed
 in yielded elements or values. The map-key exception permits lookup without
 returning the stored key; it does not permit `All()`.
+
+| Key family | Get | Direct All | Clone |
+| --- | --- | --- | --- |
+| Copied data, such as `int` | Allowed | Allowed | Allowed if values contain no local views. |
+| Exact `im.FrozenString` | Allowed | Rejected | Copies keys and slots if values contain no local views. |
+| `im.FrozenByValueString` or another allowed key containing views | Allowed | Allowed; yielded keys stay local. | Rejected; copy each key explicitly. |
 
 Service references retain their separate [handle rules](service-references.md).
 A view can yield a reference that callers keep. It does not expose the service's

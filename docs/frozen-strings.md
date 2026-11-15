@@ -56,8 +56,9 @@ Unlisted protected operations are rejected.
 | Pass to or return from a direct concrete function or method | `func read(text im.FrozenString) byte` | `func read(text im.FrozenByValueString) byte` |
 | Alias or parentheses | `type Text = im.FrozenString`, `(text).Clone()` | `type Text = im.FrozenByValueString`, `(text).Clone()` |
 
-Call methods on a local variable, field, or direct function result. `At` uses
-byte indices and panics for an invalid index. Clone first for rune operations.
+Use the complete [frozen receiver list](frozen.md#frozen-method-receivers--exhaustive)
+for method calls. `At` uses byte indices and panics for an invalid index. Clone
+first for rune operations.
 Equal byte sequences compare equal, including when their storage is separate.
 
 Shared strings can be stored in marked fields, unnamed arrays, and shared frozen

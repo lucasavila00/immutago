@@ -17,8 +17,8 @@ This rule applies to service methods. Ordinary functions and methods use the
 
 ## Result types — exhaustive
 
-Unlisted result types are rejected. Each nested field and array element must
-also pass the rules below.
+Unlisted result types are rejected. This list applies to the whole result and
+to elements of result arrays. Struct fields use the separate list below.
 
 | Type | Example |
 | --- | --- |
@@ -31,11 +31,30 @@ also pass the rules below.
 | Unnamed array whose elements use this result list | `[2]int`, `[2]Usage`, `[2]im.FrozenByValueString` |
 | Alias of an allowed type | `type Response = Usage` |
 
-A result struct's fields must pass the [stored-type proof](common-forms.md#markers-and-stored-types).
-They must not contain native strings, shared frozen handles, pointers, or
-`im.UncheckedValue` at any depth. Local frozen views have their own
+### Fields inside result records — exhaustive
+
+These fields must also pass the [stored-type proof](common-forms.md#markers-and-stored-types).
+Apply this list recursively to every record field and array element. Unlisted
+field types are rejected.
+
+| Field type | Example |
+| --- | --- |
+| Boolean or numeric scalar, including a defined type | `int`, `type Count int` |
+| Empty marker | `im.Shared`, `im.ByValue` |
+| Marked struct with fields from this list | `type Point struct { im.Shared; X int }` |
+| Unnamed array of fields from this list | `[2]Point` |
+| Local frozen view with its allowed type arguments | `im.FrozenByValueString`, `im.FrozenByValueSlice[int]` |
+| Service reference | `supervise.Ref[Worker]` |
+| Alias of a listed field type | `type Position = Point` |
+
+For example, `type Reply struct { im.ByValue; P Point }` is an allowed result.
+`Point` and `[2]Point` alone are not allowed results because their outer type is
+Shared. Shared records cannot contain local views; use ByValue for those records.
+
+Fields cannot contain native strings, shared frozen handles, pointers, or
+`im.UncheckedValue` at any depth. Local frozen views use their separate
 [type argument list](local-views.md#type-arguments--exhaustive). Service references
-remain a separate allowed handle category; callers can keep them.
+remain a separate allowed reference category; callers can keep them.
 
 A ByValue record that contains a view stays local as a whole. The caller may
 read, copy locally, pass directly, or return it, but cannot save the record in
