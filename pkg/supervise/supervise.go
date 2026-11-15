@@ -212,9 +212,14 @@ func (p Ref[T]) IsZero() bool { return p.value == nil }
 // Borrow is shared and is not exclusive. No release call is needed.
 // A call in progress finishes on its selected instance, even after a restart.
 //
-// Borrow panics for a zero or unstarted reference. It can select a value whose
-// Run has ended. Stop does not invalidate the reference or block later calls.
+// Borrow panics with "supervise: zero Ref" for a zero reference, or with
+// "supervise: Ref not started" for an unstarted reservation. It can select a
+// value whose Run has ended. Stop does not invalidate the reference or block
+// later calls.
 func (p Ref[T]) Borrow() *T {
+	if p.value == nil {
+		panic("supervise: zero Ref")
+	}
 	value := p.value.Load()
 	if value == nil {
 		panic("supervise: Ref not started")
@@ -289,6 +294,7 @@ func Start[T, A any, P interface {
 // keeps the previous value in ref. If parent has stopped, Init still runs but
 // Run does not. The runtime stops children created by a value that will not run.
 //
+// A zero Ref panics with "supervise: StartReserved needs a Ref from Reserve".
 // Starting an already started reference panics. If concurrent starts compete,
 // the one that loses publication stops its staged children and panics.
 func StartReserved[T, A any, P interface {
@@ -299,6 +305,9 @@ func StartReserved[T, A any, P interface {
 	begin(context.Context) context.Context
 	end()
 }](parent *Group, ref Ref[T], args A) error {
+	if ref.value == nil {
+		panic("supervise: StartReserved needs a Ref from Reserve")
+	}
 	if ref.value.Load() != nil {
 		panic("supervise: Ref already started")
 	}

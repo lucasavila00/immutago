@@ -39,6 +39,7 @@ returning when a context ends, require implementation review.
 | First Init panics | The panic reaches the caller. |
 | `ref := supervise.Reserve[Worker]()` | Create a nonzero reference for later startup; Borrow panics until Init succeeds. |
 | `err := supervise.StartReserved(parent, ref, args)` | Initialize a reserved reference. An Init error leaves it unstarted and permits a retry. |
+| StartReserved with a zero Ref | Panic with `supervise: StartReserved needs a Ref from Reserve`. Use `Reserve[Worker]()` to create the reference. |
 | Start an already started reservation | Panic. With concurrent starts, the losing attempt stops its staged children and panics. |
 | Start under a stopped group | Init still runs and can succeed; Run does not run. The runtime stops staged children. |
 

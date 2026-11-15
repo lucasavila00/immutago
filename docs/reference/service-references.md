@@ -68,7 +68,8 @@ pass the reference independently.
 | `selected.Borrow()` through an interface or type parameter, including method values and expressions | Ordinary Go rules apply: `pointer := selected.Borrow()`, `accessor := selected.Borrow`, `Borrower.Borrow(selected)` where Borrower is the interface type. The result can be stored and used outside the checked call form. |
 
 For direct Ref calls, the checker rejects every other use of `Borrow`, despite
-its Go return type of `*T`. Borrow panics for a zero or unstarted reference.
+its Go return type of `*T`. Borrow panics with `supervise: zero Ref` for a zero
+reference, or with `supervise: Ref not started` for an unstarted reservation.
 Each call selects the last successfully initialized service; a call in progress
 finishes on that instance.
 Borrow is shared and is not exclusive. No release call is needed.
