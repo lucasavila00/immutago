@@ -28,6 +28,15 @@ caller's goroutine; there is no mailbox or request queue.
 5. The watcher calls Run with the service's run context. It cleans the attempt
    and its children when Run ends.
 
+Execution stays with these owners:
+
+| Work | Execution owner |
+| --- | --- |
+| Initial Init | The Start caller. It has not registered a watcher yet. |
+| Run, retry Init, retry delay, and attempt cleanup | The registered service watcher goroutine. |
+| A method called through Borrow | The calling goroutine. The watcher does not serialize it. |
+| Ordered group shutdown | One shutdown goroutine per stopped group. It waits outside the group mutex. |
+
 A copy of Ref copies a pointer to the slot. Borrow performs one atomic load of
 that slot and returns `*T`. A retry publishes a new initialized T in the same
 slot. A call already in progress can finish on an older T. Stop does not clear
