@@ -8,6 +8,7 @@ The rule also covers promoted methods.
 | --- | --- |
 | No result | `func (c *Cache) Refresh()` |
 | Copied scalar or unnamed array | `bool`, `int`, `[2]int` |
+| Copied record or unnamed array of Copied records | `Score` with `im.Copied`, `[2]Score` |
 | Service reference | `supervise.Ref[Worker]` |
 | Local projection | Generated `SettingsProjection`, `im.StringProjection`, `im.MapProjection[string, int]` |
 | Local record or unnamed array of read results | `Usage` with `im.Local` and numeric fields, `[2]im.StringProjection` |
@@ -15,7 +16,8 @@ The rule also covers promoted methods.
 There is no separate field rule for services. Cell[T] and Projection[T] require the
 same Frozen T. The general Copied and Local rules determine whether a type
 is a read result. Frozen records are not read results, even when all fields are
-numbers. Use im.Local for a result record; no generation is needed for it.
+numbers. Use [im.Copied](copied.md) for an independent value record, or im.Local
+for a record that includes projections. Neither marker requires generation.
 
 ## Example: read one version
 
@@ -48,10 +50,10 @@ returns the generated IndexProjection for query processing.
 | --- | --- |
 | `string` | `im.StringProjection` from `im.ProjectString(text)`. |
 | `Usage` with `im.Frozen`, even when it has only numeric fields | Use im.Local for the result, or return its generated projection. |
-| `im.Frozen` or `im.Local` marker | Return no result when no data is needed; embed im.Local in a result record when data is needed. |
+| `im.Frozen`, `im.Local`, or `im.Copied` marker | Return no result when no data is needed; embed im.Local in a result record when data is needed. |
 | `im.FrozenString`, `im.FrozenSlice[E]`, or `im.FrozenMap[K,V]` | The corresponding StringProjection, SliceProjection, or MapProjection. |
 | Pointer, native container, interface, or Cell | A read-result value with the required data. |
-| `(int, bool)` | `type Result struct { im.Local; Count int; OK bool }`. |
+| `(int, bool)` | `type Result struct { im.Copied; Count int; OK bool }`. |
 
 Ordinary function results still use their general type rules. Service inputs,
 locks, and implementation code keep ordinary Go rules except for protected im

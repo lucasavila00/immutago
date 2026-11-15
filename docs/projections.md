@@ -2,7 +2,7 @@
 
 Every package with user-declared `im.Frozen` records requires generation.
 Frozen records get typed projections. Field methods return Copied values or
-local projections. Local records need no generation.
+local projections. Local and Copied records need no generation.
 
 ## Generate projections
 
@@ -75,7 +75,7 @@ IsNil, and immutagoProjection conflict with generated members and are rejected.
 
 | Field type | Generated result |
 | --- | --- |
-| Copied scalar or service reference | The field's own type, such as `int` or `supervise.Ref[Worker]`. |
+| Copied scalar, Copied record, or service reference | The field's own type, such as `int`, `Score` with `im.Copied`, or `supervise.Ref[Worker]`. |
 | Native string or FrozenString | `im.StringProjection`. |
 | FrozenSlice[E] | `im.SliceProjection[E]`. |
 | FrozenMap[K,V] | `im.MapProjection[K,V]`. |
@@ -83,7 +83,8 @@ IsNil, and immutagoProjection conflict with generated members and are rejected.
 | Unnamed array | A typed projection with Len and At; At uses this same result table. |
 | UncheckedValue[T] | Opaque `im.Projection[im.UncheckedValue[T]]`. |
 
-Record and array fields return projections, including arrays of Copied values.
+Frozen record and array fields return projections, including arrays of Copied values.
+A Copied record field returns a complete value copy.
 A field read does not copy the containing record or array. Reading a field through
 a nil projection panics. Array At panics if the index is out of range.
 
@@ -144,7 +145,7 @@ interfaces, callbacks, closures, user generics, go, or defer.
 | --- | --- |
 | Save `current.Load()` in a package variable | Keep a copied field or explicit Clone result. |
 | `fmt.Sprintf("%s", projection.Title())` | `fmt.Sprintf("%s", projection.Title().Unsafe())`; Clone instead when independent storage is needed. |
-| Capture `projection` in a closure | Read Copied fields or make independent copies before the closure. |
+| Capture `projection` in a closure | Read scalar fields or clone strings before the closure. Pass Copied records to a direct typed function. |
 | `go useProjection(projection)` or `defer useProjection(projection)` | Make the direct synchronous call. |
 | Read a raw pointer or UncheckedValue from a projection | Keep that operation in code with persistent Frozen access. |
 | Declare `SettingsProjection` or `SettingsCell` before generation | Use another source name; these names belong to the generated API. |

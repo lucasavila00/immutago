@@ -88,11 +88,12 @@ func (c *subsetChecks) matchConversion(call *ast.CallExpr) string {
 func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) string {
 	switch builtin.Name() {
 	case "new":
-		if pointer, ok := c.pass.TypesInfo.TypeOf(call).Underlying().(*types.Pointer); ok && checker.Marked(pointer.Elem()) {
+		if pointer, ok := c.pass.TypesInfo.TypeOf(call).Underlying().(*types.Pointer); ok &&
+			(checker.Marked(pointer.Elem()) || !c.immutableObject(pointer.Elem())) {
 			return ""
 		}
 	case "make":
-		if c.exempt[call] {
+		if c.exempt[call] || !c.queries.Retained(c.pass.TypesInfo.TypeOf(call)) {
 			return ""
 		}
 	case "len", "cap":
@@ -102,11 +103,11 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 		if _, array := c.pass.TypesInfo.TypeOf(call.Args[0]).Underlying().(*types.Array); array {
 			return ""
 		}
-		if !c.queries.Contains(c.pass.TypesInfo.TypeOf(call.Args[0])) {
+		if !c.queries.Retained(c.pass.TypesInfo.TypeOf(call.Args[0])) {
 			return ""
 		}
 	case "append", "delete", "clear", "copy":
-		if c.matchBuilderBuiltin(call, builtin.Name()) {
+		if c.matchBuilderBuiltin(call, builtin.Name()) || !c.protectedStorage(call.Args[0]) {
 			signature := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
 			return c.matchCallArguments(call, signature)
 		}
@@ -211,11 +212,6 @@ func (c *subsetChecks) protectedCallArguments(call *ast.CallExpr) bool {
 
 // matchTransport permits concrete value copies and rejects implicit interface or callback storage.
 func (c *subsetChecks) matchTransport(source, destination types.Type) string {
-	if destination != nil && c.queries.Handles(source) && !types.Identical(source, destination) {
-		if _, boxed := destination.Underlying().(*types.Interface); boxed {
-			return "service references cannot enter interfaces; keep the concrete Ref type"
-		}
-	}
 	if !c.queries.Contains(source) && !c.queries.Callable(source) {
 		return ""
 	}

@@ -48,7 +48,7 @@ func TestRefreshFiles(t *testing.T) {
 		t.Fatalf("deleted document remains: %+v", remaining)
 	}
 	time.Sleep(30 * time.Millisecond)
-	if unchanged := indexer.Current().Status(); unchanged.Version != 4 {
+	if unchanged := indexer.Borrow().Status(); unchanged.Version != 4 {
 		t.Fatalf("unchanged files published version %d", unchanged.Version)
 	}
 	if err := os.Remove(filepath.Join(directory, "extra.md")); err != nil {
@@ -102,7 +102,7 @@ func TestConcurrentRefresh(t *testing.T) {
 	root := supervisetest.NewRoot(t)
 	indexer := startIndexer(t, root, files)
 	handler := HTTPHandler(indexer)
-	selected := indexer.Current().Read()
+	selected := indexer.Borrow().Read()
 	firstEntered, firstRelease := files.pause("a.md")
 	resumeFirst := sync.OnceFunc(func() { close(firstRelease) })
 	defer resumeFirst()
@@ -188,7 +188,7 @@ func TestGracefulStop(t *testing.T) {
 	if files.reads.Load() != reads {
 		t.Fatal("file reads continued after stop")
 	}
-	if status := indexer.Current().Status(); status.Version != 1 {
+	if status := indexer.Borrow().Status(); status.Version != 1 {
 		t.Fatalf("stop lost the last publication: version %d", status.Version)
 	}
 }
@@ -208,13 +208,13 @@ func awaitStatus(t *testing.T, indexer supervise.Ref[Indexer], version int, prob
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
-		status := indexer.Current().Status()
+		status := indexer.Borrow().Status()
 		if status.Version == version && (status.Problem.Len() != 0) == problem {
 			return
 		}
 		time.Sleep(time.Millisecond)
 	}
-	status := indexer.Current().Status()
+	status := indexer.Borrow().Status()
 	t.Fatalf("status = version %d, problem %q; want version %d, problem present %t",
 		status.Version, status.Problem.Unsafe(), version, problem)
 }

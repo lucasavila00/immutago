@@ -61,7 +61,7 @@ func(*Other) Read() []int{return nil}`, true},
 		{"ordinary implementation", `func(c *Counter) Count() int {
 self:=c; f:=func(){self.count++}; defer f(); go c.add(); c.add(); return c.count }
 func(c *Counter) add(){c.count++}
-func use(ref supervise.Ref[Counter]){ref.Current().Count()}`, false},
+func use(ref supervise.Ref[Counter]){ref.Borrow().Count()}`, false},
 		{"protected write", `func(*Counter) Change(p *Reply) {p.Count++}`, true},
 		{"protected capture", `func(*Counter) Read(p *Reply) {f:=func()int{return p.Count};_=f()}`, true},
 	}

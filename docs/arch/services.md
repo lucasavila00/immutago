@@ -13,7 +13,7 @@ of named and anonymous service structs:
    It does not apply another recursive field rule to a returned record.
 
 Start arguments, method parameters, callbacks, and service implementation code
-follow ordinary Go rules. Current calls use the service reference matcher.
+follow ordinary Go rules. Borrow calls use the service reference matcher.
 Protected data passes through the im type proofs, source matcher, and Freeze checks.
 
 The classifier treats `Service[A]` as runtime storage, so a service can receive
@@ -38,10 +38,11 @@ method uses ordinary mutable data.
 | Checked code | Required check | Source |
 | --- | --- | --- |
 | `Ref[T]` | T is a concrete struct that embeds `supervise.Service`. The check does not inspect T's mutable fields. | [refTargetReason](../../internal/checker/proof.go) |
-| `ref.Current().Method(args)` | Current's result is the receiver of this direct call. Method is exported and is not Init, Run, or a runtime method. Promoted methods are allowed; promoted Current calls are rejected. | [matchCurrent](../../pkg/analyzer/service_handles.go) |
+| `ref.Borrow().Method(args)` | Borrow's result is the receiver of this direct call. Method is exported and is not Init, Run, or a runtime method. Promoted methods are allowed; promoted Borrow calls are rejected. | [matchBorrow](../../pkg/analyzer/service_handles.go) |
 | Service method result | No result or one service result, including for promoted methods. | [checkServiceResults](../../pkg/analyzer/service.go) |
-| Reference copies, storage, and calls | Match the [allowed forms](../service-references.md#reference-operations--exhaustive). Reject conversions, assignments to a different interface type, type assertions, and type-switch recovery. Interfaces with reference parameters or results must keep the same interface type. | [matchHandleUse](../../pkg/analyzer/service_handle_uses.go) |
-| User generic type arguments | Reject service references, including inside fields or callback types. Concrete Ref parameters, fields, and results are allowed. | [handleInstance](../../pkg/analyzer/service_handles.go) |
+| Reference copies, storage, and calls | Match the [allowed forms](../service-references.md#reference-operations--exhaustive). Permit interface conversion, assignment, assertion, and type-switch recovery. Keep the direct Borrow check and reject conversions between concrete reference types. | [matchHandleUse](../../pkg/analyzer/service_handle_uses.go) |
+| Atomic reference storage | Accept the resolved `sync/atomic.Pointer[T]` type and aliases that forward its one argument unchanged. The normal typed reference operations and im checks still apply. | [atomicPointerInstance](../../pkg/analyzer/service_handles.go) |
+| Other generic type arguments | Reject service references, including inside fields or callback types. Concrete Ref parameters, fields, and results are allowed. | [handleInstance](../../pkg/analyzer/service_handles.go) |
 | Functions with service references in receivers, parameters, or results | Require a Go body. This includes references inside fields and callback types. | [checkFunctionBody](../../pkg/analyzer/analyzer.go) |
 | Reference fields in marked objects | Reject field writes after construction. | [matchWrite](../../pkg/analyzer/subset_writes.go) |
 
@@ -49,7 +50,11 @@ These checks use compiler-resolved types. [Classifier.Handles](../../internal/ch
 finds service references inside pointers, fields, native containers, function signatures,
 and interface methods. It handles recursive types and caches each result.
 The [runtime](../../pkg/supervise/supervise.go) keeps Ref's fields private.
-Copies share one atomic slot; Current reads that slot once.
+Copies share one atomic slot; Borrow reads that slot once.
+Interface conversion is allowed for every value that contains references,
+including Ref and embedded Ref fields. An interface can expose Borrow and its
+service pointer outside the direct-call matcher. This is accepted; the checker
+does not inspect method sets to prevent it.
 
 A service can still expose its receiver. For a Counter service with a mutable
 count field, this code passes:
@@ -58,7 +63,7 @@ count field, this code passes:
 func (c *Counter) Visit(call func(*Counter)) { call(c) }
 
 func change(ref supervise.Ref[Counter]) {
-    ref.Current().Visit(func(c *Counter) { c.count++ })
+    ref.Borrow().Visit(func(c *Counter) { c.count++ })
 }
 ```
 
@@ -78,7 +83,7 @@ The [trusted code list](validation.md#trust-boundary) still applies.
 | Copy Ref | Copy a pointer to an atomic pointer; all copies select the same current service value. |
 | StartReserved | Create a fresh service, set arguments, call Init, then publish with compare-and-swap. A concurrent start that loses the comparison stops its children before it panics. |
 | Restart | Repeat setup; publish with an atomic store only after success. Failure leaves the previous value available. |
-| Current | One atomic load, no allocation. |
+| Borrow | One atomic load, no allocation. |
 | Children created during Init | Register in that run's child group; wait until Run begins. Failed setup stops them. |
 | Shutdown | Stop the child group before cancelling the parent's Run context. |
 | Run returns or panics | Finish child cleanup before ending or waiting to restart. |

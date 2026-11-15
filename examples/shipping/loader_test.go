@@ -58,16 +58,16 @@ func TestLoaderPollingAndShutdown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertVersionPrice(t, loader.Current().Catalog(), "2026-11", 1650)
+	assertVersionPrice(t, loader.Borrow().Catalog(), "2026-11", 1650)
 	writeCatalog(t, path, replacementJSON(initial))
 	deadline := time.Now().Add(5 * time.Second)
-	for !loader.Current().Catalog().Version().EqualString("2026-12") {
+	for !loader.Borrow().Catalog().Version().EqualString("2026-12") {
 		if time.Now().After(deadline) {
 			t.Fatal("catalog was not reloaded")
 		}
 		time.Sleep(time.Millisecond)
 	}
-	assertVersionPrice(t, loader.Current().Catalog(), "2026-12", 1850)
+	assertVersionPrice(t, loader.Borrow().Catalog(), "2026-12", 1850)
 	select {
 	case <-root.Stop():
 	case <-time.After(5 * time.Second):

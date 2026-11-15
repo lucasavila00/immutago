@@ -13,6 +13,12 @@ Consumer-only dependency tests require failures to propagate through imports,
 including wrappers. Runtime tests check storage transfer, Clone independence,
 and unchanged shared objects after pointer rebinding.
 
+[Copied record tests](copied_records_test.go) use both drivers to check fields,
+mutable holders, service results, generated getters, and consumer-only failures.
+The accepted consumer tests also run with the race detector. The
+[runtime cost tests](../pkg/im/copied_test.go) check record layout, zero-allocation
+Copy, clone independence, and native/projection copy costs.
+
 The [service guide program](testdata/accepted/servicedoc/main.go) runs through
 the CLI and vet in `TestCLI/service_guide`. That test also checks its output
 and runs the [background refresh test](testdata/accepted/servicedoc/main_test.go)

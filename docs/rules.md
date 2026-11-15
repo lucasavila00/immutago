@@ -11,6 +11,7 @@ Use this reference to check which Go forms Immutago accepts. The
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 | [Frozen](frozen-records.md) | Store or return pointers to immutable objects. |
 | [Local](local.md) | Combine local projections with copied values. |
+| [Copied](copied.md) | Return immutable value records and store independent copies. |
 | [Cell](cell.md) | Publish a Frozen value and read its current projection. |
 | [Typed projections](projections.md) | Generate field projections and choose explicit storage operations. |
 | [Projection primitives](projection-primitives.md) | Check the fixed projection APIs. |
@@ -52,7 +53,7 @@ Run `go generate ./...` after a record changes. The checker rejects a missing
 directive, missing output, or stale output. Only verified generated code can use
 the internal Read operation and form interior Frozen-record addresses. All normal
 type, write, capture, generic, receiver, and transport checks still apply.
-Local records need no generation.
+Local and Copied records need no generation.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |

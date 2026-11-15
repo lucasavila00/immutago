@@ -21,7 +21,7 @@ goroutine; the runtime does not queue them.
 | Exported service method result | Return no result or one [service result](service-results.md). This includes promoted methods. Init, Run, and methods supplied by the runtime are exempt. |
 | Fields, method parameters, closures, and goroutines | Ordinary Go rules. Synchronize shared mutable data. Uses of protected values follow the [im rules](common-forms.md). |
 | Service construction and groups | Ordinary Go rules. |
-| Service references | Copy, store, and return `Ref[T]`. Call through `ref.Current().Method(args)`; the pointer from Current has no other allowed use. See [service references](service-references.md). |
+| Service references | Copy, store, and return `Ref[T]`. Call through `ref.Borrow().Method(args)`; direct Ref calls cannot save the pointer. Interface calls can expose it. See [service references](service-references.md). |
 
 Review these together in the service code:
 
@@ -58,7 +58,7 @@ For each request, the HTTP handler selects one catalog and calculates all parcel
 prices from it:
 
 ```go
-catalog := loader.Current().Catalog()
+catalog := loader.Borrow().Catalog()
 response := shipping.Quote(catalog, request)
 ```
 
@@ -74,7 +74,7 @@ selected version. See the [loader](../examples/shipping/loader.go) and
 - A first Init panic reaches the Start caller.
 - To pass a reference before startup: `ref := supervise.Reserve[T]()`, then
   `err := supervise.StartReserved(parent, ref, args)`. Failed Init permits a retry.
-- A zero `Ref[T]` is empty, not reserved. Current panics on empty or unstarted references.
+- A zero `Ref[T]` is empty, not reserved. Borrow panics on empty or unstarted references.
 - Init must not call an unstarted peer. For readiness that depends on Run,
   expose a method such as `Ready() bool`.
 
@@ -132,7 +132,7 @@ Shutdown rules:
 - Run must return when its context ends.
 - Init has no cancellation context and must return before its attempt can finish.
 - Stop does not wait for direct method calls.
-- Current still returns the last published value after Run or Stop ends.
+- Borrow still returns the last published value after Run or Stop ends.
 
 Create groups with NewRoot or StartGroup. A zero Group cannot run. Starting
 under a stopped group still calls Init and can succeed, but Run will not run.

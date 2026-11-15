@@ -27,7 +27,7 @@ func NewHandler(loader supervise.Ref[Loader]) http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 			return
 		}
-		catalog := loader.Current().Catalog()
+		catalog := loader.Borrow().Catalog()
 		response := Quote(catalog, request)
 		if response.Error != "" {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": response.Error})

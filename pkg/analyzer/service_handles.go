@@ -7,23 +7,21 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// checkHandles checks Current and each use of stored service references in selected packages.
+// checkHandles checks Borrow and each use of stored service references in selected packages.
 func (c *subsetChecks) checkHandles() {
 	for _, file := range c.pass.Files {
 		ast.Inspect(file, c.visitHandle)
 	}
 }
 
-// visitHandle checks type instances, Current calls, and consumers of service references.
+// visitHandle checks type instances, Borrow calls, and consumers of service references.
 func (c *subsetChecks) visitHandle(node ast.Node) bool {
 	switch node := node.(type) {
-	case *ast.TypeSwitchStmt:
-		c.handleTypeSwitch(node)
 	case *ast.Ident:
 		c.handleInstance(node)
 	case *ast.SelectorExpr:
 		if selection := c.pass.TypesInfo.Selections[node]; selection != nil && refAccessor(selection.Obj()) {
-			if rule := c.matchCurrent(node); rule != "" {
+			if rule := c.matchBorrow(node); rule != "" {
 				c.report(node, rule)
 			}
 		}
@@ -45,16 +43,16 @@ func (c *subsetChecks) visitHandle(node ast.Node) bool {
 
 // refAccessor identifies the runtime accessor even through aliases and promoted methods.
 func refAccessor(object types.Object) bool {
-	if !runtimeObject(object) || object.Name() != "Current" {
+	if !runtimeObject(object) || object.Name() != "Borrow" {
 		return false
 	}
 	signature, ok := object.Type().(*types.Signature)
 	return ok && signature.Recv() != nil && checker.IsRuntimeType(signature.Recv().Type(), "Ref")
 }
 
-// matchCurrent accepts only a direct exported method call on the selected service.
-func (c *subsetChecks) matchCurrent(selector *ast.SelectorExpr) string {
-	const rejected = "use a service reference only as ref.Current().Method(args); " +
+// matchBorrow accepts only a direct exported method call on the selected service.
+func (c *subsetChecks) matchBorrow(selector *ast.SelectorExpr) string {
+	const rejected = "use a service reference only as ref.Borrow().Method(args); " +
 		"do not extract the accessor or service pointer"
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection == nil || selection.Kind() != types.MethodVal || len(selection.Index()) != 1 {
@@ -114,7 +112,7 @@ func (c *subsetChecks) handleInstance(name *ast.Ident) {
 		}
 	}
 	object := c.pass.TypesInfo.Uses[name]
-	if runtimeObject(object) || libraryObject(object) {
+	if runtimeObject(object) || libraryObject(object) || atomicPointerInstance(instance) {
 		return
 	}
 	for i := 0; i < instance.TypeArgs.Len(); i++ {
@@ -126,13 +124,21 @@ func (c *subsetChecks) handleInstance(name *ast.Ident) {
 	}
 }
 
-// handleTypeSwitch rejects interface recovery through each case that contains a service reference.
-func (c *subsetChecks) handleTypeSwitch(statement *ast.TypeSwitchStmt) {
-	for _, node := range statement.Body.List {
-		for _, expression := range node.(*ast.CaseClause).List {
-			if c.queries.Handles(c.pass.TypesInfo.TypeOf(expression)) {
-				c.report(expression, "service references cannot be recovered from interfaces; use a concrete Ref type")
-			}
-		}
+// atomicPointerInstance accepts the standard storage type and aliases that forward its argument.
+func atomicPointerInstance(instance types.Instance) bool {
+	if instance.TypeArgs.Len() != 1 {
+		return false
 	}
+	target, argument := instance.Type, instance.TypeArgs.At(0)
+	if alias, ok := target.(*types.Alias); ok {
+		origin := alias.Origin()
+		if origin.TypeParams().Len() != 1 {
+			return false
+		}
+		target, argument = origin.Rhs(), origin.TypeParams().At(0)
+	}
+	named, ok := types.Unalias(target).(*types.Named)
+	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "sync/atomic" &&
+		named.Obj().Name() == "Pointer" && named.TypeArgs().Len() == 1 &&
+		types.Identical(argument, named.TypeArgs().At(0))
 }

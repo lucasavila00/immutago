@@ -6,19 +6,16 @@ import (
 	"go/types"
 )
 
-// matchHandleUse lists consumers that preserve concrete service references and Current checks.
+// matchHandleUse lists consumers that preserve service references and direct Borrow checks.
 func (c *subsetChecks) matchHandleUse(expression ast.Expr) string {
 	if call, ok := expression.(*ast.CallExpr); ok && c.pass.TypesInfo.Types[call.Fun].IsType() {
 		return c.handleCall(call)
-	}
-	if _, assertion := expression.(*ast.TypeAssertExpr); assertion {
-		return "service references cannot be recovered from interfaces; use a concrete Ref type"
 	}
 	if statement, ok := c.parents[expression].(ast.Stmt); ok {
 		return c.handleStatement(statement)
 	}
 	switch parent := c.parents[expression].(type) {
-	case *ast.ParenExpr, *ast.SelectorExpr, *ast.StarExpr, *ast.SliceExpr, *ast.IndexListExpr:
+	case *ast.ParenExpr, *ast.SelectorExpr, *ast.StarExpr, *ast.SliceExpr, *ast.IndexListExpr, *ast.TypeAssertExpr:
 		return ""
 	case *ast.UnaryExpr:
 		if parent.Op == token.AND || parent.Op == token.ARROW {
@@ -98,9 +95,12 @@ func (c *subsetChecks) handleBindings(sources, destinations []ast.Expr) string {
 	return ""
 }
 
-// handleCall checks concrete arguments and rejects conversions that hide service reference types.
+// handleCall checks typed arguments and permits interface conversions.
 func (c *subsetChecks) handleCall(call *ast.CallExpr) string {
 	if c.pass.TypesInfo.Types[call.Fun].IsType() {
+		if _, boxed := c.pass.TypesInfo.TypeOf(call).Underlying().(*types.Interface); boxed {
+			return c.matchTransport(c.pass.TypesInfo.TypeOf(call.Args[0]), c.pass.TypesInfo.TypeOf(call))
+		}
 		return "service reference conversions are unsupported; use a type alias or copy the Ref value"
 	}
 	if signature, ok := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature); ok {

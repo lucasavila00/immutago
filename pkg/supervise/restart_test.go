@@ -56,19 +56,19 @@ func TestCallAcrossRestart(t *testing.T) {
 		callRuns.Store(0)
 		root := NewRoot(nil)
 		ref, _ := Start[heldCall](root, NoArgs{})
-		before := ref.Current()
+		before := ref.Borrow()
 		result := make(chan int, 1)
-		go func() { result <- ref.Current().Add() }()
+		go func() { result <- ref.Borrow().Add() }()
 		<-callEntered
 		close(panicRun)
 		synctest.Wait()
 		time.Sleep(time.Second)
 		synctest.Wait()
-		if ref.Current() == before {
+		if ref.Borrow() == before {
 			t.Fatal("restart did not publish a fresh instance")
 		}
 		close(callRelease)
-		if <-result != 1 || before.Count() != 1 || ref.Current().Count() != 0 {
+		if <-result != 1 || before.Count() != 1 || ref.Borrow().Count() != 0 {
 			t.Fatal("old call did not stay on its original instance")
 		}
 		<-root.Stop()
@@ -81,7 +81,7 @@ func TestRefCallAllocations(t *testing.T) {
 		root := NewRoot(nil)
 		ref, _ := Start[counter](root, NoArgs{})
 		synctest.Wait()
-		if allocations := testing.AllocsPerRun(100, func() { ref.Current().Add() }); allocations != 0 {
+		if allocations := testing.AllocsPerRun(100, func() { ref.Borrow().Add() }); allocations != 0 {
 			t.Fatalf("direct call allocations = %v, want 0", allocations)
 		}
 		<-root.Stop()

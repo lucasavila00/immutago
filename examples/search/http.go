@@ -25,14 +25,14 @@ func (h handler) search(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	index := h.indexer.Current().Read()
+	index := h.indexer.Borrow().Read()
 	response := searchIndex(index, request)
 	writeJSON(w, http.StatusOK, response)
 }
 
 // status gives the JSON encoder temporary read access to the error text.
 func (h handler) status(w http.ResponseWriter, _ *http.Request) {
-	status := h.indexer.Current().Status()
+	status := h.indexer.Borrow().Status()
 	response := struct {
 		Version   int    `json:"version"`
 		Documents int    `json:"documents"`

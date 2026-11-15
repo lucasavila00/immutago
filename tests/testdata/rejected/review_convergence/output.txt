@@ -188,7 +188,7 @@ pointer_contracts.go:14:35: unsupported immutable operation: immutable reference
   fix: allocate a concrete struct that embeds im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses
 projection_walk.go:11:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: (*p).Values[0][0] = 2
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 projection_walk.go:13:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: a, b := (builder)[0], 2
   fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start

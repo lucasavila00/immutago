@@ -2,7 +2,7 @@
 
 These forms apply to:
 
-- Structs that embed `im.Frozen` or `im.Local`.
+- Structs that embed `im.Frozen`, `im.Local`, or `im.Copied`.
 - `im.FrozenString`, `im.FrozenSlice`, `im.FrozenMap`, and local read projections.
 
 Combine them with each type's forms. [Cell](cell.md) has its own forms.
@@ -18,11 +18,13 @@ Embed exactly one marker by value:
 ```go
 type FrozenPoint struct { im.Frozen; X int }
 type LocalPoint struct { im.Local; X int }
+type CopiedPoint struct { im.Copied; X int }
 type FrozenLink struct { im.Frozen; P *FrozenPoint }
 ```
 
 Frozen fields and shared frozen entries require Frozen types. Local fields
-require read results. A Local value cannot be hidden in persistent storage.
+require read results. Copied fields use the complete [value-only field list](copied.md#fields--exhaustive).
+A Local value cannot be hidden in persistent storage.
 
 ### Generics
 
@@ -133,7 +135,8 @@ forms on this page.
 | --- | --- |
 | Struct with `im.Frozen` | Same checks as named functions; can return its pointer. |
 | Struct with `im.Local` | Its value stays Local. Its pointer can only be used in local direct calls. |
-| Either marked struct | Cannot change protected fields or have generic receivers. |
+| Every marked struct | Cannot change protected fields or have generic receivers. |
+| Struct with `im.Copied` | Value receivers only; no pointers to the record. |
 | Ordinary concrete receiver with protected inputs or results | Direct, non-generic calls. The protected inputs and results keep their im rules. |
 | Fixed library type | Listed API forms. |
 
@@ -153,6 +156,7 @@ Use the operations above inside these statement forms:
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Declare one variable or assign one destination | `var value FrozenPoint`, `value := FrozenPoint{X: 1}`, `value = FrozenPoint{X: 2}` |
+| Replace a Copied field or element in an ordinary mutable holder | `state.Score = score`, `scores[0] = score`; the [Copied forms](copied.md) list native container operations. |
 | Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
 | Bind Start results to two local names or blanks with `:=`, `=`, or `var` | `ref, err := supervise.Start[Worker](root, args)`, `var ref, err = supervise.Start[Worker](root, args)` |
 | Bind a map Get call's two results to new locals | `value, found := frozen.Get(key)` |

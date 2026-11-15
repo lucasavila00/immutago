@@ -8,6 +8,7 @@ for terms such as Frozen, local projection, and builder.
 | Need | Read |
 | --- | --- |
 | Understand the type categories and fields | [Type rules](types.md) |
+| Return an immutable record by value and store its copies | [Copied records](copied.md) |
 | Declare immutable stored data | [Frozen records](frozen-records.md) |
 | Combine local projections and copied results | [Local records](local.md) |
 | Generate typed field projections and read local projections | [Typed projections](projections.md) |
@@ -34,7 +35,7 @@ for terms such as Frozen, local projection, and builder.
 - [Install the checker](getting-started.md#install) and [run it in CI](getting-started.md#check-in-ci).
 - [Checker reference](rules.md): allowed source forms, trust promises, and which packages are checked.
 - [Glossary](glossary.md): names used by the guides, API references, and checker.
-- [Operation costs](performance.md): im collections, `im.Cell`, and `supervise.Ref.Current`.
+- [Operation costs](performance.md): im collections, `im.Cell`, and `supervise.Ref.Borrow`.
 - [Runnable projects](../examples/README.md): small Go applications with commands and tests.
 
 ## Maintainers
