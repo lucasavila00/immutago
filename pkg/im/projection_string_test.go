@@ -30,7 +30,7 @@ func TestStringProjection(t *testing.T) {
 // TestStringProjectionEmpty checks zero values and clones of empty substrings.
 func TestStringProjectionEmpty(t *testing.T) {
 	parent := strings.Repeat("x", 1024)
-	for _, projection := range []StringProjection{{}, ProjectedString(ProjectionOf("")), ProjectedString(ProjectionOf(parent[512:512]))} {
+	for _, projection := range []StringProjection{{}, ProjectString(""), ProjectString(parent[512:512])} {
 		clone := projection.Clone()
 		if projection.Len() != 0 || clone != "" {
 			t.Fatal("invalid empty string projection")
