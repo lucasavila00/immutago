@@ -1,0 +1,7 @@
+{
+  "active": {
+    "id": "wide", "account": "desk-a", "budget": 1000,
+    "parameters": {"edge": 3, "skew": 1},
+    "markets": [{"symbol": "AAA"}, {"symbol": "BBB"}]
+  }
+}
