@@ -14,6 +14,12 @@ type FrozenSlice[T any] struct {
 // Run immutago to enforce these rules; Freeze performs no runtime validation.
 func FreezeSlice[T any](values []T) FrozenSlice[T] { return FrozenSlice[T]{values: values} }
 
+// ByValue returns a local read view without copying entries or allocating.
+// Run immutago to enforce the view's type, storage, and transport rules.
+func (s FrozenSlice[T]) ByValue() FrozenByValueSlice[T] {
+	return FrozenByValueSlice[T]{values: s.values}
+}
+
 // Len returns the number of elements in O(1) time without allocations.
 func (s FrozenSlice[T]) Len() int { return len(s.values) }
 

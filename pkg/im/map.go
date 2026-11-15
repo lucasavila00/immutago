@@ -16,6 +16,12 @@ func FreezeMap[K comparable, V any](values map[K]V) FrozenMap[K, V] {
 	return FrozenMap[K, V]{values: values}
 }
 
+// ByValue returns a local read view without copying entries or allocating.
+// Run immutago to enforce the view's type, storage, and transport rules.
+func (m FrozenMap[K, V]) ByValue() FrozenByValueMap[K, V] {
+	return FrozenByValueMap[K, V]{values: m.values}
+}
+
 // Len returns the number of entries in O(1) time without allocations.
 func (m FrozenMap[K, V]) Len() int { return len(m.values) }
 
