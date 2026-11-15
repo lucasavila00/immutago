@@ -1,12 +1,12 @@
 builder_declarations.go:12:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: left, right := []int{1}, []int{2}
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 builder_declarations.go:18:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: values, count := make([]int, 1), 2
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 builder_declarations.go:6:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: values, count := []int{1}, 2
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 callback_contracts.go:10:11: unsupported immutable operation: immutable callbacks are unsupported
   source: func(ConversionValue)
   type: func(review_convergence.ConversionValue)
@@ -49,32 +49,29 @@ callback_contracts.go:9:21: unsupported immutable operation: immutable callbacks
   fix: call a named, non-generic function directly with a concrete immutable parameter
 convergence_rejected.go:14:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: a, b := value.X+1, 2
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 convergence_rejected.go:16:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: c, d = value.X + 1, 2
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 convergence_rejected.go:22:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: a, b := read(new(value)), 2
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 convergence_rejected.go:24:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: c, d = read(new(value)), 2
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 convergence_rejected.go:30:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: a, b := len(builder), 2
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 convergence_rejected.go:32:6: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: c, d = len(builder), 2
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 convergence_rejected.go:39:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for value.X, value.Y = range []int{1} { }
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 convergence_rejected.go:45:18: unsupported immutable operation: immutable method expressions are unsupported
   source: (im.FrozenMap[int, Value].Get)(frozen, 1)
   type: (review_convergence.Value, bool)
   fix: call the method on its receiver directly (value.Method(...)); do not call it through the type
-convergence_rejected.go:45:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
-  source: value, found := (im.FrozenMap[int, Value].Get)(frozen, 1)
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
 convergence_rejected.go:52:15: unsupported immutable operation: immutable iterators must be consumed by direct range
   source: (frozen.All)()
   type: iter.Seq2[int, review_convergence.Value]
@@ -125,10 +122,10 @@ convergence_rejected.go:64:62: unsupported immutable operation: dynamic calls wi
   fix: call a named, non-generic function directly with a concrete immutable parameter
 convergence_rejected.go:68:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for _, value.X = range []int{1} { }
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 convergence_rejected.go:76:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for a[value.X], n = range []int{2} { }
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 forward_capture.go:10:42: unsupported immutable operation: closures cannot capture immutable storage
   source: laterValue
   type: *review_convergence.CapturedValue
@@ -191,7 +188,7 @@ projection_walk.go:11:2: unsupported immutable operation: writes to immutable ob
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 projection_walk.go:13:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: a, b := (builder)[0], 2
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call
 range_existing_targets.go:9:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for index, value = range values { }
-  fix: use one protected destination, or local bindings for Get, Start, or (read result, error)
+  fix: use one protected destination, or local names for all results of one direct typed call

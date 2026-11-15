@@ -27,8 +27,9 @@ type Model struct {
 
 The package uses the [required generation step](rules.md#required-generation).
 It generates `ScorerProjection` as well as the record projections. A Model
-projection returns a ScorerProjection from its Scorer getter. The interface
-payload cannot leave that local projection.
+projection returns a ScorerProjection from its Scorer getter. The generated projection forwards declared interface methods. It has no raw
+payload getter. A declared method can return a Frozen value, pointer, or interface
+under the ordinary method rules.
 
 ## Interface declarations — exhaustive
 
@@ -45,18 +46,25 @@ payload cannot leave that local projection.
 - Use fixed concrete parameters. Interface and function parameters are rejected.
   Ordinary inputs such as `[]float32` follow ordinary Go contracts. Protected
   inputs also need the [common call forms](common-forms.md#statements-and-calls).
-- Return no results, or any number of results from the complete list below.
+- Method results use the same type, return, and transport rules as ordinary named
+  functions and concrete methods. There is no interface-specific result category.
 
-| Result type — exhaustive | Example |
+| Result form — exhaustive | Example |
 | --- | --- |
-| [Read result](types.md): Copied or Local | `Lookup(string) (float64, bool)`, `Name() im.StringProjection` |
-| The predeclared `error` type or an alias | `Lookup(string) (float64, error)`, `Visit() error` |
-| Native slice with Copied elements, including defined slices and aliases | `Lookup(key, buf []byte) (float64, bool, []byte)`, `Values() []Summary` where Summary embeds im.Copied |
+| No results | `Visit()` |
+| One result | `Score([]float32) float64`, `Name() string`, `Self() *Tree` |
+| Several results, with any result order | `Lookup(key, buf []byte) (float64, bool, []byte, error)`, `Self() (*Tree, Scorer)` |
+| Named results in either result form | `Lookup([]byte) (value float64, found bool)` |
 
-No-result methods such as `Visit()` remain allowed. Result order is not restricted;
-for example, `Read() (error, bool)` is allowed. Each result must satisfy one row.
-A defined interface with an Error method is not the predeclared error type.
-These method result types do not change the Frozen, Local, or service field rules.
+Each result keeps its normal Go and im rules. This includes ordinary values,
+Frozen values and pointers, Frozen interfaces, and Local values. Local pointers
+cannot be returned. Type aliases and defined ordinary result types use their
+normal rules. Native strings, buffers, errors, ordinary interfaces, and ordinary
+callbacks do not need a new result proof. For example, `Text() string`,
+`Failure() error`, `Value() any`, and `Callback() func()` are allowed signatures.
+Their method bodies still cannot box protected data in an ordinary interface or
+capture protected storage in a closure. See the complete
+[common forms](common-forms.md#statements-and-calls).
 
 These lists are complete. Unlisted operations on protected storage are rejected.
 
@@ -93,15 +101,15 @@ Frozen interfaces can be service inputs and persistent Frozen fields. Exported
 service methods return their generated local projection, not the persistent
 interface. Methods retain the normal body checks and ordinary Go input contracts. For
 example, an implementation can save its own Frozen receiver in a package
-variable. A caller of its local projection cannot extract that receiver.
+variable. A declared method can return that receiver as a Frozen pointer or interface.
+The returned value keeps its Frozen storage rules.
 The checker does not infer method effects.
 
 A slice result uses ordinary Go ownership. It can return a caller buffer such as
 `buf[:n]`, a fresh slice, or an independent `Clone()` result. The checker does not
 track which argument supplied it. The implementation's normal body checks still
-reject native slices in Frozen fields and use of a builder after Freeze. A slice
-result does not expose the implementation's frozen backing storage through an
-allowed source operation. Ordinary inputs, errors, and dependency calls retain
+reject native slices in Frozen fields and use of a builder after Freeze. An ordinary slice
+result does not expose frozen backing storage through an allowed source operation. Ordinary inputs, errors, and dependency calls retain
 Go contracts; this rule does not prove method isolation.
 
 ```go
@@ -129,9 +137,10 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | `method := scorer.Score` or `Scorer.Score(scorer, features)` | `scorer.Score(features)` |
 | `go scorer.Score(features)` or `defer scorer.Score(features)` | Call synchronously. |
 | Capture scorer or its projection in a closure | Compute an ordinary result before the closure. |
-| `Self() Scorer`, `Text() string`, or `Self() *Tree` | Return a local projection or a Copied result. |
-| `Read() any`, `Read() func()`, or `Read() map[int]int` | Return listed concrete results; use a projection for a frozen map. |
-| `Values() []string`, `Values() []*Tree`, or `Values() [][]byte` | Return a frozen collection projection, or a slice with Copied elements. |
+| `Self() *LocalRecord` | Return the Local record value. |
+| `Values() []*Tree` | Return a FrozenSlice or a projection; native containers cannot hold protected data outside the builder forms. |
+| `func (t *Tree) Value() any { return t }` | Declare a `*Tree` or Scorer result. |
+| `func (t *Tree) Callback() func() float64 { return func() float64 { return t.Weight } }` | Copy Weight to an ordinary local before the closure. |
 | `value, outputs[0] = local.Read()` | Bind local names first, then assign the ordinary output separately. |
 | Save ScorerProjection in a package variable or Frozen field | Save a Scorer value from an allowed construction. |
 | Read the raw payload with `projection.Read()` | Use the generated method. |

@@ -49,8 +49,7 @@ func selectFreeze() {
 	}
 }
 
-func makePair() (Good, Good) { return Good{}, Good{} }
-func multipleResults()       { first, second := makePair(); _ = first; _ = second }
+func multipleResults() { first, second := Good{}, Good{}; _ = first; _ = second }
 func scalarSend(ready chan<- int) {
 	var value Good
 	select {

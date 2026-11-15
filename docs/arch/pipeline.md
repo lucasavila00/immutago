@@ -100,25 +100,24 @@ declared on that exact source type; promoted methods and implicit dereferences
 fail. The private im seal is the only promoted-method exception. A conversion
 between proved Frozen interfaces keeps the earlier concrete proof.
 
-Named interface proofs require exported methods, fixed concrete parameters,
-and any number of results. Each result uses the existing ReadResult proof, the
-predeclared error identity, or the Copied proof for a native slice element.
-Defined slices and aliases use the same proof. No result-origin analysis is
-needed: ordinary caller buffers and Clone results use the normal method body
-checks. A direct typed call can bind all such results to local names or blanks;
-the matcher requires one call, the exact destination count, and a valid proof
-for every result. Service method signatures retain their separate count rule.
-The complete expression and statement
-matchers still check calls, arguments, bindings, captures, and writes. Dependency
-facts carry failed implementation checks to consumers, including consumers that
-import no im package directly.
+Named interface proofs require exported methods and fixed concrete parameters.
+They do not prove method result types as stored fields. Method results use the
+same source type and transport checks as ordinary functions. A direct typed call
+can bind all its results to local names or blanks. One shared matcher requires a
+single call and the exact compiler-resolved destination count; each component
+then passes the existing write and transport checks. Service method signatures
+retain their separate count and result-category rules. The complete expression
+and statement matchers still check calls, arguments, captures, and writes.
+Dependency facts carry failed implementation checks to consumers, including
+consumers that import no im package directly.
 
 [Generated interface projections](../../internal/projectiongen/interfaces.go)
 store `im.Projection[Interface]` in an im.Local record. Each method reads that
-interface only inside the verified generated file and forwards one direct call.
-The caller cannot extract the persistent interface. An implementation can retain
-its own Frozen receiver under ordinary Go method contracts; no method-effect
-or receiver-escape analysis is added.
+interface only inside the verified generated file and forwards one direct call,
+including all its results. There is no generated raw payload getter. A declared
+method can return its Frozen receiver, another Frozen value, or a Local value
+under the ordinary method rules. No method-effect or result-origin analysis is
+added. Handwritten Projection.Read remains rejected.
 
 Generation first supplies the projection type names without interface methods.
 This resolves signatures that return generated Local projections, including

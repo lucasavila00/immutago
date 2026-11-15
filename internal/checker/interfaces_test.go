@@ -29,9 +29,9 @@ func TestFrozenInterfaceCategories(t *testing.T) {
 	good := frozenContract("Scorer", method("Score", types.Typ[types.Float64]),
 		method("Lookup", types.Typ[types.Float64], types.Typ[types.Bool], types.NewSlice(types.Typ[types.Byte]),
 			types.Universe.Lookup("error").Type()))
-	bad := frozenContract("Text", method("Text", types.Typ[types.String]))
+	text := frozenContract("Text", method("Text", types.Typ[types.String]))
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), good)
-	for _, typ := range []types.Type{good, alias} {
+	for _, typ := range []types.Type{good, alias, text} {
 		var proofs Prover
 		var queries Classifier
 		if !FrozenInterface(typ) || !queries.Contains(typ) ||
@@ -53,9 +53,6 @@ func TestFrozenInterfaceCategories(t *testing.T) {
 	var proofs Prover
 	if reason := proofs.FrozenReason(parameter); reason == "" {
 		t.Fatal("a type parameter passed the concrete interface proof")
-	}
-	if reason := proofs.FrozenReason(bad); !strings.Contains(reason, "Text result:") {
-		t.Fatalf("invalid result was accepted: %s", reason)
 	}
 	if reason := proofs.FrozenReason(good.Underlying()); !strings.Contains(reason, "named non-generic") {
 		t.Fatalf("anonymous interface was accepted: %s", reason)

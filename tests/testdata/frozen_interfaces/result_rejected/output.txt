@@ -1,0 +1,45 @@
+forms.go:11:5: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: _, _, _, _ = reader.Lookup(nil, nil)
+  fix: use one protected destination, or local names for all results of one direct typed call
+forms.go:14:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: _, _, buffer, _ = r.Lookup(nil, nil)
+  fix: use one protected destination, or local names for all results of one direct typed call
+forms.go:16:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: _, _, outputs[0], _ = r.Lookup(nil, nil)
+  fix: use one protected destination, or local names for all results of one direct typed call
+forms.go:18:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: _, _, output.Buf, _ = r.Lookup(nil, nil)
+  fix: use one protected destination, or local names for all results of one direct typed call
+forms.go:21:2: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: boxed, ok = pair()
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+forms.go:24:6: unsupported immutable operation: bound immutable methods are unsupported
+  source: r.Lookup
+  type: func(key []byte, buf []byte) (float64, bool, []byte, error)
+  fix: call the method directly (value.Method(...)); do not save or pass its method value
+forms.go:25:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go r.Lookup(nil, nil)
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+forms.go:26:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: defer r.Lookup(nil, nil)
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+forms.go:31:14: unsupported immutable operation: immutable callbacks are unsupported
+  source: interface { Read() (im.StringProjection, bool) }
+  type: interface{Read() (im.StringProjection, bool)}
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+forms.go:32:6: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() (im.StringProjection, bool)
+  type: func() (im.StringProjection, bool)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+forms.go:35:16: unsupported immutable operation: immutable callbacks are unsupported
+  source: Dynamic
+  type: result_rejected.Dynamic
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+forms.go:35:34: unsupported immutable operation: dynamic calls with immutable storage are unsupported
+  source: r.Read()
+  type: (im.StringProjection, bool)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+forms.go:40:9: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+forms.go:48:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: pointer.Weight = 2
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

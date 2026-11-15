@@ -355,9 +355,6 @@ func (c *subsetChecks) getCall(values []ast.Expr) bool {
 
 // resultCall accepts only the direct result bindings listed in the source contract.
 func (c *subsetChecks) resultCall(values []ast.Expr, count int) bool {
-	if c.getCall(values) {
-		return count == 2
-	}
 	if len(values) != 1 {
 		return false
 	}
@@ -366,22 +363,11 @@ func (c *subsetChecks) resultCall(values []ast.Expr, count int) bool {
 		return false
 	}
 	object := c.calledObject(call.Fun)
-	if runtimeObject(object) && object.Name() == "Start" {
-		return count == 2
-	}
 	if _, direct := object.(*types.Func); !direct {
 		return false
 	}
 	signature, ok := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
-	if !ok || signature.Results().Len() != count || count < 2 {
-		return false
-	}
-	for result := range signature.Results().Variables() {
-		if c.proofs.InterfaceResultReason(result.Type()) != "" {
-			return false
-		}
-	}
-	return true
+	return ok && count > 1 && signature.Results().Len() == count
 }
 
 // resultAssignment requires new locals for Get and permits reused locals for other result calls.

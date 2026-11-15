@@ -19,9 +19,8 @@ type Counted struct {
 	Counter
 }
 
-func (p Product) Cost() int            { return p.Price }
-func (p *Product) ReadCost() int       { return p.Price }
-func (p Product) Get() (Product, bool) { return p, true }
+func (p Product) Cost() int      { return p.Price }
+func (p *Product) ReadCost() int { return p.Price }
 
 func calls() {
 	value := Product{}
@@ -43,7 +42,4 @@ func calls() {
 	go pointer.ReadCost()
 	defer pointer.ReadCost()
 	_ = func() int { return pointer.ReadCost() }
-	got, found := value.Get()
-	_ = got
-	_ = found
 }

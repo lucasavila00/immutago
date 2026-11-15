@@ -14,6 +14,12 @@ type Reader interface {
 	Name() im.StringProjection
 	Summary() Summary
 	Visit()
+	Lookup(key, buf []byte) (float64, bool, []byte, error)
+	Read() (im.StringProjection, bool)
+	SummaryLookup(Buffer) (Summary, bool, Buffer, Failure)
+	Clone() []byte
+	Self() Reader
+	Ordinary(Input) (string, any, func() int, map[int]int, [][]byte, error)
 }
 
 type Alias = Scorer
@@ -21,4 +27,13 @@ type Alias = Scorer
 type Summary struct {
 	im.Copied
 	Count int
+}
+
+type Buffer []byte
+type Bytes = Buffer
+type Failure = error
+
+type Input struct {
+	Value    any
+	Callback func() int
 }

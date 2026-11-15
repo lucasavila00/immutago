@@ -16,6 +16,12 @@ func TestProjectionCost(t *testing.T) {
 	if result != 7 {
 		t.Fatal(result)
 	}
+	if count := testing.AllocsPerRun(100, readResults); count != 0 {
+		t.Fatalf("projected interface tuple allocations = %g", count)
+	}
+	if result != 7 || !found || len(output) != 1 || &output[0] != &buffer[0] || failure != nil {
+		t.Fatal("tuple projection changed the result or caller buffer")
+	}
 }
 
 func BenchmarkDirectInterface(b *testing.B) {

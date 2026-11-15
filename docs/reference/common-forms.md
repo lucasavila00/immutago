@@ -183,21 +183,23 @@ Use the operations above inside these statement forms:
 - FrozenMap.Get and MapProjection.Get permit two new local names or blanks.
 - Calls to `supervise.Start` with protected arguments use these statement forms.
   Calls with only ordinary arguments use ordinary Go binding rules.
-- Multiple-result bindings require every result to be a read result, the predeclared
-  error type or alias, or a native slice with Copied elements. Defined slices and
-  aliases are allowed. This is the complete [Frozen interface result list](frozen-interfaces.md).
-  The one call must supply all results. All destinations must be local names or blanks.
-  The `:=`, `=`, and `var` forms are allowed, including reused locals in `:=`.
-  The [service result signatures](service-results.md) still limit service methods to
-  at most one data result and an optional error. Calls with only ordinary values
-  keep Go rules.
+- Multiple-result bindings require one direct typed call that supplies all results.
+  Each result uses the same type, write, and transport checks as a single result.
+  All destinations must be local names or blanks. The `:=`, `=`, and `var` forms
+  are allowed, including reused locals in `:=`. Aliases and parentheses keep
+  these forms. For example, `point, found := makePair()` can bind a Frozen record,
+  and `pointer, found := find()` can bind a Frozen pointer. An assignment cannot
+  box either result in `any` or store a Local value in persistent storage.
+- The [service result signatures](service-results.md) still limit service methods
+  to at most one data result and an optional error. Result binding does not change
+  a method's declared API contract. Calls with only ordinary values keep Go rules.
 - Blocks, `break`, and `continue` follow ordinary Go rules.
 - Named functions need the exact parameter type, such as `func read(p *FrozenPoint) int`.
   Call directly, without `go` or `defer`.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
-| `point, found := makePair()` returning `(FrozenPoint, bool)` | Return a marked result struct and bind it to one variable. |
+| `points[0], found = makePair()` returning `(FrozenPoint, bool)` | Bind local names first, then assign each allowed destination separately. |
 | `value, p = FrozenPoint{}, &FrozenPoint{}` | Use two statements. |
 | `Other(point)` where `type Other FrozenPoint` | Construct `Other{X: point.X}`. |
 | `OtherFrozen(frozen)` where `type OtherFrozen im.FrozenSlice[int]` | Keep the frozen type; use `Clone` for mutable storage. |

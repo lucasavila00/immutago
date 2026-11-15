@@ -179,7 +179,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 	if checker.FrozenInterface(t) && !checker.IsLibraryType(t, "FrozenInterface") {
 		if _, named := types.Unalias(t).(*types.Named); named {
 			if reason := c.proofs.FrozenReason(t); reason != "" {
-				c.report(pos, "immutable interface: "+reason+"\n  fix: use fixed concrete parameters and read results, errors, or native slices of Copied values")
+				c.report(pos, "immutable interface: "+reason+"\n  fix: use exported methods with fixed concrete parameters")
 			}
 		}
 	}

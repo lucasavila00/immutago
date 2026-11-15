@@ -85,13 +85,10 @@ func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.
 		{"capture", `func f(s Scorer){_=func()float64{return s.Score(nil)}}`, "closures cannot capture"},
 		{"callback", `func f(s Scorer,call func(Scorer)){call(s)}`, "callbacks"},
 		{"generic", `func identity[T any](v T)T{return v};func f(s Scorer){_=identity(s)}`, "user generic"},
-		{"tuple binding", `func pair()(Scorer,int){return &Tree{},1};func f(){s,n:=pair();_=s;
-_=n}`, "multiple assignments"},
+
 		{"variadic interface input", `func take(...Scorer){};func f(){take(&Tree{})}`, "native slices"},
 		{"variadic boxing", `func take(...any){};func f(s Scorer){take(s)}`, "boxing immutable"},
 		{"Copied interface field", `type Bad struct{im.Copied;Scorer Scorer}`, "copied values require"},
-		{"raw result", `type Bad interface{im.FrozenInterface;Self()Scorer}`, "Self result"},
-		{"string result", `type Bad interface{im.FrozenInterface;Name()string}`, "Name result"},
 
 		{"variadic method", `type Bad interface{im.FrozenInterface;Sum(...int)int}`, "fixed parameters"},
 		{"interface parameter", `type Bad interface{im.FrozenInterface;Use(any)}`, "concrete types"},
