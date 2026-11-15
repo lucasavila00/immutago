@@ -14,10 +14,15 @@ type nested struct{ embedded }
 
 // Interfaces checks interface transport of references, holders, and promoted methods.
 func Interfaces(ref api.Handle) any {
+	var zero api.Handle
+	var nilHolder *holder
+	_ = any(zero)
+	_ = any(nilHolder)
 	var value any = ref
 	value = &holder{worker: ref}
 	var sink interface{ OnFailure(error) } = &holder{worker: ref}
 	sink.OnFailure(nil)
+	_ = interface{ OnFailure(error) }(&holder{worker: ref})
 	value = holder{worker: ref}
 	value = any(embedded{ref})
 	value = nested{embedded{ref}}
@@ -26,6 +31,7 @@ func Interfaces(ref api.Handle) any {
 	selected = nested{embedded{ref}}
 	pointer := selected.Borrow()
 	_ = pointer.Args()
+	_ = borrower.Borrow(selected)
 	accessor := selected.Borrow
 	_ = accessor()
 	_ = borrower(ref)
@@ -61,8 +67,12 @@ func consume(any, ...any) {}
 // pair supplies a tuple whose first result contains a reference.
 func pair(ref api.Handle) (api.Handle, int) { return ref, 1 }
 
+// identity checks ordinary generic calls after interface conversion.
+func identity[T any](value T) T { return value }
+
 // Arguments checks explicit conversions, tuple arguments, and variadic elements.
 func Arguments(ref api.Handle) {
+	_ = identity(any(ref))
 	consume(ref, holder{ref}, embedded{ref}, nested{embedded{ref}})
 	consume(pair(ref))
 	consume(ref, []any{ref, holder{ref}}...)

@@ -106,11 +106,13 @@ go pool.Borrow().Process("Hello")
 
 | Form | Rule |
 | --- | --- |
-| `ref.Borrow().Method(args)` | Method is an exported service method, including a promoted method, other than Init, Run, or a method supplied by the runtime. It returns no result or one [service result](service-results.md). |
+| `ref.Borrow().Method(args)` with a concrete Ref receiver | Method is an exported service method, including a promoted method, other than Init, Run, or a method supplied by the runtime. It returns no result or one [service result](service-results.md). |
+| `selected.Borrow()` with an interface receiver, including method values and expressions | Ordinary Go rules apply: `pointer := selected.Borrow()`, `accessor := selected.Borrow`, `Borrower.Borrow(selected)` where Borrower is the interface type. The result can be stored and used outside the checked call form. |
 
 For direct Ref calls, the checker rejects every other use of `Borrow`, despite
-its Go return type of `*T`. Borrow panics for an empty or unstarted reference. Each call selects the
-last successfully initialized service; a call in progress finishes on that instance.
+its Go return type of `*T`. Borrow panics for an empty or unstarted reference.
+Each call selects the last successfully initialized service; a call in progress
+finishes on that instance.
 Borrow is shared, not exclusive. Nothing is returned or released.
 
 Interface conversion can expose the service pointer outside this checked call
@@ -134,7 +136,7 @@ service pointers and their use across restarts in the service code.
 | `supervise.Ref[Worker].Borrow(ref)` | `ref.Borrow().Method()` |
 | `ref.Borrow().Init()`, `ref.Borrow().Run(ctx)`, `ref.Borrow().Args()` | Initialize through Start; expose needed data through an exported service method. |
 | `func read(WorkerRef) int` without a body | Supply a Go body so its reference use can be checked. |
-| `identity(ref)` with generic identity | Use a concrete `supervise.Ref[Worker]` parameter, or first convert to an interface. |
+| `identity(ref)` with generic identity | Use a concrete `supervise.Ref[Worker]` parameter, or pass `identity(any(ref))`. |
 | `WorkerRef(other)` where other has a different defined concrete type | Use a reference type alias and copy the value. |
 | `wrapper.Borrow()` through an embedded Ref | Select the reference field: `wrapper.Ref.Borrow().Method()`. |
 | `type Box[T any] struct { Value T }`; `atomic.Pointer[Box[WorkerRef]]` | Use `type Slot struct { Ref WorkerRef }` and `atomic.Pointer[Slot]`. |

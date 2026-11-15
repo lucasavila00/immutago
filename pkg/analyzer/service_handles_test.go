@@ -69,7 +69,8 @@ for v=range func(yield func(Handle)bool){yield(r)}{_=v}}`},
 		{"producer assertion", `type Producer interface{Worker()Handle};func use(v any){_=v.(Producer)}`},
 		{"type switch", `func use(v any){switch r:=v.(type){case Handle:r.Borrow().Count()}}`},
 		{"explicit interface conversion", `func use(r Handle){_=any(r);_=interface{Borrow()*Counter}(r)}`},
-		{"embedded interface conversion", `type Wrapper struct{Handle};func use(r Handle){v:=interface{Borrow()*Counter}(Wrapper{r});_=v.Borrow()}`},
+		{"embedded interface conversion", `type Wrapper struct{Handle}
+func use(r Handle){v:=interface{Borrow()*Counter}(Wrapper{r});_=v.Borrow()}`},
 		{"implementation", `func(c *Counter) Add(){self:=c;f:=func(){self.count++};f()}`},
 	}
 	for _, tc := range cases {
@@ -81,9 +82,12 @@ for v=range func(yield func(Handle)bool){yield(r)}{_=v}}`},
 	}
 }
 
-// TestServiceHandleBoundary rejects indirect access and every escape of the service pointer.
+// TestServiceHandleBoundary rejects unsupported direct Ref calls and generic uses.
 func TestServiceHandleBoundary(t *testing.T) {
 	cases := []struct{ name, source string }{
+		{"recovered pointer", `func use(v any)*Counter{return v.(Handle).Borrow()}`},
+		{"marked interface boxing", `func use(r Route)any{return r}`},
+		{"marked interface conversion", `func use(r Route)any{return any(r)}`},
 		{"pointer binding", `func use(r Handle){p:=r.Borrow();_=p}`},
 		{"pointer return", `func use(r Handle)*Counter{return r.Borrow()}`},
 		{"field read", `func use(r Handle)int{return r.Borrow().count}`},
