@@ -16,9 +16,9 @@ and unchanged shared objects after pointer rebinding.
 The [service guide program](testdata/accepted/servicedoc/main.go) runs through
 the CLI and vet in `TestCLI/service_guide`. That test also checks its output
 and runs the [background refresh test](testdata/accepted/servicedoc/main_test.go)
-with the race detector. The [worker pool](../examples/workers/pool.go) shows child
-initialization. Repository CI checks it through the CLI and runs its
-[runtime tests](../examples/workers/workers_test.go).
+with the race detector. The [application examples](../examples/README.md) have
+separate tests for their own behavior. Repository CI checks their source through
+the CLI and runs their Go tests.
 
 [Test-main tests](testmain_test.go) check generated runners and real internal and
 external test files through the CLI and vet. A forged generated header is checked.
