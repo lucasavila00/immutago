@@ -37,6 +37,16 @@ receiver_bodies.go:28:21: unsupported immutable operation: user generic declarat
   source: Read
   type: func() T
   fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+receiver_calls.go:11:2: Frozen data fields must be named
+  field: rejected.Order.Product
+  fix: give the field a name, such as Product Product
+receiver_calls.go:19:2: Frozen data fields must be named
+  field: rejected.Counted.Counter
+  fix: give the field a name, such as Counter Counter
+receiver_calls.go:29:13: unsupported immutable operation: Counter: Frozen data fields must be named
+  source: &Counted{}
+  type: *rejected.Counted
+  fix: use the documented immutable value and reference forms
 receiver_calls.go:30:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.ReadCost()
   type: int
@@ -49,10 +59,10 @@ receiver_calls.go:33:6: unsupported immutable operation: immutable method receiv
   source: order.Product.ReadCost()
   type: int
   fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
-receiver_calls.go:34:2: unsupported immutable operation: promoted immutable methods are unsupported
-  source: counted.Inc()
-  type: ()
-  fix: name the embedded field explicitly and call a method allowed on that field; copy scalar fields to ordinary locals before calling their methods
+receiver_calls.go:34:2: unsupported immutable operation: Counter: Frozen data fields must be named
+  source: counted
+  type: *rejected.Counted
+  fix: use the documented immutable value and reference forms
 receiver_calls.go:35:2: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
   source: counted.Counter.Inc()
   type: ()

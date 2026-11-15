@@ -18,6 +18,15 @@ Both values share the string bytes. Frozen means immutable, not a deep copy.
 The [type rules](types.md) define allowed fields. Use a
 [Frozen interface](frozen-interfaces.md) for a polymorphic field.
 
+| Field declarations — exhaustive | Example |
+| --- | --- |
+| Embed exactly one Frozen marker by value; aliases work | `im.Frozen` or `type Marker = im.Frozen; type Settings struct { Marker; Limit int }` |
+| Give each data field a name and a Frozen type | `Count Count`, `Child Child`, `Next *Settings` |
+
+Other field declarations are rejected. Data fields cannot be embedded. A named
+field prevents Go from promoting its methods to the Frozen record. Such a
+promoted method can take an implicit field address, including through an interface.
+
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Construct, copy, and read | `Settings{Limit: 100}`, `saved := settings`, `n := settings.Limit` |
@@ -68,10 +77,12 @@ func (s *requestState) begin(cell *SettingsCell) {
 | Use go, defer, channels, or select | `go use(p)`, `defer use(p)`, `ready <- p` |
 | Use aliases or defined pointer types | `type Pointer = *Settings`, `type Selected *Settings` |
 
-The pointer slot can change; the Frozen object cannot. The checker checks typed
-target operations, including after a type assertion or a generic call. Ordinary
-Go API contracts apply to dependencies. No pointer provenance or runtime ownership
-state is added.
+The pointer slot can change. The checker rejects statically typed writes to its
+Frozen target, including after a type assertion or a generic call. Ordinary Go
+API contracts still apply: do not pass the pointer to an API that changes its
+target, such as `json.Unmarshal(data, p)`. The checker does not prove mutation
+effects through ordinary interfaces, reflection, unsafe code, or dependencies.
+No pointer provenance or runtime ownership state is added.
 Protected value arguments and results keep their own im rules.
 
 Writes through the pointer remain rejected, including promoted fields from an
@@ -85,6 +96,8 @@ be used after Freeze.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
+| `type Settings struct { im.Frozen; Count }` | `type Settings struct { im.Frozen; Count Count }`. Copy `settings.Count` into an ordinary variable before changing it. |
+| `type Settings struct { im.Frozen; *Child }` | `type Settings struct { im.Frozen; Child *Child }`. |
 | `settings.Limit = 200` | Construct another Settings value. |
 | `p := &settings` | `p := new(settings)`; copy into fresh storage. |
 | `s.Settings.Limit = 200` or `*s.Settings = Settings{}` | Replace the slot: `s.Settings = &Settings{Limit: 200}`. |

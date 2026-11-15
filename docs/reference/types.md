@@ -28,6 +28,8 @@ Frozen, Copied, or read-result payload types.
 | `im.Copied` | Boolean/numeric fields, unnamed arrays, and other Copied records; no strings or reference handles | Can be stored by value in ordinary holders and returned by services; ordinary copies can change independently. |
 
 - Embed exactly one marker by value; aliases work.
+- Frozen records embed only their marker. Give every data field a name:
+  `Count Count`, not an embedded `Count`. Local and Copied field rules do not change.
 - Declare Frozen records as named package-scope types in non-test Go files.
   Local and Copied records need no generation.
 - Set Frozen and Local fields at construction. Later field, element, or
@@ -74,6 +76,7 @@ with only numeric fields still keeps the Frozen rule.
 | Rejected | Use instead |
 | --- | --- |
 | `struct { Mark im.Frozen }` or `struct { *im.Frozen }` | Embed `im.Frozen` by value. |
+| `struct { im.Frozen; Count }` | Use a named data field: `struct { im.Frozen; Count Count }`. |
 | `im.Projection[im.Frozen]` | Embed the marker in a record and use that record. |
 | `struct { im.Frozen; Text im.StringProjection }` | Use `im.Local` for a local result. |
 | `struct { im.Local; Text string }` | Use `im.StringProjection`. |

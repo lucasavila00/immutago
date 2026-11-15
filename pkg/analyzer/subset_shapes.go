@@ -3,8 +3,6 @@ package analyzer
 import (
 	"go/ast"
 	"go/types"
-
-	"github.com/lucasavila00/immutago/internal/checker"
 )
 
 // statementOperation identifies the statement or declaration that owns an operand.
@@ -48,26 +46,23 @@ func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 	return false
 }
 
-// protectedSelection checks field owners and receivers selected through embedded fields.
+// protectedSelection checks each owner of a compiler-selected field.
 func (c *subsetChecks) protectedSelection(selector *ast.SelectorExpr) bool {
 	selection := c.pass.TypesInfo.Selections[selector]
-	if selection == nil {
+	if selection == nil || selection.Kind() != types.FieldVal {
 		return false
 	}
 	owner := selection.Recv()
-	indices := selection.Index()
-	if selection.Kind() != types.FieldVal {
-		indices = indices[:len(indices)-1]
-	}
-	protected := false
-	for _, index := range indices {
+	for _, index := range selection.Index() {
 		if pointer, ok := owner.Underlying().(*types.Pointer); ok {
 			owner = pointer.Elem()
 		}
-		protected = protected || c.queries.Contains(owner)
+		if c.queries.Contains(owner) {
+			return true
+		}
 		owner = owner.Underlying().(*types.Struct).Field(index).Type()
 	}
-	return protected && (selection.Kind() == types.FieldVal || !checker.FrozenPointer(owner))
+	return false
 }
 
 // matchStatement finds the complete statement that owns a protected operand.

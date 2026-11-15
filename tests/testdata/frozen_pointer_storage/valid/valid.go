@@ -96,3 +96,11 @@ func Handles(p *api.Settings) int {
 func Capture(p *api.Settings) func() int {
 	return func() int { return p.Limit }
 }
+
+// ChangeCopy changes a named scalar copy through an ordinary interface.
+func ChangeCopy(p *api.Settings) api.Count {
+	count := p.Count
+	var value interface{ Inc() } = &count
+	value.Inc()
+	return count
+}

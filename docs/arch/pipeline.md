@@ -54,7 +54,7 @@ whether a type contains protected storage, callbacks, or service references:
 
 | Query | Edges followed |
 | --- | --- |
-| Storage | Frozen/Local records, Frozen interfaces, projections, frozen collections, and containing storage. Copied records and their ordinary holders are not protected storage. |
+| Storage | Frozen/Local records, Frozen interfaces, projections, frozen collections, and containing storage. Stop at Frozen pointers and Copied records; their ordinary carriers use Go rules. |
 | Local | Local records, projection wrappers, and containing storage. |
 | Callback | Storage edges, unmarked interface methods, function parameters and results. |
 | Service reference | Fields, containers, interface methods, function parameters and results. |
@@ -85,7 +85,9 @@ Frozen, Copied, and ReadResult have separate cached obligations. Cell and
 Projection use the same Frozen proof. Local fields and service data results use
 ReadResult. Copied records use the same Copied field obligations and reject service
 references through the cached handle query. Pointer fields in proved stored data require a Frozen target.
-Ordinary Copied storage and pointers use normal Go rules. The owner walk rejects
+The Frozen proof permits only the marker as an embedded field. Named data fields
+prevent compiler-promoted methods from taking hidden addresses inside a Frozen object.
+Ordinary Copied storage and Frozen pointer handles use normal Go rules. The owner walk rejects
 writes and addresses inside Frozen and Local records, including nested Copied
 fields. Exact receiver matching rejects implicit addresses into these owners.
 Only protected storage or a later Freeze starts native builder ownership checks. Type parameters fail; [generic checks](../../pkg/analyzer/subset_generics.go)
@@ -137,7 +139,8 @@ three allowed-form matches for each protected expression:
 Unmatched forms fail. [Calls](../../pkg/analyzer/subset_calls.go) resolve function
 identity and actual parameter types, including tuples and variadic elements.
 
-[Marked method](../../pkg/analyzer/subset_methods.go) matching requires:
+[Marked method](../../pkg/analyzer/subset_methods.go) matching for protected
+values and Local pointers requires:
 
 - A direct call and one selection index: no promoted method path.
 - A proved, non-generic marked receiver.
@@ -145,6 +148,10 @@ identity and actual parameter types, including tuples and variadic elements.
   object's signature; a selector signature can include Go adjustments.
 - Receiver checks before the ordinary-call fast path. Even a scalar method can
   implicitly take a protected field's address.
+
+Frozen pointer handles use ordinary Go method calls. The named-field proof
+prevents promoted data methods on their targets. A selected field keeps its
+owner's rules, including the check for an implicit pointer receiver.
 
 Ordinary concrete receivers can also take protected inputs or return protected
 values through direct, non-generic methods. Their receiver does not need a marker;

@@ -24,10 +24,10 @@ invalid.go:24:2: unsupported immutable operation: Values: []int is not provably 
   source: *Mutable
   type: *invalid.Mutable
   fix: use the documented immutable value and reference forms
-invalid.go:24:3: immutable field Mutable: Values: []int is not provably immutable
-  owner: invalid.Promoted; field type: *invalid.Mutable
-  fix: replace the pointer field or argument with an owned immutable value
-invalid.go:27:35: unsupported immutable operation: Frozen interface implementation: Mutable: Values: []int is not provably immutable
+invalid.go:24:3: Frozen data fields must be named
+  field: invalid.Promoted.Mutable
+  fix: give the field a name, such as Mutable *Mutable
+invalid.go:27:35: unsupported immutable operation: Frozen interface implementation: Mutable: Frozen data fields must be named
   source: return Promoted{Mutable: &Mutable{}}
   fix: use the documented immutable value and reference forms
 invalid.go:27:51: unsupported immutable operation: Values: []int is not provably immutable

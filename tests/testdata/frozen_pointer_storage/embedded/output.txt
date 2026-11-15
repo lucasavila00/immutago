@@ -1,0 +1,34 @@
+embedded.go:19:6: cannot generate typed projections: Numeric: Count: Frozen data fields must be named
+embedded.go:21:2: Frozen data fields must be named
+  field: embedded.Numeric.Count
+  fix: give the field a name, such as Count Count
+embedded.go:26:2: Frozen data fields must be named
+  field: embedded.Record.Stats
+  fix: give the field a name, such as Stats Stats
+embedded.go:31:3: Frozen data fields must be named
+  field: embedded.Pointer.Count
+  fix: give the field a name, such as Count *Count
+embedded.go:36:17: unsupported immutable operation: Count: Frozen data fields must be named
+  source: *Numeric
+  type: *embedded.Numeric
+  fix: use the documented immutable value and reference forms
+embedded.go:36:29: unsupported immutable operation: Stats: Frozen data fields must be named
+  source: *Record
+  type: *embedded.Record
+  fix: use the documented immutable value and reference forms
+embedded.go:36:40: unsupported immutable operation: Count: Frozen data fields must be named
+  source: *Pointer
+  type: *embedded.Pointer
+  fix: use the documented immutable value and reference forms
+embedded.go:37:33: unsupported immutable operation: Count: Frozen data fields must be named
+  source: p
+  type: *embedded.Numeric
+  fix: use the documented immutable value and reference forms
+embedded.go:39:7: unsupported immutable operation: Stats: Frozen data fields must be named
+  source: r
+  type: *embedded.Record
+  fix: use the documented immutable value and reference forms
+embedded.go:40:11: unsupported immutable operation: Count: Frozen data fields must be named
+  source: q
+  type: *embedded.Pointer
+  fix: use the documented immutable value and reference forms

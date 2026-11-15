@@ -116,7 +116,7 @@ cannot change Frozen objects.
 func (p FrozenPoint) XValue() int { return p.X }
 func (p *FrozenPoint) ReadX() int { return p.X }
 
-type PointGroup struct { im.Frozen; FrozenPoint }
+type PointGroup struct { im.Frozen; FrozenPoint FrozenPoint }
 
 point := FrozenPoint{X: 3}
 p := &FrozenPoint{X: 3}
@@ -157,7 +157,7 @@ forms on this page.
 | --- | --- |
 | `point.ReadX()` adds an implicit address | Construct `p := &FrozenPoint{X: 3}`, then call `p.ReadX()`. |
 | `p.XValue()` adds an implicit dereference for a Local pointer | `(*p).XValue()` |
-| `group.XValue()` selects a method from an embedded FrozenPoint | `group.FrozenPoint.XValue()` |
+| `type PointGroup struct { im.Frozen; FrozenPoint }` embeds data | Give the field a name, then call `group.FrozenPoint.XValue()`. |
 | `p.Counter.Inc()` calls a method on a protected scalar field | Copy the scalar first: `count := p.Counter; count.Inc()`. |
 | `read := local.ReadX` or `(*LocalPoint).ReadX(local)` | `local.ReadX()` |
 | `go local.ReadX()` or `defer local.ReadX()` | `local.ReadX()` |

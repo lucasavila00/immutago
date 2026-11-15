@@ -145,6 +145,7 @@ or a generated projection.
 Embed Frozen, Local, and Copied markers to declare record categories. The markers
 themselves do not satisfy Frozen, Copied, or ReadResult payload proofs.
 
+Frozen records embed only their marker; all data fields must be named.
 Frozen and Local fields are immutable from construction. Local values cannot
 enter persistent storage, including through nested records or arrays. Local
 pointers stay local or pass to direct typed calls; never store or return them.

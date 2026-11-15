@@ -22,7 +22,8 @@ func TestMarkedMethodForms(t *testing.T) {
 		{"Frozen returned bound method", `func f(p *Value)func()int{return p.ReadPointer}`},
 		{"Frozen callback method", `func take(func()int){};func f(p *Value){take(p.ReadPointer)}`},
 		{"Frozen pointer expression", `func f(p *Value){_=(*Value).ReadPointer(p)}`},
-		{"Frozen dynamic protected argument", `type Reader interface{Read(*Value)int};func f(r Reader,p *Value){_=r.Read(p)}`},
+		{"Frozen dynamic protected argument", `type Reader interface{Read(*Value)int};
+func f(r Reader,p *Value){_=r.Read(p)}`},
 		{"Frozen go", `func f(p *Value){go p.ReadPointer()}`},
 		{"Frozen defer", `func f(p *Value){defer p.ReadPointer()}`},
 		{"Frozen capture", `func f(p *Value){callback:=func()int{return p.ReadPointer()};_=callback}`},
@@ -38,8 +39,8 @@ func f(){a:=Alias{};_=a.ReadAlias();p:=&Alias{};_=p.ReadPointer()}`},
 		{"defined struct", `type Copy Value;func(v Copy)ReadCopy()int{return v.X};func f(){v:=Copy{};_=v.ReadCopy()}`},
 		{"field", `type Outer struct{im.Frozen;Child Value;P *Value};
 func f(o Outer){_=o.Child.Read();_=o.P.ReadPointer()}`},
-		{"embedded field", `type Outer struct{im.Frozen;Value};func f(o Outer){_=o.Value.Read()}`},
-		{"embedded pointer field", `type Outer struct{im.Frozen;*Value};func f(o Outer){_=o.Value.ReadPointer()}`},
+		{"named record field", `type Outer struct{im.Frozen;Value Value};func f(o Outer){_=o.Value.Read()}`},
+		{"named pointer field", `type Outer struct{im.Frozen;Value *Value};func f(o Outer){_=o.Value.ReadPointer()}`},
 		{"array element", `func f(){a:=[1]Value{{}};_=a[0].Read();b:=[1]*Value{&Value{}};_=b[0].ReadPointer()}`},
 		{"builder value", `func f(){s:=[]Value{{}};_=s[0].Read();_=im.FreezeSlice(s)}`},
 		{"builder pointer", `func f(){s:=[]*Value{&Value{}};_=s[0].ReadPointer();_=im.FreezeSlice(s)}`},
@@ -59,7 +60,7 @@ func f(){v:=Value{};p:=&Local{};_=v.ReadOther(p)}`},
 		{"scalar variadic", `func(v Value)Sum(xs ...int)int{return v.X+len(xs)};func f(v Value){_=v.Sum(1,2)}`},
 		{"tuple forwarding", `func(v Value)Pair()(Value,int){return v,1};func take(Value,int){};
 func f(v Value)(Value,int){take(v.Pair());return v.Pair()}`},
-		{"scalar copy", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Frozen;Count};
+		{"scalar copy", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Frozen;Count Count};
 func f(o Outer){c:=o.Count;c.Inc()}`},
 		{"ordinary methods", `type Count int;func(c *Count)Inc(){*c++};func(c Count)Read()int{return int(c)};
 func f(){var c Count;c.Inc();p:=&c;_=p.Read();later:=p.Inc;later()}`},
@@ -83,17 +84,18 @@ func TestMarkedMethodBoundaries(t *testing.T) {
 		{"array element address", `func f(){a:=[1]Value{{}};_=a[0].ReadPointer()}`, "declared type exactly"},
 		{"builder element address", `func f(){s:=[]Value{{}};_=s[0].ReadPointer();_=im.FreezeSlice(s)}`,
 			"declared type exactly"},
-		{"promoted value", `type Outer struct{im.Frozen;Value};func f(o Outer){_=o.Read()}`, "promoted immutable"},
+		{"promoted value", `type Outer struct{im.Frozen;Value};func f(o Outer){_=o.Read()}`,
+			"Frozen data fields must be named"},
 		{"promoted pointer", `type Outer struct{im.Frozen;*Value};func f(o Outer){_=o.ReadPointer()}`,
-			"promoted immutable"},
+			"Frozen data fields must be named"},
 		{"nested promotion", `type Inner struct{im.Frozen;Value};type Outer struct{im.Frozen;Inner};
-func f(o Outer){_=o.Read()}`, "promoted immutable"},
+func f(o Outer){_=o.Read()}`, "Frozen data fields must be named"},
 		{"promoted scalar", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Frozen;Count};
-func f(p *Outer){p.Inc()}`, "promoted immutable"},
-		{"scalar field pointer", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Frozen;Count};
+func f(p *Outer){p.Inc()}`, "Frozen data fields must be named"},
+		{"scalar field pointer", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Frozen;Count Count};
 func f(p *Outer){p.Count.Inc()}`, "concrete non-generic marked receiver"},
 		{"scalar field value", `type Count int;func(c Count)Read()int{return int(c)};
-type Outer struct{im.Frozen;Count};func f(p *Outer){_=p.Count.Read()}`, "concrete non-generic marked receiver"},
+type Outer struct{im.Frozen;Count Count};func f(p *Outer){_=p.Count.Read()}`, "concrete non-generic marked receiver"},
 		{"bound value", `func f(v Value){callback:=v.Read;_=callback}`, "bound immutable methods"},
 		{"Local bound pointer", `func f(p *Local){callback:=(p.ReadPointer);_=callback}`, "bound immutable methods"},
 		{"Local returned bound method", `func f(p *Local)func()int{return p.ReadPointer}`, "bound immutable methods"},
@@ -105,7 +107,8 @@ type Outer struct{im.Frozen;Count};func f(p *Outer){_=p.Count.Read()}`, "concret
 			"dynamic calls with immutable storage"},
 		{"Local go", `func f(p *Local){go p.ReadPointer()}`, "synchronous"},
 		{"Local defer", `func f(p *Local){defer p.ReadPointer()}`, "synchronous"},
-		{"Local capture", `func f(p *Local){callback:=func()int{return p.ReadPointer()};_=callback}`, "closures cannot capture"},
+		{"Local capture", `func f(p *Local){callback:=func()int{return p.ReadPointer()};_=callback}`,
+			"closures cannot capture"},
 		{"Local select", `func f(p *Local,ch chan int){select{case ch<-p.ReadPointer():}}`, "select communication"},
 
 		{"variadic boxing", `func(v Value)Use(...any){};func f(v Value){v.Use(v)}`, "boxing immutable"},
@@ -113,7 +116,7 @@ type Outer struct{im.Frozen;Count};func f(p *Outer){_=p.Count.Read()}`, "concret
 			"concrete non-generic marked receiver"},
 		{"generic receiver", `type Box[T any]struct{im.Frozen;X int};func(b Box[T])Read()int{return b.X}`,
 			"user generic declarations"},
-		{"named array", `type Counts [2]int;func(c *Counts)Inc(){c[0]++};type Outer struct{im.Frozen;Counts}`,
+		{"named array", `type Counts [2]int;func(c *Counts)Inc(){c[0]++};type Outer struct{im.Frozen;Counts Counts}`,
 			"named array"},
 	}
 	for _, test := range cases {

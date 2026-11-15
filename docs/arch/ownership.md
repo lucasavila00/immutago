@@ -20,6 +20,9 @@ values, and opaque service references. Copied records reject string and referenc
 fields, including service references. The cached handle query applies this field
 rule before following Copied field obligations. Frozen records are not Copied.
 Local fields and service data results both use this boundary.
+The Frozen record proof permits the marker as its only embedded field. Each data
+field must have a name. This prevents promoted data-field methods from taking
+implicit addresses through ordinary interface or generic calls.
 
 ## Source matching
 

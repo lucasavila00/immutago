@@ -18,7 +18,7 @@ func TestFrozenPointerStorage(t *testing.T) {
 	}
 	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
 	for _, mode := range []string{"cli", "vet"} {
-		for _, target := range []string{"api", "valid", "invalid", "dependency"} {
+		for _, target := range []string{"api", "valid", "invalid", "dependency", "embedded", "embedded_dependency"} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
 				dir := consumerModule(t, root, "frozen_pointer_storage")
 				output := runBoundary(t, dir, binary, mode, target == "api" || target == "valid", "./"+target)

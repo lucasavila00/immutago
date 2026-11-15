@@ -15,7 +15,8 @@ return im.ProjectString(d.Text),true,buf[:0],nil}
 // TestInterfaceResultForms checks tuple bindings and ordinary caller buffers.
 func TestInterfaceResultForms(t *testing.T) {
 	cases := []struct{ name, source string }{
-		{"Frozen pointer boxing receiver", `type Reader interface{im.FrozenInterface;Read()any};func(d *Data)Read()any{return d}`},
+		{"Frozen pointer boxing receiver", `type Reader interface{im.FrozenInterface;Read()any};
+func(d *Data)Read()any{return d}`},
 		{"Frozen pointer capture receiver", `type Reader interface{im.FrozenInterface;Read()func()int};
 func(d *Data)Read()func()int{return func()int{return len(d.Text)}}`},
 		{"Frozen pointer implicit receiver", `func(d Data)Pair()(int,bool){return 1,true};func f(d *Data){_,_=d.Pair()}`},
@@ -94,7 +95,7 @@ func f(){var value any;var ok bool;value,ok=read();_=value;_=ok}`,
 		{"unsealed interface", `type Reader interface{Read()(im.StringProjection,bool)};
 func f(r Reader){_,_=r.Read()}`, "dynamic calls"},
 		{"promoted receiver", `type Outer struct{im.Frozen;Result};func f(r Outer){_,_,_,_=r.Lookup(nil)}`,
-			"promoted immutable"},
+			"Frozen data fields must be named"},
 		{"implicit receiver", `func(d *Data)Pair()(int,bool){return 1,true};func f(d Data){_,_=d.Pair()}`,
 			"declared type exactly"},
 		{"retained builder", `func(d *Data)Clone()[]byte{buf:=[]byte{1};_=im.FreezeSlice(buf);return buf}`,
