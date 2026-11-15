@@ -1,9 +1,10 @@
 # Frozen interface projection costs
 
 This fixture compares one direct Frozen interface call with the same call
-through its generated local projection. The implementation returns one integer.
+through its generated local projection. The implementation returns one integer or a tuple with an integer, found flag,
+caller buffer, and error.
 The projection stores the same two-word interface header. The test checks zero
-allocations for a Cell load, interface field projection, and method call.
+allocations for a Cell load, interface field projection, and method call, including the tuple result.
 
 Run the focused measurements from the repository root:
 

@@ -59,3 +59,6 @@ func ReadScalar() int {
 	}
 	return count
 }
+
+func pair() (api.Reply, bool) { return api.Reply{}, false }
+func ReadPair()               { value, ok := pair(); _ = value; _ = ok }

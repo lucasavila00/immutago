@@ -4,11 +4,11 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type Raw interface {
 	im.FrozenInterface
-	Text() string
+	Text() []im.StringProjection
 }
 type Tuple interface {
 	im.FrozenInterface
-	Pair() (int, bool)
+	Pair() (int, *Local)
 }
 type Variadic interface {
 	im.FrozenInterface
@@ -25,4 +25,9 @@ type Dynamic interface {
 type Private interface {
 	im.FrozenInterface
 	read() int
+}
+
+type Local struct {
+	im.Local
+	N int
 }

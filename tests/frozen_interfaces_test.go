@@ -20,7 +20,7 @@ func TestFrozenInterfaces(t *testing.T) {
 	for _, mode := range []string{"cli", "vet"} {
 		for _, target := range []string{
 			"api", "implementation", "accepted", "rejected", "invalid", "invalidconsumer", "contracts",
-			"privateapi", "privateconsumer",
+			"privateapi", "privateconsumer", "result_rejected",
 		} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
 				dir := consumerModule(t, root, "frozen_interfaces")

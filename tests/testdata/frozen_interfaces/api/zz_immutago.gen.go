@@ -20,16 +20,42 @@ func NewReaderProjection(value im.Projection[Reader]) ReaderProjection {
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
 func (v ReaderProjection) IsNil() bool { return v.immutagoProjection.Read() == nil }
 
+// Clone calls the checked interface method with its ordinary Go contract.
+func (v ReaderProjection) Clone() []byte { return v.immutagoProjection.Read().Clone() }
+
+// Lookup calls the checked interface method with its ordinary Go contract.
+func (v ReaderProjection) Lookup(arg0 []byte, arg1 []byte) (float64, bool, []byte, error) {
+	return v.immutagoProjection.Read().Lookup(arg0, arg1)
+}
+
 // Name calls the checked interface method with its ordinary Go contract.
 func (v ReaderProjection) Name() im.StringProjection { return v.immutagoProjection.Read().Name() }
+
+// Ordinary calls the checked interface method with its ordinary Go contract.
+func (v ReaderProjection) Ordinary(arg0 Input) (string, any, func() int, map[int]int, [][]byte, error) {
+	return v.immutagoProjection.Read().Ordinary(arg0)
+}
+
+// Read calls the checked interface method with its ordinary Go contract.
+func (v ReaderProjection) Read() (im.StringProjection, bool) {
+	return v.immutagoProjection.Read().Read()
+}
 
 // Score calls the checked interface method with its ordinary Go contract.
 func (v ReaderProjection) Score(arg0 []float32) float64 {
 	return v.immutagoProjection.Read().Score(arg0)
 }
 
+// Self calls the checked interface method with its ordinary Go contract.
+func (v ReaderProjection) Self() Reader { return v.immutagoProjection.Read().Self() }
+
 // Summary calls the checked interface method with its ordinary Go contract.
 func (v ReaderProjection) Summary() Summary { return v.immutagoProjection.Read().Summary() }
+
+// SummaryLookup calls the checked interface method with its ordinary Go contract.
+func (v ReaderProjection) SummaryLookup(arg0 Buffer) (Summary, bool, Buffer, Failure) {
+	return v.immutagoProjection.Read().SummaryLookup(arg0)
+}
 
 // Visit calls the checked interface method with its ordinary Go contract.
 func (v ReaderProjection) Visit() { v.immutagoProjection.Read().Visit() }

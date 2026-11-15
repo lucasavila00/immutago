@@ -43,8 +43,10 @@ func genericValue() Point {
 func makePair() (Point, bool) { return Point{}, true }
 
 func bindPair() {
-	point, found := makePair()
-	println(point.X, found)
+	var points [1]Point
+	var found bool
+	points[0], found = makePair()
+	println(points[0].X, found)
 }
 
 var pairMap im.FrozenMap[int, int]
