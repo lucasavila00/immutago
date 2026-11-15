@@ -22,6 +22,8 @@ Call a service:
 - Each exported method except Init and Run returns exactly one Scoped result: an immutable value such as an integer, a marked struct, or a frozen collection. The analyzer rejects returned pointers and mutable result types.
 - Arguments and implementation code follow ordinary Go rules. Uses of im values keep their immutability and pointer rules.
 
+Review state changes, locks, saved inputs, and dependency calls in the service code. Immutable results do not prove service isolation.
+
 ### Groups and shutdown
 
 - NewRoot creates an application group; StartGroup creates a nested group.

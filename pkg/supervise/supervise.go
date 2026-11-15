@@ -16,6 +16,9 @@
 //   - Arguments and implementation code follow ordinary Go rules. Uses of im
 //     values keep their immutability and pointer rules.
 //
+// Review state changes, locks, saved inputs, and dependency calls in the service
+// code. Immutable results do not prove service isolation.
+//
 // # Groups and shutdown
 //
 //   - NewRoot creates an application group; StartGroup creates a nested group.

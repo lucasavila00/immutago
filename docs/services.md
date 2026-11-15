@@ -81,6 +81,18 @@ limit through its reference and resets its request count every Window.
 Wait on `<-group.Stop()` to stop both services. Use [child groups](service-children.md) when a service must
 create or remove related work while it runs.
 
+## Review one service
+
+Review these together in the service code:
+
+- Field access from Init, Run, and methods; the locks that protect it.
+- How mutable inputs are used, copied, or saved.
+- Whether callbacks or dependencies receive access to mutable service state.
+- Child startup and shutdown.
+
+Immutable results do not prove service isolation. Ordinary Go contracts still
+apply to callers and dependencies.
+
 ## Startup errors and reservations
 
 - Only the runtime calls Init and Run. Use the default Init when no setup is needed.

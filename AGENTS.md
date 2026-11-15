@@ -1,5 +1,10 @@
 # Working principles
 
+Reduce the code that a reviewer must trace. Use im type rules to check immutable
+data. Review service state changes, locks, and input use in the service code.
+Ordinary Go contracts still apply to callers and dependencies. Do not claim full
+service isolation or add whole-program effect analysis to obtain it.
+
 Treat analyzer changes as production code. Use Go compiler type information.
 The public analyzer is in `pkg/analyzer/`, immutable values are in
 `pkg/im/`, type proofs are in `internal/checker/`, and the CLI is in

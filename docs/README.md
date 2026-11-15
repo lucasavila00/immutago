@@ -32,6 +32,7 @@
 
 ## Maintainers
 
+- [Local review](arch/README.md#local-review): reduce how much code a reviewer must trace.
 - [Architecture](arch/README.md): code map, type proofs, and builder consumption.
 - [Development](development.md): focused checks and diagnostic snapshots.
 - [Reviewer requirements](reviewer-focus.md): contract and implementation review.
