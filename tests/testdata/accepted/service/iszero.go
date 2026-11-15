@@ -68,3 +68,14 @@ func localZeroMethod(route Route) func() bool {
 	defer ref.IsZero()
 	return ref.IsZero
 }
+
+func frozenZeroForms(route FrozenRoute) func() bool {
+	check := route.Worker.IsZero
+	go route.Worker.IsZero()
+	defer route.Worker.IsZero()
+	callback := func() bool { return route.Worker.IsZero() }
+	_ = callback
+	return check
+}
+
+func localBoundZero(route Route) func() bool { return route.Worker.IsZero }

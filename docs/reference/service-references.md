@@ -31,9 +31,14 @@ if !route.Worker.IsZero() {
 }
 ```
 
-The [im rules](common-forms.md) still apply to protected expressions. Select an
-embedded Ref field explicitly. Copy a reference out before a closure, bound
-method, `go`, or `defer` uses it.
+Select an embedded Ref field explicitly. The [common forms](common-forms.md)
+apply to the record that holds it:
+
+| Use a Ref field | Frozen record | Local record |
+| --- | --- | --- |
+| `check := route.Worker.IsZero` | Allowed; copies the Ref. | Allowed; copies the Ref. |
+| `go route.Worker.IsZero()` or `defer route.Worker.IsZero()` | Allowed. | Copy the Ref first. |
+| `func() bool { return route.Worker.IsZero() }` | Allowed. | Copy the Ref first; do not capture route. |
 
 ## Checked operations — exhaustive
 
@@ -93,7 +98,7 @@ calls. Callers must account for restarts when they save a service pointer.
 | `current := ref.Borrow`, `method := ref.Borrow().Method` | Use a closure that captures the reference and makes the direct method call. |
 | `supervise.Ref[Worker].Borrow(ref)` | `ref.Borrow().Method()` |
 | `ref.Borrow().Init()`, `ref.Borrow().Run(ctx)`, `ref.Borrow().Args()` | Initialize through Start; expose needed data through an exported service method. |
-| `check := route.Worker.IsZero`, `go route.Worker.IsZero()`, or `defer route.Worker.IsZero()` where route is a marked object | Copy the field first: `ref := route.Worker`, then use `check := ref.IsZero`, `go ref.IsZero()`, or `defer ref.IsZero()`. |
+| `go route.Worker.IsZero()` or `defer route.Worker.IsZero()` where route is Local | Copy the field first: `ref := route.Worker`, then `go ref.IsZero()` or `defer ref.IsZero()`. |
 | `route.IsZero()` through an embedded Ref in a marked object | Select the field: `route.Ref.IsZero()`. |
 | `wrapper.Borrow()` through an embedded Ref | Select the reference field: `wrapper.Ref.Borrow().Method()`. |
 
