@@ -50,9 +50,7 @@ var subsetFixes = map[string]string{
 		"im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses",
 	"returning Local pointers is unsupported": "return a Local value copy, or use im.Frozen " +
 		"for objects whose pointers must be shared",
-	"global Local pointers are unsupported": "keep the Local pointer local, or store a Frozen value",
-	"service dependencies cannot enter package variables": "build the service arguments in a local variable " +
-		"and pass them to supervise.Start",
+	"global Local pointers are unsupported":        "keep the Local pointer local, or store a Frozen value",
 	"containers of Local pointers are unsupported": "keep Local values in local bindings, or store im.Frozen pointers",
 	"user generic declarations with immutable storage are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",
@@ -86,8 +84,6 @@ var subsetFixes = map[string]string{
 		"or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value",
 	"freeze functions must be called directly": "call im.FreezeMap(builder) or im.FreezeSlice(builder) " +
 		"directly so ownership consumption is checked",
-	"freezing requires a synchronous call": "freeze the local builder directly before " +
-		"starting deferred or concurrent work",
 	"reference operation is outside the supported allowlist": "use a documented reference form: fresh construction, " +
 		"a concrete variable, a read, or a direct typed call; only Frozen pointers can be stored or returned",
 	"native slices of immutable storage are unsupported": "use im.FrozenSlice[T] and All() for " +
