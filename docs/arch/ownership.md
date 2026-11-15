@@ -75,20 +75,51 @@ to the resolved `supervise.Service` type, including aliases and pointers.
 1. Skip unexported methods, Init, Run, and methods from the fixed runtime.
 2. Accept no result or one result, including for promoted user methods.
 3. Use `Prover.ScopedResultReason` to match primitives, unnamed arrays of Scoped
-   results, and structs with im.Scoped. Prove scalars and Scoped structs with
+   results, service handles, and structs with im.Scoped. Prove scalars and Scoped structs with
    the existing immutable type proof; check each array element type recursively.
    Fields of a Scoped struct use the ordinary stored-type rules.
 
 The [Scoped-result reference](../scoped-results.md) lists the allowed types.
-Start arguments, method inputs, callbacks, and Current pointers follow ordinary
-Go rules. Protected data passes through the im type proofs, source matcher, and
+Start arguments, method inputs, and service implementation code follow ordinary
+Go rules. Current calls use the service-handle matcher. Protected data passes through the im type proofs, source matcher, and
 Freeze checks.
 
 The classifier treats `Service[A]` as runtime storage, so a service can receive
 im values through its start arguments. When A contains im data, its stored-value
 proof must pass; this prevents retaining a Scoped pointer. Ordinary A types need
-no immutable proof. `Ref[T]` is an ordinary mutable handle,
-not an immutable stored type. Runtime calls use the fixed library operations.
+no immutable proof. `Ref[T]` is an opaque stored handle. The type proof checks
+that T is a service; it does not inspect T's mutable state. Runtime calls use the
+fixed library operations.
+
+### Service-handle boundary
+
+The [handle matcher](../../pkg/analyzer/service_handles.go) and
+[concrete transport matcher](../../pkg/analyzer/service_handle_uses.go) establish:
+
+1. Copies retain the runtime handle identity. Ref's private storage cannot be
+   written through ordinary external Go field access.
+2. Every use of the compiler-resolved Ref.Current method must match
+   `ref.Current().Message(args)`. The pointer has no other consumer. This rejects
+   saved accessors, method expressions, fields, pointer copies, and bound messages.
+3. The selected message must be an exported user method other than Init or Run.
+   Service result checks prove its declared result, including promoted methods.
+4. Concrete handle transport retains the method identity. Interface boxing,
+   recovery, conversions, promoted accessors, and user generic instantiations
+   with handles fail. The cached handle classifier follows native containers and
+   fields, including cycles, so a wrapper cannot hide a Ref from these checks.
+5. Marked fields containing handles still use the im write checks. Accepting Ref
+   does not make an immutable object's handle field assignable.
+
+This proves method-only access **through checked handles**. It does not prove
+that service state is immutable, that calls are serialized, or that a service
+cannot expose state deliberately through a callback, global, or ordinary input.
+Review those operations in the service implementation.
+
+The argument assumes all relevant packages pass the checker and ordinary Go API
+contracts hold. The fixed runtime and im implementations are trusted. Unsafe
+memory manipulation, reflection that breaks Go access rules, cgo, and unchecked
+external code are not a memory-security boundary supplied by this checker.
+Run the CLI or vet driver for the build configurations you ship.
 
 ### Publication and child lifetimes
 

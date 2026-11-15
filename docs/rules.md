@@ -13,7 +13,8 @@
 
 ## Service results (`supervise`)
 
-- [Scoped results](scoped-results.md): the one service-specific checker rule.
+- [Scoped results](scoped-results.md): exported message results.
+- [Service handles](service-handles.md): copies, storage, and method-only access.
 - [Supervised services](services.md): execution and restart behavior.
 
 ## Rules for im and supervise
@@ -28,7 +29,7 @@ forms are listed; unlisted protected operations are rejected.
 | --- | --- |
 | Marked struct | A struct that embeds `im.Shared` or `im.Scoped`. |
 | Protected storage | Marked values, their fields, frozen collections, and arrays containing them. |
-| Scoped result | An immutable value returned by value; see the [complete type list](scoped-results.md). |
+| Scoped result | An allowed value result, including a service handle; see the [complete type list](scoped-results.md). |
 | Owner slot and holder | An `im.Owner[T]` field or variable, and a struct that contains one. See [Owner](owner.md). |
 
 ### Trusted immutable values
@@ -54,7 +55,7 @@ The checker checks a package in any of these cases, including its test files:
 | Imports a package that failed its checks, directly or through another package | Import a package with an invalid immutable field. |
 
 - Aliases, type arguments, and generic constraints also count.
-- A package that uses only supervise receives the service result check.
+- A package that uses only supervise receives service result and handle checks.
   Importing or using im also selects the immutable-source checks.
 - The CLI and `go vet` use the same rules.
 - Other packages are trusted to obey Go contracts, including immutable strings.

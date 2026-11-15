@@ -39,7 +39,7 @@ func (p *Prover) Reason(t types.Type) string {
 	return reason
 }
 
-// ScopedResultReason accepts scalars, arrays of Scoped results, and proved Scoped structs.
+// ScopedResultReason accepts scalars, service handles, arrays, and proved Scoped structs.
 // Fields of a Scoped struct use the ordinary immutable storage proof.
 func (p *Prover) ScopedResultReason(t types.Type) string {
 	t = types.Unalias(t)
@@ -54,11 +54,11 @@ func (p *Prover) ScopedResultReason(t types.Type) string {
 			return ""
 		}
 	case *types.Struct:
-		if Scoped(t) || IsLibraryType(t, "Scoped") {
+		if Scoped(t) || IsLibraryType(t, "Scoped") || IsRuntimeType(t, "Ref") {
 			return p.Reason(t)
 		}
 	case *types.Pointer:
 		return "a Scoped result must be a value, not a pointer"
 	}
-	return "Scoped results require a primitive, an unnamed array of Scoped results, or a struct with im.Scoped"
+	return "Scoped results require a primitive, supervise.Ref, an unnamed array of Scoped results, or a struct with im.Scoped"
 }

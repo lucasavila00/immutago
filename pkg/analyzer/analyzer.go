@@ -7,6 +7,7 @@
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
 //   - No result or one Scoped result for each exported user service method except Init
 //     and Run, including promoted user methods. Runtime methods are exempt.
+//   - Concrete service handles and direct message calls through Ref.Current.
 //
 // Direct im or supervise imports, used types, and failed checked dependencies
 // select packages for analysis. Ordinary Go API contracts are trusted.
@@ -73,8 +74,10 @@ func run(pass *analysis.Pass) (any, error) {
 			ast.Inspect(file, c.visitService)
 		}
 	}
+	forms := newSubsetChecks(pass, &c.proofs)
+	forms.checkHandles()
 	if immutable {
-		checkSubset(pass, freeze.Check(pass), &c.proofs)
+		forms.checkImmutable(freeze.Check(pass))
 	}
 	return nil, nil
 }
@@ -176,7 +179,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") || checker.IsUncheckedValue(t) ||
-		checker.IsRuntimeType(t, checker.ServiceMarker) {
+		checker.IsRuntimeType(t, checker.ServiceMarker) || checker.IsRuntimeType(t, "Ref") {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)

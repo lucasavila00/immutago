@@ -11,7 +11,7 @@
 //   - Calls run in the caller's goroutine and can overlap with Run and other calls.
 //     Synchronize access to mutable fields.
 //   - Each exported user method except Init and Run returns nothing or one Scoped
-//     result: a primitive, an array of compatible values, or a struct with im.Scoped.
+//     result: a primitive, a Ref, an array of compatible values, or an im.Scoped struct.
 //     This includes promoted user methods. The runtime's own methods are exempt.
 //     The analyzer rejects top-level pointers and mutable result types.
 //   - Arguments and implementation code follow ordinary Go rules. Uses of im
@@ -65,7 +65,7 @@ const (
 // Embed Service[A] to supply start arguments and runtime methods; add
 // Run(context.Context) for background work. Start and StartReserved create and
 // initialize each service value.
-// Ref.Current selects the current value; a saved pointer keeps that value.
+// Use Ref.Current only for a direct exported message call in checked code.
 type Service[A any] struct {
 	args     A
 	report   func(value any, stack []byte)
@@ -224,8 +224,9 @@ type child struct {
 	group *Group
 }
 
-// Ref is a typed reference to the current value of one service. Copies refer
+// Ref is an opaque, copyable handle to one service. Copies refer
 // to the same service, including after its restart replaces the value.
+// Handles can be stored in immutable fields and returned as Scoped results.
 // Start returns an initialized reference. Reserve creates one for later startup;
 // a zero Ref is empty and cannot be used in place of Reserve.
 type Ref[T any] struct {
@@ -233,8 +234,9 @@ type Ref[T any] struct {
 }
 
 // Current selects the last successfully initialized service value with one
-// atomic load. A saved pointer keeps selecting that value after a restart;
-// call Current again to select the replacement.
+// atomic load. Checked code uses only ref.Current().Message(args), where Message
+// is an exported user method other than Init or Run. It cannot extract the pointer
+// or accessor. Each call selects the current instance; an in-progress call keeps it.
 //
 // Current panics for an empty or unstarted reference. It can return a value whose
 // Run has ended. Stop does not invalidate the reference or block later calls.

@@ -1,7 +1,7 @@
 # Scoped results
 
 A handler can return nothing or one **Scoped result**: a primitive, an array of
-Scoped results, or a struct with `im.Scoped`.
+Scoped results, a struct with `im.Scoped`, or a service handle.
 
 ## Example: quota results
 
@@ -31,13 +31,14 @@ to the limiter's mutable counters.
 | --- | --- |
 | Boolean, integer, floating-point, complex, or string value | `bool`, `int`, `float64`, `string` |
 | Defined scalar | `type Count int` |
+| Service handle | `supervise.Ref[Worker]`; see [handle operations](service-handles.md). |
 | Empty Scoped marker value | `im.Scoped` |
 | Struct with `im.Scoped` and proved immutable fields | `Usage` |
 | Unnamed array of Scoped results | `[2]int`, `[2]Usage` |
 | Alias of an allowed type | `type Response = Usage` |
 
 Fields of a Scoped struct follow the [stored-type rules](common-forms.md#markers-and-stored-types).
-They can contain frozen collections, Shared values, and Shared pointers.
+They can contain frozen collections, Shared values, Shared pointers, and service handles.
 Callers can read or copy the result; the checker rejects field writes and storing
 or capturing a Scoped pointer.
 

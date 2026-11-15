@@ -113,6 +113,12 @@ func (p *proof) value(result *obligation, t types.Type) {
 	if IsLibraryType(t, "Shared") || IsLibraryType(t, "Scoped") || IsUncheckedValue(t) {
 		return
 	}
+	if IsRuntimeType(t, "Ref") {
+		if !Service(t.(*types.Named).TypeArgs().At(0)) {
+			result.reason = "Ref requires a service target that embeds supervise.Service"
+		}
+		return
+	}
 	if IsCollection(t) {
 		args := t.(*types.Named).TypeArgs()
 		for index := 0; index < args.Len(); index++ {

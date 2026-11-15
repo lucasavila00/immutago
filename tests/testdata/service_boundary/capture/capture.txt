@@ -1,0 +1,4 @@
+capture.go:6:13: unsupported immutable operation: use a service handle only as ref.Current().Message(args); do not extract the accessor or service pointer
+  source: api.Get().Current
+  type: func() *api.Counter
+  fix: use the documented immutable value and reference forms

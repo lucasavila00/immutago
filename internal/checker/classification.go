@@ -17,6 +17,7 @@ const (
 	storageMode classificationMode = iota
 	callableMode
 	constraintMode
+	handleMode
 )
 
 // classificationKey keeps storage, callback, and constraint walks separate.
@@ -37,6 +38,9 @@ func (c *Classifier) Contains(t types.Type) bool { return c.query(t, storageMode
 
 // Callable reports whether t contains a callback contract that carries protected storage.
 func (c *Classifier) Callable(t types.Type) bool { return c.query(t, callableMode) }
+
+// Handles reports whether t stores a service handle, including through native containers.
+func (c *Classifier) Handles(t types.Type) bool { return c.query(t, handleMode) }
 
 // query completes all reachable edges before propagating positive results through cycles.
 func (c *Classifier) query(t types.Type, mode classificationMode) bool {
@@ -98,6 +102,16 @@ func (c *Classifier) mark(node *classificationNode) {
 
 // expand matches the outgoing edges for one classification mode.
 func (c *Classifier) expand(node *classificationNode) {
+	if IsRuntimeType(node.key.typ, "Ref") {
+		if node.key.mode == handleMode {
+			c.mark(node)
+		}
+		return
+	}
+	if node.key.mode == handleMode {
+		c.storageEdges(node)
+		return
+	}
 	if IsLibraryType(node.key.typ, "Owner") || IsRuntimeType(node.key.typ, ServiceMarker) ||
 		IsUncheckedValue(node.key.typ) {
 		return
@@ -122,19 +136,19 @@ func (c *Classifier) expand(node *classificationNode) {
 func (c *Classifier) storageEdges(node *classificationNode) {
 	switch storage := node.key.typ.Underlying().(type) {
 	case *types.Pointer:
-		c.connect(node, storage.Elem(), storageMode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Array:
-		c.connect(node, storage.Elem(), storageMode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Slice:
-		c.connect(node, storage.Elem(), storageMode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Map:
-		c.connect(node, storage.Key(), storageMode)
-		c.connect(node, storage.Elem(), storageMode)
+		c.connect(node, storage.Key(), node.key.mode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Chan:
-		c.connect(node, storage.Elem(), storageMode)
+		c.connect(node, storage.Elem(), node.key.mode)
 	case *types.Struct:
 		for field := range storage.Fields() {
-			c.connect(node, field.Type(), storageMode)
+			c.connect(node, field.Type(), node.key.mode)
 		}
 	}
 }

@@ -23,7 +23,7 @@ Enforcement:
 - Scalar origins and arbitrary unsafe memory effects are not proved; ordinary
   helpers must obey Go API contracts, including string immutability.
 - Packages that import or use im reject cgo. Bodyless functions with im
-  signatures also fail. Service-only packages receive only the result check.
+  signatures also fail. Service-only packages receive result and handle checks.
 - There are no suppression directives. [UncheckedValue](../unchecked-values.md)
   records the declaring package's immutability promise.
 - Checked dependency failures reach consumers through package facts.
