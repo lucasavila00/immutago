@@ -14,7 +14,7 @@ type baked struct {
 
 // Model holds a name and a private immutable copy of its coefficients.
 type Model struct {
-	im.Snapshot
+	im.Frozen
 	Name   string
 	engine im.UncheckedValue[baked]
 }

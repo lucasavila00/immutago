@@ -129,7 +129,7 @@ func TestChildrenDuringHalt(t *testing.T) {
 
 // askerArgs is the argument of an asker.
 type askerArgs struct {
-	im.Snapshot
+	im.Frozen
 	Self Ref[asker]
 }
 
@@ -233,7 +233,7 @@ func TestChildEscalationFailsRun(t *testing.T) {
 
 // variantArgs is the argument of a variant.
 type variantArgs struct {
-	im.Snapshot
+	im.Frozen
 	Name string
 }
 
@@ -505,7 +505,7 @@ func (v *namedVariant) Run(ctx context.Context) {
 
 // variantNames is the argument of a rebuilding dispatcher.
 type variantNames struct {
-	im.Snapshot
+	im.Frozen
 	Names im.FrozenSlice[string]
 }
 

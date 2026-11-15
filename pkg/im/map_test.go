@@ -76,7 +76,7 @@ func TestMapNativeKeySemantics(t *testing.T) {
 // TestMapReferenceClone checks pointer key identity and independent entry slots.
 func TestMapReferenceClone(t *testing.T) {
 	type point struct {
-		Snapshot
+		Frozen
 		X int
 	}
 	original := &point{X: 1}

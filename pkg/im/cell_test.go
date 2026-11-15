@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-type testSnapshot struct {
-	Snapshot
+type testFrozen struct {
+	Frozen
 	Number int
 	Text   string
 	Slice  FrozenSlice[int]
@@ -16,7 +16,7 @@ type testSnapshot struct {
 }
 
 type testChild struct {
-	Snapshot
+	Frozen
 	Number int
 }
 
@@ -30,16 +30,16 @@ func TestCellZero(t *testing.T) {
 	if !IsNil(pointer.Load()) || pointer.Shared() != nil {
 		t.Fatal("zero pointer cell is not nil")
 	}
-	var record Cell[testSnapshot]
-	if Copy(Select(record.Load(), func(v testSnapshot) int { return v.Number })) != 0 {
+	var record Cell[testFrozen]
+	if Copy(Select(record.Load(), func(v testFrozen) int { return v.Number })) != 0 {
 		t.Fatal("zero record cell changed the zero value")
 	}
 }
 
 // TestCellStore checks the private root copy and shared immutable backing storage.
 func TestCellStore(t *testing.T) {
-	input := testSnapshot{Number: 1, Slice: FreezeSlice([]int{2}), Child: &testChild{Number: 3}}
-	var cell Cell[testSnapshot]
+	input := testFrozen{Number: 1, Slice: FreezeSlice([]int{2}), Child: &testChild{Number: 3}}
+	var cell Cell[testFrozen]
 	cell.Store(input)
 	if cell.value.Load() == &input {
 		t.Fatal("cell kept the caller's root address")
@@ -57,7 +57,7 @@ func TestCellStore(t *testing.T) {
 	if cell.Shared().Number != 1 {
 		t.Fatal("Shared returned the cell's root storage")
 	}
-	cell.Store(testSnapshot{Number: 4})
+	cell.Store(testFrozen{Number: 4})
 	if first.value.Number != 1 || cell.Shared().Number != 4 {
 		t.Fatal("Store changed an earlier snapshot")
 	}

@@ -1,7 +1,7 @@
-// Package im provides immutable snapshots and local read views checked by immutago.
+// Package im provides frozen data and local read views checked by immutago.
 //
 // Choose the API for the data:
-//   - Snapshot: immutable fields that callers can store and share.
+//   - Frozen: immutable fields that callers can store and share.
 //   - Local: fields that follow the checker's local storage and transport rules.
 //   - Cell: publish a snapshot and read the current value through a View.
 //   - View: read selected data without a copy of its backing storage.
@@ -12,11 +12,11 @@
 // frozen value. Run immutago to enforce these rules; go build alone does not.
 package im
 
-// Snapshot marks a struct with immutable fields. Values and pointers to that
+// Frozen marks a struct with immutable fields. Values and pointers to that
 // struct can be copied, stored, and returned through the allowed source forms.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
-// See https://github.com/lucasavila00/immutago/blob/main/docs/snapshots.md for the complete forms.
-type Snapshot struct{}
+// See https://github.com/lucasavila00/immutago/blob/main/docs/frozen-records.md for the complete forms.
+type Frozen struct{}
 
 // Local marks a struct whose fields follow the local view rules.
 // The checker restricts storage and transport of the struct and its pointers.

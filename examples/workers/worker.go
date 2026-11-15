@@ -12,7 +12,7 @@ import (
 
 // WorkerArgs selects one worker and its text conversion version.
 type WorkerArgs struct {
-	im.Snapshot
+	im.Frozen
 	ID      int
 	Version int
 }

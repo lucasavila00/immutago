@@ -9,31 +9,31 @@ import (
 
 // TestViewSelect checks one synchronous projection call and shared field storage.
 func TestViewSelect(t *testing.T) {
-	input := testSnapshot{
+	input := testFrozen{
 		Text: strings.Repeat("text", 128), Slice: FreezeSlice([]int{2, 4}),
 		Map: FreezeMap(map[int]int{1: 3}), Child: &testChild{Number: 5}, Array: [2]int{6, 7},
 	}
 	view := ViewOf(input)
 	calls := 0
-	text := Select(view, func(v testSnapshot) string { calls++; return v.Text })
+	text := Select(view, func(v testFrozen) string { calls++; return v.Text })
 	if calls != 1 || unsafe.StringData(text.value) != unsafe.StringData(input.Text) {
 		t.Fatal("string projection changed storage or call count")
 	}
-	sequence := Select(view, func(v testSnapshot) FrozenSlice[int] { calls++; return v.Slice })
+	sequence := Select(view, func(v testFrozen) FrozenSlice[int] { calls++; return v.Slice })
 	if calls != 2 || &sequence.value.values[0] != &input.Slice.values[0] {
 		t.Fatal("slice projection changed storage or call count")
 	}
-	mapping := Select(view, func(v testSnapshot) FrozenMap[int, int] { calls++; return v.Map })
+	mapping := Select(view, func(v testFrozen) FrozenMap[int, int] { calls++; return v.Map })
 	if calls != 3 || reflect.ValueOf(mapping.value.values).UnsafePointer() !=
 		reflect.ValueOf(input.Map.values).UnsafePointer() {
 		t.Fatal("map projection changed storage or call count")
 	}
-	pointer := Select(view, func(v testSnapshot) *testChild { calls++; return v.Child })
+	pointer := Select(view, func(v testFrozen) *testChild { calls++; return v.Child })
 	if calls != 4 || pointer.value != input.Child || IsNil(pointer) {
 		t.Fatal("pointer projection changed identity or call count")
 	}
 	index := 1
-	number := Select(view, func(v testSnapshot) int { calls++; return v.Array[index] })
+	number := Select(view, func(v testFrozen) int { calls++; return v.Array[index] })
 	if calls != 5 || Copy(number) != 7 {
 		t.Fatal("array projection changed value or call count")
 	}

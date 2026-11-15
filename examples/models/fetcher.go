@@ -26,7 +26,7 @@ type FetcherArgs struct {
 
 // snapshot is one published model version.
 type snapshot struct {
-	im.Snapshot
+	im.Frozen
 	Model *model.Model
 }
 

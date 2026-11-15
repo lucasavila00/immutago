@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var viewRecordSink View[testSnapshot]
+var viewRecordSink View[testFrozen]
 var viewStringSink View[string]
 var viewSliceSink View[FrozenSlice[int]]
 var viewMapSink View[FrozenMap[int, int]]
@@ -16,12 +16,12 @@ var stringViewSink StringView
 var sliceViewSink SliceView[int]
 var mapViewSink MapView[int, int]
 var stringCloneSink string
-var cellSharedSink testSnapshot
+var cellSharedSink testFrozen
 var stringByteSink byte
 
 // TestViewAllocations checks view construction, projection, and adapters without allocations.
 func TestViewAllocations(t *testing.T) {
-	input := testSnapshot{
+	input := testFrozen{
 		Text: strings.Repeat("text", 128), Slice: FreezeSlice([]int{2, 4}),
 		Map: FreezeMap(map[int]int{1: 3}), Child: &testChild{Number: 5}, Array: [2]int{6, 7},
 	}
@@ -32,18 +32,18 @@ func TestViewAllocations(t *testing.T) {
 		run  func()
 	}{
 		{"view", func() { viewRecordSink = ViewOf(input) }},
-		{"select string", func() { viewStringSink = Select(view, func(v testSnapshot) string { return v.Text }) }},
+		{"select string", func() { viewStringSink = Select(view, func(v testFrozen) string { return v.Text }) }},
 		{"select slice", func() {
-			viewSliceSink = Select(view, func(v testSnapshot) FrozenSlice[int] { return v.Slice })
+			viewSliceSink = Select(view, func(v testFrozen) FrozenSlice[int] { return v.Slice })
 		}},
 		{"select map", func() {
-			viewMapSink = Select(view, func(v testSnapshot) FrozenMap[int, int] { return v.Map })
+			viewMapSink = Select(view, func(v testFrozen) FrozenMap[int, int] { return v.Map })
 		}},
 		{"select pointer", func() {
-			viewPointerSink = Select(view, func(v testSnapshot) *testChild { return v.Child })
+			viewPointerSink = Select(view, func(v testFrozen) *testChild { return v.Child })
 		}},
 		{"select array index", func() {
-			viewNumberSink = Select(view, func(v testSnapshot) int { return v.Array[index] })
+			viewNumberSink = Select(view, func(v testFrozen) int { return v.Array[index] })
 		}},
 		{"text adapter", func() { stringViewSink = Text(ViewOf(input.Text)) }},
 		{"slice adapter", func() { sliceViewSink = Slice(ViewOf(input.Slice)) }},
@@ -120,8 +120,8 @@ func TestViewCloneAllocations(t *testing.T) {
 
 // TestCellAllocations checks private root allocation and reads without allocation.
 func TestCellAllocations(t *testing.T) {
-	var cell Cell[testSnapshot]
-	input := testSnapshot{Number: 1}
+	var cell Cell[testFrozen]
+	input := testFrozen{Number: 1}
 	if got := testing.AllocsPerRun(100, func() { cell.Store(input) }); got != 1 {
 		t.Fatalf("cell store allocations = %g; want one", got)
 	}
@@ -135,8 +135,8 @@ func TestCellAllocations(t *testing.T) {
 
 // BenchmarkCellStore measures private root allocation for a snapshot record.
 func BenchmarkCellStore(b *testing.B) {
-	var cell Cell[testSnapshot]
-	input := testSnapshot{Number: 1}
+	var cell Cell[testFrozen]
+	input := testFrozen{Number: 1}
 	b.ReportAllocs()
 	for b.Loop() {
 		cell.Store(input)
@@ -145,8 +145,8 @@ func BenchmarkCellStore(b *testing.B) {
 
 // BenchmarkCellLoad measures an atomic load and a root value copy.
 func BenchmarkCellLoad(b *testing.B) {
-	var cell Cell[testSnapshot]
-	cell.Store(testSnapshot{Number: 1})
+	var cell Cell[testFrozen]
+	cell.Store(testFrozen{Number: 1})
 	b.ReportAllocs()
 	for b.Loop() {
 		viewRecordSink = cell.Load()
@@ -155,8 +155,8 @@ func BenchmarkCellLoad(b *testing.B) {
 
 // BenchmarkCellShared measures explicit access to a persistent snapshot.
 func BenchmarkCellShared(b *testing.B) {
-	var cell Cell[testSnapshot]
-	cell.Store(testSnapshot{Number: 1})
+	var cell Cell[testFrozen]
+	cell.Store(testFrozen{Number: 1})
 	b.ReportAllocs()
 	for b.Loop() {
 		cellSharedSink = cell.Shared()
@@ -174,10 +174,10 @@ func BenchmarkViewOf(b *testing.B) {
 
 // BenchmarkSelect measures selection of a string field without a backing copy.
 func BenchmarkSelect(b *testing.B) {
-	view := ViewOf(testSnapshot{Text: strings.Repeat("text", 128)})
+	view := ViewOf(testFrozen{Text: strings.Repeat("text", 128)})
 	b.ReportAllocs()
 	for b.Loop() {
-		viewStringSink = Select(view, func(value testSnapshot) string { return value.Text })
+		viewStringSink = Select(view, func(value testFrozen) string { return value.Text })
 	}
 }
 
