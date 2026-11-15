@@ -71,6 +71,24 @@ for v=range func(yield func(Handle)bool){yield(r)}{_=v}}`},
 		{"explicit interface conversion", `func use(r Handle){_=any(r);_=interface{Borrow()*Counter}(r)}`},
 		{"embedded interface conversion", `type Wrapper struct{Handle}
 func use(r Handle){v:=interface{Borrow()*Counter}(Wrapper{r});_=v.Borrow()}`},
+		{"conversion", `type Copy Handle;func use(r Handle){_=Copy(r)}`},
+		{"conversion result", `type Copy Handle;func use(){_=Handle(Copy{})}`},
+		{"nil conversion", `func use(){_=(*Handle)(nil)}`},
+		{"nil container conversion", `func use(){_=[]Handle(nil)}`},
+		{"callback generic", `func keep[T any](v T)T{return v}
+func use(r Handle){_=keep(func()Handle{return r})}`},
+		{"generic", `func get[T interface{Borrow()*Counter}](r T)*Counter{return r.Borrow()}
+func use(r Handle){_=get(r)}`},
+		{"bodyless parameter", `func leak(Handle)any`},
+		{"bodyless result", `func leak()Handle`},
+		{"bodyless callback", `func leak(func()Handle)any`},
+		{"bodyless receiver", `type Wrapper struct{Worker Handle};func(Wrapper) leak()any`},
+		{"generic wrapper", `type Box[T any] struct{Value T};func use(r Handle){_=Box[Handle]{r}}`},
+		{"generic alias", `type Alias[T any]=Handle;var ref Alias[Handle]`},
+		{"nil holder interface", `type Server struct{cache Handle}
+func(*Server) OnFailure(error){};var _ interface{OnFailure(error)}=(*Server)(nil)`},
+		{"named pointer conversion", `type Server struct{cache Handle};type Pointer *Server
+func use(p *Server){_=Pointer(p);_=(*Server)(Pointer(p))}`},
 		{"implementation", `func(c *Counter) Add(){self:=c;f:=func(){self.count++};f()}`},
 	}
 	for _, tc := range cases {
@@ -82,7 +100,7 @@ func use(r Handle){v:=interface{Borrow()*Counter}(Wrapper{r});_=v.Borrow()}`},
 	}
 }
 
-// TestServiceHandleBoundary rejects unsupported direct Ref calls and generic uses.
+// TestServiceHandleBoundary rejects unsupported direct Ref calls and invalid protected types.
 func TestServiceHandleBoundary(t *testing.T) {
 	cases := []struct{ name, source string }{
 		{"recovered pointer", `func use(v any)*Counter{return v.(Handle).Borrow()}`},
@@ -100,14 +118,6 @@ func TestServiceHandleBoundary(t *testing.T) {
 		{"init", `func use(r Handle){_=r.Borrow().Init()}`},
 		{"run", `func use(r Handle){r.Borrow().Run(context.Background())}`},
 		{"private method", `func(*Counter) private(){};func use(r Handle){r.Borrow().private()}`},
-		{"conversion", `type Copy Handle;func use(r Handle){_=Copy(r)}`},
-		{"conversion result", `type Copy Handle;func use(){_=Handle(Copy{})}`},
-		{"nil conversion", `func use(){_=(*Handle)(nil)}`},
-		{"nil container conversion", `func use(){_=[]Handle(nil)}`},
-		{"callback generic", `func keep[T any](v T)T{return v}
-func use(r Handle){_=keep(func()Handle{return r})}`},
-		{"generic", `func get[T interface{Borrow()*Counter}](r T)*Counter{return r.Borrow()}
-func use(r Handle){_=get(r)}`},
 		{"nonservice", `func use(){var ref supervise.Ref[int];_=ref}`},
 		{"unused nonservice", `var ref supervise.Ref[int]`},
 		{"nonservice alias", `type Wrong = supervise.Ref[int]`},
@@ -117,12 +127,6 @@ func use(r Handle){_=get(r)}`},
 func use(r supervise.Ref[struct{supervise.Service[supervise.NoArgs];Bad}])[]int{return r.Borrow().Read()}`},
 		{"unused anonymous result", `type Bad struct{};func(Bad) Read()[]int{return nil}
 var ref supervise.Ref[struct{supervise.Service[supervise.NoArgs];Bad}]`},
-		{"bodyless parameter", `func leak(Handle)any`},
-		{"bodyless result", `func leak()Handle`},
-		{"bodyless callback", `func leak(func()Handle)any`},
-		{"bodyless receiver", `type Wrapper struct{Worker Handle};func(Wrapper) leak()any`},
-		{"generic wrapper", `type Box[T any] struct{Value T};func use(r Handle){_=Box[Handle]{r}}`},
-		{"generic alias", `type Alias[T any]=Handle;var ref Alias[Handle]`},
 		{"promoted accessor", `type Wrapper struct{Handle};func use(r Wrapper){r.Borrow().Count()}`},
 		{"protected field write", `func use(r *Route,h Handle){r.Worker=h}`},
 		{"pointer field", `type Bad struct{im.Local;Worker *Handle}`},
