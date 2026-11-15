@@ -31,7 +31,10 @@ func TestFrozenInterfaceCategories(t *testing.T) {
 			types.Universe.Lookup("error").Type()))
 	text := frozenContract("Text", method("Text", types.Typ[types.String]))
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), good)
-	for _, typ := range []types.Type{good, alias, text} {
+	parameters := types.NewTuple(types.NewParam(token.NoPos, nil, "values", types.NewSlice(types.Typ[types.Int])))
+	variadic := frozenContract("Variadic", types.NewFunc(token.NoPos, nil, "Sum",
+		types.NewSignatureType(nil, nil, nil, parameters, nil, true)))
+	for _, typ := range []types.Type{good, alias, text, variadic} {
 		var proofs Prover
 		var queries Classifier
 		if !FrozenInterface(typ) || !queries.Contains(typ) ||

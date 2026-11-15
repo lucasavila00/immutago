@@ -43,7 +43,7 @@ under the ordinary method rules.
   generated file can use. Export private types inherited from another package.
 - Declare only exported methods, apart from the private im seal. Method names
   Local and IsNil conflict with generated members and are rejected.
-- Use fixed parameters. Ordinary inputs, including interface and function values,
+- Use fixed or variadic parameters. Ordinary inputs, including interface and function values,
   follow ordinary Go contracts. Protected inputs also need the
   [common call forms](common-forms.md#statements-and-calls).
 - Method results use the same type, return, and transport rules as ordinary named
@@ -53,9 +53,14 @@ under the ordinary method rules.
 | --- | --- |
 | No parameters | `Visit()` |
 | Fixed parameters with ordinary Go types, including interfaces and functions | `Score([]float32) float64`, `Apply(value any, callback func() int) int`, `Read(interface{ Number() int }) int` |
+| Variadic ordinary parameters, with zero, individual, or spread arguments | `Sum(...int) int`; `reader.Sum()`, `reader.Sum(1, 2)`, `reader.Sum(values...)` |
+| Variadic parameters after fixed parameters | `Read(prefix string, values ...int) int`; `reader.Read("key", 1, 2)` |
 | Fixed protected parameters under the common call forms | `Read(im.StringProjection) int`, `Read(*LocalRecord) int`, `WithScorer(Scorer) int` |
 
 Named types, aliases, and named or unnamed parameters use the same rules.
+A variadic parameter follows the native-slice rules for its element type. Native
+slices of protected values remain rejected. Generated methods keep the variadic
+signature and pass the final slice with `...`.
 Implementation methods can retain ordinary inputs. A callback contract
 cannot carry protected storage. An argument cannot box protected data or capture
 it in a closure. These rules also apply to generated projection calls and concrete
@@ -138,7 +143,7 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | An implementation with a mutable slice field | Store `im.FrozenSlice[T]` and freeze an exclusive builder. |
 | `Scorer(nil)` | `var scorer Scorer = nil` |
 | `var value any = scorer` | Keep the Scorer type. |
-| `Apply(...int) int` | Use `Apply([]int) int`. |
+| `Apply(...im.StringProjection)` | Use a direct `Apply(im.StringProjection)` parameter. |
 | `reader.Apply(local, nil)` with `local im.StringProjection` | Pass `local.Unsafe()`, or declare a direct `im.StringProjection` parameter. |
 | `reader.Apply(nil, func() int { return local.Len() })` | Read `n := local.Len()` before the closure, then return `n`. |
 | `Apply(func() im.StringProjection)` | Call a named function directly, then pass its projection to a direct typed method. |

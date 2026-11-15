@@ -2,8 +2,10 @@ contracts.go:11:6: unsupported immutable operation: returning Local pointers is 
   source: func() (int, *Local)
   type: func() (int, *contracts.Local)
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
-contracts.go:13:6: immutable interface: Frozen interface methods require fixed parameters
-  fix: use exported methods with fixed parameters
+contracts.go:15:6: unsupported immutable operation: native slices of immutable storage are unsupported
+  source: ...im.StringProjection
+  type: []im.StringProjection
+  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
 contracts.go:19:7: unsupported immutable operation: immutable callbacks are unsupported
   source: func() im.StringProjection
   type: func() im.StringProjection
@@ -17,7 +19,19 @@ contracts.go:23:6: unsupported immutable operation: immutable callbacks are unsu
   type: interface{Read() im.StringProjection}
   fix: call a named, non-generic function directly with a concrete immutable parameter
 contracts.go:25:6: immutable interface: Frozen interface methods must be exported
-  fix: use exported methods with fixed parameters
+  fix: use exported methods with ordinary Go contracts
+contracts.go:38:6: unsupported immutable operation: containers of Local pointers are unsupported
+  source: ...*Local
+  type: []*contracts.Local
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+contracts.go:42:6: unsupported immutable operation: immutable callbacks are unsupported
+  source: ...func() im.StringProjection
+  type: []func() im.StringProjection
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+contracts.go:42:9: unsupported immutable operation: immutable callbacks are unsupported
+  source: func() im.StringProjection
+  type: func() im.StringProjection
+  fix: call a named, non-generic function directly with a concrete immutable parameter
 contracts.go:5:6: Frozen interfaces require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 contracts.go:7:9: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []im.StringProjection

@@ -90,7 +90,6 @@ func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.
 		{"variadic boxing", `func take(...any){};func f(s Scorer){take(s)}`, "boxing immutable"},
 		{"Copied interface field", `type Bad struct{im.Copied;Scorer Scorer}`, "copied values require"},
 
-		{"variadic method", `type Bad interface{im.FrozenInterface;Sum(...int)int}`, "fixed parameters"},
 		{"unexported method", `type Bad interface{im.FrozenInterface;read()int}`, "must be exported"},
 		{"marker payload", `func f(){var s im.FrozenInterface=&Tree{};_=s}`, "markers are annotations"},
 	}
