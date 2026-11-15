@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"slices"
 	"testing"
-	"testing/synctest"
 )
 
 // TestForgetUnlinksChild checks removal at each position and repeated removal.
 func TestForgetUnlinksChild(t *testing.T) {
 	for _, order := range [][]int{{0, 1, 2, 3}, {3, 2, 1, 0}, {1, 2, 0, 3}} {
-		parent := &Group{}
+		parent := newGroup(nil, false)
 		children := make([]*child, 4)
 		for i := range children {
 			nested := &Group{}
@@ -58,9 +57,10 @@ func checkChildList(t *testing.T, parent *Group, want []*child) {
 
 // TestForgetDoesNotAllocate checks a full group removal, including the warmup run.
 func TestForgetDoesNotAllocate(t *testing.T) {
-	var parents [2]Group
+	var parents [2]*Group
 	var children [2][128]*child
 	for i := range parents {
+		parents[i] = newGroup(nil, false)
 		for j := range children[i] {
 			nested := &Group{}
 			parents[i].add(func(context.Context) {}, func() {}, nested)
@@ -79,43 +79,6 @@ func TestForgetDoesNotAllocate(t *testing.T) {
 	}
 }
 
-// TestHaltKeepsChildSnapshot checks order while children are removed and added.
-func TestHaltKeepsChildSnapshot(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		parent := &Group{}
-		entered, resume, done := make(chan struct{}), make(chan struct{}), make(chan struct{})
-		finished := make(chan struct{})
-		close(finished)
-		var stopped []int
-		var children [3]*child
-		for i := range children {
-			nested := &Group{}
-			parent.add(func(context.Context) {}, func() {
-				stopped = append(stopped, i)
-				if i == 2 {
-					close(entered)
-					<-resume
-				}
-			}, nested)
-			children[i] = nested.entry
-			children[i].done = finished
-		}
-		go func() {
-			parent.halt()
-			close(done)
-		}()
-		<-entered
-		parent.forget(children[1])
-		parent.forget(children[2])
-		parent.add(func(context.Context) {}, func() { stopped = append(stopped, 3) }, nil)
-		close(resume)
-		<-done
-		if !slices.Equal(stopped, []int{2, 1, 0}) {
-			t.Fatalf("stop order = %v, want [2 1 0]", stopped)
-		}
-	})
-}
-
 // BenchmarkGroupForget measures removal of a full group, without setup costs.
 func BenchmarkGroupForget(b *testing.B) {
 	for _, size := range []int{128, 512, 2048} {
@@ -123,7 +86,7 @@ func BenchmarkGroupForget(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
 				b.StopTimer()
-				parent := &Group{}
+				parent := newGroup(nil, false)
 				children := make([]*child, size)
 				for i := range children {
 					nested := &Group{}

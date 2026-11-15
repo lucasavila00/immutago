@@ -38,17 +38,16 @@ func TestServiceChildrenInheritReporter(t *testing.T) {
 		for _, nested := range []bool{true, false} {
 			synctest.Test(t, func(t *testing.T) {
 				reports := make(chan bool, 1)
-				parent := &Group{
-					stopped: make(chan struct{}),
-					report: func(value any, stack []byte) {
-						reports <- value == "child report" && bytes.Contains(stack, []byte("reportingChild"))
-					},
+				parent := newGroup(nil, false)
+				parent.root = parent
+				parent.report = func(value any, stack []byte) {
+					reports <- value == "child report" && bytes.Contains(stack, []byte("reportingChild"))
 				}
 				ref, _ := Start[reportingParent](parent, NoArgs{})
 				if before {
 					ref.Borrow().StartChild(nested)
 				}
-				go parent.serve(context.Background())
+				parent.activate()
 				if !before {
 					synctest.Wait()
 					ref.Borrow().StartChild(nested)

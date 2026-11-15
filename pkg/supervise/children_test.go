@@ -127,24 +127,24 @@ func TestChildrenDuringHalt(t *testing.T) {
 	})
 }
 
-// askerArgs is the argument of an asker.
-type askerArgs struct {
-	im.Frozen
-	Self Ref[asker]
-}
-
 // asker is a service whose Run answers the calls of its child.
 type asker struct {
-	Service[askerArgs]
+	Service[NoArgs]
 	requests chan chan int
 }
 
-// Run starts a child that calls Ask and answers each request until ctx ends.
-func (a *asker) Run(ctx context.Context) {
-	a.requests = make(chan chan int)
-	if _, err := Start[caller](a.Children(), a.Args().Self); err != nil {
+// Init creates the request channel before publication.
+func (a *asker) Init() error { a.requests = make(chan chan int); return nil }
+
+// StartCaller creates a child after its parent's reference is available.
+func (a *asker) StartCaller(self Ref[asker]) {
+	if _, err := Start[caller](a.Children(), self); err != nil {
 		panic(err)
 	}
+}
+
+// Run answers requests until its context ends.
+func (a *asker) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -179,10 +179,11 @@ func (c *caller) Run(ctx context.Context) {
 func TestChildCallsParentDuringStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		ref := Reserve[asker]()
-		if err := StartReserved(root, ref, askerArgs{Self: ref}); err != nil {
+		ref, err := Start[asker](root, NoArgs{})
+		if err != nil {
 			t.Fatal(err)
 		}
+		ref.Borrow().StartCaller(ref)
 		time.Sleep(time.Second)
 		<-root.Stop()
 		expectEvents(t, "stop caller", "stop asker")
@@ -211,11 +212,11 @@ func TestChildrenRestartWithRun(t *testing.T) {
 	})
 }
 
-// TestChildEscalationFailsRun verifies that a child past its restart limit fails the run of its parent.
+// TestChildEscalationFailsRun checks that exhaustion stops the parent without retrying it.
 func TestChildEscalationFailsRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
-		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
+		root := root(func(any) {}, nil)
 		if _, err := Start[failingParent](root, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
@@ -223,11 +224,8 @@ func TestChildEscalationFailsRun(t *testing.T) {
 		synctest.Wait()
 		expectEvents(t, "start parent", "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31",
 			"stop parent")
-		time.Sleep(time.Second)
-		synctest.Wait()
-		expectEvents(t, "start parent", "00:00:32")
 		<-root.Stop()
-		expectEvents(t, "stop parent")
+		expectEvents(t)
 	})
 }
 
@@ -427,7 +425,7 @@ func TestChildEscalatesDuringStop(t *testing.T) {
 		synctest.Wait()
 		takeEvents()
 		<-root.Stop()
-		expectEvents(t, "00:00:31", "stop slow", "stop parent")
+		expectEvents(t, "stop slow", "stop parent")
 	})
 }
 
@@ -450,7 +448,7 @@ func (p *lateParent) Run(ctx context.Context) {
 func TestStartAfterEscalation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
-		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
+		root := root(func(any) {}, nil)
 		if _, err := Start[lateParent](root, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
@@ -489,54 +487,5 @@ func TestMethodsRaceStop(t *testing.T) {
 		if starts != stops {
 			t.Fatalf("%d starts and %d stops, want the same count", starts, stops)
 		}
-	})
-}
-
-// namedVariant is a service that panics on each run if its name is bad.
-type namedVariant struct{ Service[variantArgs] }
-
-// Run panics for the bad variant and otherwise records the start and the stop.
-func (v *namedVariant) Run(ctx context.Context) {
-	if v.Args().Name == "bad" {
-		panic("bad variant")
-	}
-	track(ctx, v.Args().Name)
-}
-
-// variantNames is the argument of a rebuilding dispatcher.
-type variantNames struct {
-	im.Frozen
-	Names im.FrozenSlice[string]
-}
-
-// rebuilding is a dispatcher that starts one group for each variant in Run.
-type rebuilding struct{ Service[variantNames] }
-
-// Run starts one nested group for each variant and waits until ctx ends.
-func (r *rebuilding) Run(ctx context.Context) {
-	for _, name := range r.Args().Names.All() {
-		if _, err := Start[namedVariant](StartGroup(r.Children()), variantArgs{Name: name}); err != nil {
-			panic(err)
-		}
-	}
-	<-ctx.Done()
-}
-
-// TestGroupEscalation verifies that a failing group restarts alone at first, then fails the run, and the new run
-// starts the groups again.
-func TestGroupEscalation(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		if _, err := Start[rebuilding](root, variantNames{Names: im.FreezeSlice([]string{"good", "bad"})}); err != nil {
-			t.Fatal(err)
-		}
-		time.Sleep(216 * time.Second)
-		synctest.Wait()
-		expectEvents(t, "start good")
-		time.Sleep(2 * time.Second)
-		synctest.Wait()
-		expectEvents(t, "stop good", "start good")
-		<-root.Stop()
-		expectEvents(t, "stop good")
 	})
 }

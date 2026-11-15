@@ -14,19 +14,7 @@ func TestRefIsZero(t *testing.T) {
 		if !zero.IsZero() || !zeroCopy.IsZero() {
 			t.Fatal("zero Ref or its copy is set")
 		}
-		reserved := Reserve[counter]()
-		reservedCopy := reserved
-		if reserved.IsZero() || reservedCopy.IsZero() {
-			t.Fatal("reserved Ref or its copy is zero before start")
-		}
-		expectPanic(t, "supervise: Ref not started", func() { reserved.Borrow() })
 		root := NewRoot(nil)
-		if err := StartReserved(root, reserved, NoArgs{}); err != nil {
-			t.Fatal(err)
-		}
-		if reserved.IsZero() || reservedCopy.IsZero() {
-			t.Fatal("reserved Ref or its copy is zero after start")
-		}
 		started, err := Start[counter](root, NoArgs{})
 		if err != nil {
 			t.Fatal(err)
@@ -36,7 +24,7 @@ func TestRefIsZero(t *testing.T) {
 			t.Fatal("started Ref or its copy is zero")
 		}
 		<-root.Stop()
-		if started.IsZero() || startedCopy.IsZero() || reserved.IsZero() || reservedCopy.IsZero() {
+		if started.IsZero() || startedCopy.IsZero() {
 			t.Fatal("stopped Ref or its copy is zero")
 		}
 	})
@@ -48,21 +36,15 @@ func TestZeroRefBorrowPanics(t *testing.T) {
 	expectPanic(t, "supervise: zero Ref", func() { ref.Borrow() })
 }
 
-// TestZeroRefStartReservedPanics checks that startup requires a reserved reference.
-func TestZeroRefStartReservedPanics(t *testing.T) {
-	root := NewRoot(nil)
-	defer func() { <-root.Stop() }()
-	var ref Ref[counter]
-	expectPanic(t, "supervise: StartReserved needs a Ref from Reserve", func() {
-		if err := StartReserved(root, ref, NoArgs{}); err != nil {
-			t.Fatal(err)
-		}
-	})
-}
-
 // TestRefIsZeroAllocations checks both results without service access.
 func TestRefIsZeroAllocations(t *testing.T) {
-	for _, ref := range []Ref[counter]{{}, Reserve[counter]()} {
+	root := NewRoot(nil)
+	defer func() { <-root.Stop() }()
+	started, err := Start[counter](root, NoArgs{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, ref := range []Ref[counter]{{}, started} {
 		var got bool
 		if allocations := testing.AllocsPerRun(100, func() { got = ref.IsZero() }); allocations != 0 {
 			t.Fatalf("IsZero allocations = %v, want 0", allocations)
@@ -75,12 +57,18 @@ func TestRefIsZeroAllocations(t *testing.T) {
 
 // TestRefIsZeroOmitZero checks that JSON omits only an unset reference field.
 func TestRefIsZeroOmitZero(t *testing.T) {
+	root := NewRoot(nil)
+	defer func() { <-root.Stop() }()
+	started, err := Start[counter](root, NoArgs{})
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, test := range []struct {
 		ref  Ref[counter]
 		want string
 	}{
 		{Ref[counter]{}, `{}`},
-		{Reserve[counter](), `{"cache":{}}`},
+		{started, `{"cache":{}}`},
 	} {
 		value := struct {
 			Cache Ref[counter] `json:"cache,omitzero"`

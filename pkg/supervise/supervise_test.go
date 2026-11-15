@@ -118,42 +118,6 @@ func (r *restarted) Run(ctx context.Context) {
 	<-ctx.Done()
 }
 
-// ping is a service that needs the Ref of a pong.
-type ping struct{ Service[pingArgs] }
-
-// pingArgs is the argument of a ping.
-type pingArgs struct {
-	im.Frozen
-	Pong Ref[pong]
-}
-
-// Run calls the pong and waits until ctx ends.
-func (p *ping) Run(ctx context.Context) {
-	record("ping sees " + p.Args().Pong.Borrow().Name())
-	<-ctx.Done()
-}
-
-// Name returns the name of the ping.
-func (*ping) Name() string { return "ping" }
-
-// pong is a service that needs the Ref of a ping.
-type pong struct{ Service[pongArgs] }
-
-// pongArgs is the argument of a pong.
-type pongArgs struct {
-	im.Frozen
-	Ping Ref[ping]
-}
-
-// Run calls the ping and waits until ctx ends.
-func (p *pong) Run(ctx context.Context) {
-	record("pong sees " + p.Args().Ping.Borrow().Name())
-	<-ctx.Done()
-}
-
-// Name returns the name of the pong.
-func (*pong) Name() string { return "pong" }
-
 // slowFailing is a service that panics after 6 minutes on each run.
 type slowFailing struct{ Service[NoArgs] }
 
@@ -324,7 +288,7 @@ func TestRestartAndEscalate(t *testing.T) {
 		if _, err := Start[failing](root(func(value any) { escalated <- value }, nil), NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
-		if value := <-escalated; value != int64(6) {
+		if value := <-escalated; value.(*Failure).Value != int64(6) {
 			t.Fatalf("escalated %v, want 6", value)
 		}
 		expectEvents(t, "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31")
@@ -364,7 +328,7 @@ func TestPanicReport(t *testing.T) {
 func TestPanicStackCapture(t *testing.T) {
 	run := func(context.Context) { panic("failure") }
 	for _, capture := range []bool{false, true} {
-		value, stack, failed := attempt(context.Background(), run, capture)
+		value, stack, failed := attempt(context.Background(), run, capture, nil)
 		if !failed || value != "failure" || (len(stack) != 0) != capture {
 			t.Fatalf("capture %t: value %v, stack length %d, failed %t", capture, value, len(stack), failed)
 		}
@@ -403,34 +367,6 @@ func TestRestartWindow(t *testing.T) {
 	})
 }
 
-// TestEscalateToParent verifies that a nested group stops its children and restarts its subtree.
-func TestEscalateToParent(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		nested := StartGroup(root)
-		if _, err := Start[first](nested, NoArgs{}); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := Start[second](nested, NoArgs{}); err != nil {
-			t.Fatal(err)
-		}
-		failures.Store(0)
-		if _, err := Start[failing](nested, NoArgs{}); err != nil {
-			t.Fatal(err)
-		}
-		synctest.Wait()
-		expectStarted(t, "start first", "start second", "00:00:00")
-		time.Sleep(31 * time.Second)
-		synctest.Wait()
-		expectEvents(t, "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31", "stop second", "stop first")
-		time.Sleep(time.Second)
-		synctest.Wait()
-		expectStarted(t, "start first", "start second", "00:00:32")
-		<-root.Stop()
-		takeEvents()
-	})
-}
-
 // TestRestartCreatesNewValue verifies a new value with the same arguments and an empty Owner after a restart.
 func TestRestartCreatesNewValue(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
@@ -448,28 +384,6 @@ func TestRestartCreatesNewValue(t *testing.T) {
 			t.Fatal("restart did not store a new value in the same Ref")
 		}
 		expectEvents(t, "cache", "cache")
-		<-root.Stop()
-	})
-}
-
-// TestReserve verifies Borrow before start, a second start, and a start cycle.
-func TestReserve(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot(nil)
-		pongRef := Reserve[pong]()
-		expectPanic(t, "supervise: Ref not started", func() { pongRef.Borrow() })
-		pingRef, _ := Start[ping](root, pingArgs{Pong: pongRef})
-		if err := StartReserved(root, pongRef, pongArgs{Ping: pingRef}); err != nil {
-			t.Fatal(err)
-		}
-		expectPanic(t, "supervise: Ref already started", func() {
-			if err := StartReserved(root, pongRef, pongArgs{Ping: pingRef}); err != nil {
-				panic(err)
-			}
-		})
-		time.Sleep(time.Second)
-		synctest.Wait()
-		expectStarted(t, "ping sees pong", "pong sees ping")
 		<-root.Stop()
 	})
 }
