@@ -148,7 +148,9 @@ Selected user methods must be declared on that exact source; promotion and
 implicit dereference fail. The promoted private seal is the only exception.
 A conversion between proved Frozen interfaces preserves the earlier proof.
 
-The interface proof requires exported methods with fixed concrete parameters.
+The interface proof requires exported methods with fixed parameters. Ordinary
+interface and callback inputs use Go contracts; the shared argument, callback,
+closure, and generic checks still apply.
 Method results use normal source and transport checks, not stored-field proof
 or a separate result count limit. Generated interface projections read and
 forward these declared calls only in the verified generated file. Method bodies
