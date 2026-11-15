@@ -28,48 +28,54 @@ func TestRun(t *testing.T) {
 func TestServeDrainsRequests(t *testing.T) {
 	for _, fail := range []bool{false, true} {
 		t.Run(map[bool]string{false: "cancel", true: "accept_error"}[fail], func(t *testing.T) {
-			listener, err := net.Listen("tcp", "127.0.0.1:0")
-			if err != nil {
-				t.Fatal(err)
-			}
-			broken := &failingListener{Listener: listener, failed: make(chan struct{})}
-			if fail {
-				listener = broken
-			}
-			entered, release := make(chan struct{}), make(chan struct{})
-			finish := sync.OnceFunc(func() { close(release) })
-			defer finish()
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			done := make(chan error, 1)
-			go func() {
-				done <- serve(ctx, listener, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-					close(entered)
-					<-release
-					_, _ = io.WriteString(w, "complete")
-				}))
-			}()
-			response := make(chan error, 1)
-			go func() { response <- fetch("http://" + listener.Addr().String()) }()
-			<-entered
-			if fail {
-				broken.fail()
-			} else {
-				cancel()
-			}
-			select {
-			case err := <-done:
-				t.Fatalf("returned before the admitted request finished: %v", err)
-			case <-time.After(20 * time.Millisecond):
-			}
-			finish()
-			if err := <-response; err != nil {
-				t.Fatal(err)
-			}
-			if err := <-done; (err != nil) != fail || (err != nil && !strings.Contains(err.Error(), "accept failed")) {
-				t.Fatal(err)
-			}
+			checkServeDrain(t, fail)
 		})
+	}
+}
+
+// checkServeDrain exercises the same admitted request under either shutdown cause.
+func checkServeDrain(t *testing.T, fail bool) {
+	t.Helper()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	broken := &failingListener{Listener: listener, failed: make(chan struct{})}
+	if fail {
+		listener = broken
+	}
+	entered, release := make(chan struct{}), make(chan struct{})
+	finish := sync.OnceFunc(func() { close(release) })
+	defer finish()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		done <- serve(ctx, listener, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			close(entered)
+			<-release
+			_, _ = io.WriteString(w, "complete")
+		}))
+	}()
+	response := make(chan error, 1)
+	go func() { response <- fetch("http://" + listener.Addr().String()) }()
+	<-entered
+	if fail {
+		broken.fail()
+	} else {
+		cancel()
+	}
+	select {
+	case err := <-done:
+		t.Fatalf("returned before the admitted request finished: %v", err)
+	case <-time.After(20 * time.Millisecond):
+	}
+	finish()
+	if err := <-response; err != nil {
+		t.Fatal(err)
+	}
+	if err := <-done; (err != nil) != fail || (err != nil && !strings.Contains(err.Error(), "accept failed")) {
+		t.Fatal(err)
 	}
 }
 
