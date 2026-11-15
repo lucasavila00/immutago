@@ -33,7 +33,7 @@ type snapshot struct {
 // Prediction identifies the model used to calculate one score.
 type Prediction struct {
 	im.ByValue
-	Name  string
+	Name  im.FrozenByValueString
 	Score float64
 }
 
@@ -118,5 +118,5 @@ func (f *Fetcher) refresh(ctx context.Context) error {
 // Predict uses one model version for the whole prediction.
 func (f *Fetcher) Predict(features im.FrozenSlice[float64]) Prediction {
 	current := f.current.Load()
-	return Prediction{Name: current.Model.Name, Score: model.Predict(current.Model, features)}
+	return Prediction{Name: current.Model.Name.ByValue(), Score: model.Predict(current.Model, features)}
 }

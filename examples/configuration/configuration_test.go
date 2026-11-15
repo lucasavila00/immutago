@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lucasavila00/immutago/pkg/im"
 	"github.com/lucasavila00/immutago/pkg/supervise"
 	"github.com/lucasavila00/immutago/pkg/supervise/supervisetest"
 )
@@ -30,7 +31,7 @@ func TestLiveLimits(t *testing.T) {
 	}
 	before := limiter.Current().Usage()
 	writeLimits(t, path, `{"api":`)
-	waitFor(t, func() bool { return loader.Current().Problem() != "" })
+	waitFor(t, func() bool { return loader.Current().Problem().Clone() != "" })
 	if loader.Current().Limit("api") != 2 || loader.Current().Version() != 1 {
 		t.Fatal("invalid configuration replaced the last valid limits")
 	}
@@ -101,15 +102,17 @@ func TestStartReservedRetry(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "limits.json")
 	root := supervisetest.NewRoot(t)
 	cache := supervise.Reserve[FileCache]()
-	err := supervise.StartReserved(root, cache, FileArgs{Path: path, Every: time.Millisecond})
+	err := supervise.StartReserved(root, cache, FileArgs{Path: im.FreezeString(path), Every: time.Millisecond})
 	if err == nil {
 		t.Fatal("missing file did not fail startup")
 	}
 	writeLimits(t, path, `{"api":3}`)
-	if err := supervise.StartReserved(root, cache, FileArgs{Path: path, Every: time.Millisecond}); err != nil {
+	if err := supervise.StartReserved(root, cache, FileArgs{
+		Path: im.FreezeString(path), Every: time.Millisecond,
+	}); err != nil {
 		t.Fatal(err)
 	}
-	if got := cache.Current().Text(); got != `{"api":3}` {
+	if got := cache.Current().Text().Clone(); got != `{"api":3}` {
 		t.Fatalf("initial contents = %q", got)
 	}
 }
@@ -127,7 +130,7 @@ func TestInvalidInitialJSON(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "limits.json")
 			writeLimits(t, path, item.text)
 			root := supervisetest.NewRoot(t)
-			cache, err := supervise.Start[FileCache](root, FileArgs{Path: path, Every: time.Millisecond})
+			cache, err := supervise.Start[FileCache](root, FileArgs{Path: im.FreezeString(path), Every: time.Millisecond})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -142,7 +145,7 @@ func TestInvalidInitialJSON(t *testing.T) {
 // startLoader starts the real file cache before its configuration consumer.
 func startLoader(t *testing.T, root *supervise.Group, path string) supervise.Ref[ConfigLoader] {
 	t.Helper()
-	cache, err := supervise.Start[FileCache](root, FileArgs{Path: path, Every: time.Millisecond})
+	cache, err := supervise.Start[FileCache](root, FileArgs{Path: im.FreezeString(path), Every: time.Millisecond})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -16,13 +16,13 @@ type baked struct {
 // Model is an immutable object with a trusted internal part.
 type Model struct {
 	im.Shared
-	Name   string
+	Name   im.FrozenString
 	engine im.UncheckedValue[baked]
 }
 
 // Load builds a model and trusts its internal part.
 func Load(name string, weights []float64) *Model {
-	return &Model{Name: name, engine: im.Trust(&baked{weights: slices.Clone(weights)})}
+	return &Model{Name: im.FreezeString(name), engine: im.Trust(&baked{weights: slices.Clone(weights)})}
 }
 
 // Predict reads the internal part through the API of the declaring package.

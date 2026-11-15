@@ -15,13 +15,13 @@ type baked struct {
 // Model holds a name and a private immutable copy of its coefficients.
 type Model struct {
 	im.Shared
-	Name   string
+	Name   im.FrozenString
 	engine im.UncheckedValue[baked]
 }
 
 // Load copies weights so the caller can continue to use its input slice.
 func Load(name string, weights []float64) *Model {
-	return &Model{Name: name, engine: im.Trust(&baked{weights: slices.Clone(weights)})}
+	return &Model{Name: im.FreezeString(name), engine: im.Trust(&baked{weights: slices.Clone(weights)})}
 }
 
 // Predict returns the dot product of features and the model's coefficients.

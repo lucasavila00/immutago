@@ -4,7 +4,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type MarkerAlias = im.Shared
 type Number int
-type Title = string
+type Title = im.FrozenString
 
 type Leaf struct {
 	MarkerAlias
@@ -22,7 +22,7 @@ type Tree struct {
 	im.Shared
 	Leaf     Leaf
 	Children im.FrozenSlice[Tree]
-	Index    im.FrozenMap[string, Tree]
+	Index    im.FrozenMap[im.FrozenString, Tree]
 }
 
 type CountBox struct {
@@ -33,10 +33,10 @@ type Alias = Leaf
 type Derived Leaf
 
 func Value() Tree {
-	children := im.FreezeSlice([]Tree{{Leaf: Leaf{Name: "child"}}})
-	index := im.FreezeMap(map[string]Tree{})
+	children := im.FreezeSlice([]Tree{{Leaf: Leaf{Name: im.FreezeString("child")}}})
+	index := im.FreezeMap(map[im.FrozenString]Tree{})
 	return Tree{
-		Leaf:     Leaf{Name: "leaf", Count: 3},
+		Leaf:     Leaf{Name: im.FreezeString("leaf"), Count: 3},
 		Children: children,
 		Index:    index,
 	}

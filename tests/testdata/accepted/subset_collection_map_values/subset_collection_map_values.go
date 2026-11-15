@@ -16,8 +16,8 @@ type Good struct {
 func read(p *Good) int { return p.X }
 
 func build() {
-	frozen := im.FreezeMap(map[string]Good{})
+	frozen := im.FreezeMap(map[int]Good{})
 	values := frozen.Clone()
-	values["a"] = Good{X: 1}
+	values[1] = Good{X: 1}
 	_ = im.FreezeMap(values)
 }

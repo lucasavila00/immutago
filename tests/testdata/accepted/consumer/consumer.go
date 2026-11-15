@@ -8,37 +8,37 @@ import (
 type Record struct {
 	im.Shared
 	Model   model.Tree
-	Names   im.FrozenSlice[string]
+	Names   im.FrozenSlice[im.FrozenString]
 	Lookups im.FrozenMap[[2]int, im.FrozenSlice[model.Leaf]]
 	Count   model.CountBox
 }
 
 func Use() {
 	value := model.Value()
-	value = model.Tree{Leaf: model.Leaf{Name: "replacement"}}
+	value = model.Tree{Leaf: model.Leaf{Name: im.FreezeString("replacement")}}
 	_ = value.Leaf.Name
 	local := value.Leaf.Flags
 	local[0] = true
-	nativeNames := []string{"a", "b"}
-	nativeNames = append(nativeNames, "c")
-	nativeNames[0] = "d"
+	nativeNames := []im.FrozenString{im.FreezeString("a"), im.FreezeString("b")}
+	nativeNames = append(nativeNames, im.FreezeString("c"))
+	nativeNames[0] = im.FreezeString("d")
 	names := im.FreezeSlice(nativeNames)
 	_ = names.At(0)
 	_ = names.Len()
 	copy := names.Clone()
-	copy[0] = "independent"
-	nativeMap := map[string]int{"a": 1}
-	nativeMap["b"] = 2
-	delete(nativeMap, "a")
+	copy[0] = im.FreezeString("independent")
+	nativeMap := map[im.FrozenString]int{im.FreezeString("a"): 1}
+	nativeMap[im.FreezeString("b")] = 2
+	delete(nativeMap, im.FreezeString("a"))
 	mapping := im.FreezeMap(nativeMap)
-	mapping.Get("b")
+	mapping.Get(im.FreezeString("b"))
 	_ = mapping.Len()
 	mappingCopy := mapping.Clone()
-	mappingCopy["b"] = 3
+	mappingCopy[im.FreezeString("b")] = 3
 	_ = Record{Model: value, Names: names}
 	_ = model.CountBox{Value: 1}
 	_ = model.Derived{}
-	_ = im.FreezeSlice([][2]string{{"a", "b"}})
+	_ = im.FreezeSlice([][2]im.FrozenString{{im.FreezeString("a"), im.FreezeString("b")}})
 	_ = struct {
 		im.Shared
 		Value int

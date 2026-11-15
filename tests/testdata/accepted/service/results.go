@@ -27,16 +27,19 @@ func (*Counter) Array() [2]int       { return [2]int{1, 2} }
 
 type Listing struct {
 	im.ByValue
-	Values im.FrozenSlice[int]
+	Values im.FrozenByValueSlice[int]
 }
 type Table struct {
 	im.ByValue
-	Values im.FrozenMap[string, int]
+	Values im.FrozenByValueMap[im.FrozenString, int]
 }
 
-func (*Counter) List() Listing { frozen := im.FreezeSlice([]int{1, 2}); return Listing{Values: frozen} }
+func (*Counter) List() Listing {
+	frozen := im.FreezeByValueSlice([]int{1, 2})
+	return Listing{Values: frozen}
+}
 func (*Counter) Table() Table {
-	frozen := im.FreezeMap(map[string]int{"a": 1})
+	frozen := im.FreezeByValueMap(map[im.FrozenString]int{im.FreezeString("a"): 1})
 	return Table{Values: frozen}
 }
 func (c *Counter) Input(callback func(int), values map[string]int) int {

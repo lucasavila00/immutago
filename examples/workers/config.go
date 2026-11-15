@@ -10,21 +10,27 @@ import (
 // VariantSet is one immutable snapshot of the requested variant names.
 type VariantSet struct {
 	im.ByValue
-	Names im.FrozenSlice[string]
+	Names im.FrozenByValueSlice[im.FrozenByValueString]
+}
+
+// variantState stores one published set of names.
+type variantState struct {
+	im.ByValue
+	Names im.FrozenSlice[im.FrozenString]
 }
 
 // VariantConfig keeps configuration outside the dispatcher that consumes it.
 type VariantConfig struct {
 	supervise.Service[supervise.NoArgs]
-	current im.Owner[VariantSet]
+	current im.Owner[variantState]
 }
 
 // Run keeps the configuration service available until shutdown.
 func (*VariantConfig) Run(ctx context.Context) { <-ctx.Done() }
 
 // Set publishes the requested names.
-func (c *VariantConfig) Set(names im.FrozenSlice[string]) {
-	c.current.Store(&VariantSet{Names: names})
+func (c *VariantConfig) Set(names im.FrozenSlice[im.FrozenString]) {
+	c.current.Store(&variantState{Names: names})
 }
 
 // Snapshot returns the current variant set, or its zero value before the first Set.
@@ -33,5 +39,10 @@ func (c *VariantConfig) Snapshot() VariantSet {
 	if current == nil {
 		return VariantSet{}
 	}
-	return *current
+	names := make([]im.FrozenByValueString, 0, current.Names.Len())
+	for _, name := range current.Names.All() {
+		names = append(names, name.ByValue())
+	}
+	frozen := im.FreezeByValueSlice(names)
+	return VariantSet{Names: frozen}
 }

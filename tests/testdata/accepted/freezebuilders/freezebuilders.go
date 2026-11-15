@@ -13,7 +13,7 @@ type Slices struct {
 }
 type Maps struct {
 	im.Shared
-	First, Second im.FrozenMap[string, int]
+	First, Second im.FrozenMap[int, int]
 }
 
 func Slice() Slices {
@@ -26,13 +26,13 @@ func Slice() Slices {
 	return Slices{First: first, Second: second}
 }
 func Map() Maps {
-	values := make(map[string]int)
-	values["a"] = 1
-	values["b"] = 2
+	values := make(map[int]int)
+	values[1] = 1
+	values[2] = 2
 	first := im.FreezeMap(values)
 	copy := first.Clone()
-	copy["a"] = 9
-	delete(copy, "b")
+	copy[1] = 9
+	delete(copy, 2)
 	second := im.FreezeMap(copy)
 	return Maps{First: first, Second: second}
 }
@@ -42,11 +42,11 @@ func MarkedSlice() im.FrozenSlice[Value] {
 	frozen := im.FreezeSlice(values)
 	return frozen
 }
-func MarkedMap() im.FrozenMap[string, Value] {
-	values := map[string]Value{"a": {X: 1}}
-	copy := values["a"]
+func MarkedMap() im.FrozenMap[int, Value] {
+	values := map[int]Value{1: {X: 1}}
+	copy := values[1]
 	copy = Value{X: 2}
-	values["a"] = copy
+	values[1] = copy
 	frozen := im.FreezeMap(values)
 	return frozen
 }

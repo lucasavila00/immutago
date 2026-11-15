@@ -58,8 +58,8 @@ func referenceReads() Parent {
 	return value
 }
 func declaredGet() Good {
-	frozen := im.FreezeMap(map[string]Good{"first": {X: 1}})
-	var value, ok = frozen.Get("first")
+	frozen := im.FreezeMap(map[int]Good{1: {X: 1}})
+	var value, ok = frozen.Get(1)
 	_ = ok
 	value = Good{X: 2}
 	return value

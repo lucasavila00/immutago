@@ -14,7 +14,7 @@ import (
 // FileArgs selects a file and its refresh interval.
 type FileArgs struct {
 	im.Shared
-	Path  string
+	Path  im.FrozenString
 	Every time.Duration
 }
 
@@ -51,7 +51,7 @@ func (c *FileCache) Run(ctx context.Context) {
 
 // read replaces the contents after a successful read.
 func (c *FileCache) read() error {
-	path := c.Args().Path
+	path := c.Args().Path.Clone()
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -63,21 +63,21 @@ func (c *FileCache) read() error {
 }
 
 // Text returns the last contents.
-func (c *FileCache) Text() string {
+func (c *FileCache) Text() im.FrozenByValueString {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.text
+	return im.FreezeByValueString(c.text)
 }
 
 // main starts the cache, reads it, and stops its group.
 func main() {
 	root := supervise.NewRoot(nil)
 	cache, err := supervise.Start[FileCache](root, FileArgs{
-		Path: "settings.txt", Every: time.Second,
+		Path: im.FreezeString("settings.txt"), Every: time.Second,
 	})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Print(cache.Current().Text())
+	fmt.Print(cache.Current().Text().Clone())
 	<-root.Stop()
 }

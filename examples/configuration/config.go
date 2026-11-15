@@ -15,7 +15,7 @@ import (
 type Config struct {
 	im.ByValue
 	Version int
-	Limits  im.FrozenMap[string, int]
+	Limits  im.FrozenMap[im.FrozenString, int]
 }
 
 // LoaderArgs supplies the text cache and the interval between checks.
@@ -63,7 +63,7 @@ func (l *ConfigLoader) Run(ctx context.Context) {
 
 // load copies decoded limits into a fresh builder and publishes one immutable version.
 func (l *ConfigLoader) load() error {
-	text := l.Args().Cache.Current().Text()
+	text := l.Args().Cache.Current().Text().Clone()
 	version := l.Version()
 	if version > 0 && text == l.last {
 		return nil
@@ -75,12 +75,12 @@ func (l *ConfigLoader) load() error {
 	if decoded == nil {
 		return fmt.Errorf("configuration must be a JSON object")
 	}
-	limits := make(map[string]int, len(decoded))
+	limits := make(map[im.FrozenString]int, len(decoded))
 	for name, limit := range decoded {
 		if limit < 0 {
 			return fmt.Errorf("limit for %s must not be negative", name)
 		}
-		limits[name] = limit
+		limits[im.FreezeString(name)] = limit
 	}
 	frozen := im.FreezeMap(limits)
 	l.current.Store(&Config{Version: version + 1, Limits: frozen})
@@ -103,13 +103,13 @@ func (l *ConfigLoader) Limit(key string) int {
 	if config == nil {
 		return 0
 	}
-	limit, _ := config.Limits.Get(key)
+	limit, _ := config.Limits.Get(im.FreezeString(key))
 	return limit
 }
 
 // Problem returns the latest parse error, or an empty string after a valid read.
-func (l *ConfigLoader) Problem() string {
+func (l *ConfigLoader) Problem() im.FrozenByValueString {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	return l.problem
+	return im.FreezeByValueString(l.problem)
 }
