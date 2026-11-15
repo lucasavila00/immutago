@@ -25,5 +25,12 @@ func generate() error {
 	if err != nil {
 		return err
 	}
+	if len(content) == 0 {
+		err := os.Remove(projectiongen.Filename)
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
 	return os.WriteFile(projectiongen.Filename, content, 0644)
 }

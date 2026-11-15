@@ -17,10 +17,14 @@ For a Frozen record named Settings:
 | `p.IsNil()` | Report whether the projection has a record. |
 | `p.Unsafe()` | Return the selected *Settings without a record copy or allocation; nil for an empty projection. |
 | `p.Field()` | Read a declared field using the result table below. |
+| `SettingsLimitsProjection` | Local array projection for the Limits field: `p.Limits()`. Has Len and At. |
+| `SettingsLimitsElementProjection` | Array projection returned by At when Limits contains nested arrays; each deeper array adds Element before Projection. |
 | `SettingsCell` | Publication slot with Store and Load; use the [complete Cell forms](cell.md). |
 
 For an unexported record such as state, the constructor is `newStateProjection`.
-Generated-name conflicts are errors. Do not declare the generated types yourself.
+Array names join the record name and field name, then add Projection. They keep
+the record's visibility. Generated-name conflicts report both source declarations;
+rename one. Do not declare generated types yourself.
 Use the complete [Local transport forms](local.md#value-forms--exhaustive) and
 [common source forms](common-forms.md). Unlisted protected operations are rejected.
 
@@ -74,7 +78,8 @@ this map-value copy automatically. See [operation costs](performance.md).
 | `im.Value(raw)` with `raw im.Projection[Settings]` | Use a generated projection to read the required fields. |
 | `NewSettingsProjection(items.At(i))` for a slice of Settings values | `NewSettingsProjection(items.AtPointer(i))` |
 | Change `p.Unsafe().Limit` | Construct another Settings value. |
-| Declare SettingsProjection or SettingsCell before generation | Use another source name. |
+| Declare SettingsProjection, SettingsCell, or SettingsLimitsProjection before generation | Use another source name. |
+| A Frozen Plan with array field Steps and a Frozen record named PlanSteps | Rename the record to StepSummary or rename the field; both need PlanStepsProjection. |
 | A source field named Local | Rename the field. |
 
 Only verified generated code can form interior Frozen-record addresses.

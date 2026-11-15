@@ -12,7 +12,8 @@ func (g *generator) arrayReader(
 	typ *types.Array, root types.Type, path, stem string, indices []string,
 ) (string, string, error) {
 	name := stem + "Projection"
-	if err := g.reserve(name); err != nil {
+	source := "field " + g.typeName(types.Unalias(root).(*types.Pointer).Elem()) + strings.TrimPrefix(path, "value")
+	if err := g.reserve(name, source); err != nil {
 		return "", "", err
 	}
 	g.arrays = append(g.arrays, array{typ: typ, name: name, root: root, path: path, indices: indices})
