@@ -39,12 +39,22 @@ func TestSharedHolderPointers(t *testing.T) {
 		`func f(){var h Holder;call:=h.Add;call(1);defer h.Add(2)}`,
 		`func f(n *Nested){call:=n.Child.Add;call(1);(&n.Child).Add(2)}`,
 		`func f(h *Holder){e:=Embedded{h};e.Add(1);call:=e.Add;call(2);Embedded.Add(e,3)}`,
+		`type Count int;func(c Count)Read()int{return int(c)};type Mixed struct{Slot im.Cell[int];Count};func f(){var h Mixed;_=h.Read();call:=h.Read;_=call()}`,
 		`type Adder interface{Add(int)};func f(h *Holder){var a Adder=h;a.Add(1)}`,
 		`func f(h *Holder)func()*Holder{return func()*Holder{h.Add(1);return h}}`,
+		`func f()func()int{var h Holder;p:=&h;return func()int{return p.N}}`,
+		`func f()func()int{var h Holder;return func()int{return h.N}}`,
+		`func f()func(){var h Holder;return func(){h.Add(1)}}`,
+		`func f()func()*Holder{var h Holder;return func()*Holder{return &h}}`,
+		`func f()func()int{var h Nested;return func()int{return h.Child.N}}`,
+		`var h Holder;func f()func()int{return func()int{return h.N}}`,
+		`var slot im.Cell[int];func f()func(){return func(){slot.Store(1)}}`,
 		`func id[T any](v T)T{return v};func f(h *Holder)*Holder{return id(h)}`,
 		`func id[T ~*Holder](v T)T{return v};func f(h *Holder)*Holder{return id(h)}`,
 		`type Box[T any]struct{Value T};func f(h *Holder)Box[*Holder]{return Box[*Holder]{h}}`,
 		`func f[T any](v T)*Holder{return new(Holder)}`,
+		`func id[T any](v T)T{return v};var empty=id[*Holder](nil)`,
+		`func f()*struct{Slot im.Cell[int]}{return &struct{Slot im.Cell[int]}{}}`,
 		`type Callback func(...*Holder)*Holder;func f(cb Callback,h *Holder)*Holder{return cb(h,h)}`,
 	} {
 		t.Run(source, func(t *testing.T) {
@@ -73,6 +83,9 @@ func TestSharedHolderRejectsCopies(t *testing.T) {
 		`func f(h *Holder){_,*h=0,Holder{}}`,
 		`type Bad struct{Holder}`,
 		`type Bad struct{Values [1]Holder}`,
+		`type Bad struct{im.Frozen;Child *Holder}`,
+		`type Bad struct{im.Local;Child *Holder}`,
+		`var bad im.Cell[*Holder]`,
 		`func f(h *Holder){_=Parent{Child:&Holder{Slot:h.Slot}}}`,
 		`func f(h *Holder){_=Nested{Child:*h}}`,
 		`func id[T any](v *T)*T{return v};func f(h *Holder){_=id(h)}`,
@@ -84,6 +97,7 @@ func TestSharedHolderRejectsCopies(t *testing.T) {
 		`func f(h *Holder)func(){view:=h.View();return func(){_=view}}`,
 		`func f(h *Holder){view:=h.View;_=view}`,
 		`func f(h *Holder){go h.View()}`,
+		`type Count int;func(c Count)Read()int{return int(c)};type Mixed struct{Slot im.Cell[int];Count};func f(p *Mixed){_=Mixed.Read(*p)}`,
 	} {
 		t.Run(source, func(t *testing.T) {
 			if got := checkSource(t, sharedHolderTypes+source); got == "" {

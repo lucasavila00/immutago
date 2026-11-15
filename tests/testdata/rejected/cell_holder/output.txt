@@ -1,0 +1,85 @@
+holder.go:12:18: Cell slots and holders require direct named fields
+holder.go:13:15: Cell slots and holders require direct named fields
+holder.go:13:30: containers of Cell slots or holders are unsupported
+holder.go:14:33: pointers to Cell slots are unsupported
+holder.go:15:23: unmarked struct contains immutable field View; embed an immutable marker
+  owner: cell_holder.BadLocal; field type: im.Projection[int]
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+holder.go:16:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: Generic
+  type: cell_holder.Generic[T any]
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+holder.go:18:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: saved im.Projection[int]
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+holder.go:21:1: Cell slots and their holders cannot be passed or returned by value
+holder.go:22:1: Cell slots and their holders cannot be passed or returned by value
+holder.go:23:1: Cell slots and their holders cannot be passed or returned by value
+holder.go:23:53: Cell slots and their holders cannot be copied or transported by value
+holder.go:24:1: Cell slots and their holders cannot be passed or returned by value
+holder.go:24:56: Cell slots and their holders cannot be copied or transported by value
+holder.go:27:10: Cell slots and their holders cannot be copied or transported by value
+holder.go:28:6: Cell slots and their holders cannot be copied or transported by value
+holder.go:29:20: Cell slots and their holders cannot be copied or transported by value
+holder.go:30:6: Cell slots and their holders cannot be copied or transported by value
+holder.go:31:18: Cell slots and their holders cannot be copied or transported by value
+holder.go:33:2: Cell slots and their holders cannot be copied or transported by value
+holder.go:33:7: Cell slots and their holders cannot be copied or transported by value
+holder.go:34:2: Cell slots and their holders cannot be copied or transported by value
+holder.go:34:7: Cell slots and their holders cannot be copied or transported by value
+holder.go:35:11: Cell slots and their holders cannot be copied or transported by value
+holder.go:35:2: Cell slots and their holders cannot be copied or transported by value
+holder.go:36:17: Cell slots and their holders cannot be copied or transported by value
+holder.go:36:2: Cell slots and their holders cannot be copied or transported by value
+holder.go:37:23: Cell slots and their holders cannot be copied or transported by value
+holder.go:37:5: Cell slots and their holders cannot be copied or transported by value
+holder.go:38:13: Cell slots and their holders cannot be copied or transported by value
+holder.go:38:5: Cell slots and their holders cannot be copied or transported by value
+holder.go:39:20: Cell slots and their holders cannot be copied or transported by value
+holder.go:39:6: Cell slots and their holders cannot be copied or transported by value
+holder.go:40:20: Cell slots and their holders cannot be copied or transported by value
+holder.go:41:9: Cell slots and their holders cannot be copied or transported by value
+holder.go:45:6: Cell slots and their holders cannot be copied by a value receiver
+holder.go:46:10: Cell slots and their holders cannot be copied by a value receiver
+holder.go:48:6: Cell slots and their holders cannot be copied by a value receiver
+holder.go:49:6: Cell slots and their holders cannot be copied by a value receiver
+holder.go:54:41: Cell slots and their holders cannot be copied or transported by value
+holder.go:56:35: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: PointerHelper
+  type: func(p *cell_holder.Holder) *cell_holder.Holder
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+holder.go:59:13: Cell slots cannot be addressed or transported as pointers
+holder.go:59:14: Cell slots and their holders cannot be copied or transported by value
+holder.go:60:6: Cell slots cannot be addressed or transported as pointers
+holder.go:61:6: Cell slots cannot be addressed or transported as pointers
+holder.go:62:6: Cell calls require a direct field or package slot
+holder.go:63:10: Cell slots and their holders cannot be copied or transported by value
+holder.go:63:10: unsupported immutable operation: bound immutable methods are unsupported
+  source: h.Slot.Load
+  type: func() im.Projection[int]
+  fix: call the method directly (value.Method(...)); do not save or pass its method value
+holder.go:64:6: unsupported immutable operation: immutable callbacks are unsupported
+  source: load
+  type: func() im.Projection[int]
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+holder.go:65:5: Cell.Store requires a direct synchronous statement
+holder.go:66:8: Cell.Store requires a direct synchronous statement
+holder.go:70:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: saved = h.View()
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+holder.go:72:19: unsupported immutable operation: closures cannot capture immutable storage
+  source: view
+  type: im.Projection[int]
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+holder.go:73:10: unsupported immutable operation: bound immutable methods are unsupported
+  source: h.View
+  type: func() im.Projection[int]
+  fix: call the method directly (value.Method(...)); do not save or pass its method value
+holder.go:74:6: unsupported immutable operation: immutable callbacks are unsupported
+  source: read
+  type: func() im.Projection[int]
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+holder.go:75:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go h.View()
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer

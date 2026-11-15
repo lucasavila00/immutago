@@ -43,6 +43,20 @@ func TestCLI(t *testing.T) {
 			}
 		})
 	}
+	t.Run("cell_holder", func(t *testing.T) {
+		for _, fixture := range []string{"accepted", "rejected"} {
+			t.Run(fixture, func(t *testing.T) {
+				dir := consumerModule(t, root, fixture)
+				for _, mode := range []string{"cli", "vet"} {
+					output := runBoundary(t, dir, binary, mode, fixture == "accepted", "./cell_holder")
+					checkFixtureSnapshots(t, root, fixture+"/cell_holder", output)
+				}
+				if fixture == "accepted" {
+					runCommand(t, dir, true, "go", "test", "-race", "-count=1", "./cell_holder")
+				}
+			})
+		}
+	})
 	t.Run("owner_cross_package", func(t *testing.T) {
 		dir := consumerModule(t, root, "accepted")
 		output := runCommand(t, dir, true, binary, "./ownercross")

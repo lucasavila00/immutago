@@ -257,6 +257,9 @@ func (c *subsetChecks) checkSlotExpression(expression ast.Expr) {
 	if typ == nil {
 		return
 	}
+	if _, callable := typ.Underlying().(*types.Signature); callable && c.directCall(expression) != nil {
+		return
+	}
 	if pointer, ok := typ.Underlying().(*types.Pointer); ok && checker.IsLibraryType(pointer.Elem(), "Cell") {
 		c.pass.Reportf(expression.Pos(), "Cell slots cannot be addressed or transported as pointers")
 		return
@@ -291,7 +294,7 @@ func (c *subsetChecks) allowedSlotValue(expression ast.Expr) bool {
 		if selection != nil && selection.Kind() == types.FieldVal {
 			return true
 		}
-		return c.slotPointerMethod(selector)
+		return c.slotMethodSelection(selector)
 	}
 	if unary, ok := parent.(*ast.UnaryExpr); ok && unary.Op == token.AND {
 		_, holder := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Struct)

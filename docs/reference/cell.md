@@ -48,8 +48,8 @@ and source rules.
 | Construct a holder through its address; leave slot and holder fields zero | `cache := &Cache{Calls: 1}`, `cache := new(Cache)` |
 | Take the address of a holder variable or named holder field | `p := &cache`, `p := &outer.cache` |
 | Select a field without copying its holder | `cache.Calls++`, `n := (*p).Calls`, `p := &cache.Calls` |
-| Select a pointer-receiver method without copying its holder | `cache.Read()`, `read := cache.Count`, `outer.cache.Read()` |
-| Capture a slot or holder variable without copying it | `func() { v := raw.Load(); _ = v }`, `func() { cache.Calls++ }` |
+| Select a pointer-receiver method, or a promoted method on an ordinary field, without copying its holder | `cache.Read()`, `read := cache.Count`, `outer.cache.Read()` |
+| Use a slot or holder variable inside a closure | `func() { v := raw.Load(); _ = v }`, `func() { cache.Calls++ }` |
 | Store through a direct raw slot in its own synchronous statement | `raw.Store(next)`, `slot.value.Store(next)` |
 | Read through a direct raw slot in a common statement form | `v := raw.Load()`, `return slot.value.Load()`, `saved := raw.LoadShared()` |
 | Alias, package-qualified slot, or parentheses | `type Current = SettingsCell`, `v := config.Current.Load()`, `v := (raw).Load()` |
@@ -58,8 +58,9 @@ Raw slots cannot be copied, addressed, returned, passed to helpers, or embedded.
 Holder values cannot be copied, replaced, embedded, or put in arrays or native
 containers. Calls that carry protected values use the
 [common forms](common-forms.md). Unlisted slot and holder value operations are
-rejected. Load projections inside a closure; do not capture projections loaded
-outside it.
+rejected. A closure refers to the same holder variable; a value copy such as
+`copy := cache` is still rejected inside that closure. Load projections inside
+a closure; do not capture projections loaded outside it.
 
 ## Holder pointer forms
 

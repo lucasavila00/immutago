@@ -5,15 +5,14 @@ import (
 	"go/types"
 )
 
-// slotPointerMethod permits a holder method selection that saves only its address.
-func (c *subsetChecks) slotPointerMethod(selector *ast.SelectorExpr) bool {
+// slotMethodSelection permits methods that do not copy a slot-bearing receiver.
+func (c *subsetChecks) slotMethodSelection(selector *ast.SelectorExpr) bool {
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection == nil || selection.Kind() != types.MethodVal {
 		return false
 	}
 	method := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
-	_, pointer := method.Recv().Type().Underlying().(*types.Pointer)
-	return pointer
+	return !c.hasSlotValue(method.Recv().Type())
 }
 
 // checkSlotSelection rejects the implicit copy made by a holder value receiver.
