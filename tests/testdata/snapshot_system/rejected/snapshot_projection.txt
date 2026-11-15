@@ -1,0 +1,70 @@
+snapshot_projection.go:27:6: unsupported immutable operation: Select requires one inline projection path from its parameter
+  source: im.Select(view, func(d Data) Data { return d })
+  type: im.View[rejected.Data]
+  fix: use the documented immutable value and reference forms
+snapshot_projection.go:28:6: unsupported immutable operation: Select requires one inline projection path from its parameter
+  source: im.Select(view, func(d Data) string { return d.Name[:] })
+  type: im.View[string]
+  fix: use the documented immutable value and reference forms
+snapshot_projection.go:29:6: unsupported immutable operation: Select requires one inline projection path from its parameter
+  source: im.Select(view, func(d Data) string { return identity(d.Name) })
+  type: im.View[string]
+  fix: use the documented immutable value and reference forms
+snapshot_projection.go:30:6: unsupported immutable operation: Select requires one inline projection path from its parameter
+  source: im.Select(view, func(d Data) string { leaked = d.Name; return d.Name })
+  type: im.View[string]
+  fix: use the documented immutable value and reference forms
+snapshot_projection.go:31:6: unsupported immutable operation: Select requires one inline projection path from its parameter
+  source: im.Select(view, func(d Data) string { return d.Names[index] })
+  type: im.View[string]
+  fix: use the documented immutable value and reference forms
+snapshot_projection.go:33:6: unsupported immutable operation: Select requires one inline projection path from its parameter
+  source: im.Select(view, func(d Data) string { return d.Names[i+1] })
+  type: im.View[string]
+  fix: use the documented immutable value and reference forms
+snapshot_projection.go:34:6: unsupported immutable operation: Select requires one inline projection path from its parameter
+  source: im.Select(view, func(d Data) (name string) { return d.Name })
+  type: im.View[string]
+  fix: use the documented immutable value and reference forms
+snapshot_projection.go:35:22: unsupported immutable operation: immutable callbacks are unsupported
+  source: named
+  type: func(value rejected.Data) string
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+snapshot_projection.go:35:6: unsupported immutable operation: Select requires one inline projection path from its parameter
+  source: im.Select(view, named)
+  type: im.View[string]
+  fix: use the documented immutable value and reference forms
+snapshot_projection.go:36:6: unsupported immutable operation: Select requires one inline projection path from its parameter
+  source: im.Select(outer, func(o Outer) int { return o.N })
+  type: im.View[int]
+  fix: use the documented immutable value and reference forms
+snapshot_projection.go:37:30: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: Generic
+  type: rejected.Generic[T any]
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+snapshot_projection.go:38:2: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: _ = im.Select(im.ViewOf([1]int{}), func(a [len([1]im.View[int]{})]int) int { return a[0] })
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
+snapshot_projection.go:39:2: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: _ = im.Select(im.ViewOf([1]int{}), func(a [len([1]*Inner{p})]int) int { return a[0] })
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
+snapshot_projection.go:46:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go integerCell.Shared()
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+snapshot_projection.go:47:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: defer stringCell.Shared()
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+snapshot_projection.go:48:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go identity(stringCell.Shared())
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+snapshot_projection.go:49:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: defer identity(stringCell.Shared())
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+snapshot_projection.go:50:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go integerCell.Load()
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+snapshot_projection.go:51:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: defer stringCell.Load()
+  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+snapshot_projection.go:52:5: Cell.Store requires a direct synchronous statement
+snapshot_projection.go:53:8: Cell.Store requires a direct synchronous statement

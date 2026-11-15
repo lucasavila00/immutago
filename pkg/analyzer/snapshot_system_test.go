@@ -24,6 +24,11 @@ for key,value:=range view.All(){_=im.Text(key).Clone();_=im.Copy(value)}}`,
 for _,value:=range view.All(){_=im.Text(value).Len()}}`,
 		`func f(){frozen:=im.FreezeSlice([]int{1});view:=im.Slice(im.ViewOf(frozen));copy:=view.Clone();copy[0]=2}`,
 		`type Data struct{im.Snapshot; N int};func f(){value:=im.Copy(im.ViewOf(Data{N:3}));_=value.N}`,
+		`type Data struct{im.Snapshot; Text im.FrozenString};var cell im.Cell[Data]
+func f(){text:="text";cell.Store(Data{Text:im.FreezeString(text)});_=text
+view:=im.String(im.Select(cell.Load(),func(d Data)im.FrozenString{return d.Text}));_=view.At(0);_=view.Clone()}`,
+		`func f(v im.SliceView[int]){values:=v.Clone();values=append(values,1);frozen:=im.FreezeSlice(values);_=frozen}`,
+		`func f(v im.MapView[int,int]){values:=v.Clone();values[1]=2;frozen:=im.FreezeMap(values);_=frozen}`,
 		`type raw struct{values []int};type Data struct{im.Snapshot; Raw im.UncheckedValue[raw]};var cell im.Cell[Data]
 func f(){cell.Store(Data{Raw:im.Trust(&raw{values:[]int{1}})});value:=cell.Shared();_=im.Unwrap(value.Raw).values[0]}`,
 	}
@@ -41,6 +46,8 @@ func TestSnapshotCategories(t *testing.T) {
 	cases := []struct{ source, want string }{
 		{`type Result struct{im.Local; Name string}`, "Copied values cannot contain shared data references"},
 		{`type Result struct{im.Local; Values im.FrozenSlice[int]}`, "Copied values cannot contain shared data references"},
+		{`type Result struct{im.Local; Text im.FrozenString}`, "Copied values cannot contain shared data references"},
+		{`func f(){_=im.Copy(im.ViewOf(im.FreezeString("text")))}`, "Copied values cannot contain shared data references"},
 		{`type Result struct{im.Local; Text im.StringView};var cell im.Cell[Result]`, "Snapshot storage cannot contain Local values"},
 		{`type Result struct{im.Local; Text im.StringView};func f(){_=im.ViewOf(Result{})}`, "Snapshot storage cannot contain Local values"},
 		{`type Result struct{im.Local; Text im.StringView};type Data struct{im.Snapshot; Result Result}`, "Snapshot storage cannot contain Local values"},

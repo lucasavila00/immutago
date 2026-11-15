@@ -133,7 +133,7 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 			return ""
 		}
 		return "Freeze requires a standalone single binding"
-	case "Trust", "Unwrap", "ViewOf", "Text", "Slice", "Map", "IsNil":
+	case "Trust", "Unwrap", "ViewOf", "FreezeString", "String", "Text", "Slice", "Map", "IsNil":
 		return ""
 	case "Copy":
 		return c.proofs.CopiedReason(c.pass.TypesInfo.TypeOf(call))

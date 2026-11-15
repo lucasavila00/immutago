@@ -27,6 +27,7 @@ const testLibrary = `package im
  func Copy[T any](value View[T]) T { return value.value }
  func IsNil[T any](value View[*T]) bool { return value.value == nil }
  type StringView struct { value string }
+ func String(value View[FrozenString]) StringView { return StringView{} }
  func Text[S ~string](value View[S]) StringView { return StringView{} }
  func (s StringView) Len() int { return 0 }
  func (s StringView) At(index int) byte { return 0 }
@@ -48,6 +49,11 @@ const testLibrary = `package im
  func Unwrap[T any](value UncheckedValue[T]) *T { return value.value }
  type FrozenSlice[T any] struct { values []T }
  type FrozenMap[K comparable, V any] struct { values map[K]V }
+ type FrozenString struct { value string }
+ func FreezeString(value string) FrozenString { return FrozenString{} }
+ func (value FrozenString) Len() int { return 0 }
+ func (value FrozenString) At(index int) byte { return 0 }
+ func (value FrozenString) Clone() string { return "" }
  func FreezeSlice[T any](values []T) FrozenSlice[T] { return FrozenSlice[T]{} }
  func FreezeMap[K comparable, V any](values map[K]V) FrozenMap[K,V] { return FrozenMap[K,V]{} }
  func (values FrozenSlice[T]) Clone() []T { return nil }

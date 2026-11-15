@@ -34,7 +34,7 @@ func IsUncheckedValue(t types.Type) bool { return IsLibraryType(t, "UncheckedVal
 
 // IsCollection reports whether t is one of the library's sealed collection types.
 func IsCollection(t types.Type) bool {
-	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap")
+	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap") || IsLibraryType(t, "FrozenString")
 }
 
 // IsView identifies the fixed local read types.

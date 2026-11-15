@@ -92,7 +92,7 @@ func Fresh(pass *analysis.Pass, expression ast.Expr) bool {
 	if pointer, ok := receiver.Underlying().(*types.Pointer); ok {
 		receiver = pointer.Elem()
 	}
-	return checker.IsCollection(receiver)
+	return checker.IsCollection(receiver) || checker.IsView(receiver)
 }
 
 // native identifies mutable native handles rather than value arrays or frozen wrappers.

@@ -16,6 +16,8 @@ func TestSnapshotCategories(t *testing.T) {
 		types.NewStruct([]*types.Var{types.NewField(token.NoPos, pkg, "value", parameter, false)}, nil), nil)
 	view.SetTypeParams([]*types.TypeParam{parameter})
 	text := sliceType(t, view, types.Typ[types.String])
+	frozenText := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "FrozenString", nil),
+		types.NewStruct([]*types.Var{types.NewField(token.NoPos, pkg, "value", types.Typ[types.String], false)}, nil), nil)
 	copied := markedType("Count", snapshot, types.NewField(token.NoPos, nil, "N", types.Typ[types.Int], false))
 	retained := markedType("Text", snapshot, types.NewField(token.NoPos, nil, "Text", types.Typ[types.String], false))
 	reply := markedType("Reply", local, types.NewField(token.NoPos, nil, "Text", text, false))
@@ -28,6 +30,7 @@ func TestSnapshotCategories(t *testing.T) {
 	}{
 		{types.Typ[types.Int], true, true, true, false},
 		{types.Typ[types.String], true, false, false, false},
+		{frozenText, true, false, false, false},
 		{copied, true, true, true, false},
 		{retained, true, false, false, false},
 		{text, false, false, true, true},
