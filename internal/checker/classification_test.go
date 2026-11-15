@@ -24,7 +24,7 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 	if opaqueStorage(t) {
 		return false
 	}
-	if IsCollection(t) || Marked(t) || IsLibraryType(t, "Local") {
+	if IsCollection(t) || IsProjection(t) || Marked(t) || FrozenInterface(t) || IsLibraryType(t, "Local") {
 		return true
 	}
 	switch u := t.Underlying().(type) {
@@ -38,6 +38,14 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 		return classificationStorageOracle(u.Key(), seen) || classificationStorageOracle(u.Elem(), seen)
 	case *types.Chan:
 		return classificationStorageOracle(u.Elem(), seen)
+	case *types.Interface, *types.Union:
+		return classificationConstraintOracle(t, seen)
+	case *types.Tuple:
+		for item := range u.Variables() {
+			if classificationStorageOracle(item.Type(), seen) {
+				return true
+			}
+		}
 	case *types.Struct:
 		for field := range u.Fields() {
 			if classificationStorageOracle(field.Type(), seen) {
@@ -114,8 +122,60 @@ func classificationCallableFieldsOracle(storage *types.Struct, seen map[types.Ty
 func classificationSignatureOracle(signature *types.Signature, seen map[types.Type]bool) bool {
 	for _, tuple := range []*types.Tuple{signature.Params(), signature.Results()} {
 		for item := range tuple.Variables() {
-			if classificationStorageOracle(item.Type(), make(map[types.Type]bool)) ||
+			if classificationTransportOracle(item.Type(), make(map[types.Type]bool)) ||
 				classificationCallableOracle(item.Type(), seen) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// classificationTransportOracle checks transport without using cached classification answers.
+func classificationTransportOracle(t types.Type, seen map[types.Type]bool) bool {
+	if t == nil || seen[t] || opaqueStorage(t) || IsCollection(t) || Frozen(t) || FrozenInterface(t) {
+		return false
+	}
+	seen[t] = true
+	if IsProjection(t) || Local(t) || IsLibraryType(t, "Local") {
+		return true
+	}
+	if parameter, ok := types.Unalias(t).(*types.TypeParam); ok {
+		return classificationTransportOracle(parameter.Constraint(), seen)
+	}
+	switch storage := t.Underlying().(type) {
+	case *types.Pointer:
+		return classificationStorageOracle(storage.Elem(), make(map[types.Type]bool))
+	case *types.Slice:
+		return classificationStorageOracle(storage.Elem(), make(map[types.Type]bool))
+	case *types.Map:
+		return classificationStorageOracle(storage.Key(), make(map[types.Type]bool)) ||
+			classificationStorageOracle(storage.Elem(), make(map[types.Type]bool))
+	case *types.Chan:
+		return classificationStorageOracle(storage.Elem(), make(map[types.Type]bool))
+	case *types.Array:
+		return classificationTransportOracle(storage.Elem(), seen)
+	case *types.Struct:
+		for field := range storage.Fields() {
+			if classificationTransportOracle(field.Type(), seen) {
+				return true
+			}
+		}
+	case *types.Interface:
+		for i := 0; i < storage.NumEmbeddeds(); i++ {
+			if classificationTransportOracle(storage.EmbeddedType(i), seen) {
+				return true
+			}
+		}
+	case *types.Union:
+		for i := 0; i < storage.Len(); i++ {
+			if classificationTransportOracle(storage.Term(i).Type(), seen) {
+				return true
+			}
+		}
+	case *types.Tuple:
+		for item := range storage.Variables() {
+			if classificationTransportOracle(item.Type(), seen) {
 				return true
 			}
 		}
@@ -147,7 +207,7 @@ func classificationGraph(edges [][]int, leaf int, callback bool) []*types.Named 
 		if i == leaf {
 			var stored types.Type = value
 			if callback {
-				stored = classificationSignature(value)
+				stored = classificationSignature(types.NewPointer(value))
 			}
 			fields = append(fields, types.NewField(token.NoPos, nil, "Protected", stored, false))
 		}
@@ -246,6 +306,9 @@ func TestClassificationMatchesWalkers(t *testing.T) {
 			typ := shapes[query]
 			wantStored := classificationStorageOracle(typ, make(map[types.Type]bool))
 			wantCallable := classificationCallableOracle(typ, make(map[types.Type]bool))
+			if got, want := classifier.Transport(typ), classificationTransportOracle(typ, make(map[types.Type]bool)); got != want {
+				t.Fatalf("shape=%d reverse=%t: Transport=%t, want %t", query, reverse, got, want)
+			}
 			// Query callback mode first to check cross-mode sharing as well as ordinary storage-first queries.
 			if got := classifier.Callable(typ); got != wantCallable {
 				t.Fatalf("shape=%d reverse=%t: Callable=%t, want %t", query, reverse, got, wantCallable)

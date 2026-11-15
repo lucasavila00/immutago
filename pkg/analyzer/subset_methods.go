@@ -25,15 +25,19 @@ func (c *subsetChecks) markedMethodReceiver(signature *types.Signature) bool {
 // Protected receivers require an exact, non-promoted marked or runtime receiver.
 func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	selection := c.pass.TypesInfo.Selections[selector]
-	if selection.Kind() != types.MethodVal {
+	restricted := c.queries.Transport(selection.Recv()) || c.queries.Callable(c.pass.TypesInfo.TypeOf(selector))
+	if selection.Kind() != types.MethodVal && restricted {
 		return "immutable method expressions are unsupported"
 	}
-	if c.directCall(selector) == nil {
+	if c.directCall(selector) == nil && restricted {
 		return "bound immutable methods are unsupported"
 	}
 	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
 		if checker.FrozenInterface(selection.Recv()) {
 			return c.matchFrozenInterfaceMethod(selector)
+		}
+		if !restricted {
+			return ""
 		}
 		return "dynamic calls with immutable storage are unsupported"
 	}

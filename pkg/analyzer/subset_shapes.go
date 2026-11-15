@@ -39,19 +39,35 @@ func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 
 // matchStatement finds the complete statement that owns a protected operand.
 func (c *subsetChecks) matchStatement(expression ast.Expr) string {
+	restricted := c.queries.Transport(c.pass.TypesInfo.TypeOf(expression)) ||
+		c.queries.Callable(c.pass.TypesInfo.TypeOf(expression)) || c.ownedExpression(expression)
 	for parent := c.parents[expression]; parent != nil; parent = c.parents[parent] {
 		if typ, ok := parent.(ast.Expr); ok && c.pass.TypesInfo.Types[typ].IsType() {
 			return "protected operation is outside the supported statement forms"
 		}
 		if declaration, ok := parent.(*ast.ValueSpec); ok {
+			if restricted && (len(declaration.Names) != 1 || len(declaration.Values) > 1) &&
+				!c.resultDeclaration(declaration) {
+				return "multiple assignments involving protected storage are unsupported"
+			}
 			return c.matchDeclaration(declaration)
 		}
 		statement, ok := parent.(ast.Stmt)
 		if !ok {
 			continue
 		}
-		if clause, ok := c.parents[statement].(*ast.CommClause); ok && clause.Comm == statement {
+		if clause, ok := c.parents[statement].(*ast.CommClause); ok && clause.Comm == statement && restricted {
 			return "protected storage is unsupported in select communication clauses"
+		}
+		if restricted {
+			switch statement := statement.(type) {
+			case *ast.AssignStmt:
+				if (len(statement.Lhs) != 1 || len(statement.Rhs) != 1) && !c.resultAssignment(statement) {
+					return "multiple assignments involving protected storage are unsupported"
+				}
+			case *ast.GoStmt, *ast.DeferStmt:
+				return "protected storage requires synchronous calls"
+			}
 		}
 		return c.matchStatementNode(statement)
 	}
@@ -77,8 +93,10 @@ func (c *subsetChecks) matchStatementNode(statement ast.Stmt) string {
 		if call, ok := ast.Unparen(statement.X).(*ast.CallExpr); ok {
 			return c.matchCall(call)
 		}
-	case *ast.GoStmt, *ast.DeferStmt:
-		return "protected storage requires synchronous calls"
+	case *ast.GoStmt:
+		return c.matchCall(statement.Call)
+	case *ast.DeferStmt:
+		return c.matchCall(statement.Call)
 	case *ast.CaseClause:
 		if block, ok := c.parents[statement].(*ast.BlockStmt); ok {
 			if parent, ok := c.parents[block].(*ast.SwitchStmt); ok {

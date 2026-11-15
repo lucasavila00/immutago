@@ -79,6 +79,9 @@ func (c *subsetChecks) matchConversion(call *ast.CallExpr) string {
 		if checker.FrozenInterface(destination) && source != types.Typ[types.UntypedNil] {
 			return ""
 		}
+		if _, boxed := destination.Underlying().(*types.Interface); boxed && !c.queries.Transport(source) {
+			return ""
+		}
 		if c.queries.Contains(source) || c.queries.Contains(destination) {
 			return "protected value conversions are unsupported"
 		}
@@ -115,7 +118,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 			return c.matchCallArguments(call, signature)
 		}
 	}
-	if !c.protectedCallArguments(call) && !c.protectedResult(c.pass.TypesInfo.TypeOf(call)) {
+	if !c.protectedCallArguments(call) && !c.queries.Contains(c.pass.TypesInfo.TypeOf(call)) {
 		return ""
 	}
 	return "protected operation is outside the supported expression forms"
@@ -210,7 +213,7 @@ func (c *subsetChecks) matchArgument(source, destination types.Type) string {
 func (c *subsetChecks) protectedCallArguments(call *ast.CallExpr) bool {
 	for _, argument := range call.Args {
 		typ := c.pass.TypesInfo.TypeOf(argument)
-		if c.protectedResult(typ) || c.queries.Callable(typ) || c.ownedExpression(argument) {
+		if c.queries.Transport(typ) || c.queries.Callable(typ) || c.ownedExpression(argument) {
 			return true
 		}
 	}
@@ -222,7 +225,7 @@ func (c *subsetChecks) matchTransport(source, destination types.Type) string {
 	if checker.FrozenInterface(destination) {
 		return c.matchFrozenInterface(source, destination)
 	}
-	if !c.queries.Contains(source) && !c.queries.Callable(source) {
+	if !c.queries.Transport(source) && !c.queries.Callable(source) {
 		return ""
 	}
 	if destination == nil {

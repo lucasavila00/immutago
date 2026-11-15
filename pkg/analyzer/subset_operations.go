@@ -37,7 +37,7 @@ func (c *subsetChecks) operationExpression(expression ast.Expr) bool {
 			return false
 		}
 	}
-	return c.protectedStorage(expression) || c.protectedResult(c.pass.TypesInfo.TypeOf(expression)) ||
+	return c.protectedStorage(expression) || c.queries.Contains(c.pass.TypesInfo.TypeOf(expression)) ||
 		c.queries.Callable(c.pass.TypesInfo.TypeOf(expression))
 }
 
@@ -95,6 +95,12 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 		}
 		return "slice projections of immutable storage are unsupported"
 	case *ast.TypeAssertExpr:
+		if checker.FrozenInterface(c.pass.TypesInfo.TypeOf(source.Type)) {
+			return c.matchFrozenInterface(c.pass.TypesInfo.TypeOf(source.X), c.pass.TypesInfo.TypeOf(source.Type))
+		}
+		if !c.queries.Transport(c.pass.TypesInfo.TypeOf(expression)) {
+			return ""
+		}
 		return "immutable interface assertions are unsupported"
 	case *ast.FuncLit:
 		return "immutable callbacks are unsupported"
@@ -157,6 +163,10 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 	case *ast.ValueSpec:
 		return c.matchDeclaration(parent)
 	}
+	if !c.queries.Transport(c.pass.TypesInfo.TypeOf(expression)) &&
+		!c.queries.Callable(c.pass.TypesInfo.TypeOf(expression)) && !c.ownedExpression(expression) {
+		return ""
+	}
 	return "protected operation is outside the supported expression forms"
 }
 
@@ -173,6 +183,9 @@ func (c *subsetChecks) matchFunctionValue(expression ast.Expr) string {
 	object := c.calledObject(expression)
 	if libraryObject(object) && (object.Name() == "FreezeMap" || object.Name() == "FreezeSlice") {
 		return "freeze functions must be called directly"
+	}
+	if !c.queries.Callable(c.pass.TypesInfo.TypeOf(expression)) {
+		return ""
 	}
 	return "immutable callbacks are unsupported"
 }
@@ -192,7 +205,8 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 		}
 		return ""
 	}
-	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) {
+	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) &&
+		c.queries.Callable(c.pass.TypesInfo.TypeOf(selector)) {
 		return "immutable method expressions are unsupported"
 	}
 	if refAccessor(selection.Obj()) {
@@ -202,7 +216,8 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 		return ""
 	}
 	if c.exactCollectionMethod(selector) {
-		if c.directCall(selector) == nil {
+		if c.directCall(selector) == nil && (c.queries.Transport(selection.Recv()) ||
+			c.queries.Callable(c.pass.TypesInfo.TypeOf(selector))) {
 			return "bound immutable methods are unsupported"
 		}
 		return ""
