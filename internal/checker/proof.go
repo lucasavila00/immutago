@@ -147,7 +147,7 @@ func (p *proof) value(result *obligation, t types.Type) {
 		result.reason = "Frozen storage cannot contain Local values"
 		return
 	}
-	if IsLibraryType(t, "Frozen") {
+	if IsLibraryType(t, "Frozen") || IsLibraryType(t, "Copied") {
 		result.reason = "immutable markers are annotations, not data"
 		return
 	}
@@ -215,6 +215,10 @@ func refTargetReason(target types.Type) string {
 
 // structure requires one marker and checks every stored field.
 func (p *proof) structure(result *obligation, t types.Type, structure *types.Struct) {
+	if Copied(t) {
+		p.copiedRecord(result, t, structure)
+		return
+	}
 	if !Frozen(t) {
 		result.reason = "struct does not embed im.Frozen"
 		return

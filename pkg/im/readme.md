@@ -10,6 +10,7 @@ Package im provides frozen data and local read projections checked by immutago.
 
 Choose the API for the data:
 
+- Copied: record fields that are copied with the value.
 - Frozen: immutable fields that callers can store and share.
 - Local: fields that follow the checker's local storage and transport rules.
 - Cell: publish a snapshot and read the current value through a Projection.
@@ -83,6 +84,14 @@ func (c *Cell[T]) Store(value T)
 ```
 
 Store publishes a private copy of value. A nonzero\-sized T needs one allocation. It copies T by value; it does not copy the immutable storage that T refers to.
+
+## type Copied
+
+Copied marks a record with immutable bool, numeric, array, or Copied fields. Copying the record copies all its data. Strings and reference fields are rejected. Embed the marker by value. Use whole values; pointers to Copied records are rejected. See https://github.com/lucasavila00/immutago/blob/main/docs/copied.md for the complete forms.
+
+```go
+type Copied struct{}
+```
 
 ## type Frozen
 

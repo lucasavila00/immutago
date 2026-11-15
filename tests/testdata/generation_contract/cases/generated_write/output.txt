@@ -17,4 +17,4 @@ zz_immutago.gen.go:69:9: unsupported immutable operation: Projection.Read is res
   fix: use the generated field accessor
 zz_immutago.gen.go:72:38: unsupported immutable operation: writes to immutable objects are unsupported
   source: value.immutagoProjection.Read().Number = 1
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

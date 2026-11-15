@@ -1,7 +1,7 @@
 // Package analyzer exposes the immutago go/analysis analyzer.
 //
 // The analyzer checks:
-//   - Recursive field and collection types for structs with im.Frozen or im.Local.
+//   - Recursive field types for im.Frozen, im.Local, and im.Copied records.
 //   - Allowed construction, reads, calls, and assignments; no protected field writes.
 //   - Frozen pointer storage and Local pointer retention.
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
@@ -191,7 +191,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 		case *types.Struct:
 			c.checkStruct(pos, t)
 		case *types.Pointer:
-			if c.queries.Contains(t) {
+			if c.queries.Retained(t) {
 				c.report(pos, "defined pointer types are unsupported in protected storage; use a pointer alias")
 			}
 		}
@@ -219,6 +219,10 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	} else if checker.MarkerCount(t) > 1 {
 		c.report(pos, "struct must embed exactly one immutable marker; each embedded alias counts as a marker")
 	}
+	if checker.Copied(t) {
+		c.checkCopiedRecord(pos, t, s)
+		return
+	}
 	for field := range s.Fields() {
 		ft := field.Type()
 		fieldPos, data := c.checkFieldMarker(pos, t, field)
@@ -232,13 +236,27 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 					"\n  fix: "+structuralFix(ft, reason))
 				continue
 			}
-		} else if c.queries.Contains(ft) {
+		} else if c.queries.Retained(ft) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+
 				"\n  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field")
 			continue
 		}
+	}
+}
+
+// checkCopiedRecord checks marker placement and uses the same proof as all copied results.
+func (c *checks) checkCopiedRecord(pos token.Pos, t types.Type, structure *types.Struct) {
+	for field := range structure.Fields() {
+		fieldPos, _ := c.checkFieldMarker(pos, t, field)
+		if field.Embedded() && checker.IsLibraryType(field.Type(), "Copied") {
+			pos = fieldPos
+		}
+	}
+	if reason := c.proofs.CopiedReason(t); reason != "" {
+		c.report(pos, "Copied record: "+reason+"\n  type: "+diagnosticType(t)+
+			"\n  fix: use bool, numbers, unnamed arrays, or other Copied records for every field")
 	}
 }
 
@@ -249,13 +267,13 @@ func (c *checks) checkFieldMarker(pos token.Pos, owner types.Type, field *types.
 	}
 	if invalidMarkerField(field) {
 		c.report(pos, "immutable markers must be embedded by value\n  field: "+diagnosticType(owner)+"."+field.Name()+
-			"\n  fix: embed im.Frozen or im.Local; remove the marker field name or pointer")
+			"\n  fix: embed im.Frozen, im.Local, or im.Copied; remove the marker field name or pointer")
 		return pos, false
 	}
 	return pos, !field.Embedded() || !markerType(field.Type())
 }
 
-// invalidMarkerField rejects named marker fields and pointers to either marker.
+// invalidMarkerField rejects named marker fields and pointers to markers.
 func invalidMarkerField(field *types.Var) bool {
 	if markerType(field.Type()) {
 		return !field.Embedded()
@@ -264,7 +282,7 @@ func invalidMarkerField(field *types.Var) bool {
 	return ok && markerType(pointer.Elem())
 }
 
-// markerType identifies either exact library marker before its placement is checked.
+// markerType identifies exact library markers before their placement is checked.
 func markerType(t types.Type) bool {
-	return checker.IsLibraryType(t, "Frozen") || checker.IsLibraryType(t, "Local")
+	return checker.IsLibraryType(t, "Frozen") || checker.IsLibraryType(t, "Local") || checker.IsLibraryType(t, "Copied")
 }

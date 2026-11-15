@@ -43,7 +43,7 @@ func IsProjection(t types.Type) bool {
 		IsLibraryType(t, "SliceProjection") || IsLibraryType(t, "MapProjection")
 }
 
-// Marked reports the presence of either embedded marker, including invalid combinations.
+// Marked reports an embedded Frozen or Local marker, including invalid combinations.
 // It does not prove immutability; Reason checks the complete type contract.
 func Marked(t types.Type) bool {
 	return Frozen(t) || Local(t)
@@ -54,6 +54,9 @@ func Frozen(t types.Type) bool { return embedsMarker(t, "Frozen") }
 
 // Local reports the presence of an embedded im.Local value, not type validity.
 func Local(t types.Type) bool { return embedsMarker(t, "Local") }
+
+// Copied reports the presence of an embedded im.Copied value, not type validity.
+func Copied(t types.Type) bool { return embedsMarker(t, "Copied") }
 
 // Service reports whether a struct embeds supervise.Service, directly or indirectly.
 func Service(t types.Type) bool {
@@ -94,7 +97,8 @@ func MarkerCount(t types.Type) int {
 	}
 	count := 0
 	for field := range structure.Fields() {
-		if field.Embedded() && (IsLibraryType(field.Type(), "Frozen") || IsLibraryType(field.Type(), "Local")) {
+		if field.Embedded() && (IsLibraryType(field.Type(), "Frozen") || IsLibraryType(field.Type(), "Local") ||
+			IsLibraryType(field.Type(), "Copied")) {
 			count++
 		}
 	}

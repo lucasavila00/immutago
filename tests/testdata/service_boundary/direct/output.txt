@@ -1,4 +1,4 @@
-anonymous.go:7:24: service method Values must return a service result: copied values require bool, numbers, arrays, or service references
+anonymous.go:7:24: service method Values must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: []int
 borrow_calls.go:11:35: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow

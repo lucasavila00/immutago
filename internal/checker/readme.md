@@ -36,6 +36,14 @@ func Contains(t types.Type) bool
 
 Contains reports whether a type stores a marked value or sealed collection. It runs one query; use Classifier to reuse results across queries.
 
+## func Copied
+
+```go
+func Copied(t types.Type) bool
+```
+
+Copied reports the presence of an embedded im.Copied value, not type validity.
+
 ## func Frozen
 
 ```go
@@ -98,7 +106,7 @@ Local reports the presence of an embedded im.Local value, not type validity.
 func Marked(t types.Type) bool
 ```
 
-Marked reports the presence of either embedded marker, including invalid combinations. It does not prove immutability; Reason checks the complete type contract.
+Marked reports an embedded Frozen or Local marker, including invalid combinations. It does not prove immutability; Reason checks the complete type contract.
 
 ## func MarkerCount
 
@@ -166,6 +174,14 @@ func (c *Classifier) Locals(t types.Type) bool
 
 Locals reports local projections or records in storage, including through arrays and pointers.
 
+### func \(\*Classifier\) Retained
+
+```go
+func (c *Classifier) Retained(t types.Type) bool
+```
+
+Retained reports protected storage that cannot enter an ordinary mutable holder. Copied records are checked by value and do not make their holders immutable.
+
 ## type Prover
 
 Prover reuses immutable type obligations within one analysis pass. Its zero value is ready for use. Types must be complete and must not change. A Prover must not be used by concurrent passes.
@@ -182,7 +198,7 @@ type Prover struct {
 func (p *Prover) CopiedReason(t types.Type) string
 ```
 
-CopiedReason proves bool, numbers, unnamed arrays of these values, or opaque service references.
+CopiedReason proves bool, numbers, Copied records, unnamed arrays, or opaque service references.
 
 ### func \(\*Prover\) FrozenReason
 

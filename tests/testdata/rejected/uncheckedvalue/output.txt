@@ -8,4 +8,4 @@ trusted.go:20:61: im.Trust requires a type that this package declares
   fix: call a function of the package that declares the type
 trusted.go:23:23: unsupported immutable operation: writes to immutable objects are unsupported
   source: b.Table = im.Trust(&Table{})
-  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

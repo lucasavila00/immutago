@@ -20,6 +20,7 @@ import (
 const testLibrary = `package im
  type Frozen struct{}
  type Local struct{}
+ type Copied struct{}
  type Cell[T any] struct{}
  func (o *Cell[T]) Load() Projection[T] { return Projection[T]{} }
  func (o *Cell[T]) LoadPointer() Projection[*T] { return Projection[*T]{} }

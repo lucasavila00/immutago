@@ -61,7 +61,7 @@ func (c *checks) visitService(node ast.Node) bool {
 
 // checkServiceStorage applies im storage rules when the runtime saves protected arguments.
 func (c *checks) checkServiceStorage(name *ast.Ident, argument types.Type) {
-	if !c.queries.Contains(argument) && !c.queries.Callable(argument) {
+	if !c.queries.Retained(argument) && !c.queries.Callable(argument) {
 		return
 	}
 	if reason := c.proofs.FrozenReason(argument); reason != "" {

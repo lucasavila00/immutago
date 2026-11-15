@@ -37,6 +37,8 @@ Enforcement:
 | --- | --- |
 | Generator startup, repeatable output, Frozen records, and changed fields | [Generator tests](../../internal/projectiongen/generate_test.go) |
 | Frozen, Copied, ReadResult, and recursive marker proofs | [Category tests](../../internal/checker/categories_test.go), [type tests](../../internal/checker/types_test.go), [marker tests](../../internal/checker/markers_test.go) |
+| Copied declarations, mutable holders, service results, generated reads, and dependency failures | [Copied proof tests](../../internal/checker/copied_test.go), [source checks](../../pkg/analyzer/copied_test.go), [CLI and vet tests](../../tests/copied_records_test.go) |
+| Copied layout, allocation counts, and native/projection copy costs | [Runtime tests and benchmark](../../pkg/im/copied_test.go) |
 | Immutable writes and pointer escape rules | [Object tests](../../pkg/analyzer/immutable_objects_test.go), [escape tests](../../pkg/analyzer/escape_test.go) |
 | Complete allowed shapes and nearby rejections | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go) |
 | Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
