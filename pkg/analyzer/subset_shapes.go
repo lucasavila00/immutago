@@ -1,6 +1,9 @@
 package analyzer
 
-import "go/ast"
+import (
+	"go/ast"
+	"go/types"
+)
 
 // statementOperation identifies the statement or declaration that owns an operand.
 func (c *subsetChecks) statementOperation(expression ast.Expr) ast.Node {
@@ -27,6 +30,9 @@ func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 		case *ast.IndexExpr:
 			expression = node.X
 		case *ast.SelectorExpr:
+			if c.protectedSelection(node) {
+				return true
+			}
 			expression = node.X
 		case *ast.StarExpr:
 			expression = node.X
@@ -35,6 +41,26 @@ func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 		}
 	}
 	return false
+}
+
+// protectedSelection checks owners hidden by promoted fields and methods.
+func (c *subsetChecks) protectedSelection(selector *ast.SelectorExpr) bool {
+	selection := c.pass.TypesInfo.Selections[selector]
+	if selection == nil {
+		return false
+	}
+	owner := selection.Recv()
+	indices := selection.Index()
+	for _, index := range indices[:len(indices)-1] {
+		if c.queries.Contains(owner) {
+			return true
+		}
+		if pointer, ok := owner.Underlying().(*types.Pointer); ok {
+			owner = pointer.Elem()
+		}
+		owner = owner.Underlying().(*types.Struct).Field(index).Type()
+	}
+	return c.queries.Contains(owner)
 }
 
 // matchStatement finds the complete statement that owns a protected operand.

@@ -432,6 +432,10 @@ func (c *subsetChecks) allowedSlotValue(expression ast.Expr) bool {
 // checkCellCall checks the slot capability; payloads use the general Frozen proof.
 func (c *subsetChecks) checkCellCall(call *ast.CallExpr) {
 	selector := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+	if selector.Sel.Name == "LoadSharedPointer" && !checker.FrozenPointer(c.pass.TypesInfo.TypeOf(call)) {
+		c.pass.Reportf(call.Pos(), "Cell.LoadSharedPointer requires a concrete Frozen record")
+		return
+	}
 	if !c.validSlotReceiver(selector.X) {
 		c.pass.Reportf(call.Pos(), "Cell calls require a direct field or package slot")
 		return

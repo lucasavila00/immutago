@@ -124,7 +124,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 // matchLibraryCall matches fixed function identities, receivers, and result contexts.
 func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object) string {
 	switch object.Name() {
-	case "Load", "LoadPointer", "Store", "LoadShared":
+	case "Load", "LoadPointer", "Store", "LoadShared", "LoadSharedPointer":
 		if c.ownedSlotCall(call) {
 			return ""
 		}

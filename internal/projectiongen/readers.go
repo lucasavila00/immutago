@@ -144,6 +144,8 @@ func (g *generator) writeCell(out *bytes.Buffer, item record) {
 		stem, item.name, constructorName(item.name))
 	fmt.Fprintf(out, "// LoadShared returns the frozen value for persistent use.\n"+
 		"func (c *%sCell) LoadShared() %s { return c.value.LoadShared() }\n", stem, source)
+	fmt.Fprintf(out, "// LoadSharedPointer returns the frozen root for persistent use without a copy.\n"+
+		"func (c *%sCell) LoadSharedPointer() *%s { return c.value.LoadSharedPointer() }\n", stem, source)
 }
 
 // constructorName preserves the source type's exported or unexported visibility.

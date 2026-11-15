@@ -172,6 +172,9 @@ func (c *subsetChecks) bindingSource(source ast.Expr, index int) types.Type {
 	if tuple, ok := t.(*types.Tuple); ok {
 		return tuple.At(index).Type()
 	}
+	if index == 1 && c.ordinaryMapLookup(source) {
+		return types.Typ[types.Bool]
+	}
 	return t
 }
 
@@ -361,6 +364,9 @@ func (c *subsetChecks) pairCall(values []ast.Expr) bool {
 	if len(values) != 1 {
 		return false
 	}
+	if c.ordinaryMapLookup(values[0]) {
+		return true
+	}
 	call, ok := ast.Unparen(values[0]).(*ast.CallExpr)
 	if !ok {
 		return false
@@ -378,6 +384,17 @@ func (c *subsetChecks) pairCall(values []ast.Expr) bool {
 	}
 	result, valid := resultValue(signature.Results())
 	return valid && result != nil && c.proofs.ReadResultReason(result) == ""
+}
+
+// ordinaryMapLookup permits comma-ok reads from ordinary native maps.
+func (c *subsetChecks) ordinaryMapLookup(expression ast.Expr) bool {
+	index, ok := ast.Unparen(expression).(*ast.IndexExpr)
+	if !ok {
+		return false
+	}
+	typ := c.pass.TypesInfo.TypeOf(index.X)
+	_, native := typ.Underlying().(*types.Map)
+	return native && !c.queries.Contains(typ)
 }
 
 // pairAssignment requires new locals for Get and allows reused locals for other result pairs.

@@ -82,3 +82,25 @@ func TestCellConcurrent(t *testing.T) {
 	}
 	workers.Wait()
 }
+
+// TestCellSharedPointer checks the selected root identity and its lifetime across Store.
+func TestCellSharedPointer(t *testing.T) {
+	var cell Cell[testFrozen]
+	if cell.LoadSharedPointer() != nil {
+		t.Fatal("empty Cell returned a pointer")
+	}
+	cell.Store(testFrozen{Number: 3})
+	first := cell.LoadSharedPointer()
+	if first != cell.LoadSharedPointer() || first != cell.value.Load() {
+		t.Fatal("load copied the selected root")
+	}
+	cell.Store(testFrozen{Number: 7})
+	if first.Number != 3 || first == cell.LoadSharedPointer() || cell.LoadSharedPointer().Number != 7 {
+		t.Fatal("Store changed the saved version")
+	}
+	if got := testing.AllocsPerRun(100, func() { sharedPointerSink = cell.LoadSharedPointer() }); got != 0 {
+		t.Fatalf("LoadSharedPointer allocated %g times", got)
+	}
+}
+
+var sharedPointerSink *testFrozen

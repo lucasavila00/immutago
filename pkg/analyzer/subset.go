@@ -152,7 +152,7 @@ func (c *subsetChecks) protectedRoot(e ast.Expr) bool {
 	}
 	switch x := e.(type) {
 	case *ast.SelectorExpr:
-		return c.protectedRoot(x.X)
+		return c.protectedSelection(x) || c.protectedRoot(x.X)
 	case *ast.IndexExpr:
 		return c.protectedRoot(x.X)
 	case *ast.ParenExpr:
@@ -178,11 +178,11 @@ func stringType(t types.Type) bool {
 func (c *subsetChecks) subsetContainer(t types.Type) string {
 	switch u := t.(type) {
 	case *types.Slice:
-		if c.queries.Contains(u.Elem()) {
+		if c.queries.Stored(u.Elem()) {
 			return "native slices of immutable storage are unsupported"
 		}
 	case *types.Map:
-		if c.queries.Contains(u.Key()) || c.queries.Contains(u.Elem()) {
+		if c.queries.Stored(u.Key()) || c.queries.Stored(u.Elem()) {
 			return "native maps of immutable storage are unsupported"
 		}
 	case *types.Chan:

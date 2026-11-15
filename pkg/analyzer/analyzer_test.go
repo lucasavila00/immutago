@@ -27,6 +27,7 @@ const testLibrary = `package im
  func (o *Cell[T]) Load() Projection[T] { return Projection[T]{} }
  func (o *Cell[T]) LoadPointer() Projection[*T] { return Projection[*T]{} }
  func (o *Cell[T]) LoadShared() T { var zero T; return zero }
+ func (o *Cell[T]) LoadSharedPointer() *T { return nil }
  func (o *Cell[T]) Store(value T) {}
  type Projection[T any] struct { value T }
  func ProjectionOf[T any](value T) Projection[T] { return Projection[T]{value:value} }

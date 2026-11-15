@@ -240,7 +240,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 					"\n  fix: "+structuralFix(ft, reason))
 				continue
 			}
-		} else if c.queries.Contains(ft) {
+		} else if c.queries.Stored(ft) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+

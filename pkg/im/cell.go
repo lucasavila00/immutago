@@ -3,7 +3,7 @@ package im
 import "sync/atomic"
 
 // Cell stores a replaceable Frozen value. Its zero value has no stored value.
-// Load, LoadPointer, LoadShared, and Store are atomic. Readers can keep an earlier projection.
+// Loads and Store are atomic. Readers can keep an earlier selected version.
 // The checker proves T and restricts use of the returned local projections.
 // A Cell must not be copied after first use.
 // See https://github.com/lucasavila00/immutago/blob/main/docs/reference/cell.md for the complete forms.
@@ -22,6 +22,10 @@ func (c *Cell[T]) Load() Projection[T] { return ProjectionOf(c.LoadShared()) }
 // LoadPointer returns a local pointer projection without copying T or allocating.
 // It returns a nil pointer projection before Store. The checker requires a Frozen record T.
 func (c *Cell[T]) LoadPointer() Projection[*T] { return ProjectionOf(c.value.Load()) }
+
+// LoadSharedPointer returns the current root for persistent use without a copy or allocation.
+// It returns nil before Store. The checker requires a concrete Frozen record T.
+func (c *Cell[T]) LoadSharedPointer() *T { return c.value.Load() }
 
 // LoadShared returns the current Frozen value for persistent use.
 // It copies T by value without copying backing storage or allocating.
