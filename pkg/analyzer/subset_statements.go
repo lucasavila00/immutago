@@ -15,7 +15,7 @@ func (c *subsetChecks) declarationNode(node ast.Node) {
 		c.functionDeclaration(declaration)
 	case *ast.TypeSpec:
 		if declaration.TypeParams != nil {
-			c.genericStorage(declaration, declaration.Name)
+			c.genericStorage(declaration.Name)
 		}
 	case *ast.ValueSpec:
 		c.valueDeclaration(declaration)
@@ -47,7 +47,7 @@ func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 		c.report(declaration.Name, rule)
 	}
 	if genericSignature(signature) {
-		c.genericStorage(declaration, declaration.Name)
+		c.genericStorage(declaration.Name)
 	}
 	if signature.Recv() != nil && c.queries.Contains(signature.Recv().Type()) && !c.markedMethodReceiver(signature) {
 		c.report(declaration.Name, "immutable methods require a concrete non-generic marked receiver")
