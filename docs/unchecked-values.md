@@ -41,7 +41,7 @@ change the trusted object. `im.Trust` itself does not copy or freeze the data.
 The [model package](../examples/models/model/model.go) owns the trusted pointer.
 The [HTTP service](../examples/models/fetcher.go) uses its public prediction API.
 Run the [model project](../examples/models/README.md) to load models and make
-predictions while their data changes.
+predictions while new model versions arrive. Each published model stays unchanged.
 
 ## Allowed forms — exhaustive
 

@@ -1,19 +1,22 @@
 # Checker reference
 
+Use this reference to check which Go forms Immutago accepts. The
+[glossary](glossary.md) defines its terms.
+
 ## Immutable data forms (`im`)
 
 | Reference | Use it to |
 | --- | --- |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 | [Shared](shared.md) | Store or return pointers to immutable objects. |
-| [Scoped](scoped.md) | Keep pointers local; use functions and methods that do not save them. |
-| [Owner](owner.md) | Publish a new Scoped object and read the current one. |
+| [ByValue](by-value.md) | Keep pointers local; use functions and methods that do not save them. |
+| [Owner](owner.md) | Publish a new ByValue object and read the current one. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
 | [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
 
 ## Service results (`supervise`)
 
-- [Scoped results](scoped-results.md): the one service-specific checker rule.
+- [Service results](service-results.md): result types for exported service methods.
 - [Supervised services](services.md): execution and restart behavior.
 
 ## Rules for im and supervise
@@ -23,13 +26,6 @@ synchronization in the service code.
 
 Use the common forms with each type's forms. **Exhaustive** means all allowed
 forms are listed; unlisted protected operations are rejected.
-
-| Term | Meaning |
-| --- | --- |
-| Marked struct | A struct that embeds `im.Shared` or `im.Scoped`. |
-| Protected storage | Marked values, their fields, frozen collections, and arrays containing them. |
-| Scoped result | An immutable value returned by value; see the [complete type list](scoped-results.md). |
-| Owner slot and holder | An `im.Owner[T]` field or variable, and a struct that contains one. See [Owner](owner.md). |
 
 ### Trusted immutable values
 

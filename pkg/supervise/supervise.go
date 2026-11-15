@@ -3,17 +3,18 @@
 // Define a service:
 //   - Embed Service[A] for start arguments of type A; use NoArgs for no arguments.
 //   - Supply Run(context.Context) for background work.
-//   - Declare Init() error for setup before callers can use the service.
+//   - Declare Init() error for setup, or use the default Init from Service[A].
 //   - Start calls Init, returns Ref[T], and schedules Run in a managed goroutine.
 //
 // Call a service:
 //   - Keep the Ref and use ref.Current().Method().
 //   - Calls run in the caller's goroutine and can overlap with Run and other calls.
 //     Synchronize access to mutable fields.
-//   - Each exported user method except Init and Run returns nothing or one Scoped
-//     result: a primitive, an array of compatible values, or a struct with im.Scoped.
-//     This includes promoted user methods. The runtime's own methods are exempt.
-//     The analyzer rejects top-level pointers and mutable result types.
+//   - Each exported service method returns no result or one service result:
+//     a scalar, a struct with im.Scoped, the empty im.Scoped marker, or an unnamed
+//     array of these types. This includes promoted methods. Init, Run, and methods
+//     supplied by the runtime are exempt. The complete result rules are at
+//     https://github.com/lucasavila00/immutago/blob/main/docs/service-results.md.
 //   - Arguments and implementation code follow ordinary Go rules. Uses of im
 //     values keep their immutability and pointer rules.
 //
@@ -85,8 +86,8 @@ func (p *Service[A]) Args() A { return p.args }
 
 // Init supplies successful empty setup when the service does not declare Init.
 // The runtime calls Init on each fresh value before Current or Run can use it.
-// A declared Init must release any application
-// resources it opened before returning an error; the runtime stops staged children.
+// A declared Init must release any application resources it opened before
+// returning an error; the runtime stops staged children.
 func (*Service[A]) Init() error { return nil }
 
 // Children returns the group owned by this service run. Use it as the parent
@@ -224,7 +225,7 @@ type child struct {
 	group *Group
 }
 
-// Ref is a typed reference to the current value of one service. Copies refer
+// Ref is a service reference that selects the current value of one service. Copies refer
 // to the same service, including after its restart replaces the value.
 // Start returns an initialized reference. Reserve creates one for later startup;
 // a zero Ref is empty and cannot be used in place of Reserve.
@@ -233,7 +234,7 @@ type Ref[T any] struct {
 }
 
 // Current selects the last successfully initialized service value with one
-// atomic load. A saved pointer keeps selecting that value after a restart;
+// atomic load. A saved pointer still points to that value after a restart;
 // call Current again to select the replacement.
 //
 // Current panics for an empty or unstarted reference. It can return a value whose

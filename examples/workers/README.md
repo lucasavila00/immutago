@@ -49,5 +49,7 @@ shutdown. Callers can retry against the dispatcher's current pool.
 names and creates fresh version-1 pools; version requests are not persisted.
 Removing a name stops both its serving pool and any pending replacement. Start
 arguments use ordinary Go structs; job channels stay inside each worker.
-Set returns nothing. Readers return a scalar or a Scoped struct: Result for
-a job, or VariantSet for a configuration snapshot.
+`Set` has no result. Methods that return data use the
+[service result types](../../docs/service-results.md): a scalar, a `Result`
+struct for a job, or a `VariantSet` struct for the configured names. Both structs
+embed `im.ByValue`; callers can keep their values.

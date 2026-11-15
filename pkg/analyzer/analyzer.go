@@ -5,8 +5,9 @@
 //   - Allowed construction, reads, calls, and assignments; no protected field writes.
 //   - Shared pointer storage and Scoped pointer retention.
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
-//   - No result or one Scoped result for each exported user service method except Init
-//     and Run, including promoted user methods. Runtime methods are exempt.
+//   - No result or one allowed service result for each exported service method,
+//     including promoted methods. Init, Run, and methods supplied by the runtime
+//     are exempt.
 //
 // Direct im or supervise imports, used types, and failed checked dependencies
 // select packages for analysis. Ordinary Go API contracts are trusted.

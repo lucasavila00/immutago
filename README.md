@@ -14,4 +14,5 @@ review service state changes and locks in the service code.
 `go build` does not enforce these rules.
 
 [Example projects](examples/README.md) use both packages in tested programs.
+[Glossary](docs/glossary.md) defines the terms used in the guides and diagnostics.
 [Maintainer documentation](docs/README.md#maintainers) covers development and review.

@@ -14,7 +14,7 @@ const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 // RuntimePath is the package whose supervised service runtime is trusted.
 const RuntimePath = "github.com/lucasavila00/immutago/pkg/supervise"
 
-// ServiceMarker identifies the runtime's generic service base.
+// ServiceMarker identifies supervise.Service, the generic type embedded by services.
 const ServiceMarker = "Service"
 
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
@@ -49,7 +49,7 @@ func Shared(t types.Type) bool { return embedsMarker(t, "Shared") }
 // Scoped reports the presence of an embedded im.Scoped value, not type validity.
 func Scoped(t types.Type) bool { return embedsMarker(t, "Scoped") }
 
-// Service reports whether a struct embeds the runtime Service base, directly or indirectly.
+// Service reports whether a struct embeds supervise.Service, directly or indirectly.
 func Service(t types.Type) bool {
 	seen := make(map[types.Type]bool)
 	pending := []types.Type{t}

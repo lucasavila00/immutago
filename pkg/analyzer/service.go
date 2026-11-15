@@ -28,12 +28,12 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 			continue
 		}
 		if signature.Results().Len() != 1 {
-			c.report(at, "service method "+method.Name()+" must return no value or one Scoped result")
+			c.report(at, "service method "+method.Name()+" must return no value or one service result")
 			continue
 		}
 		result := signature.Results().At(0).Type()
-		if reason := c.proofs.ScopedResultReason(result); reason != "" {
-			c.report(at, "service method "+method.Name()+" must return a Scoped result: "+reason+
+		if reason := c.proofs.ServiceResultReason(result); reason != "" {
+			c.report(at, "service method "+method.Name()+" must return a service result: "+reason+
 				"\n  result type: "+diagnosticType(result))
 		}
 	}

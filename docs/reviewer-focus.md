@@ -30,7 +30,7 @@ For example, fresh protected construction requires `&T{...}` or a supported
 `&variable` and `&value.Field` must fail. Whole-variable replacement must not
 admit field, element, or pointer-target writes.
 
-Check `Shared` sharing and `Scoped` pointer escape separately. Builder
+Check `Shared` sharing and `ByValue` pointer escape separately. Builder
 exclusivity and consumption are required for both modes.
 
 ## Required evidence
@@ -62,8 +62,11 @@ validation. For collection changes, also check the [cost contract](performance.m
 
 Read as a Go developer who has not worked on the checker:
 
-- Name the API before discussing it: `im.Shared` and `im.Scoped`, not an unexplained
+- Name the API before discussing it: `im.Shared` and `im.ByValue`, not an unexplained
   “both markers.” Define terms before using them.
+- Use the [glossary](glossary.md) names. Distinguish ByValue values from ByValue
+  pointers, and service references from Go pointers. A service result is a
+  result category, not a marker or a promise of full service isolation.
 - Show what the feature does, when to choose it, and a useful working example.
 - Use lists for rules, tables for comparisons, and numbered steps for sequences.
 - Remove repeated prose; retain facts needed to use the example correctly.

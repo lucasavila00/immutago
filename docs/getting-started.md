@@ -52,7 +52,7 @@ The program prints `alice 10`.
 - `Get` returns the score and whether the key exists.
 
 For example, adding `user.Name = "bob"` makes `immutago ./...` report a write
-to an immutable object. See the [language guide](rules.md) for the complete forms.
+to an immutable object. See the [checker reference](rules.md) for the allowed forms.
 
 ## Check in CI
 

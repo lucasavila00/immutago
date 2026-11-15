@@ -1,4 +1,4 @@
-# Performance
+# Operation costs
 
 ## Zero abstraction overhead
 
@@ -19,3 +19,6 @@ check, or extra heap escape. Freeze copies only a native handle.
 Clone is shallow. Pointer elements still refer to the same immutable objects;
 replacing a cloned slot does not change the frozen slot. There are no frozen
 update methods. Edit a clone, then freeze it.
+
+The [performance checks](arch/performance.md) describe benchmarks, allocation
+tests, and comparisons with native Go.
