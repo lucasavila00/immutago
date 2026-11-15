@@ -18,6 +18,7 @@ func (*Worker) Count() int          { return 1 }
 type WorkerRef = supervise.Ref[Worker]
 type Box[T any] struct{ Value T }
 type Nested[T any] = atomic.Pointer[Box[T]]
+type Ignored[T any] = atomic.Pointer[WorkerRef]
 type Pointer[T any] struct{ Value T }
 type Defined[T any] atomic.Pointer[T]
 type LocalSlot struct {
@@ -28,6 +29,10 @@ type MixedSlot struct {
 	Ref   WorkerRef
 	Local LocalSlot
 }
+type ProtectedSlot struct {
+	im.Local
+	Current atomic.Pointer[WorkerRef]
+}
 type FrozenSlot struct {
 	Ref    WorkerRef
 	Values im.FrozenSlice[int]
@@ -35,6 +40,7 @@ type FrozenSlot struct {
 
 var user Box[WorkerRef]
 var nested Nested[WorkerRef]
+var ignored Ignored[WorkerRef]
 var lookalike Pointer[WorkerRef]
 var defined Defined[WorkerRef]
 var local atomic.Pointer[LocalSlot]

@@ -128,12 +128,21 @@ func (c *subsetChecks) handleInstance(name *ast.Ident) {
 
 // atomicPointerInstance accepts the standard storage type and aliases that forward its argument.
 func atomicPointerInstance(instance types.Instance) bool {
-	named, ok := types.Unalias(instance.Type).(*types.Named)
-	if !ok || named.Obj().Pkg() == nil || named.Obj().Pkg().Path() != "sync/atomic" || named.Obj().Name() != "Pointer" {
+	if instance.TypeArgs.Len() != 1 {
 		return false
 	}
-	return instance.TypeArgs.Len() == 1 && named.TypeArgs().Len() == 1 &&
-		types.Identical(instance.TypeArgs.At(0), named.TypeArgs().At(0))
+	target, argument := instance.Type, instance.TypeArgs.At(0)
+	if alias, ok := target.(*types.Alias); ok {
+		origin := alias.Origin()
+		if origin.TypeParams().Len() != 1 {
+			return false
+		}
+		target, argument = origin.Rhs(), origin.TypeParams().At(0)
+	}
+	named, ok := types.Unalias(target).(*types.Named)
+	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "sync/atomic" &&
+		named.Obj().Name() == "Pointer" && named.TypeArgs().Len() == 1 &&
+		types.Identical(argument, named.TypeArgs().At(0))
 }
 
 // handleTypeSwitch rejects interface recovery through each case that contains a service reference.

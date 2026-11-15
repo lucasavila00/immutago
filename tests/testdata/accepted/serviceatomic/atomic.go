@@ -16,13 +16,14 @@ func (*Worker) Count() int          { return 1 }
 
 type WorkerRef = supervise.Ref[Worker]
 type Pointer[T any] = atom.Pointer[T]
+type Forwarded[T any] = Pointer[T]
 type Selected = Pointer[WorkerRef]
 type Slot struct{ Ref WorkerRef }
 type SlotAlias = Slot
 
 type Dispatcher struct {
 	Direct  atom.Pointer[WorkerRef]
-	Wrapped Pointer[SlotAlias]
+	Wrapped Forwarded[SlotAlias]
 }
 
 func Replace(d *Dispatcher, ref WorkerRef) int {
