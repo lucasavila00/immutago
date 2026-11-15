@@ -63,7 +63,7 @@ func packageSource(name string, layer, width int, checked bool) string {
 	for index := range 50 {
 		marker := ""
 		if checked {
-			marker = "im.Shared; "
+			marker = "im.Snapshot; "
 		}
 		fmt.Fprintf(&source, "type Value%d struct { %sItems []int }\n", index, marker)
 	}
