@@ -4,7 +4,7 @@
 independent consumer modules with a local module replacement. It checks CLI,
 vet, JSON, compiler errors, dependency failures, and runtime output.
 
-Accepted fixtures cover the [allowed forms](../docs/rules.md). Rejected fixtures
+Accepted fixtures cover the [allowed forms](../docs/reference/rules.md). Rejected fixtures
 cover nearby unsupported forms. Each fixture package has one `output.txt` snapshot for combined stdout and
 stderr; accepted snapshots are empty. The harness removes machine paths and
 driver headings, then sorts complete messages without separating context lines.
@@ -21,7 +21,7 @@ The accepted consumer tests also run with the race detector. The
 [runtime cost tests](../pkg/im/copied_test.go) check record layout, zero-allocation
 Value, clone independence, and native/projection copy costs.
 
-The [service guide program](testdata/accepted/servicedoc/main.go) runs through
+The [file-cache fixture](testdata/accepted/servicedoc/main.go) runs through
 the CLI and vet in `TestCLI/service_guide`. That test also checks its output
 and runs the [background refresh test](testdata/accepted/servicedoc/main_test.go)
 with the race detector. The [application examples](../examples/README.md) have

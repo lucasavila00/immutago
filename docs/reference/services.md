@@ -1,143 +1,114 @@
-# Supervised services
+# Service runtime
 
-Use `supervise` to start, restart, and stop background services.
-A **service** is a struct that embeds `supervise.Service[A]`. The runtime calls
-its `Init` and `Run` methods. Other service method calls run in the caller's
-goroutine; the runtime does not queue them.
-
-| API | Purpose |
-| --- | --- |
-| `Service[A]` | Supply start arguments and child groups to a service struct. |
-| `Group` | Start, restart, and stop related services. |
-| `Ref[T]` | Keep a service reference and select its current value after a restart. |
+A service embeds `supervise.Service[A]`. The runtime calls Init and Run.
+Other method calls run in the caller's goroutine and can overlap with Run and
+other calls. Use the [service guide](../guides/services.md) for a walkthrough.
 
 ## Service contract
 
-| Item | Rule |
+| Item | Requirement and example |
 | --- | --- |
-| Init and Run | `*T` must provide `Init() error` and `Run(context.Context)`. Embedded `Service[A]` supplies a default Init and the runtime methods. |
-| Start arguments | Read them with `s.Args()`. The runtime saves them for each restart. Ordinary Go types are allowed; protected data must satisfy the [stored-type rules](common-forms.md#markers-and-stored-types). |
-| No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
-| Exported service method result | Return no result or one [service result](service-results.md). This includes promoted methods. Init, Run, and methods supplied by the runtime are exempt. |
-| Fields, method parameters, closures, and goroutines | Ordinary Go rules. Synchronize shared mutable data. Uses of protected values follow the [im rules](common-forms.md). |
-| Service construction and groups | Ordinary Go rules. |
-| Service references | Copy, store, and return `Ref[T]`. Call through `ref.Borrow().Method(args)`; direct Ref calls cannot save the pointer. Interface calls can expose it. See [service references](service-references.md). |
+| Service type | A concrete struct embeds `supervise.Service[A]`: `type Worker struct { supervise.Service[Args] }`. |
+| Setup | `*Worker` supplies `Init() error`, or uses the default Init from Service[A]. |
+| Background work | `*Worker` supplies `Run(context.Context)`. |
+| Start arguments | `s.Args()` reads A. The runtime saves the same arguments for each restart. Ordinary Go types are allowed; protected arguments require [Frozen types](types.md). |
+| No arguments | Embed `supervise.Service[supervise.NoArgs]` and pass `supervise.NoArgs{}` to Start. |
+| Exported methods | Return no result or one [read result](service-results.md), including promoted methods. Init, Run, and runtime methods are exempt. |
+| Fields, inputs, closures, goroutines, and construction | Ordinary Go rules; uses of protected data keep the [im source rules](common-forms.md). |
+| Reference calls | Use the complete [service-reference forms](service-references.md). |
 
-Review these together in the service code:
+Start and StartReserved require the Init and Run signatures through Go's type
+checker. The analyzer checks exported results, reference targets, direct Borrow
+calls, and protected im operations. Their linked references give the complete
+allowed forms; unlisted protected operations and direct Borrow forms are rejected.
+Other service code follows ordinary Go rules. Runtime obligations below, including
+returning when a context ends, require implementation review.
 
-- Field access from Init, Run, and methods; the locks that protect it.
-- How mutable inputs are used, copied, or saved.
-- Whether callbacks or dependencies receive access to mutable service state.
-- Child startup and shutdown.
+| Rejected examples — non-exhaustive | Allowed replacement |
+| --- | --- |
+| `supervise.Ref[int]` | Use a concrete service struct as the type argument. |
+| `func (s *Worker) Name() string` | Return `im.StringProjection`; see [service results](service-results.md). |
+| Save a Local projection in start arguments | Supply Frozen data and create a projection when reading. |
 
-Service methods can give callbacks or globals access to mutable state; see the
-[callback example](../arch/services.md#service-reference-boundary). Review the Go
-contracts of callers and dependencies. Use `go test -race` for the accesses your
-tests run.
+## Startup
 
-## Example: delivery quotes
+| Operation or event | Behavior |
+| --- | --- |
+| `ref, err := supervise.Start[Worker](parent, args)` | Create a fresh Worker, call Init, then make it available through Ref and schedule Run. Only Worker needs an explicit type argument. |
+| First Init returns an error | Start returns a zero Ref and the error. |
+| First Init panics | The panic reaches the caller. |
+| `ref := supervise.Reserve[Worker]()` | Create a nonzero reference for later startup; Borrow panics until Init succeeds. |
+| `err := supervise.StartReserved(parent, ref, args)` | Initialize a reserved reference. An Init error leaves it unstarted and permits a retry. |
+| Start an already started reservation | Panic. With concurrent starts, the losing attempt stops its staged children and panics. |
+| Start under a stopped group | Init still runs and can succeed; Run does not run. The runtime stops staged children. |
 
-The [shipping application](../../examples/shipping/README.md) quotes delivery prices
-from a catalog file. One Loader service reads the first catalog in Init and
-checks for edits in Run. Invalid edits leave the last valid catalog available.
+Init must not wait for an unstarted peer or child Run. For readiness that depends
+on Run, expose a method such as `Ready() bool`. Init has no cancellation context.
+It must return and must release application resources that it opened if setup fails.
 
-```sh
-go run ./examples/shipping/cmd/shipping
-```
+## Restarts and failure
 
-Start its loader with the file path and reload interval:
-
-```go
-loader, err := supervise.Start[shipping.Loader](../root, shipping.Args{
-    Path: "examples/shipping/catalog.json", Every: time.Second,
-})
-if err != nil { panic(err) }
-```
-
-For each request, the HTTP handler selects one catalog and calculates all parcel
-prices from it:
-
-```go
-catalog := loader.Borrow().Catalog()
-response := shipping.Quote(catalog, request)
-```
-
-`Catalog` runs in the caller's goroutine. It loads one generated projection from
-the Cell. A reload can publish a new catalog while this quote finishes with the
-selected version. See the [loader](../../examples/shipping/loader.go) and
-[quote calculation](../../examples/shipping/quote.go).
-
-## Startup errors and reservations
-
-- Start and restarts call Init and Run. Use the default Init when no setup is needed.
-- A first Init error makes Start return an empty Ref and that error.
-- A first Init panic reaches the Start caller.
-- To pass a reference before startup: `ref := supervise.Reserve[T]()`, then
-  `err := supervise.StartReserved(parent, ref, args)`. Failed Init permits a retry.
-- A zero `Ref[T]` is empty, not reserved. Borrow panics on empty or unstarted references.
-- Init must not call an unstarted peer. For readiness that depends on Run,
-  expose a method such as `Ready() bool`.
-
-## Example: mutable dependencies
-
-Start arguments can contain ordinary Go interfaces, clients, loggers, and
-functions. The [search indexer](../../examples/search/indexer.go) receives an fs.FS:
-
-```go
-indexer, err := supervise.Start[search.Indexer](../root, search.IndexerArgs{
-    Files: os.DirFS("examples/search/documents"), Every: time.Second,
-})
-if err != nil { panic(err) }
-handler := search.HTTPHandler(indexer)
-```
-
-The [search application](../../examples/search/README.md) reads files through that
-interface. Its tests supply controlled filesystems to check edits and failed
-scans. Review shared mutable dependencies under their normal Go contracts.
-
-## Failure and shutdown
-
-| Event | What happens |
+| Event | Behavior |
 | --- | --- |
 | Run returns normally | The service ends and its group removes it. |
-| Run panics | The group waits, creates a new struct, calls Init, and starts Run again after Init succeeds. |
-| Init fails during a restart | The attempt fails. The reference continues to use the previous struct. |
-| A direct service method call panics | The panic stays in its caller's goroutine. A call from Run or a restart Init can fail that attempt. |
-| A child fails six times within five minutes | Its group stops all children, last started first, and passes the failure to its parent. |
-| A failure reaches the root group | The program panics with the last failure value. |
+| Run panics | Wait, create a new struct with the same arguments, call Init, and start Run after setup succeeds. |
+| Restart Init fails | Count a failed attempt. The reference still selects the previous successfully initialized value. |
+| A direct service method panics | The panic stays in its caller's goroutine. A call from Run or restart Init can fail that attempt. |
+| One child fails six times within five minutes | Its group stops all children, last started first, and passes the failure to its parent. |
+| A nested group passes a failure to its parent | The parent restarts that group under the same restart rule. |
+| A failure reaches the root | The program panics with the last failure value. |
 
-The restart delay is one second after the first failure. It doubles for each
-restart in the last five minutes. A nested group's parent restarts that group
-with the same rule after a child exceeds the limit.
+The delay is one second after the first failure. It doubles for each restart in
+the last five minutes. Borrow continues to select the last published value during
+a delay and after stop. A call in progress finishes on its selected value.
 
-Pass a report function to `NewRoot`, or pass `nil` to disable reports:
+## Child groups
 
-```go
-root := supervise.NewRoot(func(value any, stack []byte) {
-    log.Printf("service failure: %v\n%s", value, stack)
-})
-```
+| Parent | Lifetime |
+| --- | --- |
+| `root := supervise.NewRoot(report)` | Application group, until root.Stop. Pass nil to disable reports. |
+| `group := supervise.StartGroup(parent)` | Nested group; services stop together and restart together after a child exceeds its limit. |
+| `s.Children()` | Children of one service run; a restart creates a new group. |
 
-Report rules:
+Create groups with these APIs. A zero Group cannot run. Groups otherwise follow
+ordinary Go rules. A stopped parent supplies a stopped nested group.
 
-- Called before the delay for each recovered panic or restart Init error.
-- Nested groups use the same report function; a failure passed to a parent is reported again.
-- Can run concurrently for different children.
-- Must return; the group waits for it and does not recover its panics.
-- Must not wait for its own group to stop; that would wait for the report itself.
+### Child lifetimes
 
-Shutdown rules:
+| Event | Effect |
+| --- | --- |
+| Parent Init returns an error or panics | Stop children from that setup attempt. Application resources remain Init's responsibility. |
+| A method starts a child before parent Run begins | Child Init runs immediately; child Run waits for parent Run. If the parent never runs, the child never runs. |
+| Parent is stopped | Stop children last started first and wait for them before cancelling the parent's Run context. |
+| Parent Run returns or panics | Stop and wait for children before the run ends or the restart delay begins. |
+| A child exceeds its restart limit | Its group stops the children and passes the failure up. A nested group can restart first; failure that reaches the service ends that run. |
+| A method starts a child after the parent run ends | Init can succeed and return a reference, but child Run cannot run. A saved group from that run has the same limit. |
 
-- `Stop()` requests shutdown; `<-root.Stop()` waits for the tree to stop.
-- Run must return when its context ends.
-- Init has no cancellation context and must return before its attempt can finish.
-- Stop does not wait for direct method calls.
-- Borrow still returns the last published value after Run or Stop ends.
+Create children and any reservations again in each parent run. An old child Ref
+still selects the old child after a parent restart. Keep child references in
+parent fields and expose methods that select the current child. The checker
+permits Ref copies; it does not prove their lifetime.
 
-Create groups with NewRoot or StartGroup. A zero Group cannot run. Starting
-under a stopped group still calls Init and can succeed, but Run will not run.
+## Shutdown
 
-In tests, use
-[`supervisetest.NewRoot(t)`](../../pkg/supervise/supervisetest/readme.md). It stops
-the tree during cleanup and fails the test if shutdown takes more than five
-seconds.
+| Operation | Behavior |
+| --- | --- |
+| `done := root.Stop()` | Request shutdown without waiting. Repeated calls return the same channel. |
+| `<-root.Stop()` | Wait until all children stop. |
+| `<-group.Stop()` on a nested group | Also wait for removal from the parent. Other groups continue. |
+
+Run must return when its context ends. Stop cannot force Run or Init to return
+and does not wait for direct method calls. Release locks that children need
+before waiting for Stop. A child or report function must not wait for its own
+group to stop: the group is waiting for that code to finish. A child can call a
+parent during shutdown, but must not wait for a parent method that waits for
+that child's group to stop.
+
+## Failure reports
+
+The report argument to NewRoot has type `func(value any, stack []byte)`:
+
+- It receives each recovered panic or restart Init error before the delay.
+- Nested groups use the same function; a failure passed up is reported again.
+- Reports for different children can run concurrently.
+- It must return. The group waits for it and does not recover its panics.

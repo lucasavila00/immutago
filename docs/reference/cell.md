@@ -1,26 +1,12 @@
 # Cells
 
-Generate `SettingsCell` with the [projection generator](projections.md#generate-projections).
-It publishes Settings through `im.Cell[Settings]` and returns SettingsProjection from
-Load. The underlying Cell and Projection use the same [Frozen type rule](types.md).
+A generated SettingsCell publishes Frozen Settings values through `im.Cell[Settings]`.
+Its Load method returns SettingsProjection. Use the [generation requirements](rules.md#required-generation)
+and [Frozen type rule](types.md) for the payload.
 
-```go
-type Settings struct {
-    im.Frozen
-    Title im.FrozenString
-    Limit int
-}
+## Generated Cell methods — exhaustive
 
-var settings SettingsCell
-
-func publish() {
-    settings.Store(Settings{Title: im.FreezeString("standard"), Limit: 100})
-}
-
-func read() SettingsProjection { return settings.Load() }
-```
-
-| API — exhaustive | Result |
+| Method | Result |
 | --- | --- |
 | `Store(value)` | Copy T into a new root and publish it atomically. |
 | `Load()` | Return a local typed projection of the selected record without a record copy. |
@@ -30,7 +16,7 @@ A zero generated Cell returns a nil projection. Use IsNil before reading a proje
 can be empty. Each load selects one version. Separate loads can select different
 versions.
 
-Code with the Cell can use LoadShared for trusted model/SDK operations. A Projection
+Code with the Cell can use LoadShared when it needs a persistent Frozen value. A Projection
 has no LoadShared or Unwrap operation. A service must return a read result, not its Cell.
 
 ## Cell and holder forms — exhaustive
@@ -63,7 +49,9 @@ or native containers. Calls use the
 [common forms](common-forms.md); unlisted Cell operations are rejected.
 Load projections inside a closure; do not capture projections loaded outside it.
 
-| Raw im.Cell[T] methods — exhaustive | Result |
+## Raw Cell methods — exhaustive
+
+| Method | Result |
 | --- | --- |
 | `Store(value)` | Publish a private T root. |
 | `Load()` | Copy T into Projection[T]; read zero T if the slot is empty. |

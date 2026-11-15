@@ -91,5 +91,5 @@ The [trusted code list](validation.md#trust-boundary) still applies.
 | Start a child after the run ends | Init can run, but child Run cannot: the child group is stopped. |
 
 The checker does not establish whether a saved child reference belongs to the
-current parent run. The [child service guide](../reference/service-children.md#child-lifetimes)
+current parent run. The [child lifetime reference](../reference/services.md#child-lifetimes)
 describes how callers manage these lifetimes.

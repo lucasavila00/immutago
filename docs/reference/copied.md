@@ -1,6 +1,6 @@
 # Copied records
 
-Embed `im.Copied` in a record that a service can return by value:
+Embed `im.Copied` in a record whose data fields must copy by value:
 
 ```go
 type Score struct {
@@ -9,24 +9,9 @@ type Score struct {
     Flags [2]bool
 }
 
-type Scorer struct {
-    supervise.Service[supervise.NoArgs]
-    last Score
-}
-
-func (s *Scorer) Last() Score { return s.last }
-
-type requestState struct {
-    Result Score
-    Attempts int
-}
-
-func request(scorer *Scorer) requestState {
-    state := requestState{Result: scorer.Last()}
-    state.Attempts++
-    state.Result.Value = 3
-    return state
-}
+score := Score{Value: 2}
+other := score
+other.Value++
 ```
 
 A value copy includes every data field. It shares no field storage with the

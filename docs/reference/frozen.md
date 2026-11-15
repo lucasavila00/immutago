@@ -46,37 +46,6 @@ panic. Unsafe lets the caller keep the shared bytes; the checker does not track
 the returned native string. There is no substring operation or implicit string
 conversion. For a native string projection, use `im.ProjectString(source)`.
 
-## Frozen slices and maps
-
-The checker rejects aliases and use of the original collection after Freeze:
-
-1. Build a normal Go slice or map.
-2. Freeze it without copying entries. Use only the frozen value after this call.
-3. To make a changed version, Clone, edit the copy, and Freeze again.
-
-## Example: change a score
-
-Clone the frozen map, change the copy, and freeze it. The original map stays unchanged:
-
-```go
-package main
-
-import "github.com/lucasavila00/immutago/pkg/im"
-
-func main() {
-    scores := map[string]int{"alice": 10}
-    frozen := im.FreezeMap(scores)
-
-    next := frozen.Clone()
-    next["alice"] = 20
-    updated := im.FreezeMap(next)
-
-    oldScore, _ := frozen.Get("alice")
-    newScore, _ := updated.Get("alice")
-    println(oldScore, newScore) // 10 20
-}
-```
-
 ## Build before freezing
 
 A **builder** is a local Go slice or map checked for exclusive use. These rules
@@ -109,7 +78,7 @@ Fresh inputs can go directly into Freeze; the same forms work for maps:
 | --- | --- |
 | make | `frozen := im.FreezeSlice(make([]int, 2))` |
 | Literal | `frozen := im.FreezeSlice([]int{1})` |
-| Bare nil | `frozen := im.FreezeSlice[int](../nil)` |
+| Bare nil | `frozen := im.FreezeSlice[int](nil)` |
 | Clone | `next := im.FreezeSlice(frozen.Clone())` |
 
 | Rejected examples — non-exhaustive | Replacement |
@@ -118,7 +87,7 @@ Fresh inputs can go directly into Freeze; the same forms work for maps:
 | `values[0].Set(2)` with a pointer receiver | `value := values[0]; value.Set(2); values[0] = value` |
 | `values := []int(nil)` or `scores := map[string]int(nil)` | `var values []int` or `var scores map[string]int` |
 | `type Ints []int; values := Ints(nil)` | `type Ints []int; var values Ints` |
-| `im.FreezeSlice([]int(nil))` or `im.FreezeMap(map[string]int(nil))` | `im.FreezeSlice[int](../nil)` or `im.FreezeMap[string, int](../nil)` |
+| `im.FreezeSlice([]int(nil))` or `im.FreezeMap(map[string]int(nil))` | `im.FreezeSlice[int](nil)` or `im.FreezeMap[string, int](nil)` |
 | `update(values)`, `return values` | Edit locally, then freeze and pass/return the frozen value. |
 | `im.FreezeSlice(parameter)` | Construct a local builder first. |
 | `values = append(values, other...)` | Append individual elements. |

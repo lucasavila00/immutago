@@ -24,8 +24,9 @@ Enforcement:
 - Scalar origins and arbitrary unsafe memory effects are not proved; ordinary
   helpers must obey Go API contracts, including string immutability.
 - Packages that import or use im reject cgo. Functions whose signatures contain
-  im types or service references require Go bodies. Packages that use only supervise
-  receive result and reference checks.
+  im types other than Copied require Go bodies. Copied data, service references,
+  and ordinary types keep Go rules. Packages that use only supervise receive
+  result and reference checks.
 - There are no suppression directives. [UncheckedValue](../reference/unchecked-values.md)
   records the declaring package's immutability promise.
 - Checked dependency failures reach consumers through package facts.

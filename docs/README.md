@@ -2,8 +2,11 @@
 
 ## Guides
 
-Start with [Get started](guides/getting-started.md): install the checker, generate
-typed projections, and run a small program.
+| Task | Guide |
+| --- | --- |
+| Install, generate, and check a first program | [Get started](guides/getting-started.md) |
+| Build, publish, and read a complete version | [Publish immutable data](guides/immutable-data.md) |
+| Start a service, call it, and stop its work | [Run a background service](guides/services.md) |
 
 ## Reference
 
@@ -15,7 +18,7 @@ forms and package selection rules. Use the [glossary](reference/glossary.md) for
 | im types and source forms | [Type rules](reference/types.md), [common forms](reference/common-forms.md), [Frozen](reference/frozen-records.md), [Copied](reference/copied.md), [Local](reference/local.md) |
 | im storage and reads | [Frozen collections](reference/frozen.md), [Cells](reference/cell.md), [generated projections](reference/projections.md), [projection primitives](reference/projection-primitives.md) |
 | im interfaces and trust | [Frozen interfaces](reference/frozen-interfaces.md), [UncheckedValue](reference/unchecked-values.md) |
-| supervise | [Services](reference/services.md), [references](reference/service-references.md), [results](reference/service-results.md), [children](reference/service-children.md) |
+| supervise | [Runtime and child groups](reference/services.md), [references](reference/service-references.md), [results](reference/service-results.md) |
 | API signatures and costs | [im API](../pkg/im/readme.md), [supervise API](../pkg/supervise/readme.md), [operation costs](reference/performance.md) |
 
 ## Examples

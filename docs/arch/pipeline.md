@@ -16,7 +16,7 @@ The [entry point](../../pkg/analyzer/analyzer.go) runs these stages:
 6. Check [service method results](services.md), excluding Init, Run, and methods
    supplied by the runtime. In im packages, also check field types and im type arguments.
 7. For packages that import or use im, require the exact generation directive
-   and current output for source Frozen records.
+   and current output for source Frozen records and Frozen interfaces.
 8. Match service reference operations in all selected packages.
 9. For packages that import or use im, prove native builder ownership and match
    protected source forms.

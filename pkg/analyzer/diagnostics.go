@@ -142,7 +142,8 @@ func subsetFix(rule string) string {
 		return fix
 	}
 	if strings.Contains(rule, "service reference") || strings.Contains(rule, "Ref requires") {
-		return "keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md"
+		return "keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); " +
+			"see docs/reference/service-references.md"
 	}
 	return "use the documented immutable value and reference forms"
 }

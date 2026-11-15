@@ -1,166 +1,76 @@
-# Typed projections
+# Generated projections
 
-Every package with user-declared `im.Frozen` records or
-[im.FrozenInterface interfaces](frozen-interfaces.md) requires generation.
-Frozen records get typed projections. Field methods return Copied values or
-local projections. Local and Copied records need no generation.
+The [required generation step](rules.md#required-generation) creates typed
+projections for Frozen records and Frozen interfaces. Record getters return
+Copied values or further Local projections. Local and Copied records need no
+generation. See [Get started](../guides/getting-started.md) for a first program.
 
-## Generate projections
+## Generated names and operations — exhaustive
 
-Add the generator with the [install command](../guides/getting-started.md#install).
-Declare the record and the generation command in its package:
+For a Frozen record named Settings:
 
-```go
-package settings
-
-//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
-
-import "github.com/lucasavila00/immutago/pkg/im"
-
-type Settings struct {
-    im.Frozen
-    Title im.FrozenString
-    Limit int
-}
-```
-
-Run `go generate ./...`. The command writes `zz_immutago.gen.go` in each package
-with this directive. It uses named package-scope records from non-test Go files.
-It generates projections for each concrete Frozen record.
-Run it again after a field changes. Keep this output with the source. The checker
-rejects a missing directive, missing output, or stale output. Generated-name
-conflicts are errors.
-
-Load gives a SettingsProjection. Read its fields through generated methods:
-
-```go
-var current SettingsCell
-
-func publish() {
-    current.Store(Settings{Title: im.FreezeString("standard"), Limit: 100})
-}
-
-func read() SettingsProjection { return current.Load() }
-
-func use() {
-    projection := read()
-    limit := projection.Limit()
-    title := projection.Title()
-    println(limit, title.Len(), title.Is("standard"))
-    println(title.Unsafe())
-}
-```
-
-Equal and Is compare text without allocating. Unsafe supplies a shared
-native string to ordinary Go APIs; Clone gives independent storage. The integer
-result is Copied data and can be stored directly. An empty Cell or zero
-SettingsProjection has IsNil true. Each Load selects one version for all its field reads.
-
-## Operations on record values — exhaustive
-
-| Form | Result |
+| Form | Input or result |
 | --- | --- |
-| `var current SettingsCell` | Empty publication slot. |
-| `current.Store(value)` | Publish a Settings value. |
-| `current.Load()` | Read the selected record through SettingsProjection without copying the record. |
-| `current.LoadShared()` | Read the stored Settings with its shared storage. |
-| `var projection SettingsProjection` or `SettingsProjection{}` | A nil projection. |
-| `projection.IsNil()` | Report whether the projection has a record. |
-| `projection.Field()` | Read the declared field through its generated result type. |
+| `SettingsProjection` | Local projection of a Settings record. |
+| `NewSettingsProjection(value)` | Takes `im.Projection[*Settings]`; returns SettingsProjection without copying the record. |
+| `var p SettingsProjection` or `SettingsProjection{}` | Nil projection. |
+| `p.IsNil()` | Report whether the projection has a record. |
+| `p.Field()` | Read a declared field using the result table below. |
+| `SettingsCell` | Publication slot with Store, Load, and LoadShared; use the [complete Cell forms](cell.md). |
+
+For an unexported record such as state, the constructor is `newStateProjection`.
+Generated-name conflicts are errors. Do not declare the generated types yourself.
+Use the complete [Local transport forms](local.md#value-forms--exhaustive) and
+[common source forms](common-forms.md). Unlisted protected operations are rejected.
 
 ## Field results — exhaustive
 
-Each direct field gets a method with the same name, except marker fields and
-blank fields. An unexported field has an unexported method. Field names Local,
-IsNil, and immutagoProjection conflict with generated members and are rejected.
+Each direct field gets a method with the same name, except marker and blank
+fields. An unexported field has an unexported method. Field names Local, IsNil,
+and immutagoProjection conflict with generated members and are rejected.
 
 | Field type | Generated result |
 | --- | --- |
-| Copied scalar, Copied record, or service reference | The field's own type, such as `int`, `Score` with `im.Copied`, or `supervise.Ref[Worker]`. |
+| Copied scalar, Copied record, or service reference | The field's own type: `int`, `Score`, or `supervise.Ref[Worker]`. |
 | Native string or FrozenString | `im.StringProjection`. |
 | FrozenSlice[E] | `im.SliceProjection[E]`. |
 | FrozenMap[K,V] | `im.MapProjection[K,V]`. |
 | Frozen record or pointer to one | The record's generated typed projection. |
 | Frozen interface | The interface's generated local method projection. |
-| Unnamed array | A typed projection with Len and At; At uses this same result table. |
+| Unnamed array | A typed projection with Len and At; At uses this result table. |
 | UncheckedValue[T] | Opaque `im.Projection[im.UncheckedValue[T]]`. |
 
-Frozen record and array fields return projections, including arrays of Copied values.
-A Copied record field returns a complete value copy.
-A field read does not copy the containing record or array. Reading a field through
-a nil projection panics. Array At panics if the index is out of range.
+Arrays return projections, including arrays of Copied values. A Copied record
+field returns a complete value copy. A field read does not copy its containing
+record or array. Reading through a nil record projection panics. Array At panics
+if the index is out of range.
 
-Cell placement follows the [Cell rules](cell.md). Generated code uses the
-[projection primitives](projection-primitives.md) and direct field reads.
-The checker verifies the exact generated output before permitting its internal
-Read operation. It still checks all generated types, writes, captures, calls,
-and value transport.
+## Collection elements — exhaustive
 
-## Collection elements
-
-A slice of records supports pointer reads into its immutable storage. For
-`items im.SliceProjection[Settings]`:
-
-```go
-for index := 0; index < items.Len(); index++ {
-    item := NewSettingsProjection(items.AtPointer(index))
-    println(item.Title().Unsafe())
-}
-```
-
-| Constructor for a record value — exhaustive | Input and result |
+| Element | Read through a generated projection |
 | --- | --- |
-| `NewSettingsProjection(value)` | Takes `im.Projection[*Settings]` and returns SettingsProjection without copying the record. |
+| Frozen record in a slice | `item := NewSettingsProjection(items.AtPointer(i))` |
+| Frozen pointer in a slice | `item := NewSettingsProjection(items.At(i))` |
+| Frozen pointer in a map | `value, found := entries.Get(key)`; when found, `item := NewSettingsProjection(value)` |
+| Frozen record value in a map | `value, found := entries.Get(key)`; when found, `item := NewSettingsProjection(im.CopyRecord(value))` |
+| Frozen interface in a slice or map | `local := NewScorerProjection(items.At(i))`, or pass the projection from map Get; use the [interface forms](frozen-interfaces.md). |
 
-For an unexported record such as state, the constructor is `newStateProjection`.
+CopyRecord copies one record into a new root. It shares the immutable strings
+and collections referenced by that record. Generated projections never make
+this map-value copy automatically. See [operation costs](performance.md).
 
-A map with `*Settings` values already returns `im.Projection[*Settings]` from Get.
-For a map with Settings values, request the record copy explicitly:
+## Rejected examples — non-exhaustive
 
-```go
-value, found := entries.Get(key)
-if found {
-    item := NewSettingsProjection(im.CopyRecord(value))
-    println(item.Title().Unsafe())
-}
-```
-
-CopyRecord copies one record into a new root. It does not copy the strings or
-collections that the record refers to. Generated projections do not copy map values
-into roots automatically.
-
-## Interface elements
-
-For `items im.SliceProjection[Scorer]`, where Scorer embeds im.FrozenInterface,
-use `local := NewScorerProjection(items.At(index))`. Call `local.Score(features)`
-without extracting the stored interface. A map Get supplies the same
-`im.Projection[Scorer]` input. See the complete
-[interface projection forms](frozen-interfaces.md).
-
-## Local transport — exhaustive
-
-| Form | Example |
+| Rejected | Allowed replacement |
 | --- | --- |
-| Local declaration, copy, replacement, or discard | `v := current.Load()`, `other := v`, `_ = other` |
-| Field of a Local record | `type Reply struct { im.Local; Settings SettingsProjection }` |
-| Local unnamed array | `projections := [2]SettingsProjection{v}` |
-| Exclusive local native builder | `values := []SettingsProjection{v}`; use the [Local builder forms](local.md). |
-| Direct concrete argument or result | `func read(v SettingsProjection) int`, `return v` |
+| `raw.Read().Limit` with `raw im.Projection[*Settings]` | `NewSettingsProjection(raw).Limit()` |
+| `im.Value(raw)` with `raw im.Projection[Settings]` | Use a generated projection to read the required fields. |
+| `NewSettingsProjection(items.At(i))` for a slice of Settings values | `NewSettingsProjection(items.AtPointer(i))` |
+| Extract a raw pointer or UncheckedValue from a projection | Keep that operation in code with persistent Frozen access. |
+| Declare SettingsProjection or SettingsCell before generation | Use another source name. |
+| A source field named Local | Rename the field. |
 
-These rules follow nested fields and arrays. Projections cannot enter package
-variables, Frozen fields, Cells, frozen entries, service start arguments,
-interfaces, callbacks, closures, user generics, go, or defer.
-
-| Rejected examples — non-exhaustive | Replacement |
-| --- | --- |
-| Save `current.Load()` in a package variable | Keep a copied field or explicit Clone result. |
-| `fmt.Sprintf("%s", projection.Title())` | `fmt.Sprintf("%s", projection.Title().Unsafe())`; Clone instead when independent storage is needed. |
-| Capture `projection` in a closure | Read numeric fields or Copied records, or clone strings, before the closure. |
-| `go useProjection(projection)` or `defer useProjection(projection)` | Make the direct synchronous call. |
-| Read a raw pointer or UncheckedValue from a projection | Keep that operation in code with persistent Frozen access. |
-| Declare `SettingsProjection` or `SettingsCell` before generation | Use another source name; these names belong to the generated API. |
-| A field name that conflicts with a generated member, such as Local | Rename the source field. |
-| A function-local, anonymous, or test-only Frozen record | Declare a named type at package scope in a non-test Go file. |
-
-Generated projections keep a pointer to the selected immutable record. Primitive
-Projection[T] values and explicit copies have their ordinary Go value-copy costs.
+Only verified generated code can call the internal Read operation or form
+interior Frozen-record addresses. It still receives all normal type, write,
+capture, call, and transport checks. The [architecture](../arch/ownership.md#generated-projections)
+describes those checks.

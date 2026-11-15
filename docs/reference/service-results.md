@@ -19,32 +19,15 @@ is a read result. Frozen records are not read results, even when all fields are
 numbers. Use [im.Copied](copied.md) for an independent value record, or im.Local
 for a record that includes projections. Neither marker requires generation.
 
-## Example: read one version
+For example, a service with a generated SettingsCell returns its projection:
 
 ```go
-type Settings struct {
-    im.Frozen
-    Title im.FrozenString
-    Limit int
-}
-
-type Cache struct {
-    supervise.Service[supervise.NoArgs]
-    current SettingsCell
-}
-
 func (c *Cache) Settings() SettingsProjection { return c.current.Load() }
 ```
 
-Generate SettingsCell and SettingsProjection with the [projection generator](projections.md).
-A caller reads fields through typed methods. It can keep copied
-numbers or explicit string clones. It cannot keep the returned projection in
-persistent storage.
-
-For a result that combines computed values with projections, use [im.Local](local.md).
-The [search indexer](../../examples/search/indexer.go) returns a Local Status with a
-version number, document count, and local error-text projection. Its Read method
-returns the generated IndexProjection for query processing.
+For computed values combined with projections, use [im.Local](local.md).
+The search indexer's [Status](../../examples/search/indexer.go) has a version
+number, document count, and local error-text projection.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
