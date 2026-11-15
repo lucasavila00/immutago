@@ -19,6 +19,7 @@ func TestForgetUnlinksChild(t *testing.T) {
 			children[i] = nested.entry
 		}
 		remaining := slices.Clone(children)
+		parent.forget(&child{})
 		for _, i := range order {
 			c := children[i]
 			parent.forget(c)
@@ -77,6 +78,8 @@ func TestHaltKeepsChildSnapshot(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		parent := &Group{}
 		entered, resume, done := make(chan struct{}), make(chan struct{}), make(chan struct{})
+		finished := make(chan struct{})
+		close(finished)
 		var stopped []int
 		var children [3]*child
 		for i := range children {
@@ -89,6 +92,7 @@ func TestHaltKeepsChildSnapshot(t *testing.T) {
 				}
 			}, nested)
 			children[i] = nested.entry
+			children[i].done = finished
 		}
 		go func() {
 			parent.halt()
