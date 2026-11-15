@@ -30,7 +30,8 @@ func TestDirectCollectionCalls(t *testing.T) {
 // TestDirectCollectionCallBoundaries checks nearby rejected forms and their rules.
 func TestDirectCollectionCallBoundaries(t *testing.T) {
 	cases := []struct{ source, diagnostic string }{
-		{`func f(){frozen:=im.FreezeSlice([]int{1});s:=frozen.Projection();fn:=(s.Len);_=fn()}`, "bound immutable methods are unsupported"},
+		{`func f(){frozen:=im.FreezeSlice([]int{1});
+   s:=frozen.Projection();fn:=(s.Len);_=fn()}`, "bound immutable methods are unsupported"},
 		{
 			`func f(){frozen:=im.FreezeSlice([]int{1});s:=frozen.Projection();_=im.SliceProjection[int].Len(s)}`,
 			"immutable method expressions are unsupported",
@@ -40,7 +41,8 @@ func TestDirectCollectionCallBoundaries(t *testing.T) {
 			"immutable method expressions are unsupported",
 		},
 		{
-			`func f(){frozen:=im.FreezeMap(map[int]V{});m:=frozen.Projection();v,ok:=(im.MapProjection[int,V].Get)(m,1);_=v;_=ok}`,
+			`func f(){frozen:=im.FreezeMap(map[int]V{});m:=frozen.Projection();
+   v,ok:=(im.MapProjection[int,V].Get)(m,1);_=v;_=ok}`,
 			"immutable method expressions are unsupported",
 		},
 	}

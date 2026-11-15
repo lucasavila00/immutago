@@ -96,7 +96,8 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, immutableTestTypes+test.source); (test.want == "" && got != "") || !strings.Contains(got, test.want) {
+			got := checkSource(t, immutableTestTypes+test.source)
+			if (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})

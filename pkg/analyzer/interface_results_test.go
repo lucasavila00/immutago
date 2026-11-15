@@ -98,7 +98,8 @@ func f(r Reader){_,_=r.Read()}`, "dynamic calls"},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, interfaceResultTypes+test.source); (test.want == "" && got != "") || !strings.Contains(got, test.want) {
+			got := checkSource(t, interfaceResultTypes+test.source)
+			if (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})

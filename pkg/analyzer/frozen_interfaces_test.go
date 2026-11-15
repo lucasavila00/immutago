@@ -95,7 +95,8 @@ func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			if got := checkSource(t, interfaceTestTypes+test.source); (test.want == "" && got != "") || !strings.Contains(got, test.want) {
+			got := checkSource(t, interfaceTestTypes+test.source)
+			if (test.want == "" && got != "") || !strings.Contains(got, test.want) {
 				t.Fatalf("diagnostics = %s; want %s", got, test.want)
 			}
 		})
