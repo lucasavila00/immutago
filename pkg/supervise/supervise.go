@@ -178,7 +178,7 @@ func (p Ref[T]) Borrow() *T {
 
 // NewRoot creates an active lifetime group. An exhausted service or Goexit stops
 // the root, waits for ordered cleanup, and panics with *Failure.
-// report receives each recovered panic or restart Init error with its original
+// report receives each recovered panic, restart Init error, or Goexit with its original
 // stack. Reports can overlap, must return, and must not wait for their group to stop.
 func NewRoot(report func(any, []byte)) *Group {
 	return root(func(value any) { panic(value) }, report)

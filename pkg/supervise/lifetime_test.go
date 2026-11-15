@@ -165,82 +165,74 @@ func TestPendingSubtreeStopsWithoutRun(t *testing.T) {
 	})
 }
 
-// BenchmarkServiceStartStop measures setup and complete shutdown of one service.
-func BenchmarkServiceStartStop(b *testing.B) {
-	b.ReportAllocs()
-	for b.Loop() {
-		parent := NewRoot(nil)
-		if _, err := Start[counter](parent, NoArgs{}); err != nil {
-			b.Fatal(err)
-		}
-		<-parent.Stop()
-	}
-}
-
 // TestAncestorStopEndsRestartPolicy checks propagation without early Run cancellation.
 func TestAncestorStopEndsRestartPolicy(t *testing.T) {
 	for _, where := range []string{"group", "Init", "Run"} {
 		t.Run(where, func(t *testing.T) {
-			synctest.Test(t, func(t *testing.T) {
-				parent := root(func(value any) { t.Errorf("root escalated: %v", value) }, nil)
-				var inits atomic.Int32
-				child := AssumeConcurrentSafe(&initHooks{
-					init: func(*initializing) error { inits.Add(1); return nil },
-					run:  func(*initializing, context.Context) { panic("child failure") },
-				})
-				ended := make(chan struct{})
-				if where == "group" {
-					nested := StartGroup(parent)
-					_, _ = Start[initializing](nested, child)
-					_, _ = Start[initializing](nested, AssumeConcurrentSafe(&initHooks{
-						init: func(*initializing) error { return nil },
-						run:  func(_ *initializing, ctx context.Context) { <-ctx.Done(); close(ended) },
-					}))
-				} else {
-					_, _ = Start[initializing](parent, AssumeConcurrentSafe(&initHooks{
-						init: func(p *initializing) error {
-							if where == "Init" {
-								_, _ = Start[initializing](p.Children(), child)
-							}
-							return nil
-						},
-						run: func(p *initializing, ctx context.Context) {
-							if where == "Run" {
-								_, _ = Start[initializing](p.Children(), child)
-							}
-							<-ctx.Done()
-							close(ended)
-						},
-					}))
-				}
-				cleanup, release := make(chan struct{}), make(chan struct{})
-				_, _ = Start[initializing](parent, AssumeConcurrentSafe(&initHooks{
-					init: func(*initializing) error { return nil },
-					run: func(_ *initializing, ctx context.Context) {
-						<-ctx.Done()
-						close(cleanup)
-						<-release
-					},
-				}))
-				time.Sleep(2 * time.Second)
-				before := inits.Load()
-				done := parent.Stop()
-				<-cleanup
-				time.Sleep(time.Minute)
-				synctest.Wait()
-				if got := inits.Load(); got != before {
-					t.Errorf("Init count = %d, want %d", got, before)
-				}
-				select {
-				case <-ended:
-					t.Error("older Run context ended before newer child stopped")
-				default:
-				}
-				close(release)
-				<-done
-			})
+			synctest.Test(t, func(t *testing.T) { checkAncestorStop(t, where) })
 		})
 	}
+}
+
+// checkAncestorStop holds a newer child open while the older subtree stops retrying.
+func checkAncestorStop(t *testing.T, where string) {
+	t.Helper()
+	parent := root(func(value any) { t.Errorf("root escalated: %v", value) }, nil)
+	var inits atomic.Int32
+	child := AssumeConcurrentSafe(&initHooks{
+		init: func(*initializing) error { inits.Add(1); return nil },
+		run:  func(*initializing, context.Context) { panic("child failure") },
+	})
+	ended := make(chan struct{})
+	if where == "group" {
+		nested := StartGroup(parent)
+		_, _ = Start[initializing](nested, child)
+		_, _ = Start[initializing](nested, AssumeConcurrentSafe(&initHooks{
+			init: func(*initializing) error { return nil },
+			run:  func(_ *initializing, ctx context.Context) { <-ctx.Done(); close(ended) },
+		}))
+	} else {
+		_, _ = Start[initializing](parent, AssumeConcurrentSafe(&initHooks{
+			init: func(p *initializing) error {
+				if where == "Init" {
+					_, _ = Start[initializing](p.Children(), child)
+				}
+				return nil
+			},
+			run: func(p *initializing, ctx context.Context) {
+				if where == "Run" {
+					_, _ = Start[initializing](p.Children(), child)
+				}
+				<-ctx.Done()
+				close(ended)
+			},
+		}))
+	}
+	cleanup, release := make(chan struct{}), make(chan struct{})
+	_, _ = Start[initializing](parent, AssumeConcurrentSafe(&initHooks{
+		init: func(*initializing) error { return nil },
+		run: func(_ *initializing, ctx context.Context) {
+			<-ctx.Done()
+			close(cleanup)
+			<-release
+		},
+	}))
+	time.Sleep(2 * time.Second)
+	before := inits.Load()
+	done := parent.Stop()
+	<-cleanup
+	time.Sleep(time.Minute)
+	synctest.Wait()
+	if got := inits.Load(); got != before {
+		t.Errorf("Init count = %d, want %d", got, before)
+	}
+	select {
+	case <-ended:
+		t.Error("older Run context ended before newer child stopped")
+	default:
+	}
+	close(release)
+	<-done
 }
 
 // TestStopDuringAdmittedRestartInit lets Init finish without publishing its candidate.
@@ -283,7 +275,8 @@ func TestStopDuringAdmittedRestartInit(t *testing.T) {
 				synctest.Wait()
 				expectInitEnded(t, candidate)
 				if ref.Borrow() != original || runs.Load() != 1 || inits.Load() != 2 {
-					t.Errorf("restart after stop: changed=%t, runs=%d, Init calls=%d", ref.Borrow() != original, runs.Load(), inits.Load())
+					t.Errorf("restart after stop: changed=%t, runs=%d, Init calls=%d",
+						ref.Borrow() != original, runs.Load(), inits.Load())
 				}
 				close(slowRelease)
 				<-done
