@@ -5,7 +5,7 @@
 | Frozen | Immutable stored data with the recursive [Frozen field rule](types.md). Copies can share backing storage. |
 | Frozen record | A struct with `im.Frozen`. |
 | Copied | Boolean/numeric data, opaque service references, and unnamed arrays of Copied values. Frozen records are not Copied. |
-| Local value | A read projection, an `im.Local` marker or record, or an unnamed array of Local values. It cannot enter persistent storage. |
+| Local value | A read projection, a record with `im.Local`, or an unnamed array of Local values. It cannot enter persistent storage. |
 | Read result | Copied or Local. This is a type category, not a service-specific field rule. |
 | Projection | Local access to a Frozen value. Generated types such as SettingsProjection return Copied fields or more projections. |
 | Cell; cell holder | An `im.Cell[T]` slot; an unmarked struct containing a named slot or holder field. Generated types such as SettingsCell are holders. |

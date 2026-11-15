@@ -4,21 +4,21 @@ These categories define fields, Cells, projections, and service results.
 
 | Category — exhaustive | Types |
 | --- | --- |
-| Frozen | Booleans, numbers, native strings, the im.Frozen marker, FrozenString, unnamed arrays of Frozen values, Frozen records, pointers to Frozen records, FrozenSlice/FrozenMap with Frozen arguments, UncheckedValue handles, and service references. |
+| Frozen | Booleans, numbers, native strings, FrozenString, unnamed arrays of Frozen values, Frozen records, pointers to Frozen records, FrozenSlice/FrozenMap with Frozen arguments, UncheckedValue handles, and service references. |
 | Copied | Booleans, numbers, service references, and unnamed arrays of Copied values. |
-| Local | The im.Local marker, Projection, StringProjection, SliceProjection, MapProjection, Local records, and unnamed arrays whose elements are Local. |
+| Local | Projection, StringProjection, SliceProjection, MapProjection, Local records, and unnamed arrays whose elements are Local. |
 | Read result | Copied or Local. |
 
 Defined scalar types and aliases keep their category. Named arrays need a
 marked struct wrapper. Copied excludes native strings, pointers, and all structs
-except opaque service references. Frozen records and the im.Frozen marker are
-not Copied. Copying a service reference does not copy its service.
-The library marker values are zero-size. Using them alone does not declare a
-record or require generated output; im.Local still follows Local transport rules.
+except opaque service references. Frozen records are not Copied.
+Copying a service reference does not copy its service.
+Markers are embedded annotations. They cannot be used as standalone values or
+payload types.
 
 ## Markers — exhaustive
 
-| Marker | Required fields | Whole value |
+| Marker | Required fields | Record use |
 | --- | --- | --- |
 | `im.Frozen` | Frozen fields | Can be copied, stored, and returned from ordinary functions. |
 | `im.Local` | Read-result fields | Can be copied locally, passed directly, and returned; cannot enter persistent storage. |
@@ -58,6 +58,7 @@ projection or an im.Local result, including when all fields are numbers.
 | Rejected | Use instead |
 | --- | --- |
 | `struct { Mark im.Frozen }` or `struct { *im.Frozen }` | Embed `im.Frozen` by value. |
+| `var marker im.Local` or `im.Projection[im.Frozen]` | Embed the marker in a record and use that record. |
 | `struct { im.Frozen; Text im.StringProjection }` | Use `im.Local` for a local result. |
 | `struct { im.Local; Text string }` | Use `im.StringProjection`. |
 | `struct { im.Local; Text im.FrozenString }` | Use `im.StringProjection`. |

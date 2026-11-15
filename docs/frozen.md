@@ -14,7 +14,6 @@ Each Projection method reads the stored value without copying its backing storag
 Slice elements and map keys and values must be Frozen types. Map keys must also
 be Go-comparable.
 Use the forms below with the [common forms](common-forms.md).
-These lists are complete; unlisted operations are rejected.
 
 ## Frozen strings
 

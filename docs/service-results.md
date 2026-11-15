@@ -10,7 +10,7 @@ The rule also covers promoted methods.
 | Copied scalar or unnamed array | `bool`, `int`, `[2]int` |
 | Service reference | `supervise.Ref[Worker]` |
 | Local projection | Generated `SettingsProjection`, `im.StringProjection`, `im.MapProjection[string, int]` |
-| Local marker, record, or unnamed array of read results | `im.Local`, `Usage` with `im.Local` and numeric fields, `[2]im.StringProjection` |
+| Local record or unnamed array of read results | `Usage` with `im.Local` and numeric fields, `[2]im.StringProjection` |
 
 There is no separate field rule for services. Cell[T] and Projection[T] require the
 same Frozen T. The general Copied and Local rules determine whether a type
@@ -48,7 +48,7 @@ returns quota counters in an im.Local Usage record.
 | --- | --- |
 | `string` | `im.StringProjection` from `im.ProjectString(text)`. |
 | `Usage` with `im.Frozen`, even when it has only numeric fields | Use im.Local for the result, or return its generated projection. |
-| `im.Frozen` | Return no result when no data is needed. |
+| `im.Frozen` or `im.Local` marker | Return no result when no data is needed; embed im.Local in a result record when data is needed. |
 | `im.FrozenString`, `im.FrozenSlice[E]`, or `im.FrozenMap[K,V]` | The corresponding StringProjection, SliceProjection, or MapProjection. |
 | Pointer, native container, interface, or Cell | A read-result value with the required data. |
 | `(int, bool)` | `type Result struct { im.Local; Count int; OK bool }`. |

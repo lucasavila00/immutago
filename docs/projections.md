@@ -139,7 +139,6 @@ into roots automatically.
 These rules follow nested fields and arrays. Projections cannot enter package
 variables, Frozen fields, Cells, frozen entries, service start arguments,
 interfaces, callbacks, closures, user generics, go, or defer.
-The lists are complete; unlisted operations are rejected.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
