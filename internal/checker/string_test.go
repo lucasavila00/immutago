@@ -10,8 +10,9 @@ import (
 // TestFrozenStringProof checks exact identity and recursive native string rejection.
 func TestFrozenStringProof(t *testing.T) {
 	marker, slice := testTypes()
+	field := types.NewField(token.NoPos, marker.Obj().Pkg(), "value", types.Typ[types.String], false)
 	frozen := types.NewNamed(types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "FrozenString", nil),
-		types.NewStruct([]*types.Var{types.NewField(token.NoPos, marker.Obj().Pkg(), "value", types.Typ[types.String], false)}, nil), nil)
+		types.NewStruct([]*types.Var{field}, nil), nil)
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Text", nil), frozen)
 	for _, typ := range []types.Type{frozen, alias, types.NewArray(frozen, 2), sliceType(t, slice, frozen)} {
 		if reason := Reason(typ); reason != "" || !Contains(typ) {

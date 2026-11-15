@@ -49,9 +49,10 @@ The program prints `alice 10`.
   permits sharing the object's pointer.
 - `FreezeMap` reuses the Go map without copying its entries. After this call,
   read through the frozen map, not `scores`.
+- `FreezeString` copies native text; `Clone` returns an independent native string.
 - `Get` returns the score and whether the key exists.
 
-For example, adding `user.Name = "bob"` makes `immutago ./...` report a write
+For example, adding `user.Name = im.FreezeString("bob")` makes `immutago ./...` report a write
 to an immutable object. See the [language guide](rules.md) for the complete forms.
 
 ## Check in CI

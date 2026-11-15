@@ -12,12 +12,17 @@ func TestFrozenStringForms(t *testing.T) {
 		`func f(){var zero im.FrozenString; zero=im.FreezeString("text"); _=zero.Len(); _=zero.At(0)}`,
 		`func f(){value:=im.FrozenString{};_=value;type Text=im.FrozenString;var text Text;_=text}`,
 		`func f(){text:=im.FreezeString("text");native:=text.Clone();_=native[:1];_=text.Len()}`,
+		`func f(){text:=im.FreezeString("text");_=text.Clone()[:1]}`,
+		`func pair()(im.FrozenString,int){return im.FreezeString("text"),1};
+func sink(im.FrozenString,int){};func f(){sink(pair())}`,
 		`func f(){text:="text";_=im.FreezeString(text);_=text[:1]}`,
 		`type V struct{im.Shared;Text im.FrozenString};func f()V{return V{Text:im.FreezeString("text")}}`,
 		`type V struct{im.Scoped;Text [2]im.FrozenString};func f()V{return V{}}`,
 		`func f(){a:=im.FreezeString("same");b:=im.FreezeString("same");_=a==b;_=a!=b}`,
-		`func f(){key:=im.FreezeString("key");values:=map[im.FrozenString]int{key:1};frozen:=im.FreezeMap(values);value,ok:=frozen.Get(key);_=value;_=ok}`,
-		`func f(){values:=[]im.FrozenString{im.FreezeString("text")};frozen:=im.FreezeSlice(values);for _,text:=range frozen.All(){_=text.Clone()}}`,
+		`func f(){key:=im.FreezeString("key");values:=map[im.FrozenString]int{key:1};
+frozen:=im.FreezeMap(values);value,ok:=frozen.Get(key);_=value;_=ok}`,
+		`func f(){values:=[]im.FrozenString{im.FreezeString("text")};frozen:=im.FreezeSlice(values);
+for _,text:=range frozen.All(){_=text.Clone()}}`,
 		`func read(text im.FrozenString)int{return text.Len()};func f(){_=read(im.FreezeString("text"))}`,
 		`func f(){text:=im.FreezeString("text");_=((text.Clone))();_=((im.FreezeString))("text")}`,
 		`func f(){type Text string;text:=Text("text");_=im.FreezeString(string(text));_=text[:1]}`,
@@ -39,11 +44,14 @@ func TestFrozenStringRejectedForms(t *testing.T) {
 		{`func f(){text:=im.FreezeString("text");copy:=text.Clone;_=copy()}`, "bound immutable methods"},
 		{`func f(){text:=im.FreezeString("text");_=im.FrozenString.Clone(text)}`, "immutable method expressions"},
 		{`var freeze=im.FreezeString`, "immutable callbacks"},
+		{`func pair()(im.FrozenString,int){return im.FreezeString("text"),1};func sink(any,int){};
+func f(){sink(pair())}`, "boxing immutable storage"},
 		{`func f(){text:=im.FreezeString("text");_=func()string{return text.Clone()}}`, "closures cannot capture"},
 		{`func f(){text:=im.FreezeString("text");go text.Clone()}`, "requires synchronous calls"},
 		{`func f(){text:=im.FreezeString("text");defer text.Clone()}`, "requires synchronous calls"},
 		{`func f(){a,b:=im.FreezeString("a"),1;_=a;_=b}`, "multiple assignments"},
-		{`type V struct{im.Shared;Text im.FrozenString};func f(){v:=V{};v.Text=im.FreezeString("text")}`, "writes to immutable objects"},
+		{`type V struct{im.Shared;Text im.FrozenString};func f(){v:=V{};
+v.Text=im.FreezeString("text")}`, "writes to immutable objects"},
 		{`type Other im.FrozenString;func f(v im.FrozenString)Other{return Other(v)}`, "protected value conversions"},
 		{`func f(){var p *im.FrozenString;_=p}`, "concrete marked struct target"},
 		{`func f(){text:=im.FreezeString("text");_= &text}`, "concrete marked struct target"},
@@ -100,7 +108,8 @@ func TestFrozenStringServiceResults(t *testing.T) {
 		{`type Text string;func(*Counter) Text()Text{return "text"}`, true},
 		{`type Text=string;func(*Counter) Text()[0]Text{return [0]Text{}}`, true},
 		{`type Page struct{im.Scoped;Text string};func(*Counter) Text()Page{return Page{}}`, true},
-		{`func(*Counter) text(s string)string{return s[:1]};func(c *Counter) Text(s string)im.FrozenString{return im.FreezeString(c.text(s))}`, false},
+		{`func(*Counter) text(s string)string{return s[:1]};
+func(c *Counter) Text(s string)im.FrozenString{return im.FreezeString(c.text(s))}`, false},
 	}
 	for _, test := range cases {
 		t.Run(test.source, func(t *testing.T) {

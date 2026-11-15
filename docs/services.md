@@ -52,10 +52,10 @@ stop the group. Its file cache starts with these arguments:
 
 ```go
 cache, err := supervise.Start[configuration.FileCache](root, configuration.FileArgs{
-    Path: path, Every: 100 * time.Millisecond,
+    Path: im.FreezeString(path), Every: 100 * time.Millisecond,
 })
 if err != nil { panic(err) }
-fmt.Print(cache.Current().Text())
+fmt.Print(cache.Current().Text().Clone())
 ```
 
 The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and

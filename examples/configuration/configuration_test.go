@@ -107,7 +107,9 @@ func TestStartReservedRetry(t *testing.T) {
 		t.Fatal("missing file did not fail startup")
 	}
 	writeLimits(t, path, `{"api":3}`)
-	if err := supervise.StartReserved(root, cache, FileArgs{Path: im.FreezeString(path), Every: time.Millisecond}); err != nil {
+	if err := supervise.StartReserved(root, cache, FileArgs{
+		Path: im.FreezeString(path), Every: time.Millisecond,
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if got := cache.Current().Text().Clone(); got != `{"api":3}` {

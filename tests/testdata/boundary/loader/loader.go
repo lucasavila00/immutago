@@ -18,5 +18,5 @@ func Publish(l *Loader, version string, weights []float64) {
 
 func LogVersion(l *Loader) {
 	current := l.Current.Load()
-	logx.Info(current.Version, current.Weights.Len())
+	logx.Info(current.Version.Clone(), current.Weights.Len())
 }

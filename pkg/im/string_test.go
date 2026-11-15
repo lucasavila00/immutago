@@ -32,7 +32,7 @@ func TestFreezeString(t *testing.T) {
 					t.Error("out-of-range access did not panic")
 				}
 			}()
-			frozen.At(index)
+			_ = frozen.At(index)
 		}()
 	}
 }
@@ -51,7 +51,7 @@ func TestFrozenStringEmpty(t *testing.T) {
 			t.Fatal("empty indexing did not panic")
 		}
 	}()
-	zero.At(0)
+	_ = zero.At(0)
 }
 
 var stringSink string

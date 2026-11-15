@@ -41,7 +41,7 @@ Package selection and state:
 ## Type proof
 
 [Type predicates](../../internal/checker/types.go) resolve aliases and identify
-`im.Shared`, `im.Scoped`, and frozen collections by package path and named type.
+`im.Shared`, `im.Scoped`, frozen strings, and frozen collections by package path and named type.
 
 The per-pass [classifier](../../internal/checker/classification.go) answers
 whether a type contains protected storage or callbacks:

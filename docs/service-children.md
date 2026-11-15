@@ -46,7 +46,7 @@ worker, err := supervise.Start[Worker](group, WorkerArgs{ID: 1, Version: 1})
 if err != nil { panic(err) }
 if worker.Current().Ready() {
     result := worker.Current().Process("Hello")
-    if result.Available { println(result.Text) } // HELLO
+    if result.Available { println(result.Text.Clone()) } // HELLO
 }
 ```
 

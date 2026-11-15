@@ -125,6 +125,48 @@ func (s FrozenSlice[T]) Len() int
 
 Len returns the number of elements in O\(1\) time without allocations.
 
+## type FrozenString
+
+FrozenString holds read\-only bytes. Its zero value is empty. Copies share the same bytes. Native string access requires Clone.
+
+```go
+type FrozenString struct {
+    // contains filtered or unexported fields
+}
+```
+
+### func FreezeString
+
+```go
+func FreezeString(value string) FrozenString
+```
+
+FreezeString copies value into independent storage in O\(n\) time and space. It does not retain a larger string allocation when value is a substring. The input remains usable. An empty input needs no allocation.
+
+### func \(FrozenString\) At
+
+```go
+func (s FrozenString) At(index int) byte
+```
+
+At returns the byte at index in O\(1\) time without allocations. It panics if index is out of range, as native string indexing does.
+
+### func \(FrozenString\) Clone
+
+```go
+func (s FrozenString) Clone() string
+```
+
+Clone returns a native string with independent storage in O\(n\) time and space. Substrings of the result do not retain this FrozenString's storage. An empty result needs no allocation.
+
+### func \(FrozenString\) Len
+
+```go
+func (s FrozenString) Len() int
+```
+
+Len returns the number of bytes in O\(1\) time without allocations.
+
 ## type Owner
 
 Owner wraps an atomic.Pointer to an immutable Scoped object. The analyzer checks construction and pointer use; Load and Store use atomic pointer operations. Declare a slot as a package variable or a direct named field of an unmarked struct. Its zero value is empty. An Owner value must not be copied. See https://github.com/lucasavila00/immutago/blob/main/docs/owner.md for the complete forms.

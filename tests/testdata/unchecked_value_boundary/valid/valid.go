@@ -31,8 +31,8 @@ func FreezeSlice() im.FrozenSlice[im.UncheckedValue[api.Table]] {
 }
 
 // FreezeMap permits the same handle as a frozen map element.
-func FreezeMap() im.FrozenMap[string, im.UncheckedValue[api.Table]] {
-	values := map[string]im.UncheckedValue[api.Table]{"table": api.New()}
+func FreezeMap() im.FrozenMap[int, im.UncheckedValue[api.Table]] {
+	values := map[int]im.UncheckedValue[api.Table]{1: api.New()}
 	frozen := im.FreezeMap(values)
 	return frozen
 }

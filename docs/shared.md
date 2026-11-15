@@ -29,7 +29,7 @@ type Order struct {
 }
 
 func product() *Product {
-    return &Product{Name: "coffee", Price: 8}
+    return &Product{Name: im.FreezeString("coffee"), Price: 8}
 }
 
 func main() {
