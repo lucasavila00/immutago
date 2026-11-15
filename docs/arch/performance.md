@@ -11,10 +11,11 @@ costs changed and measure the affected operation.
 | --- | --- |
 | FreezeSlice or FreezeMap | Copy a native handle into a private wrapper. No entry copy or runtime ownership check. Native builder construction has its own cost. |
 | FreezeString | Keep the native immutable string. No byte copy or consumption of the input string. |
-| Frozen collection read or iteration | Read native storage. No collection copy. |
+| Frozen collection read or iteration | Read native storage. Copy returned or yielded elements by value, without copying the collection. |
 | Collection Clone | Allocate independent native collection slots and copy keys and values. Referenced immutable objects remain shared. |
 | String Clone | Copy bytes into independent native string storage. The empty result needs no allocation. |
 | ProjectionOf | Copy its T into a projection. No backing-storage copy. T can be a root pointer or a larger value. |
+| SliceProjection.AtPointer | Select a Frozen record element by address without copying it. Map lookup has no corresponding addressable slot. |
 | Generated field read | Read through a retained root pointer. Nested record and array readers retain the root and indices instead of copying parent records. |
 | CopyRecord | Make an explicit private root copy; a nonzero-sized root needs one allocation. |
 | Cell.Store | Publish a private root copy through an atomic pointer; a nonzero-sized T needs one allocation. Backing storage remains shared. |

@@ -33,7 +33,7 @@ Execution stays with these owners:
 | Work | Execution owner |
 | --- | --- |
 | Initial Init | The Start caller. It has not registered a watcher yet. |
-| Run, retry Init, retry delay, and attempt cleanup | The registered service watcher goroutine. |
+| Run, its deferred cleanup, retry Init, and retry delay | The registered service watcher goroutine. |
 | A method called through Borrow | The calling goroutine. The watcher does not serialize it. |
 | Ordered group shutdown | One shutdown goroutine per stopped group. It waits outside the group mutex. |
 

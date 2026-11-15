@@ -112,6 +112,10 @@ Native strings use ProjectString; frozen string, slice, and map fields use their
 Projection methods. Normal read access does not expose a mutable slice, map, or
 record pointer.
 
+Collection projections can still copy an element: SliceProjection.At and
+MapProjection.Get copy the element value into a Projection. SliceProjection.AtPointer
+selects a Frozen record element by address without copying it.
+
 A record returned by value from a map lookup has no addressable map slot.
 `CopyRecord` makes an explicit private root copy and returns its pointer
 projection. Clone makes independent native collection slots under its type
