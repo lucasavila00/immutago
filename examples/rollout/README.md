@@ -1,13 +1,32 @@
-# Live release gate
+# Checkout release monitor
 
-Compare a checkout release with a candidate from their replica access logs.
-The application counts requests, HTTP 5xx responses, and latency. A background
-policy service supplies the gate limits. A separate service tree reads the logs,
-combines each deployment's results, and evaluates the candidate.
+An online store wants to replace `checkout-v1` with `checkout-v2`, a new version
+of the same checkout application. Before the operator sends more traffic to v2,
+they want to check its server errors and response times against v1.
 
-The example runs locally without external infrastructure. The operator changes
-application traffic separately; `primary` selects the release that this monitor
-uses for comparison.
+In this workflow, both versions already run and receive requests. The operator
+controls application traffic through a separate router. A **replica** is one
+running instance of a version. Each replica writes an **access log** with the
+HTTP status and response time for each request.
+
+This example is the monitor for that workflow. It reads the logs, combines the
+results for each version, and serves the comparison at `GET /report`.
+
+| Role in `rollout.json` | Meaning |
+| --- | --- |
+| `primary`, initially `checkout-v1` | The existing version used as the comparison baseline. |
+| `candidate`, here `checkout-v2` | The new version under evaluation. |
+
+The **gate** checks the comparison against the rules in `policy.json`. These
+rules require enough requests from both versions and limit increases in errors
+and response time. A `pass` result means the candidate meets those rules for the
+recorded requests. The operator uses the result to decide whether to send more
+traffic to it. The monitor does not route requests or enforce that decision.
+
+The local example uses sample logs in place of running checkout servers.
+You append log rows to simulate new requests. A background policy service
+updates the limits, while a separate [service tree](#service-ownership) reads
+the logs and updates the report.
 
 ## Run and compare
 
@@ -28,7 +47,8 @@ curl -s http://127.0.0.1:8082/report
 ```
 
 The primary is `checkout-v1`, with two replicas, 10 requests, no failures, and
-`p95_ms: 100`. The verdict is `no_candidate`. Add a live candidate:
+`p95_ms: 100`. The verdict is `no_candidate`. Add the candidate's logs to the
+comparison:
 
 ```sh
 cat > "$demo/rollout.json" <<'JSON'
@@ -40,8 +60,8 @@ JSON
 ```
 
 After one second, the report shows six candidate requests and `verdict: waiting`.
-The policy requires at least 10 requests from each release. Append four requests
-while both deployment trees continue to run:
+The policy requires at least 10 requests from each release. Simulate four more
+candidate requests by appending rows to its log:
 
 ```sh
 cat >> "$demo/v2-a.ndjson" <<'JSON'
@@ -74,7 +94,8 @@ JSON
 ```
 
 Within two read intervals, the verdict becomes `waiting`. No deployment or
-reader restarts. Restore `min_requests` to 10, then select the candidate as primary:
+reader restarts. Restore `min_requests` to 10, then make the candidate the
+monitor's new comparison baseline:
 
 ```sh
 cat > "$demo/rollout.json" <<'JSON'
@@ -90,9 +111,9 @@ both old log streams. A request that selected the old report can still finish.
 Promotion is an operator action; the monitor does not prevent a selection when
 the verdict is `fail` or `waiting`.
 
-To cancel a trial instead, remove `candidate` from the file and keep the original
-`primary`. Only the candidate and its readers stop. You can add another candidate
-later without restarting the application.
+To stop monitoring the candidate instead, remove `candidate` from the file and
+keep the original `primary`. Only the candidate's monitoring services stop. You
+can add another candidate later without restarting the monitor.
 
 Use `-addr` to change the listen address or `-every` to change the one-second read
 interval. Without `-dir`, the command uses the repository's sample data directly.
@@ -136,6 +157,10 @@ it does not add them again. Reports can show the last published counts while a
 reader waits to retry.
 
 ## Service ownership
+
+This tree runs the monitor's background work. Its Deployment and Reader services
+process log files from the checkout replicas. Policy reads the gate rules
+independently, so the operator can change the limits while log reading continues.
 
 ```text
 root
