@@ -153,7 +153,7 @@ Store publishes a freshly constructed object.
 
 ## type Scoped
 
-Scoped marks a struct with read\-only fields. Its pointers cannot be saved or returned. Use Owner to publish a new Scoped object for other code to read. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/scoped.md for the complete forms.
+Scoped marks a struct with read\-only fields. Its pointers cannot be saved or returned. Its values satisfy the Scoped result contract, which also accepts scalars, immutable arrays, Shared values, and frozen collections. Use Owner to publish a new Scoped object for other code to read. Embed it by value. A named field or pointer embedding does not mark the struct. See https://github.com/lucasavila00/immutago/blob/main/docs/scoped.md for the complete forms.
 
 ```go
 type Scoped struct{}
@@ -169,7 +169,7 @@ type Shared struct{}
 
 ## type UncheckedValue
 
-UncheckedValue holds a pointer to a value that the analyzer does not look inside. It is one of the two trust markers of immutago, with supervise.ConcurrentSafe: the analyzer does not prove that the value is immutable. The package that declares T trusts its own code to never change the value after Trust.
+UncheckedValue holds a pointer to a value that the analyzer does not look inside. The analyzer does not prove that the value is immutable. The package that declares T trusts its own code to never change the value after Trust.
 
 UncheckedValue is an allowed stored type. Any package can store, copy, and pass it. Only the package that declares T can use Trust and Unwrap, so other packages reach the value only through the API of that package. See https://github.com/lucasavila00/immutago/blob/main/docs/unchecked-values.md for the complete forms.
 

@@ -29,6 +29,10 @@ func main() {
 }
 ```
 
+The [Scoped result](scoped-results.md) category also includes primitives, arrays,
+and frozen collections. It describes returned values, while this marker controls
+object fields and pointer retention.
+
 ## Allowed forms — exhaustive
 
 Use the [common forms](common-forms.md).

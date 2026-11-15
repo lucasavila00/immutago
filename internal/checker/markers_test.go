@@ -60,36 +60,3 @@ func TestRecursivePointerProof(t *testing.T) {
 		t.Fatalf("mutable recursive field accepted: %s", reason)
 	}
 }
-
-// TestServiceProofs checks that a Ref is an allowed stored value and a service is not.
-func TestServiceProofs(t *testing.T) {
-	sharedMarker, _ := testTypes()
-	runtime := types.NewPackage(RuntimePath, "supervise")
-	serviceMarker := types.NewNamed(types.NewTypeName(token.NoPos, runtime, "Service", nil),
-		types.NewStruct(nil, nil), nil)
-	service := types.NewNamed(types.NewTypeName(token.NoPos, nil, "ConfigLoader", nil), types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Service", serviceMarker, true),
-		types.NewField(token.NoPos, nil, "version", types.Typ[types.Int], false),
-	}, nil), nil)
-	ref := types.NewNamed(types.NewTypeName(token.NoPos, runtime, "Ref", nil), types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, runtime, "value", types.NewPointer(service), false),
-	}, nil), nil)
-	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "LoaderRef", nil), ref)
-	if !Service(service) || Marked(service) || MarkerCount(service) != 0 ||
-		!IsRuntimeType(alias, RefType) || IsRuntimeType(service, RefType) {
-		t.Fatal("service identities were not preserved")
-	}
-	for _, value := range []types.Type{
-		ref, alias, types.NewArray(ref, 2),
-		markedType("Peers", sharedMarker, types.NewField(token.NoPos, nil, "Config", ref, false)),
-	} {
-		if reason := Reason(value); reason != "" {
-			t.Errorf("Ref value %s rejected: %s", value, reason)
-		}
-	}
-	for _, value := range []types.Type{service, types.NewPointer(service)} {
-		if Reason(value) == "" {
-			t.Errorf("service value %s accepted", value)
-		}
-	}
-}

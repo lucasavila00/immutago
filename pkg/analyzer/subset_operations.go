@@ -97,9 +97,6 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	case *ast.TypeAssertExpr:
 		return "immutable interface assertions are unsupported"
 	case *ast.FuncLit:
-		if c.trustedValue(source) {
-			return ""
-		}
 		return "immutable callbacks are unsupported"
 	}
 	return "protected operation is outside the supported expression forms"
@@ -165,9 +162,6 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 
 // matchFunctionValue permits protected functions only as direct callees.
 func (c *subsetChecks) matchFunctionValue(expression ast.Expr) string {
-	if c.trustedValue(expression) {
-		return ""
-	}
 	if call := c.directCall(expression); call != nil {
 		return c.matchCall(call)
 	}
@@ -199,19 +193,13 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 	if c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
 		return ""
 	}
-	if selection.Kind() == types.MethodVal && (c.serviceValue(selection.Recv()) || currentMethod(selection.Obj())) {
-		return ""
-	}
-	if c.dependencyValue(selector) {
-		return ""
-	}
 	if c.exactCollectionMethod(selector) {
 		if c.directCall(selector) == nil {
 			return "bound immutable methods are unsupported"
 		}
 		return ""
 	}
-	return c.matchMarkedMethod(selector)
+	return c.matchMethod(selector)
 }
 
 // matchUnary permits fresh marked allocations and ordinary scalar operations.

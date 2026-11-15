@@ -1,1 +1,0 @@
-capture.go:6:13: service pointer escapes; use ref.Current() only as the receiver of a direct exported method call

@@ -29,9 +29,8 @@ source, set `-url http://host/path/model.json`.
 | [model/model.go](model/model.go) | Copy coefficients, wrap them with `im.Trust`, and expose read-only prediction. |
 | [cmd/models/main.go](cmd/models/main.go) | Start the service with a logger, HTTP client, and store factory. |
 
-The caller promises that the logger, HTTP client, and factory are safe for
-concurrent use with `supervise.AssumeConcurrentSafe`. The command uses Go's
-concurrent-safe logger and client. Its factory captures only a fixed path and
+The arguments hold a logger, HTTP client, and factory directly. The command uses
+Go's concurrent-safe logger and client. Its factory captures only a fixed path and
 creates a FileStore for that service. Use a separate output path per service.
 
 The model package makes a different promise with `im.Trust`: its copied

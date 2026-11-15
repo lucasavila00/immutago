@@ -11,9 +11,9 @@
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
 | [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
 
-## Service forms (`supervise`)
+## Service results (`supervise`)
 
-- [Service source forms](service-forms.md): declarations, start arguments, calls, and child groups.
+- [Scoped results](scoped-results.md): the one service-specific checker rule.
 - [Supervised services](services.md): execution and restart behavior.
 
 ## Rules for im and supervise
@@ -28,18 +28,14 @@ forms are listed; unlisted protected operations are rejected.
 | --- | --- |
 | Marked struct | A struct that embeds `im.Shared` or `im.Scoped`. |
 | Protected storage | Marked values, their fields, frozen collections, and arrays containing them. |
-| Service dependency | A `supervise.ConcurrentSafe[T]` value. Its uses are checked; its contents are trusted. |
+| Scoped result | An immutable value returned by value; see the [complete type list](scoped-results.md). |
 | Owner slot and holder | An `im.Owner[T]` field or variable, and a struct that contains one. See [Owner](owner.md). |
 
-### Trust markers
+### Trusted immutable values
 
-User code has exactly two trust markers. The checker does not prove either
-promise:
-
-| Marker | Promise | Where |
-| --- | --- | --- |
-| [`im.UncheckedValue[T]`](unchecked-values.md), from `im.Trust` | The value never changes after `im.Trust`. Only the package that declares `T` can wrap or read it. | Anywhere a stored type is allowed. |
-| [`supervise.ConcurrentSafe[T]`](services.md#concurrent-dependencies), from `supervise.AssumeConcurrentSafe` | The value is safe for concurrent use by several services. | Only in service start arguments. |
+[`im.UncheckedValue[T]`](unchecked-values.md) records the declaring package's
+promise that the wrapped value never changes. Only that package can wrap or read
+it. The checker does not prove the promise.
 
 ### Check the program
 
@@ -58,12 +54,14 @@ The checker checks a package in any of these cases, including its test files:
 | Imports a package that failed its checks, directly or through another package | Import a package with an invalid immutable field. |
 
 - Aliases, type arguments, and generic constraints also count.
+- A package that uses only supervise receives the service result check.
+  Importing or using im also selects the immutable-source checks.
 - The CLI and `go vet` use the same rules.
 - Other packages are trusted to obey Go contracts, including immutable strings.
 - The `im`, `supervise`, and standard-library implementations are trusted.
 - The generated Go test runner is skipped; user tests are checked.
-- User code has no suppression comments. Its only trust markers are
-  `im.UncheckedValue` and `supervise.ConcurrentSafe`.
+- User code has no suppression comments. `im.UncheckedValue` is the explicit
+  immutability trust marker.
 
 - Importing `unsafe` or `reflect` is allowed; ordinary values use ordinary Go rules.
 - Protected values still need a listed form: `reflect.ValueOf(1)` is allowed,
@@ -71,13 +69,13 @@ The checker checks a package in any of these cases, including its test files:
 
 | Rejected examples — non-exhaustive | Use instead |
 | --- | --- |
-| Cgo | Ordinary typed Go code. Cgo produces one error at the source package line. |
-| A function without a body whose signature contains an im or supervise type | Supply a Go body to check its protected operations. |
+| Cgo in a package that imports or uses im | Ordinary typed Go code. Cgo produces one error at the source package line. |
+| A function without a body whose signature contains an im type | Supply a Go body to check its protected operations. |
 
 An imported package's error includes one cause and a command to see its other errors.
 
 Functions without a body use ordinary Go rules when their compiler-resolved
-receiver, parameters, results, and generic constraints contain no im or supervise
+receiver, parameters, results, and generic constraints contain no im
 type. For example, `func cpuID() uint64` and `func checksum(data []byte) uint64`
 can use assembly implementations in a checked package. A declaration such as
 `func read(value *Config) int`, where Config embeds im.Shared, needs a Go body.

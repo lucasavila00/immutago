@@ -127,12 +127,10 @@ request body when the user requests that issue or pull request.
 
 Check every field and collection type argument. Use resolved Go type identity,
 not source spelling. Do not accept unknown cases or add escape hatches. There
-are exactly two trust markers, each with its own promise, and the checker proves
-neither: `supervise.ConcurrentSafe[T]` from `supervise.AssumeConcurrentSafe` in service start
-arguments, whose caller promises that the value is safe for concurrent use (the
-user decided this in issue #52), and `im.UncheckedValue[T]` from `im.Trust`, whose
-declaring package promises that the value never changes; only the package that
-declares `T` can wrap or read it. Do not add other escape hatches.
+is one explicit immutability trust marker: `im.UncheckedValue[T]`, from
+`im.Trust`. The declaring package promises that the value never changes; only
+that package can wrap or read it. The checker does not prove this promise.
+Do not add other escape hatches.
 Support cases that can be proved. Report unsupported cases explicitly.
 Unmarked structs cannot own marked values or immutable collections.
 Both `im.Shared` and `im.Scoped` require immutable objects from construction.
@@ -232,9 +230,9 @@ the [language reference](docs/rules.md) for the complete supported forms.
 
 | Example and failure | Decision and fix |
 | --- | --- |
-| An unmarked struct containing a marked child makes writes such as `a.b.c.d = 1` require rules about aliases into nested storage. | Require a marker on each struct that stores protected data, except the explicitly listed Owner and service forms. Prove the nested fields instead of supporting arbitrary mutable owners of immutable children. |
+| An unmarked struct containing a marked child makes writes such as `a.b.c.d = 1` require rules about aliases into nested storage. | Require a marker on each struct that stores protected data, except the explicitly listed Owner and runtime storage forms. Prove the nested fields instead of supporting arbitrary mutable owners of immutable children. |
 | `type Count [2]int` can have a mutating pointer method. Treating it as an immutable field required more method analysis. | Use `type Count struct { im.Shared; Values [2]int }`. Require a marker on each nested struct and prove its fields. The inline array does not need a separate allocation. |
-| `p.Inc()` could call an embedded field's pointer method and mutate a protected value. The broad "method call" category missed the implicit receiver. | Allow direct methods on proved concrete marked structs only when the written receiver has exactly the declared receiver type. Reject promoted calls, implicit address/dereference, method values, and method expressions. Use `outer.Child.Read()` for a marked child or a named reader such as `Read(p)`. Keep the separate fixed library and service forms. |
+| `p.Inc()` could call an embedded field's pointer method and mutate a protected value. The broad "method call" category missed the implicit receiver. | Allow direct methods on proved concrete marked structs only when the written receiver has exactly the declared receiver type. Reject promoted calls, implicit address/dereference, method values, and method expressions. Use `outer.Child.Read()` for a marked child or a named reader such as `Read(p)`. Keep the separate fixed library forms. Ordinary concrete receivers can take or return protected values through direct, non-generic calls. |
 | `case _, values[0] = <-ready` could write after another case's channel expression froze `values`. The control-flow graph did not describe that ordering. | Reject protected operations in select channel expressions and receive targets. Receive first, then change the builder in the case body. Do not add a complete select evaluation model for these forms. |
 | `value, p = next, makePointer()` and `use(im.FreezeSlice(values))` mixed writes or consumption with other operations. | Use one assignment destination and a separate Freeze statement: `frozen := im.FreezeSlice(values); use(frozen)`. Keep the explicitly listed result exceptions, such as `Get`. |
 | Mutable construction followed by borrowing still required NLL. Also, `p := &value; value = other` changes the storage observed by `p`. | Make marked objects read-only from construction; create pointers with `&T{...}` or supported `new` forms, not `&value`. Prepare field values in ordinary locals first. Remove the loan machinery; retain Freeze builder checks. |
@@ -250,7 +248,7 @@ the [language reference](docs/rules.md) for the complete supported forms.
 | The proof cache replayed old depth-first/FIFO discovery to preserve the exact historical diagnostic cause. That introduced repeated walks for invalid roots. | Exact cause order was never required. Keep one real failure cause and test correct rejection and terminating cause paths. Remove replay and compatibility machinery; update snapshots if needed. [PR #29](https://github.com/lucasavila00/immutago/pull/29) records the change. |
 | Each dependency fact carried every reachable failure, so vet repeatedly wrote and read the same closure of errors. | Carry one representative original failure and a command to check its origin. Do not preserve the whole error closure or add compression merely to retain it. [PR #30](https://github.com/lucasavila00/immutago/pull/30). |
 | Ordinary libraries using unsafe or reflection made unrelated callers fail. A proposed fix would track where strings came from to defend against libraries changing string bytes. | Trust ordinary Go API contracts. Select checked packages from the documented imports/types/failure facts, using one compiler-type traversal. Do not add string taint analysis. [PR #46](https://github.com/lucasavila00/immutago/pull/46). |
-| The service feature claimed that no mutable memory could cross a service boundary, but ordinary method bodies could use a global map. Enforcing the claim required a new language for isolated method bodies. | Check the listed service boundaries and state their limits. Do not claim full isolation or add checks beyond the agreed trust assumptions. [PR #45](https://github.com/lucasavila00/immutago/pull/45). |
+| The service feature claimed that no mutable memory could cross a service boundary, but ordinary method bodies could use a global map. Enforcing the claim required a new language for isolated method bodies. | Require exactly one Scoped result from each exported service method except Init and Run. Other service code follows ordinary Go rules; im operations keep their general checks. Do not claim full isolation or add a separate service source grammar. [PR #45](https://github.com/lucasavila00/immutago/pull/45). |
 | Duplicate push/PR jobs and always-on performance runs made routine CI large. | Keep four routine checks and run performance workflows manually. Keep focused local debugging; use hosted CI for full validation. [PR #26](https://github.com/lucasavila00/immutago/pull/26). |
 
 ### Simplify the implementation when the feature is needed

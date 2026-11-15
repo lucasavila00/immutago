@@ -108,7 +108,7 @@ func checkCgoDependencyFailure(t *testing.T, origin string) {
 	}
 	bad := types.NewPackage(origin, "bad")
 	pkg := types.NewPackage("example/wrapper", "wrapper")
-	pkg.SetImports([]*types.Package{bad})
+	pkg.SetImports([]*types.Package{bad, types.NewPackage(checker.LibraryPath, "im")})
 	upstream := proofFailure{Location: origin + "/bad.go:1:1", Message: "invalid dependency"}
 	var exported *invalidPackage
 	var reports []analysis.Diagnostic

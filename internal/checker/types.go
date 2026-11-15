@@ -14,23 +14,8 @@ const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 // RuntimePath is the package whose supervised service runtime is trusted.
 const RuntimePath = "github.com/lucasavila00/immutago/pkg/supervise"
 
-// Names of the service runtime identities in RuntimePath and of the service methods that only the runtime calls.
-const (
-	ServiceMarker                = "Service"
-	RefType                      = "Ref"
-	StartFunction                = "Start"
-	ReserveFunction              = "Reserve"
-	StartReservedFunction        = "StartReserved"
-	StartGroupFunction           = "StartGroup"
-	CurrentMethod                = "Current"
-	ArgsMethod                   = "Args"
-	ChildrenMethod               = "Children"
-	RunMethod                    = "Run"
-	InitMethod                   = "Init"
-	ConcurrentSafeType           = "ConcurrentSafe"
-	AssumeConcurrentSafeFunction = "AssumeConcurrentSafe"
-	ValueMethod                  = "Value"
-)
+// ServiceMarker identifies the runtime's generic service base.
+const ServiceMarker = "Service"
 
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
 func IsLibraryType(t types.Type, name string) bool {
@@ -64,18 +49,29 @@ func Shared(t types.Type) bool { return embedsMarker(t, "Shared") }
 // Scoped reports the presence of an embedded im.Scoped value, not type validity.
 func Scoped(t types.Type) bool { return embedsMarker(t, "Scoped") }
 
-// Service reports the presence of an embedded supervise.Service value. A service is not a marked struct.
+// Service reports whether a struct embeds the runtime Service base, directly or indirectly.
 func Service(t types.Type) bool {
-	if t == nil {
-		return false
-	}
-	s, ok := t.Underlying().(*types.Struct)
-	if !ok {
-		return false
-	}
-	for field := range s.Fields() {
-		if field.Embedded() && IsRuntimeType(field.Type(), ServiceMarker) {
+	seen := make(map[types.Type]bool)
+	pending := []types.Type{t}
+	for len(pending) != 0 {
+		current := types.Unalias(pending[len(pending)-1])
+		pending = pending[:len(pending)-1]
+		if pointer, ok := current.(*types.Pointer); ok {
+			current = types.Unalias(pointer.Elem())
+		}
+		if seen[current] {
+			continue
+		}
+		seen[current] = true
+		if IsRuntimeType(current, ServiceMarker) {
 			return true
+		}
+		if structure, ok := current.Underlying().(*types.Struct); ok {
+			for field := range structure.Fields() {
+				if field.Embedded() {
+					pending = append(pending, field.Type())
+				}
+			}
 		}
 	}
 	return false
@@ -116,15 +112,9 @@ func embedsMarker(t types.Type, name string) bool {
 	return false
 }
 
-// Contains reports whether a type stores a marked value, sealed collection, or service dependency.
+// Contains reports whether a type stores a marked value or sealed collection.
 // It runs one query; use Classifier to reuse results across queries.
 func Contains(t types.Type) bool {
 	var classifier Classifier
 	return classifier.Contains(t)
-}
-
-// TrustedField identifies a named supervise.ConcurrentSafe field.
-// Only a marked service argument struct can store it.
-func TrustedField(field *types.Var) bool {
-	return !field.Embedded() && IsRuntimeType(field.Type(), ConcurrentSafeType)
 }

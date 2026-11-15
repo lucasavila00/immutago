@@ -65,69 +65,32 @@ the supported forms.
 - The [slot matcher](../../pkg/analyzer/owner_slot.go) checks the type argument,
   receiver, direct call, fresh Store input, and local Load binding.
 - The holder check rejects copies of slots and their containing structs. It
-  also checks holder pointer uses and captures.
+  also checks holder pointer uses. A closure can access a slot; a loaded pointer
+  still has the Scoped capture restriction.
 - Loaded pointers follow Scoped rules. Store replaces the slot's pointer;
   previous objects stay immutable. Go's GC manages their lifetime.
 
-## Services and groups
+## Services and Scoped results
 
-- The analyzer matches the [service source forms](../service-forms.md).
-- The trusted [runtime](../../pkg/supervise/supervise.go) manages service values and groups.
-- Ordinary method bodies can still share mutable data, such as a global map.
+[Service classification](../../internal/checker/types.go) follows embedded fields
+to the resolved `supervise.Service` type, including aliases and pointers.
+[Result checking](../../pkg/analyzer/service.go) visits the pointer method set:
 
-### Compiler identities and source forms
+1. Skip unexported methods, Init, Run, and methods from the fixed runtime.
+2. Require exactly one result, including for promoted user methods.
+3. Use `Prover.ScopedResultReason`: reject a top-level pointer, then use the
+   same recursive immutable-value proof as fields and collection elements.
 
-[Runtime identities](../../internal/checker/types.go) use the resolved package
-path `github.com/lucasavila00/immutago/pkg/supervise` and named objects. Source
-spelling and import aliases do not establish identity. The classifier stops at
-`Service[A]`; its runtime fields are not immutable application storage. `Ref[T]`
-is a leaf of the stored-type proof. The service value itself is not immutable.
+The [Scoped-result reference](../scoped-results.md) lists the allowed types.
+There is no service source grammar. Start arguments, method inputs, callbacks,
+and Current pointers follow ordinary Go rules. Actual im data still passes
+through its type proofs, source matcher, and Freeze checks.
 
-The [service matcher](../../pkg/analyzer/service.go) checks the complete shapes
-listed in the [service reference](../service-forms.md):
-
-1. A service declaration must be a named, non-generic struct with one embedded
-   `Service[A]` value and no immutable marker. `Run` must be declared on its
-   pointer receiver with the exact context parameter and no results. `Init` is
-   either the embedded default or a declared pointer method with no parameters
-   and the exact `error` result. Promoted user entry points do not pass.
-2. A service type name is valid only in its declaration, pointer receiver, or
-   single type argument of `Start`, `StartReserved`, `Reserve`, or `Ref`.
-   Construction outside the runtime therefore fails. A service receiver can
-   select fields other than `Service` and make direct synchronous method calls
-   other than `Init` and `Run`. Captures and other receiver uses fail.
-3. A `Ref.Current()` result must receive a direct synchronous call of an exported
-   method declared on that service, other than `Init` and `Run`. The matcher
-   checks the resolved method selection and statement context. It rejects
-   saved pointers, field reads, promoted calls, method values, and direct go or
-   defer calls. The stored-type proof checks each result of the declared exported
-   method. Inputs use ordinary Go types; protected input operations still pass
-   through the common shape checks.
-4. `Children()` must be a direct synchronous call on the service receiver,
-   outside a function literal. Its result must be the parent argument of
-   `Start`, `StartReserved`, or `StartGroup`, directly or through one new local
-   from `:=`. Every use of that local must match the same parent position in
-   the same method. A nested group returned by `StartGroup` is ordinary mutable
-   data; it can be stored in the service and stopped from another method.
-5. The start argument type must pass `Prover.ArgumentReason`. This accepts the
-   stored types plus `ConcurrentSafe[T]` as the whole argument or a named field
-   of an argument struct with exactly one immutable marker. Service fields
-   cannot hold protected data directly, except for the listed Owner forms.
-
-`ConcurrentSafe` has its own [trust contract](../services.md#concurrent-dependencies).
-The classifier treats its handle as protected but does not inspect its payload.
-The ordinary stored-type proof rejects the wrapper, so it cannot enter an Owner,
-a frozen collection, or an exported service method signature. Its source checks
-reject defined copies, pointers, arrays, native containers, interface boxing,
-and package variables. Exact aliases remain valid. `Value` must be called
-directly and synchronously on the receiver's `Args()` result or one field of that
-result. `AssumeConcurrentSafe` records a caller promise; it adds no proof or lock.
-Owned native builders still need proved key and element types, so ownership does
-not admit these argument-only wrappers into collections.
-
-The receiver and reference rules are separate from the marked-object and Owner
-holder rules. Each dispatcher path uses the same service classification cache.
-Unmatched uses fail instead of falling back to ordinary protected calls.
+The classifier treats `Service[A]` as runtime storage, so a service can receive
+im values through its start arguments. When A contains im data, its stored-value
+proof must pass; this prevents retaining a Scoped pointer. Ordinary A types need
+no immutable proof. `Ref[T]` is an ordinary mutable handle,
+not an immutable stored type. Runtime calls remain fixed library operations.
 
 ### Publication and child lifetimes
 

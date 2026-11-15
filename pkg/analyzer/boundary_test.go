@@ -96,7 +96,7 @@ func TestPrunedProofBoundary(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			pass := boundaryPass(t, importer,
 				`package boundary; import api "sample"; `+tc.declarations)
-			if usesImmutable(pass.Pkg) {
+			if importsCheckedLibrary(pass.Pkg, true) {
 				t.Fatal("fixture did not prune the im import graph")
 			}
 			pass.Report = func(analysis.Diagnostic) {}

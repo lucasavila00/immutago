@@ -32,7 +32,7 @@ type classificationNode struct {
 	value bool
 }
 
-// Contains reports whether t stores a marked value, sealed collection, or service dependency.
+// Contains reports whether t stores a marked value or sealed collection.
 func (c *Classifier) Contains(t types.Type) bool { return c.query(t, storageMode) }
 
 // Callable reports whether t contains a callback contract that carries protected storage.
@@ -98,12 +98,6 @@ func (c *Classifier) mark(node *classificationNode) {
 
 // expand matches the outgoing edges for one classification mode.
 func (c *Classifier) expand(node *classificationNode) {
-	if IsRuntimeType(node.key.typ, ConcurrentSafeType) {
-		if node.key.mode != callableMode {
-			c.mark(node)
-		}
-		return
-	}
 	if IsLibraryType(node.key.typ, "Owner") || IsRuntimeType(node.key.typ, ServiceMarker) ||
 		IsUncheckedValue(node.key.typ) {
 		return

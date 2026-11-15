@@ -10,12 +10,11 @@
 //   - Keep the Ref and use ref.Current().Method().
 //   - Calls run in the caller's goroutine and can overlap with Run and other calls.
 //     Synchronize access to mutable fields.
-//   - Start arguments and results of methods called through Current use
-//     immutable values or service Refs. The analyzer checks these types.
-//   - Method inputs follow ordinary Go rules. Protected values keep their
-//     immutability and pointer rules.
-//   - Start arguments can also use ConcurrentSafe. The caller promises safe
-//     concurrent use; the analyzer does not prove this promise.
+//   - Each exported method except Init and Run returns exactly one Scoped result:
+//     an immutable value such as an integer, a marked struct, or a frozen collection.
+//     The analyzer rejects returned pointers and mutable result types.
+//   - Arguments and implementation code follow ordinary Go rules. Uses of im
+//     values keep their immutability and pointer rules.
 //
 // Review state changes, locks, saved inputs, and dependency calls in the service
 // code. Immutable results do not prove service isolation.
@@ -54,8 +53,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/lucasavila00/immutago/pkg/im"
 )
 
 const (
@@ -81,18 +78,18 @@ type Service[A any] struct {
 }
 
 // Args reads the start arguments of this service value. Each restart receives
-// the same arguments. Call Args directly on the receiver inside a service method.
+// the same arguments.
 func (p *Service[A]) Args() A { return p.args }
 
 // Init supplies successful empty setup when the service does not declare Init.
 // The runtime calls Init on each fresh value before Current or Run can use it.
-// Only the runtime can call Init. A declared Init must release any application
+// A declared Init must release any application
 // resources it opened before returning an error; the runtime stops staged children.
 func (*Service[A]) Init() error { return nil }
 
 // Children returns the group owned by this service run. Use it as the parent
-// of Start, StartReserved, or StartGroup inside a service method. Only the runtime
-// stops this group. To stop selected children from a method, create a nested group.
+// of Start, StartReserved, or StartGroup. The runtime stops it when this run ends.
+// To stop selected children separately, create a nested group.
 //
 // Each run has a separate child group. Children created before Run begins wait
 // for that run. Failed setup stops them without running them. On stop, the runtime
@@ -185,13 +182,11 @@ func (p *Service[A]) end() {
 
 // NoArgs supplies an empty start argument. Embed Service[NoArgs] and pass
 // NoArgs{} to Start when the service needs no arguments.
-type NoArgs struct {
-	im.Shared
-}
+type NoArgs struct{}
 
 // ConcurrentSafe carries a caller's promise that its value is safe for concurrent use.
-// The analyzer does not inspect T or prove the promise. Use the wrapper as the
-// service argument type or as a named field of a marked argument struct.
+// The wrapper adds no synchronization and has no special checker rule.
+// Ordinary service arguments can hold T directly.
 type ConcurrentSafe[T any] struct {
 	value T
 }
@@ -201,8 +196,7 @@ type ConcurrentSafe[T any] struct {
 func AssumeConcurrentSafe[T any](v T) ConcurrentSafe[T] { return ConcurrentSafe[T]{value: v} }
 
 // Value reads the wrapped dependency. A zero ConcurrentSafe value contains the
-// zero value of T. Inside a service method, call Value directly and synchronously
-// on the receiver's Args() result or on one named dependency field of that result.
+// zero value of T.
 func (d ConcurrentSafe[T]) Value() T { return d.value }
 
 // Group manages the lifetime and restart rules of its child services and groups.
@@ -237,8 +231,8 @@ type Ref[T any] struct {
 }
 
 // Current selects the last successfully initialized service value with one
-// atomic load. Use the result only for a direct synchronous call of an exported
-// method other than Init or Run; do not save the pointer.
+// atomic load. A saved pointer keeps selecting that value after a restart;
+// call Current again to select the replacement.
 //
 // Current panics for an empty or unstarted reference. It can return a value whose
 // Run has ended. Stop does not invalidate the reference or block later calls.

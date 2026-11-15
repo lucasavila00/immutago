@@ -31,8 +31,7 @@ for id := range p.Args().Workers {
 - Child Init runs during Start. Child Run waits until the pool's Run begins.
 - Pool.Ready reports when every worker's job loop has started.
 - Failed pool Init stops its children. Init must not wait for work from child Run.
-- Use `children` only as the parent argument of Start, StartReserved, or StartGroup
-  in that method. The runtime stops this group.
+- The runtime stops this child group when the parent run ends.
 - For children you can stop yourself, create a nested group.
 - For work chosen after setup, start children from Run, as the dispatcher does below.
 - A restart creates a new parent struct and child group; Init or Run rebuilds the children.
@@ -126,5 +125,5 @@ start arguments or a longer-lived service; old mutable fields are not copied.
   same parent method. Create fresh reservations on each run. Reusing a started
   reservation from the parent's arguments would panic.
 
-See [child-group forms](service-forms.md#child-groups) for the complete allowed
-calls and nearby rejected forms.
+Child-group handles follow ordinary Go rules. Exported service methods still
+need one [Scoped result](scoped-results.md).

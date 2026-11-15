@@ -5,13 +5,12 @@
 //   - Allowed construction, reads, calls, and assignments; no protected field writes.
 //   - Shared pointer storage and Scoped pointer retention.
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
-//   - Service declarations, start arguments, receivers, and calls through Ref.Current.
+//   - Exactly one Scoped result for each exported service method except Init and Run.
 //
 // Direct im or supervise imports, used types, and failed checked dependencies
 // select packages for analysis. Ordinary Go APIs remain trusted.
-// The checker does not prove these promises:
-//   - im.UncheckedValue: the declaring package promises that the value never changes.
-//   - supervise.ConcurrentSafe: the caller promises that concurrent use is safe.
+// im.UncheckedValue records the declaring package's promise that a value never
+// changes. The checker does not prove this promise.
 //
 // The complete source forms and package rules are in
 // https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
@@ -46,7 +45,8 @@ func run(pass *analysis.Pass) (any, error) {
 	if !relevant {
 		return nil, nil
 	}
-	if rejectCgo(pass, imports) {
+	immutable := referencesLibrary(pass, false)
+	if immutable && rejectCgo(pass, imports) {
 		return nil, nil
 	}
 	reportDependencyFailures(pass, imports)
@@ -66,16 +66,25 @@ func run(pass *analysis.Pass) (any, error) {
 	}()
 	c := &checks{pass: pass, reported: make(map[token.Pos]bool)}
 	for _, file := range pass.Files {
-		ast.Inspect(file, c.visit)
+		if immutable {
+			ast.Inspect(file, c.visit)
+		} else {
+			ast.Inspect(file, c.visitService)
+		}
 	}
-	checkSubset(pass, freeze.Check(pass), &c.proofs)
+	if immutable {
+		checkSubset(pass, freeze.Check(pass), &c.proofs)
+	}
 	return nil, nil
 }
 
-// checkLibraryArguments proves type arguments outside unchecked dependency payloads.
+// checkLibraryArguments proves im type arguments and protected runtime storage.
 func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance) {
 	obj := c.pass.TypesInfo.Uses[ident]
-	c.checkRuntimeArguments(ident, obj, instance)
+	if runtimeObject(obj) && obj.Name() == "Service" {
+		c.checkServiceStorage(ident, instance.TypeArgs.At(0))
+		return
+	}
 	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
 		return
 	}
@@ -119,27 +128,21 @@ func (c *checks) report(pos token.Pos, message string) {
 
 // visit checks struct contracts, collection instantiations, and mutation sites.
 func (c *checks) visit(node ast.Node) bool {
-	if expression, ok := node.(ast.Expr); ok && uncheckedTypeArguments(c.pass.TypesInfo, expression) {
-		return false
-	}
 	switch n := node.(type) {
 	case *ast.Ident:
 		if instance, ok := c.pass.TypesInfo.Instances[n]; ok {
 			c.checkLibraryArguments(n, instance)
 		}
 	case *ast.FuncDecl:
-		if n.Body == nil && usesLibraryType(c.pass.TypesInfo.Defs[n.Name].Type(), make(map[types.Type]bool)) {
+		if n.Body == nil && usesLibraryType(c.pass.TypesInfo.Defs[n.Name].Type(), make(map[types.Type]bool), false) {
 			c.report(n.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
 				"provide a Go implementation so writes and pointer transport can be checked")
 		}
-		c.checkServiceMethod(n)
 
 	case *ast.TypeSpec:
-		if !n.Assign.IsValid() && checker.IsRuntimeType(c.pass.TypesInfo.TypeOf(n.Type), checker.ConcurrentSafeType) {
-			c.report(n.Pos(), "defined copies of supervise.ConcurrentSafe are unsupported; use a type alias")
-		}
 		if obj := c.pass.TypesInfo.Defs[n.Name]; obj != nil {
 			c.checkType(n.Pos(), obj.Type())
+			c.checkServiceResults(n.Name.Pos(), obj.Type())
 		}
 	case *ast.StructType:
 		c.checkStruct(n.Pos(), c.pass.TypesInfo.TypeOf(n))
@@ -172,7 +175,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 // checkStruct enforces marker placement and recursively proves each owned field.
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if t == nil || checker.IsCollection(t) || checker.IsLibraryType(t, "Owner") || checker.IsUncheckedValue(t) ||
-		checker.IsRuntimeType(t, checker.ServiceMarker) || checker.IsRuntimeType(t, checker.ConcurrentSafeType) {
+		checker.IsRuntimeType(t, checker.ServiceMarker) {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)
@@ -191,7 +194,9 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		if field.Pkg() == c.pass.Pkg && field.Pos().IsValid() {
 			fieldPos = field.Pos()
 		}
-		if c.unprovedField(fieldPos, t, field, marked) {
+		if invalidMarkerField(field) {
+			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
+				"\n  fix: embed im.Shared or im.Scoped; remove the marker field name or pointer")
 			continue
 		}
 		if marked {
@@ -201,9 +206,6 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 					"\n  fix: "+structuralFix(ft, reason))
 				continue
 			}
-		} else if c.queries.Contains(ft) && checker.Service(t) {
-			c.report(fieldPos, "service field "+field.Name()+" contains immutable storage; publish it through an im.Owner field")
-			continue
 		} else if c.queries.Contains(ft) {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
@@ -212,24 +214,6 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			continue
 		}
 	}
-}
-
-// unprovedField reports a misplaced marker or supervise.ConcurrentSafe field.
-// It identifies a field without a type proof.
-func (c *checks) unprovedField(pos token.Pos, t types.Type, field *types.Var, marked bool) bool {
-	if invalidMarkerField(field) {
-		c.report(pos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
-			"\n  fix: embed im.Shared or im.Scoped; remove the marker field name or pointer")
-		return true
-	}
-	if !checker.TrustedField(field) {
-		return false
-	}
-	if !marked {
-		c.report(pos, "supervise.ConcurrentSafe field "+field.Name()+" is allowed only in a marked service argument struct"+
-			"\n  owner: "+diagnosticType(t)+"\n  fix: move the field into the argument struct of the service")
-	}
-	return true
 }
 
 // invalidMarkerField rejects named marker fields and pointers to either marker.

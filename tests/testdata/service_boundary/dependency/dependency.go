@@ -17,5 +17,5 @@ func Unwrap(value api.Dependency) *int {
 	return getter.Value()
 }
 
-// DirectUnwrap uses the exact method in the wrong source context.
+// DirectUnwrap reads the wrapper through an ordinary direct method call.
 func DirectUnwrap(value api.Dependency) *int { return value.Value() }

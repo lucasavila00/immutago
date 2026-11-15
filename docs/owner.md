@@ -49,6 +49,7 @@ func main() {
 | Named Owner field in a struct without an im marker | `type State struct { Current im.Owner[Config] }` |
 | Local or package variable of that struct without an initializer | `var state State` |
 | New struct pointer in a local variable | `state := &State{}` or `state := new(State)` |
+| Capture an Owner slot or its holder pointer | `func() { config := current.Load(); _ = config.Limit }` |
 | Copy that pointer to a local variable | `other := state` |
 | Pass that pointer to a named, non-generic function with the exact fixed parameter type | `publish(state)` where `func publish(s *State)` |
 | Store in a package variable or direct field, with exactly `&T{...}` or `new(T)`, as a direct call statement | `current.Store(&Config{Limit: 1})`, `state.Current.Store(new(Config))` |
@@ -57,8 +58,8 @@ func main() {
 | Parentheses around an allowed expression | `config := (current).Load()` |
 
 Loaded pointers use the [Scoped forms](scoped.md).
-[Supervised services](service-forms.md#inside-a-service-method) have separate
-rules for methods that access Owner fields.
+An Owner slot can be used inside a closure. Load the Scoped pointer inside
+that closure; do not capture a pointer loaded outside it.
 
 A named publisher can run in a goroutine:
 
@@ -80,7 +81,7 @@ func start() {
 | `current.Store(config)` | `current.Store(&Config{Limit: config.Limit})` |
 | `return current.Load()` | `config := current.Load(); return *config` with a Config result. |
 | `retain(state)` where retain takes `...*State` | Use a fixed `*State` parameter. |
-| Store state in a field, slice, map, global, or closure; return state | Keep the pointer local or pass it to a named function. |
+| Store state in a field, slice, map, global; return state | Keep the pointer local or pass it to a named function. |
 | Pass `&state.Current` as `*im.Owner[Config]` | Pass `state` as `*State`. |
 | `go current.Store(&Config{})` or `defer current.Load()` | Call directly. Use `go publish(state)` for a background publisher. |
 | `read := current.Load` | `config := current.Load()` |

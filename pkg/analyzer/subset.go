@@ -21,7 +21,6 @@ type subsetChecks struct {
 	reported   map[token.Pos]bool
 	owners     map[*types.Var]bool
 	literals   map[*ast.CompositeLit]string
-	services   map[types.Type]bool
 }
 
 // checkSubset checks the supported immutable forms with compiler-resolved types.
@@ -61,12 +60,7 @@ func (c *subsetChecks) report(n ast.Node, message string) {
 
 // visit sends each protected operation through the complete source-form matcher.
 func (c *subsetChecks) visit(node ast.Node) bool {
-	if expression, ok := node.(ast.Expr); ok && c.pass.TypesInfo.Types[expression].IsType() &&
-		checker.IsRuntimeType(c.pass.TypesInfo.TypeOf(expression), checker.ConcurrentSafeType) {
-		return false
-	}
 	c.checkOwnerNode(node)
-	c.checkServiceNode(node)
 	c.declarationNode(node)
 	if name, ok := node.(*ast.Ident); ok {
 		c.genericInstance(name)
@@ -81,7 +75,7 @@ func (c *subsetChecks) visit(node ast.Node) bool {
 			c.report(operation, rule)
 		}
 	}
-	return !uncheckedTypeArguments(c.pass.TypesInfo, expression)
+	return true
 }
 
 // subsetType rejects hidden references and native containers, including inferred result types.
@@ -212,7 +206,7 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 		return
 	}
 	t := c.pass.TypesInfo.TypeOf(expression)
-	if c.pass.TypesInfo.Types[expression].IsType() && c.queries.Callable(t) && !c.trustedFunctionType(expression) {
+	if c.pass.TypesInfo.Types[expression].IsType() && c.queries.Callable(t) {
 		if _, declaration := c.parents[expression].(*ast.FuncDecl); !declaration {
 			c.report(expression, "immutable callbacks are unsupported")
 		}

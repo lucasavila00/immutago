@@ -37,13 +37,13 @@ const testLibrary = `package im
 `
 
 const testRuntime = `package supervise
- import ("context"; "github.com/lucasavila00/immutago/pkg/im")
+ import "context"
  type Service[A any] struct { args A }
  func (p *Service[A]) Init() error { return nil }
  func (p *Service[A]) Args() A { return p.args }
  func (p *Service[A]) bind(args A) { p.args = args }
  func (p *Service[A]) Children() *Group { return nil }
- type NoArgs struct { im.Shared }
+ type NoArgs struct{}
  type Group struct{}
  func NewRoot(func(any, []byte)) *Group { return nil }
  func StartGroup(parent *Group) *Group { return nil }

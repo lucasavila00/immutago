@@ -21,8 +21,6 @@ type SharedLink struct { im.Shared; P *SharedPoint }
 
 Use the types below for struct fields and frozen collection keys and elements.
 They also apply to each nested field, key, and element.
-Service start arguments have one separate [unchecked dependency form](service-forms.md#concurrent-dependencies).
-An argument struct with a dependency field is not an allowed stored type.
 
 | Allowed forms — exhaustive | Example |
 | --- | --- |
@@ -36,7 +34,6 @@ An argument struct with a dependency field is not an allowed stored type.
 | Recursive marked struct | `type SharedNode struct { im.Shared; Next *SharedNode }` |
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
-| Service Ref | `supervise.Ref[ConfigLoader]`; see [Supervised services](services.md). |
 | Trusted handle | `im.UncheckedValue[baked]`; see [Unchecked immutable values](unchecked-values.md). |
 
 | Rejected examples — non-exhaustive | Replacement |
@@ -122,7 +119,7 @@ These forms apply to both `*SharedPoint` (`im.Shared`) and
 
 ## Methods
 
-Declare methods on a concrete marked struct or its pointer. For example:
+Methods on protected receivers use these forms:
 
 ```go
 func (p SharedPoint) XValue() int { return p.X }
@@ -139,7 +136,8 @@ p.ReadX()
 group.SharedPoint.XValue()
 ```
 
-The receiver expression must have exactly the type in the method declaration.
+For a protected receiver, the expression must have exactly the type in the
+method declaration.
 Combine these forms with the construction, read, argument, result, and statement
 forms on this page.
 
@@ -150,6 +148,7 @@ forms on this page.
 | Direct call on a value or pointer of the declared receiver type | `point.XValue()`, `p.ReadX()`, `(*p).XValue()` |
 | Explicit field or element as receiver | `group.SharedPoint.XValue()`, `points[i].XValue()` |
 | Constructed value, new pointer, or direct call result as receiver | `SharedPoint{X: 3}.XValue()`, `(&SharedPoint{X: 3}).ReadX()`, `makePoint().XValue()` |
+| Direct method on an ordinary concrete receiver with protected inputs or results | `reader.Read(p)` with `func (r *Reader) Read(p *ScopedPoint) int`; `r` can have an ordinary mutable type. |
 | Alias or parentheses in these forms | `type Position = SharedPoint`, `(p).ReadX()` |
 
 | Method receiver | Body rules |
@@ -157,7 +156,8 @@ forms on this page.
 | Struct with `im.Shared` | Same checks as named functions; can return its pointer. |
 | Struct with `im.Scoped` | Same checks as named functions; can return a value copy, but cannot store or return its pointer. |
 | Either marked struct | Cannot change protected fields or have generic receivers. |
-| Service or fixed library type | Separate listed API forms. |
+| Ordinary concrete receiver with protected inputs or results | Direct, non-generic calls. The protected inputs and results keep their im rules. |
+| Fixed library type | Listed API forms. |
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
@@ -166,7 +166,6 @@ forms on this page.
 | `group.XValue()` selects a method from an embedded SharedPoint | `group.SharedPoint.XValue()` |
 | `p.Counter.Inc()` calls a method on a protected scalar field | Copy the scalar first: `count := p.Counter; count.Inc()`. |
 | `read := p.ReadX` or `(*SharedPoint).ReadX(p)` | `p.ReadX()` |
-| `reader.Read(p)` where reader has an unmarked type | Use a named function: `Read(p)`. |
 | `go p.ReadX()` or `defer p.ReadX()` | `p.ReadX()` |
 
 ## Statements and calls
@@ -177,7 +176,7 @@ Use the operations above inside these statement forms:
 | --- | --- |
 | Declare one variable or assign one destination | `var value SharedPoint`, `value := SharedPoint{X: 1}`, `value = SharedPoint{X: 2}` |
 | Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
-| Bind Start results to two local names or blanks with `:=` or `=` | `ref, err := supervise.Start[Worker](root, args)`; see [service forms](service-forms.md#startup-and-references). |
+| Bind Start results to two local names or blanks with `:=` or `=` | `ref, err := supervise.Start[Worker](root, args)`; arguments containing im values keep the common statement rules. |
 | Bind a map reader's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |
