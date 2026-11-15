@@ -139,7 +139,7 @@ forms on this page.
 | --- | --- |
 | Struct with `im.Frozen` | Same checks as named functions; can return its pointer. |
 | Struct with `im.Local` | Its value stays Local. Its pointer can only be used in local direct calls. |
-| Every marked struct | Cannot change protected fields or have generic receivers. |
+| Frozen or Local record | Cannot change protected fields or have generic receivers. |
 | Copied field inside a protected owner | Exact value-receiver calls copy the field. Pointer-receiver calls that address the field are rejected. |
 | Ordinary concrete receiver with protected inputs or results | Direct, non-generic calls. The protected inputs and results keep their im rules. |
 | Fixed library type | Listed API forms. |

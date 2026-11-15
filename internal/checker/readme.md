@@ -34,7 +34,7 @@ const ServiceMarker = "Service"
 func Contains(t types.Type) bool
 ```
 
-Contains reports Frozen or Local storage, including its holders and containers. It runs one query; use Classifier to reuse results across queries.
+Contains reports protected storage, including its holders and containers. It runs one query; use Classifier to reuse results across queries.
 
 ## func Copied
 
@@ -172,7 +172,7 @@ Callable reports whether t contains a callback contract that carries protected s
 func (c *Classifier) Contains(t types.Type) bool
 ```
 
-Contains reports Frozen or Local storage, including its holders and containers. Copied records use ordinary Go storage rules.
+Contains reports protected storage, including its holders and containers. Copied records use ordinary Go storage rules.
 
 ### func \(\*Classifier\) Handles
 

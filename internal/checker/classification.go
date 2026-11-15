@@ -34,7 +34,7 @@ type classificationNode struct {
 	value bool
 }
 
-// Contains reports Frozen or Local storage, including its holders and containers.
+// Contains reports protected storage, including its holders and containers.
 // Copied records use ordinary Go storage rules.
 func (c *Classifier) Contains(t types.Type) bool { return c.query(t, storageMode) }
 

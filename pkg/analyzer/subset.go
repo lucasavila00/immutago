@@ -145,7 +145,7 @@ func (c *subsetChecks) protectedReference(t types.Type) bool {
 	return ok && c.queries.Contains(t)
 }
 
-// protectedRoot follows projections to detect scalar fields of immutable owners.
+// protectedRoot follows selectors and indices to detect protected owners.
 func (c *subsetChecks) protectedRoot(e ast.Expr) bool {
 	if c.queries.Contains(c.pass.TypesInfo.TypeOf(e)) {
 		return true
