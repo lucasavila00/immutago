@@ -2,7 +2,7 @@
 
 `supervise.Ref[T]` identifies a service. Copy, store, or return the reference;
 call an exported service method with `ref.Current().Method(args)`.
-A restart replaces the service value. The reference continues to select that service.
+After a restart, Current selects the replacement service value.
 A Ref field fixes which service the object names; it does not freeze that service's state.
 
 ## Example: call a selected pool
@@ -55,8 +55,8 @@ Copy a reference from a marked field to a local before capturing it or using it
 in go or defer:
 
 ```go
-worker := route.Worker
-go worker.Current().Process("Hello")
+pool := route.Pool
+go pool.Current().Process("Hello")
 ```
 
 ## Current calls — exhaustive

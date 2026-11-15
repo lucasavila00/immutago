@@ -7,14 +7,14 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// checkHandles checks the accessor and each use of stored handles in all selected packages.
+// checkHandles checks Current and each use of stored service references in selected packages.
 func (c *subsetChecks) checkHandles() {
 	for _, file := range c.pass.Files {
 		ast.Inspect(file, c.visitHandle)
 	}
 }
 
-// visitHandle checks type instances, accessors, and the consumer of each handle operand.
+// visitHandle checks type instances, Current calls, and consumers of service references.
 func (c *subsetChecks) visitHandle(node ast.Node) bool {
 	switch node := node.(type) {
 	case *ast.TypeSwitchStmt:
@@ -52,7 +52,7 @@ func refAccessor(object types.Object) bool {
 	return ok && signature.Recv() != nil && checker.IsRuntimeType(signature.Recv().Type(), "Ref")
 }
 
-// matchCurrent accepts only a direct exported message call on the selected service.
+// matchCurrent accepts only a direct exported method call on the selected service.
 func (c *subsetChecks) matchCurrent(selector *ast.SelectorExpr) string {
 	const rejected = "use a service reference only as ref.Current().Message(args); " +
 		"do not extract the accessor or service pointer"
@@ -102,7 +102,7 @@ func (c *subsetChecks) handleOperand(expression ast.Expr) bool {
 	return c.queries.Handles(t)
 }
 
-// handleInstance keeps handles out of unchecked user generic bodies and constraints.
+// handleInstance keeps service references out of unchecked user generic bodies and constraints.
 func (c *subsetChecks) handleInstance(name *ast.Ident) {
 	instance, ok := c.pass.TypesInfo.Instances[name]
 	if !ok {
@@ -125,7 +125,7 @@ func (c *subsetChecks) handleInstance(name *ast.Ident) {
 	}
 }
 
-// handleTypeSwitch rejects interface recovery through every concrete handle-containing case.
+// handleTypeSwitch rejects interface recovery through each case that contains a service reference.
 func (c *subsetChecks) handleTypeSwitch(statement *ast.TypeSwitchStmt) {
 	for _, node := range statement.Body.List {
 		for _, expression := range node.(*ast.CaseClause).List {

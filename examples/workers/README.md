@@ -27,7 +27,7 @@ green v1: STILL RUNNING
 | [Pool](pool.go) | Create child workers during Init and distribute requests among them. |
 | [Configuration](config.go) | Publish immutable variant-name snapshots through `im.Owner`. |
 | [Dispatcher](dispatcher.go) | Poll configuration, stage new versions, and stop old or removed groups. |
-| [Lookup](lookup.go) | Return a pool reference in a ByValue result so callers can call the selected pool. |
+| [Lookup](lookup.go) | Return a pool reference in a PoolRoute value so callers can call the selected pool. |
 | [Command](cmd/workers/main.go) | Start two variants, replace blue, remove blue, and read green. |
 | [Tests](workers_test.go) | Check job results, shutdown, readiness, failed setup, and concurrent changes. |
 

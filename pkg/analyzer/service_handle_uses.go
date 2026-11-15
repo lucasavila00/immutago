@@ -6,7 +6,7 @@ import (
 	"go/types"
 )
 
-// matchHandleUse lists consumers that preserve the concrete handle and its accessor checks.
+// matchHandleUse lists consumers that preserve concrete service references and Current checks.
 func (c *subsetChecks) matchHandleUse(expression ast.Expr) string {
 	if call, ok := expression.(*ast.CallExpr); ok && c.pass.TypesInfo.Types[call.Fun].IsType() {
 		return c.handleCall(call)
@@ -98,7 +98,7 @@ func (c *subsetChecks) handleBindings(sources, destinations []ast.Expr) string {
 	return ""
 }
 
-// handleCall checks concrete arguments and disallows conversions that erase handle identity.
+// handleCall checks concrete arguments and rejects conversions that hide service reference types.
 func (c *subsetChecks) handleCall(call *ast.CallExpr) string {
 	if c.pass.TypesInfo.Types[call.Fun].IsType() {
 		return "service reference conversions are unsupported; use a type alias or copy the Ref value"
