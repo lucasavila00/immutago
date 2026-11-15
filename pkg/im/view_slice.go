@@ -23,6 +23,10 @@ func (s SliceView[E]) Len() int { return len(s.values) }
 // It copies E by value. It panics if index is out of range, as native indexing does.
 func (s SliceView[E]) At(index int) View[E] { return ViewOf(s.values[index]) }
 
+// AtPointer returns a local pointer view of an element without copying it.
+// The checker requires a Frozen record E. An invalid index has Go's bounds panic.
+func (s SliceView[E]) AtPointer(index int) View[*E] { return ViewOf(&s.values[index]) }
+
 // Clone returns an independent native slice in O(n) time and space and preserves nil.
 // It copies elements by value. The checker permits only Copied element types.
 func (s SliceView[E]) Clone() []E { return slices.Clone(s.values) }

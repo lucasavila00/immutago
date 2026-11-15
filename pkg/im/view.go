@@ -12,6 +12,11 @@ type View[T any] struct {
 // backing storage or allocating. Run immutago to enforce the local view rules.
 func ViewOf[T any](value T) View[T] { return View[T]{value: value} }
 
+// CopyView allocates a private root copy and returns a local pointer view.
+// It copies T by value and shares immutable backing storage. A nonzero-sized T
+// needs one allocation. The checker requires a Frozen record T.
+func CopyView[T any](value View[T]) View[*T] { return ViewOf(new(value.value)) }
+
 // Select calls project once, before returning, and wraps its result in a View.
 // The checker permits only the listed field and array-index paths in project.
 // Select does not keep project or copy the selected value's backing storage.
@@ -24,4 +29,4 @@ func Select[T, F any](value View[T], project func(T) F) View[F] {
 func Copy[T any](value View[T]) T { return value.value }
 
 // IsNil reports whether a pointer view contains nil without exposing the pointer.
-func IsNil[T any, P ~*T](value View[P]) bool { return value.value == nil }
+func IsNil[T any](value View[*T]) bool { return value.value == nil }

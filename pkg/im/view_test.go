@@ -63,8 +63,8 @@ func TestViewPublicAPI(t *testing.T) {
 		methods []string
 	}{
 		{reflect.TypeFor[View[int]](), nil},
-		{reflect.TypeFor[StringView](), []string{"At", "Clone", "Len"}},
-		{reflect.TypeFor[SliceView[int]](), []string{"All", "At", "Clone", "Len"}},
+		{reflect.TypeFor[StringView](), []string{"At", "Clone", "Equal", "EqualString", "Len", "Unsafe"}},
+		{reflect.TypeFor[SliceView[int]](), []string{"All", "At", "AtPointer", "Clone", "Len"}},
 		{reflect.TypeFor[MapView[int, int]](), []string{"All", "Clone", "Get", "Len"}},
 	}
 	for _, test := range cases {
