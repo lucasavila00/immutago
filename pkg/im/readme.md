@@ -361,7 +361,7 @@ Len returns the number of entries in O\(1\) time without allocations.
 
 ## type Projection
 
-Projection holds a value for local reads. Its zero value contains the zero T. The checker proves T and restricts storage and transport of the projection. Copies copy T by value and share its immutable backing storage. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/projection-primitives.md for the complete forms.
+Projection holds a value for local reads. Its zero value contains the zero T. The checker proves T and restricts storage and transport of the projection. Copies copy T by value and share its immutable backing storage. See the complete forms at https://github.com/lucasavila00/immutago/blob/main/docs/reference/projection-primitives.md.
 
 ```go
 type Projection[T any] struct {
