@@ -12,7 +12,7 @@ type Tuple interface {
 }
 type Variadic interface {
 	im.FrozenInterface
-	Sum(...int) int
+	Sum(...im.StringProjection) int
 }
 type Callback interface {
 	im.FrozenInterface
@@ -30,4 +30,14 @@ type Private interface {
 type Local struct {
 	im.Local
 	N int
+}
+
+// Protected variadic elements retain their native-slice restrictions.
+type LocalVariadic interface {
+	im.FrozenInterface
+	Use(...*Local)
+}
+type CallbackVariadic interface {
+	im.FrozenInterface
+	Use(...func() im.StringProjection)
 }

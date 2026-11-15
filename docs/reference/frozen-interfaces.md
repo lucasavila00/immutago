@@ -58,6 +58,9 @@ under the ordinary method rules.
 | Fixed protected parameters under the common call forms | `Read(im.StringProjection) int`, `Read(*LocalRecord) int`, `WithScorer(Scorer) int` |
 
 Named types, aliases, and named or unnamed parameters use the same rules.
+A variadic parameter follows the native-slice rules for its element type. Native
+slices of protected values remain rejected. Generated methods keep the variadic
+signature and pass the final slice with `...`.
 Implementation methods can retain ordinary inputs. A callback contract
 cannot carry protected storage. An argument cannot box protected data or capture
 it in a closure. These rules also apply to generated projection calls and concrete

@@ -148,7 +148,7 @@ Selected user methods must be declared on that exact source; promotion and
 implicit dereference fail. The promoted private seal is the only exception.
 A conversion between proved Frozen interfaces preserves the earlier proof.
 
-The interface proof requires exported methods with fixed parameters. Ordinary
+The interface proof requires exported methods. Ordinary
 interface and callback inputs use Go contracts; the shared argument, callback,
 closure, and generic checks still apply.
 Method results use normal source and transport checks, not stored-field proof

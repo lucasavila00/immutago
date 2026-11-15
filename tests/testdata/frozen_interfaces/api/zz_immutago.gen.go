@@ -117,3 +117,40 @@ func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Read() == n
 func (v ScorerProjection) Score(arg0 []float32) float64 {
 	return v.immutagoProjection.Read().Score(arg0)
 }
+
+// VariadicReaderProjection provides local method access to VariadicReader.
+type VariadicReaderProjection struct {
+	im.Local
+	immutagoProjection im.Projection[VariadicReader]
+}
+
+// NewVariadicReaderProjection wraps a checked local interface projection.
+func NewVariadicReaderProjection(value im.Projection[VariadicReader]) VariadicReaderProjection {
+	return VariadicReaderProjection{immutagoProjection: value}
+}
+
+// IsNil reports whether the interface is nil; a stored nil pointer is not nil.
+func (v VariadicReaderProjection) IsNil() bool { return v.immutagoProjection.Read() == nil }
+
+// Add calls the checked interface method with its ordinary Go contract.
+func (v VariadicReaderProjection) Add(arg0 int, arg1 ...AmountAlias) int {
+	return v.immutagoProjection.Read().Add(arg0, arg1...)
+}
+
+// Box calls the checked interface method with its ordinary Go contract.
+func (v VariadicReaderProjection) Box(arg0 ...any) int {
+	return v.immutagoProjection.Read().Box(arg0...)
+}
+
+// Call calls the checked interface method with its ordinary Go contract.
+func (v VariadicReaderProjection) Call(arg0 ...func() int) int {
+	return v.immutagoProjection.Read().Call(arg0...)
+}
+
+// Retain calls the checked interface method with its ordinary Go contract.
+func (v VariadicReaderProjection) Retain(arg0 ...int) { v.immutagoProjection.Read().Retain(arg0...) }
+
+// Sum calls the checked interface method with its ordinary Go contract.
+func (v VariadicReaderProjection) Sum(arg0 ...int) int {
+	return v.immutagoProjection.Read().Sum(arg0...)
+}
