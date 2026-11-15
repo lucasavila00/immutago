@@ -136,7 +136,8 @@ p.ReadX()
 group.SharedPoint.XValue()
 ```
 
-The receiver expression must have exactly the type in the method declaration.
+For a protected receiver, the expression must have exactly the type in the
+method declaration.
 Combine these forms with the construction, read, argument, result, and statement
 forms on this page.
 

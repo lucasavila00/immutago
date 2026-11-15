@@ -62,3 +62,5 @@ type StoredValue struct{ supervise.Service[Reply] }
 type StoredShared struct {
 	supervise.Service[*SharedReply]
 }
+
+func (*Counter) Ack() im.Scoped { return im.Scoped{} }

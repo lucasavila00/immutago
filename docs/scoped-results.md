@@ -30,6 +30,7 @@ to the limiter's mutable counters.
 | --- | --- |
 | Boolean, integer, floating-point, complex, or string value | `bool`, `int`, `float64`, `string` |
 | Defined scalar | `type Count int` |
+| Empty marker value | `im.Scoped`, `im.Shared` |
 | Struct with `im.Scoped` or `im.Shared`, with proved immutable fields | `Usage`, a struct with `im.Shared` |
 | Unnamed array of allowed stored elements | `[2]int`, `[2]Usage` |
 | Frozen collection with allowed keys and elements | `im.FrozenSlice[Usage]`, `im.FrozenMap[string, int]` |
