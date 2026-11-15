@@ -281,7 +281,7 @@ func (r *router) entries() int {
 	s := r.Children()
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return len(s.children)
+	return s.children.count
 }
 
 // TestChildrenChangeDuringRun verifies that methods can start and stop single children many times in one run.
@@ -348,7 +348,7 @@ func TestReturnedChildrenAreRemoved(t *testing.T) {
 		}
 		synctest.Wait()
 		root.mu.Lock()
-		entries := len(root.children)
+		entries := root.children.count
 		root.mu.Unlock()
 		if entries != 1 {
 			t.Fatalf("root has %d entries, want 1", entries)

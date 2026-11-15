@@ -292,7 +292,7 @@ func TestStopNestedReleases(t *testing.T) {
 			}
 		}
 		root.mu.Lock()
-		children := len(root.children)
+		children := root.children.count
 		root.mu.Unlock()
 		if children != 1 {
 			t.Errorf("root keeps %d children, want 1", children)
