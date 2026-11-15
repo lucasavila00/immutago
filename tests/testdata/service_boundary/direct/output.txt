@@ -12,21 +12,13 @@ borrow_calls.go:8:54: unsupported immutable operation: use a service reference o
   source: value.(api.Handle).Borrow
   type: func() *api.Counter
   fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
-handles.go:12:39: unsupported immutable operation: service reference conversions are unsupported; use a type alias or copy the Ref value
-  source: api.Handle(value)
-  type: api.Handle
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
-handles.go:5:88: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
+handles.go:5:48: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *api.Counter
   fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
-handles.go:6:78: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
+handles.go:6:38: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
-handles.go:8:81: unsupported immutable operation: user generic type arguments cannot contain service references; use concrete Ref parameters and storage
-  source: indirect
-  type: func(value api.Handle) *api.Counter
   fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md
 init_calls.go:6:33: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow

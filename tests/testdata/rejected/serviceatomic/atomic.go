@@ -16,11 +16,6 @@ func (*Worker) Run(context.Context) {}
 func (*Worker) Count() int          { return 1 }
 
 type WorkerRef = supervise.Ref[Worker]
-type Box[T any] struct{ Value T }
-type Nested[T any] = atomic.Pointer[Box[T]]
-type Ignored[T any] = atomic.Pointer[WorkerRef]
-type Pointer[T any] struct{ Value T }
-type Defined[T any] atomic.Pointer[T]
 type LocalSlot struct {
 	im.Local
 	Ref WorkerRef
@@ -38,11 +33,6 @@ type FrozenSlot struct {
 	Values im.FrozenSlice[int]
 }
 
-var user Box[WorkerRef]
-var nested Nested[WorkerRef]
-var ignored Ignored[WorkerRef]
-var lookalike Pointer[WorkerRef]
-var defined Defined[WorkerRef]
 var local atomic.Pointer[LocalSlot]
 var mixed atomic.Pointer[MixedSlot]
 var frozen atomic.Pointer[FrozenSlot]
@@ -50,10 +40,4 @@ var frozen atomic.Pointer[FrozenSlot]
 func Extract(pointer *atomic.Pointer[WorkerRef]) {
 	service := pointer.Load().Borrow()
 	_ = service
-}
-
-func Generic[T any](value T) T { return value }
-
-func Transport(pointer *atomic.Pointer[WorkerRef]) {
-	_ = Generic(pointer)
 }

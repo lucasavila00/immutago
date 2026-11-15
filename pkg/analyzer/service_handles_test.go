@@ -80,6 +80,8 @@ func use(r Handle){_=keep(func()Handle{return r})}`},
 		{"generic", `func get[T interface{Borrow()*Counter}](r T)*Counter{return r.Borrow()}
 func use(r Handle){_=get(r)}`},
 		{"bodyless parameter", `func leak(Handle)any`},
+		{"bodyless opaque target", `type Worker struct{supervise.Service[supervise.NoArgs]; data im.Cell[Data]}
+type Data struct{im.Frozen; N int};func(*Worker) Run(context.Context){};func read(supervise.Ref[Worker])`},
 		{"bodyless result", `func leak()Handle`},
 		{"bodyless callback", `func leak(func()Handle)any`},
 		{"bodyless receiver", `type Wrapper struct{Worker Handle};func(Wrapper) leak()any`},

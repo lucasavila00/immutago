@@ -13,17 +13,9 @@ handles.go:8:13: unsupported immutable operation: use a service reference only a
 interfaces.go:14:34: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
   source: return route
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-interfaces.go:14:41: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
-  source: route
-  type: service.Route
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 interfaces.go:17:45: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
   source: any(route)
   type: any
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-interfaces.go:17:49: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
-  source: route
-  type: service.Route
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 result_uses.go:12:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = pointer

@@ -55,6 +55,9 @@ func usesLibraryType(t types.Type, seen map[types.Type]bool, includeRuntime bool
 		return libraryTypeMetadata(value.Obj(), value.TypeParams(), value.TypeArgs(), seen, includeRuntime) ||
 			usesLibraryType(value.Rhs(), seen, includeRuntime)
 	case *types.Named:
+		if checker.IsRuntimeType(value, "Ref") {
+			return includeRuntime
+		}
 		return libraryTypeMetadata(value.Obj(), value.TypeParams(), value.TypeArgs(), seen, includeRuntime) ||
 			usesLibraryType(value.Underlying(), seen, includeRuntime)
 	case *types.TypeParam:
