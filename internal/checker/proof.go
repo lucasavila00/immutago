@@ -114,10 +114,7 @@ func (p *proof) value(result *obligation, t types.Type) {
 		return
 	}
 	if IsRuntimeType(t, "Ref") {
-		target := t.(*types.Named).TypeArgs().At(0)
-		if _, concrete := target.Underlying().(*types.Struct); !concrete || !Service(target) {
-			result.reason = "Ref requires a concrete struct that embeds supervise.Service"
-		}
+		result.reason = refTargetReason(t.(*types.Named).TypeArgs().At(0))
 		return
 	}
 	if IsCollection(t) {
@@ -161,6 +158,14 @@ func (p *proof) value(result *obligation, t types.Type) {
 		return
 	}
 	result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
+}
+
+// refTargetReason requires the concrete service value selected by Current's *T result.
+func refTargetReason(target types.Type) string {
+	if _, concrete := target.Underlying().(*types.Struct); !concrete || !Service(target) {
+		return "Ref requires a concrete struct that embeds supervise.Service"
+	}
+	return ""
 }
 
 // structure requires one marker and checks every stored field.
