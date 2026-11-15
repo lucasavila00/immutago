@@ -109,8 +109,8 @@ read does not copy a large parent record.
 result representation by type. Copied values, service references, and unchecked
 handles return directly. Frozen records and arrays return further projections.
 Native strings use ProjectString; frozen string, slice, and map fields use their
-Projection methods. Generated field getters do not expose a mutable slice, map, or raw
-record pointer. Declared Frozen interface methods keep their ordinary result
+Projection methods. Generated field getters do not expose a mutable slice, map,
+or raw record pointer. Declared Frozen interface methods keep their ordinary result
 rules and can return a Frozen pointer.
 
 Collection projections can still copy an element: SliceProjection.At and
@@ -120,8 +120,8 @@ selects a Frozen record element by address without copying it.
 A record returned by value from a map lookup has no addressable map slot.
 `CopyRecord` makes an explicit private root copy and returns its pointer
 projection. A retained nonzero-sized root needs heap storage; the compiler can
-eliminate an allocation for local use. Clone makes independent native collection slots under its type
-constraints; it does not clone referenced objects. Shared referenced objects
+eliminate an allocation for local use. Clone makes independent native collection
+slots under its type constraints; it does not clone referenced objects. Shared referenced objects
 remain immutable. `StringProjection.Unsafe` and `FrozenString.Unsafe` explicitly
 return a shared native string. The caller must obey string immutability; the
 analyzer does not track string origins or lifetimes.
@@ -168,10 +168,10 @@ or runtime ownership tracking is needed. Possession of the Cell also permits
 LoadShared; projections do not return the Cell to a reader.
 
 [Slot checks](../../pkg/analyzer/owner_slot.go) require named Cell slots and
-restricted direct access, including holder records. Value-copy checks prevent copies of the atomic slot. Holder-pointer source
-forms are also restricted by the current matcher. Holder methods use exact
-pointer receivers, with the allowed Go
-implicit address of an addressable holder variable or direct field. The
+restricted direct access, including holder records. Value-copy checks prevent
+copies of the atomic slot. Holder-pointer source forms are also restricted by
+the current matcher. Holder methods use exact pointer receivers, with the
+allowed Go implicit address of an addressable holder variable or direct field. The
 payload still uses the same Frozen proof as every other persistent value.
 
 `UncheckedValue` is a deliberate exception to payload inspection. Its declaring
