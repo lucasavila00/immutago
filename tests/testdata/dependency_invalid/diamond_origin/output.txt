@@ -1,3 +1,4 @@
+diamond_origin.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 diamond_origin.go:7:2: immutable field Values: []int is not provably immutable
   owner: diamond_origin.Broken; field type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable

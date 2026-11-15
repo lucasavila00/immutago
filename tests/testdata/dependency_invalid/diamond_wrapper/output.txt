@@ -1,12 +1,8 @@
 diamond_wrapper.go:4:2: unsupported dependency example.com/consumer/diamond_left: immutability proof failed
-  representative failure: example.com/consumer/diamond_origin/diamond_origin.go:7:2: immutable field Values: []int is not provably immutable
-    owner: diamond_origin.Broken; field type: []int
-    fix: replace the native slice with im.FrozenSlice[T], where T is immutable
+  representative failure: example.com/consumer/diamond_origin/diamond_origin.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/diamond_origin, correct its errors, then rerun immutago on this package
 diamond_wrapper.go:5:2: unsupported dependency example.com/consumer/diamond_right: immutability proof failed
-  representative failure: example.com/consumer/diamond_origin/diamond_origin.go:7:2: immutable field Values: []int is not provably immutable
-    owner: diamond_origin.Broken; field type: []int
-    fix: replace the native slice with im.FrozenSlice[T], where T is immutable
+  representative failure: example.com/consumer/diamond_origin/diamond_origin.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/diamond_origin, correct its errors, then rerun immutago on this package

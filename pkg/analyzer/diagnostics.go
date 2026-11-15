@@ -37,10 +37,6 @@ func diagnosticType(t types.Type) string {
 
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
-	"copied values require bool, numbers, arrays, or service references": "copy scalar fields, or use " +
-		"a generated local projection",
-	"immutable markers are annotations, not data": "embed the marker in a named struct; " +
-		"use data fields for values",
 	"protected operation is outside the supported expression forms": "use a documented concrete value, pointer, " +
 		"reader, or builder operation",
 	"protected value conversions are unsupported": "construct the destination marked value from copied fields; " +
@@ -130,6 +126,12 @@ var subsetFixes = map[string]string{
 
 // subsetFix gives a supported replacement for each rejected operation.
 func subsetFix(rule string) string {
+	if strings.Contains(rule, "copied values require") {
+		return "copy scalar fields, or use a generated local projection"
+	}
+	if strings.Contains(rule, "markers are annotations") {
+		return "embed the marker in a named struct; use data fields for values"
+	}
 	if fix, ok := subsetFixes[rule]; ok {
 		return fix
 	}

@@ -200,3 +200,17 @@ func raw(value im.Projection[string])string{return value.Read()}`)
 		t.Fatal(got)
 	}
 }
+
+// TestGeneratedBridgeChecksItsOwnInputs preserves valid generated reads beside unrelated source errors.
+func TestGeneratedBridgeChecksItsOwnInputs(t *testing.T) {
+	for _, source := range []string{
+		serviceDefinitions + `func(*Counter) Read()SnapshotReply{return SnapshotReply{}}`,
+		`type Data struct{im.Frozen;N int};type BadLocal struct{im.Local;Text string}`,
+		`type Data struct{im.Frozen;N int};type BadOwner struct{Value Data}`,
+	} {
+		got := checkSource(t, source)
+		if got == "" || strings.Contains(got, "reserved for verified generated") || strings.Contains(got, "is stale") {
+			t.Fatal(got)
+		}
+	}
+}

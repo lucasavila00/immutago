@@ -18,6 +18,7 @@ owned.go:24:2: unsupported immutable operation: Local values and pointers cannot
 owned.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: m.X = 2
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owned.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 transport.go:11:1: Cell holder pointers require direct non-variadic parameters
 transport.go:12:1: Cell holder pointers cannot be returned
 transport.go:15:9: Cell holder pointers require local bindings or direct typed calls

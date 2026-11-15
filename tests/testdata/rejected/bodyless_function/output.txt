@@ -6,7 +6,3 @@ bodyless_function.go:18:1: unsupported function without a Go body; immutability 
   fix: provide a Go implementation so writes and pointer transport can be checked
 bodyless_function.go:7:1: unsupported function without a Go body; immutability cannot be proved
   fix: provide a Go implementation so writes and pointer transport can be checked
-zz_immutago.gen.go:26:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *rejected.Config
-  fix: use the generated field accessor

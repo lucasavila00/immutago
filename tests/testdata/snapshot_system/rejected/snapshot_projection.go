@@ -32,10 +32,10 @@ func projection(projection im.Projection[*Data], scalar im.Projection[int]) {
 func identity(value string) string { return value }
 
 func cellStatements() {
-	go integerCell.Shared()
-	defer stringCell.Shared()
-	go identity(stringCell.Shared())
-	defer identity(stringCell.Shared())
+	go integerCell.LoadShared()
+	defer stringCell.LoadShared()
+	go identity(stringCell.LoadShared())
+	defer identity(stringCell.LoadShared())
 	go integerCell.Load()
 	defer stringCell.Load()
 	go stringCell.Store("text")

@@ -1,3 +1,4 @@
+named_array_field.go:6:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 named_array_field.go:8:2: immutable field N: named array must be wrapped in a struct with an immutable marker
   owner: rejected.Value; field type: rejected.Count
   fix: use an unnamed array type, or wrap the named array in a struct that embeds im.Frozen or im.Local

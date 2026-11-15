@@ -1,4 +1,4 @@
-anonymous.go:7:24: service method Values must return a service result: Copied values cannot contain shared data references
+anonymous.go:7:24: service method Values must return a service result: copied values require bool, numbers, arrays, or service references
   result type: []int
 handles.go:13:49: unsupported immutable operation: service reference conversions are unsupported; use a type alias or copy the Ref value
   source: api.Handle(value)

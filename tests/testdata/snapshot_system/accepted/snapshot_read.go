@@ -37,21 +37,21 @@ func read(projection Alias, index int) api.Result {
 	}
 	names := model.Names()
 	for _, value := range names.All() {
-		_ = im.String(value).Clone()
+		_ = im.ProjectedFrozenString(value).Clone()
 	}
 	entries := model.Entries()
 	entry, ok := entries.Get("name")
 	score := 0
 	if ok {
-		score = api.NewEntryProjection(im.CopyProjection(entry)).Score()
+		score = api.NewEntryProjection(im.CopyRecord(entry)).Score()
 	}
 	for key, value := range entries.All() {
-		_ = im.Text(key).Len()
-		_ = api.NewEntryProjection(im.CopyProjection(value)).Name().At(0)
+		_ = im.ProjectedString(key).Len()
+		_ = api.NewEntryProjection(im.CopyRecord(value)).Name().At(0)
 	}
 	byName := model.ByName()
 	for key, value := range byName.All() {
-		_ = im.String(key).Clone()
+		_ = im.ProjectedFrozenString(key).Clone()
 		_ = im.Copy(value)
 	}
 	return api.Result{Name: name, Score: score}
@@ -66,9 +66,9 @@ func ordinaryCopies(slice im.SliceProjection[int], mapping im.MapProjection[int,
 	entries[1] = 2
 	frozenEntries := im.FreezeMap(entries)
 	_ = frozenEntries
-	label := im.Text(im.ProjectionOf(Label("label")))
+	label := im.ProjectString(Label("label"))
 	_ = label.Clone()
-	owned := api.Shared()
+	owned := api.LoadShared()
 	_ = owned.Native[:1]
 }
 
@@ -115,7 +115,7 @@ func recordEntries(values im.MapProjection[string, api.Entry], pointers im.MapPr
 	sequence im.SliceProjection[api.Entry]) int {
 	value, ok := values.Get("name")
 	if ok {
-		_ = api.NewEntryProjection(im.CopyProjection(value)).Name().Len()
+		_ = api.NewEntryProjection(im.CopyRecord(value)).Name().Len()
 	}
 	for key, entry := range pointers.All() {
 		_ = api.NewEntryProjection(key).Score()

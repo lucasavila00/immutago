@@ -85,3 +85,4 @@ smaller_subset.go:47:21: unsupported immutable operation: reference operation is
   source: {Value: 1}
   type: *smaller_subset.Node
   fix: use a documented reference form: fresh construction, a concrete variable, a read, or a direct typed call; only Frozen pointers can be stored or returned
+smaller_subset.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

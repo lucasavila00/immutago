@@ -21,7 +21,7 @@ type Loader struct {
 // Publish stores a new model and predicts with the current one.
 func Publish(l *Loader, weights []float64) float64 {
 	l.current.Store(Current{Model: uncheckedvalue.Load("next", weights)})
-	current := l.current.Shared()
+	current := l.current.LoadShared()
 	model := current.Model
 	return uncheckedvalue.Predict(model, 0)
 }

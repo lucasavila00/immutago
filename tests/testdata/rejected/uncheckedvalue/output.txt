@@ -9,7 +9,3 @@ trusted.go:20:61: im.Trust requires a type that this package declares
 trusted.go:23:23: unsupported immutable operation: writes to immutable objects are unsupported
   source: b.Table = im.Trust(&Table{})
   fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
-zz_immutago.gen.go:26:25: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *uncheckedvalue.Box
-  fix: use the generated field accessor

@@ -94,6 +94,7 @@ convergence_rejected.go:58:58: unsupported immutable operation: dynamic calls wi
   source: factory()
   type: review_convergence.Value
   fix: call a named, non-generic function directly with a concrete immutable parameter
+convergence_rejected.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 convergence_rejected.go:60:14: unsupported immutable operation: immutable callbacks are unsupported
   source: interface{ Make() Value }
   type: interface{Make() review_convergence.Value}

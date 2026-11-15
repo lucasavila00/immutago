@@ -36,11 +36,11 @@ type Table struct {
 
 func (*Counter) List() Listing {
 	frozen := im.FreezeSlice([]int{1, 2})
-	return Listing{Values: im.Slice(im.ProjectionOf(frozen))}
+	return Listing{Values: frozen.Projection()}
 }
 func (*Counter) Table() Table {
 	frozen := im.FreezeMap(map[string]int{"a": 1})
-	return Table{Values: im.Map(im.ProjectionOf(frozen))}
+	return Table{Values: frozen.Projection()}
 }
 func (c *Counter) Input(callback func(int), values map[string]int) int {
 	callback(c.count)

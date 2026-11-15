@@ -49,7 +49,8 @@ const testLibrary = `package im
  func (s SliceProjection[E]) All()func(func(int,Projection[E])bool) { return nil }
  func (s SliceProjection[E]) Clone() []E { return nil }
  type MapProjection[K comparable,V any] struct { values map[K]V }
- func ProjectedMap[K comparable,V any](value Projection[FrozenMap[K,V]]) MapProjection[K,V] { return MapProjection[K,V]{} }
+ func ProjectedMap[K comparable,V any](value Projection[FrozenMap[K,V]]) MapProjection[K,V] {
+ return MapProjection[K,V]{} }
  func (m MapProjection[K,V]) Len() int { return 0 }
  func (m MapProjection[K,V]) Get(key K)(Projection[V],bool) { return Projection[V]{},false }
  func (m MapProjection[K,V]) All()func(func(Projection[K],Projection[V])bool) { return nil }

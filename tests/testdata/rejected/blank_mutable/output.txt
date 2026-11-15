@@ -1,3 +1,4 @@
 blank_mutable.go:13:2: immutable field _: []int is not provably immutable
   owner: rejected.Bad; field type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable
+blank_mutable.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

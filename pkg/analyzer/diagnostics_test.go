@@ -1,9 +1,22 @@
 package analyzer
 
 import (
+	"go/types"
 	"strings"
 	"testing"
 )
+
+// TestCopiedDiagnosticPaths keeps the same repair for nested category failures.
+func TestCopiedDiagnosticPaths(t *testing.T) {
+	for _, prefix := range []string{"", "array element: ", "Result: array element: "} {
+		reason := prefix + "copied values require bool, numbers, arrays, or service references"
+		for _, fix := range []string{subsetFix(reason), structuralFix(types.Typ[types.Int], reason)} {
+			if fix != "copy scalar fields, or use a generated local projection" {
+				t.Fatal(fix)
+			}
+		}
+	}
+}
 
 // TestStructuralDiagnosticContext checks the owner, failed field type, and supported repair.
 func TestStructuralDiagnosticContext(t *testing.T) {

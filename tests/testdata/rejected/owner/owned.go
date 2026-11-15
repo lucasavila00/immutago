@@ -22,6 +22,6 @@ func badUses(l *Loader) {
 	copy := *l
 	_ = copy
 	saved = l.Current.Load()
-	m := l.Current.Shared()
+	m := l.Current.LoadShared()
 	m.X = 2
 }

@@ -6,11 +6,3 @@ slice_wrapper.go:13:24: unsupported immutable operation: native slices of immuta
   source: []Good
   type: []rejected.Good
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-zz_immutago.gen.go:26:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *rejected.Good
-  fix: use the generated field accessor
-zz_immutago.gen.go:60:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *rejected.Good
-  fix: use the generated field accessor

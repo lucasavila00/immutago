@@ -25,6 +25,7 @@ receiver_bodies.go:17:65: unsupported immutable operation: closures cannot captu
   source: s
   type: *rejected.Settings
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+receiver_bodies.go:23:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 receiver_bodies.go:23:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
   source: Generic
   type: rejected.Generic[T any]

@@ -7,11 +7,3 @@ mutable_map_value.go:13:5: immutable collection: type argument 2: stored pointer
 mutable_map_value.go:13:9: immutable collection: type argument 2: stored pointers require a concrete marked struct target
   type: im.FrozenMap[string, *int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-zz_immutago.gen.go:26:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *rejected.Good
-  fix: use the generated field accessor
-zz_immutago.gen.go:60:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *rejected.Good
-  fix: use the generated field accessor

@@ -2,13 +2,13 @@ restricted_boundaries.go:17:15: unsupported immutable operation: containers of L
   source: []*Local
   type: []*restricted_boundaries.Local
   fix: keep Local values in local bindings, or store im.Frozen pointers
-restricted_boundaries.go:17:6: unsupported native builder: Copied values cannot contain shared data references
+restricted_boundaries.go:17:6: unsupported native builder: copied values require bool, numbers, arrays, or service references
   fix: use allowed stored types for builder keys and elements
 restricted_boundaries.go:18:16: unsupported immutable operation: containers of Local pointers are unsupported
   source: []*Local{}
   type: []*restricted_boundaries.Local
   fix: keep Local values in local bindings, or store im.Frozen pointers
-restricted_boundaries.go:18:2: unsupported native builder: Copied values cannot contain shared data references
+restricted_boundaries.go:18:2: unsupported native builder: copied values require bool, numbers, arrays, or service references
   fix: use allowed stored types for builder keys and elements
 restricted_boundaries.go:19:14: unsupported immutable operation: containers of Local pointers are unsupported
   source: make(map[int]*Local)
@@ -18,7 +18,7 @@ restricted_boundaries.go:19:19: unsupported immutable operation: containers of L
   source: map[int]*Local
   type: map[int]*restricted_boundaries.Local
   fix: keep Local values in local bindings, or store im.Frozen pointers
-restricted_boundaries.go:19:2: unsupported native builder: Copied values cannot contain shared data references
+restricted_boundaries.go:19:2: unsupported native builder: copied values require bool, numbers, arrays, or service references
   fix: use allowed stored types for builder keys and elements
 restricted_boundaries.go:20:6: unsupported immutable operation: containers of Local pointers are unsupported
   source: nilSlice

@@ -6,11 +6,3 @@ map_wrapper.go:13:24: unsupported immutable operation: native maps of immutable 
   source: map[string]Good
   type: map[string]rejected.Good
   fix: use im.FrozenMap[K, V]; pass an owned local map or fresh literal to im.FreezeMap
-zz_immutago.gen.go:26:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *rejected.Good
-  fix: use the generated field accessor
-zz_immutago.gen.go:60:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
-  source: v.immutagoProjection.Read()
-  type: *rejected.Good
-  fix: use the generated field accessor

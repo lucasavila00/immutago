@@ -43,7 +43,8 @@ _=text.EqualString("text");_=text.Equal(text);_=projection.EqualString("text");_
 		`var saved string;func format(string){};func f(projection im.StringProjection,text im.FrozenString){
 format(projection.Unsafe());format(text.Unsafe());saved=projection.Unsafe()}`,
 		`type raw struct{values []int};type Data struct{im.Frozen; Raw im.UncheckedValue[raw]};var cell im.Cell[Data]
-func f(){cell.Store(Data{Raw:im.Trust(&raw{values:[]int{1}})});value:=cell.LoadShared();_=im.Unwrap(value.Raw).values[0]}`,
+func f(){cell.Store(Data{Raw:im.Trust(&raw{values:[]int{1}})})
+value:=cell.LoadShared();_=im.Unwrap(value.Raw).values[0]}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {

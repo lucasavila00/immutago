@@ -1,3 +1,4 @@
 zero_array.go:13:2: immutable field Value: stored pointers require a concrete marked struct target
   owner: rejected.Bad; field type: [0]*int
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+zero_array.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

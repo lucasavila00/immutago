@@ -75,7 +75,7 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 	}
 	forms := newSubsetChecks(pass, &c.proofs)
-	if immutable && !invalid {
+	if immutable {
 		forms.checkGeneration()
 	}
 	forms.checkHandles()
@@ -221,16 +221,8 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	}
 	for field := range s.Fields() {
 		ft := field.Type()
-		fieldPos := pos
-		if field.Pkg() == c.pass.Pkg && field.Pos().IsValid() {
-			fieldPos = field.Pos()
-		}
-		if invalidMarkerField(field) {
-			c.report(fieldPos, "immutable markers must be embedded by value\n  field: "+diagnosticType(t)+"."+field.Name()+
-				"\n  fix: embed im.Frozen or im.Local; remove the marker field name or pointer")
-			continue
-		}
-		if field.Embedded() && markerType(ft) {
+		fieldPos, data := c.checkFieldMarker(pos, t, field)
+		if !data {
 			continue
 		}
 		if marked {
@@ -248,6 +240,19 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			continue
 		}
 	}
+}
+
+// checkFieldMarker checks annotation placement and returns the position of a data field.
+func (c *checks) checkFieldMarker(pos token.Pos, owner types.Type, field *types.Var) (token.Pos, bool) {
+	if field.Pkg() == c.pass.Pkg && field.Pos().IsValid() {
+		pos = field.Pos()
+	}
+	if invalidMarkerField(field) {
+		c.report(pos, "immutable markers must be embedded by value\n  field: "+diagnosticType(owner)+"."+field.Name()+
+			"\n  fix: embed im.Frozen or im.Local; remove the marker field name or pointer")
+		return pos, false
+	}
+	return pos, !field.Embedded() || !markerType(field.Type())
 }
 
 // invalidMarkerField rejects named marker fields and pointers to either marker.
