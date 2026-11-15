@@ -6,7 +6,7 @@
 import "github.com/lucasavila00/immutago/internal/projectiongen"
 ```
 
-Package projectiongen generates typed readers for Frozen records.
+Package projectiongen generates typed readers for Frozen records and interfaces.
 
 ## Constants
 
@@ -28,7 +28,7 @@ const Filename = "zz_immutago.gen.go"
 func Generate(dir string) ([]byte, error)
 ```
 
-Generate reads one package and generates its Frozen record readers and cells. Existing generated declarations are excluded, so changed fields can regenerate.
+Generate reads one package and generates its Frozen record and interface readers. Existing generated declarations are excluded, so changed fields can regenerate.
 
 ## func GenerateTypes
 

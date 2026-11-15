@@ -19,6 +19,8 @@ import (
 
 const testLibrary = `package im
  type Frozen struct{}
+ func(Frozen) immutagoFrozen() {}
+ type FrozenInterface interface { immutagoFrozen() }
  type Local struct{}
  type Copied struct{}
  type Cell[T any] struct{}

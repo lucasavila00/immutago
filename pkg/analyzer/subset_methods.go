@@ -32,6 +32,9 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 		return "bound immutable methods are unsupported"
 	}
 	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
+		if checker.FrozenInterface(selection.Recv()) {
+			return c.matchFrozenInterfaceMethod(selector)
+		}
 		return "dynamic calls with immutable storage are unsupported"
 	}
 	signature := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)

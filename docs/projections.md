@@ -1,6 +1,7 @@
 # Typed projections
 
-Every package with user-declared `im.Frozen` records requires generation.
+Every package with user-declared `im.Frozen` records or
+[im.FrozenInterface interfaces](frozen-interfaces.md) requires generation.
 Frozen records get typed projections. Field methods return Copied values or
 local projections. Local and Copied records need no generation.
 
@@ -80,6 +81,7 @@ IsNil, and immutagoProjection conflict with generated members and are rejected.
 | FrozenSlice[E] | `im.SliceProjection[E]`. |
 | FrozenMap[K,V] | `im.MapProjection[K,V]`. |
 | Frozen record or pointer to one | The record's generated typed projection. |
+| Frozen interface | The interface's generated local method projection. |
 | Unnamed array | A typed projection with Len and At; At uses this same result table. |
 | UncheckedValue[T] | Opaque `im.Projection[im.UncheckedValue[T]]`. |
 
@@ -126,6 +128,14 @@ if found {
 CopyRecord copies one record into a new root. It does not copy the strings or
 collections that the record refers to. Generated projections do not copy map values
 into roots automatically.
+
+## Interface elements
+
+For `items im.SliceProjection[Scorer]`, where Scorer embeds im.FrozenInterface,
+use `local := NewScorerProjection(items.At(index))`. Call `local.Score(features)`
+without extracting the stored interface. A map Get supplies the same
+`im.Projection[Scorer]` input. See the complete
+[interface projection forms](frozen-interfaces.md).
 
 ## Local transport — exhaustive
 

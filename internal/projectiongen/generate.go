@@ -1,4 +1,4 @@
-// Package projectiongen generates typed readers for Frozen records.
+// Package projectiongen generates typed readers for Frozen records and interfaces.
 package projectiongen
 
 import (
@@ -26,7 +26,7 @@ const Directive = "//go:generate go run github.com/lucasavila00/immutago/cmd/imm
 
 const imPath = "github.com/lucasavila00/immutago/pkg/im"
 
-// Generate reads one package and generates its Frozen record readers and cells.
+// Generate reads one package and generates its Frozen record and interface readers.
 // Existing generated declarations are excluded, so changed fields can regenerate.
 func Generate(dir string) ([]byte, error) {
 	config := &packages.Config{
@@ -39,7 +39,7 @@ func Generate(dir string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	provisional, err := GenerateTypes(pkg.Types, pkg.Fset)
+	provisional, err := generateTypes(pkg.Types, pkg.Fset, true)
 	if err != nil {
 		return nil, err
 	}
@@ -49,11 +49,23 @@ func Generate(dir string) ([]byte, error) {
 	}
 	config.ParseFile = nil
 	config.Overlay = map[string][]byte{path: provisional}
-	pkg, err = loadPackage(config, true)
+	pkg, err = loadPackage(config, false)
 	if err != nil {
 		return nil, err
 	}
-	return GenerateTypes(pkg.Types, pkg.Fset)
+	output, err := GenerateTypes(pkg.Types, pkg.Fset)
+	if err != nil {
+		return nil, err
+	}
+	if !bytes.Equal(provisional, output) {
+		config.Overlay[path] = output
+		if _, err := loadPackage(config, true); err != nil {
+			return nil, err
+		}
+	} else if len(pkg.Errors) != 0 {
+		return nil, fmt.Errorf("%s", pkg.Errors[0])
+	}
+	return output, nil
 }
 
 // loadPackage reports syntax errors first and permits missing generated names during bootstrap.
@@ -76,8 +88,13 @@ func loadPackage(config *packages.Config, complete bool) (*packages.Package, err
 // GenerateTypes produces canonical output from compiler-resolved source types.
 // Generated declarations are not inputs. Normal analysis must still check output.
 func GenerateTypes(pkg *types.Package, fset *token.FileSet) ([]byte, error) {
+	return generateTypes(pkg, fset, false)
+}
+
+// generateTypes first supplies projection names, then proves the resolved method results.
+func generateTypes(pkg *types.Package, fset *token.FileSet, bootstrap bool) ([]byte, error) {
 	g := generator{
-		pkg: pkg, fset: fset, imports: make(map[string]string), names: make(map[string]bool),
+		pkg: pkg, fset: fset, imports: make(map[string]string), names: make(map[string]bool), bootstrap: bootstrap,
 	}
 	for _, name := range pkg.Scope().Names() {
 		object, ok := pkg.Scope().Lookup(name).(*types.TypeName)
@@ -85,19 +102,23 @@ func GenerateTypes(pkg *types.Package, fset *token.FileSet) ([]byte, error) {
 			continue
 		}
 		typ := object.Type()
-		if !checker.Frozen(typ) {
+		if !checker.Frozen(typ) && !checker.FrozenInterface(typ) {
 			continue
 		}
-		if reason := g.proofs.FrozenReason(typ); reason != "" {
+		if reason := g.proofs.FrozenReason(typ); reason != "" && !bootstrap {
 			return nil, fmt.Errorf("%s: %s", name, reason)
 		}
 		g.imports[imPath] = "im"
-		if err := g.addRecord(types.NewPointer(typ), name+"Projection"); err != nil {
+		if checker.FrozenInterface(typ) {
+			if err := g.addInterface(typ, name+"Projection"); err != nil {
+				return nil, err
+			}
+		} else if err := g.addRecord(types.NewPointer(typ), name+"Projection"); err != nil {
 			return nil, err
 		}
 	}
-	if len(g.records) == 0 {
-		return nil, fmt.Errorf("package %s has no structs with im.Frozen", pkg.Name())
+	if len(g.records) == 0 && len(g.interfaces) == 0 {
+		return nil, fmt.Errorf("package %s has no structs with im.Frozen or interfaces with im.FrozenInterface", pkg.Name())
 	}
 	return g.render()
 }
@@ -118,13 +139,15 @@ func parseSource(fset *token.FileSet, filename string, source []byte) (*ast.File
 
 // generator records the typed output and its required imports.
 type generator struct {
-	pkg     *types.Package
-	fset    *token.FileSet
-	proofs  checker.Prover
-	imports map[string]string
-	names   map[string]bool
-	records []record
-	arrays  []array
+	pkg        *types.Package
+	fset       *token.FileSet
+	proofs     checker.Prover
+	imports    map[string]string
+	names      map[string]bool
+	records    []record
+	arrays     []array
+	interfaces []record
+	bootstrap  bool
 }
 
 // record describes a generated reader and its publication cell.
@@ -198,6 +221,11 @@ func (g *generator) importUsed(name string) bool {
 // render builds all requested readers before writing the import list.
 func (g *generator) render() ([]byte, error) {
 	var body bytes.Buffer
+	for _, item := range g.interfaces {
+		if err := g.writeInterface(&body, item); err != nil {
+			return nil, err
+		}
+	}
 	for ri, ai := 0, 0; ri < len(g.records) || ai < len(g.arrays); {
 		if ri < len(g.records) {
 			if err := g.writeRecord(&body, g.records[ri]); err != nil {

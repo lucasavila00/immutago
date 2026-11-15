@@ -106,6 +106,12 @@ var subsetFixes = map[string]string{
 		"storage before slicing it, or use im.FrozenSlice for immutable sequence values",
 	"shared pointer conversions are unsupported": "keep the original pointer " +
 		"type; copy the value first if a different owned value type is required",
+	"Frozen interface implementations cannot use promoted methods": "convert the explicit embedded Frozen field, " +
+		"or declare the method on the converted record",
+	"Frozen interface method receivers must match the converted type exactly": "convert a value for value methods " +
+		"or a fresh pointer for pointer methods; do not rely on implicit dereferences",
+	"Frozen interfaces require concrete Frozen record implementations": "use a proved record that embeds im.Frozen " +
+		"or a pointer to that record",
 	"boxing immutable storage in interfaces is unsupported": "keep the concrete immutable " +
 		"type in parameters, results, and variables instead of using an interface",
 	"immutable interface assertions are unsupported": "keep the concrete immutable " +

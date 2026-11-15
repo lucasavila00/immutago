@@ -1,0 +1,2 @@
+immutago: analysis skipped due to errors in package
+plain.go:5:20: cannot use Plain{} (value of struct type Plain) as api.Scorer value in variable declaration: Plain does not implement api.Scorer (missing method immutagoFrozen)
