@@ -5,18 +5,15 @@ consumption checks. The analyzer adds no runtime state.
 
 ## Local review
 
-The design reduces how much code a reviewer must trace. Put enforceable rules
-at a type or API boundary; review implementation behavior inside that boundary.
+The goal is to reduce how much code a reviewer must trace.
 
-| Boundary | What it removes from a caller review |
+| Concern | Where to check it |
 | --- | --- |
-| Marked types and frozen collections | Searching other callers for writes to the same protected data. |
-| Scoped pointers | Tracing checked callees to see whether they save the pointer. |
-| Service Refs and result types | Inspecting callers for direct field access or mutable return values. |
+| Immutable fields and collection elements | Type declarations and the im type proof. |
+| Saved Scoped pointers | The im pointer rules and their source checks. |
+| Service state changes, locks, and input use | The service code and ordinary Go API contracts. |
 
-Review service state changes, synchronization, and input contracts in the service
-implementation. Ordinary inputs and dependency calls follow Go contracts. The
-checker does not prove service logic or full isolation. Do not add whole-program
+The checker does not prove full service isolation. Do not add whole-program
 effect analysis to make that claim.
 
 ## Code map

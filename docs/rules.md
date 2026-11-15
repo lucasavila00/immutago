@@ -18,8 +18,8 @@
 
 ## Rules for im and supervise
 
-These rules support local review: callers use checked data and service APIs;
-reviewers check the behavior inside those boundaries.
+Use im type rules to check immutable data. Review service state changes and
+synchronization in the service code.
 
 Use the common forms with each type's forms. **Exhaustive** means all allowed
 forms are listed; unlisted protected operations are rejected.

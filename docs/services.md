@@ -82,16 +82,15 @@ create or remove related work while it runs.
 
 ## Review one service
 
-The API rules aim to keep review local. Review these together inside the service:
+Review these together in the service code:
 
 - Field access from Init, Run, and methods; the locks that protect it.
 - How mutable inputs are used, copied, or saved.
 - Whether callbacks or dependencies receive access to mutable service state.
 - Child startup and shutdown.
 
-Checked callers use methods through Ref; they cannot access service fields.
-Results use allowed stored types. Method logic and ordinary input contracts
-remain part of the service review.
+Immutable results do not prove service isolation. Ordinary Go contracts still
+apply to callers and dependencies.
 
 ## Startup errors and reservations
 

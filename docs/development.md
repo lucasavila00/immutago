@@ -4,8 +4,8 @@ Use the Go version in [go.mod](../go.mod). Run repository commands from the root
 Read the [rules](rules.md), then change the matcher, proof checks, documentation,
 and accepted/rejected tests together. Each new form needs a rejecting fallback.
 
-For a new rule, state which invariant it enforces and which caller tracing it
-removes. Keep ordinary input contracts in the implementation review.
+For a new rule, state what it checks and which code a reviewer no longer needs
+to trace. Keep ordinary Go input contracts in the implementation review.
 
 ## Validation
 

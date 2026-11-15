@@ -1,10 +1,9 @@
 # Working principles
 
-Keep reviews local to a type or service. Enforce data and API boundaries so a
-reviewer does not have to trace all callers. Review service logic, field access,
-locks, mutable input retention, and dependency contracts in the service itself.
-Ordinary method inputs follow Go rules; exported results keep their type checks.
-Do not add whole-program effect analysis or claim full service isolation.
+Reduce the code that a reviewer must trace. Use im type rules to check immutable
+data. Review service state changes, locks, and input use in the service code.
+Ordinary Go contracts still apply to callers and dependencies. Do not claim full
+service isolation or add whole-program effect analysis to obtain it.
 
 Treat analyzer changes as production code. Use Go compiler type information.
 The public analyzer is in `pkg/analyzer/`, immutable values are in

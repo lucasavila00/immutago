@@ -2,8 +2,8 @@
 
 A Go checker and library for immutable data and supervised services.
 
-Keep reviews local: reason about immutable data from its type, and review
-mutable state inside the service that manages it.
+The design goal is local review: check immutable data through its type rules;
+review service state changes and locks in the service code.
 
 | What do you need? | Start here |
 | --- | --- |
