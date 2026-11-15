@@ -34,8 +34,12 @@ payload cannot leave that local projection.
 
 - Declare a named, non-generic interface at package scope in a non-test Go file.
 - Embed `im.FrozenInterface`, directly or through another Frozen interface.
-- Aliases keep the interface identity. An interface can embed other interfaces
-  when its complete method set meets these rules.
+- Aliases keep the interface identity. Export the interface declaration when a
+  Frozen record in another package uses it as a field. The generator uses the
+  declared name; it does not select an exported alias for a private declaration.
+- An interface can embed other interfaces when its complete method set meets
+  these rules. Its method parameter and result types must have names that the
+  generated file can use. Export private types inherited from another package.
 - Declare only exported methods, apart from the private im seal. Method names
   Local and IsNil conflict with generated members and are rejected.
 - Use fixed concrete parameters. Interface and function parameters are rejected.
@@ -82,6 +86,8 @@ The checker does not infer method effects.
 
 | Rejected | Allowed replacement |
 | --- | --- |
+| A foreign field uses `type Public = privateReader` | Export the original Reader declaration. |
+| An inherited method returns a private type from another package | Export the result type in its declaring package. |
 | An implementation with a mutable slice field | Store `im.FrozenSlice[T]` and freeze an exclusive builder. |
 | `Scorer(nil)` | `var scorer Scorer = nil` |
 | `var value any = scorer` | Keep the Scorer type. |

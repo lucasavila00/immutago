@@ -1,0 +1,1 @@
+private.go:10:6: cannot generate typed projections: Frozen interface privateapi.privateReader requires an exported declaration for a foreign projection

@@ -2,6 +2,7 @@ package projectiongen
 
 import (
 	"bytes"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -51,5 +52,30 @@ func TestInterfaceProjectionCost(t *testing.T) {
 	command := exec.Command("go", "test", "./testdata/interfacecost", "-run", "^TestProjectionCost$", "-count=1")
 	if out, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("interface projection cost: %v\n%s", err, out)
+	}
+}
+
+// TestInheritedPrivateResult rejects a method type that the generated file cannot name.
+func TestInheritedPrivateResult(t *testing.T) {
+	dir := module(t, `package reader
+import "example.test/projections/hidden"
+type Reader interface { hidden.Reader }
+`)
+	hidden := filepath.Join(dir, "hidden")
+	if err := os.Mkdir(hidden, 0700); err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(hidden, "reader.go"), `package hidden
+import "github.com/lucasavila00/immutago/pkg/im"
+type number int
+type Reader interface { im.FrozenInterface; Read() number }
+`)
+	output, err := Generate(hidden)
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(hidden, Filename), string(output))
+	if _, err := Generate(dir); err == nil {
+		t.Fatal("an inherited private result escaped the generator's compiler check")
 	}
 }

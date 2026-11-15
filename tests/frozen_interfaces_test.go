@@ -20,10 +20,12 @@ func TestFrozenInterfaces(t *testing.T) {
 	for _, mode := range []string{"cli", "vet"} {
 		for _, target := range []string{
 			"api", "implementation", "accepted", "rejected", "invalid", "invalidconsumer", "contracts",
+			"privateapi", "privateconsumer",
 		} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
 				dir := consumerModule(t, root, "frozen_interfaces")
-				valid := target == "api" || target == "implementation" || target == "accepted"
+				valid := target == "api" || target == "implementation" ||
+					target == "accepted" || target == "privateapi"
 				output := runBoundary(t, dir, binary, mode, valid, "./"+target)
 				checkFixtureSnapshots(t, root, "frozen_interfaces/"+target, output)
 			})

@@ -26,8 +26,8 @@ func (g *generator) readPath(typ, root types.Type, path, stem string, indices []
 		return name, constructor + "(im.ProjectionOf(" + expression + "))", err
 	}
 	if checker.FrozenInterface(typ) {
-		name, constructor := g.interfaceReader(typ)
-		return name, constructor + "(im.ProjectionOf(" + expression + "))", nil
+		name, constructor, err := g.interfaceReader(typ)
+		return name, constructor + "(im.ProjectionOf(" + expression + "))", err
 	}
 	if g.proofs.CopiedReason(typ) == "" {
 		return g.typeName(typ), expression, nil

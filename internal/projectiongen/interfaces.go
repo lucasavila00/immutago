@@ -22,14 +22,18 @@ func (g *generator) addInterface(typ types.Type, name string) error {
 }
 
 // interfaceReader selects the local adapter from the interface's declaring package.
-func (g *generator) interfaceReader(typ types.Type) (string, string) {
+func (g *generator) interfaceReader(typ types.Type) (string, string, error) {
 	named := types.Unalias(typ).(*types.Named)
 	projection := named.Obj().Name() + "Projection"
 	if named.Obj().Pkg() == g.pkg {
-		return projection, constructorName(projection)
+		return projection, constructorName(projection), nil
+	}
+	if !named.Obj().Exported() {
+		return "", "", fmt.Errorf("Frozen interface %s requires an exported declaration for a foreign projection",
+			g.typeName(named))
 	}
 	qualifier := strings.TrimSuffix(g.typeName(named), named.Obj().Name())
-	return qualifier + projection, qualifier + constructorName(projection)
+	return qualifier + projection, qualifier + constructorName(projection), nil
 }
 
 // writeInterface forwards checked methods without returning the persistent interface.
