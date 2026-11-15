@@ -24,10 +24,10 @@ native slice ──FreezeSlice──> FrozenSlice ──Store Rates──> Cell
 | Stage | Go operation | What happens |
 | --- | --- | --- |
 | Build | `values := []int{10, 20}` | Create one local builder. |
-| Freeze | `frozen := im.FreezeSlice(values)` | Prove the element type; consume `values`; share its backing array. |
-| Publish | `current.Store(Rates{Values: frozen})` | Copy the root and replace an atomic pointer. |
-| Select | `view := current.Load()` | Keep the selected root. A later Store does not change this view. |
-| Read | `price := im.Value(view.Values().At(0))` | Read through the root and copy one integer. |
+| Freeze | `frozen := im.FreezeSlice(values)` | Reuse the backing array; the checker rejects later use of `values`. |
+| Publish | `current.Store(Rates{Values: frozen})` | Store a copy of Rates behind an atomic pointer. |
+| Select | `view := current.Load()` | Keep this Rates value; a later Store does not change it. |
+| Read | `price := im.Value(view.Values().At(0))` | Read `Values[0]` from this Rates value and copy the integer. |
 
 ## Implementation
 
