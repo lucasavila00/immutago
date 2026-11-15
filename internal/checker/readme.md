@@ -52,6 +52,22 @@ func Frozen(t types.Type) bool
 
 Frozen reports the presence of an embedded im.Frozen value, not type validity.
 
+## func FrozenInterface
+
+```go
+func FrozenInterface(t types.Type) bool
+```
+
+FrozenInterface identifies the sealed method on an interface by compiler identity. It does not prove the interface's name or method contracts.
+
+## func FrozenInterfaceSeal
+
+```go
+func FrozenInterfaceSeal(method *types.Func) bool
+```
+
+FrozenInterfaceSeal identifies the private method supplied by im.Frozen.
+
 ## func IsCollection
 
 ```go

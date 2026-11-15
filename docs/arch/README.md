@@ -12,6 +12,7 @@ The goal is to reduce how much code a reviewer must trace.
 | Concern | Where to check it |
 | --- | --- |
 | Immutable fields and collection elements | Type declarations and the im type proof. |
+| Frozen interface conversion and method bodies | Prove the converted type; review the method's ordinary Go contract. |
 | Stored Local values and pointers | The im storage rules and their source checks. |
 | Calls through service references | The Borrow call matcher and result type checks. |
 | Service state changes, locks, and input use | The service code and ordinary Go API contracts. |

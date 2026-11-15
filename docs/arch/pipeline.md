@@ -46,16 +46,18 @@ Package selection and state:
 
 [Type predicates](../../internal/checker/types.go) resolve aliases and identify
 `im.Frozen`, `im.Local`, `im.Copied`, and frozen collections by package path and named type.
+[Frozen interface identity](../../internal/checker/interfaces.go) uses the private
+im seal method. The seal does not prove an implementation's fields.
 
 The per-pass [classifier](../../internal/checker/classification.go) answers
 whether a type contains protected storage, callbacks, or service references:
 
 | Query | Edges followed |
 | --- | --- |
-| Storage | All marked records, fields, and containers; used for transport checks. |
-| Retained storage | Frozen/Local records, projections, frozen collections, and containing storage. Copied records do not make ordinary holders immutable. |
+| Storage | All marked records and interfaces, fields, and containers; used for transport checks. |
+| Retained storage | Frozen/Local records, Frozen interfaces, projections, frozen collections, and containing storage. Copied records do not make ordinary holders immutable. |
 | Local | Local records, projection wrappers, and containing storage. |
-| Callback | Storage edges, interface methods, function parameters and results. |
+| Callback | Storage edges, unmarked interface methods, function parameters and results. |
 | Service reference | Fields, containers, interface methods, function parameters and results. |
 | Type-parameter constraint | Separate traversal mode. |
 
@@ -88,6 +90,34 @@ Copied pointers are rejected. Mutable holders and native Copied containers keep
 whole-slot replacement; the owner walk rejects writes inside any marked record.
 Only retained storage or a later Freeze starts native builder ownership checks. Type parameters fail; [generic checks](../../pkg/analyzer/subset_generics.go)
 retain the fixed im APIs and reject user generics with protected storage.
+
+## Frozen interface methods
+
+The [interface matcher](../../pkg/analyzer/subset_interfaces.go) proves each
+concrete source at implicit and explicit interface conversions. The source
+must be a named Frozen record or pointer to one. Each selected method must be
+declared on that exact source type; promoted methods and implicit dereferences
+fail. The private im seal is the only promoted-method exception. A conversion
+between proved Frozen interfaces keeps the earlier concrete proof.
+
+Named interface proofs require exported methods, fixed concrete parameters,
+and no result or one general ReadResult. The complete expression and statement
+matchers still check calls, arguments, bindings, captures, and writes. Dependency
+facts carry failed implementation checks to consumers, including consumers that
+import no im package directly.
+
+[Generated interface projections](../../internal/projectiongen/interfaces.go)
+store `im.Projection[Interface]` in an im.Local record. Each method reads that
+interface only inside the verified generated file and forwards one direct call.
+The caller cannot extract the persistent interface. An implementation can retain
+its own Frozen receiver under ordinary Go method contracts; no method-effect
+or receiver-escape analysis is added.
+
+Generation first supplies the projection type names without interface methods.
+This resolves signatures that return generated Local projections, including
+recursive results. The next pass proves the complete types and writes the
+forwarding methods. A final compiler load checks changed provisional output.
+Only the complete proved output can pass the analyzer's generated-file check.
 
 ## Source forms and dependency failures
 

@@ -25,6 +25,20 @@ type Copied struct{}
 // See https://github.com/lucasavila00/immutago/blob/main/docs/frozen-records.md for the complete forms.
 type Frozen struct{}
 
+// immutagoFrozen seals FrozenInterface implementations to types that embed Frozen.
+func (Frozen) immutagoFrozen() {}
+
+// FrozenInterface marks an interface implemented by proved Frozen records.
+// Embed it in a named interface. Each conversion needs an immutability proof;
+// the private method alone does not prove the fields of an implementation.
+// Methods have fixed concrete parameters and at most one read result.
+// Generated local projections do not expose the interface. Method implementations
+// keep ordinary Go contracts, including retention of their own Frozen receiver.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/frozen-interfaces.md for the complete forms.
+type FrozenInterface interface {
+	immutagoFrozen()
+}
+
 // Local marks a struct whose fields follow the local projection rules.
 // The checker restricts storage and transport of the struct and its pointers.
 // Embed it by value. A named field or pointer embedding does not mark the struct.

@@ -237,7 +237,7 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 	}
 	t := c.pass.TypesInfo.TypeOf(expression)
 	if c.pass.TypesInfo.Types[expression].IsType() && c.queries.Callable(t) {
-		if _, declaration := c.parents[expression].(*ast.FuncDecl); !declaration {
+		if _, declaration := c.parents[expression].(*ast.FuncDecl); !declaration && !c.frozenInterfaceMethodType(expression) {
 			c.report(expression, "immutable callbacks are unsupported")
 		}
 	}

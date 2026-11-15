@@ -175,6 +175,13 @@ func (c *checks) checkFunctionBody(declaration *ast.FuncDecl) {
 
 // checkType proves collection arguments and named struct fields.
 func (c *checks) checkType(pos token.Pos, t types.Type) {
+	if checker.FrozenInterface(t) && !checker.IsLibraryType(t, "FrozenInterface") {
+		if _, named := types.Unalias(t).(*types.Named); named {
+			if reason := c.proofs.FrozenReason(t); reason != "" {
+				c.report(pos, "immutable interface: "+reason+"\n  fix: use fixed concrete parameters and at most one read result")
+			}
+		}
+	}
 	if checker.IsCollection(t) || checker.IsProjection(t) {
 		if reason := c.proofs.Reason(t); reason != "" {
 			c.report(pos, "immutable collection: "+reason+"\n  type: "+diagnosticType(t)+

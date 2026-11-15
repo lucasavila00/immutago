@@ -1,0 +1,44 @@
+invalid.go:10:6: cannot generate typed projections: Mutable: Values: []int is not provably immutable
+invalid.go:12:2: immutable field Values: []int is not provably immutable
+  owner: invalid.Mutable; field type: []int
+  fix: replace the native slice with im.FrozenSlice[T], where T is immutable
+invalid.go:15:19: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
+  source: Score
+  type: func([]float32) float64
+  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
+invalid.go:15:9: unsupported immutable operation: Values: []int is not provably immutable
+  source: *Mutable
+  type: *invalid.Mutable
+  fix: use the documented immutable value and reference forms
+invalid.go:16:46: unsupported immutable operation: Frozen interface implementation: Values: []int is not provably immutable
+  source: return &Mutable{}
+  fix: use the documented immutable value and reference forms
+invalid.go:16:53: unsupported immutable operation: Values: []int is not provably immutable
+  source: &Mutable{}
+  type: *invalid.Mutable
+  fix: use the documented immutable value and reference forms
+invalid.go:18:25: unmarked struct contains immutable field Scorer; embed an immutable marker
+  owner: invalid.Hidden; field type: api.Scorer
+  rule: a struct that owns immutable storage must itself have an immutable field proof
+  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+invalid.go:20:45: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
+  source: return Hidden{Scorer: s}
+  fix: use the documented immutable value and reference forms
+invalid.go:24:2: unsupported immutable operation: Values: []int is not provably immutable
+  source: *Mutable
+  type: *invalid.Mutable
+  fix: use the documented immutable value and reference forms
+invalid.go:24:3: immutable field Mutable: Values: []int is not provably immutable
+  owner: invalid.Promoted; field type: *invalid.Mutable
+  fix: replace the pointer field or argument with an owned immutable value
+invalid.go:27:35: unsupported immutable operation: Frozen interface implementation: Mutable: Values: []int is not provably immutable
+  source: return Promoted{Mutable: &Mutable{}}
+  fix: use the documented immutable value and reference forms
+invalid.go:27:51: unsupported immutable operation: Values: []int is not provably immutable
+  source: Mutable
+  type: *invalid.Mutable
+  fix: use the documented immutable value and reference forms
+invalid.go:27:60: unsupported immutable operation: Values: []int is not provably immutable
+  source: &Mutable{}
+  type: *invalid.Mutable
+  fix: use the documented immutable value and reference forms
