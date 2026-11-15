@@ -11,6 +11,10 @@ func TestInterfaceReads(t *testing.T) {
 	if got := Exercise(); got != 9 {
 		t.Fatal(got)
 	}
+	summary := current.Load().Readers().At(0).Summary()
+	if summary.Count != 3 {
+		t.Fatal(summary.Count)
+	}
 	if implementation.Saved == nil {
 		t.Fatal("method did not retain its receiver")
 	}

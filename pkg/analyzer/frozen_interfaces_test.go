@@ -36,6 +36,9 @@ value,ok:=frozen.Get(Count{});_=value;_=ok}`},
 		{"local result", `type Reader interface{im.FrozenInterface; Read()im.StringProjection};
 func(t *Tree)Read()im.StringProjection{return im.ProjectString("text")};
 func f(){var r Reader=&Tree{};_=r.Read().Len()}`},
+		{"Copied result", `type Summary struct{im.Copied;N int};
+type Reader interface{im.FrozenInterface;Summary()Summary};
+func(t *Tree)Summary()Summary{return Summary{N:1}};func f(){var r Reader=&Tree{};_=r.Summary()}`},
 		{"protected parameters", `type Reader interface{im.FrozenInterface;Read(*Tree)float64};
 func(t *Tree)Read(other *Tree)float64{return other.Weight};func f(){var r Reader=&Tree{};_=r.Read(&Tree{})}`},
 		{"local parameter", `type Input struct{im.Local;N int};
@@ -86,6 +89,7 @@ func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.
 _=n}`, "multiple assignments"},
 		{"variadic interface input", `func take(...Scorer){};func f(){take(&Tree{})}`, "native slices"},
 		{"variadic boxing", `func take(...any){};func f(s Scorer){take(s)}`, "boxing immutable"},
+		{"Copied interface field", `type Bad struct{im.Copied;Scorer Scorer}`, "copied values require"},
 		{"raw result", `type Bad interface{im.FrozenInterface;Self()Scorer}`, "Self result"},
 		{"string result", `type Bad interface{im.FrozenInterface;Name()string}`, "Name result"},
 		{"tuple result", `type Bad interface{im.FrozenInterface;Pair()(int,bool)}`, "at most one read result"},

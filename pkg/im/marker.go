@@ -1,6 +1,7 @@
 // Package im provides frozen data and local read projections checked by immutago.
 //
 // Choose the API for the data:
+//   - Copied: record fields that are copied with the value.
 //   - Frozen: immutable fields that callers can store and share.
 //   - Local: fields that follow the checker's local storage and transport rules.
 //   - Cell: publish a snapshot and read the current value through a Projection.
@@ -11,6 +12,12 @@
 // Prepare a native collection in one local variable. After Freeze, use only the
 // frozen value. Run immutago to enforce these rules; go build alone does not.
 package im
+
+// Copied marks a record with immutable bool, numeric, array, or Copied fields.
+// Copying the record copies all its data. Strings and reference fields are rejected.
+// Embed the marker by value. Use whole values; pointers to Copied records are rejected.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/copied.md for the complete forms.
+type Copied struct{}
 
 // Frozen marks a struct with immutable fields. Values and pointers to that
 // struct can be copied, stored, and returned through the allowed source forms.

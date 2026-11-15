@@ -12,7 +12,13 @@ type Scorer interface {
 type Reader interface {
 	Scorer
 	Name() im.StringProjection
+	Summary() Summary
 	Visit()
 }
 
 type Alias = Scorer
+
+type Summary struct {
+	im.Copied
+	Count int
+}

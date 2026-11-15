@@ -1,0 +1,106 @@
+copied_fields.go:100:21: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+copied_fields.go:100:6: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+copied_fields.go:101:5: Copied record: Frozen storage cannot contain Local values
+  type: fields.BadLocalMarker
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:105:16: service method Bad must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: *api.Point
+copied_fields.go:105:22: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
+  source: *api.Point
+  type: *api.Point
+  fix: pass or return the Copied value; replace the whole stored value when needed
+copied_fields.go:106:16: service method Unmarked must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: struct{N int}
+copied_fields.go:107:16: service method Marker must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: im.Copied
+copied_fields.go:13:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadString
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:17:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadFrozenString
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:21:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadPointer
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:22:8: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
+  source: *api.Point
+  type: *api.Point
+  fix: pass or return the Copied value; replace the whole stored value when needed
+copied_fields.go:25:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadSlice
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:29:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadMap
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:33:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadChannel
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:37:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadFunction
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:41:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadInterface
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:45:5: Copied record: Value: array element: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadZeroArray
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:49:5: Copied record: Value: array element: array element: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadNestedArray
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:50:11: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
+  source: [0]*api.Point
+  type: [0]*api.Point
+  fix: pass or return the Copied value; replace the whole stored value when needed
+copied_fields.go:50:14: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
+  source: *api.Point
+  type: *api.Point
+  fix: pass or return the Copied value; replace the whole stored value when needed
+copied_fields.go:50:8: unsupported immutable operation: pointers to Copied records are unsupported; use a value copy
+  source: [2][0]*api.Point
+  type: [2][0]*api.Point
+  fix: pass or return the Copied value; replace the whole stored value when needed
+copied_fields.go:53:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadRecord
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:57:5: Copied record: Value: Copied records cannot contain service references
+  type: fields.BadReference
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:61:5: Copied record: Value: Copied records cannot contain service references
+  type: fields.BadReferenceArray
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:65:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadCollection
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:69:5: Copied record: Frozen storage cannot contain Local values
+  type: fields.BadProjection
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:73:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadCell
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:77:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadTrust
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:81:5: Copied record: Value: array element: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadMarker
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:86:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadNamedArray
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:89:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: BadGeneric
+  type: fields.BadGeneric[T any]
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+copied_fields.go:90:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+  type: fields.BadGeneric[T any]
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+copied_fields.go:93:29: immutable markers must be embedded by value
+  field: fields.BadNamedMarker.Marker
+  fix: embed im.Frozen, im.Local, or im.Copied; remove the marker field name or pointer
+copied_fields.go:94:35: immutable markers must be embedded by value
+  field: fields.BadPointerMarker.Copied
+  fix: embed im.Frozen, im.Local, or im.Copied; remove the marker field name or pointer
+copied_fields.go:96:22: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+copied_fields.go:96:6: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+copied_fields.go:98:2: Copied record: Copied record must embed exactly one marker
+  type: fields.BadDoubleMarker
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field

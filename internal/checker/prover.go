@@ -22,7 +22,7 @@ func (p *Prover) FrozenReason(t types.Type) string {
 	return p.render(p.graph.categoryNode(t, frozenCategory))
 }
 
-// CopiedReason proves bool, numbers, unnamed arrays of these values, or opaque service references.
+// CopiedReason proves bool, numbers, Copied records, unnamed arrays, or opaque service references.
 func (p *Prover) CopiedReason(t types.Type) string {
 	return p.render(p.graph.categoryNode(t, copiedCategory))
 }

@@ -8,37 +8,40 @@ Go type and proof category. The same cached obligations serve all consumers.
 | Proof | Consumers |
 | --- | --- |
 | FrozenReason | Frozen fields, shared frozen arguments, Cell[T], Projection[T], ProjectionOf. |
-| CopiedReason | Copy and local collection Clone arguments. |
+| CopiedReason | Copied record fields, Copy, and local collection Clone arguments. |
 | ReadResultReason | Local fields and service results. |
 | General immutable proof | Marked records and fixed library types, including Local values. |
 
-Frozen and Local markers set one field rule each. API names and service
+Frozen, Local, and Copied markers set one field rule each. API names and service
 context do not change those rules. Ordinary functions can return shared
 Frozen values; APIs that require read results accept only Copied or Local types.
-Copied contains booleans, numbers, unnamed arrays of Copied values, and opaque
-service references. It excludes Frozen records and the Frozen marker. Local
-fields and service results both use this boundary.
+Copied contains booleans, numbers, Copied records, unnamed arrays of Copied
+values, and opaque service references. Copied records reject string and reference
+fields, including service references. The cached handle query applies this field
+rule before following Copied field obligations. Frozen records are not Copied.
+Local fields and service results both use this boundary.
 
 ## Source matching
 
 | Rule | Implementation |
 | --- | --- |
 | Fields are immutable from construction | [Write matcher](../../pkg/analyzer/subset_writes.go). |
+| Copied values can enter mutable holders | Retained storage classification separates the holder from its immutable Copied fields. Whole holder slots can change; fields inside the Copied record cannot. |
 | Protected pointers originate from fresh storage | [Source matcher](../../pkg/analyzer/subset_operations.go); reject addresses of reassignable locals. |
 | Local storage and captures cannot escape | Declaration, assignment, container, callback, and closure checks use the recursive Local classification. |
 | Application code cannot call Projection.Read | [Generation checks](../../pkg/analyzer/generation.go) identify the exact current generated token file before source checks. Handwritten Read calls are rejected. |
-| Reads preserve access types | Generated getters return Copied scalars or local projections. Copy requires Copied. |
+| Reads preserve access types | Generated getters return Copied scalars/records or local projections. Copy requires Copied. |
 
 ## Generated projections
 
 The [generator](../../internal/projectiongen/generate.go) reads named package-scope
 Frozen declarations with compiler type information. Frozen records get typed
-projections, projection constructors, and Cell holders. Local records need no
+projections, projection constructors, and Cell holders. Local and Copied records need no
 generation.
 
 [Generated field methods](../../internal/projectiongen/readers.go) use a projection of the
-root pointer and read fields directly. Records and arrays use projections with
-that root and the required indices. Copied scalars and opaque service references
+root pointer and read fields directly. Frozen records and arrays use projections with
+that root and the required indices. Copied scalars/records and opaque service references
 return directly. Native strings use ProjectString; frozen string, slice, and map
 fields use their Projection methods.
 
@@ -77,7 +80,7 @@ Frozen access can use the existing trusted API.
 
 | Stage | Work |
 | --- | --- |
-| [Discovery](../../internal/freeze/discover.go) | Index local declarations by compiler variable identity. Track containers with protected contents and native Freeze inputs. |
+| [Discovery](../../internal/freeze/discover.go) | Index local declarations by compiler variable identity. Track containers with retained immutable contents and native Freeze inputs. Native Copied containers need ownership checks only when later frozen. |
 | Initial source | Match allocation, literal, bare nil, zero declaration, or exact collection Clone. |
 | [Use checks](../../internal/freeze/uses.go) | Reject handle copies, subslices, slot addresses, escapes, and unmatched calls. |
 

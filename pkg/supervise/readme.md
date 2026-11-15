@@ -17,7 +17,7 @@ Define a service:
 
 Call a service:
 
-- Keep the Ref and use ref.Current\(\).Method\(\).
+- Keep the Ref and use ref.Borrow\(\).Method\(\).
 - Calls run in the caller's goroutine and can overlap with Run and other calls. Synchronize access to mutable fields.
 - Each exported service method returns no result or one service result: a Copied value or a Local value, including projections and Local records. This includes promoted methods. Init, Run, and methods supplied by the runtime are exempt. See the complete result rules at https://github.com/lucasavila00/immutago/blob/main/docs/service-results.md.
 - Arguments and implementation code follow ordinary Go rules. Uses of im values keep their immutability and pointer rules.
@@ -38,7 +38,7 @@ Service methods can give callbacks or globals access to mutable state. Review st
 - Each attempt creates a fresh value with the same arguments and calls Init. Successful setup replaces the current value; failed setup counts as a failure.
 - Six failures from one child in 5 minutes stop its siblings and pass failure to the parent group. The parent restarts that group under the same rules. Failure at the root panics and ends the program.
 - NewRoot can report recovered panics and restart Init errors before each delay.
-- Current selects the last published value, even during delays and after stop. Calls in progress finish on their selected value.
+- Borrow selects the last published value, even during delays and after stop. Calls in progress finish on their selected value.
 - A direct call's panic stays in its goroutine. Calls from Run or a restart Init can fail that attempt. The first Init panic reaches the Start caller.
 - A child Ref does not follow its parent's restart.
 
@@ -149,7 +149,7 @@ type Ref[T any] struct {
 func Reserve[T any]() Ref[T]
 ```
 
-Reserve creates a reference that StartReserved can initialize later. Use it to connect services whose start arguments need each other's references. Current panics until initialization succeeds.
+Reserve creates a reference that StartReserved can initialize later. Use it to connect services whose start arguments need each other's references. Borrow panics until initialization succeeds.
 
 ### func Start
 
@@ -168,19 +168,19 @@ Start creates T with args, calls Init, and returns its reference after setup suc
 
 An Init error returns an empty Ref and that error. An Init panic reaches the caller. If parent has stopped, setup still runs but Run does not. Start uses Reserve and StartReserved; their initialization and restart rules apply.
 
-### func \(Ref\[T\]\) Current
+### func \(Ref\[T\]\) Borrow
 
 ```go
-func (p Ref[T]) Current() *T
+func (p Ref[T]) Borrow() *T
 ```
 
-Current selects the last successfully initialized service value with one atomic load. The analyzer accepts only ref.Current\(\).Method\(args\). Method must be an exported service method other than Init, Run, or a runtime method. The analyzer rejects saving the pointer, the Current method, or the selected method. A call in progress finishes on its selected instance, even after a restart.
+Borrow selects the last successfully initialized service value with one atomic load. For direct Ref calls, the analyzer accepts only ref.Borrow\(\).Method\(args\). Method must be exported and must not be Init, Run, or a runtime method. Direct calls cannot save the pointer, Borrow method, or selected method. Interface calls can expose the pointer without these source checks. Borrow is shared and is not exclusive. No release call is needed. A call in progress finishes on its selected instance, even after a restart.
 
-Current panics for an empty or unstarted reference. It can select a value whose Run has ended. Stop does not invalidate the reference or block later calls.
+Borrow panics for an empty or unstarted reference. It can select a value whose Run has ended. Stop does not invalidate the reference or block later calls.
 
 ## type Service
 
-Service supplies the arguments and child group of a supervised service. Embed Service\[A\] to supply start arguments and runtime methods; add Run\(context.Context\) for background work. Start and StartReserved create and initialize each service value. Call an exported service method with ref.Current\(\).Method\(args\).
+Service supplies the arguments and child group of a supervised service. Embed Service\[A\] to supply start arguments and runtime methods; add Run\(context.Context\) for background work. Start and StartReserved create and initialize each service value. Call an exported service method with ref.Borrow\(\).Method\(args\).
 
 ```go
 type Service[A any] struct {
@@ -214,6 +214,6 @@ A child that passes its restart limit fails this run. After the run ends, Childr
 func (*Service[A]) Init() error
 ```
 
-Init supplies successful empty setup when the service does not declare Init. The runtime calls Init on each fresh value before Current or Run can use it. A declared Init must release any application resources it opened before returning an error; the runtime stops staged children.
+Init supplies successful empty setup when the service does not declare Init. The runtime calls Init on each fresh value before Borrow or Run can use it. A declared Init must release any application resources it opened before returning an error; the runtime stops staged children.
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

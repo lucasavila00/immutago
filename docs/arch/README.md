@@ -14,7 +14,7 @@ The goal is to reduce how much code a reviewer must trace.
 | Immutable fields and collection elements | Type declarations and the im type proof. |
 | Frozen interface conversion and method bodies | Prove the converted type; review the method's ordinary Go contract. |
 | Stored Local values and pointers | The im storage rules and their source checks. |
-| Calls through service references | The Current call matcher and result type checks. |
+| Calls through service references | The Borrow call matcher and result type checks. |
 | Service state changes, locks, and input use | The service code and ordinary Go API contracts. |
 
 The checker does not prove full service isolation. Do not add whole-program
@@ -31,7 +31,7 @@ effect analysis to make that claim.
 | [internal/checker](../../internal/checker/proof.go) | Prove each field, key, and element type. |
 | [internal/freeze](../../internal/freeze/freeze.go) | Require one native builder handle and reject use after Freeze. |
 | [internal/freeze/flow](../../internal/freeze/flow/graph.go) | Supply the builder solver's graph and set operations. |
-| [pkg/im](../../pkg/im/marker.go) | Define `im.Frozen`, `im.Local`, and the trusted native storage wrappers. |
+| [pkg/im](../../pkg/im/marker.go) | Define `im.Frozen`, `im.Local`, `im.Copied`, and the trusted native storage wrappers. |
 | [pkg/supervise](../../pkg/supervise/supervise.go) | Define `Service`, service references, and the trusted group runtime. |
 | [tests](../../tests/cli_test.go) | Run consumer fixtures through the command and vet driver. |
 

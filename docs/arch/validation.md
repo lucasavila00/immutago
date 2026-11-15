@@ -37,13 +37,15 @@ Enforcement:
 | --- | --- |
 | Generator startup, repeatable output, Frozen records, and changed fields | [Generator tests](../../internal/projectiongen/generate_test.go) |
 | Frozen, Copied, ReadResult, and recursive marker proofs | [Category tests](../../internal/checker/categories_test.go), [type tests](../../internal/checker/types_test.go), [marker tests](../../internal/checker/markers_test.go) |
+| Copied declarations, mutable holders, service results, generated reads, and dependency failures | [Copied proof tests](../../internal/checker/copied_test.go), [source checks](../../pkg/analyzer/copied_test.go), [CLI and vet tests](../../tests/copied_records_test.go) |
+| Copied layout, allocation counts, and native/projection copy costs | [Runtime tests and benchmark](../../pkg/im/copied_test.go) |
 | Immutable writes and pointer escape rules | [Object tests](../../pkg/analyzer/immutable_objects_test.go), [escape tests](../../pkg/analyzer/escape_test.go) |
 | Complete allowed shapes and nearby rejections | [Subset tests](../../pkg/analyzer/explicit_subset_test.go), [shape tests](../../pkg/analyzer/shape_convergence_test.go) |
 | Builder aliases, loop resets, and consumption | [Freeze tests](../../internal/freeze/freeze_test.go) |
 | Storage reuse, clone independence, identity, and allocation counts | [Slice tests](../../pkg/im/slice_test.go), [map tests](../../pkg/im/map_test.go), [iterator tests](../../pkg/im/iterator_test.go) |
 | Generated field reads without record copies | [Generated projection cost fixture](../../internal/projectiongen/testdata/readcost/README.md) |
 | Service result types and ordinary service code | [Service tests](../../pkg/analyzer/service_test.go), [CLI fixtures](../../tests/testdata/accepted/service) |
-| Service reference storage, Current call forms, and concrete transport | [Reference tests](../../pkg/analyzer/service_handles_test.go), [CLI fixtures](../../tests/testdata/accepted/service/handles.go), [rejected forms](../../tests/testdata/rejected/service/handles.go) |
+| Service reference storage, Borrow call forms, and concrete transport | [Reference tests](../../pkg/analyzer/service_handles_test.go), [CLI fixtures](../../tests/testdata/accepted/service/handles.go), [rejected forms](../../tests/testdata/rejected/service/handles.go) |
 | Startup errors, publication, and failed setup cleanup | [runtime tests](../../pkg/supervise/init_test.go), [CLI fixture](../../tests/testdata/accepted/serviceinit/main.go) |
 | Guide projects and their runtime interactions | [Configuration tests](../../examples/configuration/configuration_test.go), [worker tests](../../examples/workers/workers_test.go), [model tests](../../examples/models/fetcher_test.go) |
 | CLI source coverage for file refresh and child pools | [File-cache fixture](../../tests/testdata/accepted/servicedoc/main.go), [refresh test](../../tests/testdata/accepted/servicedoc/main_test.go) |

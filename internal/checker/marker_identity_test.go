@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// TestMarkerIdentities checks both exact library names, aliases, and same-named foreign types.
+// TestMarkerIdentities checks exact library names, aliases, and same-named foreign types.
 func TestMarkerIdentities(t *testing.T) {
 	library := types.NewPackage(LibraryPath, "im")
 	foreign := types.NewPackage("example.test/im", "im")
@@ -17,6 +17,7 @@ func TestMarkerIdentities(t *testing.T) {
 	}{
 		{"Frozen", Frozen},
 		{"Local", Local},
+		{"Copied", Copied},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			marker := types.NewNamed(types.NewTypeName(token.NoPos, library, test.name, nil),
@@ -32,7 +33,7 @@ func TestMarkerIdentities(t *testing.T) {
 			defined := types.NewNamed(types.NewTypeName(token.NoPos, nil, "Defined", nil),
 				marker.Underlying(), nil)
 			for _, field := range []types.Type{impostor, defined, types.NewPointer(marker)} {
-				if Marked(markedType("Value", field)) {
+				if value := markedType("Value", field); Marked(value) || Copied(value) {
 					t.Fatal("non-marker type established a marker policy")
 				}
 			}

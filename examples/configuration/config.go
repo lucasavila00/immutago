@@ -65,7 +65,7 @@ func (l *ConfigLoader) Run(ctx context.Context) {
 
 // load copies decoded limits into a fresh builder and publishes one immutable version.
 func (l *ConfigLoader) load() error {
-	projection := l.Args().Cache.Current().Text()
+	projection := l.Args().Cache.Borrow().Text()
 	version := l.Version()
 	if version > 0 && projection.EqualString(l.last) {
 		return nil

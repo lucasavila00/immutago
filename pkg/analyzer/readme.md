@@ -10,12 +10,12 @@ Package analyzer exposes the immutago go/analysis analyzer.
 
 The analyzer checks:
 
-- Recursive field and collection types for structs with im.Frozen or im.Local.
+- Recursive field types for im.Frozen, im.Local, and im.Copied records.
 - Allowed construction, reads, calls, and assignments; no protected field writes.
 - Frozen pointer storage and Local pointer retention.
 - Exclusive native builders, Freeze consumption, and use after Freeze.
 - No result or one service result for each exported service method, including promoted methods. Init, Run, and methods supplied by the runtime are exempt.
-- Concrete service references and direct method calls through Ref.Current.
+- Concrete service references and direct method calls through Ref.Borrow.
 
 Direct im or supervise imports, used types, and failed checked dependencies select packages for analysis. Ordinary Go API contracts are trusted. im.UncheckedValue records the declaring package's promise that a value never changes. The checker does not prove this promise.
 

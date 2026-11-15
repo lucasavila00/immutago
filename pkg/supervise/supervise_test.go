@@ -129,7 +129,7 @@ type pingArgs struct {
 
 // Run calls the pong and waits until ctx ends.
 func (p *ping) Run(ctx context.Context) {
-	record("ping sees " + p.Args().Pong.Current().Name())
+	record("ping sees " + p.Args().Pong.Borrow().Name())
 	<-ctx.Done()
 }
 
@@ -147,7 +147,7 @@ type pongArgs struct {
 
 // Run calls the ping and waits until ctx ends.
 func (p *pong) Run(ctx context.Context) {
-	record("pong sees " + p.Args().Ping.Current().Name())
+	record("pong sees " + p.Args().Ping.Borrow().Name())
 	<-ctx.Done()
 }
 
@@ -199,7 +199,7 @@ func expectStarted(t *testing.T, want ...string) {
 	}
 }
 
-// TestStart verifies a new value, a stable Current, and calls from many goroutines.
+// TestStart verifies a new value, a stable Borrow, and calls from many goroutines.
 func TestStart(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
@@ -207,20 +207,20 @@ func TestStart(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		service := ref.Current()
-		if ref.Current() != service || service.count != 0 {
-			t.Fatal("Current did not return one new service")
+		service := ref.Borrow()
+		if ref.Borrow() != service || service.count != 0 {
+			t.Fatal("Borrow did not return one new service")
 		}
 		var callers sync.WaitGroup
 		for range 4 {
 			callers.Go(func() {
 				for range 100 {
-					ref.Current().Add()
+					ref.Borrow().Add()
 				}
 			})
 		}
 		callers.Wait()
-		if got := ref.Current().Add(); got != 401 {
+		if got := ref.Borrow().Add(); got != 401 {
 			t.Fatalf("count = %d, want 401", got)
 		}
 		<-root.Stop()
@@ -437,14 +437,14 @@ func TestRestartCreatesNewValue(t *testing.T) {
 		failures.Store(0)
 		root := NewRoot(nil)
 		ref, _ := Start[restarted](root, label{Name: "cache"})
-		before := ref.Current()
+		before := ref.Borrow()
 		synctest.Wait()
-		if ref.Current() != before || before.runs != 1 {
+		if ref.Borrow() != before || before.runs != 1 {
 			t.Fatal("Ref changed before the restart delay ended")
 		}
 		time.Sleep(time.Second)
 		synctest.Wait()
-		if ref.Current() == before || before.runs != 1 || ref.Current().runs != 1 {
+		if ref.Borrow() == before || before.runs != 1 || ref.Borrow().runs != 1 {
 			t.Fatal("restart did not store a new value in the same Ref")
 		}
 		expectEvents(t, "cache", "cache")
@@ -452,12 +452,12 @@ func TestRestartCreatesNewValue(t *testing.T) {
 	})
 }
 
-// TestReserve verifies Current before start, a second start, and a start cycle.
+// TestReserve verifies Borrow before start, a second start, and a start cycle.
 func TestReserve(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
 		pongRef := Reserve[pong]()
-		expectPanic(t, "supervise: Ref not started", func() { pongRef.Current() })
+		expectPanic(t, "supervise: Ref not started", func() { pongRef.Borrow() })
 		pingRef, _ := Start[ping](root, pingArgs{Pong: pongRef})
 		if err := StartReserved(root, pongRef, pongArgs{Ping: pingRef}); err != nil {
 			t.Fatal(err)
@@ -494,7 +494,7 @@ func TestStartAfterStop(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if ref.Current() == nil {
+		if ref.Borrow() == nil {
 			t.Fatal("Start returned an empty Ref")
 		}
 		synctest.Wait()
@@ -502,13 +502,13 @@ func TestStartAfterStop(t *testing.T) {
 	})
 }
 
-// BenchmarkRefCurrent measures one Ref.Current call.
-func BenchmarkRefCurrent(b *testing.B) {
+// BenchmarkRefBorrow measures one Ref.Borrow call.
+func BenchmarkRefBorrow(b *testing.B) {
 	root := NewRoot(nil)
 	ref, _ := Start[counter](root, NoArgs{})
 	b.ReportAllocs()
 	for b.Loop() {
-		_ = ref.Current()
+		_ = ref.Borrow()
 	}
 	<-root.Stop()
 }

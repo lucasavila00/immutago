@@ -28,6 +28,9 @@ func (v ReaderProjection) Score(arg0 []float32) float64 {
 	return v.immutagoProjection.Read().Score(arg0)
 }
 
+// Summary calls the checked interface method with its ordinary Go contract.
+func (v ReaderProjection) Summary() Summary { return v.immutagoProjection.Read().Summary() }
+
 // Visit calls the checked interface method with its ordinary Go contract.
 func (v ReaderProjection) Visit() { v.immutagoProjection.Read().Visit() }
 

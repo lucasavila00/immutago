@@ -61,8 +61,8 @@ var subsetFixes = map[string]string{
 		"with concrete immutable types; the fixed im collection APIs remain supported",
 	"user generic instantiations with immutable types are unsupported": "use a non-generic declaration " +
 		"with concrete immutable types; the fixed im collection APIs remain supported",
-	"writes to immutable objects are unsupported": "construct a new value, or replace the whole variable; " +
-		"only a native builder's whole elements can be changed before Freeze",
+	"writes to immutable objects are unsupported": "construct a new value and replace the whole variable " +
+		"or mutable holder slot; do not write inside immutable records",
 	"immutable references require fresh allocation": "use &T{...}, new(T), or new(value); " +
 		"do not take the address of an existing variable, field, or element",
 	"protected composite literals require a concrete storage type": "use a concrete " +
@@ -132,6 +132,9 @@ var subsetFixes = map[string]string{
 
 // subsetFix gives a supported replacement for each rejected operation.
 func subsetFix(rule string) string {
+	if strings.HasPrefix(rule, "pointers to Copied records") {
+		return "pass or return the Copied value; replace the whole stored value when needed"
+	}
 	if strings.Contains(rule, "copied values require") {
 		return "copy scalar fields, or use a generated local projection"
 	}
@@ -142,7 +145,7 @@ func subsetFix(rule string) string {
 		return fix
 	}
 	if strings.Contains(rule, "service reference") || strings.Contains(rule, "Ref requires") {
-		return "keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md"
+		return "keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/service-references.md"
 	}
 	return "use the documented immutable value and reference forms"
 }

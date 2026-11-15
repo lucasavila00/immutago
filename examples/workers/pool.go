@@ -64,7 +64,7 @@ func (p *Pool) Run(ctx context.Context) {
 // workersReady reports whether every child has started its job loop.
 func (p *Pool) workersReady() bool {
 	for _, worker := range p.workers {
-		if !worker.Current().Ready() {
+		if !worker.Borrow().Ready() {
 			return false
 		}
 	}
@@ -95,5 +95,5 @@ func (p *Pool) Process(text string) Result {
 	worker := p.workers[p.next]
 	p.next = (p.next + 1) % len(p.workers)
 	p.mu.Unlock()
-	return worker.Current().Process(text)
+	return worker.Borrow().Process(text)
 }

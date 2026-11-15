@@ -46,12 +46,12 @@ func TestServiceChildrenInheritReporter(t *testing.T) {
 				}
 				ref, _ := Start[reportingParent](parent, NoArgs{})
 				if before {
-					ref.Current().StartChild(nested)
+					ref.Borrow().StartChild(nested)
 				}
 				go parent.serve(context.Background())
 				if !before {
 					synctest.Wait()
-					ref.Current().StartChild(nested)
+					ref.Borrow().StartChild(nested)
 				}
 				if !<-reports {
 					t.Errorf("wrong child report: before=%t, nested=%t", before, nested)

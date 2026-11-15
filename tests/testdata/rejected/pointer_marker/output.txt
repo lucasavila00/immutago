@@ -1,3 +1,3 @@
 pointer_marker.go:14:6: immutable markers must be embedded by value
   field: rejected.Bad.Frozen
-  fix: embed im.Frozen or im.Local; remove the marker field name or pointer
+  fix: embed im.Frozen, im.Local, or im.Copied; remove the marker field name or pointer

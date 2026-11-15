@@ -17,7 +17,8 @@ func (c *subsetChecks) markedMethodReceiver(signature *types.Signature) bool {
 		receiver = types.Unalias(pointer.Elem())
 	}
 	named, ok := receiver.(*types.Named)
-	return ok && named.TypeParams().Len() == 0 && checker.Marked(named) && c.proofs.Reason(named) == ""
+	return ok && named.TypeParams().Len() == 0 && (checker.Marked(named) || checker.Copied(named)) &&
+		c.proofs.Reason(named) == ""
 }
 
 // matchMethod requires direct concrete calls for protected arguments and results.
@@ -36,8 +37,8 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 		}
 		return "dynamic calls with immutable storage are unsupported"
 	}
-	if !c.protectedStorage(selector.X) {
-		signature := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
+	signature := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
+	if !c.protectedStorage(selector.X) && !c.immutableObject(signature.Recv().Type()) {
 		if genericSignature(signature) && !runtimeObject(selection.Obj()) {
 			return "user generic instantiations with immutable types are unsupported"
 		}
@@ -46,7 +47,6 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	if len(selection.Index()) != 1 {
 		return "promoted immutable methods are unsupported"
 	}
-	signature := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
 	if !c.markedMethodReceiver(signature) {
 		return "immutable methods require a concrete non-generic marked receiver"
 	}

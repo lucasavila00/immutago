@@ -58,9 +58,9 @@ Clone gives callers independent text storage.
 ## Example: call a selected pool
 
 ```go
-route := dispatcher.Current().Lookup("blue")
+route := dispatcher.Borrow().Lookup("blue")
 if route.Available {
-    result := route.Pool.Current().Process("Hello World")
+    result := route.Pool.Borrow().Process("Hello World")
     fmt.Println(result.Text.Unsafe())
 }
 ```

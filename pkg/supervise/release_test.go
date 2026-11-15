@@ -108,7 +108,7 @@ func TestStartAfterStopDoesNotRetainChildren(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if ref.Current() == nil {
+			if ref.Borrow() == nil {
 				t.Fatal("Start returned an empty Ref")
 			}
 		}

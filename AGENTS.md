@@ -130,11 +130,15 @@ Use compiler-resolved types and the recursive categories in [type rules](docs/ty
 Frozen fields, Cell[T], and Projection[T] use one Frozen proof. Local fields and
 service outputs use one ReadResult proof. Copy and local Clone use Copied.
 Do not add a service-only field proof or a context-dependent marker meaning.
-Copied permits only booleans, numbers, unnamed arrays of Copied values, and
-opaque service references. Frozen records are not Copied,
-even when their fields contain only numbers. Struct results require Local or a
-generated projection.
-Embed Frozen and Local markers to declare record categories. The markers
+Copied permits booleans, numbers, Copied records, unnamed arrays of Copied values,
+and opaque service references. Copied records contain only bool/numeric fields,
+unnamed arrays, and other Copied records; no strings or reference handles. Their
+fields are immutable from construction. Ordinary holders can store and replace
+complete Copied values without becoming immutable. Copied pointers are rejected.
+Frozen records are not Copied,
+even when their fields contain only numbers. Struct results require Copied, Local,
+or a generated projection.
+Embed Frozen, Local, and Copied markers to declare record categories. The markers
 themselves do not satisfy Frozen, Copied, or ReadResult payload proofs.
 
 Frozen and Local fields are immutable from construction. Local values cannot
@@ -170,7 +174,7 @@ Every package with user-declared Frozen records must have this directive:
 Declare Frozen records as named package-scope types in non-test Go files.
 Reject function-local, anonymous, and test-only Frozen declarations.
 Keep the exact current `zz_immutago.gen.go` output. Frozen records get typed
-projections and Cells. Local records need no generation. Keep the two
+projections and Cells. Local and Copied records need no generation. Keep the two
 generated-only operations above separate from the normal checks; do not skip
 analysis of a generated file.
 
@@ -271,10 +275,10 @@ Keep source restrictions and examples there. Keep analysis details in the
 - Allow no result or one ReadResult from each exported service method
   except Init and Run. Runtime methods are exempt. Other service code follows
   ordinary Go rules; im operations use their general checks.
-- Permit service references as stored values and results. Match every Current
-  call as `ref.Current().Method(args)` with an exported service method other
-  than Init, Run, or a runtime method. Reject all other uses of the returned
-  pointer. Keep the reference proof in [service architecture](docs/arch/services.md).
+- Permit service references as stored values and results. Match every direct Ref Borrow
+  call as `ref.Borrow().Method(args)` with an exported service method other
+  than Init, Run, or a runtime method. Reject all other direct uses of the returned
+  pointer. Interface conversion is allowed and can expose the service pointer. Keep the reference proof in [service architecture](docs/arch/services.md).
 - Trust ordinary Go API contracts. Use the documented package selection rules;
   do not add string taint analysis or whole-program service effect analysis.
 

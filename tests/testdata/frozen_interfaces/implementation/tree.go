@@ -29,3 +29,5 @@ type Count struct {
 }
 
 func (c Count) Score([]float32) float64 { return float64(c.N) }
+
+func (t *Tree) Summary() api.Summary { return api.Summary{Count: int(t.Weight)} }

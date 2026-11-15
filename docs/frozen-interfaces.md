@@ -46,7 +46,8 @@ payload cannot leave that local projection.
   Ordinary inputs such as `[]float32` follow ordinary Go contracts. Protected
   inputs also need the [common call forms](common-forms.md#statements-and-calls).
 - Return no result or one [read result](types.md). For example, `Score([]float32)
-  float64`, `Name() im.StringProjection`, or `Visit()`.
+  float64`, `Name() im.StringProjection`, or `Visit()`. A Copied record is also
+  a read result, such as `Summary() Summary` where Summary embeds im.Copied.
 
 These lists are complete. Unlisted operations on protected storage are rejected.
 

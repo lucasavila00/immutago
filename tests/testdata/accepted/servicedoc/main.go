@@ -80,7 +80,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	text := cache.Current().Text()
+	text := cache.Borrow().Text()
 	fmt.Print(text.Clone())
 	<-root.Stop()
 }

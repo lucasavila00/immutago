@@ -21,7 +21,7 @@ goroutine; the runtime does not queue them.
 | Exported service method result | Return no result or one [service result](service-results.md). This includes promoted methods. Init, Run, and methods supplied by the runtime are exempt. |
 | Fields, method parameters, closures, and goroutines | Ordinary Go rules. Synchronize shared mutable data. Uses of protected values follow the [im rules](common-forms.md). |
 | Service construction and groups | Ordinary Go rules. |
-| Service references | Copy, store, and return `Ref[T]`. Call through `ref.Current().Method(args)`; the pointer from Current has no other allowed use. See [service references](service-references.md). |
+| Service references | Copy, store, and return `Ref[T]`. Call through `ref.Borrow().Method(args)`; direct Ref calls cannot save the pointer. Interface calls can expose it. See [service references](service-references.md). |
 
 Review these together in the service code:
 
@@ -57,7 +57,7 @@ cache, err := supervise.Start[configuration.FileCache](root, configuration.FileA
     Path: path, Every: 100 * time.Millisecond,
 })
 if err != nil { panic(err) }
-fmt.Print(cache.Current().Text().Unsafe())
+fmt.Print(cache.Borrow().Text().Unsafe())
 ```
 
 The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and
@@ -66,7 +66,7 @@ The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and
 1. `Start[FileCache]` creates the cache, sets its arguments, and calls `Init`.
 2. After Init succeeds, Start returns `Ref[FileCache]` and schedules Run in a
    goroutine. Run might not have started when Start returns.
-3. `cache.Current().Text()` runs in the caller's goroutine. The mutex protects
+3. `cache.Borrow().Text()` runs in the caller's goroutine. The mutex protects
    concurrent reads and refreshes. Keep `cache` to select the current service after a restart.
 4. A later file-read error makes Run panic. The group waits, then creates a
    replacement with the same arguments. Calls use the old cache until the new
@@ -89,7 +89,7 @@ limiter, err := supervise.Start[configuration.Limiter](group, configuration.Limi
     Loader: loader, Key: "api", Window: time.Second,
 })
 if err != nil { panic(err) }
-decision := limiter.Current().Take()
+decision := limiter.Borrow().Take()
 ```
 
 The loader parses the initial limits in Init. The limiter reads the current
@@ -104,7 +104,7 @@ create or remove related work while it runs.
 - A first Init panic reaches the Start caller.
 - To pass a reference before startup: `ref := supervise.Reserve[T]()`, then
   `err := supervise.StartReserved(parent, ref, args)`. Failed Init permits a retry.
-- A zero `Ref[T]` is empty, not reserved. Current panics on empty or unstarted references.
+- A zero `Ref[T]` is empty, not reserved. Borrow panics on empty or unstarted references.
 - Init must not call an unstarted peer. For readiness that depends on Run,
   expose a method such as `Ready() bool`.
 
@@ -166,7 +166,7 @@ Shutdown rules:
 - Run must return when its context ends.
 - Init has no cancellation context and must return before its attempt can finish.
 - Stop does not wait for direct method calls.
-- Current still returns the last published value after Run or Stop ends.
+- Borrow still returns the last published value after Run or Stop ends.
 
 Create groups with NewRoot or StartGroup. A zero Group cannot run. Starting
 under a stopped group still calls Init and can succeed, but Run will not run.

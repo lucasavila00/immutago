@@ -54,10 +54,10 @@ func (c *Counter) Capture() int {
 	return c.count
 }
 func use(ref supervise.Ref[Counter]) {
-	ref.Current().Update()
-	_ = ref.Current().Count()
-	go ref.Current().Count()
-	defer ref.Current().Count()
+	ref.Borrow().Update()
+	_ = ref.Borrow().Count()
+	go ref.Borrow().Count()
+	defer ref.Borrow().Count()
 }
 
 // User embedding and promoted methods use the same result contract.
