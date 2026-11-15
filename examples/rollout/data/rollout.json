@@ -1,0 +1,3 @@
+{
+  "primary": {"version": "checkout-v1", "logs": ["v1-a.ndjson", "v1-b.ndjson"]}
+}

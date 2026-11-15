@@ -1,183 +1,91 @@
 # Analysis pipeline
 
-The analyzer receives one type-checked Go package through `go/analysis`.
-`cmd/immutago` uses the singlechecker driver; `go vet -vettool` supplies the same
-analyzer through vet. Both provide AST nodes, compiler objects, resolved types,
-method selections, and generic instances. Checks use those identities so aliases,
-shadowed names, and Go's implicit receiver adjustments cannot change API meaning.
+The command and vet driver use the same `go/analysis` pass. Its input is one
+package's AST and compiler type information.
 
 ## Package pass
 
-[The pass entry point](../../pkg/analyzer/analyzer.go) makes these decisions in
-order:
+[The pass](../../pkg/analyzer/analyzer.go) runs these stages in order:
 
-1. Skip the fixed im and supervise implementations, standard-library source,
-   and the generated test main. User test packages remain checked.
-2. Read failures from direct dependency facts and determine package relevance.
-   Return if neither local API use nor a relevant dependency selects the package.
-3. Determine whether the package imports or uses im. If so, reject cgo before
-   other checks. The compiler-generated cgo header identifies the original
-   source position even when wrappers no longer contain `import "C"`.
-4. Report failed direct dependencies. Capture subsequent local diagnostics for
-   the fact that this package will export.
-5. Walk declarations and resolved expressions. All selected packages get service
-   embedding and result checks. An im package also gets recursive field proofs,
-   im type-argument checks, and Go-body requirements for protected signatures.
-6. Build the source checker's parent-node map. For an im package, verify the
-   canonical projection file before any source operation can use its permissions.
-7. Check Ref targets and direct Borrow uses in every selected package.
-8. In an im package, run native builder ownership analysis, then match protected
-   source operations using the returned builder set.
-9. If this package or a checked dependency failed, export one representative
-   original failure for importers.
+| Stage | Work | Result used by the next stage |
+| --- | --- | --- |
+| Select | Inspect direct imports, used types, and dependency facts. | Skip unrelated packages; select service checks or full im checks. |
+| Read failures | Report failures saved by direct dependencies. | Retain their original causes for this package's fact. |
+| Check declarations | Prove im types; check service embedding and method results. | Shared type proof cache and local diagnostics. |
+| Verify generation | Compare the generated file with current compiler types. | Exact file identity for two generated-only operations. |
+| Check references and builders | Match direct Borrow calls; check native builder aliases and consumption. | Builder variable identities for source checks. |
+| Match source | Check complete operations on protected storage. | Diagnostics for every unmatched form. |
+| Export failure | Select one local or imported cause if the package failed. | A package fact for importers. |
 
-A package that uses only supervise gets service checks without the full im
-source and builder checks. A package with a failed dependency can report that
-failure even if it has no direct import of im or supervise.
+Generation, builder analysis, and protected source checks run only for im
+packages. [Package selection](../../pkg/analyzer/package_scope.go) shares one
+visited-type set across local roots; it follows used contracts, not dependency
+implementations. See the complete [package boundary](../reference/rules.md#package-boundary).
 
-[Package selection](../../pkg/analyzer/package_scope.go) starts from direct API
-imports and types used in expressions, declarations, object uses, and generic
-instances. It follows aliases and named-type metadata before underlying storage,
-plus used signatures, constraints, and interface contracts. One seen set is shared
-across roots. It does not scan every import or all methods of an unused concrete
-type. An ordinary scalar API does not select all the implementation behind it.
-The im-only and runtime-inclusive walks use the same traversal with different
-selection modes.
+## Why a Freeze call needs three checks
 
-## Trace one operation
+```go
+frozen := im.FreezeSlice(values)
+```
 
-For `frozen := im.FreezeSlice(values)`, no single check is sufficient:
+| Check | Question answered | Evidence |
+| --- | --- | --- |
+| Type proof | Can the elements share storage? | The compiler-resolved element type passes Frozen. |
+| Builder analysis | Can another native handle change the array? | Fresh local storage, exclusive use, and no use after Freeze. |
+| Source match | Is this operation a supported form? | The exact function object, argument, local binding, and complete statement match. |
 
-- Type proof checks the element type of the resulting FrozenSlice. A slice of
-  mutable pointers cannot become safe merely because its handle is consumed.
-- Builder discovery checks that values comes from fresh local native storage.
-  Use checks reject aliases and escapes; flow checks reject use after Freeze.
-- Source matching checks the exact library call, its argument, the local result
-  binding, and the enclosing statement. A correct type does not permit a saved
-  Freeze function or an unsupported statement context.
+[Source matching](../../pkg/analyzer/subset_operations.go) checks the expression
+that creates a value, the operation that uses it, and the complete statement.
+Each has a rejecting fallback.
 
-The type prover and source matcher share completed type proofs. Builder
-analysis keeps separate state because it proves variable ownership over time,
-not a property of the element type. It returns variable identities to the source
-matcher without granting an exemption from normal operation checks.
+| Compiler information | Why the matcher needs it |
+| --- | --- |
+| Function and type identity | Aliases and shadowed names must not change which API is called. |
+| Declared receiver and selected method | Detect implicit addresses, dereferences, and promoted methods. |
+| Instantiated signature and result tuple | Check every argument and result binding, including variadic elements. |
+| AST parents | Check statement context and operands that Go does not evaluate. |
 
-## Recursive type proofs
+Frozen interface conversions also prove the concrete implementation and its
+selected receivers. The private interface seal alone is not that proof.
+[Conversion checks](../../pkg/analyzer/subset_interfaces.go) apply at the conversion;
+method bodies still receive normal source checks.
 
-[Prover](../../internal/checker/prover.go) answers Frozen, Copied, and ReadResult
-queries. These categories describe shared payloads, independent copied values,
-and restricted read results. Frozen fields, Cell, and Projection all use the
-same Frozen obligation. Local fields and service data outputs use the same
-ReadResult obligation. There is no separate service-field proof.
+## Recursive type graphs
 
-[The proof graph](../../internal/checker/proof.go) records one obligation for each
-resolved type and category. It inserts a node before inspecting components.
-A field, element, pointer target, or type argument adds a dependency edge, with
-a reverse edge back to its owner. A direct unsupported component seeds failure.
-After graph expansion, failure travels through reverse edges to every owner.
-A recursive cycle succeeds only when all reachable obligations succeed.
+This Frozen proof must fail for both A and B:
 
-For example, mutually recursive Frozen records A and B cannot hide a mutable
-map in B. The map fails; failure reaches B and then A through the reverse
-edges. Returning early at an unfinished A query would incorrectly cache a
-success, so expansion and propagation are separate steps.
+```go
+type A struct { im.Frozen; Next *B }
+type B struct { im.Frozen; Next *A; Bad map[string]int }
+```
 
-Completed nodes remain in the per-pass cache. New edges to already failed
-children are retained as pending seeds. Direct failures are applied before
-indirect paths through previously failed children. Each failed node keeps one
-component label and an earlier failed cause. Only an unfailed node can receive
-that cause, so the message chain terminates even when the type graph cycles.
-Empty pointer and array labels are collapsed. Rendered root messages are cached.
-Query order can change which real failure is shown, but not the proof result.
+[The prover](../../internal/checker/proof.go):
 
-## Classification is different from proof
+1. Create one node per compiler type and requested category before visiting its components.
+2. Add reverse edges from each field or element proof to its owners.
+3. Expand the reachable graph. A revisit of A reuses its node.
+4. Propagate the map failure to B, then A. New owners also receive cached child failures.
+5. Keep one earlier failed cause per failed node; cache the rendered diagnostic.
 
-[Classifier](../../internal/checker/classification.go) asks whether a type
-contains something that needs a check. It does not establish that the type is
-valid. It caches separate queries for protected storage, Local values,
-callbacks carrying protected storage, service references, and type-parameter
-constraints. Copied records use ordinary storage and do not become protected
-merely because they have a marker.
+Cause links cannot form a cycle. Query order can select a different real cause.
 
-Classification also records nodes before following edges, expands all reachable
-nodes, then propagates positive answers backwards. This avoids a false negative
-when a cycle reaches protected storage only after an earlier recursive visit.
-Different modes follow different edges: stored fields and containers matter to
-storage queries; function parameters, results, and interface methods also matter
-to callback and service-reference queries. Caches are owned by one pass and
-require complete compiler types that do not change.
+| Graph | Cache key | Answer propagated to owners |
+| --- | --- | --- |
+| Type proof | Type + Frozen, Copied, or ReadResult | A component failed the requested category. |
+| [Classification](../../internal/checker/classification.go) | Type + query mode | A component needs storage, Local, callback, or service-reference checks. |
 
-## Complete source matches
+Both graphs finish expansion before propagation. Completed answers belong to
+one package pass; compiler types must remain unchanged.
 
-[The operation dispatcher](../../pkg/analyzer/subset_operations.go) requires
-three matches for each protected expression: its producer, its consuming use,
-and its complete enclosing statement. Each matcher has a rejecting fallback.
-The dispatcher excludes type syntax and field-name metadata, but checks real
-operands even when Go does not evaluate them, such as constant array len
-operands. Capture, placement, generic, and Freeze rules still apply there.
+## Failures across imports
 
-Calls resolve the function object, instantiated parameter types, tuple results,
-and variadic elements. A direct typed call can bind all results to local names
-or blanks through `:=`, `=`, or `var`. The shared result matcher requires one
-call and the exact compiler result count, then applies normal write and
-transport checks to each component. Service signatures have their separate
-result count and category limit.
+```text
+leaf fails ──> wrapper fact ──> app diagnostic
+               original leaf location and message survive
+```
 
-[Method matching](../../pkg/analyzer/subset_methods.go) inspects the declared
-function signature, not only the selector signature: Go can adjust a selector
-receiver with an implicit address or dereference. Marked user receivers require
-a proved non-generic type, a direct unpromoted call, and exact written receiver
-identity. Receiver checks occur before the ordinary-call path, including when
-the method returns only a scalar. Ordinary concrete methods can take or return
-protected values through direct non-generic calls; their receivers need no marker.
-
-[Storage matching](../../pkg/analyzer/subset_shapes.go) walks each expression's
-selector, index, dereference, and parenthesis chain to find protected owners or
-native builders. Thus a scalar field write still carries its owner's rule.
-Cell slots have their own source context to prevent copies of atomic storage.
-The source checker caches literal validation, but still checks every operand.
-User generics carrying protected storage are rejected; fixed im generic APIs
-use their reviewed contracts. Ordinary Copied operations keep Go rules.
-
-### Frozen interface conversions
-
-A Frozen interface's private im seal identifies the interface category. It does
-not prove a concrete implementation. [Conversion checks](../../pkg/analyzer/subset_interfaces.go)
-prove each concrete source and its selected methods at implicit or explicit
-conversion. The source must be a named Frozen record or a pointer to one.
-Selected user methods must be declared on that exact source; promotion and
-implicit dereference fail. The promoted private seal is the only exception.
-A conversion between proved Frozen interfaces preserves the earlier proof.
-
-The interface proof requires exported methods. Ordinary
-interface and callback inputs use Go contracts; the shared argument, callback,
-closure, and generic checks still apply.
-Method results use normal source and transport checks, not stored-field proof
-or a separate result count limit. Generated interface projections read and
-forward these declared calls only in the verified generated file. Method bodies
-still receive normal checks; there is no effect or result-origin analysis.
-
-## Failure facts across packages
-
-[Dependency facts](../../pkg/analyzer/dependencies.go) let a consumer fail when
-a checked dependency has failed, even when the driver hides dependency
-diagnostics. A fact carries relevance plus one original package, portable
-source location, and exact message. It contains no method effects.
-
-For an invalid leaf imported through a wrapper, the wrapper selects a cause
-from its local and imported failures and exports that original cause again.
-Selection takes the minimum location, then message, then origin package. This
-makes selection independent of import order and shared graph paths. The consumer
-reports one cause at each failed direct import and gives `immutago <origin>`
-as the command to inspect all errors at the source.
-
-The fact must include the cause itself. Vet does not re-export imported facts,
-so a later consumer cannot depend on finding an indirect origin in the driver's
-fact map. Keeping one cause also avoids copying every dependency failure into
-every importer. Local diagnostics remain complete; the fact is a representative
-failure, not a complete error list.
-
-[Proof tests](../../internal/checker/prover_test.go) cover cycles and terminating
-causes. [Shape tests](../../pkg/analyzer/shape_convergence_test.go) cover nearby
-source forms. [Dependency graph tests](../../pkg/analyzer/dependencies_graph_test.go)
-cover deterministic facts and serialization. The [source reference](../reference/rules.md)
-defines the allowed language these matches implement.
+[Each failure fact](../../pkg/analyzer/dependencies.go) keeps relevance, the origin
+package, one location, and the exact message. Selection uses location, message,
+then origin package. Vet does not forward imported facts automatically, so each
+wrapper exports the original cause itself. The app diagnostic gives
+`immutago <origin>` to inspect all failures at that source.

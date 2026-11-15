@@ -31,7 +31,7 @@ type CarrierService struct {
 
 // Band charges PriceCents for a parcel up to and including UpToGrams.
 type Band struct {
-	im.Frozen
+	im.Copied
 	UpToGrams  int64
 	PriceCents int64
 }

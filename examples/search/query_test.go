@@ -28,6 +28,23 @@ func TestTokenize(t *testing.T) {
 	}
 }
 
+// TestPostingCopy changes a local score without changing the selected index.
+func TestPostingCopy(t *testing.T) {
+	var current IndexCell
+	current.Store(buildIndex([]sourceDocument{{path: "one.md", title: "One", body: "example"}}, 1))
+	value, found := current.Load().Terms().Get("example")
+	if !found {
+		t.Fatal("missing posting")
+	}
+	postings := im.SliceOf(value)
+	posting := im.Value(postings.At(0))
+	score := posting.Score
+	posting.Score += 2
+	if posting.Score != score+2 || im.Value(postings.At(0)).Score != score {
+		t.Fatal("posting copy did not remain independent")
+	}
+}
+
 // TestSearchRanking checks all-term matching, title weight, and repeated terms.
 func TestSearchRanking(t *testing.T) {
 	files := fstest.MapFS{
