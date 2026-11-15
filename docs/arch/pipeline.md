@@ -36,7 +36,7 @@ Package selection and state:
   string origins or defend against arbitrary memory writes.
 - [Cgo detection](../../pkg/analyzer/cgo.go) rejects the compiler's exact generated
   header in packages that import or use im. It reports the original package line, retained by
-  line directives; `import "C"` is no longer reliably available after rewriting.
+  line directives. Generated wrappers do not reliably retain `import "C"`.
 
 ## Type proof
 

@@ -1,4 +1,4 @@
-// Command immutago checks marked Go structs and immutable collection types.
+// Command immutago checks immutable data forms and service method results.
 package main
 
 import (

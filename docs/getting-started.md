@@ -9,7 +9,7 @@ go get github.com/lucasavila00/immutago@latest
 go install github.com/lucasavila00/immutago/cmd/immutago@latest
 ```
 
-## Run an immutable-data example
+## Example: immutable user data
 
 This program creates a user with a read-only score map. The checker will reject
 code that changes the user's fields or the frozen map.

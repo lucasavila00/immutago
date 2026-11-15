@@ -1,14 +1,36 @@
 # Supervised services
 
-Use `supervise` for state with background work, such as a cache that refreshes a file.
+Use `supervise` to start, restart, and stop background services.
 
 | API | Purpose |
 | --- | --- |
-| `Service[A]` | Mutable service state with start arguments of type A. |
+| `Service[A]` | Supply start arguments and child groups to a service struct. |
 | `Group` | Start, restart, and stop related services. |
 | `Ref[T]` | Reach the current service after a restart replaces its struct. |
 
-## Refresh a file and serve its contents
+## Service contract
+
+| Item | Rule |
+| --- | --- |
+| Runtime methods | `*T` must provide `Init() error`, `Run(context.Context)`, and the methods supplied by embedded `Service[A]`. `Service[A]` supplies a default Init. |
+| Start arguments | Read them with `s.Args()`. The runtime saves them for each restart. Ordinary Go types are allowed; protected data must satisfy the [stored-type rules](common-forms.md#markers-and-stored-types). |
+| No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
+| Exported user method result | Return exactly one [Scoped result](scoped-results.md). This includes promoted user methods. Init, Run, and runtime methods are exempt. |
+| Fields, method inputs, closures, and goroutines | Ordinary Go rules. Synchronize shared mutable data. Uses of protected values follow the [im rules](common-forms.md). |
+| Service construction, Ref copies, Current pointers, and group handles | Ordinary Go rules. Each Current call selects the published service; a saved pointer keeps the selected value. |
+
+Review these together in the service code:
+
+- Field access from Init, Run, and methods; the locks that protect it.
+- How mutable inputs are used, copied, or saved.
+- Whether callbacks or dependencies receive access to mutable service state.
+- Child startup and shutdown.
+
+The result rule does not prove service isolation. Review the ordinary Go
+contracts of callers and dependencies. Use `go test -race` for the accesses your
+tests run.
+
+## Example: a file cache
 
 This cache reads a file before startup succeeds. It then refreshes the contents
 at the configured interval. Calls to `Text` return the last contents without reading the
@@ -46,17 +68,7 @@ The [command](../examples/configuration/cmd/limits/main.go) supplies `root` and
    replacement with the same arguments. Calls use the old cache until the new
    Init succeeds; calls already in progress finish on the old cache.
 
-## Choose arguments and results
-
-| Need | Use |
-| --- | --- |
-| Start arguments | Embed `supervise.Service[A]`; read `p.Args()` in a service method. |
-| No arguments | Embed `supervise.Service[supervise.NoArgs]`; pass `supervise.NoArgs{}` to Start. |
-| Start arguments | Ordinary Go types, or stored im values. A Scoped pointer cannot be saved as an argument. Synchronize shared mutable data. |
-| Exported method result | Exactly one [Scoped result](scoped-results.md): an immutable value, such as an integer, a marked struct, or a frozen collection. Init and Run are excluded. |
-| Method inputs | Ordinary Go types, including interfaces, callbacks, pointers, slices, maps, and channels. Protected values follow the [common source rules](common-forms.md). |
-| Return a list | `im.FrozenSlice[string]`. |
-| Replace immutable configuration | An [im.Owner[Config]](owner.md) field. |
+## Example: a loader and limiter
 
 A reference can be a field of another service's arguments. The
 [limiter](../examples/configuration/limiter.go) takes a reference to a
@@ -81,18 +93,6 @@ limit through its reference and resets its request count every Window.
 Wait on `<-group.Stop()` to stop both services. Use [child groups](service-children.md) when a service must
 create or remove related work while it runs.
 
-## Review one service
-
-Review these together in the service code:
-
-- Field access from Init, Run, and methods; the locks that protect it.
-- How mutable inputs are used, copied, or saved.
-- Whether callbacks or dependencies receive access to mutable service state.
-- Child startup and shutdown.
-
-Immutable results do not prove service isolation. Ordinary Go contracts still
-apply to callers and dependencies.
-
 ## Startup errors and reservations
 
 - Start and restarts call Init and Run. Use the default Init when no setup is needed.
@@ -106,7 +106,7 @@ apply to callers and dependencies.
 
 The [startup and retry example](../examples/configuration/README.md#startup-and-retry) shows errors and a retry.
 
-## Mutable dependencies
+## Example: mutable dependencies
 
 Pass ordinary Go fields for a logger, client, or factory. The
 [model service](../examples/models/fetcher.go) receives:
@@ -171,17 +171,6 @@ In tests, use
 [`supervisetest.NewRoot(t)`](../pkg/supervise/supervisetest/readme.md). It stops
 the tree during cleanup and fails the test if shutdown takes more than five
 seconds.
-
-## Checker contract
-
-| Checked | Ordinary Go review |
-| --- | --- |
-| Every exported user method except Init and Run returns exactly one [Scoped result](scoped-results.md). | Start arguments, method inputs, mutable fields, locks, callbacks, and goroutines. |
-| Uses of im values follow the [im rules](common-forms.md). | Service construction, Ref copies, Current pointers, and child-group handles. |
-
-The result rule prevents a method from returning mutable data or a top-level
-pointer. It does not prove service isolation. Review the service's state changes,
-locks, saved inputs, and calls. Use `go test -race` for the accesses your tests run.
 
 The [API reference](../pkg/supervise/readme.md) lists signatures;
 the [cost reference](performance.md) lists operation costs.

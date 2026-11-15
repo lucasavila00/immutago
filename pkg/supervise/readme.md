@@ -11,7 +11,7 @@ Package supervise manages background services and restarts them after a panic.
 Define a service:
 
 - Embed Service\[A\] for start arguments of type A; use NoArgs for no arguments.
-- Declare Run\(context.Context\) on a pointer receiver for background work.
+- Supply Run\(context.Context\) for background work.
 - Declare Init\(\) error for setup before callers can use the service.
 - Start calls Init, returns Ref\[T\], and schedules Run in a managed goroutine.
 
@@ -19,7 +19,7 @@ Call a service:
 
 - Keep the Ref and use ref.Current\(\).Method\(\).
 - Calls run in the caller's goroutine and can overlap with Run and other calls. Synchronize access to mutable fields.
-- Each exported method except Init and Run returns exactly one Scoped result: an immutable value such as an integer, a marked struct, or a frozen collection. The analyzer rejects returned pointers and mutable result types.
+- Each exported user method except Init and Run returns exactly one Scoped result: an immutable value such as an integer, a marked struct, or a frozen collection. This includes promoted user methods. The runtime's own methods are exempt. The analyzer rejects top\-level pointers and mutable result types.
 - Arguments and implementation code follow ordinary Go rules. Uses of im values keep their immutability and pointer rules.
 
 Review state changes, locks, saved inputs, and dependency calls in the service code. Immutable results do not prove service isolation.
@@ -180,7 +180,7 @@ Current panics for an empty or unstarted reference. It can return a value whose 
 
 ## type Service
 
-Service supplies the arguments and child group of a supervised service. Embed one Service\[A\] by value in a named, non\-generic struct, and declare Run\(context.Context\) with a pointer receiver. Start and StartReserved create the struct; callers use a Ref instead of constructing or retaining its pointer.
+Service supplies the arguments and child group of a supervised service. Embed Service\[A\] to supply start arguments and runtime methods; add Run\(context.Context\) for background work. Start and StartReserved create and initialize each service value. Ref.Current selects the current value; a saved pointer keeps that value.
 
 ```go
 type Service[A any] struct {

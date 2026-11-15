@@ -7,7 +7,12 @@ The checker rejects aliases and use of the original collection after Freeze.
 2. Freeze it without copying entries. Use only the frozen value after this call.
 3. To make a changed version, Clone, edit the copy, and Freeze again.
 
-The original map stays unchanged:
+Keys and elements must use the [allowed types](common-forms.md#markers-and-stored-types).
+Use the forms below with the [common forms](common-forms.md).
+
+## Example: change a score
+
+Clone the frozen map, change the copy, and freeze it. The original map stays unchanged:
 
 ```go
 package main
@@ -27,10 +32,6 @@ func main() {
     println(oldScore, newScore) // 10 20
 }
 ```
-
-Keys and elements must use the [allowed types](common-forms.md#markers-and-stored-types).
-
-Use these forms with the [common forms](common-forms.md).
 
 ## Build before freezing
 

@@ -1,4 +1,4 @@
-# Live configuration and request limits
+# Example: live configuration and request limits
 
 Three services turn a JSON file into a request quota:
 
@@ -66,7 +66,7 @@ go test -race ./examples/configuration/...
 
 The [tests](configuration_test.go) check actual file changes, invalid edits,
 window resets, concurrent quota use, startup errors, and reservation retry.
-Repository CI runs these commands' checks as part of its existing jobs.
+Repository CI runs these checks.
 
 JSON decoding uses an ordinary Go map. ConfigLoader copies its scalar entries
 into a fresh builder before Freeze, so no decoder alias can change a published

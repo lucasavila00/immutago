@@ -12,11 +12,11 @@
 Go comments. [.gomarkdoc.yml](../.gomarkdoc.yml) selects the templates;
 `make docs` writes the references and `make docs-check` checks them.
 
-[dependency-stress](dependency-stress/main.go) writes the dense package graph
-from issue 20. Use `go run ./scripts/dependency-stress -scale 5 -out /tmp/deps`
+[dependency-stress](dependency-stress/main.go) writes a dense package graph.
+Use `go run ./scripts/dependency-stress -scale 5 -out /tmp/deps`
 for 400 ordinary packages, which should pass under ordinary Go API trust. Add
 `-library /absolute/path/to/immutago` to give every generated package a direct
-`im` import and add a consumer. Those packages remain checked: invalid immutable fields
+`im` import and add a consumer. Those packages are checked: invalid immutable fields
 must be reported, and the consumer receives one representative original
 failure. The
 [dependency workflow](../.github/workflows/dependency-performance.yml) runs it

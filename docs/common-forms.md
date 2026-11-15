@@ -26,6 +26,7 @@ They also apply to each nested field, key, and element.
 | --- | --- |
 | Boolean, integer, float, complex, or string | `bool`, `int`, `uintptr`, `float64`, `complex128`, `string` |
 | Defined scalar | `type Count int` |
+| Empty marker value | `im.Shared`, `im.Scoped` |
 | Unnamed array of allowed elements | `[2]int`, `[2]SharedPoint` |
 | Struct with one embedded marker and allowed fields | `SharedPoint`, `ScopedPoint` above |
 | Embedded marker alias | `type Mark = im.Shared; type Value struct { Mark; X int }` |
@@ -52,6 +53,7 @@ They also apply to each nested field, key, and element.
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Fixed im types and functions | `im.FrozenSlice[SharedPoint]`, `im.FreezeSlice([]SharedPoint{})` |
+| Fixed supervise APIs with protected values | `supervise.Service[ScopedPoint]`, `supervise.Start[Worker](root, args)`; saved arguments must use the stored types above. |
 | User generics without protected storage | `type Plain[T any] struct { Value T }`, used as `Plain[int]` |
 
 | Rejected examples — non-exhaustive | Replacement |
@@ -176,7 +178,7 @@ Use the operations above inside these statement forms:
 | --- | --- |
 | Declare one variable or assign one destination | `var value SharedPoint`, `value := SharedPoint{X: 1}`, `value = SharedPoint{X: 2}` |
 | Change a native builder slot | `values[0] = value`, `counts[0]++`, `counts[0] += 2` |
-| Bind Start results to two local names or blanks with `:=` or `=` | `ref, err := supervise.Start[Worker](root, args)`; arguments containing im values keep the common statement rules. |
+| Bind Start results to two local names or blanks with `:=`, `=`, or `var` | `ref, err := supervise.Start[Worker](root, args)`, `var ref, err = supervise.Start[Worker](root, args)` |
 | Bind a map reader's two results to new locals | `value, found := frozen.Get(key)` |
 | Freeze in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |
@@ -192,7 +194,8 @@ Use the operations above inside these statement forms:
 - Assignments and declarations have one destination, including package variables.
   Returns can have several results.
 - `FrozenMap.Get` permits two new local names or blanks.
-- `supervise.Start` also permits existing local names, `=`, and local `var` declarations.
+- Calls to `supervise.Start` with protected arguments use these statement forms.
+  Calls with only ordinary arguments use ordinary Go binding rules.
 - Blocks, `break`, and `continue` follow ordinary Go rules.
 - Named functions need the exact parameter type, such as `func read(p *SharedPoint) int`.
   Call directly, without `go` or `defer`.

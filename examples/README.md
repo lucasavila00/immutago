@@ -16,7 +16,7 @@ go run ./cmd/immutago ./examples/...
 go test -race ./examples/...
 ```
 
-The existing CI jobs check these packages with the rest of the repository.
+CI checks these packages with the rest of the repository.
 No separate module or service installation is needed. The model command uses
 a local HTTP source; its README includes the start command.
 
@@ -32,6 +32,6 @@ a local HTTP source; its README includes the start command.
 | Concurrent dependencies, factories, and test backends | [Fetcher](models/fetcher.go), [Store](models/store.go), [tests](models/fetcher_test.go) |
 | Package-owned trusted immutable data | [Model provider](models/model/model.go), [service consumer](models/fetcher.go) |
 
-Analyzer acceptance/rejection fixtures stay in `tests/testdata`. They record
+Analyzer acceptance/rejection fixtures are in `tests/testdata`. They record
 source forms and diagnostics; these projects show complete programs and test
 their behavior.

@@ -9,7 +9,7 @@ run, such as workers in a pool. Choose the parent by the required lifetime:
 | A group from `supervise.StartGroup(parent)` | Services that must be stopped together or restarted together after a child exceeds its restart limit. |
 | `p.Children()` inside a service method | Work that must stop when that run of `p` ends. |
 
-## Build a pool during initialization
+## Example: build a worker pool in Init
 
 Use Init when all children can be created from the start arguments. The
 [worker project](../examples/workers/README.md) creates a
@@ -36,7 +36,7 @@ for id := range p.Args().Workers {
 - For work chosen after setup, start children from Run, as the dispatcher does below.
 - A restart creates a new parent struct and child group; Init or Run rebuilds the children.
 
-## Stop one group while the parent continues
+## Example: stop one worker group
 
 Create a nested group under the current run:
 
@@ -55,6 +55,8 @@ if worker.Current().Ready() {
 - The parent and its other groups continue.
 - Release shared-state locks before waiting for Stop. A child may need a parent
   method that takes the same lock to finish shutdown.
+
+## Example: change worker groups from configuration
 
 The [dispatcher](../examples/workers/dispatcher.go) applies this pattern to
 configuration changes. Its [configuration service](../examples/workers/config.go)
@@ -125,5 +127,5 @@ start arguments or a longer-lived service; old mutable fields are not copied.
   same parent method. Create fresh reservations on each run. Reusing a started
   reservation from the parent's arguments would panic.
 
-Child-group handles follow ordinary Go rules. Exported service methods still
-need one [Scoped result](scoped-results.md).
+Child-group handles follow ordinary Go rules. Exported user service methods
+need one [Scoped result](scoped-results.md), except Init and Run.

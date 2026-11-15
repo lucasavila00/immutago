@@ -14,9 +14,9 @@ The analyzer checks:
 - Allowed construction, reads, calls, and assignments; no protected field writes.
 - Shared pointer storage and Scoped pointer retention.
 - Exclusive native builders, Freeze consumption, and use after Freeze.
-- Exactly one Scoped result for each exported service method except Init and Run.
+- Exactly one Scoped result for each exported user service method except Init and Run, including promoted user methods. Runtime methods are exempt.
 
-Direct im or supervise imports, used types, and failed checked dependencies select packages for analysis. Ordinary Go APIs remain trusted. im.UncheckedValue records the declaring package's promise that a value never changes. The checker does not prove this promise.
+Direct im or supervise imports, used types, and failed checked dependencies select packages for analysis. Ordinary Go API contracts are trusted. im.UncheckedValue records the declaring package's promise that a value never changes. The checker does not prove this promise.
 
 The complete source forms and package rules are in https://github.com/lucasavila00/immutago/blob/main/docs/rules.md.
 

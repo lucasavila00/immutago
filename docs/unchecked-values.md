@@ -7,6 +7,8 @@ Use it when your package supplies immutable data that does not fit the checked f
 - Only the package that declares `T` can wrap it with `im.Trust` or read it with `im.Unwrap`.
 - Other packages can keep the handle and call your functions to read the data.
 
+## Example: a prediction model
+
 ```go
 type baked struct { weights []float64 }
 

@@ -14,7 +14,7 @@
 - Recognizes standard-library source under the active `go env GOROOT`.
 - Skips generated `.test` main packages with the compiler-checked standard
   internal test dependency.
-- Still checks user test packages.
+- Checks user test packages.
 
 Enforcement:
 
