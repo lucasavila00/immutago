@@ -2,7 +2,7 @@
 //
 // Choose the API for the data:
 //   - Shared: read-only fields; callers can store or return pointers.
-//   - ByValue: read-only fields; pointers stay local or pass to checked readers.
+//   - ByValue: keep read-only value copies; use pointers through direct checked calls.
 //   - Owner: publish a new ByValue object while readers finish with the previous one.
 //   - FrozenSlice and FrozenMap: freeze a native collection without copying entries.
 //     Use Clone for an independent mutable copy.
@@ -20,7 +20,6 @@ type Shared struct{}
 // ByValue marks a struct with read-only fields. Values can be copied, stored, and returned.
 // Pointers can stay local or pass to direct checked calls. They cannot be stored
 // in fields or containers, saved globally, returned, or captured by closures.
-// ByValue does not make a value expire at the end of a Go block.
 // Use Owner to publish a new ByValue object for other code to read.
 // Embed it by value. A named field or pointer embedding does not mark the struct.
 // See https://github.com/lucasavila00/immutago/blob/main/docs/by-value.md for the complete forms.

@@ -5,7 +5,7 @@ import (
 	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
-// PoolRoute gives callers a handle to a selected pool when one is available.
+// PoolRoute gives callers a reference to a selected pool when one is available.
 type PoolRoute struct {
 	im.ByValue
 	Available bool

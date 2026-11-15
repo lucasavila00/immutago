@@ -9,7 +9,7 @@ Use this reference to check which Go forms Immutago accepts. The
 | --- | --- |
 | [Common forms](common-forms.md) | Check stored types, construction, reads, pointers, calls, and statements. |
 | [Shared](shared.md) | Store or return pointers to immutable objects. |
-| [ByValue](by-value.md) | Keep pointers local; use functions and methods that do not save them. |
+| [ByValue](by-value.md) | Keep immutable value copies and use pointers for local reads. |
 | [Owner](owner.md) | Publish a new ByValue object and read the current one. |
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
 | [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |

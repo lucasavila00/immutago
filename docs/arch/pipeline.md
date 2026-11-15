@@ -14,10 +14,11 @@ The [entry point](../../pkg/analyzer/analyzer.go) runs these stages:
 4. Reject cgo in packages that import or use im; report one source error.
 5. Report checked dependency failures and record local diagnostics.
 6. Check [service method results](services.md), excluding Init, Run, and methods
-   supplied by the runtime.
-7. For packages that import or use im, check field types and im type arguments,
-   prove native builder ownership, and match protected source forms.
-8. Export failures for importers.
+   supplied by the runtime. In im packages, also check field types and im type arguments.
+7. Match service reference operations in all selected packages.
+8. For packages that import or use im, prove native builder ownership and match
+   protected source forms.
+9. Export failures for importers.
 
 Package selection and state:
 
@@ -45,12 +46,13 @@ Package selection and state:
 `im.Shared`, `im.ByValue`, and frozen collections by package path and named type.
 
 The per-pass [classifier](../../internal/checker/classification.go) answers
-whether a type contains protected storage or callbacks:
+whether a type contains protected storage, callbacks, or service references:
 
 | Query | Edges followed |
 | --- | --- |
 | Storage | Fields and containers. |
 | Callback | Storage edges, interface methods, function parameters and results. |
+| Service reference | Fields, containers, interface methods, function parameters and results. |
 | Type-parameter constraint | Separate traversal mode. |
 
 It expands all reachable edges before propagating positive results backwards.
