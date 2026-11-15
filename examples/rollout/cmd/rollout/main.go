@@ -60,20 +60,24 @@ func serve(ctx context.Context, listener net.Listener, handler http.Handler) err
 	server := &http.Server{Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	done := make(chan error, 1)
 	go func() { done <- server.Serve(listener) }()
+	var serveErr error
+	ended := false
 	select {
 	case err := <-done:
-		return err
+		serveErr, ended = err, true
 	case <-ctx.Done():
-		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := server.Shutdown(shutdown); err != nil {
-			_ = server.Close()
-			return err
-		}
-		err := <-done
-		if errors.Is(err, http.ErrServerClosed) {
-			return nil
-		}
-		return err
 	}
+	shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(shutdown); err != nil {
+		_ = server.Close()
+		return errors.Join(serveErr, err)
+	}
+	if !ended {
+		serveErr = <-done
+	}
+	if errors.Is(serveErr, http.ErrServerClosed) {
+		return nil
+	}
+	return serveErr
 }

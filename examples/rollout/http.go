@@ -60,6 +60,7 @@ func releaseResponse(selected ReleaseProjection) ReleaseResponse {
 	totals := selected.Totals()
 	return ReleaseResponse{
 		Version: selected.Version().Unsafe(), Replicas: selected.Replicas(), Requests: totals.Requests,
-		Failures: totals.Failures, Invalid: totals.Invalid, ErrorPercent: totals.ErrorPercent(), P95Millis: totals.P95Millis(),
+		Failures: totals.Failures, Invalid: totals.Invalid,
+		ErrorPercent: totals.ErrorPercent(), P95Millis: totals.P95Millis(),
 	}
 }

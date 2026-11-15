@@ -31,7 +31,7 @@ type Report struct {
 // evaluate compares counts after both releases have enough valid requests.
 func evaluate(primary, candidate Totals, rules Limits) (string, string) {
 	if primary.Invalid != 0 || candidate.Invalid != 0 {
-		return "invalid_logs", "Repair the invalid log records before evaluating this release."
+		return "invalid_logs", "Select corrected log files before evaluating this release."
 	}
 	if primary.Requests < rules.MinRequests || candidate.Requests < rules.MinRequests {
 		return "waiting", fmt.Sprintf("Each release needs at least %d requests.", rules.MinRequests)
