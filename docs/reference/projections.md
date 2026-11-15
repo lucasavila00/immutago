@@ -78,6 +78,7 @@ this map-value copy automatically. See [operation costs](performance.md).
 | A source field named Local | Rename the field. |
 
 Only verified generated code can form interior Frozen-record addresses.
-The public Unsafe operation returns the selected value without another Cell load. It still receives all normal type, write,
+The public Unsafe operation returns the selected value without another Cell load.
+Generated code still receives all normal type, write,
 capture, call, and transport checks. The [architecture](../arch/ownership.md#generated-projections)
 describes those checks.

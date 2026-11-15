@@ -130,27 +130,27 @@ func NewVariadicReaderProjection(value im.Projection[VariadicReader]) VariadicRe
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v VariadicReaderProjection) IsNil() bool { return v.immutagoProjection.Read() == nil }
+func (v VariadicReaderProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
 
 // Add calls the checked interface method with its ordinary Go contract.
 func (v VariadicReaderProjection) Add(arg0 int, arg1 ...AmountAlias) int {
-	return v.immutagoProjection.Read().Add(arg0, arg1...)
+	return v.immutagoProjection.Unsafe().Add(arg0, arg1...)
 }
 
 // Box calls the checked interface method with its ordinary Go contract.
 func (v VariadicReaderProjection) Box(arg0 ...any) int {
-	return v.immutagoProjection.Read().Box(arg0...)
+	return v.immutagoProjection.Unsafe().Box(arg0...)
 }
 
 // Call calls the checked interface method with its ordinary Go contract.
 func (v VariadicReaderProjection) Call(arg0 ...func() int) int {
-	return v.immutagoProjection.Read().Call(arg0...)
+	return v.immutagoProjection.Unsafe().Call(arg0...)
 }
 
 // Retain calls the checked interface method with its ordinary Go contract.
-func (v VariadicReaderProjection) Retain(arg0 ...int) { v.immutagoProjection.Read().Retain(arg0...) }
+func (v VariadicReaderProjection) Retain(arg0 ...int) { v.immutagoProjection.Unsafe().Retain(arg0...) }
 
 // Sum calls the checked interface method with its ordinary Go contract.
 func (v VariadicReaderProjection) Sum(arg0 ...int) int {
-	return v.immutagoProjection.Read().Sum(arg0...)
+	return v.immutagoProjection.Unsafe().Sum(arg0...)
 }
