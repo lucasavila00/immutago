@@ -1,0 +1,4 @@
+capture.go:6:13: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
+  source: api.Get().Current
+  type: func() *api.Counter
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md

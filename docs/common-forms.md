@@ -37,6 +37,7 @@ They also apply to each nested field, key, and element.
 | Frozen collection of allowed types | `im.FrozenSlice[SharedPoint]`, `im.FrozenMap[string, *SharedPoint]` |
 | Alias or defined marked struct | `type Position = SharedPoint`, `type Position SharedPoint` |
 | Unchecked immutable value | `im.UncheckedValue[baked]`; see [Unchecked immutable values](unchecked-values.md). |
+| Service reference | `supervise.Ref[Worker]`; see [service references](service-references.md). |
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |

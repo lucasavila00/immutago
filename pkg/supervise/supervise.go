@@ -11,15 +11,15 @@
 //   - Calls run in the caller's goroutine and can overlap with Run and other calls.
 //     Synchronize access to mutable fields.
 //   - Each exported service method returns no result or one service result:
-//     a scalar, a struct with im.ByValue, the empty im.ByValue marker, or an unnamed
-//     array of these types. This includes promoted methods. Init, Run, and methods
-//     supplied by the runtime are exempt. The complete result rules are at
+//     a scalar, a Ref, an im.ByValue struct or marker, or an unnamed array of these
+//     types. This includes promoted methods. Init, Run, and methods supplied by
+//     the runtime are exempt. See the complete result rules at
 //     https://github.com/lucasavila00/immutago/blob/main/docs/service-results.md.
 //   - Arguments and implementation code follow ordinary Go rules. Uses of im
 //     values keep their immutability and pointer rules.
 //
-// Review state changes, locks, saved inputs, and dependency calls in the service
-// code. Immutable results do not prove service isolation.
+// Service methods can give callbacks or globals access to mutable state.
+// Review state changes, locks, saved inputs, and dependency calls in the service code.
 //
 // # Groups and shutdown
 //
@@ -66,7 +66,7 @@ const (
 // Embed Service[A] to supply start arguments and runtime methods; add
 // Run(context.Context) for background work. Start and StartReserved create and
 // initialize each service value.
-// Ref.Current selects the current value; a saved pointer keeps that value.
+// Call an exported service method with ref.Current().Method(args).
 type Service[A any] struct {
 	args     A
 	report   func(value any, stack []byte)
@@ -225,17 +225,21 @@ type child struct {
 	group *Group
 }
 
-// Ref is a service reference. Copies identify the same service, including after
-// a restart replaces its current value.
+// Ref is a reference to one service. Copies select the same service, including
+// after a restart. The analyzer requires T to be a concrete struct that embeds Service.
+// References can be stored in immutable fields and returned as service results;
+// the service state can still change.
 // Start returns an initialized reference. Reserve creates one for later startup;
 // a zero Ref is empty and cannot be used in place of Reserve.
 type Ref[T any] struct {
 	value *atomic.Pointer[T]
 }
 
-// Current selects the last successfully initialized service value with one
-// atomic load. A saved pointer still points to that value after a restart;
-// call Current again to select the replacement.
+// Current selects the last successfully initialized service value with one atomic load.
+// The analyzer accepts only ref.Current().Method(args). Method must be an
+// exported service method other than Init, Run, or a runtime method. The analyzer
+// rejects saving the pointer, the Current method, or the selected method.
+// A call in progress finishes on its selected instance, even after a restart.
 //
 // Current panics for an empty or unstarted reference. It can select a value whose
 // Run has ended. Stop does not invalidate the reference or block later calls.

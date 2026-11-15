@@ -14,7 +14,8 @@ The analyzer checks:
 - Allowed construction, reads, calls, and assignments; no protected field writes.
 - Shared pointer storage and ByValue pointer retention.
 - Exclusive native builders, Freeze consumption, and use after Freeze.
-- No result or one allowed service result for each exported service method, including promoted methods. Init, Run, and methods supplied by the runtime are exempt.
+- No result or one service result for each exported service method, including promoted methods. Init, Run, and methods supplied by the runtime are exempt.
+- Concrete service references and direct method calls through Ref.Current.
 
 Direct im or supervise imports, used types, and failed checked dependencies select packages for analysis. Ordinary Go API contracts are trusted. im.UncheckedValue records the declaring package's promise that a value never changes. The checker does not prove this promise.
 

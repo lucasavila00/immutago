@@ -11,7 +11,7 @@ Use it when callers can keep value copies but must not keep pointers to the obje
   or captured by closures.
 
 Value copies can retain memory through strings, frozen collections, Shared
-pointers, or `im.UncheckedValue` fields.
+pointers, service references, or `im.UncheckedValue` fields.
 
 ## Example: a request limit
 
@@ -55,7 +55,7 @@ Use the [common forms](common-forms.md).
 | Publish a new version for readers | [im.Owner](owner.md). |
 
 Exported [service methods](service-results.md) can return a ByValue struct.
-Their result rule also permits scalars and unnamed arrays.
+Their result rule also permits scalars, service references, and unnamed arrays.
 
 ## Rejected examples — non-exhaustive
 

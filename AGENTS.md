@@ -244,6 +244,10 @@ Keep source restrictions and examples there. Keep analysis details in the
 - Allow no result or one service result from each exported service method
   except Init and Run. Runtime methods are exempt. Other service code follows
   ordinary Go rules; im operations use their general checks.
+- Permit service references as stored values and results. Match every Current
+  call as `ref.Current().Method(args)` with an exported service method other
+  than Init, Run, or a runtime method. Reject all other uses of the returned
+  pointer. Keep the reference proof in [service architecture](docs/arch/services.md).
 - Trust ordinary Go API contracts. Use the documented package selection rules;
   do not add string taint analysis or whole-program service effect analysis.
 

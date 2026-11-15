@@ -14,9 +14,10 @@ Use this reference to check which Go forms Immutago accepts. The
 | [Frozen collections](frozen.md) | Build a slice or map, freeze it, and make a copy to edit. |
 | [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
 
-## Service results (`supervise`)
+## Service forms (`supervise`)
 
 - [Service results](service-results.md): result types for exported service methods.
+- [Service references](service-references.md): stored references and direct calls to the current service.
 - [Supervised services](services.md): execution and restart behavior.
 
 ## Rules for im and supervise
@@ -25,7 +26,8 @@ Use im type rules to check immutable data. Review service state changes and
 synchronization in the service code.
 
 Use the common forms with each type's forms. **Exhaustive** means all allowed
-forms are listed; unlisted protected operations are rejected.
+forms are listed. Unlisted operations on protected storage or service references
+are rejected.
 
 ### Trusted immutable values
 
@@ -50,7 +52,7 @@ The checker checks a package in any of these cases, including its test files:
 | Imports a package that failed its checks, directly or through another package | Import a package with an invalid immutable field. |
 
 - Aliases, type arguments, and generic constraints also count.
-- A package that uses only supervise receives the service result check.
+- A package that uses only supervise receives service result and reference checks.
   Importing or using im also selects the immutable-source checks.
 - The CLI and `go vet` use the same rules.
 - Other packages are trusted to obey Go contracts, including immutable strings.
@@ -66,12 +68,13 @@ The checker checks a package in any of these cases, including its test files:
 | Rejected examples — non-exhaustive | Use instead |
 | --- | --- |
 | Cgo in a package that imports or uses im | Ordinary typed Go code. Cgo produces one error at the source package line. |
-| A function without a body whose signature contains an im type | Supply a Go body to check its protected operations. |
+| A function without a body whose signature contains an im type or a service reference | Supply a Go body to check its protected operations and service calls. |
 
 An imported package's error includes one cause and a command to see its other errors.
 
 Functions without a body use ordinary Go rules when their compiler-resolved
 receiver, parameters, results, and generic constraints contain no im
-type. For example, `func cpuID() uint64` and `func checksum(data []byte) uint64`
-can use assembly implementations in a checked package. A declaration such as
-`func read(value *Config) int`, where Config embeds im.Shared, needs a Go body.
+type or service reference. For example, `func cpuID() uint64` and
+`func checksum(data []byte) uint64` can use assembly implementations in a checked
+package. A declaration such as `func read(value *Config) int`, where Config embeds
+im.Shared, needs a Go body.
