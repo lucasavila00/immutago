@@ -28,25 +28,31 @@ func TestForgetUnlinksChild(t *testing.T) {
 			if c.run != nil || c.prev != nil || c.next != nil {
 				t.Fatal("removed child keeps its run or list links")
 			}
-			if parent.children.count != len(remaining) {
-				t.Fatalf("child count = %d, want %d", parent.children.count, len(remaining))
-			}
-			var forward, backward []*child
-			for c := parent.children.first; c != nil; c = c.next {
-				forward = append(forward, c)
-			}
-			for c := parent.children.last; c != nil; c = c.prev {
-				backward = append(backward, c)
-			}
-			slices.Reverse(backward)
-			if !slices.Equal(forward, remaining) || !slices.Equal(backward, remaining) {
-				t.Fatal("removal changed the order of remaining children")
-			}
+			checkChildList(t, parent, remaining)
 		}
 		parent.forget(&child{})
 		if parent.children.first != nil || parent.children.last != nil || parent.children.count != 0 {
 			t.Fatal("empty group retains a child")
 		}
+	}
+}
+
+// checkChildList checks both directions and the number of entries.
+func checkChildList(t *testing.T, parent *Group, want []*child) {
+	t.Helper()
+	if parent.children.count != len(want) {
+		t.Fatalf("child count = %d, want %d", parent.children.count, len(want))
+	}
+	var forward, backward []*child
+	for c := parent.children.first; c != nil; c = c.next {
+		forward = append(forward, c)
+	}
+	for c := parent.children.last; c != nil; c = c.prev {
+		backward = append(backward, c)
+	}
+	slices.Reverse(backward)
+	if !slices.Equal(forward, want) || !slices.Equal(backward, want) {
+		t.Fatal("removal changed the order of remaining children")
 	}
 }
 
