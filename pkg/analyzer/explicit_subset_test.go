@@ -17,8 +17,10 @@ func TestExplicitSubsetRejects(t *testing.T) {
 		{"multiple write", `func f(){var v V;v.X,v.X=1,2}`},
 		{"multiple value", `func f(){a,b:=V{},V{};_,_=a,b}`},
 
-		{"Get field destination", `func f(){m:=im.FreezeMap(map[int]V{});var out struct{V V};var ok bool;out.V,ok=m.Get(1);_=ok}`},
-		{"Get boxed destination", `func f(){m:=im.FreezeMap(map[int]V{});var value any;var ok bool;value,ok=m.Get(1);_=value;_=ok}`},
+		{"Get field destination", `func f(){m:=im.FreezeMap(map[int]V{});var out struct{V V};
+var ok bool;out.V,ok=m.Get(1);_=ok}`},
+		{"Get boxed destination", `func f(){m:=im.FreezeMap(map[int]V{});var value any;
+var ok bool;value,ok=m.Get(1);_=value;_=ok}`},
 		{"nested Freeze return", `func f()im.FrozenSlice[int]{return im.FreezeSlice([]int{1})}`},
 		{"nested Freeze call", `func use(im.FrozenSlice[int]){};func f(){use(im.FreezeSlice([]int{1}))}`},
 		{"nested Freeze chain", `func f(){_=im.FreezeSlice([]int{1}).Len()}`},
@@ -51,9 +53,9 @@ func TestExplicitSubsetAccepts(t *testing.T) {
 		`func f(){m:=im.FreezeMap(map[int]V{});var v,ok=m.Get(1);_=v;_=ok}`,
 		`func f(){m:=im.FreezeMap(map[int]V{});var v V;v,ok:=m.Get(1);_=v;_=ok}`,
 		`func f(){m:=im.FreezeMap(map[int]V{});var v V;var ok bool;v,ok=m.Get(1);_=v;_=ok;_,_=m.Get(1)}`,
-		`func f(){m:=im.FreezeMap(map[int]V{}).Projection();v,ok:=m.Get(1);v,ok=m.Get(1);_=v;_=ok}`,
-		`func f(){m:=im.FreezeMap(map[int]V{}).Projection();var v,ok=m.Get(1);v,ok=m.Get(1);_=v;_=ok}`,
-		`func f(){m:=im.FreezeMap(map[int]V{}).Projection();var v im.Projection[V];v,ok:=m.Get(1);_=v;_=ok}`,
+		`func f(){frozen:=im.FreezeMap(map[int]V{});m:=frozen.Projection();v,ok:=m.Get(1);v,ok=m.Get(1);_=v;_=ok}`,
+		`func f(){frozen:=im.FreezeMap(map[int]V{});m:=frozen.Projection();var v,ok=m.Get(1);v,ok=m.Get(1);_=v;_=ok}`,
+		`func f(){frozen:=im.FreezeMap(map[int]V{});m:=frozen.Projection();var v im.Projection[V];v,ok:=m.Get(1);_=v;_=ok}`,
 
 		`var frozen=im.FreezeSlice([]int{1})`,
 		`func f(){_=im.FreezeSlice([]int{1})}`,
