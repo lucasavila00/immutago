@@ -1,0 +1,6 @@
+receiver_invalidconsumer.go:3:8: unsupported dependency example.com/consumer/invalid: immutability proof failed
+  representative failure: example.com/consumer/invalid/receiver_invalid.go:12:30: unsupported immutable operation: writes to immutable objects are unsupported
+    source: p.Price = 1
+    fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/invalid, correct its errors, then rerun immutago on this package

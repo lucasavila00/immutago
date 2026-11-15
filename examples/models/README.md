@@ -24,7 +24,7 @@ source, set `-url http://host/path/model.json`.
 
 | File | Purpose |
 | --- | --- |
-| [fetcher.go](fetcher.go) | Fetch in Init, poll in Run, and publish each valid model through `im.Owner`. |
+| [fetcher.go](fetcher.go) | Fetch in Init, poll in Run, and publish each valid model through `im.Cell`. |
 | [store.go](store.go) | Save the source document with a backend supplied by a factory. |
 | [model/model.go](model/model.go) | Copy coefficients, wrap them with `im.Trust`, and expose read-only prediction. |
 | [cmd/models/main.go](cmd/models/main.go) | Start the service with a logger, HTTP client, and store factory. |
@@ -37,9 +37,9 @@ per service.
 The model package promises with `im.Trust` that its copied
 coefficients never change, and its API never exposes the slice. Only that
 package can unwrap the pointer. The service publishes each model in a new
-`snapshot` struct with `im.ByValue`. Each prediction reads one snapshot for the
+record with `im.Frozen`. Each prediction reads one version for the
 whole calculation. The returned `Prediction` is a [service result](../../docs/service-results.md)
-with its model name and score from that same version.
+with a local name projection and score from that same version. Clone gives independent name bytes.
 
 Check this project and run its tests:
 

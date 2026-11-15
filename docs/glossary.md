@@ -1,35 +1,23 @@
 # Glossary
 
-## Immutable data
-
 | Term | Meaning |
 | --- | --- |
-| **Immutable object** | An object whose fields cannot change after construction. See [common forms](common-forms.md). |
-| **Marker; marked struct** | `im.Shared` or `im.ByValue`, embedded by value; a struct with one of these markers and allowed field types. See [stored types](common-forms.md#markers-and-stored-types). |
-| **Shared object** | A read-only struct with `im.Shared`. Callers can keep its values and pointers. See [Shared](shared.md). |
-| **ByValue object** | A read-only struct with `im.ByValue`. Callers keep value copies and use pointers only through the [local pointer forms](by-value.md). |
-| **Builder** | A local Go slice or map whose storage is checked for exclusive use. See [build before freezing](frozen.md#build-before-freezing). |
-| **Freeze** | `im.FreezeSlice` or `im.FreezeMap` transfers a builder's storage to a frozen collection without copying entries. See [frozen collections](frozen.md). |
-| **Frozen collection; Clone** | A read-only `im.FrozenSlice` or `im.FrozenMap`; its `Clone` method makes an independent mutable slice or map with the same entries. See [collection reads](frozen.md#reads-and-clone). |
-| **Owner slot; Owner holder** | An `im.Owner[T]` package variable or named field; an unmarked struct that contains such a field. See [Owner](owner.md). |
-| **Unchecked immutable value** | An `im.UncheckedValue[T]` handle. The package that declares `T` promises that the wrapped data never changes. See [unchecked values](unchecked-values.md). |
-
-## Services
-
-| Term | Meaning |
-| --- | --- |
-| **Service** | A struct that embeds `supervise.Service[A]`, directly or through embedded fields. The runtime calls Init for setup and Run for background work. See [services](services.md). |
-| **Service method** | A method declared on a service or promoted from an embedded field. Exported methods have a [result rule](service-results.md), except Init, Run, and methods supplied by the runtime. |
-| **Service result** | The optional single result of an exported service method. Its [allowed types](service-results.md#result-types--exhaustive) include scalars and ByValue structs. |
-| **Service reference** | A `supervise.Ref[T]` that can be copied, stored, and returned. `ref.Current().Method(args)` calls the current service. See [service references](service-references.md). |
-| **Service run** | One service value's background execution and child group. A restart creates a new value and run. References to old children do not select children from the new run. See [child lifetimes](service-children.md#child-lifetimes). |
-| **Group; child** | A `supervise.Group` manages services and nested groups. Each service or nested group is a child of its parent group. See [child services](service-children.md). |
-
-## Checker terms
-
-| Term | Meaning |
-| --- | --- |
-| **Protected storage** | Marked objects and their fields, frozen collections, and arrays containing them. The [source rules](common-forms.md) check operations on this storage and its pointers. |
-| **Consumed builder** | A builder after Freeze. Further uses of its original slice or map are rejected. See [frozen collections](frozen.md). |
-| **Checked package** | A package selected for im checks, service result checks, or dependency failure reports. See the [package boundary](rules.md#package-boundary). |
-| **Allowed form; matcher** | A documented Go expression or statement shape; the analyzer code that checks its syntax, resolved types, and context. See the [analysis pipeline](arch/pipeline.md#source-forms-and-dependency-failures). |
+| Frozen | Immutable stored data with the recursive [Frozen field rule](types.md). Copies can share backing storage. |
+| Frozen record | A struct with `im.Frozen`. |
+| Copied | Boolean/numeric data, opaque service references, and unnamed arrays of Copied values. Frozen records are not Copied. |
+| Local value | A read projection, a record with `im.Local`, or an unnamed array of Local values. It cannot enter persistent storage. |
+| Read result | Copied or Local. This is a type category, not a service-specific field rule. |
+| Projection | Local access to a Frozen value. Generated types such as SettingsProjection return Copied fields or more projections. |
+| Cell; cell holder | An `im.Cell[T]` slot; an unmarked struct containing a named slot or holder field. Generated types such as SettingsCell are holders. |
+| Builder | A native slice or map checked for exclusive use before Freeze. |
+| FrozenString; FrozenSlice; FrozenMap | Stored string, slice, and map types. Copies share immutable backing storage. |
+| Freeze | Wrap native storage without a copy. FreezeSlice and FreezeMap consume a builder; FreezeString retains an immutable input string. |
+| Clone | Make independent native storage. It does not recursively copy arbitrary fields. |
+| Protected storage | Marked records, frozen collections, projections, and containers that contain them. |
+| Checked package | A package selected by the [package boundary](rules.md#package-boundary). |
+| Service | A struct that embeds `supervise.Service[A]`. Init sets it up; Run does background work. |
+| Service method | A declared or promoted method on a service. Exported methods have the [read-result rule](service-results.md). |
+| Service reference | `supervise.Ref[T]`; each Current call selects the current service after any restart. |
+| Service run | One service value's background execution and child group. |
+| Group; child | A `supervise.Group` manages services and nested groups; each is a child of its parent group. |
+| Allowed form; matcher | A documented source shape; the checker code that validates its syntax, resolved types, and context. |

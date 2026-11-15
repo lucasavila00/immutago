@@ -26,3 +26,6 @@ func (s FrozenSlice[T]) At(index int) T { return s.values[index] }
 // change the frozen slice. Pointers still point to the same immutable objects;
 // immutable element types make deeper copying unnecessary.
 func (s FrozenSlice[T]) Clone() []T { return slices.Clone(s.values) }
+
+// Projection returns local read access without copying backing storage or allocating.
+func (s FrozenSlice[E]) Projection() SliceProjection[E] { return SliceProjection[E]{values: s.values} }

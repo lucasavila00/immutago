@@ -1,92 +1,58 @@
 # Service results
 
-A service is a struct that embeds `supervise.Service[A]`. Each exported service
-method can return no result or one **service result** from the types below.
-This includes promoted methods on named or anonymous service structs.
-`Init`, `Run`, and methods supplied by the supervise runtime are exempt.
+Each exported service method returns no result or one [read result](types.md):
+Copied data or a Local value. Init, Run, and runtime methods are exempt.
+The rule also covers promoted methods.
 
-This rule applies to service methods. Ordinary functions and methods use the
-[im source forms](common-forms.md) when they work with protected data.
-
-## Method signatures — exhaustive
-
-| Form | Example |
+| Allowed result — exhaustive | Example |
 | --- | --- |
-| No result | `func (c *Counter) Pause() { c.paused.Store(true) }` |
-| One allowed result | `func (l *Limiter) Usage() Usage` |
+| No result | `func (c *Cache) Refresh()` |
+| Copied scalar or unnamed array | `bool`, `int`, `[2]int` |
+| Service reference | `supervise.Ref[Worker]` |
+| Local projection | Generated `SettingsProjection`, `im.StringProjection`, `im.MapProjection[string, int]` |
+| Local record or unnamed array of read results | `Usage` with `im.Local` and numeric fields, `[2]im.StringProjection` |
 
-## Example: quota results
+There is no separate field rule for services. Cell[T] and Projection[T] require the
+same Frozen T. The general Copied and Local rules determine whether a type
+is a read result. Frozen records are not read results, even when all fields are
+numbers. Use im.Local for a result record; no generation is needed for it.
 
-Examples from the [configuration project](../examples/configuration/README.md):
-
-| Method | Result |
-| --- | --- |
-| `FileCache.Text() string` | The last file contents. |
-| `Limiter.Take() Decision` | An integer type with the request decision. |
-| `Limiter.Usage() Usage` | A struct with `im.ByValue` and the current counts. |
+## Example: read one version
 
 ```go
-type Usage struct {
-    im.ByValue
-    Used   int
-    Limit  int
-    Window int
+type Settings struct {
+    im.Frozen
+    Title im.FrozenString
+    Limit int
 }
+
+type Cache struct {
+    supervise.Service[supervise.NoArgs]
+    current SettingsCell
+}
+
+func (c *Cache) Settings() SettingsProjection { return c.current.Load() }
 ```
 
-Callers receive a value they can keep. Returning Usage does not return a pointer
-to the limiter's mutable counters.
+Generate SettingsCell and SettingsProjection with the [projection generator](projections.md).
+A caller reads fields through typed methods. It can keep copied
+numbers or explicit string clones. It cannot keep the returned projection in
+persistent storage.
 
-## Result types — exhaustive
+For a result that combines computed values with projections, use [im.Local](local.md).
+The [model service](../examples/models/fetcher.go) returns a name projection and a score
+from one selected model. The [configuration service](../examples/configuration/limiter.go)
+returns quota counters in an im.Local Usage record.
 
-| Type | Example |
+| Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
-| Scalar: boolean, integer, floating-point, complex, or string | `bool`, `int`, `float64`, `complex128`, `string` |
-| Defined scalar | `type Count int` |
-| Service reference | `supervise.Ref[Worker]`; see [service references](service-references.md). |
-| Empty ByValue marker value | `im.ByValue` |
-| Struct with `im.ByValue` and proved immutable fields | `Usage` |
-| Unnamed array whose elements use this type list | `[2]int`, `[2]Usage`, `[2][3]Usage` |
-| Alias of an allowed type | `type Response = Usage` |
+| `string` | `im.StringProjection` from `im.ProjectString(text)`. |
+| `Usage` with `im.Frozen`, even when it has only numeric fields | Use im.Local for the result, or return its generated projection. |
+| `im.Frozen` or `im.Local` marker | Return no result when no data is needed; embed im.Local in a result record when data is needed. |
+| `im.FrozenString`, `im.FrozenSlice[E]`, or `im.FrozenMap[K,V]` | The corresponding StringProjection, SliceProjection, or MapProjection. |
+| Pointer, native container, interface, or Cell | A read-result value with the required data. |
+| `(int, bool)` | `type Result struct { im.Local; Count int; OK bool }`. |
 
-A service result is a category of return types, not an im marker. A returned
-integer is an ordinary Go value: callers can change it. A returned ByValue value
-keeps its read-only fields and [pointer rules](by-value.md).
-
-Fields of a ByValue struct follow the [stored-type rules](common-forms.md#markers-and-stored-types).
-They can contain frozen collections, Shared values, Shared pointers, and service references.
-For example, return a ByValue struct with a frozen map field when callers need
-a collection. The frozen map is not an allowed service result on its own.
-
-Start arguments and method parameters follow the [service contract](services.md#service-contract).
-The result rule does not prove service isolation or restrict ordinary mutable inputs.
-
-## Return related data together
-
-Return related fields together when they describe one version. The
-[model service](../examples/models/fetcher.go) reads one published model for
-both its name and prediction:
-
-```go
-func (f *Fetcher) Predict(features im.FrozenSlice[float64]) Prediction {
-    current := f.current.Load()
-    return Prediction{Name: current.Model.Name, Score: model.Predict(current.Model, features)}
-}
-```
-
-The caller can keep the Prediction after the service publishes a new model.
-The single Load keeps the name and score consistent with the same model.
-
-## Rejected examples — non-exhaustive
-
-| Result | Use instead |
-| --- | --- |
-| `*Usage` | Declare a value result such as `Read() Usage`; return `*p`. |
-| `[]int`, `map[string]int`, or a frozen collection | Put a frozen collection in a struct with `im.ByValue` and return that struct. |
-| `error`, `any`, or another interface | Return a struct with `im.ByValue` and the information the caller needs. |
-| `(int, bool)` | Return a struct with `im.ByValue` and fields for both values. |
-| An unmarked struct, Shared struct or pointer, or `im.UncheckedValue[T]` | Return a struct with `im.ByValue` and allowed fields. |
-| `type Counts [2]int` | Return `[2]int`, or a struct with `im.ByValue` and an array field. |
-
-ByValue pointers cannot be saved, returned, or captured. See
-[ByValue objects](by-value.md) for their use inside a function.
+Ordinary function results still use their general type rules. Service inputs,
+locks, and implementation code keep ordinary Go rules except for protected im
+operations.

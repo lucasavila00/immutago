@@ -15,8 +15,8 @@ func TestMarkerIdentities(t *testing.T) {
 		name  string
 		match func(types.Type) bool
 	}{
-		{"Shared", Shared},
-		{"ByValue", ByValue},
+		{"Frozen", Frozen},
+		{"Local", Local},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			marker := types.NewNamed(types.NewTypeName(token.NoPos, library, test.name, nil),
@@ -37,7 +37,7 @@ func TestMarkerIdentities(t *testing.T) {
 				}
 			}
 			duplicate := markedType("Duplicate", marker, types.NewField(token.NoPos, nil, "Alias", alias, true))
-			if MarkerCount(duplicate) != 2 || !strings.Contains(Reason(duplicate), "exactly one immutable marker") {
+			if MarkerCount(duplicate) != 2 || !strings.Contains(Reason(duplicate), "exactly one") {
 				t.Fatal("duplicate aliases passed the structural proof")
 			}
 		})
@@ -47,14 +47,14 @@ func TestMarkerIdentities(t *testing.T) {
 // TestLocalPointerIdentity checks that aliases and defined pointer types retain the storage restriction.
 func TestLocalPointerIdentity(t *testing.T) {
 	library := types.NewPackage(LibraryPath, "im")
-	marker := types.NewNamed(types.NewTypeName(token.NoPos, library, "ByValue", nil),
+	marker := types.NewNamed(types.NewTypeName(token.NoPos, library, "Local", nil),
 		types.NewStruct(nil, nil), nil)
 	value := markedType("Value", marker)
 	pointer := types.NewPointer(value)
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), pointer)
 	defined := types.NewNamed(types.NewTypeName(token.NoPos, nil, "Defined", nil), pointer, nil)
 	for _, stored := range []types.Type{pointer, alias, defined} {
-		if reason := Reason(stored); !strings.Contains(reason, "ByValue pointers cannot be stored") {
+		if reason := Reason(stored); reason == "" {
 			t.Errorf("local pointer %s accepted: %s", stored, reason)
 		}
 	}

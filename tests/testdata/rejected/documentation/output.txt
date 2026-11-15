@@ -1,0 +1,94 @@
+constant_operands.go:12:33: unsupported immutable operation: containers of Local pointers are unsupported
+  source: [1]*ConstantLocal{local}
+  type: [1]*docrejected.ConstantLocal
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+constant_operands.go:12:51: unsupported immutable operation: closures cannot capture immutable storage
+  source: local
+  type: *docrejected.ConstantLocal
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+constant_operands.go:16:7: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: constantLength = len([1]Point{})
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
+constant_operands.go:19:30: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: [1]Point{}
+  type: [1]docrejected.Point
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
+constant_operands.go:22:37: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: values [len([1]Point{})]int
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
+constant_operands.go:22:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: constantGeneric
+  type: func[T any]()
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+constant_operands.go:27:25: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+constant_operands.go:27:8: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: n = len([1][]int{values})
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
+constant_operands.go:36:8: unsupported immutable operation: protected operation is outside the supported statement forms
+  source: n = len([1]int{values[99]})
+  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
+reference_forms.go:15:30: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: &[2]Point{}
+  type: *[2]docrejected.Point
+  fix: allocate a concrete struct that embeds im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses
+reference_forms.go:15:47: unsupported immutable operation: immutable references require a concrete marked struct target
+  source: p
+  type: *[2]docrejected.Point
+  fix: allocate a concrete struct that embeds im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses
+reference_forms.go:18:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.Values[0].X = 1
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+reference_forms.go:22:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: values[0].X = 1
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+reference_forms.go:32:34: unsupported immutable operation: closures cannot capture immutable storage
+  source: point
+  type: *docrejected.LocalPoint
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+reference_forms.go:40:9: unsupported immutable operation: user generic instantiations with immutable types are unsupported
+  source: identity(point)
+  type: docrejected.Point
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+reference_forms.go:46:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: point, found := makePair()
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+reference_forms.go:51:5: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: _, _ = pairMap.Get(0)
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+typed_nil_boundaries.go:11:2: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:11:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: values := []int(nil)
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
+typed_nil_boundaries.go:13:6: cannot freeze scores: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:13:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: scores = map[string]int(nil)
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
+typed_nil_boundaries.go:15:6: cannot freeze named: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:15:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: named nilInts = nilInts(nil)
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
+typed_nil_boundaries.go:17:2: cannot freeze alias: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:17:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: alias := (nilIntsAlias)((nil))
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
+typed_nil_boundaries.go:19:13: unsupported immutable operation: protected value conversions are unsupported
+  source: []nilSnapshot(nil)
+  type: []docrejected.nilSnapshot
+  fix: construct the destination marked value from copied fields; keep frozen collections in their original im type
+typed_nil_boundaries.go:19:2: cannot freeze objects: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:19:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: objects := []nilSnapshot(nil)
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
+typed_nil_boundaries.go:25:21: cannot freeze this expression: pass an exclusively owned local builder or a fresh make, literal, bare nil, or Clone result
+typed_nil_boundaries.go:26:19: cannot freeze this expression: pass an exclusively owned local builder or a fresh make, literal, bare nil, or Clone result
+typed_nil_boundaries.go:27:21: cannot freeze this expression: pass an exclusively owned local builder or a fresh make, literal, bare nil, or Clone result
+typed_nil_boundaries.go:28:21: cannot freeze this expression: pass an exclusively owned local builder or a fresh make, literal, bare nil, or Clone result
+typed_nil_boundaries.go:29:21: cannot freeze this expression: pass an exclusively owned local builder or a fresh make, literal, bare nil, or Clone result
+typed_nil_boundaries.go:29:21: unsupported immutable operation: protected value conversions are unsupported
+  source: []nilSnapshot(nil)
+  type: []docrejected.nilSnapshot
+  fix: construct the destination marked value from copied fields; keep frozen collections in their original im type
+typed_nil_boundaries.go:35:6: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:35:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: values []int = nil
+  fix: declare one fresh local builder; use values = append(values, element) to extend it

@@ -1,8 +1,0 @@
-reflect_mutation.go:13:17: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
-  source: reflect.ValueOf([]Value{{N: 1}})
-  type: reflect.Value
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-reflect_mutation.go:13:33: unsupported immutable operation: native slices of immutable storage are unsupported
-  source: []Value{{N: 1}}
-  type: []rejected.Value
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice

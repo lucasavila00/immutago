@@ -1,9 +1,0 @@
-inferred_slice.go:11:11: immutable collection: type argument 1: []int is not provably immutable
-  type: im.FrozenSlice[[]int]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-inferred_slice.go:11:14: immutable type argument: []int is not provably immutable
-  type: []int
-  fix: replace the native slice with im.FrozenSlice[T], where T is immutable
-inferred_slice.go:11:5: immutable collection: type argument 1: []int is not provably immutable
-  type: im.FrozenSlice[[]int]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments

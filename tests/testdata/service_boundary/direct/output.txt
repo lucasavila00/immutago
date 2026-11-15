@@ -1,0 +1,38 @@
+anonymous.go:7:24: service method Values must return a service result: copied values require bool, numbers, arrays, or service references
+  result type: []int
+handles.go:13:49: unsupported immutable operation: service reference conversions are unsupported; use a type alias or copy the Ref value
+  source: api.Handle(value)
+  type: api.Handle
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+handles.go:14:49: unsupported immutable operation: service references cannot enter interfaces; keep the concrete Ref type
+  source: func() api.Handle { return ref }
+  type: func() api.Handle
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+handles.go:18:20: unsupported immutable operation: service references cannot enter interfaces; keep the concrete Ref type
+  source: values
+  type: func(yield func(api.Handle) bool)
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+handles.go:5:89: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
+  source: ref.Current
+  type: func() *api.Counter
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+handles.go:6:79: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
+  source: ref.Current
+  type: func() *api.Counter
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+handles.go:7:85: unsupported immutable operation: service references cannot enter interfaces; keep the concrete Ref type
+  source: ref
+  type: api.Handle
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+handles.go:9:82: unsupported immutable operation: user generic type arguments cannot contain service references; use concrete Ref parameters and storage
+  source: indirect
+  type: func(value api.Handle) *api.Counter
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+init_calls.go:6:33: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
+  source: ref.Current
+  type: func() *api.Counter
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md
+init_calls.go:9:44: unsupported immutable operation: use a service reference only as ref.Current().Method(args); do not extract the accessor or service pointer
+  source: ref.Current
+  type: func() *api.ReadyCounter
+  fix: keep a concrete supervise.Ref[Service] and call ref.Current().Message(args); see docs/service-references.md

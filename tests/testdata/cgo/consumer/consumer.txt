@@ -1,5 +1,0 @@
-consumer.go:4:2: unsupported dependency example.com/consumer/cgolib: immutability proof failed
-  representative failure: example.com/consumer/cgolib/cgo.go:1:1: cgo is not supported; immutability cannot be proved
-    fix: replace cgo with checked Go code
-  note: other dependency errors may exist
-  fix: run immutago example.com/consumer/cgolib, correct its errors, then rerun immutago on this package

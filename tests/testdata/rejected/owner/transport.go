@@ -16,7 +16,7 @@ func badTransport(l *Loader) {
 	savedLoader = l
 }
 
-func publish(l *Loader)  { l.Current.Store(&Model{}) }
+func publish(l *Loader)  { l.Current.Store(Model{}) }
 func (*Loader) publish() {}
 func badCallbacks() {
 	f := publish

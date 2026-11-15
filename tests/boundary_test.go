@@ -68,19 +68,20 @@ func checkBoundaryFixtures(t *testing.T, root, binary, mode, fixture, target str
 		t.Fatal(err)
 	}
 	for _, entry := range entries {
-		if !strings.HasSuffix(entry.Name(), ".go") {
+		if !entry.IsDir() {
 			continue
 		}
 		t.Run(entry.Name(), func(t *testing.T) {
 			dir := consumerModule(t, root, "boundary")
-			source, err := os.ReadFile(filepath.Join(fixtures, entry.Name()))
+			name := entry.Name() + ".go"
+			source, err := os.ReadFile(filepath.Join(fixtures, entry.Name(), name))
 			if err != nil {
 				t.Fatal(err)
 			}
 			if err := os.MkdirAll(filepath.Join(dir, target), 0755); err != nil {
 				t.Fatal(err)
 			}
-			writeFile(t, filepath.Join(dir, target, entry.Name()), string(source))
+			writeFile(t, filepath.Join(dir, target, name), string(source))
 			if fixture == "boundary_contracts" {
 				writeFile(t, filepath.Join(dir, target, "opaque.s"), "// Permit bodyless Go declarations.\n")
 			}
@@ -88,7 +89,7 @@ func checkBoundaryFixtures(t *testing.T, root, binary, mode, fixture, target str
 			if fixture == "boundary_contracts" && !strings.Contains(output, "unsupported function without a Go body") {
 				t.Fatalf("local contract did not activate checking: %s", output)
 			}
-			checkSnapshot(t, filepath.Join(fixtures, strings.TrimSuffix(entry.Name(), ".go")+".txt"), normalizeOutput(output))
+			checkSnapshot(t, filepath.Join(fixtures, entry.Name(), "output.txt"), normalizeOutput(output))
 		})
 	}
 }

@@ -3,11 +3,11 @@ package rejected
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Product struct {
-	im.Shared
+	im.Frozen
 	Price int
 }
 type Order struct {
-	im.Shared
+	im.Frozen
 	Product
 }
 type Counter int
@@ -15,7 +15,7 @@ type Counter int
 func (c *Counter) Inc() { *c++ }
 
 type Counted struct {
-	im.Shared
+	im.Frozen
 	Counter
 }
 

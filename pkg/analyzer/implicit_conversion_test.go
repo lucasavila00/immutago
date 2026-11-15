@@ -19,7 +19,7 @@ func TestImplicitInterfaceConversions(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			got := checkSource(t, `type V struct{im.Shared;X int};`+test.source)
+			got := checkSource(t, `type V struct{im.Frozen;X int};`+test.source)
 			if !strings.Contains(got, "boxing immutable storage in interfaces is unsupported") &&
 				!(test.name == "variadic callback" && strings.Contains(got, "immutable callbacks are unsupported")) {
 				t.Fatalf("implicit interface conversion accepted: %s", got)
@@ -39,7 +39,7 @@ func TestScalarInterfaceConversions(t *testing.T) {
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, `type V struct{im.Shared;X int};`+source); got != "" {
+			if got := checkSource(t, `type V struct{im.Frozen;X int};`+source); got != "" {
 				t.Fatalf("ordinary conversion rejected: %s", got)
 			}
 		})

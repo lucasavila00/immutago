@@ -3,11 +3,11 @@ package local_reference_escape
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Local struct {
-	im.ByValue
+	im.Local
 	Value int
 }
 type Stored struct {
-	im.Shared
+	im.Frozen
 	Pointer *Local
 }
 
@@ -46,12 +46,24 @@ func delayed() {
 }
 
 type Both struct {
-	im.Shared
-	im.ByValue
+	im.Frozen
+	im.Local
 	Value int
 }
 
 type LocalStored struct {
-	im.ByValue
+	im.Local
 	Pointer *Local
+}
+
+// frozenValues cannot put local records into persistent frozen storage.
+func frozenValues() im.FrozenSlice[Local] {
+	builder := []Local{{Value: 1}}
+	frozen := im.FreezeSlice(builder)
+	return frozen
+}
+
+type SavedValue struct {
+	im.Frozen
+	Value Local
 }

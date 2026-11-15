@@ -1,3 +1,0 @@
-unmarked_field.go:13:2: immutable field Value: struct does not embed im.Shared or im.ByValue
-  owner: rejected.Bad; field type: struct{Count int}
-  fix: embed im.Shared or im.ByValue in the struct and make each field immutable

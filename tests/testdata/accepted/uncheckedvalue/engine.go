@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package uncheckedvalue
 
 import (
@@ -15,7 +17,7 @@ type baked struct {
 
 // Model is an immutable object with a trusted internal part.
 type Model struct {
-	im.Shared
+	im.Frozen
 	Name   string
 	engine im.UncheckedValue[baked]
 }

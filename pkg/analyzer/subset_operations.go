@@ -8,13 +8,13 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// localReference identifies a pointer to a concrete im.ByValue struct.
+// localReference identifies a pointer to a concrete im.Local struct.
 func localReference(t types.Type) bool {
 	if t == nil {
 		return false
 	}
 	pointer, ok := t.Underlying().(*types.Pointer)
-	return ok && checker.ByValue(pointer.Elem())
+	return ok && checker.Local(pointer.Elem())
 }
 
 // operationExpression separates runtime operands from compiler type and field metadata.
@@ -93,7 +93,7 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 		if stringType(c.pass.TypesInfo.TypeOf(source.X)) {
 			return ""
 		}
-		return "slice views of immutable storage are unsupported"
+		return "slice projections of immutable storage are unsupported"
 	case *ast.TypeAssertExpr:
 		return "immutable interface assertions are unsupported"
 	case *ast.FuncLit:
@@ -145,7 +145,7 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 		if stringType(c.pass.TypesInfo.TypeOf(parent.X)) {
 			return ""
 		}
-		return "slice views of immutable storage are unsupported"
+		return "slice projections of immutable storage are unsupported"
 	case *ast.CallExpr:
 		return c.matchCall(parent)
 	case *ast.CompositeLit:
@@ -208,6 +208,12 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 // matchUnary permits fresh marked allocations and ordinary scalar operations.
 func (c *subsetChecks) matchUnary(expression *ast.UnaryExpr) string {
 	if expression.Op == token.AND {
+		if c.generatedSource(expression) {
+			pointer, ok := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Pointer)
+			if ok && checker.Frozen(pointer.Elem()) {
+				return ""
+			}
+		}
 		if !c.queries.Contains(c.pass.TypesInfo.TypeOf(expression.X)) {
 			return "scalar interior addresses are unsupported"
 		}

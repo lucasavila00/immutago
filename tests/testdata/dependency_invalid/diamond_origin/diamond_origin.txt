@@ -1,3 +1,0 @@
-diamond_origin.go:7:2: immutable field Values: []int is not provably immutable
-  owner: diamond_origin.Broken; field type: []int
-  fix: replace the native slice with im.FrozenSlice[T], where T is immutable

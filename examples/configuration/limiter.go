@@ -28,7 +28,7 @@ type LimiterArgs struct {
 
 // Usage is a copy of the current counters and limit.
 type Usage struct {
-	im.ByValue
+	im.Local
 	Used   int
 	Limit  int
 	Window int
@@ -79,7 +79,7 @@ func (l *Limiter) Take() Decision {
 	return Allowed
 }
 
-// Usage returns a value copy that callers can keep after the next window starts.
+// Usage returns local counters for the current window.
 func (l *Limiter) Usage() Usage {
 	limit := l.Args().Loader.Current().Limit(l.Args().Key)
 	l.mu.Lock()

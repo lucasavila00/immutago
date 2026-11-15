@@ -6,25 +6,71 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/lucasavila00/immutago/internal/checker"
+	"github.com/lucasavila00/immutago/internal/projectiongen"
 	"golang.org/x/tools/go/analysis"
 )
 
 const testLibrary = `package im
- type Shared struct{}
- type ByValue struct{}
- type Owner[T any] struct{}
- func (o *Owner[T]) Load() *T { return nil }
- func (o *Owner[T]) Store(p *T) {}
+ type Frozen struct{}
+ type Local struct{}
+ type Cell[T any] struct{}
+ func (o *Cell[T]) Load() Projection[T] { return Projection[T]{} }
+ func (o *Cell[T]) LoadPointer() Projection[*T] { return Projection[*T]{} }
+ func (o *Cell[T]) LoadShared() T { var zero T; return zero }
+ func (o *Cell[T]) Store(value T) {}
+ type Projection[T any] struct { value T }
+ func ProjectionOf[T any](value T) Projection[T] { return Projection[T]{value:value} }
+ func CopyRecord[T any](value Projection[T]) Projection[*T] { return Projection[*T]{} }
+ func (value Projection[T]) Read() T { return value.value }
+ func Copy[T any](value Projection[T]) T { return value.value }
+ func IsNil[T any](value Projection[*T]) bool { return value.value == nil }
+ type StringProjection struct { value string }
+ func ProjectString[S ~string](value S) StringProjection { return StringProjection{} }
+ func ProjectedFrozenString(value Projection[FrozenString]) StringProjection { return StringProjection{} }
+ func ProjectedString[S ~string](value Projection[S]) StringProjection { return StringProjection{} }
+ func (s StringProjection) Len() int { return 0 }
+ func (s StringProjection) At(index int) byte { return 0 }
+ func (s StringProjection) Clone() string { return "" }
+ func (s StringProjection) Equal(other StringProjection) bool { return false }
+ func (s StringProjection) EqualString(other string) bool { return false }
+ func (s StringProjection) Unsafe() string { return s.value }
+ type SliceProjection[E any] struct { values []E }
+ func ProjectedSlice[E any](value Projection[FrozenSlice[E]]) SliceProjection[E] { return SliceProjection[E]{} }
+ func (s SliceProjection[E]) Len() int { return 0 }
+ func (s SliceProjection[E]) At(index int) Projection[E] { return Projection[E]{} }
+ func (s SliceProjection[E]) AtPointer(index int) Projection[*E] { return Projection[*E]{} }
+ func (s SliceProjection[E]) All()func(func(int,Projection[E])bool) { return nil }
+ func (s SliceProjection[E]) Clone() []E { return nil }
+ type MapProjection[K comparable,V any] struct { values map[K]V }
+ func ProjectedMap[K comparable,V any](value Projection[FrozenMap[K,V]]) MapProjection[K,V] {
+ return MapProjection[K,V]{} }
+ func (m MapProjection[K,V]) Len() int { return 0 }
+ func (m MapProjection[K,V]) Get(key K)(Projection[V],bool) { return Projection[V]{},false }
+ func (m MapProjection[K,V]) All()func(func(Projection[K],Projection[V])bool) { return nil }
+ func (m MapProjection[K,V]) Clone() map[K]V { return nil }
  type UncheckedValue[T any] struct { value *T }
  func Trust[T any](value *T) UncheckedValue[T] { return UncheckedValue[T]{value: value} }
  func Unwrap[T any](value UncheckedValue[T]) *T { return value.value }
  type FrozenSlice[T any] struct { values []T }
  type FrozenMap[K comparable, V any] struct { values map[K]V }
+ type FrozenString struct { value string }
+ func (value FrozenString) Projection() StringProjection { return StringProjection{} }
+ func (value FrozenSlice[T]) Projection() SliceProjection[T] { return SliceProjection[T]{} }
+ func (value FrozenMap[K,V]) Projection() MapProjection[K,V] { return MapProjection[K,V]{} }
+ func FreezeString(value string) FrozenString { return FrozenString{} }
+ func (value FrozenString) Len() int { return 0 }
+ func (value FrozenString) At(index int) byte { return 0 }
+ func (value FrozenString) Clone() string { return "" }
+ func (value FrozenString) Equal(other FrozenString) bool { return false }
+ func (value FrozenString) EqualString(other string) bool { return false }
+ func (value FrozenString) Unsafe() string { return value.value }
  func FreezeSlice[T any](values []T) FrozenSlice[T] { return FrozenSlice[T]{} }
  func FreezeMap[K comparable, V any](values map[K]V) FrozenMap[K,V] { return FrozenMap[K,V]{} }
  func (values FrozenSlice[T]) Clone() []T { return nil }
@@ -116,49 +162,75 @@ func sourcePass(t testing.TB, declarations string) *analysis.Pass {
 	if err != nil {
 		t.Fatal(err)
 	}
-	source := "package sample\nimport \"" + checker.LibraryPath + "\"\n" + declarations
-	file, err := parser.ParseFile(positions, "sample.go", source, 0)
+	source := projectiongen.Directive + "\npackage sample\nimport \"" + checker.LibraryPath + "\"\n" + declarations
+	file, err := parser.ParseFile(positions, "sample.go", source, parser.ParseComments)
 	if err != nil {
 		t.Fatal(err)
 	}
-	info := &types.Info{
-		Types:      make(map[ast.Expr]types.TypeAndValue),
-		Defs:       make(map[*ast.Ident]types.Object),
-		Uses:       make(map[*ast.Ident]types.Object),
-		Instances:  make(map[*ast.Ident]types.Instance),
-		Selections: make(map[*ast.SelectorExpr]*types.Selection),
-		Scopes:     make(map[ast.Node]*types.Scope),
-		Implicits:  make(map[ast.Node]types.Object),
-	}
-	config := types.Config{Importer: testImporter{library, servicePackage, standard}}
-	pkg, err := config.Check("sample", positions, []*ast.File{file}, info)
+	info := sourceTypeInfo()
+	config := types.Config{Importer: testImporter{library, servicePackage, standard}, IgnoreFuncBodies: true}
+	files := []*ast.File{file}
+	pkg, err := config.Check("sample", positions, files, info)
 	if err != nil {
 		t.Fatalf("test source does not compile: %v", err)
 	}
+	generated, generationErr := projectiongen.GenerateTypes(pkg, positions)
+	if generationErr == nil {
+		output, parseErr := parser.ParseFile(positions, projectiongen.Filename, generated, parser.ParseComments)
+		if parseErr != nil {
+			t.Fatal(parseErr)
+		}
+		files = append(files, output)
+	}
+	config.IgnoreFuncBodies = false
+	info = sourceTypeInfo()
+	pkg, err = config.Check("sample", positions, files, info)
+	if err != nil {
+		t.Fatalf("generated test source does not compile: %v", err)
+	}
 	return &analysis.Pass{
 		TypesSizes: types.SizesFor("gc", runtime.GOARCH),
-		Analyzer:   Analyzer, Fset: positions, Files: []*ast.File{file}, Pkg: pkg, TypesInfo: info,
+		Analyzer:   Analyzer, Fset: positions, Files: files, Pkg: pkg, TypesInfo: info,
+		ReadFile: func(name string) ([]byte, error) {
+			if filepath.Base(name) == projectiongen.Filename {
+				return generated, nil
+			}
+			if filepath.Base(name) == "sample.go" {
+				return []byte(source), nil
+			}
+			return nil, os.ErrNotExist
+		},
+	}
+}
+
+// sourceTypeInfo records the compiler facts used by the production analyzer.
+func sourceTypeInfo() *types.Info {
+	return &types.Info{
+		Types: make(map[ast.Expr]types.TypeAndValue), Defs: make(map[*ast.Ident]types.Object),
+		Uses: make(map[*ast.Ident]types.Object), Instances: make(map[*ast.Ident]types.Instance),
+		Selections: make(map[*ast.SelectorExpr]*types.Selection), Scopes: make(map[ast.Node]*types.Scope),
+		Implicits: make(map[ast.Node]types.Object),
 	}
 }
 
 // TestValidTypes covers recursive proofs, aliases, and ordinary mutable scalar locals.
 func TestValidTypes(t *testing.T) {
 	cases := []string{
-		`type Value struct { im.Shared; Flag bool; Text string; Number complex128; Array [4]int }`,
-		`type Node struct { im.Shared; Children im.FrozenSlice[Node] }`,
-		`type A struct { im.Shared; B im.FrozenSlice[B] }
-   type B struct { im.Shared; A im.FrozenMap[string,A] }`,
-		`type Alias = im.Shared
+		`type Value struct { im.Frozen; Flag bool; Text string; Number complex128; Array [4]int }`,
+		`type Node struct { im.Frozen; Children im.FrozenSlice[Node] }`,
+		`type A struct { im.Frozen; B im.FrozenSlice[B] }
+   type B struct { im.Frozen; A im.FrozenMap[string,A] }`,
+		`type Alias = im.Frozen
    type Value struct { Alias; Text string }
    type Copy Value`,
-		`type Value struct { im.Shared; Items im.FrozenSlice[im.FrozenMap[string,int]] }`,
-		`type Value struct { im.Shared; X int }
+		`type Value struct { im.Frozen; Items im.FrozenSlice[im.FrozenMap[string,int]] }`,
+		`type Value struct { im.Frozen; X int }
    func replace() { v := Value{X: 1}; v = Value{X: 2}; _ = v }`,
-		`type Value struct { im.Shared; A [2]int }
+		`type Value struct { im.Frozen; A [2]int }
    func copyArray(v Value) { a := v.A; a[0] = 1 }`,
-		`type Value struct { im.Shared; S string }
+		`type Value struct { im.Frozen; S string }
    func text(v Value) string { return v.S[:] }`,
-		`type V struct { im.Shared }; func f(x *V) {}`,
+		`type V struct { im.Frozen }; func f(x *V) {}`,
 		`var _ = im.FreezeSlice([]int{1, 2})
    var _ = im.FreezeMap(map[string]int{"a": 1})`,
 	}
@@ -174,32 +246,32 @@ func TestValidTypes(t *testing.T) {
 // TestRejectedTypes covers failed recursive obligations, marker misuse, and immutable ownership boundaries.
 func TestRejectedTypes(t *testing.T) {
 	cases := []struct{ name, source, want string }{
-		{"named array", `type Count [2]int; type V struct { im.Shared; X Count }`, "named array"},
-		{"pointer", `type V struct { im.Shared; X *int }`, "concrete marked struct target"},
-		{"slice", `type V struct { im.Shared; X []int }`, "not provably immutable"},
-		{"interface", `type V struct { im.Shared; X any }`, "not provably immutable"},
-		{"function", `type V struct { im.Shared; X func() }`, "not provably immutable"},
-		{"channel", `type V struct { im.Shared; X chan int }`, "not provably immutable"},
-		{"map", `type V struct { im.Shared; X map[int]int }`, "not provably immutable"},
-		{"unmarked", `type V struct { im.Shared; X struct{ N int } }`, "does not embed"},
-		{"named marker", `type V struct { M im.Shared }`, "must be embedded by value"},
-		{"pointer marker", `type V struct { *im.Shared }`, "must be embedded by value"},
-		{"recursive failure", `type V struct { im.Shared; Next im.FrozenSlice[V]; Bad []int }`, "Bad"},
-		{"generic", `type V[T any] struct { im.Shared; X T }`, "type parameters are unsupported"},
-		{"mixed terms", `type V[T interface{ ~int | ~[]int }] struct { im.Shared; X T }`, "type parameters are unsupported"},
+		{"named array", `type Count [2]int; type V struct { im.Frozen; X Count }`, "named array"},
+		{"pointer", `type V struct { im.Frozen; X *int }`, "concrete marked struct target"},
+		{"slice", `type V struct { im.Frozen; X []int }`, "not provably immutable"},
+		{"interface", `type V struct { im.Frozen; X any }`, "not provably immutable"},
+		{"function", `type V struct { im.Frozen; X func() }`, "not provably immutable"},
+		{"channel", `type V struct { im.Frozen; X chan int }`, "not provably immutable"},
+		{"map", `type V struct { im.Frozen; X map[int]int }`, "not provably immutable"},
+		{"unmarked", `type V struct { im.Frozen; X struct{ N int } }`, "does not embed"},
+		{"named marker", `type V struct { M im.Frozen }`, "must be embedded by value"},
+		{"pointer marker", `type V struct { *im.Frozen }`, "must be embedded by value"},
+		{"recursive failure", `type V struct { im.Frozen; Next im.FrozenSlice[V]; Bad []int }`, "Bad"},
+		{"generic", `type V[T any] struct { im.Frozen; X T }`, "type parameters are unsupported"},
+		{"mixed terms", `type V[T interface{ ~int | ~[]int }] struct { im.Frozen; X T }`, "type parameters are unsupported"},
 		{"repeated failed bound", `type Bad struct{ X int }
-         type V[T interface{ Bad; Bad }] struct { im.Shared; X T }`, "type parameters are unsupported"},
-		{"failed recursive alternatives", `type Bad struct { im.Shared; Next im.FrozenSlice[Bad]; X []int }
-         type V[T interface{ Bad; Bad }] struct { im.Shared; X T }`, "type parameters are unsupported"},
+         type V[T interface{ Bad; Bad }] struct { im.Frozen; X T }`, "type parameters are unsupported"},
+		{"failed recursive alternatives", `type Bad struct { im.Frozen; Next im.FrozenSlice[Bad]; X []int }
+         type V[T interface{ Bad; Bad }] struct { im.Frozen; X T }`, "type parameters are unsupported"},
 		{"bad argument", `var _ im.FrozenSlice[*int]`, "concrete marked struct target"},
 		{"bad inference", `var _ = im.FreezeSlice([]*int{new(int)})`, "concrete marked struct target"},
 		{"bad key", `var _ im.FrozenMap[*int,int]`, "concrete marked struct target"},
-		{"unmarked owner", `type V struct { im.Shared }; type W struct { V V }`, "unmarked struct"},
-		{"unmarked slice", `type V struct { im.Shared }; type W struct { V []V }`, "unmarked struct"},
-		{"unmarked map", `type V struct { im.Shared }; type W struct { V map[int]V }`, "unmarked struct"},
-		{"unmarked array", `type V struct { im.Shared }; type W struct { V [2]V }`, "unmarked struct"},
+		{"unmarked owner", `type V struct { im.Frozen }; type W struct { V V }`, "unmarked struct"},
+		{"unmarked slice", `type V struct { im.Frozen }; type W struct { V []V }`, "unmarked struct"},
+		{"unmarked map", `type V struct { im.Frozen }; type W struct { V map[int]V }`, "unmarked struct"},
+		{"unmarked array", `type V struct { im.Frozen }; type W struct { V [2]V }`, "unmarked struct"},
 		{"unmarked collection", `type W struct { V im.FrozenSlice[int] }`, "unmarked struct"},
-		{"constrained owner", `type V struct { im.Shared }; type W[T V] struct { X T }`, "unmarked struct"},
+		{"constrained owner", `type V struct { im.Frozen }; type W[T V] struct { X T }`, "unmarked struct"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -1,0 +1,44 @@
+restricted_boundaries.go:17:15: unsupported immutable operation: containers of Local pointers are unsupported
+  source: []*Local
+  type: []*restricted_boundaries.Local
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+restricted_boundaries.go:17:6: unsupported native builder: copied values require bool, numbers, arrays, or service references
+  fix: use allowed stored types for builder keys and elements
+restricted_boundaries.go:18:16: unsupported immutable operation: containers of Local pointers are unsupported
+  source: []*Local{}
+  type: []*restricted_boundaries.Local
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+restricted_boundaries.go:18:2: unsupported native builder: copied values require bool, numbers, arrays, or service references
+  fix: use allowed stored types for builder keys and elements
+restricted_boundaries.go:19:14: unsupported immutable operation: containers of Local pointers are unsupported
+  source: make(map[int]*Local)
+  type: map[int]*restricted_boundaries.Local
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+restricted_boundaries.go:19:19: unsupported immutable operation: containers of Local pointers are unsupported
+  source: map[int]*Local
+  type: map[int]*restricted_boundaries.Local
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+restricted_boundaries.go:19:2: unsupported native builder: copied values require bool, numbers, arrays, or service references
+  fix: use allowed stored types for builder keys and elements
+restricted_boundaries.go:20:6: unsupported immutable operation: containers of Local pointers are unsupported
+  source: nilSlice
+  type: []*restricted_boundaries.Local
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+restricted_boundaries.go:20:6: unsupported owned container nilSlice: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+restricted_boundaries.go:21:6: unsupported immutable operation: containers of Local pointers are unsupported
+  source: emptySlice
+  type: []*restricted_boundaries.Local
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+restricted_boundaries.go:21:6: unsupported owned container emptySlice: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+restricted_boundaries.go:22:6: unsupported immutable operation: containers of Local pointers are unsupported
+  source: emptyMap
+  type: map[int]*restricted_boundaries.Local
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+restricted_boundaries.go:22:6: unsupported owned container emptyMap: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+restricted_boundaries.go:27:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: for _, value = range frozen.All() { _ = value }
+  fix: write one protected destination per statement; use two new locals for frozen.Get, or two local names for supervise.Start
+restricted_boundaries.go:39:17: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: ProtectedBody
+  type: func() int
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported

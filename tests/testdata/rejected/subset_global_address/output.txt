@@ -1,0 +1,4 @@
+subset_global_address.go:22:18: unsupported immutable operation: immutable references require fresh allocation
+  source: &Global
+  type: *rejected.Good
+  fix: use &T{...}, new(T), or new(value); do not take the address of an existing variable, field, or element

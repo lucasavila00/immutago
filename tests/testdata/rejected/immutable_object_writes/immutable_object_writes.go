@@ -1,9 +1,11 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package immutable_object_writes
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Node struct {
-	im.Shared
+	im.Frozen
 	Value int
 	Next  *Node
 }

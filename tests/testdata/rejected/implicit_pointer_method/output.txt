@@ -1,0 +1,4 @@
+implicit_pointer_method.go:19:2: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
+  source: value.N.Change()
+  type: ()
+  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters

@@ -10,7 +10,7 @@ import (
 // testTypes creates compiler type objects with the sealed library's exact package identity.
 func testTypes() (*types.Named, *types.Named) {
 	pkg := types.NewPackage(LibraryPath, "im")
-	marker := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Shared", nil), types.NewStruct(nil, nil), nil)
+	marker := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Frozen", nil), types.NewStruct(nil, nil), nil)
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, pkg, "T", nil),
 		types.NewInterfaceType(nil, nil).Complete())
 	slice := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "FrozenSlice", nil),
@@ -21,7 +21,7 @@ func testTypes() (*types.Named, *types.Named) {
 
 // markedType creates a named marked struct whose fields can later be set for a recursive test.
 func markedType(name string, marker types.Type, fields ...*types.Var) *types.Named {
-	fields = append([]*types.Var{types.NewField(token.NoPos, nil, "Shared", marker, true)}, fields...)
+	fields = append([]*types.Var{types.NewField(token.NoPos, nil, "Frozen", marker, true)}, fields...)
 	return types.NewNamed(types.NewTypeName(token.NoPos, nil, name, nil), types.NewStruct(fields, nil), nil)
 }
 
@@ -40,7 +40,7 @@ func TestProofGraph(t *testing.T) {
 	marker, slice := testTypes()
 	good := markedType("Good", marker)
 	good.SetUnderlying(types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Shared", marker, true),
+		types.NewField(token.NoPos, nil, "Frozen", marker, true),
 		types.NewField(token.NoPos, nil, "Next", sliceType(t, slice, good), false),
 	}, nil))
 	if reason := Reason(good); reason != "" {
@@ -48,7 +48,7 @@ func TestProofGraph(t *testing.T) {
 	}
 	bad := markedType("Bad", marker)
 	bad.SetUnderlying(types.NewStruct([]*types.Var{
-		types.NewField(token.NoPos, nil, "Shared", marker, true),
+		types.NewField(token.NoPos, nil, "Frozen", marker, true),
 		types.NewField(token.NoPos, nil, "Next", sliceType(t, slice, bad), false),
 		types.NewField(token.NoPos, nil, "Mutable", types.NewPointer(types.Typ[types.Int]), false),
 	}, nil))
@@ -86,8 +86,8 @@ func TestPrimitiveProofs(t *testing.T) {
 	}
 }
 
-// TestOwnershipGraph checks containers, recursive unmarked structs, aliases, and exact marker identity.
-func TestOwnershipGraph(t *testing.T) {
+// TestCellshipGraph checks containers, recursive unmarked structs, aliases, and exact marker identity.
+func TestCellshipGraph(t *testing.T) {
 	marker, slice := testTypes()
 	value := markedType("Value", marker)
 	for _, typ := range []types.Type{
@@ -106,7 +106,7 @@ func TestOwnershipGraph(t *testing.T) {
 	if Contains(node) {
 		t.Fatal("ordinary recursive type contains immutable storage")
 	}
-	other := types.NewNamed(types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Shared", nil),
+	other := types.NewNamed(types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Frozen", nil),
 		types.NewStruct(nil, nil), nil)
 	if Marked(markedType("Pretender", other)) {
 		t.Fatal("accepted marker from another package")
@@ -120,8 +120,8 @@ func TestOwnershipGraph(t *testing.T) {
 	}
 }
 
-// TestSharedProofGraph verifies that a deep shared DAG creates one obligation per type, not per path.
-func TestSharedProofGraph(t *testing.T) {
+// TestSnapshotProofGraph verifies that a deep shared DAG creates one obligation per type, not per path.
+func TestSnapshotProofGraph(t *testing.T) {
 	marker, _ := testTypes()
 	var current types.Type = types.Typ[types.Int]
 	for depth := 0; depth < 45; depth++ {
@@ -131,8 +131,8 @@ func TestSharedProofGraph(t *testing.T) {
 	}
 	p := &proof{nodes: make(map[types.Type]*obligation)}
 	p.node(current)
-	if len(p.nodes) != 47 {
-		t.Fatalf("built %d obligations; want 47", len(p.nodes))
+	if len(p.nodes) != 46 {
+		t.Fatalf("built %d data obligations; want 46", len(p.nodes))
 	}
 	if reason := Reason(current); reason != "" {
 		t.Fatal(reason)

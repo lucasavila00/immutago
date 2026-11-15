@@ -5,7 +5,9 @@
 | Evidence | What it measures |
 | --- | --- |
 | [Collection benchmarks](../../pkg/im/benchmark_test.go) | Native Go versus im operations. Run `make bench`. |
-| [Owner benchmarks](../../pkg/im/owner_test.go) | Slot loads. |
+| [Generated projection benchmarks](../../internal/projectiongen/testdata/readcost/README.md) | Generated scalar and array reads versus native atomic pointer reads for 8 KiB and 64 KiB records. |
+| [Projection benchmarks](../../pkg/im/projection_benchmark_test.go) | Native handles, string operations, field selection, and projection allocations. |
+| [Cell benchmarks](../../pkg/im/cell_test.go) | Slot loads. |
 | [Service benchmarks](../../pkg/supervise/supervise_test.go) | Ref.Current. |
 | [Allocation tests](../../pkg/im/iterator_test.go) | Construction separately from Freeze, reads, and direct iteration. |
 | Slice and map tests | Storage reuse and Clone independence. |

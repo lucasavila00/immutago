@@ -1,4 +1,0 @@
-invalid_unsafe.go:13:32: unsupported immutable operation: protected operation is outside the supported expression forms
-  source: unsafe.Sizeof(Good{})
-  type: uintptr
-  fix: use a documented concrete value, pointer, reader, or builder operation

@@ -1,6 +1,0 @@
-shape_wrapper.go:3:8: unsupported dependency example.com/consumer/invalid_shape: immutability proof failed
-  representative failure: example.com/consumer/invalid_shape/invalid_shape.go:7:2: immutable field Values: []int is not provably immutable
-    owner: invalid_shape.Bad; field type: []int
-    fix: replace the native slice with im.FrozenSlice[T], where T is immutable
-  note: other dependency errors may exist
-  fix: run immutago example.com/consumer/invalid_shape, correct its errors, then rerun immutago on this package

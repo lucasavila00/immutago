@@ -1,6 +1,0 @@
-diamond_right.go:3:8: unsupported dependency example.com/consumer/diamond_origin: immutability proof failed
-  representative failure: example.com/consumer/diamond_origin/diamond_origin.go:7:2: immutable field Values: []int is not provably immutable
-    owner: diamond_origin.Broken; field type: []int
-    fix: replace the native slice with im.FrozenSlice[T], where T is immutable
-  note: other dependency errors may exist
-  fix: run immutago example.com/consumer/diamond_origin, correct its errors, then rerun immutago on this package

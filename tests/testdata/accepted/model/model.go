@@ -1,8 +1,10 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package model
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
-type MarkerAlias = im.Shared
+type MarkerAlias = im.Frozen
 type Number int
 type Title = string
 
@@ -19,14 +21,14 @@ type Leaf struct {
 }
 
 type Tree struct {
-	im.Shared
+	im.Frozen
 	Leaf     Leaf
 	Children im.FrozenSlice[Tree]
 	Index    im.FrozenMap[string, Tree]
 }
 
 type CountBox struct {
-	im.Shared
+	im.Frozen
 	Value int
 }
 type Alias = Leaf

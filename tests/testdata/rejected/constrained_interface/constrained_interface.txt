@@ -1,3 +1,0 @@
-constrained_interface.go:13:2: immutable field Value: interface{Read() int} is not provably immutable
-  owner: rejected.Bad; field type: interface{Read() int}
-  fix: replace the interface with a concrete immutable type

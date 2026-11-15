@@ -1,0 +1,4 @@
+invalid_shape.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+invalid_shape.go:7:2: immutable field Values: []int is not provably immutable
+  owner: invalid_shape.Bad; field type: []int
+  fix: replace the native slice with im.FrozenSlice[T], where T is immutable

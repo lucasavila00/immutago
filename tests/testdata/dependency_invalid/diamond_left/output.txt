@@ -1,0 +1,4 @@
+diamond_left.go:3:8: unsupported dependency example.com/consumer/diamond_origin: immutability proof failed
+  representative failure: example.com/consumer/diamond_origin/diamond_origin.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/diamond_origin, correct its errors, then rerun immutago on this package

@@ -32,6 +32,9 @@ func (n *obligation) failed() bool { return n.reason != "" || n.cause != nil }
 // proof visits each concrete type once and propagates failures through recursive owners.
 type proof struct {
 	nodes    map[types.Type]*obligation
+	copied   map[types.Type]*obligation
+	reads    map[types.Type]*obligation
+	queries  Classifier
 	failures []*obligation
 	pending  []proofSeed
 }
@@ -44,13 +47,38 @@ func Reason(t types.Type) string {
 
 // node records an obligation before descending, so recursive references terminate.
 func (p *proof) node(t types.Type) *obligation {
+	if p.queries.Locals(t) {
+		return p.categoryNode(t, readCategory)
+	}
+	return p.categoryNode(t, frozenCategory)
+}
+
+// categoryNode records one complete type obligation before checking its components.
+func (p *proof) categoryNode(t types.Type, category proofCategory) *obligation {
 	t = types.Unalias(t)
-	if existing := p.nodes[t]; existing != nil {
+	table := &p.nodes
+	switch category {
+	case copiedCategory:
+		table = &p.copied
+	case readCategory:
+		table = &p.reads
+	}
+	if *table == nil {
+		*table = make(map[types.Type]*obligation)
+	}
+	if existing := (*table)[t]; existing != nil {
 		return existing
 	}
 	result := &obligation{}
-	p.nodes[t] = result
-	p.value(result, t)
+	(*table)[t] = result
+	switch category {
+	case frozenCategory:
+		p.value(result, t)
+	case copiedCategory:
+		p.copiedValue(result, t)
+	case readCategory:
+		p.readValue(result, t)
+	}
 	if result.reason != "" && result.cause == nil {
 		p.failures = append(p.failures, result)
 	}
@@ -59,7 +87,12 @@ func (p *proof) node(t types.Type) *obligation {
 
 // depend records an owner and handles children that failed in an earlier query.
 func (p *proof) depend(owner *obligation, t types.Type, label string) {
-	child := p.node(t)
+	p.dependCategory(owner, t, label, frozenCategory)
+}
+
+// dependCategory connects a stored component to its intrinsic category proof.
+func (p *proof) dependCategory(owner *obligation, t types.Type, label string, category proofCategory) {
+	child := p.categoryNode(t, category)
 	child.users = append(child.users, proofUse{owner: owner, label: label})
 	if child.failed() {
 		p.pending = append(p.pending, proofSeed{owner: owner, child: child, label: label})
@@ -106,11 +139,19 @@ func (p *proof) drainFailures() {
 
 // value matches the complete concrete immutable storage forms.
 func (p *proof) value(result *obligation, t types.Type) {
-	if IsLibraryType(t, "Owner") {
-		result.reason = "Owner slots are mutable"
+	if IsLibraryType(t, "Cell") {
+		result.reason = "Cell slots are mutable"
 		return
 	}
-	if IsLibraryType(t, "Shared") || IsLibraryType(t, "ByValue") || IsUncheckedValue(t) {
+	if p.queries.Locals(t) {
+		result.reason = "Frozen storage cannot contain Local values"
+		return
+	}
+	if IsLibraryType(t, "Frozen") {
+		result.reason = "immutable markers are annotations, not data"
+		return
+	}
+	if IsUncheckedValue(t) {
 		return
 	}
 	if IsRuntimeType(t, "Ref") {
@@ -129,15 +170,19 @@ func (p *proof) value(result *obligation, t types.Type) {
 		return
 	}
 	if _, named := t.(*types.Named); named {
-		if _, array := t.Underlying().(*types.Array); array {
+		switch t.Underlying().(type) {
+		case *types.Array:
 			result.reason = "named array must be wrapped in a struct with an immutable marker"
+			return
+		case *types.Pointer:
+			result.reason = "defined pointer types are unsupported in Frozen data; use a pointer alias"
 			return
 		}
 	}
 	switch underlying := t.Underlying().(type) {
 	case *types.Pointer:
-		if ByValue(underlying.Elem()) {
-			result.reason = "ByValue pointers cannot be stored"
+		if Local(underlying.Elem()) {
+			result.reason = "Local pointers cannot be stored"
 			return
 		}
 		if !Marked(underlying.Elem()) {
@@ -170,12 +215,12 @@ func refTargetReason(target types.Type) string {
 
 // structure requires one marker and checks every stored field.
 func (p *proof) structure(result *obligation, t types.Type, structure *types.Struct) {
-	if !Marked(t) {
-		result.reason = "struct does not embed im.Shared or im.ByValue"
+	if !Frozen(t) {
+		result.reason = "struct does not embed im.Frozen"
 		return
 	}
-	if Shared(t) && ByValue(t) {
-		result.reason = "struct cannot embed both im.Shared and im.ByValue"
+	if Frozen(t) && Local(t) {
+		result.reason = "struct cannot embed both im.Frozen and im.Local"
 		return
 	}
 	if MarkerCount(t) != 1 {
@@ -183,6 +228,9 @@ func (p *proof) structure(result *obligation, t types.Type, structure *types.Str
 		return
 	}
 	for field := range structure.Fields() {
+		if field.Embedded() && IsLibraryType(field.Type(), "Frozen") {
+			continue
+		}
 		p.depend(result, field.Type(), field.Name()+": ")
 	}
 }

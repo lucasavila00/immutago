@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package configuration
 
 import (
@@ -13,7 +15,7 @@ import (
 
 // Config is one immutable version of the request limits.
 type Config struct {
-	im.ByValue
+	im.Frozen
 	Version int
 	Limits  im.FrozenMap[string, int]
 }
@@ -27,7 +29,7 @@ type LoaderArgs struct {
 // ConfigLoader publishes valid JSON limits and keeps the last valid version on an error.
 type ConfigLoader struct {
 	supervise.Service[LoaderArgs]
-	current im.Owner[Config]
+	current ConfigCell
 	last    string
 	mu      sync.RWMutex
 	problem string
@@ -63,11 +65,12 @@ func (l *ConfigLoader) Run(ctx context.Context) {
 
 // load copies decoded limits into a fresh builder and publishes one immutable version.
 func (l *ConfigLoader) load() error {
-	text := l.Args().Cache.Current().Text()
+	projection := l.Args().Cache.Current().Text()
 	version := l.Version()
-	if version > 0 && text == l.last {
+	if version > 0 && projection.EqualString(l.last) {
 		return nil
 	}
+	text := projection.Clone()
 	var decoded map[string]int
 	if err := json.Unmarshal([]byte(text), &decoded); err != nil {
 		return err
@@ -83,33 +86,27 @@ func (l *ConfigLoader) load() error {
 		limits[name] = limit
 	}
 	frozen := im.FreezeMap(limits)
-	l.current.Store(&Config{Version: version + 1, Limits: frozen})
+	l.current.Store(Config{Version: version + 1, Limits: frozen})
 	l.last = text
 	return nil
 }
 
 // Version returns the last valid configuration version.
 func (l *ConfigLoader) Version() int {
-	config := l.current.Load()
-	if config == nil {
-		return 0
-	}
+	config := l.current.LoadShared()
 	return config.Version
 }
 
 // Limit returns the current limit for a key; an absent key has a zero limit.
 func (l *ConfigLoader) Limit(key string) int {
-	config := l.current.Load()
-	if config == nil {
-		return 0
-	}
+	config := l.current.LoadShared()
 	limit, _ := config.Limits.Get(key)
 	return limit
 }
 
 // Problem returns the latest parse error, or an empty string after a valid read.
-func (l *ConfigLoader) Problem() string {
+func (l *ConfigLoader) Problem() im.StringProjection {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	return l.problem
+	return im.ProjectString(l.problem)
 }

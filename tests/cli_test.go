@@ -116,7 +116,7 @@ func TestCLI(t *testing.T) {
 		}
 		writeFile(t, filepath.Join(dir, "broken.go"), string(source))
 		output := runCommand(t, dir, false, binary, "./...")
-		checkSnapshot(t, filepath.Join(root, "tests/testdata/compiler_error/broken.txt"), normalizeOutput(output))
+		checkSnapshot(t, filepath.Join(root, "tests/testdata/compiler_error/output.txt"), normalizeOutput(output))
 	})
 }
 
@@ -179,41 +179,26 @@ func runCommand(t *testing.T, dir string, success bool, name string, args ...str
 	return string(output)
 }
 
-// checkFixtureSnapshots checks each source against its sibling text snapshot.
+// checkFixtureSnapshots stores combined diagnostics once per fixture package.
 func checkFixtureSnapshots(t *testing.T, root, fixture, output string) {
 	t.Helper()
 	directory := filepath.Join(root, "tests", "testdata", fixture)
-	lines := diagnosticRecords(output)
-	used := make(map[int]bool)
-	err := filepath.WalkDir(directory, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
-			return err
-		}
-		var diagnostics []string
-		for index, line := range lines {
-			if strings.HasPrefix(line, filepath.Base(path)+":") {
-				diagnostics = append(diagnostics, line)
-				used[index] = true
-			}
-		}
-		actual := ""
-		if len(diagnostics) > 0 {
-			actual = strings.Join(diagnostics, "\n") + "\n"
-		}
-		checkSnapshot(t, strings.TrimSuffix(path, ".go")+".txt", actual)
-		return nil
-	})
+	module := filepath.Join(root, "tests", "testdata", strings.Split(filepath.ToSlash(fixture), "/")[0])
+	packages, err := packageOutputs(directory, module, output)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for index, line := range lines {
-		if line != "" && !used[index] {
-			t.Errorf("unmatched tool output: %s", line)
-		}
+	paths := make([]string, 0, len(packages))
+	for path := range packages {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	for _, path := range paths {
+		checkSnapshot(t, filepath.Join(path, "output.txt"), packages[path])
 	}
 }
 
-// checkSnapshot compares exact tool output with a checked-in sibling diagnostic snapshot.
+// checkSnapshot compares normalized tool output with the fixture snapshot.
 func checkSnapshot(t *testing.T, path, actual string) {
 	t.Helper()
 	if *updateSnapshots {
@@ -244,7 +229,10 @@ func normalizeOutput(output string) string {
 }
 
 // diagnosticRecords removes machine paths and sorts complete messages with their indented context.
-func diagnosticRecords(output string) []string {
+func diagnosticRecords(output string) []string { return splitDiagnosticRecords(output, true) }
+
+// splitDiagnosticRecords keeps source paths until a fixture package is selected.
+func splitDiagnosticRecords(output string, stripPaths bool) []string {
 	location := regexp.MustCompile(`^.*?\.go:[0-9]+:[0-9]+: `)
 	output = strings.ReplaceAll(output, "\\", "/")
 	output = strings.ReplaceAll(output, "\r\n", "\n")
@@ -257,7 +245,7 @@ func diagnosticRecords(output string) []string {
 		indent := line[:len(line)-len(trimmed)]
 		prefix := location.FindString(trimmed)
 		related := prefix != "" && strings.HasPrefix(strings.TrimPrefix(trimmed, prefix), "\t")
-		if indent == "" && prefix != "" {
+		if stripPaths && indent == "" && prefix != "" {
 			line = filepath.Base(prefix) + strings.TrimPrefix(trimmed, prefix)
 		}
 		if (indent != "" || related) && len(records) > 0 {

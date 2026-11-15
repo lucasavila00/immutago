@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package uncheckedvalue
 
 import "github.com/lucasavila00/immutago/pkg/im"
@@ -7,7 +9,7 @@ type Table struct{ Rows []int }
 
 // Box holds a trusted table.
 type Box struct {
-	im.Shared
+	im.Frozen
 	Table im.UncheckedValue[Table]
 }
 

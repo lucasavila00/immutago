@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package explicit_methods
 
 import "github.com/lucasavila00/immutago/pkg/im"
@@ -8,7 +10,7 @@ func (c *Counter) Increment() { *c++ }
 func (c Counter) Read() int   { return int(c) }
 
 type Good struct {
-	im.Shared
+	im.Frozen
 	Counter
 }
 

@@ -1,9 +1,11 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package explicit_forms
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Good struct {
-	im.Shared
+	im.Frozen
 	X int
 }
 type Alias = Good
@@ -39,7 +41,7 @@ func selectValueBody(ready <-chan int) Good {
 }
 
 type Parent struct {
-	im.Shared
+	im.Frozen
 	Child Good
 	Other int
 }

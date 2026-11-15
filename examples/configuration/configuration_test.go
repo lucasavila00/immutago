@@ -30,7 +30,7 @@ func TestLiveLimits(t *testing.T) {
 	}
 	before := limiter.Current().Usage()
 	writeLimits(t, path, `{"api":`)
-	waitFor(t, func() bool { return loader.Current().Problem() != "" })
+	waitFor(t, func() bool { return loader.Current().Problem().Len() != 0 })
 	if loader.Current().Limit("api") != 2 || loader.Current().Version() != 1 {
 		t.Fatal("invalid configuration replaced the last valid limits")
 	}
@@ -109,8 +109,8 @@ func TestStartReservedRetry(t *testing.T) {
 	if err := supervise.StartReserved(root, cache, FileArgs{Path: path, Every: time.Millisecond}); err != nil {
 		t.Fatal(err)
 	}
-	if got := cache.Current().Text(); got != `{"api":3}` {
-		t.Fatalf("initial contents = %q", got)
+	if got := cache.Current().Text(); !got.EqualString(`{"api":3}`) {
+		t.Fatalf("initial contents = %q", got.Unsafe())
 	}
 }
 

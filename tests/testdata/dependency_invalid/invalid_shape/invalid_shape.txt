@@ -1,3 +1,0 @@
-invalid_shape.go:7:2: immutable field Values: []int is not provably immutable
-  owner: invalid_shape.Bad; field type: []int
-  fix: replace the native slice with im.FrozenSlice[T], where T is immutable

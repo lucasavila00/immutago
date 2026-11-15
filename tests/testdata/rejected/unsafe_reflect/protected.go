@@ -8,7 +8,7 @@ import (
 )
 
 type Record struct {
-	im.Shared
+	im.Frozen
 	Name string
 }
 
@@ -17,7 +17,7 @@ type Cache struct {
 }
 
 type UnsafeField struct {
-	im.Shared
+	im.Frozen
 	Pointer u.Pointer
 }
 

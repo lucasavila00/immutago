@@ -1,3 +1,0 @@
-map_field.go:13:2: immutable field Value: map[string]int is not provably immutable
-  owner: rejected.Bad; field type: map[string]int
-  fix: replace the native map with im.FrozenMap[K, V], where K and V are immutable

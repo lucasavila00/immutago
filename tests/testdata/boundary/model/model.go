@@ -1,17 +1,18 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package model
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Model struct {
-	im.ByValue
+	im.Frozen
 	Version string
 	Weights im.FrozenSlice[float64]
 }
 
-type Shared struct {
-	im.Shared
+type Frozen struct {
+	im.Frozen
 	N int
 }
 
-type SafeOwner = im.Owner[Model]
-type Scalar[T interface{ ~int | SafeOwner }] = int
+type SafeCell = im.Cell[Model]

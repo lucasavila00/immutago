@@ -1,13 +1,15 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package api
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Product struct {
-	im.Shared
+	im.Frozen
 	Price int
 }
 type Settings struct {
-	im.ByValue
+	im.Local
 	Limit int
 }
 

@@ -1,0 +1,3 @@
+named_marker.go:14:2: immutable markers must be embedded by value
+  field: rejected.Bad.Marker
+  fix: embed im.Frozen or im.Local; remove the marker field name or pointer

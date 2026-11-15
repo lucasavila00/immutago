@@ -136,7 +136,7 @@ func waitName(t *testing.T, fetcher supervise.Ref[models.Fetcher], want string) 
 	deadline := time.Now().Add(5 * time.Second)
 	for {
 		prediction := fetcher.Current().Predict(features)
-		if prediction.Name == want {
+		if prediction.Name.EqualString(want) {
 			return
 		}
 		if time.Now().After(deadline) {
@@ -238,10 +238,10 @@ func readScores(fetcher supervise.Ref[models.Fetcher], done <-chan struct{}, fai
 			return
 		default:
 			prediction := fetcher.Current().Predict(features)
-			validFirst := prediction.Name == "first" && prediction.Score == 13
-			validSecond := prediction.Name == "second" && prediction.Score == 11
+			validFirst := prediction.Name.EqualString("first") && prediction.Score == 13
+			validSecond := prediction.Name.EqualString("second") && prediction.Score == 11
 			if !validFirst && !validSecond {
-				message := fmt.Sprintf("%s:%v", prediction.Name, prediction.Score)
+				message := fmt.Sprintf("%s:%v", prediction.Name.Unsafe(), prediction.Score)
 				select {
 				case failures <- message:
 				default:

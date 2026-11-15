@@ -2,6 +2,6 @@ package freeze_wrapper
 
 import "example.com/consumer/invalid_freeze"
 
-type View = invalid_freeze.View
+type Projection = invalid_freeze.Projection
 
-func Value() View { return invalid_freeze.Value() }
+func Value() Projection { return invalid_freeze.Value() }

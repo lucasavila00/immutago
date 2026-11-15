@@ -1,0 +1,1 @@
+schema.go:3:11: Frozen records require a named package-level type; anonymous records are unsupported

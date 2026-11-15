@@ -1,13 +1,15 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package rejected
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Child struct {
-	im.Shared
+	im.Frozen
 	X, Y int
 }
 type Good struct {
-	im.Shared
+	im.Frozen
 	X, Y  int
 	Child Child
 	Array [2]int

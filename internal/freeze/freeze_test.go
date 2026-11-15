@@ -13,7 +13,7 @@ import (
 )
 
 const librarySource = `package im
- type Shared struct{}
+ type Frozen struct{}
  type FrozenSlice[T any] struct{}
  type FrozenMap[K comparable,V any] struct{}
  func FreezeSlice[T any](v []T)FrozenSlice[T]{return FrozenSlice[T]{}}
@@ -28,8 +28,8 @@ type libraryImporter struct{ library *types.Package }
 // Import supplies the test library without loading implementation dependencies.
 func (i libraryImporter) Import(string) (*types.Package, error) { return i.library, nil }
 
-// TestFreezeOwnership exercises fresh ownership, forbidden aliases, and control-flow consumption.
-func TestFreezeOwnership(t *testing.T) {
+// TestFreezeCellship exercises fresh ownership, forbidden aliases, and control-flow consumption.
+func TestFreezeCellship(t *testing.T) {
 	cases := []struct {
 		name, body string
 		reject     bool
@@ -65,7 +65,7 @@ func TestFreezeOwnership(t *testing.T) {
 		{"ordinary constant", `const n=len([1]int{});s:=make([]int,n);_=im.FreezeSlice(s)`, false},
 		{"evaluated element", `s:=[]int{1};_=im.FreezeSlice(s);_=len([1]int{s[index(im.FrozenSlice[int]{})]})`, true},
 		{"dead alias", `s:=[]int{1};a:=s;_=a;_=im.FreezeSlice(s)`, true},
-		{"slice view", `s:=[]int{1};a:=s[:];_=a;_=im.FreezeSlice(s)`, true},
+		{"slice projection", `s:=[]int{1};a:=s[:];_=a;_=im.FreezeSlice(s)`, true},
 		{"address", `s:=[]int{1};p:=&s[0];_=p;_=im.FreezeSlice(s)`, true},
 		{"escape", `s:=[]int{1};take(s);_=im.FreezeSlice(s)`, true},
 		{"capture", `s:=[]int{1};g:=func(){_=len(s)};g();_=im.FreezeSlice(s)`, true},
@@ -82,7 +82,7 @@ func TestFreezeOwnership(t *testing.T) {
 		{"post copy", `s:=[]int{1};copy(s,im.FreezeSlice(s).Clone())`, true},
 		{"deferred mutation", `s:=[]int{1};defer clear(s);_=im.FreezeSlice(s)`, true},
 		{"concurrent mutation", `s:=[]int{1};go clear(s);_=im.FreezeSlice(s)`, true},
-		{"array view", `s:=[][1]int{{1}};v:=s[0][:];_=im.FreezeSlice(s);v[0]=2`, true},
+		{"array projection", `s:=[][1]int{{1}};v:=s[0][:];_=im.FreezeSlice(s);v[0]=2`, true},
 		{"argument order", `s:=[]int{1};both(im.FreezeSlice(s),s[0])`, true},
 	}
 	for _, tc := range cases {
@@ -136,10 +136,10 @@ func diagnostics(t *testing.T, body string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	source := `package sample;import "` + checker.LibraryPath + `";type V struct{im.Shared;X int};
+	source := `package sample;import "` + checker.LibraryPath + `";type V struct{im.Frozen;X int};
 	 func(v V)Read()int{return v.X};func(v *V)ReadPointer()int{return v.X};
-	 type Ref struct{im.Shared;*V};type Scalar int;func(s *Scalar)Inc(){*s++};
-	 type Box[T any]struct{im.Shared;X int};func(b *Box[T])Read()int{return b.X};
+	 type Ref struct{im.Frozen;*V};type Scalar int;func(s *Scalar)Inc(){*s++};
+	 type Box[T any]struct{im.Frozen;X int};func(b *Box[T])Read()int{return b.X};
 	 type Fake struct{};func(Fake)Clone()[]int{return nil};
  func take([]int){};func both(im.FrozenSlice[int],int){};
  func index(im.FrozenSlice[int])int{return 0};func key(im.FrozenMap[string,int])string{return "x"};

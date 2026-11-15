@@ -124,34 +124,61 @@ comments under the user's identity on your own initiative.
 This rule does not prevent the creation or update of an issue body or pull
 request body when the user requests that issue or pull request.
 
-## 11. Prove Immutability Before Accepting It
+## 11. Prove Types Before Accepting Operations
 
-Check every field and collection type argument. Use resolved Go type identity,
-not source spelling. Do not accept unknown cases or add escape hatches. There
-is one explicit immutability trust marker: `im.UncheckedValue[T]`, from
-`im.Trust`. The declaring package promises that the value never changes; only
-that package can wrap or read it. The checker does not prove this promise.
-Do not add other escape hatches.
-Support cases that can be proved. Report unsupported cases explicitly.
-Unmarked structs cannot own marked values or immutable collections.
-Both `im.Shared` and `im.ByValue` require immutable objects from construction.
-Reject field, element, and dereference writes to protected objects. Permit
-reassignment of whole variable bindings. Protected references originate from
-fresh construction, never addresses of reassignable local storage. Protected
-pointers target concrete marked structs only. Reject user generics involving
-protected storage, protected closure captures and callback transport, and
-protected operations in go or defer. Keep the fixed generic im collection APIs.
-`Shared` references can be shared, stored, and returned. `ByValue` references
-stay local or pass through direct typed non-escaping calls; reject storing,
-returning, or capturing them. Do not add mutable initialization, loan lifetimes,
-or runtime ownership state. Keep unsupported transport explicit instead of
-inferring arbitrary callback effects.
-Frozen collections must not expose writable storage. Freeze consumes a proved
-exclusive native builder without a copy. Reject builder aliases and use after
-freeze. Clone returns independent mutable storage; there are no frozen updates.
-Test accepted, rejected, and unsupported programs through the real CLI.
-Keep runtime checks out of the immutability proof. Record collection costs and
-check performance with benchmarks.
+Use compiler-resolved types and the recursive categories in [type rules](docs/types.md).
+Frozen fields, Cell[T], and Projection[T] use one Frozen proof. Local fields and
+service outputs use one ReadResult proof. Copy and local Clone use Copied.
+Do not add a service-only field proof or a context-dependent marker meaning.
+Copied permits only booleans, numbers, unnamed arrays of Copied values, and
+opaque service references. Frozen records are not Copied,
+even when their fields contain only numbers. Struct results require Local or a
+generated projection.
+Embed Frozen and Local markers to declare record categories. The markers
+themselves do not satisfy Frozen, Copied, or ReadResult payload proofs.
+
+Frozen and Local fields are immutable from construction. Local values cannot
+enter persistent storage, including through nested records or arrays. Local
+pointers stay local or pass to direct typed calls; never store or return them.
+Ordinary protected pointers originate from fresh storage. Fixed projection APIs
+and verified generated getters can select record addresses inside frozen storage.
+Do not add mutable construction, loan tracking, string provenance, or runtime
+ownership state.
+
+Generated getters read fields directly. Permit im.Projection.Read and interior
+Frozen-record addresses only in the exact current generated file. Verify its
+normalized bytes and physical token file before source checks. Handwritten Read
+calls are rejected, including scalar reads. All normal type, write, capture,
+generic, receiver, and transport checks still apply to generated nodes.
+Generated record and array projections keep the root pointer and indices;
+do not copy parent values during field reads.
+CopyRecord is the explicit root copy for a record value, including a map result.
+Use ProjectString for native strings and Projection methods for frozen strings,
+slices, and maps. Keep generic projection adapters in the low-level reference.
+Normal projection reads return Copied values or further projections. StringProjection.Unsafe and
+FrozenString.Unsafe explicitly return a shared native string; trust the caller
+and add no string provenance or lifetime analysis. Native collection builders keep
+exclusive-use and consume-on-Freeze checks. Freeze copies no backing storage;
+Clone makes explicit independent storage under its type constraints.
+
+The fixed im and supervise implementations obey reviewed API contracts.
+UncheckedValue is the explicit package-level immutability promise. Do not expose
+its payload through a local projection or add another trust annotation.
+
+Every package with user-declared Frozen records must have this directive:
+`//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen`.
+Declare Frozen records as named package-scope types in non-test Go files.
+Reject function-local, anonymous, and test-only Frozen declarations.
+Keep the exact current `zz_immutago.gen.go` output. Frozen records get typed
+projections and Cells. Local records need no generation. Keep the two
+generated-only operations above separate from the normal checks; do not skip
+analysis of a generated file.
+
+Test supported and rejected forms through the real CLI with diagnostic snapshots.
+Keep one `output.txt` per fixture package for combined stdout and stderr. Keep
+source and generated Go files separate; do not add `.gen.txt` companions.
+Check runtime representations and allocation costs. Keep ordinary Go outside
+protected operations unaffected.
 
 ## 12. The User Merges Pull Requests
 
@@ -232,16 +259,16 @@ Keep source restrictions and examples there. Keep analysis details in the
 
 - Apply builder ownership checks when protected elements or a later Freeze
   require them. A scalar Clone that is never frozen follows ordinary Go rules.
-- Reuse completed type proofs and cached Owner queries. Test cycles and query
+- Reuse completed type proofs and cached Cell queries. Test cycles and query
   order. Use the existing cache during recursive walks.
 - Keep one real failure cause for each invalid type. Test correct rejection and
   terminating cause paths. The selected cause may depend on query order.
 - Carry one representative original failure in each dependency fact, with a
   command to check its origin.
 - Walk each storage selector/index chain once. Keep one storage classifier and
-  one Owner/source context.
+  one Cell/source context.
 - Pass the builder owner ID and consume/reset flags directly to the bitset solver.
-- Allow no result or one service result from each exported service method
+- Allow no result or one ReadResult from each exported service method
   except Init and Run. Runtime methods are exempt. Other service code follows
   ordinary Go rules; im operations use their general checks.
 - Permit service references as stored values and results. Match every Current
@@ -261,7 +288,7 @@ Apply the same source rules to all operands, including operands that Go does
 not evaluate. Constant operands do not bypass capture, type placement, generic,
 or Freeze checks. Direct array `len` and `cap` work in allowed statements.
 
-For a local `p *Local`, where Local embeds `im.ByValue`:
+For a local `p *Local`, where Local embeds `im.Local`:
 
 | Rejected form | Allowed replacement |
 | --- | --- |

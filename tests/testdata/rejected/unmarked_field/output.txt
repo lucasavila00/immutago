@@ -1,0 +1,4 @@
+unmarked_field.go:13:2: immutable field Value: struct does not embed im.Frozen
+  owner: rejected.Bad; field type: struct{Count int}
+  fix: embed im.Frozen or im.Local in the struct and make each field immutable
+unmarked_field.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

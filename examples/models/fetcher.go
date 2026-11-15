@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 // Package models polls an HTTP source and serves predictions from its last valid model.
 package models
 
@@ -26,14 +28,14 @@ type FetcherArgs struct {
 
 // snapshot is one published model version.
 type snapshot struct {
-	im.ByValue
+	im.Frozen
 	Model *model.Model
 }
 
 // Prediction identifies the model used to calculate one score.
 type Prediction struct {
-	im.ByValue
-	Name  string
+	im.Local
+	Name  im.StringProjection
 	Score float64
 }
 
@@ -47,7 +49,7 @@ type document struct {
 type Fetcher struct {
 	supervise.Service[FetcherArgs]
 	store   Store
-	current im.Owner[snapshot]
+	current snapshotCell
 }
 
 // Init creates the document store and loads the first model before callers can predict.
@@ -109,7 +111,7 @@ func (f *Fetcher) refresh(ctx context.Context) error {
 		return err
 	}
 	m := model.Load(next.Name, next.Weights)
-	f.current.Store(&snapshot{Model: m})
+	f.current.Store(snapshot{Model: m})
 	log := f.Args().Log
 	log.Info("model loaded", "name", next.Name)
 	return nil
@@ -117,6 +119,6 @@ func (f *Fetcher) refresh(ctx context.Context) error {
 
 // Predict uses one model version for the whole prediction.
 func (f *Fetcher) Predict(features im.FrozenSlice[float64]) Prediction {
-	current := f.current.Load()
-	return Prediction{Name: current.Model.Name, Score: model.Predict(current.Model, features)}
+	current := f.current.LoadShared()
+	return Prediction{Name: im.ProjectString(current.Model.Name), Score: model.Predict(current.Model, features)}
 }

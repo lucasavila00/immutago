@@ -1,0 +1,3 @@
+subset_boxed_reference.go:20:24: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
+  source: boxed any = new(v)
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

@@ -11,7 +11,7 @@ func CrossPackage() borrowapi.Good {
 }
 
 func CrossPackagePointer() *borrowapi.Good {
-	value := borrowapi.Shared(1)
+	value := borrowapi.Frozen(1)
 	return borrowapi.Forward(value)
 }
 

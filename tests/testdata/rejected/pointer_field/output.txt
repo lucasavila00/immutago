@@ -1,0 +1,4 @@
+pointer_field.go:13:2: immutable field Value: stored pointers require a concrete marked struct target
+  owner: rejected.Bad; field type: *int
+  fix: replace the pointer field or argument with an owned immutable value
+pointer_field.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

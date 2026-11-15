@@ -8,7 +8,7 @@ import (
 // TestUncheckedValue covers the declaring-package rule of im.Trust and im.Unwrap.
 func TestUncheckedValue(t *testing.T) {
 	const definitions = `type baked struct { weights []float64 }
-type Model struct { im.Shared; engine im.UncheckedValue[baked] }
+type Model struct { im.Frozen; engine im.UncheckedValue[baked] }
 `
 	for _, tc := range []struct{ name, source, want string }{
 		{"wrap and read", `func Load() *Model { return &Model{engine: im.Trust(&baked{})} }

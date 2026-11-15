@@ -15,6 +15,7 @@ Use local runs for focused debugging. Push the branch and use
 | Command | Purpose |
 | --- | --- |
 | `make build` | Build `bin/immutago`. |
+| `go generate ./path/to/package` | Update typed projections and required output after Frozen records change. |
 | `go test ./internal/freeze -run TestFreezeOwnership -count=1` | Debug builder ownership. |
 | `go test ./tests -run '^TestCLI/documentation$' -count=1` | Check guide fixtures through the CLI. |
 | `make docs` | Generate package references from Go comments. |
@@ -28,8 +29,9 @@ Race-enabled tests run on Linux, macOS, and Windows.
 
 ## Diagnostic snapshots
 
-Each CLI source has a sibling `.txt` file with exact diagnostics. Inspect output
-before updating it. For one changed fixture group:
+Each CLI fixture package has one `output.txt` with its expected combined stdout
+and stderr. Source and generated Go files stay separate; there are no `.gen.txt`
+companions. Inspect output before updating it. For one changed fixture group:
 
 ```sh
 go test ./tests -run '^TestCLI/documentation$' -count=1
@@ -40,6 +42,8 @@ git diff -- tests/testdata
 A passing snapshot is not proof of the rule. Check the accepted forms and nearby
 rejections. Consumer-only dependency cases must also pass through CLI and vet.
 
-Check changed documentation links and run complete examples through the CLI.
+The checker requires the exact generation directive and current output in every
+package with source Frozen records. Check changed documentation links
+and run complete examples through the CLI.
 Keep language rules in the guide and implementation facts in architecture.
 [Source checks](../scripts/README.md) define comment and size requirements.

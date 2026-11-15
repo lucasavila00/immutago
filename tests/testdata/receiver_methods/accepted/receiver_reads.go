@@ -3,16 +3,16 @@ package accepted
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Product struct {
-	im.Shared
+	im.Frozen
 	Price int
 }
 type Alias = Product
 type Settings struct {
-	im.ByValue
+	im.Local
 	Limit int
 }
 type Order struct {
-	im.Shared
+	im.Frozen
 	Product
 	Pointer *Product
 }

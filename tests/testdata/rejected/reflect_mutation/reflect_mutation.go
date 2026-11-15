@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package rejected
 
 import (
@@ -6,7 +8,7 @@ import (
 )
 
 type Value struct {
-	im.Shared
+	im.Frozen
 	N int
 }
 

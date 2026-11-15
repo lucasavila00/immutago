@@ -4,7 +4,7 @@ import "github.com/lucasavila00/immutago/pkg/im"
 
 type nilInts []int
 type nilIntsAlias = nilInts
-type nilShared struct{ im.Shared }
+type nilSnapshot struct{ im.Frozen }
 
 // convertedNilDeclarations must use a zero declaration or bare nil initializer.
 func convertedNilDeclarations() {
@@ -16,7 +16,7 @@ func convertedNilDeclarations() {
 	_ = im.FreezeSlice(named)
 	alias := (nilIntsAlias)((nil))
 	_ = im.FreezeSlice(alias)
-	objects := []nilShared(nil)
+	objects := []nilSnapshot(nil)
 	_ = im.FreezeSlice(objects)
 }
 
@@ -26,7 +26,7 @@ func convertedNilInputs() {
 	_ = im.FreezeMap(map[string]int(nil))
 	_ = im.FreezeSlice(nilInts(nil))
 	_ = im.FreezeSlice((nilIntsAlias)((nil)))
-	_ = im.FreezeSlice([]nilShared(nil))
+	_ = im.FreezeSlice([]nilSnapshot(nil))
 }
 
 // shadowedNil is an existing handle, not Go's predeclared nil value.

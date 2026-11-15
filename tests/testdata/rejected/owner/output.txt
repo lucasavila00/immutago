@@ -1,0 +1,38 @@
+owned.go:13:2: immutable field Current: Cell slots are mutable
+  owner: owner.BadCell; field type: im.Cell[owner.Model]
+  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+owned.go:16:12: immutable type argument: Frozen storage cannot contain Local values
+  type: owner.Local
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+owned.go:17:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: saved im.Projection[Model]
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+owned.go:20:11: Cell slots and their holders cannot be copied or transported by value
+owned.go:21:6: Cell slots and their holders cannot be copied or transported by value
+owned.go:22:10: Cell slots and their holders cannot be copied or transported by value
+owned.go:22:11: Cell holder pointers require local bindings or direct typed calls
+owned.go:23:6: Cell slots and their holders cannot be copied or transported by value
+owned.go:24:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: saved = l.Current.Load()
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+owned.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: m.X = 2
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze
+owned.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+transport.go:11:1: Cell holder pointers require direct non-variadic parameters
+transport.go:12:1: Cell holder pointers cannot be returned
+transport.go:15:9: Cell holder pointers require local bindings or direct typed calls
+transport.go:16:16: Cell holder pointers require local bindings or direct typed calls
+transport.go:16:2: Cell holder pointers require local bindings or direct typed calls
+transport.go:22:7: function values cannot carry Cell holder pointers
+transport.go:23:6: function values cannot carry Cell holder pointers
+transport.go:24:7: function values cannot carry Cell holder pointers
+transport.go:25:6: function values cannot carry Cell holder pointers
+transport.go:3:18: containers of Cell slots or holders are unsupported
+transport.go:3:5: Cell holder pointers cannot be stored in package variables
+transport.go:4:5: Cell holder pointers cannot be stored in package variables
+transport.go:5:15: containers of Cell slots or holders are unsupported
+transport.go:5:5: Cell holder pointers cannot be stored in package variables
+transport.go:6:19: containers of Cell slots or holders are unsupported
+transport.go:6:5: Cell holder pointers cannot be stored in package variables
+transport.go:9:16: Cell holder pointers cannot be stored in fields

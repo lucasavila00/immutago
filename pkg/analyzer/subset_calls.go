@@ -120,32 +120,54 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 // matchLibraryCall matches fixed function identities, receivers, and result contexts.
 func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object) string {
 	switch object.Name() {
-	case "Load", "Store":
+	case "Load", "LoadPointer", "Store", "LoadShared":
 		if c.ownedSlotCall(call) {
 			return ""
 		}
-		return "Owner requires a direct slot call"
+		return "Cell requires a direct slot call"
 	case "FreezeMap", "FreezeSlice":
 		if c.standaloneFreeze(call) {
 			return ""
 		}
 		return "Freeze requires a standalone single binding"
-	case "Trust", "Unwrap":
+	case "Trust", "Unwrap", "ProjectionOf", "CopyRecord", "FreezeString", "ProjectString", "IsNil",
+		"ProjectedString", "ProjectedFrozenString", "ProjectedSlice", "ProjectedMap":
 		return ""
-	case "Get", "At", "Len", "All", "Clone":
-		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
-		if !ok || !c.exactCollectionMethod(selector) {
-			return "immutable method expressions are unsupported"
+	case "Copy":
+		return c.proofs.CopiedReason(c.pass.TypesInfo.TypeOf(call))
+	case "Read":
+		if !c.generatedSource(call) {
+			return "Projection.Read is reserved for verified generated projections"
 		}
-		if object.Name() == "All" && c.queries.Callable(c.pass.TypesInfo.TypeOf(call)) {
-			statement, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
-			if !ok || ast.Unparen(statement.X) != call {
-				return "immutable iterators must be consumed by direct range"
-			}
-		}
-		return ""
+		return c.matchLibraryMethod(call, object.Name())
+	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Unsafe", "Projection":
+		return c.matchLibraryMethod(call, object.Name())
 	}
 	return "protected operation is outside the supported expression forms"
+}
+
+// matchLibraryMethod checks the sealed receiver and any result storage restriction.
+func (c *subsetChecks) matchLibraryMethod(call *ast.CallExpr, method string) string {
+	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+	if !ok || !c.exactCollectionMethod(selector) {
+		return "immutable method expressions are unsupported"
+	}
+	receiver := c.pass.TypesInfo.TypeOf(selector.X)
+	if checker.IsProjection(receiver) && method == "Clone" {
+		args := types.Unalias(receiver).(*types.Named).TypeArgs()
+		for index := 0; index < args.Len(); index++ {
+			if reason := c.proofs.CopiedReason(args.At(index)); reason != "" {
+				return reason
+			}
+		}
+	}
+	if method == "All" && (checker.IsProjection(receiver) || c.queries.Callable(c.pass.TypesInfo.TypeOf(call))) {
+		statement, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
+		if !ok || ast.Unparen(statement.X) != call {
+			return "immutable iterators must be consumed by direct range"
+		}
+	}
+	return ""
 }
 
 // matchCallArguments resolves every actual parameter, including forwarded tuples and variadic elements.

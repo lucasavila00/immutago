@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package service
 
 import (
@@ -20,7 +22,7 @@ func (p *Pool) Worker(name string) supervise.Ref[Counter] {
 }
 
 type Route struct {
-	im.ByValue
+	im.Local
 	Worker supervise.Ref[Counter]
 }
 

@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package consumer
 
 import (
@@ -6,11 +8,16 @@ import (
 )
 
 type Record struct {
-	im.Shared
+	im.Frozen
 	Model   model.Tree
 	Names   im.FrozenSlice[string]
 	Lookups im.FrozenMap[[2]int, im.FrozenSlice[model.Leaf]]
 	Count   model.CountBox
+}
+
+type Scalar struct {
+	im.Frozen
+	Value int
 }
 
 func Use() {
@@ -39,8 +46,5 @@ func Use() {
 	_ = model.CountBox{Value: 1}
 	_ = model.Derived{}
 	_ = im.FreezeSlice([][2]string{{"a", "b"}})
-	_ = struct {
-		im.Shared
-		Value int
-	}{Value: 1}
+	_ = Scalar{Value: 1}
 }

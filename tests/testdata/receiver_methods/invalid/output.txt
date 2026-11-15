@@ -1,0 +1,3 @@
+receiver_invalid.go:12:30: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.Price = 1
+  fix: construct a new value, or replace the whole variable; only a native builder's whole elements can be changed before Freeze

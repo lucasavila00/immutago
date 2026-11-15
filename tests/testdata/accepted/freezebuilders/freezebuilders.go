@@ -1,18 +1,20 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package freezebuilders
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Value struct {
-	im.Shared
+	im.Frozen
 	X int
 }
 
 type Slices struct {
-	im.Shared
+	im.Frozen
 	First, Second im.FrozenSlice[int]
 }
 type Maps struct {
-	im.Shared
+	im.Frozen
 	First, Second im.FrozenMap[string, int]
 }
 

@@ -5,13 +5,14 @@ Three services turn a JSON file into a request quota:
 | Service | Work |
 | --- | --- |
 | [FileCache](filecache.go) | Read the file during Init; refresh its text in Run. |
-| [ConfigLoader](config.go) | Parse changed text and publish immutable limits through `im.Owner`. Keep the last valid limits if an edit is invalid. |
+| [ConfigLoader](config.go) | Parse changed text and publish immutable limits through `im.Cell`. Keep the last valid limits if an edit is invalid. |
 | [Limiter](limiter.go) | Count requests under a mutex; reset the count once per time window. Read the current limit on each request. |
 
 The services use `supervise.Ref` to call each other. Calls run in the caller's
 goroutine. Each service protects its own mutable fields.
-Their [service results](../../docs/service-results.md) are strings, integer
-decisions, or the read-only `Usage` struct. Callers can keep these values.
+Their [service results](../../docs/service-results.md) are local string projections,
+integer decisions, or the Local `Usage` record. Callers can keep its numeric
+fields; Clone gives independent text bytes.
 
 ## Run
 

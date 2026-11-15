@@ -19,9 +19,9 @@ func TestPoolJobsAndShutdown(t *testing.T) {
 	await(t, func() bool { return pool.Current().Ready() })
 	for i := range 4 {
 		result := pool.Current().Process("Hello World")
-		if !result.Available || result.Text != "HELLO WORLD" || result.Version != 1 || result.Worker != i%2 {
+		if !result.Available || !result.Text.EqualString("HELLO WORLD") || result.Version != 1 || result.Worker != i%2 {
 			t.Fatalf("job %d: available=%t text=%q version=%d worker=%d",
-				i, result.Available, result.Text, result.Version, result.Worker)
+				i, result.Available, result.Text.Unsafe(), result.Version, result.Worker)
 		}
 	}
 	stop(t, root)
@@ -81,7 +81,7 @@ func TestDispatcherHandover(t *testing.T) {
 		t.Fatal("version 2 setup failed")
 	}
 	old := dispatcher.Current().Process("blue", "Hello")
-	if !old.Available || old.Version != 1 || old.Text != "HELLO" {
+	if !old.Available || old.Version != 1 || !old.Text.EqualString("HELLO") {
 		t.Fatal("staging a replacement changed the serving version")
 	}
 	await(t, func() bool {
@@ -89,14 +89,14 @@ func TestDispatcherHandover(t *testing.T) {
 		return dispatcher.Current().Version("blue") == 2
 	})
 	next := dispatcher.Current().Process("blue", "Hello")
-	if !next.Available || next.Version != 2 || next.Text != "hello" {
+	if !next.Available || next.Version != 2 || !next.Text.EqualString("hello") {
 		t.Fatal("ready replacement did not serve version 2")
 	}
 	if dispatcher.Current().Load("blue", 3) {
 		t.Fatal("unsupported version started")
 	}
 	unchanged := dispatcher.Current().Process("blue", "Still Version Two")
-	if unchanged.Text != "still version two" || unchanged.Version != 2 {
+	if !unchanged.Text.EqualString("still version two") || unchanged.Version != 2 {
 		t.Fatal("failed setup replaced the serving version")
 	}
 	stop(t, root)
@@ -117,7 +117,7 @@ func TestDispatcherReconfiguration(t *testing.T) {
 		valid := true
 		for range 100 {
 			result := dispatcher.Current().Process("green", "Keep Serving")
-			valid = valid && result.Available && result.Text == "KEEP SERVING"
+			valid = valid && result.Available && result.Text.EqualString("KEEP SERVING")
 		}
 		jobs <- valid
 	}()

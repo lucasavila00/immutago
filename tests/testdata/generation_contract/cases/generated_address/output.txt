@@ -1,0 +1,25 @@
+zz_immutago.gen.go:25:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *contract.Data
+  fix: use the generated field accessor
+zz_immutago.gen.go:30:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *contract.Data
+  fix: use the generated field accessor
+zz_immutago.gen.go:3:1: zz_immutago.gen.go is stale; run go generate in this package
+zz_immutago.gen.go:43:26: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *contract.Data
+  fix: use the generated field accessor
+zz_immutago.gen.go:69:9: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: v.immutagoProjection.Read()
+  type: *contract.Data
+  fix: use the generated field accessor
+zz_immutago.gen.go:72:50: unsupported immutable operation: scalar interior addresses are unsupported
+  source: &value.immutagoProjection.Read().Number
+  type: *int
+  fix: copy the scalar field into a local; do not take a pointer into immutable storage
+zz_immutago.gen.go:72:51: unsupported immutable operation: Projection.Read is reserved for verified generated projections
+  source: value.immutagoProjection.Read()
+  type: *contract.Data
+  fix: use the generated field accessor

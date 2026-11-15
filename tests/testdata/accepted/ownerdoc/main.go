@@ -1,25 +1,30 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package main
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Config struct {
-	im.ByValue
+	im.Frozen
+	Ready bool
 	Limit int
 }
 
-var current im.Owner[Config]
+var current ConfigCell
 
 func allowed(used int) bool {
 	config := current.Load()
-	if config == nil {
+	ready := config.Ready()
+	if !ready {
 		return false
 	}
-	return used < config.Limit
+	limit := config.Limit()
+	return used < limit
 }
 
 func main() {
-	current.Store(&Config{Limit: 100})
+	current.Store(Config{Ready: true, Limit: 100})
 	println(allowed(80)) // true
-	current.Store(&Config{Limit: 50})
+	current.Store(Config{Ready: true, Limit: 50})
 	println(allowed(80)) // false
 }

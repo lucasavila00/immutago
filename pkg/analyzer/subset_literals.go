@@ -69,13 +69,13 @@ func (c *subsetChecks) matchLiteralElement(storage types.Type, index int, elemen
 	return ""
 }
 
-// matchStoredValue permits immutable copies and Shared pointers in aggregate storage.
+// matchStoredValue permits immutable copies and Frozen pointers in aggregate storage.
 func (c *subsetChecks) matchStoredValue(source, destination types.Type) string {
 	if rule := c.matchTransport(source, destination); rule != "" {
 		return rule
 	}
 	if localReference(source) {
-		return "ByValue pointers cannot enter aggregate storage"
+		return "Local pointers cannot enter aggregate storage"
 	}
 	return ""
 }

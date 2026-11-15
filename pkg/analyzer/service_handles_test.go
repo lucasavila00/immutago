@@ -5,7 +5,7 @@ import "testing"
 const handleDefinitions = serviceDefinitions + `
 func(c *Counter) Count() int {return c.count}
 type Handle = supervise.Ref[Counter]
-type Route struct { im.ByValue; Worker Handle }
+type Route struct { im.Local; Worker Handle }
 `
 
 // TestServiceHandles checks handle copies without exposing the selected service pointer.
@@ -18,8 +18,8 @@ func TestServiceHandles(t *testing.T) {
 		{"marked field", `func use(r Route) int{return r.Worker.Current().Count()}`},
 		{"anonymous target", `type Reader struct{};func(Reader) Count()int{return 1}
 func use(r supervise.Ref[struct{supervise.Service[supervise.NoArgs];Reader}])int{return r.Current().Count()}`},
-		{"shared field", `type SharedRoute struct{im.Shared;Worker Handle}
-func use(r *SharedRoute) int{return r.Worker.Current().Count()}`},
+		{"shared field", `type SnapshotRoute struct{im.Frozen;Worker Handle}
+func use(r *SnapshotRoute) int{return r.Worker.Current().Count()}`},
 		{"native map", `func use(r Handle) int{m:=map[string]Handle{"a":r};v,ok:=m["a"];if !ok{return 0}
 return v.Current().Count()}`},
 		{"multiple copy", `func use(r Handle){a,b:=r,r;a,b=b,a;_,_=a,b}`},
@@ -47,7 +47,7 @@ func(p *Pool) Update(r Handle){p.Workers["x"]=r;self:=p;f:=func(){self.Workers["
 p.Args().Current().Count()}`},
 		{"service callback", `func(c *Counter) Visit(f func(*Counter)){f(c)}
 func use(r Handle){r.Current().Visit(func(c *Counter){c.count++})}`},
-		{"frozen field", `type Routes struct{im.ByValue;Workers im.FrozenSlice[Handle]}
+		{"frozen field", `type Routes struct{im.Frozen;Workers im.FrozenSlice[Handle]}
 func use(r Routes)int{return r.Workers.At(0).Current().Count()}`},
 		{"implementation", `func(c *Counter) Add(){self:=c;f:=func(){self.count++};f()}`},
 	}
@@ -119,7 +119,7 @@ var ref supervise.Ref[struct{supervise.Service[supervise.NoArgs];Bad}]`},
 		{"generic alias", `type Alias[T any]=Handle;var ref Alias[Handle]`},
 		{"promoted accessor", `type Wrapper struct{Handle};func use(r Wrapper){r.Current().Count()}`},
 		{"protected field write", `func use(r *Route,h Handle){r.Worker=h}`},
-		{"pointer field", `type Bad struct{im.ByValue;Worker *Handle}`},
+		{"pointer field", `type Bad struct{im.Local;Worker *Handle}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

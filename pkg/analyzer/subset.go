@@ -21,11 +21,14 @@ type subsetChecks struct {
 	reported   map[token.Pos]bool
 	owners     map[*types.Var]bool
 	literals   map[*ast.CompositeLit]string
+	generated  *token.File
 }
 
 // checkSubset checks the supported immutable forms with compiler-resolved types.
 func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checker.Prover) {
-	newSubsetChecks(pass, proofs).checkImmutable(owners)
+	c := newSubsetChecks(pass, proofs)
+	c.checkGeneration()
+	c.checkImmutable(owners)
 }
 
 // newSubsetChecks records parents once for service references and immutable source forms.
@@ -71,7 +74,7 @@ func (c *subsetChecks) report(n ast.Node, message string) {
 
 // visit sends each protected operation through the complete source-form matcher.
 func (c *subsetChecks) visit(node ast.Node) bool {
-	c.checkOwnerNode(node)
+	c.checkCellNode(node)
 	c.declarationNode(node)
 	if name, ok := node.(*ast.Ident); ok {
 		c.genericInstance(name)
@@ -91,24 +94,13 @@ func (c *subsetChecks) visit(node ast.Node) bool {
 
 // subsetType rejects hidden references and native containers, including inferred result types.
 func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string {
-	if t == nil || seen[t] || checker.IsCollection(t) {
+	if t == nil || seen[t] || checker.IsCollection(t) || checker.IsProjection(t) {
 		return ""
 	}
 	seen[t] = true
 	switch u := t.Underlying().(type) {
 	case *types.Pointer:
-		if _, ok := u.Elem().Underlying().(*types.Pointer); ok && c.queries.Contains(t) {
-			return "pointer indirection is unsupported"
-		}
-		if c.queries.Contains(t) && !checker.Marked(u.Elem()) {
-			return "immutable references require a concrete marked struct target"
-		}
-		if checker.Marked(u.Elem()) {
-			if reason := c.proofs.Reason(u.Elem()); reason != "" {
-				return reason
-			}
-		}
-		return c.subsetType(u.Elem(), seen)
+		return c.subsetPointer(t, u, seen)
 	case *types.Array:
 		if c.queries.Contains(t) {
 			if reason := c.proofs.Reason(t); reason != "" {
@@ -123,6 +115,25 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 	default:
 		return c.subsetContainer(u)
 	}
+}
+
+// subsetPointer proves the concrete target and rejects hidden pointer forms.
+func (c *subsetChecks) subsetPointer(t types.Type, pointer *types.Pointer, seen map[types.Type]bool) string {
+	if _, named := types.Unalias(t).(*types.Named); named && c.queries.Contains(t) {
+		return "defined pointer types are unsupported in protected storage; use a pointer alias"
+	}
+	if _, nested := pointer.Elem().Underlying().(*types.Pointer); nested && c.queries.Contains(t) {
+		return "pointer indirection is unsupported"
+	}
+	if c.queries.Contains(t) && !checker.Marked(pointer.Elem()) {
+		return "immutable references require a concrete marked struct target"
+	}
+	if checker.Marked(pointer.Elem()) {
+		if reason := c.proofs.Reason(pointer.Elem()); reason != "" {
+			return reason
+		}
+	}
+	return c.subsetType(pointer.Elem(), seen)
 }
 
 // protectedReference identifies a pointer whose target contains immutable storage.
@@ -186,7 +197,7 @@ func (c *subsetChecks) subsetContainer(t types.Type) string {
 func subsetResults(results *types.Tuple) string {
 	for i := 0; i < results.Len(); i++ {
 		if localReference(results.At(i).Type()) {
-			return "returning ByValue pointers is unsupported"
+			return "returning Local pointers is unsupported"
 		}
 	}
 	return ""
@@ -222,8 +233,8 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 			c.report(expression, "immutable callbacks are unsupported")
 		}
 	}
-	if storedByValueReference(t, make(map[types.Type]bool)) {
-		c.report(expression, "containers of ByValue pointers are unsupported")
+	if storedLocalReference(t, make(map[types.Type]bool)) {
+		c.report(expression, "containers of Local pointers are unsupported")
 	}
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return
@@ -249,8 +260,8 @@ func (c *subsetChecks) directSlotMethodExpression(expression ast.Expr) bool {
 	return c.ownedSlotSelector(selector) && c.directCall(selector) != nil
 }
 
-// storedByValueReference checks native container elements even when the handle has an ownership proof.
-func storedByValueReference(t types.Type, seen map[types.Type]bool) bool {
+// storedLocalReference checks native container elements even when the handle has an ownership proof.
+func storedLocalReference(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] {
 		return false
 	}
@@ -267,7 +278,7 @@ func storedByValueReference(t types.Type, seen map[types.Type]bool) bool {
 		elements = []types.Type{storage.Elem()}
 	}
 	for _, element := range elements {
-		if localReference(element) || storedByValueReference(element, seen) {
+		if localReference(element) || storedLocalReference(element, seen) {
 			return true
 		}
 	}

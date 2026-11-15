@@ -16,7 +16,7 @@ func stressGraph(edges [][]int, bad int, aliases bool) []*types.Named {
 		nodes[i] = markedType(fmt.Sprintf("Node%d", i), marker)
 	}
 	for i, targets := range edges {
-		fields := []*types.Var{types.NewField(token.NoPos, nil, "Shared", marker, true)}
+		fields := []*types.Var{types.NewField(token.NoPos, nil, "Frozen", marker, true)}
 		for j, target := range targets {
 			var element types.Type = nodes[target]
 			if aliases {
@@ -122,7 +122,7 @@ func TestStressLargeProofGraphs(t *testing.T) {
 // TestStressAliasMarkerPolicy checks long alias chains for both marker policies.
 func TestStressAliasMarkerPolicy(t *testing.T) {
 	shared, _ := testTypes()
-	localName := types.NewTypeName(token.NoPos, shared.Obj().Pkg(), "ByValue", nil)
+	localName := types.NewTypeName(token.NoPos, shared.Obj().Pkg(), "Local", nil)
 	local := types.NewNamed(localName, types.NewStruct(nil, nil), nil)
 	for _, marker := range []*types.Named{shared, local} {
 		var alias types.Type = marker

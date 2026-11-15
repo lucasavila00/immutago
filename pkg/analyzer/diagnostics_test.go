@@ -1,9 +1,22 @@
 package analyzer
 
 import (
+	"go/types"
 	"strings"
 	"testing"
 )
+
+// TestCopiedDiagnosticPaths keeps the same repair for nested category failures.
+func TestCopiedDiagnosticPaths(t *testing.T) {
+	for _, prefix := range []string{"", "array element: ", "Result: array element: "} {
+		reason := prefix + "copied values require bool, numbers, arrays, or service references"
+		for _, fix := range []string{subsetFix(reason), structuralFix(types.Typ[types.Int], reason)} {
+			if fix != "copy scalar fields, or use a generated local projection" {
+				t.Fatal(fix)
+			}
+		}
+	}
+}
 
 // TestStructuralDiagnosticContext checks the owner, failed field type, and supported repair.
 func TestStructuralDiagnosticContext(t *testing.T) {
@@ -11,13 +24,13 @@ func TestStructuralDiagnosticContext(t *testing.T) {
 		source string
 		want   []string
 	}{
-		{`type Value struct{im.Shared; Items []string}`, []string{
+		{`type Value struct{im.Frozen; Items []string}`, []string{
 			"immutable field Items", "owner: sample.Value; field type: []string",
 			"fix: replace the native slice with im.FrozenSlice[T]",
 		}},
-		{`type Child struct{im.Shared}; type Parent struct{Child Child}`, []string{
+		{`type Child struct{im.Frozen}; type Parent struct{Child Child}`, []string{
 			"unmarked struct", "owner: sample.Parent; field type: sample.Child",
-			"fix: embed im.Shared",
+			"fix: embed im.Frozen",
 		}},
 		{`var _ = im.FreezeSlice([]*int{new(int)})`, []string{
 			"immutable type argument", "type: *int", "fix: replace the pointer field or argument with an owned immutable value",
@@ -58,7 +71,7 @@ func TestDependencyWitnessSelection(t *testing.T) {
 
 // TestFieldDiagnosticsUseOneDeclarationSite reports each failed field once across repeated type visits.
 func TestFieldDiagnosticsUseOneDeclarationSite(t *testing.T) {
-	got := checkSource(t, `type Value struct{im.Shared; Items []string; Pointer *int}; var _ Value`)
+	got := checkSource(t, `type Value struct{im.Frozen; Items []string; Pointer *int}; var _ Value`)
 	for _, field := range []string{"Items", "Pointer"} {
 		if count := strings.Count(got, "immutable field "+field+":"); count != 1 {
 			t.Fatalf("field %s reported %d times: %s", field, count, got)
@@ -68,7 +81,7 @@ func TestFieldDiagnosticsUseOneDeclarationSite(t *testing.T) {
 
 // TestPointerConstructorAcceptsCompilerBuiltinSignature checks the fresh allocation boundary.
 func TestPointerConstructorAcceptsCompilerBuiltinSignature(t *testing.T) {
-	got := checkSource(t, `type Value struct{im.Shared};func f(){_=new(Value)}`)
+	got := checkSource(t, `type Value struct{im.Frozen};func f(){_=new(Value)}`)
 	if got != "" {
 		t.Fatalf("incorrect constructor diagnostic: %s", got)
 	}

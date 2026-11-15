@@ -8,14 +8,14 @@ import (
 
 // TestSlotCacheReusesCompletedTypes prevents fresh wrappers from expanding a known negative cycle again.
 func TestSlotCacheReusesCompletedTypes(t *testing.T) {
-	pass := sourcePass(t, `type Checked struct{im.Shared}
+	pass := sourcePass(t, `type Checked struct{im.Frozen}
  type A struct{ Next []B; N int }
  type B struct{ Next []A }`)
 	a := pass.Pkg.Scope().Lookup("A").Type()
 	b := pass.Pkg.Scope().Lookup("B").Type()
 	c := &subsetChecks{}
 	if c.hasSlotValue(a) || c.hasSlotValue(types.Typ[types.String]) {
-		t.Fatal("ordinary storage contains an Owner slot")
+		t.Fatal("ordinary storage contains an Cell slot")
 	}
 	variable := func(typ types.Type) *types.Var { return types.NewVar(token.NoPos, nil, "", typ) }
 	wrappers := []types.Type{
@@ -27,7 +27,7 @@ func TestSlotCacheReusesCompletedTypes(t *testing.T) {
 	for _, wrapper := range wrappers {
 		seen := make(map[types.Type]bool)
 		if c.containsSlotValue(wrapper, seen) {
-			t.Fatalf("ordinary wrapper %s contains an Owner slot", wrapper)
+			t.Fatalf("ordinary wrapper %s contains an Cell slot", wrapper)
 		}
 		if seen[a] || seen[b] || len(seen) > 3 {
 			t.Fatalf("wrapper %s expanded the cached cycle: %d types visited", wrapper, len(seen))
@@ -37,21 +37,25 @@ func TestSlotCacheReusesCompletedTypes(t *testing.T) {
 
 // TestSlotCacheQueryOrder checks that a cycle does not cache an incomplete negative result.
 func TestSlotCacheQueryOrder(t *testing.T) {
-	pass := sourcePass(t, `type Model struct{im.ByValue}
- type A struct{ Next []B; Slot im.Owner[Model] }
+	pass := sourcePass(t, `type Model struct{im.Frozen}
+ type A struct{ Next []B; Slot im.Cell[Model] }
  type B struct{ Next []A }
  type Empty struct{ Next []Empty }
  type Mixed struct{ Plain []Empty; Next []A }
  type Alias = A
  type Pointer *A
  type Contract interface{ Take(A) }
+ type Union interface{ ~int|A }
+ type ConstraintAlias = Union
+ type OrdinaryContract interface{ Take(Empty) }
  type Callback func(A) B`)
 	queries := []struct {
 		name string
 		want bool
 	}{
 		{"A", true}, {"B", true}, {"Empty", false}, {"Mixed", true}, {"Alias", true},
-		{"Pointer", false}, {"Contract", false}, {"Callback", true},
+		{"Pointer", false}, {"Contract", true}, {"Union", true}, {"ConstraintAlias", true},
+		{"OrdinaryContract", false}, {"Callback", true},
 	}
 	for start := range queries {
 		for _, step := range []int{1, -1} {
@@ -69,7 +73,7 @@ func TestSlotCacheQueryOrder(t *testing.T) {
 
 // TestSlotCachePositiveHit checks that a completed positive result is reused inside a fresh wrapper.
 func TestSlotCachePositiveHit(t *testing.T) {
-	pass := sourcePass(t, `type Model struct{im.ByValue};type Holder struct{Slot im.Owner[Model]}`)
+	pass := sourcePass(t, `type Model struct{im.Frozen};type Holder struct{Slot im.Cell[Model]}`)
 	holder := pass.Pkg.Scope().Lookup("Holder").Type()
 	c := &subsetChecks{}
 	if !c.hasSlotValue(holder) {

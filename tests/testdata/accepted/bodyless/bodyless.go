@@ -1,9 +1,11 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package bodyless
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type Config struct {
-	im.Shared
+	im.Frozen
 	Count int
 }
 

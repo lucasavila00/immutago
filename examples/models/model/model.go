@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 // Package model supplies immutable linear prediction models.
 package model
 
@@ -14,7 +16,7 @@ type baked struct {
 
 // Model holds a name and a private immutable copy of its coefficients.
 type Model struct {
-	im.Shared
+	im.Frozen
 	Name   string
 	engine im.UncheckedValue[baked]
 }

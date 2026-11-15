@@ -15,10 +15,12 @@ The [entry point](../../pkg/analyzer/analyzer.go) runs these stages:
 5. Report checked dependency failures and record local diagnostics.
 6. Check [service method results](services.md), excluding Init, Run, and methods
    supplied by the runtime. In im packages, also check field types and im type arguments.
-7. Match service reference operations in all selected packages.
-8. For packages that import or use im, prove native builder ownership and match
+7. For packages that import or use im, require the exact generation directive
+   and current output for source Frozen records.
+8. Match service reference operations in all selected packages.
+9. For packages that import or use im, prove native builder ownership and match
    protected source forms.
-9. Export failures for importers.
+10. Export failures for importers.
 
 Package selection and state:
 
@@ -43,7 +45,7 @@ Package selection and state:
 ## Type proof
 
 [Type predicates](../../internal/checker/types.go) resolve aliases and identify
-`im.Shared`, `im.ByValue`, and frozen collections by package path and named type.
+`im.Frozen`, `im.Local`, and frozen collections by package path and named type.
 
 The per-pass [classifier](../../internal/checker/classification.go) answers
 whether a type contains protected storage, callbacks, or service references:
@@ -51,6 +53,7 @@ whether a type contains protected storage, callbacks, or service references:
 | Query | Edges followed |
 | --- | --- |
 | Storage | Fields and containers. |
+| Local | Local records, projection wrappers, and containing storage. |
 | Callback | Storage edges, interface methods, function parameters and results. |
 | Service reference | Fields, containers, interface methods, function parameters and results. |
 | Type-parameter constraint | Separate traversal mode. |
@@ -62,7 +65,7 @@ Cached queries do not bypass source checks or package selection.
 The per-pass [Prover](../../internal/checker/prover.go) checks field, collection,
 and type arguments in one [graph](../../internal/checker/proof.go):
 
-1. Record a type node before visiting its components.
+1. Record a (type, proof category) node before visiting its components.
 2. Expand the graph; retain edges to already failed children as pending seeds.
 3. Apply direct failures before paths through previously failed children.
 4. Propagate failures through reverse edges. A cycle passes only if every
@@ -76,8 +79,9 @@ Failure messages:
 - Earlier queries can affect the selected cause, but not acceptance or rejection.
 - `Reason` is the single-query convenience function.
 
-The proof applies to Shared and ByValue structs. Stored pointers require a
-Shared target. Type parameters fail; [generic checks](../../pkg/analyzer/subset_generics.go)
+Frozen, Copied, and ReadResult have separate cached obligations. Cell and
+Projection use the same Frozen proof. Local fields and service results use
+ReadResult. Stored pointers require a Frozen target. Type parameters fail; [generic checks](../../pkg/analyzer/subset_generics.go)
 retain the fixed im APIs and reject user generics with protected storage.
 
 ## Source forms and dependency failures

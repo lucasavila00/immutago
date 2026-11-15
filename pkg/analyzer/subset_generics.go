@@ -32,7 +32,7 @@ func (c *subsetChecks) genericStorage(declaration ast.Node, name *ast.Ident) {
 			return true
 		}
 		typ := c.pass.TypesInfo.TypeOf(expression)
-		if c.queries.Contains(typ) || c.queries.Callable(typ) {
+		if c.queries.Contains(typ) || c.slotRelevant(typ) || c.queries.Callable(typ) {
 			c.report(name, "user generic declarations with immutable storage are unsupported")
 			return false
 		}

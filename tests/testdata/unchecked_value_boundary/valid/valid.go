@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package valid
 
 import (
@@ -7,7 +9,7 @@ import (
 
 // Model keeps a trusted handle in immutable storage.
 type Model struct {
-	im.Shared
+	im.Frozen
 	Table im.UncheckedValue[api.Table]
 }
 

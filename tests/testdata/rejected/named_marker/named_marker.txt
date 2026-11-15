@@ -1,3 +1,0 @@
-named_marker.go:12:2: immutable markers must be embedded by value
-  field: rejected.Bad.Marker
-  fix: embed im.Shared or im.ByValue; remove the marker field name or pointer

@@ -1,0 +1,8 @@
+generic_any.go:11:6: unsupported immutable operation: user generic declarations with immutable storage are unsupported
+  source: Bad
+  type: rejected.Bad[T any]
+  fix: use a non-generic declaration with concrete immutable types; the fixed im collection APIs remain supported
+generic_any.go:13:2: immutable field Value: type parameters are unsupported in immutable storage
+  owner: rejected.Bad[T any]; field type: T
+  fix: use a concrete type; user generic declarations cannot contain immutable storage
+generic_any.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package ordinary
 
 import (
@@ -8,7 +10,7 @@ import (
 )
 
 type Record struct {
-	im.Shared
+	im.Frozen
 	Name string
 }
 

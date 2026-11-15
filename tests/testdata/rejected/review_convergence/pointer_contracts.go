@@ -3,7 +3,7 @@ package review_convergence
 import "github.com/lucasavila00/immutago/pkg/im"
 
 type PointerValue struct {
-	im.Shared
+	im.Frozen
 	N int
 }
 

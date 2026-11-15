@@ -1,4 +1,0 @@
-subset_interior_array.go:9:21: unsupported immutable operation: scalar interior addresses are unsupported
-  source: &v.Array[0]
-  type: *int
-  fix: copy the scalar field into a local; do not take a pointer into immutable storage

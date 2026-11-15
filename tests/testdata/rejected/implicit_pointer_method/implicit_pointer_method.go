@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package rejected
 
 import "github.com/lucasavila00/immutago/pkg/im"
@@ -7,7 +9,7 @@ type Count int
 func (p *Count) Change() { *p = 1 }
 
 type Value struct {
-	im.Shared
+	im.Frozen
 	N Count
 }
 

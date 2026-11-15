@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/lucasavila00/immutago/pkg/im"
 	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
@@ -72,8 +73,13 @@ func (d *Dispatcher) Refresh() int {
 		return 0
 	}
 	wanted := make(map[string]bool)
-	snapshot := d.Args().Config.Current().Snapshot()
-	for _, name := range snapshot.Names.All() {
+	projection := d.Args().Config.Current().Variants()
+	var names im.SliceProjection[string]
+	if !projection.IsNil() {
+		names = projection.Names()
+	}
+	for _, item := range names.All() {
+		name := im.ProjectedString(item).Clone()
 		wanted[name] = true
 		d.mu.Lock()
 		_, exists := d.groups[name]

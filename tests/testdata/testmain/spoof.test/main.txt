@@ -1,4 +1,0 @@
-main.go:14:19: unsupported immutable operation: boxing immutable storage in interfaces is unsupported
-  source: reflect.TypeOf(Value{})
-  type: reflect.Type
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

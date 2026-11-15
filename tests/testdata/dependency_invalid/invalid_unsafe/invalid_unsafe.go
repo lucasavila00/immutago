@@ -1,3 +1,5 @@
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+
 package invalid_unsafe
 
 import (
@@ -6,7 +8,7 @@ import (
 )
 
 type Good struct {
-	im.Shared
+	im.Frozen
 	X int
 }
 
