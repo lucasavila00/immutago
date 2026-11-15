@@ -10,7 +10,7 @@ Package analyzer exposes the immutago go/analysis analyzer.
 
 The analyzer checks:
 
-- Recursive field and collection types for structs with im.Frozen or im.Local.
+- Recursive field types for im.Frozen, im.Local, and im.Copied records.
 - Allowed construction, reads, calls, and assignments; no protected field writes.
 - Frozen pointer storage and Local pointer retention.
 - Exclusive native builders, Freeze consumption, and use after Freeze.

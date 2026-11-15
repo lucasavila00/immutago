@@ -31,7 +31,7 @@ func (c *subsetChecks) declarationNode(node ast.Node) {
 // assignmentBinding activates complete binding checks for tracked short-declaration destinations.
 func (c *subsetChecks) assignmentBinding(statement *ast.AssignStmt) {
 	for _, destination := range statement.Lhs {
-		if c.protectedStorage(destination) {
+		if c.protectedStorage(destination) || c.protectedResult(c.pass.TypesInfo.TypeOf(destination)) {
 			if rule := c.matchAssignment(statement); rule != "" {
 				c.report(statement, rule)
 			}
@@ -49,7 +49,7 @@ func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 	if genericSignature(signature) {
 		c.genericStorage(declaration, declaration.Name)
 	}
-	if signature.Recv() != nil && c.queries.Contains(signature.Recv().Type()) && !c.markedMethodReceiver(signature) {
+	if signature.Recv() != nil && c.immutableObject(signature.Recv().Type()) && !c.markedMethodReceiver(signature) {
 		c.report(declaration.Name, "immutable methods require a concrete non-generic marked receiver")
 	}
 }

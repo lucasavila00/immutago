@@ -29,8 +29,30 @@ func (p *proof) copiedValue(result *obligation, t types.Type) {
 			p.dependCategory(result, value.Elem(), "array element: ", copiedCategory)
 			return
 		}
+	case *types.Struct:
+		if Copied(t) {
+			return
+		}
 	}
-	result.reason = "copied values require bool, numbers, arrays, or service references"
+	result.reason = "copied values require bool, numbers, Copied records, arrays, or service references"
+}
+
+// copiedRecord proves each field through the shared Copied rule.
+func (p *proof) copiedRecord(result *obligation, t types.Type, structure *types.Struct) {
+	if MarkerCount(t) != 1 {
+		result.reason = "Copied record must embed exactly one marker"
+		return
+	}
+	for field := range structure.Fields() {
+		if field.Embedded() && IsLibraryType(field.Type(), "Copied") {
+			continue
+		}
+		if p.queries.Handles(field.Type()) {
+			result.reason = field.Name() + ": Copied records cannot contain service references"
+			return
+		}
+		p.dependCategory(result, field.Type(), field.Name()+": ", copiedCategory)
+	}
 }
 
 // readValue proves the general result category used by Local fields and readers.

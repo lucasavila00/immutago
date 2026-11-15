@@ -5,13 +5,14 @@ These categories define fields, Cells, projections, and service results.
 | Category — exhaustive | Types |
 | --- | --- |
 | Frozen | Booleans, numbers, native strings, FrozenString, unnamed arrays of Frozen values, Frozen records, pointers to Frozen records, FrozenSlice/FrozenMap with Frozen arguments, UncheckedValue handles, and service references. |
-| Copied | Booleans, numbers, service references, and unnamed arrays of Copied values. |
+| Copied | Booleans, numbers, Copied records, service references, and unnamed arrays of Copied values. |
 | Local | Projection, StringProjection, SliceProjection, MapProjection, Local records, and unnamed arrays whose elements are Local. |
 | Read result | Copied or Local. |
 
 Defined scalar types and aliases keep their category. Named arrays need a
-marked struct wrapper. Copied excludes native strings, pointers, and all structs
-except opaque service references. Frozen records are not Copied.
+marked struct wrapper in these categories. Copied excludes native strings and
+pointers. Its structs require `im.Copied`, except opaque service references.
+Frozen records are not Copied.
 Copying a service reference does not copy its service.
 Embed a marker to declare a record category. The markers themselves are not
 Frozen, Copied, or read-result payload types.
@@ -22,13 +23,15 @@ Frozen, Copied, or read-result payload types.
 | --- | --- | --- |
 | `im.Frozen` | Frozen fields | Can be copied, stored, and returned from ordinary functions. |
 | `im.Local` | Read-result fields | Can be copied locally, passed directly, and returned; cannot enter persistent storage. |
+| `im.Copied` | Boolean/numeric fields, unnamed arrays, and other Copied records; no strings or reference handles | Can be stored by value in ordinary holders and returned by services; fields remain immutable. |
 
 - Embed exactly one marker by value; aliases work.
 - Declare Frozen records as named package-scope types in non-test Go files.
-  Local records need no generation.
+  Local and Copied records need no generation.
 - Set fields at construction. Later field, element, or dereference writes fail.
-- Each nested record needs its own marker. Unmarked structs cannot own
-  protected data.
+- Each record in a proved field needs its own marker. Unmarked structs can
+  hold Copied values and their native containers. They cannot own Frozen or
+  Local data. See the complete [Copied forms](copied.md).
 - Native containers, interfaces, functions, and Local values are not Frozen fields.
 - A Cell is mutable storage, not a Frozen value or read result.
 
@@ -51,7 +54,8 @@ Frozen, Copied, or read-result payload types.
 
 The service rule does not change a struct's field rules. A Frozen record can be
 stored in a Cell or read through Projection. A service returns its generated
-projection or an im.Local result, including when all fields are numbers.
+projection, an im.Local result, or a separate im.Copied value. A Frozen record
+with only numeric fields still keeps the Frozen rule.
 
 ## Rejected examples — non-exhaustive
 
@@ -66,4 +70,4 @@ projection or an im.Local result, including when all fields are numbers.
 | `type Counts [2]int` as protected storage | `type Counts struct { im.Frozen; Values [2]int }`. |
 | `im.Copy(textProjection)` with a string or FrozenString payload | Use the matching [projection adapter](projection-primitives.md#projection-operations--exhaustive), then Unsafe for shared access or Clone for independent storage. |
 | `im.Copy(countProjection)` with `countProjection im.Projection[FrozenCount]` | Use a generated projection, or copy individual numeric fields. |
-| Save a Local record in a package variable | Copy the required data into independent storage. |
+| Save a Local record in a package variable | Use im.Copied when every field meets its value-only rule, or copy the required data into independent storage. |

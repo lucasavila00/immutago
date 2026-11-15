@@ -28,15 +28,15 @@ result_uses.go:7:5: unsupported immutable operation: Local values and pointers c
   source: saved *Reply
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 results.go:22:17: service method Pair must return no value or one service result
-results.go:23:17: service method Map must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:23:17: service method Map must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: map[string]int
-results.go:24:17: service method Slice must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:24:17: service method Slice must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: []int
-results.go:25:17: service method Interface must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:25:17: service method Interface must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: error
-results.go:26:17: service method Pointer must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:26:17: service method Pointer must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: *service.SnapshotReply
-results.go:27:17: service method LocalPointer must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:27:17: service method LocalPointer must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: *service.Reply
 results.go:27:17: unsupported immutable operation: returning Local pointers is unsupported
   source: LocalPointer
@@ -49,7 +49,7 @@ results.go:29:75: unsupported immutable operation: closures cannot capture immut
   source: p
   type: *service.Reply
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-results.go:30:17: service method Frozen must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:30:17: service method Frozen must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: im.FrozenSlice[[]int]
 results.go:30:26: immutable collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
@@ -69,23 +69,23 @@ results.go:30:64: immutable type argument: []int is not provably immutable
 results.go:30:91: immutable collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-results.go:34:17: service method Struct must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:34:17: service method Struct must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: service.Unmarked
-results.go:38:16: service method Mutable must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:38:16: service method Mutable must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: []int
-results.go:46:25: service method Mutable must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:46:25: service method Mutable must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: []int
 results.go:49:38: stored im argument: Frozen storage cannot contain Local values
   fix: pass an immutable value or a Frozen pointer; Local pointers cannot be stored
-results.go:51:17: service method PointerArray must return a service result: array element: copied values require bool, numbers, arrays, or service references
+results.go:51:17: service method PointerArray must return a service result: array element: copied values require bool, numbers, Copied records, arrays, or service references
   result type: [1]*service.SnapshotReply
-results.go:52:17: service method List must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:52:17: service method List must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: im.FrozenSlice[int]
-results.go:53:17: service method MapResult must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:53:17: service method MapResult must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: im.FrozenMap[string, int]
-results.go:58:17: service method FrozenRecord must return a service result: copied values require bool, numbers, arrays, or service references
+results.go:58:17: service method FrozenRecord must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: service.SnapshotReply
-results.go:59:17: service method FrozenArray must return a service result: array element: copied values require bool, numbers, arrays, or service references
+results.go:59:17: service method FrozenArray must return a service result: array element: copied values require bool, numbers, Copied records, arrays, or service references
   result type: [1]service.SnapshotReply
 results.go:60:17: service method Marker must return a service result: immutable markers are annotations, not data
   result type: im.Local

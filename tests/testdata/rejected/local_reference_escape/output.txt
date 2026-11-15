@@ -22,9 +22,9 @@ local_reference_escape.go:25:13: unsupported immutable operation: containers of 
   source: []*Local{value}
   type: []*local_reference_escape.Local
   fix: keep Local values in local bindings, or store im.Frozen pointers
-local_reference_escape.go:25:2: unsupported native builder: copied values require bool, numbers, arrays, or service references
+local_reference_escape.go:25:2: unsupported native builder: copied values require bool, numbers, Copied records, arrays, or service references
   fix: use allowed stored types for builder keys and elements
-local_reference_escape.go:26:12: immutable collection: copied values require bool, numbers, arrays, or service references
+local_reference_escape.go:26:12: immutable collection: copied values require bool, numbers, Copied records, arrays, or service references
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: copy scalar fields, or use a generated local projection
 local_reference_escape.go:26:15: immutable type argument: Frozen storage cannot contain Local values
@@ -34,10 +34,10 @@ local_reference_escape.go:26:27: unsupported immutable operation: containers of 
   source: builder
   type: []*local_reference_escape.Local
   fix: keep Local values in local bindings, or store im.Frozen pointers
-local_reference_escape.go:26:2: immutable collection: copied values require bool, numbers, arrays, or service references
+local_reference_escape.go:26:2: immutable collection: copied values require bool, numbers, Copied records, arrays, or service references
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: copy scalar fields, or use a generated local projection
-local_reference_escape.go:27:6: immutable collection: copied values require bool, numbers, arrays, or service references
+local_reference_escape.go:27:6: immutable collection: copied values require bool, numbers, Copied records, arrays, or service references
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: copy scalar fields, or use a generated local projection
 local_reference_escape.go:31:34: unsupported immutable operation: closures cannot capture immutable storage
@@ -58,25 +58,25 @@ local_reference_escape.go:45:2: unsupported immutable operation: protected stora
   fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
 local_reference_escape.go:48:11: struct cannot embed both im.Frozen and im.Local
 local_reference_escape.go:48:6: struct cannot embed both im.Frozen and im.Local
-local_reference_escape.go:56:2: immutable field Pointer: copied values require bool, numbers, arrays, or service references
+local_reference_escape.go:56:2: immutable field Pointer: copied values require bool, numbers, Copied records, arrays, or service references
   owner: local_reference_escape.LocalStored; field type: *local_reference_escape.Local
   fix: copy scalar fields, or use a generated local projection
-local_reference_escape.go:60:21: immutable collection: copied values require bool, numbers, arrays, or service references
+local_reference_escape.go:60:21: immutable collection: copied values require bool, numbers, Copied records, arrays, or service references
   type: im.FrozenSlice[local_reference_escape.Local]
   fix: copy scalar fields, or use a generated local projection
 local_reference_escape.go:60:24: immutable type argument: Frozen storage cannot contain Local values
   type: local_reference_escape.Local
   fix: store Frozen data; keep its Projection or Local result in local bindings
-local_reference_escape.go:62:12: immutable collection: copied values require bool, numbers, arrays, or service references
+local_reference_escape.go:62:12: immutable collection: copied values require bool, numbers, Copied records, arrays, or service references
   type: im.FrozenSlice[local_reference_escape.Local]
   fix: copy scalar fields, or use a generated local projection
 local_reference_escape.go:62:15: immutable type argument: Frozen storage cannot contain Local values
   type: local_reference_escape.Local
   fix: store Frozen data; keep its Projection or Local result in local bindings
-local_reference_escape.go:62:2: immutable collection: copied values require bool, numbers, arrays, or service references
+local_reference_escape.go:62:2: immutable collection: copied values require bool, numbers, Copied records, arrays, or service references
   type: im.FrozenSlice[local_reference_escape.Local]
   fix: copy scalar fields, or use a generated local projection
-local_reference_escape.go:63:9: immutable collection: copied values require bool, numbers, arrays, or service references
+local_reference_escape.go:63:9: immutable collection: copied values require bool, numbers, Copied records, arrays, or service references
   type: im.FrozenSlice[local_reference_escape.Local]
   fix: copy scalar fields, or use a generated local projection
 local_reference_escape.go:68:2: immutable field Value: Frozen storage cannot contain Local values
