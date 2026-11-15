@@ -12,7 +12,7 @@ func TestSnapshotSystemForms(t *testing.T) {
 func load()im.Projection[*Data]{return cell.LoadPointer()}
 func f(){cell.Store(Data{Name:"name",N:3});projection:=load()
 reader:=NewDataProjection(projection);name:=reader.Name();_=name.Clone()
-n:=reader.N();_=n;owned:=cell.LoadShared();_=owned.Name}`,
+n:=reader.N();_=n;owned:=cell.Load().Unsafe();_=owned.Name}`,
 		`var cell im.Cell[int];func f(){cell.Store(3);_=im.Value(cell.Load())}`,
 		`type Data struct{im.Frozen; Name string};type Reply struct{im.Local; Name im.StringProjection; Score int}
 func makeReply(v im.Projection[*Data])Reply{
@@ -44,7 +44,7 @@ _=text.EqualString("text");_=text.Equal(text);_=projection.Is("text");_=projecti
 format(projection.Unsafe());format(text.Unsafe());saved=projection.Unsafe()}`,
 		`type raw struct{values []int};type Data struct{im.Frozen; Raw im.UncheckedValue[raw]};var cell im.Cell[Data]
 func f(){cell.Store(Data{Raw:im.Trust(&raw{values:[]int{1}})})
-value:=cell.LoadShared();_=im.Unwrap(value.Raw).values[0]}`,
+value:=cell.Load().Unsafe();_=im.Unwrap(value.Raw).values[0]}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
@@ -93,34 +93,38 @@ all:=projection.All();_=all}`,
 	}
 }
 
-// TestProjectionReadIsGeneratedOnly rejects every handwritten use of the raw bridge.
-func TestProjectionReadIsGeneratedOnly(t *testing.T) {
+// TestProjectionUnsafe checks explicit shared access and the remaining target rules.
+func TestProjectionUnsafe(t *testing.T) {
 	const definitions = `type Data struct{im.Frozen;Name string;Names [2]string;Numbers [2]int;Next *Data;N int}
 func identity(string)string{return ""};func read(*Data)int{return 0}
 func f(projection im.Projection[*Data]){`
 	for _, operation := range []string{
-		`_ = projection.Read()`,
-		`_ = projection.Read().Name`,
-		`_ = projection.Read().N`,
-		`_ = projection.Read().Numbers[:]`,
-		`_ = &projection.Read().N`,
-		`_ = im.ProjectionOf(projection.Read().Next)`,
-		`_ = identity(projection.Read().Name)`,
-		`_ = read(projection.Read().Next)`,
-		`projection.Read().N = 1`,
-		`projection.Read().Numbers[0] = 1`,
-		`raw := projection.Read; _ = raw`,
-		`_ = im.Projection[*Data].Read(projection)`,
+		`_ = projection.Unsafe()`,
+		`_ = projection.Unsafe().Name`,
+		`_ = projection.Unsafe().N`,
+		`_ = im.ProjectionOf(projection.Unsafe().Next)`,
+		`_ = identity(projection.Unsafe().Name)`,
+		`_ = read(projection.Unsafe().Next)`,
 	} {
-		t.Run(operation, func(t *testing.T) {
-			if got := checkSource(t, definitions+operation+`}`); got == "" {
-				t.Fatal("handwritten raw read passed")
-			}
-		})
+		if got := checkSource(t, definitions+operation+`}`); got != "" {
+			t.Fatal(got)
+		}
+	}
+	for _, operation := range []string{
+		`_ = projection.Unsafe().Numbers[:]`,
+		`_ = &projection.Unsafe().N`,
+		`projection.Unsafe().N = 1`,
+		`projection.Unsafe().Numbers[0] = 1`,
+		`raw := projection.Unsafe; _ = raw`,
+		`_ = im.Projection[*Data].Unsafe(projection)`,
+	} {
+		if got := checkSource(t, definitions+operation+`}`); got == "" {
+			t.Fatal("invalid shared access passed")
+		}
 	}
 	for _, value := range []string{"1", `"text"`} {
-		source := `func f(){p:=im.ProjectionOf(` + value + `);_=p.Read()}`
-		if got := checkSource(t, source); !strings.Contains(got, "reserved for verified generated") {
+		source := `func f(){p:=im.ProjectionOf(` + value + `);_=p.Unsafe()}`
+		if got := checkSource(t, source); got != "" {
 			t.Fatal(got)
 		}
 	}
@@ -152,7 +156,7 @@ func(*Counter) Data()im.Projection[Data]{return im.ProjectionOf(Data{})}`, false
 // TestCellCallStatements applies the same statement forms to every payload type.
 func TestCellCallStatements(t *testing.T) {
 	for _, payload := range []string{"int", "string", "Data"} {
-		for _, method := range []string{"Load", "LoadShared"} {
+		for _, method := range []string{"Load", "Load().Unsafe"} {
 			for _, statement := range []string{"go cell.%s()", "defer cell.%s()", "go use(cell.%s())", "defer use(cell.%s())"} {
 				call := strings.ReplaceAll(statement, "%s", method)
 				source := `type Data struct{im.Frozen;N int};var cell im.Cell[` + payload + `]
@@ -180,12 +184,12 @@ func f(value im.Projection[*Route]){`
 		}
 	}
 	for _, operation := range []string{
-		`_ = value.Read().Worker`,
-		`_ = value.Read().Count`,
-		`saved = value.Read().Worker`,
+		`_ = value.Unsafe().Worker`,
+		`_ = value.Unsafe().Count`,
+		`saved = value.Unsafe().Worker`,
 	} {
 		source := serviceDefinitions + `var saved supervise.Ref[Counter];` + record + operation + `}`
-		if got := checkSource(t, source); !strings.Contains(got, "reserved for verified generated") {
+		if got := checkSource(t, source); got != "" {
 			t.Fatal(got)
 		}
 	}

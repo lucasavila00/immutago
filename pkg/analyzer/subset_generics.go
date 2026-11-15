@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"go/ast"
+	"go/types"
 
 	"github.com/lucasavila00/immutago/internal/checker"
 )
@@ -24,18 +25,32 @@ func (c *subsetChecks) genericInstance(name *ast.Ident) {
 	}
 }
 
-// genericStorage rejects user generic declarations that directly use protected storage.
-func (c *subsetChecks) genericStorage(declaration ast.Node, name *ast.Ident) {
-	ast.Inspect(declaration, func(node ast.Node) bool {
-		expression, ok := node.(ast.Expr)
-		if !ok {
-			return true
+// genericStorage checks complete declared types and constraints; bodies use normal source checks.
+func (c *subsetChecks) genericStorage(name *ast.Ident) {
+	typ := c.pass.TypesInfo.Defs[name].Type()
+	declared := []types.Type{typ}
+	var parameters *types.TypeParamList
+	switch definition := typ.(type) {
+	case *types.Signature:
+		parameters = definition.TypeParams()
+		if definition.Recv() != nil {
+			declared = append(declared, definition.Recv().Type())
 		}
-		typ := c.pass.TypesInfo.TypeOf(expression)
+		for parameter := range definition.RecvTypeParams().Len() {
+			declared = append(declared, definition.RecvTypeParams().At(parameter))
+		}
+	case *types.Named:
+		parameters = definition.TypeParams()
+	case *types.Alias:
+		parameters = definition.TypeParams()
+	}
+	for parameter := range parameters.Len() {
+		declared = append(declared, parameters.At(parameter))
+	}
+	for _, typ := range declared {
 		if c.queries.Contains(typ) || c.slotRelevant(typ) || c.queries.Callable(typ) {
 			c.report(name, "user generic declarations with immutable storage are unsupported")
-			return false
+			return
 		}
-		return true
-	})
+	}
 }

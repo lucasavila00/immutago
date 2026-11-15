@@ -25,7 +25,7 @@ var current im.Cell[Data]
 // TestFrozenPointerStorage accepts ordinary carriers without builder ownership.
 func TestFrozenPointerStorage(t *testing.T) {
 	cases := []string{
-		`func f(){var s State;s.Current=current.LoadSharedPointer();s.Current=nil;s.Set(&Data{});_=s.Current.N}`,
+		`func f(){var s State;s.Current=current.LoadPointer().Unsafe();s.Current=nil;s.Set(&Data{});_=s.Current.N}`,
 		`func f(p *Data){s:=State{Current:p};s.Calls++;copy:=s;copy.Current=nil;_=s.Current.Read()}`,
 		`func f(p *Data)any{s:=&State{Current:p};var boxed any=s;return boxed}`,
 		`func f(p *Data){s:=State{Current:p};fn:=func(){s.Calls++;_=s.Current.N};go fn();defer fn()}`,
@@ -37,11 +37,11 @@ func TestFrozenPointerStorage(t *testing.T) {
 		`func f(p *Data){a:=[2]*Data{p,nil};b:=&a;b[0]=nil;_=a[1]}`,
 		`func f(p *Data){var s Outer;s.Data=p;s.Calls++;_=s.N;s.Data=nil}`,
 		`func f(p *Data){var s struct{States []State};s.States=[]State{{Current:p}};s.States[0].Current=nil}`,
-		`var saved *Data;func f(){saved=current.LoadSharedPointer()}`,
-		`func f()[]*Data{return []*Data{current.LoadSharedPointer()}}`,
+		`var saved *Data;func f(){saved=current.LoadPointer().Unsafe()}`,
+		`func f()[]*Data{return []*Data{current.LoadPointer().Unsafe()}}`,
 		`func f(s *State)any{return s.Current}`,
 		`func id[T any](v T)T{return v};func f(s *State){_=id(s.Current)}`,
-		`func f(s *State){slot:=&s.Current;*slot=nil;*slot=current.LoadSharedPointer()}`,
+		`func f(s *State){slot:=&s.Current;*slot=nil;*slot=current.LoadPointer().Unsafe()}`,
 		`func f(s *State){_=s.Current.Value();read:=s.Current.Read;_=read()}`,
 		`func f(p *Data){_=(*Data).Read(p);read:=(*Data).Read;_=read(p)}`,
 		`func f(s *Outer){_=s.Read()}`,
@@ -52,6 +52,7 @@ func TestFrozenPointerStorage(t *testing.T) {
 		`type P *Data;func f(p P){q:=(*Data)(p);_=q.N;_=p.N}`,
 		`func f(s *State){score:=s.Current.Score;score.Inc()}`,
 		`func f(){a:=[]*Data{{N:1}};_=a[0].N}`,
+		`func get[T ~*Data](p T)int{return (*p).N};func f(p *Data)int{return get(p)}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
@@ -100,11 +101,11 @@ func TestFrozenPointerTargets(t *testing.T) {
 	}
 }
 
-// TestCellSharedPointerPayload requires a concrete Frozen record for persistent pointer loads.
-func TestCellSharedPointerPayload(t *testing.T) {
+// TestCellPointerPayload requires a concrete marked struct target for persistent pointer loads.
+func TestCellPointerPayload(t *testing.T) {
 	for _, payload := range []string{"int", "*Data", "[2]Data", "im.FrozenString"} {
-		source := "var raw im.Cell[" + payload + "];func f(){_=raw.LoadSharedPointer()}"
-		if got := checkSource(t, frozenPointerStorageTypes+source); !strings.Contains(got, "concrete Frozen record") {
+		source := "var raw im.Cell[" + payload + "];func f(){_=raw.LoadPointer().Unsafe()}"
+		if got := checkSource(t, frozenPointerStorageTypes+source); !strings.Contains(got, "concrete marked struct target") {
 			t.Fatalf("payload %s: diagnostics = %q", payload, got)
 		}
 	}

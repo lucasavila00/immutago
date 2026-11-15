@@ -18,9 +18,11 @@ func ProjectionOf[T any](value T) Projection[T] { return Projection[T]{value: va
 // needs one allocation. The checker requires a Frozen record T.
 func CopyRecord[T any](value Projection[T]) Projection[*T] { return ProjectionOf(new(value.value)) }
 
-// Read supplies direct field access to generated accessors without copying backing storage.
-// Application code uses the generated projection methods. The checker controls Read access.
-func (p Projection[T]) Read() T { return p.value }
+// Unsafe returns the selected Frozen value for use outside the local projection.
+// It copies T by value without copying backing storage or allocating. A pointer
+// result is the same pointer. The caller controls retention and must not change
+// its target through reflection, unsafe code, or another API.
+func (p Projection[T]) Unsafe() T { return p.value }
 
 // Value returns the value from a projection. The checker requires a Frozen read result:
 // a Copied value, an UncheckedValue handle, or an unnamed array of these values.

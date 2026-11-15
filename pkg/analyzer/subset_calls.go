@@ -124,7 +124,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 // matchLibraryCall matches fixed function identities, receivers, and result contexts.
 func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object) string {
 	switch object.Name() {
-	case "Load", "LoadPointer", "Store", "LoadShared", "LoadSharedPointer":
+	case "Load", "LoadPointer", "Store":
 		if c.ownedSlotCall(call) {
 			return ""
 		}
@@ -143,11 +143,6 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 			return reason
 		}
 		return c.proofs.ReadResultReason(typ)
-	case "Read":
-		if !c.generatedSource(call) {
-			return "Projection.Read is reserved for verified generated projections"
-		}
-		return c.matchLibraryMethod(call, object.Name())
 	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Is", "Unsafe", "Projection":
 		return c.matchLibraryMethod(call, object.Name())
 	}

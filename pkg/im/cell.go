@@ -17,23 +17,13 @@ func (c *Cell[T]) Store(value T) { c.value.Store(&value) }
 
 // Load returns a local projection of the current value, or the zero T if no value was stored.
 // It copies T by value without copying backing storage or allocating.
-func (c *Cell[T]) Load() Projection[T] { return ProjectionOf(c.LoadShared()) }
+func (c *Cell[T]) Load() Projection[T] {
+	if value := c.value.Load(); value != nil {
+		return ProjectionOf(*value)
+	}
+	return Projection[T]{}
+}
 
 // LoadPointer returns a local pointer projection without copying T or allocating.
 // It returns a nil pointer projection before Store. The checker requires a Frozen record T.
 func (c *Cell[T]) LoadPointer() Projection[*T] { return ProjectionOf(c.value.Load()) }
-
-// LoadSharedPointer returns the current root for persistent use without a copy or allocation.
-// It returns nil before Store. The checker requires a concrete Frozen record T.
-func (c *Cell[T]) LoadSharedPointer() *T { return c.value.Load() }
-
-// LoadShared returns the current Frozen value for persistent use.
-// It copies T by value without copying backing storage or allocating.
-// If no value was stored, it returns the zero T.
-func (c *Cell[T]) LoadShared() T {
-	if value := c.value.Load(); value != nil {
-		return *value
-	}
-	var zero T
-	return zero
-}

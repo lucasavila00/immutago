@@ -46,7 +46,6 @@ var subsetFixes = map[string]string{
 	"Local pointers cannot enter aggregate storage": "keep a Local value in a local binding, or store a Frozen pointer",
 	"Local values and pointers cannot be stored in package variables": "keep Local values in local bindings; " +
 		"copy the required data into Frozen values before saving it",
-	"Projection.Read is reserved for verified generated projections": "use the generated field accessor",
 	"Cell holder methods require a direct concrete pointer receiver": "call a direct pointer method " +
 		"on the holder variable or its named field",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +

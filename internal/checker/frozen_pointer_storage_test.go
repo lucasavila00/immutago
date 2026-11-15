@@ -12,6 +12,10 @@ func TestFrozenPointerCarriers(t *testing.T) {
 	record := markedType("Record", marker)
 	pointer := types.NewPointer(record)
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Pointer", nil), pointer)
+	constraint := types.NewInterfaceType(nil, []types.Type{
+		types.NewUnion([]*types.Term{types.NewTerm(true, pointer)}),
+	}).Complete()
+	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "T", nil), constraint)
 	first := types.NewNamed(types.NewTypeName(token.NoPos, nil, "First", nil), types.NewStruct(nil, nil), nil)
 	second := types.NewNamed(types.NewTypeName(token.NoPos, nil, "Second", nil), types.NewStruct(nil, nil), nil)
 	first.SetUnderlying(types.NewStruct([]*types.Var{
@@ -25,7 +29,7 @@ func TestFrozenPointerCarriers(t *testing.T) {
 		typ      types.Type
 		contains bool
 	}{
-		{record, true}, {pointer, false}, {alias, false},
+		{record, true}, {pointer, false}, {alias, false}, {parameter, false},
 		{first, false}, {second, false}, {types.NewPointer(first), false},
 		{types.NewArray(pointer, 2), false}, {types.NewSlice(pointer), false},
 		{types.NewMap(pointer, types.NewPointer(second)), false},

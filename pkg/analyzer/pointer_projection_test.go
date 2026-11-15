@@ -30,15 +30,15 @@ value,ok:=values.Get("name");_=ok;pointer:=im.CopyRecord(value);_=NewChildProjec
 // TestPointerProjectionBoundaries rejects handwritten interior pointers, including rewrapped ones.
 func TestPointerProjectionBoundaries(t *testing.T) {
 	for _, operation := range []string{
-		`_ = &projection.Read().Child`,
-		`_ = im.ProjectionOf(&projection.Read().Child)`,
-		`_ = &projection.Read().Children[0]`,
-		`_ = &projection.Read().Pointer`,
-		`_ = &projection.Read().Child.Number`,
-		`_ = &*projection.Read()`,
+		`_ = &projection.Unsafe().Child`,
+		`_ = im.ProjectionOf(&projection.Unsafe().Child)`,
+		`_ = &projection.Unsafe().Children[0]`,
+		`_ = &projection.Unsafe().Pointer`,
+		`_ = &projection.Unsafe().Child.Number`,
+		`_ = &*projection.Unsafe()`,
 	} {
 		source := pointerProjectionTypes + `func f(projection im.Projection[*Root]){` + operation + `}`
-		if got := checkSource(t, source); !strings.Contains(got, "reserved for verified generated") {
+		if got := checkSource(t, source); got == "" {
 			t.Fatal(got)
 		}
 	}
