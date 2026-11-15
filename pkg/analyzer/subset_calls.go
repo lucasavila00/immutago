@@ -120,7 +120,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 // matchLibraryCall matches fixed function identities, receivers, and result contexts.
 func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object) string {
 	switch object.Name() {
-	case "Load", "LoadPointer", "Store", "Shared":
+	case "Load", "LoadPointer", "Store", "LoadShared":
 		if c.ownedSlotCall(call) {
 			return ""
 		}
@@ -130,7 +130,8 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 			return ""
 		}
 		return "Freeze requires a standalone single binding"
-	case "Trust", "Unwrap", "ProjectionOf", "CopyProjection", "FreezeString", "String", "Text", "Slice", "Map", "IsNil":
+	case "Trust", "Unwrap", "ProjectionOf", "CopyRecord", "FreezeString", "ProjectString", "IsNil",
+		"ProjectedString", "ProjectedFrozenString", "ProjectedSlice", "ProjectedMap":
 		return ""
 	case "Copy":
 		return c.proofs.CopiedReason(c.pass.TypesInfo.TypeOf(call))
@@ -139,7 +140,7 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 			return "Projection.Read is reserved for verified generated projections"
 		}
 		return c.matchLibraryMethod(call, object.Name())
-	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Unsafe":
+	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Unsafe", "Projection":
 		return c.matchLibraryMethod(call, object.Name())
 	}
 	return "protected operation is outside the supported expression forms"

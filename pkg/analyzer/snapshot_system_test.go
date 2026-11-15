@@ -12,7 +12,7 @@ func TestSnapshotSystemForms(t *testing.T) {
 func load()im.Projection[*Data]{return cell.LoadPointer()}
 func f(){cell.Store(Data{Name:"name",N:3});projection:=load()
 reader:=NewDataProjection(projection);name:=reader.Name();_=name.Clone()
-n:=reader.N();_=n;owned:=cell.Shared();_=owned.Name}`,
+n:=reader.N();_=n;owned:=cell.LoadShared();_=owned.Name}`,
 		`var cell im.Cell[int];func f(){cell.Store(3);_=im.Copy(cell.Load())}`,
 		`type Data struct{im.Frozen; Name string};type Reply struct{im.Local; Name im.StringProjection; Score int}
 func makeReply(v im.Projection[*Data])Reply{
@@ -23,13 +23,13 @@ text:=NewDataProjection(projection).Names().At(i);_=text.Len()}`,
 if !im.IsNil(projection){_=NewDataProjection(projection).Name().Clone()}}`,
 		`type Data struct{im.Frozen; Name string};type Pointer=*Data
 func f(projection im.Projection[Pointer]){_=im.IsNil(projection);_=NewDataProjection(projection).Name().Len()}`,
-		`func f(){frozen:=im.FreezeMap(map[string]int{"key":3});projection:=im.Map(im.ProjectionOf(frozen))
+		`func f(){frozen:=im.FreezeMap(map[string]int{"key":3});projection:=frozen.Projection()
 value,ok:=projection.Get("key");_=ok;_=im.Copy(value)
-for key,value:=range projection.All(){_=im.Text(key).Clone();_=im.Copy(value)}}`,
-		`func f(){frozen:=im.FreezeSlice([]string{"text"});projection:=im.Slice(im.ProjectionOf(frozen))
-_=im.Text(projection.At(0)).Clone()
-for _,value:=range projection.All(){_=im.Text(value).Len()}}`,
-		`func f(){frozen:=im.FreezeSlice([]int{1});projection:=im.Slice(im.ProjectionOf(frozen))
+for key,value:=range projection.All(){_=im.ProjectedString(key).Clone();_=im.Copy(value)}}`,
+		`func f(){frozen:=im.FreezeSlice([]string{"text"});projection:=frozen.Projection()
+_=im.ProjectedString(projection.At(0)).Clone()
+for _,value:=range projection.All(){_=im.ProjectedString(value).Len()}}`,
+		`func f(){frozen:=im.FreezeSlice([]int{1});projection:=frozen.Projection()
 copy:=projection.Clone();copy[0]=2}`,
 		`func f(){values:=im.Copy(im.ProjectionOf([2]int{1,2}));_=values[0]}`,
 		`type Data struct{im.Frozen; Text im.FrozenString};var cell im.Cell[Data]
@@ -38,12 +38,12 @@ projection:=NewDataProjection(cell.LoadPointer()).Text();_=projection.At(0);_=pr
 		`func f(v im.SliceProjection[int]){values:=v.Clone();values=append(values,1)
 frozen:=im.FreezeSlice(values);_=frozen}`,
 		`func f(v im.MapProjection[int,int]){values:=v.Clone();values[1]=2;frozen:=im.FreezeMap(values);_=frozen}`,
-		`func f(){text:=im.FreezeString("text");projection:=im.String(im.ProjectionOf(text))
+		`func f(){text:=im.FreezeString("text");projection:=text.Projection()
 _=text.EqualString("text");_=text.Equal(text);_=projection.EqualString("text");_=projection.Equal(projection)}`,
 		`var saved string;func format(string){};func f(projection im.StringProjection,text im.FrozenString){
 format(projection.Unsafe());format(text.Unsafe());saved=projection.Unsafe()}`,
 		`type raw struct{values []int};type Data struct{im.Frozen; Raw im.UncheckedValue[raw]};var cell im.Cell[Data]
-func f(){cell.Store(Data{Raw:im.Trust(&raw{values:[]int{1}})});value:=cell.Shared();_=im.Unwrap(value.Raw).values[0]}`,
+func f(){cell.Store(Data{Raw:im.Trust(&raw{values:[]int{1}})});value:=cell.LoadShared();_=im.Unwrap(value.Raw).values[0]}`,
 	}
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
@@ -73,10 +73,10 @@ func TestSnapshotCategories(t *testing.T) {
 		{`var marker im.Local`, "package variables"},
 		{`type Data struct{im.Frozen};type Pointer *Data`, "defined pointer types"},
 		{`func f(){_=im.Copy(im.ProjectionOf("text"))}`, "copied values require"},
-		{`func f(){frozen:=im.FreezeMap(map[string]int{});projection:=im.Map(im.ProjectionOf(frozen))
+		{`func f(){frozen:=im.FreezeMap(map[string]int{});projection:=frozen.Projection()
 copy:=projection.Clone();_=copy}`,
 			"copied values require"},
-		{`func f(){frozen:=im.FreezeSlice([]int{1});projection:=im.Slice(im.ProjectionOf(frozen))
+		{`func f(){frozen:=im.FreezeSlice([]int{1});projection:=frozen.Projection()
 all:=projection.All();_=all}`,
 			"direct range"},
 		{`func f(){projection:=im.ProjectionOf("text");var boxed any=projection;_=boxed}`, "boxing immutable storage"},
@@ -151,7 +151,7 @@ func(*Counter) Data()im.Projection[Data]{return im.ProjectionOf(Data{})}`, false
 // TestCellCallStatements applies the same statement forms to every payload type.
 func TestCellCallStatements(t *testing.T) {
 	for _, payload := range []string{"int", "string", "Data"} {
-		for _, method := range []string{"Load", "Shared"} {
+		for _, method := range []string{"Load", "LoadShared"} {
 			for _, statement := range []string{"go cell.%s()", "defer cell.%s()", "go use(cell.%s())", "defer use(cell.%s())"} {
 				call := strings.ReplaceAll(statement, "%s", method)
 				source := `type Data struct{im.Frozen;N int};var cell im.Cell[` + payload + `]

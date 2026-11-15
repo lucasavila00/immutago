@@ -4,11 +4,11 @@ import "testing"
 
 const holderProjectionTypes = `type Model struct{im.Frozen;Name string;Count int}
 type TypedModelProjection struct{im.Local;value im.Projection[Model]}
-func(v TypedModelProjection) Count()int{return NewModelProjection(im.CopyProjection(v.value)).Count()}
+func(v TypedModelProjection) Count()int{return NewModelProjection(im.CopyRecord(v.value)).Count()}
 type TypedModelCell struct{value im.Cell[Model]}
 func(c *TypedModelCell) Store(v Model){c.value.Store(v)}
 func(c *TypedModelCell) Load()TypedModelProjection{return TypedModelProjection{value:c.value.Load()}}
-func(c *TypedModelCell) Shared()Model{return c.value.Shared()}
+func(c *TypedModelCell) LoadShared()Model{return c.value.LoadShared()}
 func(c *TypedModelCell) Count()int{return 0}
 type Holder struct{Current TypedModelCell}
 var current TypedModelCell
@@ -23,7 +23,7 @@ func TestHolderMethods(t *testing.T) {
 		{"package", `func f(){current.Store(Model{});v:=current.Load();_=v.Count()}`, false},
 		{"local value", `func f(){var c TypedModelCell;c.Store(Model{});_=c.Load()}`, false},
 		{"local pointer", `func f(){c:=&TypedModelCell{};c.Store(Model{});_=c.Load()}`, false},
-		{"pointer parameter", `func f(c *TypedModelCell){c.Store(Model{});_=c.Shared()}`, false},
+		{"pointer parameter", `func f(c *TypedModelCell){c.Store(Model{});_=c.LoadShared()}`, false},
 		{"nested holder", `func f(h *Holder){h.Current.Store(Model{});_=h.Current.Load()}`, false},
 		{"nested dereference", `func f(h *Holder){(*h).Current.Store(Model{});_=(*h).Current.Load()}`, false},
 		{"new holder", `func f(){h:=new(Holder);h.Current.Store(Model{});_=h.Current.Load()}`, false},
@@ -38,7 +38,7 @@ func TestHolderMethods(t *testing.T) {
 		{"method expression", `func f(c *TypedModelCell){_=(*TypedModelCell).Load(c)}`, true},
 		{"promoted method", `type Outer struct{TypedModelCell};func f(o *Outer){_=o.Load()}`, true},
 		{"generic method", `type Generic[T any]struct{value im.Cell[int]}
-func(c *Generic[T]) Read()int{return c.value.Shared()};func f(c *Generic[int]){_=c.Read()}`, true},
+func(c *Generic[T]) Read()int{return c.value.LoadShared()};func f(c *Generic[int]){_=c.Read()}`, true},
 		{"generic holder declaration", `type Generic[T any]struct{value im.Cell[int]}`, true},
 		{"generic holder alias", `type Generic[T any]=struct{value im.Cell[int]}`, true},
 		{"unused generic method", `type Generic[T any]struct{value im.Cell[int]};func(c *Generic[T]) Read(){}`, true},

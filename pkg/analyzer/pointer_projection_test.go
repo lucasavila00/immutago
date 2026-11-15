@@ -16,10 +16,10 @@ func TestPointerProjectionForms(t *testing.T) {
 		`func f(){cell.Store(Root{});projection:=NewRootProjection(cell.LoadPointer())
 if !projection.IsNil(){_=projection.Child().Name().Len()}}`,
 		`func f(projection im.Projection[*Root],index int){_=NewRootProjection(projection).Children().At(index).Number()}`,
-		`func f(){frozen:=im.FreezeSlice([]Child{{}});values:=im.Slice(im.ProjectionOf(frozen))
+		`func f(){frozen:=im.FreezeSlice([]Child{{}});values:=frozen.Projection()
 _=NewChildProjection(values.AtPointer(0)).Number()}`,
-		`func f(){frozen:=im.FreezeMap(map[string]Child{"name":{}});values:=im.Map(im.ProjectionOf(frozen))
-value,ok:=values.Get("name");_=ok;pointer:=im.CopyProjection(value);_=NewChildProjection(pointer).Name().Len()}`,
+		`func f(){frozen:=im.FreezeMap(map[string]Child{"name":{}});values:=frozen.Projection()
+value,ok:=values.Get("name");_=ok;pointer:=im.CopyRecord(value);_=NewChildProjection(pointer).Name().Len()}`,
 	} {
 		if got := checkSource(t, pointerProjectionTypes+source); got != "" {
 			t.Fatal(got)
@@ -48,7 +48,7 @@ func TestPointerProjectionBoundaries(t *testing.T) {
 func TestPointerAPIRecordTypes(t *testing.T) {
 	for _, source := range []string{
 		`var cell im.Cell[int];func f(){_=cell.LoadPointer()}`,
-		`func f(){_=im.CopyProjection(im.ProjectionOf(1))}`,
+		`func f(){_=im.CopyRecord(im.ProjectionOf(1))}`,
 		`func f(projection im.SliceProjection[string]){_=projection.AtPointer(0)}`,
 	} {
 		if got := checkSource(t, source); !strings.Contains(got, "concrete marked struct target") {
