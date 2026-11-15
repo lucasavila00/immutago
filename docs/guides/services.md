@@ -63,7 +63,7 @@ Its Cell publishes an immutable index. A mutex also protects the error text and
 keeps Status consistent with publication. Its `fs.FS` start argument follows the
 filesystem's ordinary Go contract; no immutable wrapper is required.
 
-Exported service methods return Copied or Local data, an error, both, or nothing.
+Exported service methods return a read result, an error, both, or nothing.
 The result rule does not restrict ordinary method inputs, callbacks, or dependency
 calls. See [service results](../reference/service-results.md) for the full list.
 

@@ -9,7 +9,7 @@ that error does not belong to these categories.
 | Frozen | Booleans, numbers, native strings, FrozenString, unnamed arrays of Frozen values, Frozen and Copied records, pointers to Frozen records, [Frozen interfaces](frozen-interfaces.md), FrozenSlice/FrozenMap with Frozen arguments, UncheckedValue handles, and service references. |
 | Copied | Booleans, numbers, Copied records, service references, and unnamed arrays of Copied values. |
 | Local | Projection, StringProjection, SliceProjection, MapProjection, Local records, and unnamed arrays whose elements are Local. |
-| Read result | Copied or Local. |
+| Read result | Copied, Local, UncheckedValue handles, and unnamed arrays of read results. |
 
 Defined scalar types and aliases keep their category. Named arrays need a
 marked struct wrapper in these categories. Copied excludes native strings and
@@ -55,7 +55,7 @@ projection when reading through a Local value. See the complete
 | `frozen.Projection()` | FrozenString, FrozenSlice[E], or FrozenMap[K,V]. |
 | [Generic projection adapters](projection-primitives.md#projection-operations--exhaustive) | A Projection of the matching string, FrozenString, FrozenSlice, or FrozenMap type. |
 | `IsNil(Projection[*T])` | T is a Frozen record. |
-| `Value(Projection[T])` | T is Copied. |
+| `Value(Projection[T])` | T is both Frozen and a read result: Copied, UncheckedValue, or an unnamed array of these values. |
 | `CopyRecord(Projection[T])` | T is a concrete Frozen record; returns a projection of a new copied root. |
 | `Cell[T].LoadPointer()`, `SliceProjection[T].AtPointer(i)` | T is a concrete Frozen record; the result is Projection[*T]. |
 | `SliceProjection[E].Clone()` | E is Copied. |

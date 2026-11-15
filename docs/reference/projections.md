@@ -2,7 +2,7 @@
 
 The [required generation step](rules.md#required-generation) creates typed
 projections for Frozen records and Frozen interfaces. Record getters return
-Copied values or further Local projections. Local and Copied records need no
+Copied values, unchecked handles, or further Local projections. Local and Copied records need no
 generation. See [Get started](../guides/getting-started.md) for a first program.
 
 ## Generated names and operations — exhaustive
@@ -38,7 +38,7 @@ and immutagoProjection conflict with generated members and are rejected.
 | Frozen record or pointer to one | The record's generated typed projection. |
 | Frozen interface | The interface's generated local method projection. |
 | Unnamed array | A typed projection with Len and At; At uses this result table. |
-| UncheckedValue[T] | Opaque `im.Projection[im.UncheckedValue[T]]`. |
+| UncheckedValue[T] | The handle itself: `im.UncheckedValue[T]`. |
 
 Arrays return projections, including arrays of Copied values. A Copied record
 field returns a complete value copy. A field read does not copy its containing
@@ -66,7 +66,7 @@ this map-value copy automatically. See [operation costs](performance.md).
 | `raw.Read().Limit` with `raw im.Projection[*Settings]` | `NewSettingsProjection(raw).Limit()` |
 | `im.Value(raw)` with `raw im.Projection[Settings]` | Use a generated projection to read the required fields. |
 | `NewSettingsProjection(items.At(i))` for a slice of Settings values | `NewSettingsProjection(items.AtPointer(i))` |
-| Extract a raw pointer or UncheckedValue from a projection | Keep that operation in code with persistent Frozen access. |
+| Extract a raw Frozen-record pointer from a projection | Use the record's generated projection. |
 | Declare SettingsProjection or SettingsCell before generation | Use another source name. |
 | A source field named Local | Rename the field. |
 

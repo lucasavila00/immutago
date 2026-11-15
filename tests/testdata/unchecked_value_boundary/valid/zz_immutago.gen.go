@@ -22,8 +22,8 @@ func NewModelProjection(value im.Projection[*Model]) ModelProjection {
 func (v ModelProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
 // Table reads the Table field.
-func (v ModelProjection) Table() im.Projection[im.UncheckedValue[api.Table]] {
-	return im.ProjectionOf(v.immutagoProjection.Read().Table)
+func (v ModelProjection) Table() im.UncheckedValue[api.Table] {
+	return v.immutagoProjection.Read().Table
 }
 
 // ModelCell publishes frozen Model values. Do not copy it.

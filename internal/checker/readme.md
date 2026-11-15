@@ -222,7 +222,7 @@ FrozenReason proves the shared payload contract used by Cell and Projection.
 func (p *Prover) ReadResultReason(t types.Type) string
 ```
 
-ReadResultReason proves Copied values and local read values through one type rule.
+ReadResultReason proves Copied values, local values, and unchecked handles through one type rule.
 
 ### func \(\*Prover\) Reason
 

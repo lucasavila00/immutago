@@ -57,6 +57,10 @@ func (p *proof) copiedRecord(result *obligation, t types.Type, structure *types.
 
 // readValue proves the general result category used by Local fields and readers.
 func (p *proof) readValue(result *obligation, t types.Type) {
+	if IsUncheckedValue(t) {
+		p.depend(result, t, "")
+		return
+	}
 	if IsProjection(t) {
 		args := t.(*types.Named).TypeArgs()
 		for index := 0; index < args.Len(); index++ {

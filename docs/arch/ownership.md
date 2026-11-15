@@ -8,13 +8,13 @@ Go type and proof category. The same cached obligations serve all consumers.
 | Proof | Consumers |
 | --- | --- |
 | FrozenReason | Frozen fields, shared frozen arguments, Cell[T], Projection[T], ProjectionOf. |
-| CopiedReason | Copied record fields, Value, and local collection Clone arguments. |
-| ReadResultReason | Local fields and service data results. |
+| CopiedReason | Copied record fields and local collection Clone arguments. |
+| ReadResultReason | Local fields, service data results, and Value results (also requiring Frozen). |
 | General immutable proof | Marked records and fixed library types, including Local values. |
 
 Frozen, Local, and Copied markers set one field rule each. API names and service
 context do not change those rules. Ordinary functions can return shared
-Frozen values; APIs that require read results accept only Copied or Local types.
+Frozen values; APIs that require read results accept Copied values, Local values, unchecked handles, and unnamed arrays of read results.
 Copied contains booleans, numbers, Copied records, unnamed arrays of Copied
 values, and opaque service references. Copied records reject string and reference
 fields, including service references. The cached handle query applies this field
@@ -30,7 +30,7 @@ Local fields and service data results both use this boundary.
 | Protected pointers originate from fresh storage | [Source matcher](../../pkg/analyzer/subset_operations.go); reject addresses of reassignable locals. |
 | Local storage and captures cannot escape | Declaration, assignment, container, callback, and closure checks use the recursive Local classification. |
 | Application code cannot call Projection.Read | [Generation checks](../../pkg/analyzer/generation.go) identify the exact current generated token file before source checks. Handwritten Read calls are rejected. |
-| Reads preserve access types | Generated getters return Copied scalars/records or local projections. Value requires Copied. |
+| Reads preserve access types | Generated getters return Copied values, unchecked handles, or local projections. Value requires both Frozen and ReadResult. |
 
 ## Generated projections
 
@@ -41,7 +41,7 @@ generation.
 
 [Generated field methods](../../internal/projectiongen/readers.go) use a projection of the
 root pointer and read fields directly. Frozen records and arrays use projections with
-that root and the required indices. Copied scalars/records and opaque service references
+that root and the required indices. Copied scalars/records, opaque service references, and unchecked handles
 return directly. Native strings use ProjectString; frozen string, slice, and map
 fields use their Projection methods.
 
@@ -72,9 +72,10 @@ values cannot be stored in a Cell, even through a Frozen record or type alias.
 ## Trusted values
 
 UncheckedValue is a Frozen handle under its declaring package's immutability
-promise. Trust/Unwrap keep their package check. UncheckedValue is not Copied;
-selecting one through a Projection does not permit Unwrap. Code with persistent
-Frozen access can use the existing trusted API.
+promise. It is also a read result, so Local fields, services, generated getters,
+and Value can return the handle. It is not Copied; projection Clone keeps its
+Copied requirement. Trust/Unwrap keep their declaring-package check. The handle
+classification stays opaque, so ordinary handle transport keeps Go rules.
 
 ## Native builders
 

@@ -39,3 +39,25 @@ func Read() int { return im.Unwrap(im.Trust(&box[int]{value: 1})).value }`, ""},
 		})
 	}
 }
+
+// TestUncheckedReadResults checks the shared result rule and projection extraction.
+func TestUncheckedReadResults(t *testing.T) {
+	const definitions = `import "github.com/lucasavila00/immutago/pkg/supervise"
+ type Model struct{ Values []int }
+ type Handle = im.UncheckedValue[Model]
+ type Loader struct{ supervise.Service[supervise.NoArgs] }
+ `
+	for _, source := range []string{
+		`func(*Loader) Current()Handle{return Handle{}}`,
+		`type Reply struct{im.Local;Model Handle;Models [2]Handle};func(*Loader) Current()Reply{return Reply{}}`,
+		`func(*Loader) Current()[2]Handle{return [2]Handle{}}`,
+		`func Read(value im.Projection[Handle])Handle{return im.Value(value)}`,
+		`func Read(value im.Projection[[2]Handle])[2]Handle{return im.Value(value)}`,
+	} {
+		t.Run(source, func(t *testing.T) {
+			if got := checkSource(t, definitions+source); got != "" {
+				t.Fatal(got)
+			}
+		})
+	}
+}

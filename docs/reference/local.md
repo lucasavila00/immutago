@@ -29,6 +29,7 @@ Unlisted operations on protected storage are rejected.
 | Construct a projection with its fixed API | `p := cell.Load()`, `name := im.ProjectString(text)`; see [generated](projections.md) and [primitive](projection-primitives.md) projection forms. |
 | Copy, replace, or discard locally | `other := p`, `p = other`, `_ = p` |
 | Read a Local record field | `score := p.Score`, `name := p.Name` |
+| Store an unchecked handle field | `type Reply struct { im.Local; Model im.UncheckedValue[Model] }` |
 | Use a field in another Local record | `type Reply struct { im.Local; Item Prediction }` |
 | Use a local unnamed array | `values := [2]Prediction{p}` |
 | Use an exclusive local native builder | `names := []im.StringProjection{name}`, `names := map[string]im.StringProjection{"first": name}` |

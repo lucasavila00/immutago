@@ -26,8 +26,8 @@ func (v ModelProjection) Name() im.StringProjection {
 }
 
 // engine reads the engine field.
-func (v ModelProjection) engine() im.Projection[im.UncheckedValue[baked]] {
-	return im.ProjectionOf(v.immutagoProjection.Read().engine)
+func (v ModelProjection) engine() im.UncheckedValue[baked] {
+	return v.immutagoProjection.Read().engine
 }
 
 // ModelCell publishes frozen Model values. Do not copy it.

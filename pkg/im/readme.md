@@ -41,7 +41,7 @@ Unwrap returns the wrapped pointer, or nil for the zero UncheckedValue. Only the
 func Value[T any](value Projection[T]) T
 ```
 
-Value returns the value from a projection. The checker permits only Copied types, including opaque service references. Value does not allocate.
+Value returns the value from a projection. The checker requires a Frozen read result: a Copied value, an UncheckedValue handle, or an unnamed array of these values. Value does not allocate.
 
 ## type Cell
 

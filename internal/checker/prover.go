@@ -27,7 +27,7 @@ func (p *Prover) CopiedReason(t types.Type) string {
 	return p.render(p.graph.categoryNode(t, copiedCategory))
 }
 
-// ReadResultReason proves Copied values and local read values through one type rule.
+// ReadResultReason proves Copied values, local values, and unchecked handles through one type rule.
 func (p *Prover) ReadResultReason(t types.Type) string {
 	return p.render(p.graph.categoryNode(t, readCategory))
 }
