@@ -117,15 +117,15 @@ invalid.go:90:58: unsupported immutable operation: interior addresses of protect
   source: &value.Model
   type: *valid.Handle
   fix: copy the field into a local; do not take a pointer into immutable storage
-invalid.go:93:18: local projection: projection payload 1: Frozen storage cannot contain Local values
+invalid.go:93:21: local projection: projection payload 1: Frozen storage cannot contain Local values
   type: im.Projection[valid.Serving]
   fix: store Frozen data; keep its Projection or Local result in local bindings
-invalid.go:93:24: local projection: projection payload 1: Frozen storage cannot contain Local values
+invalid.go:93:27: local projection: projection payload 1: Frozen storage cannot contain Local values
   type: im.Projection[valid.Serving]
   fix: store Frozen data; keep its Projection or Local result in local bindings
-invalid.go:93:27: immutable type argument: Frozen storage cannot contain Local values
+invalid.go:93:30: immutable type argument: Frozen storage cannot contain Local values
   type: valid.Serving
   fix: store Frozen data; keep its Projection or Local result in local bindings
-invalid.go:93:77: local projection: projection payload 1: Frozen storage cannot contain Local values
+invalid.go:93:80: local projection: projection payload 1: Frozen storage cannot contain Local values
   type: im.Projection[valid.Serving]
   fix: store Frozen data; keep its Projection or Local result in local bindings
