@@ -3,7 +3,7 @@ package accepted
 //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 
 import (
-	"example.com/consumer/api"
+	api "example.com/consumer/api"
 	immutable "github.com/lucasavila00/immutago/pkg/im"
 )
 

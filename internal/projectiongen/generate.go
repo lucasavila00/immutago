@@ -221,12 +221,29 @@ func (g *generator) importName(path, preferred string) string {
 	if name, exists := g.imports[path]; exists {
 		return name
 	}
+	if types.Universe.Lookup(preferred) != nil || generatedLocalName(preferred) {
+		preferred += "pkg"
+	}
 	name := preferred
 	for suffix := 2; g.importUsed(name) || g.declaredName(name); suffix++ {
 		name = preferred + strconv.Itoa(suffix)
 	}
 	g.imports[path] = name
 	return name
+}
+
+// generatedLocalName identifies receiver, parameter, and index names used in generated functions.
+func generatedLocalName(name string) bool {
+	if name == "v" || name == "c" || name == "value" {
+		return true
+	}
+	for _, prefix := range []string{"arg", "index"} {
+		if suffix, match := strings.CutPrefix(name, prefix); match && suffix != "" &&
+			strings.Trim(suffix, "0123456789") == "" {
+			return true
+		}
+	}
+	return false
 }
 
 // declaredName ignores stale output and retains names reserved by the current generation.

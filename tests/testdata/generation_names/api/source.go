@@ -1,4 +1,4 @@
-package api
+package v
 
 //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 

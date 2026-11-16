@@ -3,7 +3,7 @@
 package accepted
 
 import (
-	api "example.com/consumer/api"
+	vpkg "example.com/consumer/api"
 	im3 "github.com/lucasavila00/immutago/pkg/im"
 )
 
@@ -114,13 +114,13 @@ func (v RecordProjection) Reader() ReaderProjection {
 }
 
 // Foreign reads the Foreign field.
-func (v RecordProjection) Foreign() api.RecordProjection {
-	return api.NewRecordProjection(im3.ProjectionOf(&v.immutagoProjection3.Unsafe().Foreign))
+func (v RecordProjection) Foreign() vpkg.RecordProjection {
+	return vpkg.NewRecordProjection(im3.ProjectionOf(&v.immutagoProjection3.Unsafe().Foreign))
 }
 
 // Pointer reads the Pointer field.
-func (v RecordProjection) Pointer() api.RecordProjection {
-	return api.NewRecordProjection(im3.ProjectionOf(v.immutagoProjection3.Unsafe().Pointer))
+func (v RecordProjection) Pointer() vpkg.RecordProjection {
+	return vpkg.NewRecordProjection(im3.ProjectionOf(v.immutagoProjection3.Unsafe().Pointer))
 }
 
 // ForeignArray reads the ForeignArray field.
@@ -178,8 +178,8 @@ type RecordForeignArrayProjection struct {
 func (v RecordForeignArrayProjection) Len() int { return 2 }
 
 // At reads the element at index.
-func (v RecordForeignArrayProjection) At(index0 int) api.RecordProjection {
-	return api.NewRecordProjection(im3.ProjectionOf(&v.immutagoProjection3.Unsafe().ForeignArray[index0]))
+func (v RecordForeignArrayProjection) At(index0 int) vpkg.RecordProjection {
+	return vpkg.NewRecordProjection(im3.ProjectionOf(&v.immutagoProjection3.Unsafe().ForeignArray[index0]))
 }
 
 // RecordPointerArrayProjection reads a fixed array locally.
@@ -192,8 +192,8 @@ type RecordPointerArrayProjection struct {
 func (v RecordPointerArrayProjection) Len() int { return 2 }
 
 // At reads the element at index.
-func (v RecordPointerArrayProjection) At(index0 int) api.RecordProjection {
-	return api.NewRecordProjection(im3.ProjectionOf(v.immutagoProjection3.Unsafe().PointerArray[index0]))
+func (v RecordPointerArrayProjection) At(index0 int) vpkg.RecordProjection {
+	return vpkg.NewRecordProjection(im3.ProjectionOf(v.immutagoProjection3.Unsafe().PointerArray[index0]))
 }
 
 // RecordGridElementProjection reads a fixed array locally.
