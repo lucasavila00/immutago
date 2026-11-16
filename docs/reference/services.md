@@ -141,7 +141,7 @@ Stop does not wait for requests already using the old reference.
 | `done := root.Stop()` | Request shutdown without waiting. Repeated calls return the same channel. |
 | Stop on a nil or zero Group | Panic with `supervise: nil or zero Group`. |
 | `<-root.Stop()` | Wait until all registered children stop. A terminal failure prevents normal completion. |
-| `<-group.Stop()` on a nested group | Also wait for removal from the parent. Other groups continue. |
+| `<-group.Stop()` on a nested group | Wait for this group's children and removal from its parent. This means the subtree has ended; a child failure still stops the root. |
 | Stop is requested | Close admission immediately; cancel services in reverse start order. |
 | A registered service has not been admitted to Run when Stop is requested | Wait for its turn, stop its children, then call Run with an already-cancelled context. |
 

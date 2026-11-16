@@ -126,8 +126,8 @@ var subsetFixes = map[string]string{
 		"directly (value.Method(...)); do not call it through the type",
 	"method values require ordinary or Frozen receivers and contracts": "call the method directly " +
 		"(value.Method(...)); do not save or pass its method value",
-	"closures require ordinary or Frozen captures": "copy the required Copied values or opaque handles before the closure, " +
-		"or use a named function with a concrete immutable parameter",
+	"closures require ordinary or Frozen captures": "copy the required Copied values or opaque handles " +
+		"before the closure, or use a named function with a concrete immutable parameter",
 	"immutable iterators must be consumed by direct range": "write for key, value := range " +
 		"collection.All() { ... }; do not retain or pass the iterator",
 }

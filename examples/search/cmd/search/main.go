@@ -32,7 +32,7 @@ func main() {
 
 // run starts the indexer, serves requests, and stops both parts on cancellation.
 func run(ctx context.Context, directory, address string, every time.Duration) error {
-	root := supervise.NewRoot(func(value any, _ []byte) { log.Print(value) })
+	root := supervise.NewRoot(nil)
 	defer func() { <-root.Stop() }()
 	indexer, err := supervise.Start[search.Indexer](root, search.IndexerArgs{
 		Files: os.DirFS(directory), Every: every,
