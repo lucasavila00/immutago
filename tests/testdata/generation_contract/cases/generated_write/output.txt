@@ -1,4 +1,1 @@
 zz_immutago.gen.go:3:1: zz_immutago.gen.go is stale; run go generate in this package
-zz_immutago.gen.go:73:38: unsupported immutable operation: writes to immutable objects are unsupported
-  source: value.immutagoProjection.Unsafe().Number = 1
-  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

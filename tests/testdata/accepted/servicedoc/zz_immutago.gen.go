@@ -7,9 +7,12 @@ import (
 	time "time"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // FileArgsProjection provides local read access to *FileArgs.
 type FileArgsProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*FileArgs]
 }
 

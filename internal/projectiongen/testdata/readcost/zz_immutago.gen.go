@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // Record64KiBProjection provides local read access to *Record64KiB.
 type Record64KiBProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Record64KiB]
 }
 
@@ -50,7 +53,7 @@ func (c *Record64KiBCell) Load() Record64KiBProjection {
 
 // Record8KiBProjection provides local read access to *Record8KiB.
 type Record8KiBProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Record8KiB]
 }
 
@@ -92,7 +95,7 @@ func (c *Record8KiBCell) Load() Record8KiBProjection {
 
 // Record64KiBPaddingProjection reads a fixed array locally.
 type Record64KiBPaddingProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Record64KiB]
 }
 
@@ -106,7 +109,7 @@ func (v Record64KiBPaddingProjection) At(index0 int) byte {
 
 // Record8KiBPaddingProjection reads a fixed array locally.
 type Record8KiBPaddingProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Record8KiB]
 }
 

@@ -1,0 +1,1 @@
+source.go:10:6: cannot generate typed projections: Frozen record privateapi.hidden requires an exported declaration for a foreign projection

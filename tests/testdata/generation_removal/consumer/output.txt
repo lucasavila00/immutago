@@ -1,0 +1,4 @@
+consumer.go:3:8: unsupported dependency example.com/consumer/schema: immutability proof failed
+  representative failure: example.com/consumer/schema/zz_immutago.gen.go:3:1: zz_immutago.gen.go has no source Frozen declarations; remove it or run go run github.com/lucasavila00/immutago/cmd/immutago-gen in this package
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/schema, correct its errors, then rerun immutago on this package

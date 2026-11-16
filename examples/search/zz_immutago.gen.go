@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // DocumentProjection provides local read access to *Document.
 type DocumentProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Document]
 }
 
@@ -50,7 +53,7 @@ func (c *DocumentCell) Load() DocumentProjection { return NewDocumentProjection(
 
 // IndexProjection provides local read access to *Index.
 type IndexProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Index]
 }
 

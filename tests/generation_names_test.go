@@ -49,6 +49,7 @@ func TestGenerationRemoval(t *testing.T) {
 	for _, mode := range []string{"cli", "vet"} {
 		t.Run(mode, func(t *testing.T) {
 			dir := consumerModule(t, root, "generation_removal")
+			runCommand(t, dir, true, "go", "get", "-tool", "github.com/lucasavila00/immutago/cmd/immutago-gen")
 			runBoundary(t, dir, binary, mode, true, "./...")
 			path := filepath.Join(dir, "schema", "schema.go")
 			source, err := os.ReadFile(path)

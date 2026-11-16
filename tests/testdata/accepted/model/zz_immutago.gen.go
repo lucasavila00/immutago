@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // CountBoxProjection provides local read access to *CountBox.
 type CountBoxProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*CountBox]
 }
 
@@ -40,7 +43,7 @@ func (c *CountBoxCell) Load() CountBoxProjection { return NewCountBoxProjection(
 
 // DerivedProjection provides local read access to *Derived.
 type DerivedProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Derived]
 }
 
@@ -110,7 +113,7 @@ func (c *DerivedCell) Load() DerivedProjection { return NewDerivedProjection(c.v
 
 // LeafProjection provides local read access to *Leaf.
 type LeafProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Leaf]
 }
 
@@ -180,7 +183,7 @@ func (c *LeafCell) Load() LeafProjection { return NewLeafProjection(c.value.Load
 
 // TreeProjection provides local read access to *Tree.
 type TreeProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Tree]
 }
 
@@ -222,7 +225,7 @@ func (c *TreeCell) Load() TreeProjection { return NewTreeProjection(c.value.Load
 
 // DerivedFlagsProjection reads a fixed array locally.
 type DerivedFlagsProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Derived]
 }
 
@@ -236,7 +239,7 @@ func (v DerivedFlagsProjection) At(index0 int) bool {
 
 // LeafFlagsProjection reads a fixed array locally.
 type LeafFlagsProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Leaf]
 }
 

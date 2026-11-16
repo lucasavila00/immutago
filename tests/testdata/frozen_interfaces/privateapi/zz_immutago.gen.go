@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // privateReaderProjection provides local method access to privateReader.
 type privateReaderProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[privateReader]
 }
 

@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // SnapshotReplyProjection provides local read access to *SnapshotReply.
 type SnapshotReplyProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*SnapshotReply]
 }
 

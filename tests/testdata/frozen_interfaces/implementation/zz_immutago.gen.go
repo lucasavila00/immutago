@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // TreeReaderProjection provides local method access to TreeReader.
 type TreeReaderProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[TreeReader]
 }
 
@@ -25,7 +28,7 @@ func (v TreeReaderProjection) TreePointer() *Tree { return v.immutagoProjection.
 
 // CountProjection provides local read access to *Count.
 type CountProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Count]
 }
 
@@ -57,7 +60,7 @@ func (c *CountCell) Load() CountProjection { return NewCountProjection(c.value.L
 
 // TreeProjection provides local read access to *Tree.
 type TreeProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Tree]
 }
 

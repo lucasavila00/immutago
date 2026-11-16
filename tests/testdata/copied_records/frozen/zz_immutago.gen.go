@@ -7,9 +7,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // SnapshotProjection provides local read access to *Snapshot.
 type SnapshotProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Snapshot]
 }
 
@@ -59,7 +62,7 @@ func (c *SnapshotCell) Load() SnapshotProjection { return NewSnapshotProjection(
 
 // SnapshotPointsProjection reads a fixed array locally.
 type SnapshotPointsProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Snapshot]
 }
 

@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // MarketReportProjection provides local read access to *MarketReport.
 type MarketReportProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*MarketReport]
 }
 
@@ -52,7 +55,7 @@ func (c *MarketReportCell) Load() MarketReportProjection {
 
 // PolicySnapshotProjection provides local read access to *PolicySnapshot.
 type PolicySnapshotProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*PolicySnapshot]
 }
 
@@ -96,7 +99,7 @@ func (c *PolicySnapshotCell) Load() PolicySnapshotProjection {
 
 // ReportProjection provides local read access to *Report.
 type ReportProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Report]
 }
 
@@ -148,7 +151,7 @@ func (c *ReportCell) Load() ReportProjection { return NewReportProjection(c.valu
 
 // StrategyReportProjection provides local read access to *StrategyReport.
 type StrategyReportProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*StrategyReport]
 }
 

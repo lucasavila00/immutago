@@ -194,6 +194,9 @@ func (g *generator) addRecord(typ types.Type, name string) error {
 	}
 	structure := types.Unalias(typ).(*types.Pointer).Elem().Underlying().(*types.Struct)
 	for field := range structure.Fields() {
+		if field.Name() == "_" || checker.IsLibraryType(field.Type(), "Frozen") {
+			continue
+		}
 		if err := g.reserveArrays(field.Type(), strings.TrimSuffix(name, "Projection")+field.Name(),
 			strings.TrimPrefix(source, "record ")+"."+field.Name()); err != nil {
 			return err
