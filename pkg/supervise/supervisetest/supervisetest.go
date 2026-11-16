@@ -12,17 +12,21 @@ import (
 )
 
 // NewRoot reports supervised failures and their stacks with t.Errorf and registers
-// cleanup with t. Cleanup waits up to 5 seconds for the group to stop, then reports
-// a test failure if work remains. Reports after cleanup are ignored.
-// Run methods must observe cancellation.
+// cleanup with t. The first failure requests root shutdown; failed attempts are not
+// retried. Cleanup waits up to 5 seconds for the group to stop, then reports a test
+// failure if work remains. Reports after cleanup are ignored.
+// Run methods must observe cancellation. Use supervise.NewRoot to test expected
+// failures and retries.
 func NewRoot(t testing.TB) *supervise.Group {
 	var mu sync.Mutex
 	closed := false
-	root := supervise.NewRoot(func(value any, stack []byte) {
+	var root *supervise.Group
+	root = supervise.NewRoot(func(value any, stack []byte) {
 		mu.Lock()
 		defer mu.Unlock()
 		if !closed {
 			t.Errorf("supervised service failed: %v\n%s", value, stack)
+			root.Stop()
 		}
 	})
 	t.Cleanup(func() {

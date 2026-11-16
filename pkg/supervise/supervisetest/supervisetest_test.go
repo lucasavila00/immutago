@@ -81,7 +81,7 @@ func (s *failing) Init() error {
 // Run supplies a failure that must fail the owning test.
 func (*failing) Run(context.Context) { panic("Run failed") }
 
-// TestReportsFailTest records both Run and restart Init failures with original frames.
+// TestReportsFailTest stops the root after the first failure, before a retry.
 func TestReportsFailTest(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		var inits atomic.Int32
@@ -91,17 +91,20 @@ func TestReportsFailTest(t *testing.T) {
 			t.Fatal(err)
 		}
 		synctest.Wait()
-		time.Sleep(time.Second)
+		time.Sleep(time.Minute)
 		synctest.Wait()
-		recorder.cleanups[0]()
-		if recorder.errors != 2 {
-			t.Fatalf("test failures = %d; want 2", recorder.errors)
+		select {
+		case <-root.Stop():
+		default:
+			t.Fatal("failed test root did not stop")
 		}
-		for index, method := range []string{"Run", "Init"} {
-			if message := recorder.messages[index]; !strings.Contains(message, method+" failed") ||
-				!strings.Contains(message, "failing)."+method) {
-				t.Errorf("test failure lost its value or frame: %s", message)
-			}
+		recorder.cleanups[0]()
+		if recorder.errors != 1 || inits.Load() != 1 {
+			t.Fatalf("test failures = %d, Init calls = %d; want 1 each", recorder.errors, inits.Load())
+		}
+		if message := recorder.messages[0]; !strings.Contains(message, "Run failed") ||
+			!strings.Contains(message, "failing).Run") {
+			t.Errorf("test failure lost its value or frame: %s", message)
 		}
 	})
 }
@@ -113,6 +116,32 @@ type lateFailure struct {
 
 // Run fails after the test has stopped accepting reports.
 func (s *lateFailure) Run(context.Context) { <-s.Args(); panic("late panic") }
+
+// TestConcurrentFailures reports both attempts while root shutdown starts once.
+func TestConcurrentFailures(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		recorder := &recorder{TB: t}
+		root := NewRoot(recorder)
+		release := make(chan struct{})
+		for range 2 {
+			if _, err := supervise.Start[lateFailure](root, release); err != nil {
+				t.Fatal(err)
+			}
+		}
+		synctest.Wait()
+		close(release)
+		synctest.Wait()
+		select {
+		case <-root.Stop():
+		default:
+			t.Fatal("concurrent failures did not stop the root")
+		}
+		recorder.cleanups[0]()
+		if recorder.errors != 2 {
+			t.Fatalf("test failures = %d; want 2", recorder.errors)
+		}
+	})
+}
 
 // TestReportsAfterCleanup ignores failures after a cleanup timeout.
 func TestReportsAfterCleanup(t *testing.T) {

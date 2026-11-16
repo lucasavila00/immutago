@@ -1,0 +1,101 @@
+package supervisetest
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"runtime"
+	"strings"
+	"testing"
+	"testing/synctest"
+	"time"
+
+	"github.com/lucasavila00/immutago/pkg/supervise"
+)
+
+// processService fails after it creates a child that must finish cleanup.
+type processService struct{ supervise.Service[string] }
+
+// Init starts a child in this attempt's group.
+func (s *processService) Init() error {
+	_, err := supervise.Start[processChild](s.Children(), supervise.NoArgs{})
+	return err
+}
+
+// Run supplies the original frame in both failure cases.
+func (s *processService) Run(context.Context) {
+	if s.Args() == "Goexit" {
+		runtime.Goexit()
+	}
+	panic("original service panic")
+}
+
+// processChild records completion after its owner requests shutdown.
+type processChild struct {
+	supervise.Service[supervise.NoArgs]
+}
+
+// Run stops when its attempt ends.
+func (*processChild) Run(ctx context.Context) {
+	<-ctx.Done()
+	fmt.Println("child cleanup complete")
+}
+
+// TestFailureProcessService is the failing test in the child process.
+func TestFailureProcessService(t *testing.T) {
+	mode := os.Getenv("IMMUTAGO_TEST_ROOT_FAILURE")
+	if mode == "" {
+		return
+	}
+	synctest.Test(t, func(t *testing.T) {
+		root := NewRoot(t)
+		if _, err := supervise.Start[processService](root, mode); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(time.Minute)
+	})
+}
+
+// TestFailureProcessUnrelated must run after the failing test finishes cleanup.
+func TestFailureProcessUnrelated(*testing.T) {
+	if os.Getenv("IMMUTAGO_TEST_ROOT_FAILURE") != "" {
+		fmt.Println("unrelated test ran")
+	}
+}
+
+// TestFailureKeepsTestProcessRunning checks failures without verbose test output.
+func TestFailureKeepsTestProcessRunning(t *testing.T) {
+	for _, mode := range []string{"panic", "Goexit"} {
+		t.Run(mode, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+			defer cancel()
+			command := exec.CommandContext(ctx, os.Args[0],
+				"-test.run=^TestFailureProcess(Service|Unrelated)$", "-test.timeout=10s")
+			command.Env = append(os.Environ(), "IMMUTAGO_TEST_ROOT_FAILURE="+mode)
+			output, err := command.CombinedOutput()
+			if ctx.Err() != nil {
+				t.Fatalf("test process did not finish: %v\n%s", ctx.Err(), output)
+			}
+			if exit, ok := err.(*exec.ExitError); !ok || exit.ExitCode() != 1 {
+				t.Fatalf("test process error = %v; want test failure exit code 1:\n%s", err, output)
+			}
+			text := string(output)
+			for _, want := range []string{
+				"--- FAIL: TestFailureProcessService", "processService).Run",
+				"child cleanup complete", "unrelated test ran", mode,
+			} {
+				if !strings.Contains(text, want) {
+					t.Errorf("test output lacks %q:\n%s", want, output)
+				}
+			}
+			if strings.Contains(text, "panic: supervise: terminal failure") {
+				t.Errorf("service failure terminated the test process:\n%s", output)
+			}
+			if strings.Count(text, "child cleanup complete") != 1 ||
+				strings.Index(text, "child cleanup complete") > strings.Index(text, "unrelated test ran") {
+				t.Errorf("child cleanup did not finish once before the next test:\n%s", output)
+			}
+		})
+	}
+}
