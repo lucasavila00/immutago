@@ -67,7 +67,7 @@ Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
 | Start after the group or an ancestor closes admission | Return a zero Ref and `context.Canceled`. Do not call Init or Run. |
 | Stop after Start is accepted | Wait for Init before stopping registered services. Successful Init still registers and returns Ref; Run can receive a cancelled context. |
 | Nil or zero Group passed to Start or StartGroup | Panic with `supervise: nil or zero Group` before Init. |
-| Pointer on the selected Service embedding path | Panic before Init with `supervise: embed Service by value through each embedded field`. |
+| Pointer on the selected Service embedding path | An accepted Start panics before Init with `supervise: embed Service by value through each embedded field`. |
 
 Go infers A from the argument's type. An untyped constant supplies its default
 type. If that type differs from the service's A, specify A or convert the argument:

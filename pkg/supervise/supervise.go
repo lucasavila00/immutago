@@ -293,7 +293,7 @@ func bindService[A any, P interface{ bind(A, *Group) }](value P, args A, parent 
 // accepted Init calls, then stops children in reverse registration order and
 // removes a nested group from its parent. Init must return without waiting for
 // shutdown of its owning group or an ancestor, or cancellation that needs it.
-// It does not wait for ordinary direct method calls. A service can request its
+// Stop does not wait for ordinary direct method calls. A service can request its
 // group's stop, but must not wait for that group from its own Run.
 func (s *Group) Stop() <-chan struct{} {
 	checkGroup(s)
