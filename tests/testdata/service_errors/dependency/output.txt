@@ -4,3 +4,6 @@ dependency.go:3:8: unsupported dependency example.com/consumer/signatures: immut
     fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/signatures, correct its errors, then rerun immutago on this package
+dependency.go:5:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: Worker *signatures.Pool
+  fix: keep Local values in local bindings; store Frozen data or a service Ref

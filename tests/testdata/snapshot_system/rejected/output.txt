@@ -48,13 +48,13 @@ snapshot_categories.go:25:24: unmarked struct contains immutable field Saved; em
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
 snapshot_categories.go:28:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved Local
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 snapshot_categories.go:29:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: savedAlias Alias
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 snapshot_categories.go:30:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: savedZero [0]im.Projection[string]
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 snapshot_categories.go:31:16: immutable type argument: Frozen storage cannot contain Local values
   type: rejected.Local
   fix: store Frozen data; keep its Projection or Local result in local bindings
@@ -69,7 +69,7 @@ snapshot_categories.go:32:5: local projection: projection payload 1: Frozen stor
   fix: store Frozen data; keep its Projection or Local result in local bindings
 snapshot_categories.go:32:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: badProjection im.Projection[Local]
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 snapshot_categories.go:33:15: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenSlice[rejected.Local]
   fix: store Frozen data; keep its Projection or Local result in local bindings
@@ -81,7 +81,7 @@ snapshot_categories.go:33:5: Frozen collection: Frozen storage cannot contain Lo
   fix: store Frozen data; keep its Projection or Local result in local bindings
 snapshot_categories.go:33:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: badFrozen im.FrozenSlice[Local]
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 snapshot_categories.go:34:12: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenMap[im.StringProjection, int]
   fix: store Frozen data; keep its Projection or Local result in local bindings
@@ -93,7 +93,7 @@ snapshot_categories.go:34:5: Frozen collection: Frozen storage cannot contain Lo
   fix: store Frozen data; keep its Projection or Local result in local bindings
 snapshot_categories.go:34:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: badMap im.FrozenMap[im.StringProjection, int]
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 snapshot_categories.go:40:17: service method Raw must return a read result: string is not a Copied value
   result type: string
   fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
@@ -116,10 +116,10 @@ snapshot_categories.go:44:17: service method LocalPointer must return a read res
 snapshot_categories.go:44:17: unsupported immutable operation: returning Local pointers is unsupported
   source: LocalPointer
   type: func() *rejected.Local
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 snapshot_categories.go:44:52: unsupported immutable operation: returning Local pointers is unsupported
   source: return &Local{}
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 snapshot_categories.go:47:6: unsupported immutable operation: example.com/consumer/rejected.Retained is not a Copied value
   source: im.Value(projection)
   type: rejected.Retained
@@ -144,7 +144,7 @@ snapshot_categories.go:50:6: unsupported immutable operation: string is not a Co
   fix: copy scalar fields, or use a local projection
 snapshot_categories.go:54:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = value
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 snapshot_categories.go:55:6: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []Local{value}
   type: []rejected.Local

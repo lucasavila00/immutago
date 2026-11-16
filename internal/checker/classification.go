@@ -39,7 +39,7 @@ type classificationNode struct {
 	value bool
 }
 
-// Contains reports values that need im source checks, including their holders and containers.
+// Contains reports values that need protected source checks, including their holders and containers.
 // Frozen pointer handles and Copied records use ordinary Go storage rules.
 func (c *Classifier) Contains(t types.Type) bool { return c.query(t, sourceMode) }
 
@@ -57,7 +57,7 @@ func (c *Classifier) Callable(t types.Type) bool { return c.query(t, callableMod
 // Handles reports whether storage or a callable contract contains a service reference.
 func (c *Classifier) Handles(t types.Type) bool { return c.query(t, handleMode) }
 
-// Locals reports local projections or records in storage, including through arrays and pointers.
+// Locals reports Local records, projections, and service pointers in storage, including arrays and pointers.
 func (c *Classifier) Locals(t types.Type) bool { return c.query(t, localMode) }
 
 // LocalPointer identifies a Local record pointer or a service pointer restricted in this package.

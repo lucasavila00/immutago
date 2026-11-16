@@ -53,7 +53,7 @@ generic_methods.go:8:9: unsupported immutable operation: dynamic calls require o
   fix: call a named, non-generic function directly with a concrete immutable parameter
 receiver_bodies.go:10:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved *Settings
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 receiver_bodies.go:12:41: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Price = 1
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -62,21 +62,21 @@ receiver_bodies.go:13:41: unsupported immutable operation: writes to immutable o
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 receiver_bodies.go:14:41: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = s
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 receiver_bodies.go:15:20: unsupported immutable operation: returning Local pointers is unsupported
   source: Return
   type: func() *rejected.Settings
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 receiver_bodies.go:15:41: unsupported immutable operation: returning Local pointers is unsupported
   source: return s
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 receiver_bodies.go:16:20: unsupported immutable operation: returning Local pointers is unsupported
   source: Nil
   type: func() *rejected.Settings
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 receiver_bodies.go:16:41: unsupported immutable operation: returning Local pointers is unsupported
   source: return nil
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 receiver_bodies.go:17:65: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: s
   type: *rejected.Settings

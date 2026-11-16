@@ -43,15 +43,16 @@ var subsetFixes = map[string]string{
 	"protected value conversions are unsupported": "construct the destination marked value from copied fields",
 	"native builders require fresh local bindings or append to the same handle": "declare one fresh local builder; " +
 		"use values = append(values, element) to extend it",
-	"Local pointers cannot enter aggregate storage": "keep a Local value in a local binding, or store a Frozen pointer",
+	"Local pointers cannot enter aggregate storage": "keep the pointer local; store Frozen data or a service Ref",
 	"Local values and pointers cannot be stored in package variables": "keep Local values in local bindings; " +
-		"copy the required data into Frozen values before saving it",
+		"store Frozen data or a service Ref",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
 		"im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs",
-	"returning Local pointers is unsupported": "return a Local value copy, or use im.Frozen " +
-		"for objects whose pointers must be shared",
-	"global Local pointers are unsupported":        "keep the Local pointer local, or store a Frozen value",
-	"containers of Local pointers are unsupported": "keep Local values in local bindings, or store im.Frozen pointers",
+	"returning Local pointers is unsupported":      "return the required data or a service Ref; keep the pointer local",
+	"global Local pointers are unsupported":        "keep the pointer local; store Frozen data or a service Ref",
+	"containers of Local pointers are unsupported": "keep pointers local; store Frozen data or service Refs",
+	"Local service pointers permit only direct exported service method calls": "call worker.Method(args) directly; " +
+		"use an exported method other than Init, Run, or a runtime method",
 	"user generic declarations cannot define Frozen or Local types": "declare a concrete Frozen or Local type " +
 		"without type parameters",
 	"user generic declarations require ordinary or persistent Frozen contracts": "use a non-generic declaration " +
@@ -137,7 +138,7 @@ func subsetFix(rule string) string {
 		return fix
 	}
 	if strings.Contains(rule, "service reference") || strings.Contains(rule, "Ref requires") {
-		return "keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); " +
+		return "use supervise.Ref[T] with a concrete service struct T; " +
 			"see docs/reference/service-references.md"
 	}
 	return "use the documented immutable value and reference forms"

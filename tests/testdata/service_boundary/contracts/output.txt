@@ -1,0 +1,47 @@
+bodyless.go:5:1: unsupported function without a Go body; immutability cannot be proved
+  fix: provide a Go implementation so writes and pointer transport can be checked
+contracts.go:10:13: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: interface{ Read() mixedapi.Pointer }
+  type: interface{Read() mixedapi.Pointer}
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+contracts.go:10:28: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: func() mixedapi.Pointer
+  type: func() mixedapi.Pointer
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+contracts.go:13:10: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: mixedapi.Mixed
+  type: func() (*mixedapi.Worker, mixedapi.View)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+contracts.go:13:2: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: read := mixedapi.Mixed
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+contracts.go:14:9: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
+  source: read()
+  type: (*mixedapi.Worker, mixedapi.View)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+contracts.go:19:2: Local service pointers cannot be stored in fields
+  owner: contracts.LocalHolder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+contracts.go:22:13: immutable type argument: stored pointers require a concrete Frozen record target
+  type: *api.Worker
+  fix: replace the pointer field or argument with an owned immutable value
+contracts.go:25:12: unsupported immutable operation: containers of Local pointers are unsupported
+  source: []*api.Worker{worker}
+  type: []*api.Worker
+  fix: keep pointers local; store Frozen data or service Refs
+contracts.go:25:2: unsupported native builder: stored pointers require a concrete Frozen record target
+  fix: use allowed stored types for builder keys and elements
+contracts.go:26:21: unsupported immutable operation: containers of Local pointers are unsupported
+  source: values
+  type: []*api.Worker
+  fix: keep pointers local; store Frozen data or service Refs
+contracts.go:26:6: Frozen collection: type argument 1: stored pointers require a concrete Frozen record target
+  type: im.FrozenSlice[*api.Worker]
+  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+contracts.go:26:9: immutable type argument: stored pointers require a concrete Frozen record target
+  type: *api.Worker
+  fix: replace the pointer field or argument with an owned immutable value
+contracts.go:9:13: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: func() mixedapi.Pointer
+  type: func() mixedapi.Pointer
+  fix: call a named, non-generic function directly with a concrete immutable parameter

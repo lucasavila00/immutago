@@ -1,7 +1,7 @@
 contracts.go:11:6: unsupported immutable operation: returning Local pointers is unsupported
   source: func() (int, *Local)
   type: func() (int, *contracts.Local)
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 contracts.go:15:6: unsupported immutable operation: native slices of immutable storage are unsupported
   source: ...im.StringProjection
   type: []im.StringProjection
@@ -23,7 +23,7 @@ contracts.go:25:6: immutable interface: Frozen interface methods must be exporte
 contracts.go:38:6: unsupported immutable operation: containers of Local pointers are unsupported
   source: ...*Local
   type: []*contracts.Local
-  fix: keep Local values in local bindings, or store im.Frozen pointers
+  fix: keep pointers local; store Frozen data or service Refs
 contracts.go:42:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: ...func() im.StringProjection
   type: []func() im.StringProjection

@@ -22,6 +22,12 @@ type Alias = Worker
 type Handle = supervise.Ref[Worker]
 func Pointer() *Worker {return new(Worker)}
 func Pair() (*Worker,int) {return Pointer(),1}
+var Current *Worker
+type Holder struct{Value *Worker}
+type HolderAlias=Holder
+func MakeHolder()Holder{return Holder{}}
+func MakeAnon()struct{Value *Worker}{return struct{Value *Worker}{}}
+func AnonPair()(struct{Value *Worker},int){return MakeAnon(),1}
 type Anonymous = struct {supervise.Service[int]; View}
 type AnonymousHandle = supervise.Ref[Anonymous]
 type Box[T any] struct {Value T}
@@ -42,6 +48,8 @@ func use(r api.Handle)int{q:=r.Borrow();return read(q)+read(r.Borrow())}`},
 		{"construction", `func use(){value:=api.Worker{};q:=&value;q=new(api.Worker);q=&api.Worker{};_=q}`},
 		{"promoted method", `func use(r api.Handle)int{q:=r.Borrow();return q.Promoted()}`},
 		{"factory", `func use()int{q:=api.Pointer();return q.Count()}`},
+		{"generic factory", `func identity[T any](value T)T{return value}
+func use(r api.Handle)int{next:=identity(api.Pointer);q:=next();q=identity(r.Borrow)();return q.Count()}`},
 		{"tuple", `func use()int{q,n:=api.Pair();return q.Count()+n}`},
 		{"interface", `type Borrower interface{Borrow()*api.Worker}
 func use(r api.Handle)int{var b Borrower=r;q:=b.Borrow();return q.Count()}`},
@@ -58,6 +66,16 @@ func use(r api.Handle)int{return read(r)}`},
 	}
 }
 
+// TestMixedServicePointerProducer keeps an im.Local result under the existing callback rules.
+func TestMixedServicePointerProducer(t *testing.T) {
+	api := sourcePass(t, servicePointerAPI+`
+func Mixed()(*Worker,im.StringProjection){return Pointer(),im.StringProjection{}}`).Pkg
+	api.SetImports(nil)
+	if got := checkServicePointerConsumer(t, api, `func use(){next:=api.Mixed;_,_=next()}`); got == "" {
+		t.Fatal("mixed Local producer contract accepted")
+	}
+}
+
 // TestLocalServicePointerBoundary rejects retention and target access by resolved pointer type.
 func TestLocalServicePointerBoundary(t *testing.T) {
 	api := sourcePass(t, servicePointerAPI).Pkg
@@ -66,6 +84,16 @@ func TestLocalServicePointerBoundary(t *testing.T) {
 		{"return", `func use(q *api.Worker)*api.Worker{return q}`},
 		{"nil return", `func use()*api.Worker{return nil}`},
 		{"global", `var saved *api.Worker`},
+		{"global nil", `func use(){api.Current=nil}`},
+		{"field nil", `func use(){value:=api.Holder{};value.Value=nil}`},
+		{"holder nil", `func use(){_=api.Holder{Value:nil}}`},
+		{"holder zero", `func use(){var value api.Holder;_=value}`},
+		{"holder alias", `type Alias=api.HolderAlias`},
+		{"holder factory", `func use(){value:=api.MakeHolder();_=value.Value}`},
+		{"holder return", `func use()api.Holder{return api.MakeHolder()}`},
+		{"nested holder", `type Nested struct{Values [1]api.Holder}`},
+		{"anonymous holder", `func use(){value:=api.MakeAnon();_=value}`},
+		{"anonymous tuple", `func use(){api.AnonPair()}`},
 		{"field", `type Holder struct{Value *api.Worker}`},
 		{"array", `func use(q *api.Worker){_=[1]*api.Worker{q}}`},
 		{"box", `func use(q *api.Worker){var value any=q;_=value}`},
@@ -73,6 +101,7 @@ func TestLocalServicePointerBoundary(t *testing.T) {
 		{"goroutine", `func use(q *api.Worker){go q.Count()}`},
 		{"defer", `func use(q *api.Worker){defer q.Count()}`},
 		{"generic", `func identity[T any](v T)T{return v};func use(q *api.Worker){_=identity(q)}`},
+		{"bodyless input", `func retain(*api.Worker);func use(r api.Handle){retain(r.Borrow())}`},
 		{"read field", `func use(q *api.Worker)int{return q.Value}`},
 		{"write field", `func use(q *api.Worker){q.Value++}`},
 		{"dereference", `func use(q *api.Worker){_=*q}`},
@@ -161,6 +190,7 @@ func TestLocalPointerProducerContracts(t *testing.T) {
 		`type Getter = func() *LocalRecord`,
 		`type Reader interface{ Read() *LocalRecord }`,
 		`type Reader = interface{ Read() *LocalRecord }`,
+		`type Reader interface{im.FrozenInterface; Read() *LocalRecord}`,
 		`type Getter func() (int, *LocalRecord)`,
 		`func use(f func() *LocalRecord){p:=f();_=p}`,
 	} {
@@ -180,10 +210,10 @@ func TestServiceValueFieldRules(t *testing.T) {
 	}{
 		{"Frozen field", `type Bad struct{supervise.Service[int]; Data FrozenData}`, true},
 		{"Local field", `type Data struct{im.Local; N int};type Bad struct{supervise.Service[int]; Data Data}`, true},
-		{"protected target", `type Holder struct{supervise.Service[int]; Data *FrozenData}
-func change(p Holder){p.Data.Value++}`, true},
-		{"ordinary slot", `type Holder struct{supervise.Service[int]; Data *FrozenData}
-func change(p Holder){p.Data=&FrozenData{Value:1}}`, false},
+		{"protected target", `type WithData struct{supervise.Service[int]; Data *FrozenData}
+func change(p WithData){p.Data.Value++}`, true},
+		{"ordinary slot", `type WithData struct{supervise.Service[int]; Data *FrozenData}
+func change(p WithData){p.Data=&FrozenData{Value:1}}`, false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			if got := checkSource(t, servicePointerAPI+test.source); (got != "") != test.reject {

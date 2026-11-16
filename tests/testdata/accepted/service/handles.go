@@ -29,3 +29,12 @@ type Route struct {
 func (p *Pool) Route(name string) Route { return Route{Worker: p.Worker(name)} }
 
 func UseRoute(route Route) int { return route.Worker.Borrow().Count() }
+
+func extract(ref supervise.Ref[ResultReader]) {
+	current := ref.Borrow
+	_ = current()
+	pointer := ref.Borrow()
+	*pointer = ResultReader{}
+}
+
+func overwrite(ref supervise.Ref[ResultReader]) { *ref.Borrow() = ResultReader{} }

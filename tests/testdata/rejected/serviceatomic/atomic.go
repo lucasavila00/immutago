@@ -31,8 +31,3 @@ type ProtectedSlot struct {
 
 var local atomic.Pointer[LocalSlot]
 var mixed atomic.Pointer[MixedSlot]
-
-func Extract(pointer *atomic.Pointer[WorkerRef]) {
-	service := pointer.Load().Borrow()
-	_ = service
-}

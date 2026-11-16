@@ -38,7 +38,7 @@ func IsReference(t types.Type) bool {
 	if !ok || structure.NumFields() == 0 {
 		return false
 	}
-	pkg := structure.Field(0).Origin().Pkg()
+	pkg := structure.Field(0).Pkg()
 	if pkg == nil || pkg.Path() != RuntimePath {
 		return false
 	}
@@ -51,7 +51,7 @@ func IsReference(t types.Type) bool {
 		return false
 	}
 	for index := range structure.NumFields() {
-		if structure.Field(index).Origin() != reference.Field(index).Origin() ||
+		if structure.Field(index).Id() != reference.Field(index).Id() ||
 			structure.Tag(index) != reference.Tag(index) {
 			return false
 		}

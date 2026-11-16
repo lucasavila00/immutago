@@ -53,7 +53,7 @@ func newSubsetChecks(pass *analysis.Pass, proofs *checker.Prover) *subsetChecks 
 	return c
 }
 
-// checkImmutable checks im operations after native builder ownership analysis.
+// checkImmutable checks protected source forms after native builder ownership analysis.
 func (c *subsetChecks) checkImmutable(owners map[*types.Var]bool) {
 	c.owners = owners
 	c.checkBuilderTypes()
@@ -110,6 +110,13 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 		return c.subsetType(u.Elem(), seen)
 	case *types.Tuple:
 		return c.subsetTuple(u, seen)
+	case *types.Signature:
+		for result := range u.Results().Variables() {
+			if c.queries.LocalPointer(result.Type()) && !c.queries.ServicePointer(result.Type()) {
+				return "returning Local pointers is unsupported"
+			}
+		}
+		return ""
 	default:
 		return c.subsetContainer(u)
 	}

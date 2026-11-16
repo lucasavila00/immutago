@@ -52,9 +52,10 @@ The examples use `api.Worker`, declared in another package.
 | Address an ordinary service value: local, field, array/slice element, or package variable | `&value`, `&state.Worker`, `&workers[i]`, `&api.CurrentValue` |
 | A zero declaration or nil | `var worker *api.Worker`, `worker = nil` |
 
-A function or interface that produces service pointers can use ordinary Go call
-forms. The resulting pointers use this table. Contracts with Local-pointer
-inputs or im.Local outputs still use the [common call rules](common-forms.md).
+Producer function and interface values use ordinary Go storage and transport.
+Their calls and pointer results use the Local forms below and the
+[common statement forms](common-forms.md#statements-and-calls). Contracts with
+Local-pointer inputs or im.Local outputs keep the common call restrictions.
 
 | Pointer use | Example |
 | --- | --- |
@@ -75,6 +76,7 @@ These examples apply outside the service's declaring package.
 | Rejected | Use instead |
 | --- | --- |
 | `var saved *api.Worker` or `type State struct { Worker *api.Worker }` | Store `supervise.Ref[api.Worker]`; borrow inside the function that needs it. |
+| Use an imported `api.Holder` with a `*api.Worker` field, including an anonymous factory result | Declare the holder with a `supervise.Ref[api.Worker]` field. |
 | `return worker` | Return the Ref, or return the data read from a method. |
 | `worker.CountField`, `*worker`, `worker.CountField = 1` | Call an exported service method. |
 | `method := worker.Count` | Call `worker.Count()` directly. |
@@ -84,6 +86,7 @@ These examples apply outside the service's declaring package.
 | `any(worker)`, `identity(worker)`, `[]*api.Worker{worker}` | Pass or store the Ref. |
 | `&worker` or a protected pointer conversion | Use the existing local pointer with its declared type. |
 | Pass worker as a service start argument | Pass its Ref. |
+| `func retain(*api.Worker)` without a Go body | Supply a Go body; pass the pointer only to direct typed calls. |
 
 ## Runtime behavior
 

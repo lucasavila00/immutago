@@ -6,10 +6,10 @@ uses.go:18:2: immutable field Err requires a read result: error is not a Copied 
   fix: copy scalar fields, or use a local projection
 uses.go:21:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: Saved api.Reply
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 uses.go:25:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: Saved, err = api.Read()
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 uses.go:28:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: values[0], err = api.Read()
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -37,4 +37,4 @@ uses.go:46:54: unsupported immutable operation: user generic instantiations requ
   fix: use a direct non-generic function with concrete parameter types
 uses.go:48:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: GlobalPair, GlobalError = api.Read()
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref

@@ -45,7 +45,7 @@ forms.go:33:33: unsupported immutable operation: multiple assignments involving 
 forms.go:35:33: unsupported immutable operation: containers of Local pointers are unsupported
   source: [1]*View{value}
   type: [1]*rejected.View
-  fix: keep Local values in local bindings, or store im.Frozen pointers
+  fix: keep pointers local; store Frozen data or service Refs
 forms.go:35:42: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: value
   type: *rejected.View

@@ -1,15 +1,3 @@
-handles.go:10:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-handles.go:14:47: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-handles.go:8:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
 interfaces.go:14:34: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: return route
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
@@ -27,29 +15,21 @@ iszero.go:20:2: unsupported immutable operation: protected storage requires sync
 iszero.go:21:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer route.Worker.IsZero()
   fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
-iszero.go:26:14: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-iszero.go:36:58: unsupported immutable operation: promoted immutable methods are unsupported
+iszero.go:29:58: unsupported immutable operation: promoted immutable methods are unsupported
   source: route.IsZero()
   type: bool
   fix: name the embedded field explicitly and call a method allowed on that field; copy scalar fields to ordinary locals before calling their methods
-iszero.go:38:57: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: route.Worker.Borrow
-  type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-iszero.go:49:50: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
+iszero.go:40:50: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
   source: status.Status.IsZero()
   type: bool
   fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
-iszero.go:51:53: unsupported immutable operation: interior addresses of protected storage are unsupported
+iszero.go:42:53: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &route.Worker
   type: *supervise.Ref[service.Counter]
   fix: copy the field into a local; do not take a pointer into immutable storage
 result_uses.go:12:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = pointer
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 result_uses.go:17:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: message.Count = 1
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -59,83 +39,83 @@ result_uses.go:23:27: unsupported immutable operation: closures require ordinary
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
 result_uses.go:7:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved *Reply
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-results.go:23:17: service method Map must return a read result: map[string]int is not a Copied value
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
+results.go:25:17: service method Map must return a read result: map[string]int is not a Copied value
   result type: map[string]int
   fix: copy scalar fields, or use a local projection
-results.go:24:17: service method Slice must return a read result: []int is not a Copied value
+results.go:26:17: service method Slice must return a read result: []int is not a Copied value
   result type: []int
   fix: copy scalar fields, or use a local projection
-results.go:25:17: service method Interface must return a read result: interface{} is not a Copied value
+results.go:27:17: service method Interface must return a read result: interface{} is not a Copied value
   result type: any
   fix: copy scalar fields, or use a local projection
-results.go:26:17: service method Pointer must return a read result: *example.com/consumer/service.SnapshotReply is not a Copied value
+results.go:28:17: service method Pointer must return a read result: *example.com/consumer/service.SnapshotReply is not a Copied value
   result type: *service.SnapshotReply
   fix: copy scalar fields, or use a local projection
-results.go:27:17: service method LocalPointer must return a read result: *example.com/consumer/service.Reply is not a Copied value
+results.go:29:17: service method LocalPointer must return a read result: *example.com/consumer/service.Reply is not a Copied value
   result type: *service.Reply
   fix: copy scalar fields, or use a local projection
-results.go:27:17: unsupported immutable operation: returning Local pointers is unsupported
+results.go:29:17: unsupported immutable operation: returning Local pointers is unsupported
   source: LocalPointer
   type: func() *service.Reply
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
-results.go:27:50: unsupported immutable operation: returning Local pointers is unsupported
+  fix: return the required data or a service Ref; keep the pointer local
+results.go:29:50: unsupported immutable operation: returning Local pointers is unsupported
   source: return nil
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
-results.go:28:50: unsupported immutable operation: writes to immutable objects are unsupported
+  fix: return the required data or a service Ref; keep the pointer local
+results.go:30:50: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Count++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-results.go:29:75: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+results.go:31:75: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: p
   type: *service.Reply
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-results.go:30:17: service method Frozen must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[[]int] is not a Copied value
+results.go:32:17: service method Frozen must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[[]int] is not a Copied value
   result type: im.FrozenSlice[[]int]
   fix: copy scalar fields, or use a local projection
-results.go:30:26: Frozen collection: type argument 1: []int is not provably immutable
+results.go:32:26: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-results.go:30:29: immutable type argument: []int is not provably immutable
+results.go:32:29: immutable type argument: []int is not provably immutable
   type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable
-results.go:30:54: Frozen collection: type argument 1: []int is not provably immutable
+results.go:32:54: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-results.go:30:61: Frozen collection: type argument 1: []int is not provably immutable
+results.go:32:61: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-results.go:30:64: immutable type argument: []int is not provably immutable
+results.go:32:64: immutable type argument: []int is not provably immutable
   type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable
-results.go:30:91: Frozen collection: type argument 1: []int is not provably immutable
+results.go:32:91: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-results.go:34:17: service method Struct must return a read result: example.com/consumer/service.Unmarked is not a Copied value
+results.go:36:17: service method Struct must return a read result: example.com/consumer/service.Unmarked is not a Copied value
   result type: service.Unmarked
   fix: copy scalar fields, or use a local projection
-results.go:38:16: service method Mutable must return a read result: []int is not a Copied value
+results.go:40:16: service method Mutable must return a read result: []int is not a Copied value
   result type: []int
   fix: copy scalar fields, or use a local projection
-results.go:46:23: service method Mutable must return a read result: []int is not a Copied value
+results.go:48:23: service method Mutable must return a read result: []int is not a Copied value
   result type: []int
   fix: copy scalar fields, or use a local projection
-results.go:49:38: stored im argument: Frozen storage cannot contain Local values
-  fix: pass an immutable value or a Frozen pointer; Local pointers cannot be stored
-results.go:51:17: service method PointerArray must return a read result: array element: *example.com/consumer/service.SnapshotReply is not a Copied value
+results.go:51:38: stored service argument: Frozen storage cannot contain Local values
+  fix: pass Frozen data or a service Ref; Local pointers cannot be stored
+results.go:53:17: service method PointerArray must return a read result: array element: *example.com/consumer/service.SnapshotReply is not a Copied value
   result type: [1]*service.SnapshotReply
   fix: copy scalar fields, or use a local projection
-results.go:52:17: service method List must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a Copied value
+results.go:54:17: service method List must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a Copied value
   result type: im.FrozenSlice[int]
   fix: copy scalar fields, or use a local projection
-results.go:53:17: service method MapResult must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenMap[string, int] is not a Copied value
+results.go:55:17: service method MapResult must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenMap[string, int] is not a Copied value
   result type: im.FrozenMap[string, int]
   fix: copy scalar fields, or use a local projection
-results.go:58:17: service method FrozenRecord must return a read result: example.com/consumer/service.SnapshotReply is not a Copied value
+results.go:60:17: service method FrozenRecord must return a read result: example.com/consumer/service.SnapshotReply is not a Copied value
   result type: service.SnapshotReply
   fix: copy scalar fields, or use a local projection
-results.go:59:17: service method FrozenArray must return a read result: array element: example.com/consumer/service.SnapshotReply is not a Copied value
+results.go:61:17: service method FrozenArray must return a read result: array element: example.com/consumer/service.SnapshotReply is not a Copied value
   result type: [1]service.SnapshotReply
   fix: copy scalar fields, or use a local projection
-results.go:60:17: service method Marker must return a read result: immutable markers are annotations, not data
+results.go:62:17: service method Marker must return a read result: immutable markers are annotations, not data
   result type: im.Local
   fix: embed the marker in a named struct; use data fields for values

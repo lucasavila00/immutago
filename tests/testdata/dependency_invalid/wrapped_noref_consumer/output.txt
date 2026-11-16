@@ -1,6 +1,6 @@
 wrapped_noref_consumer.go:3:8: unsupported dependency example.com/consumer/noref_wrapper: immutability proof failed
   representative failure: example.com/consumer/invalid_noref/invalid_noref.go:10:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
     source: retained *Local
-    fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+    fix: keep Local values in local bindings; store Frozen data or a service Ref
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/invalid_noref, correct its errors, then rerun immutago on this package

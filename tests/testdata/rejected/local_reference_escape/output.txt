@@ -3,25 +3,25 @@ local_reference_escape.go:11:2: immutable field Pointer requires a Frozen type: 
   fix: store Frozen data; keep its Projection or Local result in local bindings
 local_reference_escape.go:14:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: global *Local
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 local_reference_escape.go:16:31: unsupported immutable operation: returning Local pointers is unsupported
   source: return &Local{Value: 1}
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 local_reference_escape.go:16:6: unsupported immutable operation: returning Local pointers is unsupported
   source: returned
   type: func() *local_reference_escape.Local
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 local_reference_escape.go:17:31: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: global = value
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 local_reference_escape.go:20:12: unsupported immutable operation: Local pointers cannot enter aggregate storage
   source: Stored{Pointer: value}
   type: local_reference_escape.Stored
-  fix: keep a Local value in a local binding, or store a Frozen pointer
+  fix: keep the pointer local; store Frozen data or a service Ref
 local_reference_escape.go:25:13: unsupported immutable operation: containers of Local pointers are unsupported
   source: []*Local{value}
   type: []*local_reference_escape.Local
-  fix: keep Local values in local bindings, or store im.Frozen pointers
+  fix: keep pointers local; store Frozen data or service Refs
 local_reference_escape.go:25:2: unsupported native builder: *example.com/consumer/local_reference_escape.Local is not a Copied value
   fix: use allowed stored types for builder keys and elements
 local_reference_escape.go:26:12: Frozen collection: Frozen storage cannot contain Local values
@@ -33,7 +33,7 @@ local_reference_escape.go:26:15: immutable type argument: Frozen storage cannot 
 local_reference_escape.go:26:27: unsupported immutable operation: containers of Local pointers are unsupported
   source: builder
   type: []*local_reference_escape.Local
-  fix: keep Local values in local bindings, or store im.Frozen pointers
+  fix: keep pointers local; store Frozen data or service Refs
 local_reference_escape.go:26:2: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: store Frozen data; keep its Projection or Local result in local bindings

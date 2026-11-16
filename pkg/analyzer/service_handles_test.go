@@ -105,6 +105,8 @@ func use(p *Server){_=Pointer(p);_=(*Server)(Pointer(p))}`},
 // TestServiceOwnerPointers keeps pointers ordinary inside the service's declaring package.
 func TestServiceOwnerPointers(t *testing.T) {
 	cases := []struct{ name, source string }{
+		{"bodyless input", `func retain(*Counter);func use(ref Handle){retain(ref.Borrow())}`},
+		{"global nil", `var current *Counter;func clear(){current=nil}`},
 		{"recovered pointer", `func use(v any)*Counter{return v.(Handle).Borrow()}`},
 		{"pointer binding", `func use(r Handle){p:=r.Borrow();_=p}`},
 		{"pointer return", `func use(r Handle)*Counter{return r.Borrow()}`},
@@ -137,6 +139,7 @@ func TestServiceHandleBoundary(t *testing.T) {
 		{"nonservice", `func use(){var ref supervise.Ref[int];_=ref}`},
 		{"unused nonservice", `var ref supervise.Ref[int]`},
 		{"nonservice alias", `type Wrong = supervise.Ref[int]`},
+		{"nonservice defined wrapper", `type Wrong supervise.Ref[int]`},
 		{"nonservice parameter", `func use(supervise.Ref[int]){}`},
 		{"pointer target", `var ref supervise.Ref[*Counter]`},
 		{"anonymous result", `type Bad struct{};func(Bad) Read()[]int{return nil}

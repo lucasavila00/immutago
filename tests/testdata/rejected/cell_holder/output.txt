@@ -12,7 +12,7 @@ holder.go:16:6: unsupported immutable operation: user generic declarations requi
   fix: use a non-generic declaration with concrete field and parameter types
 holder.go:18:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved im.Projection[int]
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 holder.go:21:1: Cell slots and their holders cannot be passed or returned by value
 holder.go:22:1: Cell slots and their holders cannot be passed or returned by value
 holder.go:23:1: Cell slots and their holders cannot be passed or returned by value
@@ -70,7 +70,7 @@ holder.go:65:5: Cell.Store requires a direct synchronous statement
 holder.go:66:8: Cell.Store requires a direct synchronous statement
 holder.go:70:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = h.View()
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 holder.go:72:19: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: view
   type: im.Projection[int]

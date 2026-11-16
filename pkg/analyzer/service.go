@@ -55,13 +55,13 @@ func runtimeObject(object types.Object) bool {
 	return object != nil && object.Pkg() != nil && object.Pkg().Path() == checker.RuntimePath
 }
 
-// checkServiceStorage applies im storage rules when the runtime saves protected arguments.
+// checkServiceStorage proves protected arguments before the runtime saves them.
 func (c *checks) checkServiceStorage(name *ast.Ident, argument types.Type) {
 	if !c.queries.Owns(argument) && !c.queries.Callable(argument) {
 		return
 	}
 	if reason := c.proofs.FrozenReason(argument); reason != "" {
-		c.report(name.Pos(), "stored im argument: "+reason+
-			"\n  fix: pass an immutable value or a Frozen pointer; Local pointers cannot be stored")
+		c.report(name.Pos(), "stored service argument: "+reason+
+			"\n  fix: pass Frozen data or a service Ref; Local pointers cannot be stored")
 	}
 }

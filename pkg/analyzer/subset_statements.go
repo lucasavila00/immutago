@@ -121,12 +121,13 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	if rule := c.matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
 		return rule
 	}
-	if !c.queries.LocalPointer(source) && !c.queries.Locals(source) {
+	localPointer := c.queries.LocalPointer(source) || c.queries.LocalPointer(c.pass.TypesInfo.TypeOf(destination))
+	if !localPointer && !c.queries.Locals(source) {
 		return ""
 	}
 	name, ok := ast.Unparen(destination).(*ast.Ident)
 	if !ok {
-		if c.queries.LocalPointer(source) {
+		if localPointer {
 			return "Local pointers cannot enter aggregate storage"
 		}
 		return ""

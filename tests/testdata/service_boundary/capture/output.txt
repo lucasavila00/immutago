@@ -1,4 +1,293 @@
-capture.go:6:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: api.Get().Borrow
-  type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
+capture.go:6:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: saved = api.Get().Borrow()
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
+holders.go:11:11: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:11:15: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:11:6: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:12:6: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:13:11: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:13:2: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:14:12: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:16:10: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:16:6: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:16:6: unsupported immutable operation: Local pointers cannot enter aggregate storage
+  source: api.Holder{Value: nil}
+  type: api.Holder
+  fix: keep the pointer local; store Frozen data or a service Ref
+holders.go:17:10: Local service pointers cannot be stored in fields
+  owner: struct{Value *api.Worker}; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:17:2: Local service pointers cannot be stored in fields
+  owner: struct{Value *api.Worker}; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:18:6: Local service pointers cannot be stored in fields
+  owner: struct{Value *api.Worker}; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:19:2: Local service pointers cannot be stored in fields
+  owner: struct{Value *api.Worker}; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:5:20: Local service pointers cannot be stored in fields
+  owner: api.HolderAlias; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:5:24: Local service pointers cannot be stored in fields
+  owner: api.HolderAlias; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:5:6: Local service pointers cannot be stored in fields
+  owner: capture.HolderAlias; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:6:27: Local service pointers cannot be stored in fields
+  owner: capture.NestedHolder; field type: [1]api.Holder
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:6:34: unsupported immutable operation: struct does not embed im.Frozen
+  source: [1]api.Holder
+  type: [1]api.Holder
+  fix: use the documented immutable value and reference forms
+holders.go:6:37: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:6:41: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:8:15: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:8:19: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:8:35: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+pointers.go:11:6: defined pointer types are unsupported in protected storage; use a pointer alias
+pointers.go:12:21: Local service pointers cannot be stored in fields
+  owner: capture.Holder; field type: capture.Pointer
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+pointers.go:13:21: Local service pointers cannot be stored in fields
+  owner: capture.Nested; field type: [1][2]capture.Pointer
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+pointers.go:13:28: unsupported immutable operation: containers of Local pointers are unsupported
+  source: [1][2]Pointer
+  type: [1][2]capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:13:31: unsupported immutable operation: containers of Local pointers are unsupported
+  source: [2]Pointer
+  type: [2]capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:14:29: Local service pointers cannot be stored in fields
+  owner: capture.Generic[T any]; field type: capture.Pointer
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+pointers.go:14:6: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+  source: Generic
+  type: capture.Generic[T any]
+  fix: use a non-generic declaration with concrete field and parameter types
+pointers.go:15:21: Local service pointers cannot be stored in fields
+  owner: capture.Atomic; field type: atomic.Pointer[api.Worker]
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+pointers.go:15:27: Local service pointers cannot be stored in fields
+  owner: atomic.Pointer[api.Worker]; field type: [0]*api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+pointers.go:17:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: zero Pointer
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
+pointers.go:18:5: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+  source: boxed any = api.Current
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+pointers.go:19:11: unsupported immutable operation: containers of Local pointers are unsupported
+  source: [1]Pointer
+  type: [1]capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:19:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: array [1]Pointer
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
+pointers.go:20:12: unsupported immutable operation: containers of Local pointers are unsupported
+  source: []Pointer
+  type: []capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:20:5: native builder values requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+pointers.go:20:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: values []Pointer
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
+pointers.go:20:5: unsupported native builder: stored pointers require a concrete Frozen record target
+  fix: use allowed stored types for builder keys and elements
+pointers.go:21:13: unsupported immutable operation: containers of Local pointers are unsupported
+  source: map[int]Pointer
+  type: map[int]capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:21:5: native builder mapping requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+pointers.go:21:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: mapping map[int]Pointer
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
+pointers.go:21:5: unsupported native builder: stored pointers require a concrete Frozen record target
+  fix: use allowed stored types for builder keys and elements
+pointers.go:22:13: unsupported immutable operation: containers of Local pointers are unsupported
+  source: chan Pointer
+  type: chan capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:22:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: channel chan Pointer
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
+pointers.go:24:22: unsupported immutable operation: Local pointers cannot enter aggregate storage
+  source: api.Current = nil
+  fix: keep the pointer local; store Frozen data or a service Ref
+pointers.go:28:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: value.Next = nil
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+pointers.go:31:50: unsupported immutable operation: returning Local pointers is unsupported
+  source: return nil
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:31:6: unsupported immutable operation: returning Local pointers is unsupported
+  source: returnNil
+  type: func() capture.Pointer
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:32:50: unsupported immutable operation: returning Local pointers is unsupported
+  source: return value
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:32:6: unsupported immutable operation: returning Local pointers is unsupported
+  source: returnPointer
+  type: func(value capture.Pointer) capture.Pointer
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:33:50: unsupported immutable operation: returning Local pointers is unsupported
+  source: return 1, api.Pointer()
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:33:6: unsupported immutable operation: returning Local pointers is unsupported
+  source: returnTuple
+  type: func() (int, capture.Pointer)
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:34:50: unsupported immutable operation: returning Local pointers is unsupported
+  source: return api.Keep(ref.Borrow)()
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:34:6: unsupported immutable operation: returning Local pointers is unsupported
+  source: returnIndirect
+  type: func(ref api.WorkerRef) capture.Pointer
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:37:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+  source: any(value)
+  type: any
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+pointers.go:38:6: unsupported immutable operation: Local pointers cannot enter aggregate storage
+  source: Holder{Value: value}
+  type: capture.Holder
+  fix: keep the pointer local; store Frozen data or a service Ref
+pointers.go:39:6: unsupported immutable operation: Local pointers cannot enter aggregate storage
+  source: api.Worker{Next: value}
+  type: api.Worker
+  fix: keep the pointer local; store Frozen data or a service Ref
+pointers.go:40:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: destination.Next = value
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+pointers.go:41:6: unsupported immutable operation: containers of Local pointers are unsupported
+  source: [1]Pointer{value}
+  type: [1]capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:42:6: unsupported immutable operation: containers of Local pointers are unsupported
+  source: []Pointer{value}
+  type: []capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:43:6: unsupported immutable operation: containers of Local pointers are unsupported
+  source: map[Pointer]int{value: 1}
+  type: map[capture.Pointer]int
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:44:2: unsupported immutable operation: containers of Local pointers are unsupported
+  source: channel
+  type: chan capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:45:10: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+  source: Box
+  type: api.Box[T any]
+  fix: use a direct non-generic function with concrete parameter types
+pointers.go:45:6: Local service pointers cannot be stored in fields
+  owner: api.Box[capture.Pointer]; field type: capture.Pointer
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+pointers.go:45:6: unsupported immutable operation: Local pointers cannot enter aggregate storage
+  source: api.Box[Pointer]{Value: value}
+  type: api.Box[capture.Pointer]
+  fix: keep the pointer local; store Frozen data or a service Ref
+pointers.go:46:10: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+  source: Keep
+  type: func[T any](value T) T
+  fix: use a direct non-generic function with concrete parameter types
+pointers.go:46:6: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+  source: api.Keep(value)
+  type: capture.Pointer
+  fix: use a direct non-generic function with concrete parameter types
+pointers.go:47:26: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+  source: value
+  type: capture.Pointer
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+pointers.go:48:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go value.Count()
+  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+pointers.go:49:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: defer value.Count()
+  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+pointers.go:50:6: unsupported immutable operation: pointer indirection is unsupported
+  source: &value
+  type: *capture.Pointer
+  fix: use a direct pointer to a concrete marked struct
+pointers.go:51:6: unsupported immutable operation: shared pointer conversions are unsupported
+  source: (*api.Alias)(value)
+  type: *api.Alias
+  fix: keep the original pointer type; copy the value first if a different owned value type is required
+pointers.go:52:6: unsupported immutable operation: shared pointer conversions are unsupported
+  source: (*api.Worker)(nil)
+  type: *api.Worker
+  fix: keep the original pointer type; copy the value first if a different owned value type is required
+pointers.go:56:6: unsupported immutable operation: interface assertions require ordinary or persistent Frozen values
+  source: value.(Pointer)
+  type: capture.Pointer
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+pointers.go:58:7: unsupported immutable operation: protected storage is unsupported in type switches
+  source: Pointer
+  type: capture.Pointer
+  fix: keep concrete protected types in named function parameters instead of recovering values or references from interfaces
+pointers.go:62:21: unsupported immutable operation: pointer indirection is unsupported
+  source: **api.Worker
+  type: **api.Worker
+  fix: use a direct pointer to a concrete marked struct
+pointers.go:62:41: unsupported immutable operation: pointer indirection is unsupported
+  source: value
+  type: **api.Worker
+  fix: use a direct pointer to a concrete marked struct
+pointers.go:64:22: unsupported immutable operation: containers of Local pointers are unsupported
+  source: ...Pointer
+  type: []capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:64:40: unsupported immutable operation: containers of Local pointers are unsupported
+  source: values
+  type: []capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:67:19: stored service argument: stored pointers require a concrete Frozen record target
+  fix: pass Frozen data or a service Ref; Local pointers cannot be stored
+pointers.go:70:20: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: func(Pointer) int
+  type: func(capture.Pointer) int
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+pointers.go:70:60: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
+  source: read(value)
+  type: int
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+pointers.go:73:60: unsupported immutable operation: containers of Local pointers are unsupported
+  source: [1]Pointer{value}
+  type: [1]capture.Pointer
+  fix: keep pointers local; store Frozen data or service Refs
+pointers.go:73:71: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+  source: value
+  type: capture.Pointer
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

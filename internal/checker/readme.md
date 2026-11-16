@@ -100,6 +100,14 @@ func IsProjection(t types.Type) bool
 
 IsProjection identifies the fixed local read types.
 
+## func IsReference
+
+```go
+func IsReference(t types.Type) bool
+```
+
+IsReference identifies Ref and defined types that retain its sealed fields.
+
 ## func IsRuntimeType
 
 ```go
@@ -170,6 +178,9 @@ Classifier caches protected storage, callback, and service reference queries for
 
 ```go
 type Classifier struct {
+    // Package supplies the source package for service pointer checks.
+    // Set it before the first query. Nil checks only im types.
+    Package *types.Package
     // contains filtered or unexported fields
 }
 ```
@@ -188,7 +199,7 @@ Callable reports whether t contains a callback contract that carries protected s
 func (c *Classifier) Contains(t types.Type) bool
 ```
 
-Contains reports values that need im source checks, including their holders and containers. Frozen pointer handles and Copied records use ordinary Go storage rules.
+Contains reports values that need protected source checks, including their holders and containers. Frozen pointer handles and Copied records use ordinary Go storage rules.
 
 ### func \(\*Classifier\) Handles
 
@@ -198,13 +209,21 @@ func (c *Classifier) Handles(t types.Type) bool
 
 Handles reports whether storage or a callable contract contains a service reference.
 
+### func \(\*Classifier\) LocalPointer
+
+```go
+func (c *Classifier) LocalPointer(t types.Type) bool
+```
+
+LocalPointer identifies a Local record pointer or a service pointer restricted in this package.
+
 ### func \(\*Classifier\) Locals
 
 ```go
 func (c *Classifier) Locals(t types.Type) bool
 ```
 
-Locals reports local projections or records in storage, including through arrays and pointers.
+Locals reports Local records, projections, and service pointers in storage, including arrays and pointers.
 
 ### func \(\*Classifier\) Owns
 
@@ -213,6 +232,14 @@ func (c *Classifier) Owns(t types.Type) bool
 ```
 
 Owns reports protected object storage, including its holders and containers. Frozen handles can occupy ordinary mutable slots without changing their targets.
+
+### func \(\*Classifier\) ServicePointer
+
+```go
+func (c *Classifier) ServicePointer(t types.Type) bool
+```
+
+ServicePointer identifies service pointers outside their declaring package. Anonymous service types have no declaring package, so their pointers are Local everywhere.
 
 ### func \(\*Classifier\) Transport
 

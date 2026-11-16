@@ -79,3 +79,12 @@ func frozenZeroForms(route FrozenRoute) func() bool {
 }
 
 func localBoundZero(route Route) func() bool { return route.Worker.IsZero }
+
+func guardedBorrow(ref supervise.Ref[Counter]) {
+	if !ref.IsZero() {
+		pointer := ref.Borrow()
+		_ = pointer
+	}
+}
+
+func protectedBorrow(route Route) *Counter { return route.Worker.Borrow() }

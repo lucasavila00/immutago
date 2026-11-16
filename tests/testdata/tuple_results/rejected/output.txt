@@ -1,6 +1,6 @@
 forms.go:10:48: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: Saved, Found = api.Pair()
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 forms.go:11:79: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: value, found = api.Pair()
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
@@ -17,7 +17,7 @@ forms.go:15:48: unsupported immutable operation: ordinary interfaces require ord
 forms.go:16:6: unsupported immutable operation: returning Local pointers is unsupported
   source: Pointer
   type: func() (found bool, value *api.View)
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 forms.go:17:20: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: func() (api.View, bool)
   type: func() (api.View, bool)
@@ -63,4 +63,4 @@ forms.go:32:61: unsupported owned container values: copying, rebinding, slicing,
 forms.go:37:8: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 forms.go:8:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: Saved, Found = api.Pair()
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref

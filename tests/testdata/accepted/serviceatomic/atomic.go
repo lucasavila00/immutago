@@ -89,3 +89,8 @@ type FrozenSlot struct {
 }
 
 var frozen atom.Pointer[FrozenSlot]
+
+func Extract(pointer *atom.Pointer[WorkerRef]) {
+	service := pointer.Load().Borrow()
+	_ = service
+}

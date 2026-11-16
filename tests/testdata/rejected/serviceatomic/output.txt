@@ -19,7 +19,7 @@ atomic.go:32:5: unmarked struct contains immutable field _; embed an immutable m
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
 atomic.go:32:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: local atomic.Pointer[LocalSlot]
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 atomic.go:33:11: unmarked struct contains immutable field _; embed an immutable marker
   owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof
@@ -34,8 +34,4 @@ atomic.go:33:5: unmarked struct contains immutable field _; embed an immutable m
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
 atomic.go:33:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: mixed atomic.Pointer[MixedSlot]
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-atomic.go:36:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: pointer.Load().Borrow
-  type: func() *serviceatomic.Worker
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
+  fix: keep Local values in local bindings; store Frozen data or a service Ref

@@ -7,7 +7,7 @@
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
 //   - Each exported service method result is a read result or error, with no count or order limit.
 //     Promoted methods use the same rule. Init, Run, and runtime methods are exempt.
-//   - Concrete service references and direct method calls through Ref.Borrow.
+//   - Concrete service references and Local service pointers outside the declaring package.
 //
 // Direct im or supervise imports, used types, and failed checked dependencies
 // select packages for analysis. Ordinary Go API contracts are trusted.
@@ -168,13 +168,13 @@ func (c *checks) checkFunctionBody(declaration *ast.FuncDecl) {
 		return
 	}
 	signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)
-	if usesLibraryType(signature, make(map[types.Type]bool), false, false) {
+	if c.queries.Callable(signature) || usesLibraryType(signature, make(map[types.Type]bool), false, false) {
 		c.report(declaration.Pos(), "unsupported function without a Go body; immutability cannot be proved\n  fix: "+
 			"provide a Go implementation so writes and pointer transport can be checked")
 	}
 }
 
-// checkType proves collection arguments and named struct fields.
+// checkType proves collection arguments and actual struct fields, including inferred results.
 func (c *checks) checkType(pos token.Pos, t types.Type) {
 	if checker.FrozenInterface(t) && !checker.IsLibraryType(t, "FrozenInterface") {
 		if _, named := types.Unalias(t).(*types.Named); named {
@@ -193,15 +193,16 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 				"\n  fix: "+structuralFix(t, reason))
 		}
 	}
-	// Defined types can inherit a struct without a struct literal in this package.
-	if _, ok := types.Unalias(t).(*types.Named); ok && !checker.IsCollection(t) && !checker.IsProjection(t) {
-		switch t.Underlying().(type) {
-		case *types.Struct:
-			c.checkStruct(pos, t)
-		case *types.Pointer:
-			if c.queries.Owns(t) {
-				c.report(pos, "defined pointer types are unsupported in protected storage; use a pointer alias")
-			}
+	switch underlying := t.Underlying().(type) {
+	case *types.Struct:
+		c.checkStruct(pos, t)
+	case *types.Tuple:
+		for result := range underlying.Variables() {
+			c.checkType(pos, result.Type())
+		}
+	case *types.Pointer:
+		if _, named := types.Unalias(t).(*types.Named); named && c.queries.Owns(t) {
+			c.report(pos, "defined pointer types are unsupported in protected storage; use a pointer alias")
 		}
 	}
 }
@@ -261,10 +262,13 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	}
 }
 
-// servicePointerField identifies consumer-declared storage of Local service pointers.
+// servicePointerField rejects Local service pointer fields without inspecting another service's state.
 func (c *checks) servicePointerField(owner types.Type, field *types.Var) bool {
 	if c.fields.Owns(field.Type()) || !c.queries.Owns(field.Type()) {
 		return false
+	}
+	if !checker.Service(owner) {
+		return true
 	}
 	if named, ok := types.Unalias(owner).(*types.Named); ok {
 		return named.Obj().Pkg() == c.pass.Pkg

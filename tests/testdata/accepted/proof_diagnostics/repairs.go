@@ -69,3 +69,8 @@ func record(score im.Projection[Score], values im.SliceProjection[int]) {
 	_ = im.Value(counts.Load())
 	_ = im.Value(values.At(0))
 }
+
+func keep(ref supervise.Ref[Worker]) {
+	worker := ref.Borrow()
+	_ = worker
+}

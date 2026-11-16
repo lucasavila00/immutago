@@ -18,13 +18,21 @@ func TestServiceBoundary(t *testing.T) {
 	}
 	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
 	for _, mode := range []string{"cli", "vet"} {
-		for _, target := range []string{"valid", "direct", "capture", "contract", "dependency", "invalidresults"} {
+		for _, target := range []string{
+			"api", "valid", "wrapper", "mixedallowed", "direct", "capture", "contract", "contracts",
+			"dependency", "invalidresults",
+		} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
 				dir := consumerModule(t, root, "service_boundary")
-				accepted := target == "valid" || target == "contract" || target == "dependency"
+				accepted := target == "api" || target == "valid" || target == "wrapper" || target == "mixedallowed" ||
+					target == "contract" || target == "dependency"
 				output := runBoundary(t, dir, binary, mode, accepted, "./"+target)
 				checkFixtureSnapshots(t, root, "service_boundary/"+target, output)
 			})
 		}
 	}
+	t.Run("runtime", func(t *testing.T) {
+		dir := consumerModule(t, root, "service_boundary")
+		runCommand(t, dir, true, "go", "test", "-race", "-count=1", "./valid")
+	})
 }

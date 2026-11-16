@@ -1,31 +1,85 @@
 anonymous.go:7:24: service method Values must return a read result: []int is not a Copied value
   result type: []int
   fix: copy scalar fields, or use a local projection
-borrow_calls.go:11:35: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-borrow_calls.go:14:59: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: api.Handle.Borrow
-  type: func(api.Handle) *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-borrow_calls.go:8:54: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: value.(api.Handle).Borrow
-  type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-handles.go:5:48: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-handles.go:6:38: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-init_calls.go:6:33: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-init_calls.go:9:44: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *api.ReadyCounter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
+borrow_calls.go:6:47: unsupported immutable operation: returning Local pointers is unsupported
+  source: return value.(api.Handle).Borrow()
+  fix: return the required data or a service Ref; keep the pointer local
+borrow_calls.go:6:6: unsupported immutable operation: returning Local pointers is unsupported
+  source: recoverPointer
+  type: func(value any) *api.Counter
+  fix: return the required data or a service Ref; keep the pointer local
+borrow_calls.go:9:52: unsupported immutable operation: returning Local pointers is unsupported
+  source: return api.Handle.Borrow(ref)
+  fix: return the required data or a service Ref; keep the pointer local
+borrow_calls.go:9:6: unsupported immutable operation: returning Local pointers is unsupported
+  source: expressionCall
+  type: func(ref api.Handle) *api.Counter
+  fix: return the required data or a service Ref; keep the pointer local
+handles.go:5:32: unsupported immutable operation: writes to immutable objects are unsupported
+  source: *ref.Borrow() = api.Counter{}
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+init_calls.go:6:33: unsupported immutable operation: Local service pointers permit only direct exported service method calls
+  source: ref.Borrow().Init()
+  type: error
+  fix: call worker.Method(args) directly; use an exported method other than Init, Run, or a runtime method
+init_calls.go:9:44: unsupported immutable operation: Local service pointers permit only direct exported service method calls
+  source: ref.Borrow().Init()
+  type: error
+  fix: call worker.Method(args) directly; use an exported method other than Init, Run, or a runtime method
+pointers.go:10:6: unsupported immutable operation: Local service pointers permit only direct exported service method calls
+  source: value.Count
+  type: func() int
+  fix: call worker.Method(args) directly; use an exported method other than Init, Run, or a runtime method
+pointers.go:11:6: unsupported immutable operation: Local service pointers permit only direct exported service method calls
+  source: (*api.Worker).Count(value)
+  type: int
+  fix: call worker.Method(args) directly; use an exported method other than Init, Run, or a runtime method
+pointers.go:12:6: unsupported immutable operation: Local service pointers permit only direct exported service method calls
+  source: value.Init()
+  type: error
+  fix: call worker.Method(args) directly; use an exported method other than Init, Run, or a runtime method
+pointers.go:13:2: unsupported immutable operation: Local service pointers permit only direct exported service method calls
+  source: value.Run(nil)
+  type: ()
+  fix: call worker.Method(args) directly; use an exported method other than Init, Run, or a runtime method
+pointers.go:14:6: unsupported immutable operation: Local service pointers permit only direct exported service method calls
+  source: value.Args()
+  type: int
+  fix: call worker.Method(args) directly; use an exported method other than Init, Run, or a runtime method
+pointers.go:15:6: unsupported immutable operation: Local service pointers permit only direct exported service method calls
+  source: value.Children()
+  type: *supervise.Group
+  fix: call worker.Method(args) directly; use an exported method other than Init, Run, or a runtime method
+pointers.go:16:6: unsupported immutable operation: Local service pointers permit only direct exported service method calls
+  source: value.Service
+  type: supervise.Service[int]
+  fix: call worker.Method(args) directly; use an exported method other than Init, Run, or a runtime method
+pointers.go:19:6: unsupported immutable operation: returning Local pointers is unsupported
+  source: genericReturn
+  type: func[T interface{Borrow() *api.Worker}](ref T) *api.Worker
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:20:2: unsupported immutable operation: returning Local pointers is unsupported
+  source: return ref.Borrow()
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:23:61: unsupported immutable operation: returning Local pointers is unsupported
+  source: return ref.Borrow()
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:23:6: unsupported immutable operation: returning Local pointers is unsupported
+  source: returnAnonymous
+  type: func(ref api.AnonymousRef) *api.Anonymous
+  fix: return the required data or a service Ref; keep the pointer local
+pointers.go:6:6: unsupported immutable operation: Local service pointers permit only direct exported service method calls
+  source: value.Value
+  type: int
+  fix: call worker.Method(args) directly; use an exported method other than Init, Run, or a runtime method
+pointers.go:7:2: unsupported immutable operation: Local service pointers permit only direct exported service method calls
+  source: value.Value
+  type: int
+  fix: call worker.Method(args) directly; use an exported method other than Init, Run, or a runtime method
+pointers.go:8:6: unsupported immutable operation: protected operation is outside the supported expression forms
+  source: *value
+  type: api.Worker
+  fix: use a documented concrete value, pointer, projection, or builder operation
+pointers.go:9:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: *value = api.Worker{}
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

@@ -74,7 +74,7 @@ func (c *subsetChecks) matchStoredValue(source, destination types.Type) string {
 	if rule := c.matchTransport(source, destination); rule != "" {
 		return rule
 	}
-	if c.queries.LocalPointer(source) {
+	if c.queries.LocalPointer(source) || c.queries.LocalPointer(destination) {
 		return "Local pointers cannot enter aggregate storage"
 	}
 	return ""

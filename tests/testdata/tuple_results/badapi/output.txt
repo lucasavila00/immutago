@@ -13,10 +13,10 @@ api.go:22:14: service method Pointer must return a read result: *example.com/con
 api.go:22:14: unsupported immutable operation: returning Local pointers is unsupported
   source: Pointer
   type: func() (bool, *api.View)
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 api.go:22:54: unsupported immutable operation: returning Local pointers is unsupported
   source: return false, nil
-  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+  fix: return the required data or a service Ref; keep the pointer local
 api.go:23:14: service method Record must return a read result: example.com/consumer/badapi.Unmarked is not a Copied value
   result type: badapi.Unmarked
   fix: copy scalar fields, or use a local projection
@@ -38,19 +38,19 @@ api.go:28:14: service method Nested must return a read result: array element: ar
 api.go:28:30: unsupported immutable operation: containers of Local pointers are unsupported
   source: [2][1]*api.View
   type: [2][1]*api.View
-  fix: keep Local values in local bindings, or store im.Frozen pointers
+  fix: keep pointers local; store Frozen data or service Refs
 api.go:28:33: unsupported immutable operation: containers of Local pointers are unsupported
   source: [1]*api.View
   type: [1]*api.View
-  fix: keep Local values in local bindings, or store im.Frozen pointers
+  fix: keep pointers local; store Frozen data or service Refs
 api.go:28:68: unsupported immutable operation: containers of Local pointers are unsupported
   source: [2][1]*api.View{}
   type: [2][1]*api.View
-  fix: keep Local values in local bindings, or store im.Frozen pointers
+  fix: keep pointers local; store Frozen data or service Refs
 api.go:28:71: unsupported immutable operation: containers of Local pointers are unsupported
   source: [1]*api.View
   type: [1]*api.View
-  fix: keep Local values in local bindings, or store im.Frozen pointers
+  fix: keep pointers local; store Frozen data or service Refs
 api.go:29:14: service method FrozenRecord must return a read result: example.com/consumer/api.Frozen is not a Copied value
   result type: api.Frozen
   fix: copy scalar fields, or use a local projection

@@ -1,6 +1,6 @@
 forms.go:10:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved api.ScorerProjection
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 forms.go:14:18: service method Raw must return a read result: example.com/consumer/api.Scorer is not a Copied value
   result type: api.Scorer
   fix: copy scalar fields, or use a local projection
@@ -13,7 +13,7 @@ forms.go:27:6: unsupported immutable operation: Frozen interface method receiver
   fix: convert a value for value methods or a fresh pointer for pointer methods; do not rely on implicit dereferences
 forms.go:29:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = local
-  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
 forms.go:30:6: unsupported immutable operation: example.com/consumer/api.Scorer is not a Copied value
   source: im.Value(im.ProjectionOf(s))
   type: api.Scorer
