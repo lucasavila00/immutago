@@ -14,7 +14,7 @@ For a Frozen record named Settings:
 | `SettingsProjection` | Local projection of a Settings record. |
 | `NewSettingsProjection(value)` | Takes `im.Projection[*Settings]`; returns SettingsProjection without copying the record. |
 | `var p SettingsProjection` or `SettingsProjection{}` | Nil projection. |
-| `p.IsNil()` | Report whether the projection has a record. |
+| `p.IsNil()` | Report whether the projection is empty (has no record). |
 | `p.Unsafe()` | Return the selected *Settings without a record copy or allocation; nil for an empty projection. |
 | `p.Field()` | Read a declared field using the result table below. |
 | `SettingsLimitsProjection` | Local array projection for the Limits field: `p.Limits()`. Has Len and At. |
