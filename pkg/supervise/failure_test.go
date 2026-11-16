@@ -14,7 +14,7 @@ import (
 // failureLeaf fails with the error supplied at startup.
 type failureLeaf struct{ Service[error] }
 
-// Run fails on each attempt.
+// Run fails with its supplied cause.
 func (s *failureLeaf) Run(context.Context) { panic(s.Args()) }
 
 // failureTreeArgs sets the parent depth above one failing leaf.
@@ -56,7 +56,7 @@ func TestFailureOrigin(t *testing.T) {
 	}
 }
 
-// checkFailureOrigin checks the terminal record and unchanged attempt reports.
+// checkFailureOrigin checks the terminal record and one report per failure.
 func checkFailureOrigin(t *testing.T, shape string, reporting bool) {
 	t.Helper()
 	cause := errors.New("model load failed")
@@ -106,7 +106,7 @@ func checkFailureOrigin(t *testing.T, shape string, reporting bool) {
 	defer mu.Unlock()
 	var want []any
 	if reporting {
-		want = []any{cause, failure}
+		want = []any{failure}
 	}
 	if !slices.Equal(reports, want) {
 		t.Errorf("reports = %v, want %v", reports, want)

@@ -61,7 +61,7 @@ func (p *Service[A]) UnsafeChildren() *Group {
 		p.children = newGroup(p.owner, false)
 		switch {
 		case p.ended:
-			p.children.stop(nil)
+			p.children.stop()
 		case p.cancel != nil:
 			p.children.activate()
 		}
@@ -78,7 +78,7 @@ func (p *Service[A]) bind(args A, owner *Group) {
 func (p *Service[A]) begin(ctx context.Context) (context.Context, bool) {
 	run, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	p.cancel = cancel
-	if p.owner.policy.Err() != nil || ctx.Err() != nil {
+	if p.owner.admission.Err() != nil || ctx.Err() != nil {
 		p.ended = true
 		return run, false
 	}
@@ -125,19 +125,21 @@ type NoArgs struct{}
 // It activates at most once and stops at most once. The zero value is not usable.
 // Do not copy an initialized Group. Pass its pointer. Run go vet to check for copies.
 type Group struct {
-	_        noCopy
-	mu       *sync.Mutex
-	children childList
-	active   bool
-	stopping bool
-	stopped  chan struct{}
-	policy   context.Context
-	cancel   context.CancelFunc
-	root     *Group
-	parent   *Group
-	entry    *child
-	report   func(any, []byte)
-	exit     func(any)
+	_           noCopy
+	mu          *sync.Mutex
+	children    childList
+	active      bool
+	stopping    bool
+	stopped     chan struct{}
+	admission   context.Context
+	cancel      context.CancelFunc
+	root        *Group
+	parent      *Group
+	entry       *child
+	report      func(any, []byte)
+	exit        func(any)
+	failure     *Failure
+	failureDone <-chan struct{}
 }
 
 // childList preserves start order and permits constant-time removal under Group.mu.
@@ -149,7 +151,7 @@ type childList struct {
 // child is pending while done is nil. Activation or shutdown starts its watcher.
 // Nested groups own their own completion channel.
 type child struct {
-	run        func(context.Context)
+	run        func(context.Context, <-chan struct{})
 	stop       func()
 	done       chan struct{}
 	group      *Group
@@ -178,9 +180,9 @@ func (p Ref[T]) Borrow() *T {
 
 // NewRoot creates an active lifetime group. A Run panic or Goexit stops the root,
 // waits for ordered cleanup, and panics with *Failure.
-// report receives each recovered Run panic or Goexit with its original
-// stack, then the selected terminal *Failure before cleanup waits. A nil report
-// disables individual Run reports; terminal failures still go to standard error.
+// report receives each recovered Run panic or Goexit once as *Failure, with its
+// original stack, before that service waits for child cleanup. A nil report
+// writes failures to standard error. Stop does not suppress failures.
 // Reports can overlap, must return, and must not wait for their group to stop.
 func NewRoot(report func(any, []byte)) *Group {
 	return root(func(value any) { panic(value) }, report)
@@ -193,18 +195,18 @@ func root(exit func(any), report func(any, []byte)) *Group {
 	return s
 }
 
-// newGroup creates a pending or active group with its owner's admission policy.
+// newGroup creates a pending or active group with its owner's admission context.
 func newGroup(owner *Group, active bool) *Group {
 	parent := context.Background()
 	var mu *sync.Mutex
 	var top *Group
 	if owner != nil {
-		parent, top, mu = owner.policy, owner.root, owner.mu
+		parent, top, mu = owner.admission, owner.root, owner.mu
 	} else {
 		mu = new(sync.Mutex)
 	}
-	policy, cancel := context.WithCancel(parent)
-	return &Group{mu: mu, active: active, stopped: make(chan struct{}), policy: policy, cancel: cancel, root: top}
+	admission, cancel := context.WithCancel(parent)
+	return &Group{mu: mu, active: active, stopped: make(chan struct{}), admission: admission, cancel: cancel, root: top}
 }
 
 // StartGroup creates a lifetime group for selective shutdown.
@@ -234,21 +236,21 @@ func Start[T, A any, P interface {
 	end()
 }](parent *Group, args A) (Ref[T], error) {
 	checkGroup(parent)
-	first := new(T)
-	bindService(P(first), args, parent)
+	value := new(T)
+	bindService(P(value), args, parent)
 	ready := false
 	defer func() {
 		if !ready {
-			P(first).end()
+			P(value).end()
 		}
 	}()
-	if err := P(first).Init(); err != nil {
+	if err := P(value).Init(); err != nil {
 		return Ref[T]{}, err
 	}
 	ready = true
-	ref := Ref[T]{value: im.Trust(first)}
+	ref := Ref[T]{value: im.Trust(value)}
 	run := func(ctx context.Context) {
-		service := P(first)
+		service := P(value)
 		parent.mu.Lock()
 		run, admitted := service.begin(ctx)
 		parent.mu.Unlock()
@@ -258,9 +260,9 @@ func Start[T, A any, P interface {
 		}
 		service.Run(run)
 	}
-	cleanup := func() { P(first).end() }
-	parent.add(func(ctx context.Context) {
-		watch(parent, ctx, reflect.TypeFor[T]().String(), run, cleanup)
+	cleanup := func() { P(value).end() }
+	parent.add(func(ctx context.Context, done <-chan struct{}) {
+		watch(parent, ctx, done, reflect.TypeFor[T]().String(), run, cleanup)
 	}, nil)
 	return ref, nil
 }
@@ -284,7 +286,7 @@ func (s *Group) Stop() <-chan struct{} {
 	checkGroup(s)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.stop(nil)
+	s.stop()
 	return s.stopped
 }
 
@@ -296,48 +298,53 @@ func checkGroup(s *Group) {
 }
 
 // stop starts one shutdown worker. The caller holds s.mu.
-func (s *Group) stop(failure *Failure) {
+func (s *Group) stop() {
 	if s.stopping {
 		return
 	}
 	s.stopping = true
 	s.cancel()
 	go func() {
-		if failure != nil {
-			s.reportFailure(failure)
-		}
 		s.halt()
-		if failure != nil {
-			s.exit(failure)
-		}
-		if s.parent != nil {
-			parent, entry := s.parent, s.entry
-			s.parent, s.entry = nil, nil
-			parent.finish(entry, s.stopped)
-		} else {
+		s.mu.Lock()
+		failure, done := s.failure, s.failureDone
+		if failure == nil {
+			if s.parent != nil {
+				s.parent.unlink(s.entry)
+				s.parent, s.entry = nil, nil
+			}
 			close(s.stopped)
+			s.mu.Unlock()
+			return
 		}
+		s.mu.Unlock()
+		<-done
+		s.exit(failure)
+		close(s.stopped)
 	}()
 }
 
-// fail submits one terminal failure. Root Stop and failure use the same decision lock.
-func (s *Group) fail(failure *Failure) {
+// fail records the first failure before reporting or cleanup can run.
+// done includes the failing service's children, even for a start after Stop.
+func (s *Group) fail(failure *Failure, done <-chan struct{}) {
 	top := s.root
 	top.mu.Lock()
 	defer top.mu.Unlock()
-	if s.policy.Err() == nil {
-		top.stop(failure)
+	if top.failure != nil {
+		return
 	}
+	top.failure, top.failureDone = failure, done
+	top.stop()
 }
 
-// add registers pending setup or starts one lifetime. Initial Init is already complete.
-func (s *Group) add(run func(context.Context), group *Group) {
+// add registers pending setup or starts one lifetime. Init is already complete.
+func (s *Group) add(run func(context.Context, <-chan struct{}), group *Group) {
 	c := &child{run: run, group: group}
 	if group != nil {
 		group.entry = c
 	}
 	s.mu.Lock()
-	if s.policy.Err() != nil {
+	if s.admission.Err() != nil {
 		if group != nil {
 			s.mu.Unlock()
 			<-group.Stop()
@@ -367,7 +374,7 @@ func (s *Group) add(run func(context.Context), group *Group) {
 // activate launches pending entries once. The caller holds the tree lock.
 // Parent shutdown keeps them pending for cleanup.
 func (s *Group) activate() {
-	if s.active || s.policy.Err() != nil {
+	if s.active || s.admission.Err() != nil {
 		return
 	}
 	s.active = true
@@ -376,19 +383,24 @@ func (s *Group) activate() {
 	}
 }
 
-// forget removes an entry whose work has already ended.
-func (s *Group) forget(c *child) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.unlink(c)
-}
-
-// finish publishes completion and removal in one parent-list operation.
+// finish handles a late terminal failure before it publishes completion and removal.
+// If exit panics, Start must remain blocked.
 func (s *Group) finish(c *child, done chan struct{}) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	top := s.root
+	if top.failureDone == done {
+		select {
+		case <-top.stopped:
+			failure := top.failure
+			s.mu.Unlock()
+			top.exit(failure)
+			s.mu.Lock()
+		default:
+		}
+	}
 	s.unlink(c)
 	close(done)
+	s.mu.Unlock()
 }
 
 // unlink removes an entry in constant time. The caller holds s.mu.
@@ -424,7 +436,7 @@ func (s *Group) launch(c *child) {
 	go func() {
 		defer s.finish(c, done)
 		defer cancel()
-		run(ctx)
+		run(ctx, done)
 	}()
 }
 
@@ -448,12 +460,12 @@ func (s *Group) halt() {
 		}
 		stop()
 		<-done
-		s.forget(c)
 	}
 }
 
 // watch reports a Run failure before cleanup can wait for children.
-func watch(parent *Group, ctx context.Context, name string, run func(context.Context), cleanup func()) {
+func watch(parent *Group, ctx context.Context, done <-chan struct{}, name string,
+	run func(context.Context), cleanup func()) {
 	defer cleanup()
 	completed := false
 	defer func() {
@@ -465,12 +477,9 @@ func watch(parent *Group, ctx context.Context, name string, run func(context.Con
 			value = errGoexit
 		}
 		stack := debug.Stack()
-		if report := parent.root.report; report != nil {
-			report(value, stack)
-		}
-		if ctx.Err() == nil {
-			parent.fail(&Failure{Service: name, Value: value, Stack: stack})
-		}
+		failure := &Failure{Service: name, Value: value, Stack: stack}
+		parent.fail(failure, done)
+		parent.root.reportFailure(failure)
 	}()
 	run(ctx)
 	completed = true

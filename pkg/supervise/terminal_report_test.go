@@ -13,38 +13,41 @@ import (
 	"time"
 )
 
-// TestTerminalReportBeforeCleanup keeps failure reporting ahead of a blocked shutdown.
+// TestTerminalReportBeforeCleanup reports the original failure while child cleanup blocks.
 func TestTerminalReportBeforeCleanup(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		cause := errors.New("terminal cause")
-		failure := &Failure{Service: "worker", Value: cause, Stack: []byte("original stack")}
 		reported, exiting := make(chan struct{}), make(chan struct{})
 		release := make(chan struct{})
 		var reports atomic.Int32
 		top := root(func(any) { close(exiting) }, func(value any, stack []byte) {
 			err, _ := value.(error)
-			var got *Failure
-			if !errors.As(err, &got) || got != failure || !errors.Is(err, cause) || string(stack) != "original stack" {
-				t.Error("terminal report lost its error or stack")
+			var failure *Failure
+			if !errors.As(err, &failure) || !errors.Is(err, cause) ||
+				!strings.Contains(string(stack), "initializing).Run") {
+				t.Error("report lost its error or stack")
 			}
 			reports.Add(1)
 			close(reported)
 		})
 		_, err := Start[initializing](top, &initHooks{
-			init: func(*initializing) error { return nil },
-			run:  func(_ *initializing, ctx context.Context) { <-ctx.Done(); <-release },
+			init: func(p *initializing) error {
+				_, err := Start[initializing](p.UnsafeChildren(), &initHooks{
+					init: func(*initializing) error { return nil },
+					run:  func(_ *initializing, ctx context.Context) { <-ctx.Done(); <-release },
+				})
+				return err
+			},
+			run: func(*initializing, context.Context) { panic(cause) },
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
 		synctest.Wait()
-		top.fail(failure)
-		top.fail(&Failure{Service: "other", Value: "later failure"})
-		synctest.Wait()
 		select {
 		case <-reported:
 		default:
-			t.Error("terminal report waited for service cleanup")
+			t.Error("failure report waited for service cleanup")
 		}
 		select {
 		case <-exiting:
@@ -54,7 +57,7 @@ func TestTerminalReportBeforeCleanup(t *testing.T) {
 		close(release)
 		<-top.Stop()
 		if reports.Load() != 1 {
-			t.Fatalf("terminal reports = %d; want 1", reports.Load())
+			t.Fatalf("reports = %d; want 1", reports.Load())
 		}
 	})
 }
@@ -70,7 +73,7 @@ func (s *processFailure) Run(context.Context) {
 	panic("original panic")
 }
 
-// TestTerminalProcessOutput checks original stacks when attempt reports are disabled.
+// TestTerminalProcessOutput checks original stacks with the default reporter.
 func TestTerminalProcessOutput(t *testing.T) {
 	if mode := os.Getenv("IMMUTAGO_TERMINAL_PROCESS"); mode != "" {
 		synctest.Test(t, func(t *testing.T) {

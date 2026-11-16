@@ -23,7 +23,7 @@ func (c *stopOnRead) Err() error {
 	if c.when == nil || c.when() {
 		c.once.Do(func() {
 			if c.group.mu.TryLock() {
-				c.group.stop(nil)
+				c.group.stop()
 				c.group.mu.Unlock()
 			} else {
 				go c.group.Stop()
@@ -76,12 +76,12 @@ func checkRunAdmissionOrdersStop(t *testing.T) {
 	entry := parent.children.first
 	run := entry.run
 	release := make(chan struct{})
-	entry.run = func(ctx context.Context) {
+	entry.run = func(ctx context.Context, done <-chan struct{}) {
 		<-release
-		run(&stopOnRead{Context: ctx, group: parent, when: func() bool { return inits.Load() == 1 }})
+		run(&stopOnRead{Context: ctx, group: parent, when: func() bool { return inits.Load() == 1 }}, done)
 	}
 	cleanup, slowRelease := make(chan struct{}), make(chan struct{})
-	parent.add(func(ctx context.Context) { <-ctx.Done(); close(cleanup); <-slowRelease }, nil)
+	parent.add(func(ctx context.Context, _ <-chan struct{}) { <-ctx.Done(); close(cleanup); <-slowRelease }, nil)
 	parent.mu.Lock()
 	parent.activate()
 	parent.mu.Unlock()
@@ -128,7 +128,7 @@ func TestStagedActivationOrdersStop(t *testing.T) {
 						return err
 					}
 				}
-				children.policy = &stopOnRead{Context: children.policy, group: parent}
+				children.admission = &stopOnRead{Context: children.admission, group: parent}
 				return nil
 			},
 		})
@@ -138,7 +138,7 @@ func TestStagedActivationOrdersStop(t *testing.T) {
 		entry := parent.children.first
 		run := entry.run
 		release := make(chan struct{})
-		entry.run = func(ctx context.Context) { <-release; run(ctx) }
+		entry.run = func(ctx context.Context, done <-chan struct{}) { <-release; run(ctx, done) }
 		parent.mu.Lock()
 		parent.activate()
 		parent.mu.Unlock()

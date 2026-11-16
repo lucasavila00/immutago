@@ -51,10 +51,7 @@ func checkServiceChildrenReporter(t *testing.T, before, nested bool) {
 	parent.root = parent
 	parent.exit = func(any) {}
 	parent.report = func(value any, stack []byte) {
-		if _, terminal := value.(*Failure); terminal {
-			return
-		}
-		reports <- value == "child report" && bytes.Contains(stack, []byte("reportingChild"))
+		reports <- value.(*Failure).Value == "child report" && bytes.Contains(stack, []byte("reportingChild"))
 	}
 	ref, _ := Start[reportingParent](parent, NoArgs{})
 	if before {

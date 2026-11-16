@@ -54,7 +54,7 @@ type Group struct {
 func NewRoot(report func(any, []byte)) *Group
 ```
 
-NewRoot creates an active lifetime group. A Run panic or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered Run panic or Goexit with its original stack, then the selected terminal \*Failure before cleanup waits. A nil report disables individual Run reports; terminal failures still go to standard error. Reports can overlap, must return, and must not wait for their group to stop.
+NewRoot creates an active lifetime group. A Run panic or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered Run panic or Goexit once as \*Failure, with its original stack, before that service waits for child cleanup. A nil report writes failures to standard error. Stop does not suppress failures. Reports can overlap, must return, and must not wait for their group to stop.
 
 ### func StartGroup
 

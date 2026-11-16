@@ -83,8 +83,7 @@ Stopping a nested group leaves other groups running. A Run failure stops the ent
 The [runtime reference](../reference/services.md) defines child shutdown order,
 completion and failure reports. In tests,
 [`supervisetest.NewRoot(t)`](../../pkg/supervise/supervisetest/readme.md) stops the
-tree during cleanup. It fails the test and prints the original stack when a
-Run fails, then requests root shutdown.
-The failed test completes cleanup, and later tests can run. The helper also fails
-if shutdown takes more than five seconds.
-Use a subprocess to test termination from a Run failure.
+tree during cleanup and fails the test if shutdown takes more than five seconds.
+It uses the same terminal failure rule: a Run panic or Goexit prints the original
+stack, completes ordered cleanup, and terminates the test process.
+Use a subprocess to test these failures.
