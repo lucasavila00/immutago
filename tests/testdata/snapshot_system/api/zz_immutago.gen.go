@@ -23,18 +23,18 @@ func NewEntryProjection(value im.Projection[*Entry]) EntryProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v EntryProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v EntryProjection) Unsafe() *Entry { return v.immutagoProjection.Unsafe() }
+func (v EntryProjection) Unchecked() *Entry { return v.immutagoProjection.Unchecked() }
 
 // Name reads the Name field.
 func (v EntryProjection) Name() im.StringProjection {
-	return v.immutagoProjection.Unsafe().Name.Projection()
+	return v.immutagoProjection.Unchecked().Name.Projection()
 }
 
 // Score reads the Score field.
 func (v EntryProjection) Score() int {
-	return v.immutagoProjection.Unsafe().Score
+	return v.immutagoProjection.Unchecked().Score
 }
 
 // EntryCell publishes frozen Entry values. Do not copy it.
@@ -60,38 +60,38 @@ func NewModelProjection(value im.Projection[*Model]) ModelProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ModelProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ModelProjection) Unsafe() *Model { return v.immutagoProjection.Unsafe() }
+func (v ModelProjection) Unchecked() *Model { return v.immutagoProjection.Unchecked() }
 
 // Name reads the Name field.
 func (v ModelProjection) Name() im.StringProjection {
-	return v.immutagoProjection.Unsafe().Name.Projection()
+	return v.immutagoProjection.Unchecked().Name.Projection()
 }
 
 // Native reads the Native field.
 func (v ModelProjection) Native() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Native)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Native)
 }
 
 // Names reads the Names field.
 func (v ModelProjection) Names() im.SliceProjection[im.FrozenString] {
-	return v.immutagoProjection.Unsafe().Names.Projection()
+	return v.immutagoProjection.Unchecked().Names.Projection()
 }
 
 // Entries reads the Entries field.
 func (v ModelProjection) Entries() im.MapProjection[string, Entry] {
-	return v.immutagoProjection.Unsafe().Entries.Projection()
+	return v.immutagoProjection.Unchecked().Entries.Projection()
 }
 
 // ByName reads the ByName field.
 func (v ModelProjection) ByName() im.MapProjection[im.FrozenString, int] {
-	return v.immutagoProjection.Unsafe().ByName.Projection()
+	return v.immutagoProjection.Unchecked().ByName.Projection()
 }
 
 // Child reads the Child field.
 func (v ModelProjection) Child() EntryProjection {
-	return NewEntryProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Child))
+	return NewEntryProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Child))
 }
 
 // Points reads the Points field.
@@ -125,18 +125,18 @@ func NewPointProjection(value im.Projection[*Point]) PointProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v PointProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v PointProjection) Unsafe() *Point { return v.immutagoProjection.Unsafe() }
+func (v PointProjection) Unchecked() *Point { return v.immutagoProjection.Unchecked() }
 
 // X reads the X field.
 func (v PointProjection) X() int {
-	return v.immutagoProjection.Unsafe().X
+	return v.immutagoProjection.Unchecked().X
 }
 
 // Y reads the Y field.
 func (v PointProjection) Y() int {
-	return v.immutagoProjection.Unsafe().Y
+	return v.immutagoProjection.Unchecked().Y
 }
 
 // PointCell publishes frozen Point values. Do not copy it.
@@ -159,5 +159,5 @@ func (v ModelPointsProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v ModelPointsProjection) At(index0 int) PointProjection {
-	return NewPointProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Points[index0]))
+	return NewPointProjection(im.ProjectionOf(&v.immutagoProjection.Unchecked().Points[index0]))
 }

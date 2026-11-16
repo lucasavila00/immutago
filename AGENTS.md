@@ -149,15 +149,15 @@ Frozen and Local fields are immutable from construction. Local variables, Local
 records, and Local builders can hold Local values; package variables, ordinary
 records, and closures cannot. This rule also applies through nested records and
 arrays. Local pointers stay local or pass to direct typed calls; never store or return them.
-Ordinary protected pointers originate from fresh storage or projection Unsafe. Fixed projection APIs
+Ordinary protected pointers originate from fresh storage or projection Unchecked. Fixed projection APIs
 and verified generated getters can select record addresses inside frozen storage.
 Do not add mutable construction, loan tracking, string provenance, or runtime
 ownership state.
 
 Generated getters read fields directly. Permit interior Frozen-record addresses
 only in the exact current generated file. Verify its normalized bytes and physical
-token file before source checks. Projection.Unsafe returns its Frozen payload;
-generated record projection Unsafe returns the selected pointer without a copy.
+token file before source checks. Projection.Unchecked returns its Frozen payload;
+generated record projection Unchecked returns the selected pointer without a copy.
 The caller controls retention and must not change its target. All normal type,
 write, capture, generic, receiver, and transport checks still apply to generated nodes.
 Generated record and array projections keep the root pointer and indices;
@@ -165,8 +165,8 @@ do not copy parent values during field reads.
 CopyRecord is the explicit root copy for a record value, including a map result.
 Use ProjectString for native strings and Projection methods for frozen strings,
 slices, and maps. Keep generic projection adapters in the low-level reference.
-Normal projection reads return Copied values, opaque handles, pointers to Frozen handle wrappers, or further projections. StringProjection.Unsafe and
-FrozenString.Unsafe explicitly return a shared native string; trust the caller
+Normal projection reads return Copied values, opaque handles, pointers to Frozen handle wrappers, or further projections. StringProjection.Unchecked and
+FrozenString.Unchecked explicitly return a shared native string; trust the caller
 and add no string provenance or lifetime analysis. Native collection builders keep
 exclusive-use and consume-on-Freeze checks. Freeze copies no backing storage;
 Clone makes explicit independent storage under its type constraints.
@@ -204,6 +204,8 @@ Prefer concise package names and calls that read naturally in user code.
 Use `im` for the immutable value package, so imports need no routine alias.
 Keep examples idiomatic and convenient. Preserve the immutability guarantees
 when improving the API; do not make callers repeat implementation details.
+Use Unchecked for explicit access that relies on caller contracts. Reserve Unsafe
+names for APIs that use Go's unsafe package or can break memory safety.
 
 ## 14. Document Exact Allowed Forms
 

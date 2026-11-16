@@ -24,8 +24,9 @@ func TestGenerationNames(t *testing.T) {
 	for _, mode := range []string{"cli", "vet"} {
 		t.Run(mode, func(t *testing.T) {
 			dir := consumerModule(t, root, "generation_names")
-			for _, name := range []string{"api", "privateapi", "accepted", "local_rejections", "record_isnil", "record_unsafe",
-				"interface_isnil", "private_value", "private_pointer", "private_array", "private_pointer_array"} {
+			for _, name := range []string{"api", "privateapi", "accepted", "local_rejections", "record_isnil",
+				"record_unchecked", "interface_isnil", "private_value", "private_pointer",
+				"private_array", "private_pointer_array"} {
 				t.Run(name, func(t *testing.T) {
 					valid := name == "api" || name == "privateapi" || name == "accepted"
 					output := runBoundary(t, dir, binary, mode, valid, "./"+name)

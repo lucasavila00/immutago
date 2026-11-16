@@ -79,7 +79,7 @@ func (s *consumerParent) Run(context.Context) {
 	args := s.Args()
 	worker := newConsumerLifetime()
 	worker.finish = args.finish
-	if _, err := Start[consumerModel](s.UnsafeChildren(), consumerModelArgs{life: worker}); err != nil {
+	if _, err := Start[consumerModel](s.UncheckedChildren(), consumerModelArgs{life: worker}); err != nil {
 		panic(err)
 	}
 	args.workers <- worker

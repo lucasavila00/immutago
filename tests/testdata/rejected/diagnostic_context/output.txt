@@ -130,66 +130,66 @@ handle_addresses.go:33:6: unsupported immutable operation: immutable references 
 operations.go:24:6: unsupported immutable operation: string is not a read result
   source: im.Value(title)
   type: string
-  fix: use im.StringOf(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOf(projection), then Unchecked for shared text or Clone for an independent copy
 operations.go:24:9: immutable type argument: string is not a read result
   type: string
-  fix: use im.StringOf(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOf(projection), then Unchecked for shared text or Clone for an independent copy
 operations.go:25:6: unsupported immutable operation: example.com/consumer/diagnostic_context.NamedText is not a read result
   source: im.Value[NamedText](named)
   type: diagnosticcontext.NamedText
-  fix: use im.StringOf(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOf(projection), then Unchecked for shared text or Clone for an independent copy
 operations.go:25:9: immutable type argument: example.com/consumer/diagnostic_context.NamedText is not a read result
   type: diagnosticcontext.NamedText
-  fix: use im.StringOf(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOf(projection), then Unchecked for shared text or Clone for an independent copy
 operations.go:26:6: unsupported immutable operation: string is not a read result
   source: im.Value[Text](alias)
   type: diagnosticcontext.Text
-  fix: use im.StringOf(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOf(projection), then Unchecked for shared text or Clone for an independent copy
 operations.go:26:9: immutable type argument: string is not a read result
   type: diagnosticcontext.Text
-  fix: use im.StringOf(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOf(projection), then Unchecked for shared text or Clone for an independent copy
 operations.go:27:6: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a read result
   source: im.Value(label)
   type: im.FrozenString
-  fix: use im.StringOfFrozen(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOfFrozen(projection), then Unchecked for shared text or Clone for an independent copy
 operations.go:27:9: immutable type argument: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a read result
   type: im.FrozenString
-  fix: use im.StringOfFrozen(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOfFrozen(projection), then Unchecked for shared text or Clone for an independent copy
 operations.go:28:6: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a read result
   source: im.Value[FrozenText](frozenAlias)
   type: diagnosticcontext.FrozenText
-  fix: use im.StringOfFrozen(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOfFrozen(projection), then Unchecked for shared text or Clone for an independent copy
 operations.go:28:9: immutable type argument: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a read result
   type: diagnosticcontext.FrozenText
-  fix: use im.StringOfFrozen(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOfFrozen(projection), then Unchecked for shared text or Clone for an independent copy
 operations.go:29:6: unsupported immutable operation: example.com/consumer/diagnostic_context.Settings is not a read result
   source: im.Value(record)
   type: diagnosticcontext.Record
-  fix: use projection.Unsafe() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
+  fix: use projection.Unchecked() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
 operations.go:29:9: immutable type argument: example.com/consumer/diagnostic_context.Settings is not a read result
   type: diagnosticcontext.Record
-  fix: use projection.Unsafe() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
+  fix: use projection.Unchecked() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
 operations.go:34:6: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[string] is not a read result
   source: im.Value(slice)
   type: im.FrozenSlice[string]
-  fix: use im.SliceOf(projection) for element reads, or projection.Unsafe() for the shared FrozenSlice
+  fix: use im.SliceOf(projection) for element reads, or projection.Unchecked() for the shared FrozenSlice
 operations.go:34:9: immutable type argument: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[string] is not a read result
   type: im.FrozenSlice[string]
-  fix: use im.SliceOf(projection) for element reads, or projection.Unsafe() for the shared FrozenSlice
+  fix: use im.SliceOf(projection) for element reads, or projection.Unchecked() for the shared FrozenSlice
 operations.go:35:6: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.FrozenMap[string, int] is not a read result
   source: im.Value(lookup)
   type: im.FrozenMap[string, int]
-  fix: use im.MapOf(projection) for entry reads, or projection.Unsafe() for the shared FrozenMap
+  fix: use im.MapOf(projection) for entry reads, or projection.Unchecked() for the shared FrozenMap
 operations.go:35:9: immutable type argument: github.com/lucasavila00/immutago/pkg/im.FrozenMap[string, int] is not a read result
   type: im.FrozenMap[string, int]
-  fix: use im.MapOf(projection) for entry reads, or projection.Unsafe() for the shared FrozenMap
+  fix: use im.MapOf(projection) for entry reads, or projection.Unchecked() for the shared FrozenMap
 operations.go:36:6: unsupported immutable operation: array element: string is not a read result
   source: im.Value(array)
   type: [2]string
-  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
+  fix: use projection.Unchecked() for shared access; use the matching generated projection for Local reads when available
 operations.go:36:9: immutable type argument: array element: string is not a read result
   type: [2]string
-  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
+  fix: use projection.Unchecked() for shared access; use the matching generated projection for Local reads when available
 operations.go:39:37: unsupported immutable operation: Frozen interface implementation: interface{} is not provably immutable
   source: boxed.(Scorer)
   type: diagnosticcontext.Scorer

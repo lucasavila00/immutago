@@ -4,7 +4,7 @@
 Ref copies hold the same service pointer.
 Method calls run in the caller's goroutine.
 
-Service and Group keep mutable ownership state in their values. UnsafeChildren
+Service and Group keep mutable ownership state in their values. UncheckedChildren
 requires the original service pointer created by Start. The runtime keeps that
 pointer through setup, Run, and cleanup. Its tree mutex protects child state.
 The zero-size `noCopy` fields enable standard vet diagnostics; they add no runtime

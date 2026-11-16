@@ -21,10 +21,10 @@ func NewScorerProjection(value im.Projection[Scorer]) ScorerProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Score calls the checked interface method with its ordinary Go contract.
-func (v ScorerProjection) Score() int { return v.immutagoProjection.Unsafe().Score() }
+func (v ScorerProjection) Score() int { return v.immutagoProjection.Unchecked().Score() }
 
 // SettingsProjection provides local read access to *Settings.
 type SettingsProjection struct {
@@ -40,13 +40,13 @@ func NewSettingsProjection(value im.Projection[*Settings]) SettingsProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v SettingsProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v SettingsProjection) Unsafe() *Settings { return v.immutagoProjection.Unsafe() }
+func (v SettingsProjection) Unchecked() *Settings { return v.immutagoProjection.Unchecked() }
 
 // Limit reads the Limit field.
 func (v SettingsProjection) Limit() int {
-	return v.immutagoProjection.Unsafe().Limit
+	return v.immutagoProjection.Unchecked().Limit
 }
 
 // SettingsCell publishes frozen Settings values. Do not copy it.
@@ -72,13 +72,13 @@ func NewStoredScorerProjection(value im.Projection[*StoredScorer]) StoredScorerP
 // IsNil reports whether the selected pointer is nil.
 func (v StoredScorerProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v StoredScorerProjection) Unsafe() *StoredScorer { return v.immutagoProjection.Unsafe() }
+func (v StoredScorerProjection) Unchecked() *StoredScorer { return v.immutagoProjection.Unchecked() }
 
 // Model reads the Model field.
 func (v StoredScorerProjection) Model() ScorerProjection {
-	return NewScorerProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Model))
+	return NewScorerProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Model))
 }
 
 // StoredScorerCell publishes frozen StoredScorer values. Do not copy it.

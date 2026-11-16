@@ -30,7 +30,7 @@ const testLibrary = `package im
  type Projection[T any] struct { value T }
  func ProjectionOf[T any](value T) Projection[T] { return Projection[T]{value:value} }
  func CopyRecord[T any](value Projection[T]) Projection[*T] { return Projection[*T]{} }
- func (value Projection[T]) Unsafe() T { return value.value }
+ func (value Projection[T]) Unchecked() T { return value.value }
  func Value[T any](value Projection[T]) T { return value.value }
  func IsNil[T any](value Projection[*T]) bool { return value.value == nil }
  type StringProjection struct { value string }
@@ -42,7 +42,7 @@ const testLibrary = `package im
  func (s StringProjection) Clone() string { return "" }
  func (s StringProjection) Equal(other StringProjection) bool { return false }
  func (s StringProjection) Is(other string) bool { return false }
- func (s StringProjection) Unsafe() string { return s.value }
+ func (s StringProjection) Unchecked() string { return s.value }
  type SliceProjection[E any] struct { values []E }
  func SliceOf[E any](value Projection[FrozenSlice[E]]) SliceProjection[E] { return SliceProjection[E]{} }
  func (s SliceProjection[E]) Len() int { return 0 }
@@ -72,7 +72,7 @@ const testLibrary = `package im
  func (value FrozenString) Clone() string { return "" }
  func (value FrozenString) Equal(other FrozenString) bool { return false }
  func (value FrozenString) EqualString(other string) bool { return false }
- func (value FrozenString) Unsafe() string { return value.value }
+ func (value FrozenString) Unchecked() string { return value.value }
  func FreezeSlice[T any](values []T) FrozenSlice[T] { return FrozenSlice[T]{} }
  func FreezeMap[K comparable, V any](values map[K]V) FrozenMap[K,V] { return FrozenMap[K,V]{} }
  func (values FrozenSlice[T]) Clone() []T { return nil }
@@ -91,7 +91,7 @@ const testRuntime = `package supervise
  func (p *Service[A]) Init() error { return nil }
  func (p *Service[A]) Args() A { return p.args }
  func (p *Service[A]) bind(args A) { p.args = args }
- func (p *Service[A]) UnsafeChildren() *Group { return nil }
+ func (p *Service[A]) UncheckedChildren() *Group { return nil }
  type NoArgs struct{}
  type Group struct{}
  func NewRoot(func(any, []byte)) *Group { return nil }

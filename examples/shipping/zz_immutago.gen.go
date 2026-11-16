@@ -23,33 +23,35 @@ func NewCarrierServiceProjection(value im.Projection[*CarrierService]) CarrierSe
 // IsNil reports whether the selected pointer is nil.
 func (v CarrierServiceProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v CarrierServiceProjection) Unsafe() *CarrierService { return v.immutagoProjection.Unsafe() }
+func (v CarrierServiceProjection) Unchecked() *CarrierService {
+	return v.immutagoProjection.Unchecked()
+}
 
 // ID reads the ID field.
 func (v CarrierServiceProjection) ID() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().ID)
+	return im.ProjectString(v.immutagoProjection.Unchecked().ID)
 }
 
 // Carrier reads the Carrier field.
 func (v CarrierServiceProjection) Carrier() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Carrier)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Carrier)
 }
 
 // Name reads the Name field.
 func (v CarrierServiceProjection) Name() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Name)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Name)
 }
 
 // DeliveryDays reads the DeliveryDays field.
 func (v CarrierServiceProjection) DeliveryDays() int {
-	return v.immutagoProjection.Unsafe().DeliveryDays
+	return v.immutagoProjection.Unchecked().DeliveryDays
 }
 
 // Rates reads the Rates field.
 func (v CarrierServiceProjection) Rates() im.MapProjection[string, im.FrozenSlice[Band]] {
-	return v.immutagoProjection.Unsafe().Rates.Projection()
+	return v.immutagoProjection.Unchecked().Rates.Projection()
 }
 
 // CarrierServiceCell publishes frozen CarrierService values. Do not copy it.
@@ -77,28 +79,28 @@ func NewCatalogProjection(value im.Projection[*Catalog]) CatalogProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v CatalogProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v CatalogProjection) Unsafe() *Catalog { return v.immutagoProjection.Unsafe() }
+func (v CatalogProjection) Unchecked() *Catalog { return v.immutagoProjection.Unchecked() }
 
 // Version reads the Version field.
 func (v CatalogProjection) Version() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Version)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Version)
 }
 
 // Currency reads the Currency field.
 func (v CatalogProjection) Currency() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Currency)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Currency)
 }
 
 // Destinations reads the Destinations field.
 func (v CatalogProjection) Destinations() im.MapProjection[string, string] {
-	return v.immutagoProjection.Unsafe().Destinations.Projection()
+	return v.immutagoProjection.Unchecked().Destinations.Projection()
 }
 
 // Services reads the Services field.
 func (v CatalogProjection) Services() im.SliceProjection[CarrierService] {
-	return v.immutagoProjection.Unsafe().Services.Projection()
+	return v.immutagoProjection.Unchecked().Services.Projection()
 }
 
 // CatalogCell publishes frozen Catalog values. Do not copy it.

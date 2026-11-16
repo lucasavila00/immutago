@@ -21,7 +21,7 @@ func newPrivateReaderProjection(value im.Projection[privateReader]) privateReade
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v privateReaderProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v privateReaderProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Read calls the checked interface method with its ordinary Go contract.
-func (v privateReaderProjection) Read() int { return v.immutagoProjection.Unsafe().Read() }
+func (v privateReaderProjection) Read() int { return v.immutagoProjection.Unchecked().Read() }

@@ -23,9 +23,9 @@ func newValueProjection(value im.Projection[*value]) valueProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v valueProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v valueProjection) Unsafe() *value { return v.immutagoProjection.Unsafe() }
+func (v valueProjection) Unchecked() *value { return v.immutagoProjection.Unchecked() }
 
 // valueCell publishes frozen value values. Do not copy it.
 type valueCell struct{ value im.Cell[value] }

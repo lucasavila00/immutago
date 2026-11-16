@@ -21,11 +21,11 @@ func NewCallbackProjection(value im.Projection[Callback]) CallbackProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v CallbackProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v CallbackProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Call calls the checked interface method with its ordinary Go contract.
 func (v CallbackProjection) Call(arg0 func() im.StringProjection) {
-	v.immutagoProjection.Unsafe().Call(arg0)
+	v.immutagoProjection.Unchecked().Call(arg0)
 }
 
 // CallbackVariadicProjection provides local method access to CallbackVariadic.
@@ -40,11 +40,11 @@ func NewCallbackVariadicProjection(value im.Projection[CallbackVariadic]) Callba
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v CallbackVariadicProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v CallbackVariadicProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Use calls the checked interface method with its ordinary Go contract.
 func (v CallbackVariadicProjection) Use(arg0 ...func() im.StringProjection) {
-	v.immutagoProjection.Unsafe().Use(arg0...)
+	v.immutagoProjection.Unchecked().Use(arg0...)
 }
 
 // DynamicProjection provides local method access to Dynamic.
@@ -59,11 +59,11 @@ func NewDynamicProjection(value im.Projection[Dynamic]) DynamicProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v DynamicProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v DynamicProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Use calls the checked interface method with its ordinary Go contract.
 func (v DynamicProjection) Use(arg0 interface{ Read() im.StringProjection }) {
-	v.immutagoProjection.Unsafe().Use(arg0)
+	v.immutagoProjection.Unchecked().Use(arg0)
 }
 
 // LocalVariadicProjection provides local method access to LocalVariadic.
@@ -78,10 +78,10 @@ func NewLocalVariadicProjection(value im.Projection[LocalVariadic]) LocalVariadi
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v LocalVariadicProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v LocalVariadicProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Use calls the checked interface method with its ordinary Go contract.
-func (v LocalVariadicProjection) Use(arg0 ...*Local) { v.immutagoProjection.Unsafe().Use(arg0...) }
+func (v LocalVariadicProjection) Use(arg0 ...*Local) { v.immutagoProjection.Unchecked().Use(arg0...) }
 
 // RawProjection provides local method access to Raw.
 type RawProjection struct {
@@ -95,10 +95,10 @@ func NewRawProjection(value im.Projection[Raw]) RawProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v RawProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v RawProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Text calls the checked interface method with its ordinary Go contract.
-func (v RawProjection) Text() []im.StringProjection { return v.immutagoProjection.Unsafe().Text() }
+func (v RawProjection) Text() []im.StringProjection { return v.immutagoProjection.Unchecked().Text() }
 
 // TupleProjection provides local method access to Tuple.
 type TupleProjection struct {
@@ -112,10 +112,10 @@ func NewTupleProjection(value im.Projection[Tuple]) TupleProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v TupleProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v TupleProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Pair calls the checked interface method with its ordinary Go contract.
-func (v TupleProjection) Pair() (int, *Local) { return v.immutagoProjection.Unsafe().Pair() }
+func (v TupleProjection) Pair() (int, *Local) { return v.immutagoProjection.Unchecked().Pair() }
 
 // VariadicProjection provides local method access to Variadic.
 type VariadicProjection struct {
@@ -129,9 +129,9 @@ func NewVariadicProjection(value im.Projection[Variadic]) VariadicProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v VariadicProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v VariadicProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Sum calls the checked interface method with its ordinary Go contract.
 func (v VariadicProjection) Sum(arg0 ...im.StringProjection) int {
-	return v.immutagoProjection.Unsafe().Sum(arg0...)
+	return v.immutagoProjection.Unchecked().Sum(arg0...)
 }

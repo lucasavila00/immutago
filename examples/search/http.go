@@ -37,7 +37,7 @@ func (h handler) status(w http.ResponseWriter, _ *http.Request) {
 		Version   int    `json:"version"`
 		Documents int    `json:"documents"`
 		Problem   string `json:"problem"`
-	}{Version: status.Version, Documents: status.Documents, Problem: status.Problem.Unsafe()}
+	}{Version: status.Version, Documents: status.Documents, Problem: status.Problem.Unchecked()}
 	writeJSON(w, http.StatusOK, response)
 }
 

@@ -23,9 +23,11 @@ func NewProjectionValueProjection(value im.Projection[*ProjectionValue]) Project
 // IsNil reports whether the selected pointer is nil.
 func (v ProjectionValueProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ProjectionValueProjection) Unsafe() *ProjectionValue { return v.immutagoProjection.Unsafe() }
+func (v ProjectionValueProjection) Unchecked() *ProjectionValue {
+	return v.immutagoProjection.Unchecked()
+}
 
 // Values reads the Values field.
 func (v ProjectionValueProjection) Values() ProjectionValueValuesProjection {
@@ -60,13 +62,13 @@ func NewValueProjection(value im.Projection[*Value]) ValueProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ValueProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ValueProjection) Unsafe() *Value { return v.immutagoProjection.Unsafe() }
+func (v ValueProjection) Unchecked() *Value { return v.immutagoProjection.Unchecked() }
 
 // X reads the X field.
 func (v ValueProjection) X() int {
-	return v.immutagoProjection.Unsafe().X
+	return v.immutagoProjection.Unchecked().X
 }
 
 // ValueCell publishes frozen Value values. Do not copy it.
@@ -111,5 +113,5 @@ func (v ProjectionValueValuesElementProjection) Len() int { return 1 }
 // At reads the element at index.
 func (v ProjectionValueValuesElementProjection) At(index1 int) int {
 	index0 := v.index0
-	return v.immutagoProjection.Unsafe().Values[index0][index1]
+	return v.immutagoProjection.Unchecked().Values[index0][index1]
 }

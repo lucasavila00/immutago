@@ -23,18 +23,18 @@ func NewMapsProjection(value im.Projection[*Maps]) MapsProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v MapsProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v MapsProjection) Unsafe() *Maps { return v.immutagoProjection.Unsafe() }
+func (v MapsProjection) Unchecked() *Maps { return v.immutagoProjection.Unchecked() }
 
 // First reads the First field.
 func (v MapsProjection) First() im.MapProjection[string, int] {
-	return v.immutagoProjection.Unsafe().First.Projection()
+	return v.immutagoProjection.Unchecked().First.Projection()
 }
 
 // Second reads the Second field.
 func (v MapsProjection) Second() im.MapProjection[string, int] {
-	return v.immutagoProjection.Unsafe().Second.Projection()
+	return v.immutagoProjection.Unchecked().Second.Projection()
 }
 
 // MapsCell publishes frozen Maps values. Do not copy it.
@@ -60,18 +60,18 @@ func NewSlicesProjection(value im.Projection[*Slices]) SlicesProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v SlicesProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v SlicesProjection) Unsafe() *Slices { return v.immutagoProjection.Unsafe() }
+func (v SlicesProjection) Unchecked() *Slices { return v.immutagoProjection.Unchecked() }
 
 // First reads the First field.
 func (v SlicesProjection) First() im.SliceProjection[int] {
-	return v.immutagoProjection.Unsafe().First.Projection()
+	return v.immutagoProjection.Unchecked().First.Projection()
 }
 
 // Second reads the Second field.
 func (v SlicesProjection) Second() im.SliceProjection[int] {
-	return v.immutagoProjection.Unsafe().Second.Projection()
+	return v.immutagoProjection.Unchecked().Second.Projection()
 }
 
 // SlicesCell publishes frozen Slices values. Do not copy it.
@@ -97,13 +97,13 @@ func NewValueProjection(value im.Projection[*Value]) ValueProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ValueProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ValueProjection) Unsafe() *Value { return v.immutagoProjection.Unsafe() }
+func (v ValueProjection) Unchecked() *Value { return v.immutagoProjection.Unchecked() }
 
 // X reads the X field.
 func (v ValueProjection) X() int {
-	return v.immutagoProjection.Unsafe().X
+	return v.immutagoProjection.Unchecked().X
 }
 
 // ValueCell publishes frozen Value values. Do not copy it.

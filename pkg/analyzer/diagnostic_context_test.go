@@ -18,9 +18,9 @@ func TestValueDiagnosticContext(t *testing.T) {
 		{"type Settings struct{im.Frozen; Limit int}; type Alias = Settings", "Alias", "im.CopyRecord(projection)"},
 		{"", "im.FrozenSlice[string]", "use im.SliceOf(projection)"},
 		{"", "im.FrozenMap[string,int]", "use im.MapOf(projection)"},
-		{"", "[2]string", "use projection.Unsafe() for shared access"},
-		{"type Settings struct{im.Frozen; Limit int}", "*Settings", "use projection.Unsafe() for shared access"},
-		{"type Reader interface{im.FrozenInterface}", "Reader", "use projection.Unsafe() for shared access"},
+		{"", "[2]string", "use projection.Unchecked() for shared access"},
+		{"type Settings struct{im.Frozen; Limit int}", "*Settings", "use projection.Unchecked() for shared access"},
+		{"type Reader interface{im.FrozenInterface}", "Reader", "use projection.Unchecked() for shared access"},
 	}
 	for _, test := range cases {
 		for _, typeArguments := range []string{"", "[" + test.payload + "]"} {

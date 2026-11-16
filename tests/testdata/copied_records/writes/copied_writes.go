@@ -83,8 +83,8 @@ func Consumed() {
 func ProjectionPointers(value im.Projection[api.Point], values im.SliceProjection[api.Point]) {
 	_ = im.CopyRecord(value)
 	_ = values.AtPointer(0)
-	_ = value.Unsafe()
-	_ = values.At(0).Unsafe()
+	_ = value.Unchecked()
+	_ = values.At(0).Unchecked()
 }
 
 var savedField *int

@@ -23,13 +23,13 @@ func NewDataProjection(value im.Projection[*Data]) DataProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v DataProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v DataProjection) Unsafe() *Data { return v.immutagoProjection.Unsafe() }
+func (v DataProjection) Unchecked() *Data { return v.immutagoProjection.Unchecked() }
 
 // Name reads the Name field.
 func (v DataProjection) Name() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Name)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Name)
 }
 
 // Names reads the Names field.
@@ -42,7 +42,7 @@ func (v DataProjection) Names() DataNamesProjection {
 
 // Next reads the Next field.
 func (v DataProjection) Next() DataProjection {
-	return NewDataProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Next))
+	return NewDataProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Next))
 }
 
 // DataCell publishes frozen Data values. Do not copy it.
@@ -68,13 +68,13 @@ func NewNumericProjection(value im.Projection[*Numeric]) NumericProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v NumericProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v NumericProjection) Unsafe() *Numeric { return v.immutagoProjection.Unsafe() }
+func (v NumericProjection) Unchecked() *Numeric { return v.immutagoProjection.Unchecked() }
 
 // Number reads the Number field.
 func (v NumericProjection) Number() int {
-	return v.immutagoProjection.Unsafe().Number
+	return v.immutagoProjection.Unchecked().Number
 }
 
 // NumericCell publishes frozen Numeric values. Do not copy it.
@@ -100,13 +100,13 @@ func NewRetainedProjection(value im.Projection[*Retained]) RetainedProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v RetainedProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v RetainedProjection) Unsafe() *Retained { return v.immutagoProjection.Unsafe() }
+func (v RetainedProjection) Unchecked() *Retained { return v.immutagoProjection.Unchecked() }
 
 // Text reads the Text field.
 func (v RetainedProjection) Text() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Text)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Text)
 }
 
 // RetainedCell publishes frozen Retained values. Do not copy it.
@@ -129,5 +129,5 @@ func (v DataNamesProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v DataNamesProjection) At(index0 int) im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Names[index0])
+	return im.ProjectString(v.immutagoProjection.Unchecked().Names[index0])
 }

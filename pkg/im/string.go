@@ -26,9 +26,9 @@ func (s FrozenString) Equal(other FrozenString) bool { return s.value == other.v
 // EqualString compares the bytes with a native string without copying or allocating.
 func (s FrozenString) EqualString(other string) bool { return s.value == other }
 
-// Unsafe returns the underlying string without copying or allocating.
+// Unchecked returns the underlying string without copying or allocating.
 // The caller controls retention of its shared backing storage.
-func (s FrozenString) Unsafe() string { return s.value }
+func (s FrozenString) Unchecked() string { return s.value }
 
 // Clone returns a native string with independent storage in O(n) time and space.
 // An empty result needs no allocation.

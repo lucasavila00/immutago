@@ -102,10 +102,10 @@ not capture it. `Status` is a Local result with copied counts and an error
 projection.
 
 `Path` and `Title` use `Clone` because the ordinary result owns their text.
-The snippet function uses `Unsafe` for local reads by the standard string APIs,
-then returns independent text. The status handler uses `Unsafe` to give the
+The snippet function uses `Unchecked` for local reads by the standard string APIs,
+then returns independent text. The status handler uses `Unchecked` to give the
 JSON encoder temporary read access. These calls trust the normal Go string
-contract; `Unsafe` itself does not enforce a lifetime.
+contract; `Unchecked` itself does not enforce a lifetime.
 
 An initial scan or parse error prevents startup. A later error leaves the last
 valid index available and sets `problem`. The next successful scan clears the

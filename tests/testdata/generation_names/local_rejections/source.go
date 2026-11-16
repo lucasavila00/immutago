@@ -10,4 +10,4 @@ func capture(p accepted.RecordProjection) func() int {
 
 func pointer(p *accepted.RecordProjection) *accepted.RecordProjection { return p }
 
-func write(p accepted.RecordProjection) { p.Unsafe().Local = 2 }
+func write(p accepted.RecordProjection) { p.Unchecked().Local = 2 }

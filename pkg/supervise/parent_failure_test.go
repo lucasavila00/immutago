@@ -34,7 +34,7 @@ func checkChildFailureAfterParentReturn(t *testing.T, where, cause string) {
 	var children *Group
 	parent, err := Start[initializing](top, &initHooks{
 		init: func(p *initializing) error {
-			children = p.UnsafeChildren()
+			children = p.UncheckedChildren()
 			_, err := Start[initializing](children, &initHooks{
 				init: func(*initializing) error { return nil },
 				run: func(*initializing, context.Context) {

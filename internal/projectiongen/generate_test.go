@@ -46,7 +46,7 @@ func main() {
  projection := current.Load()
  reply := Reply{Settings:projection}
  title := projection.Title(); node := projection.Node(); word := projection.Names().At(1)
- println(reply.Settings.Limit(), title.Unsafe(), node.Name().Unsafe(), word.Unsafe())
+ println(reply.Settings.Limit(), title.Unchecked(), node.Name().Unchecked(), word.Unchecked())
 }
 `)
 	first, err := Generate(dir)
@@ -87,7 +87,7 @@ func TestGenerateRejects(t *testing.T) {
 		`type Bad[T any] interface { im.FrozenInterface; Read() int }`,
 		`type Good struct { im.Frozen; N int }; type GoodProjection struct{}`,
 		`type Bad struct { im.Frozen; IsNil int }`,
-		`type Bad struct { im.Frozen; Unsafe int }`,
+		`type Bad struct { im.Frozen; Unchecked int }`,
 		`type Bad interface { im.FrozenInterface; IsNil() bool }`,
 	} {
 		dir := module(t, "package example\nimport \"github.com/lucasavila00/immutago/pkg/im\"\n"+source)
@@ -185,7 +185,7 @@ var current SettingsCell
 func main() {
  current.Store(Settings{Child:foreign.Make(), Pointer:new(foreign.Make())})
  projection := current.Load()
- println(projection.Child().Value(), projection.Child().Text().Unsafe(), projection.Pointer().Value())
+ println(projection.Child().Value(), projection.Child().Text().Unchecked(), projection.Pointer().Value())
 }
 `)
 	foreign := filepath.Join(dir, "foreign")

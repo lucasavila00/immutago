@@ -17,10 +17,10 @@ forms.go:29:2: unsupported immutable operation: Local values and pointers cannot
 forms.go:30:6: unsupported immutable operation: example.com/consumer/api.Scorer is not a read result
   source: im.Value(im.ProjectionOf(s))
   type: api.Scorer
-  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
+  fix: use projection.Unchecked() for shared access; use the matching generated projection for Local reads when available
 forms.go:30:9: immutable type argument: example.com/consumer/api.Scorer is not a read result
   type: api.Scorer
-  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
+  fix: use projection.Unchecked() for shared access; use the matching generated projection for Local reads when available
 forms.go:45:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: tree.Weight = 4
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

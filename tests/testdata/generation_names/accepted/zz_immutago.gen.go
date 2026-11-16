@@ -22,13 +22,13 @@ func NewReaderProjection(value im3.Projection[Reader]) ReaderProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v ReaderProjection) IsNil() bool { return v.immutagoProjection3.Unsafe() == nil }
+func (v ReaderProjection) IsNil() bool { return v.immutagoProjection3.Unchecked() == nil }
 
 // Local calls the checked interface method with its ordinary Go contract.
-func (v ReaderProjection) Local() int { return v.immutagoProjection3.Unsafe().Local() }
+func (v ReaderProjection) Local() int { return v.immutagoProjection3.Unchecked().Local() }
 
-// Unsafe calls the checked interface method with its ordinary Go contract.
-func (v ReaderProjection) Unsafe() int { return v.immutagoProjection3.Unsafe().Unsafe() }
+// Unchecked calls the checked interface method with its ordinary Go contract.
+func (v ReaderProjection) Unchecked() int { return v.immutagoProjection3.Unchecked().Unchecked() }
 
 // NumberProjection provides local read access to *Number.
 type NumberProjection struct {
@@ -44,13 +44,13 @@ func NewNumberProjection(value im3.Projection[*Number]) NumberProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v NumberProjection) IsNil() bool { return im3.IsNil(v.immutagoProjection3) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v NumberProjection) Unsafe() *Number { return v.immutagoProjection3.Unsafe() }
+func (v NumberProjection) Unchecked() *Number { return v.immutagoProjection3.Unchecked() }
 
 // N reads the N field.
 func (v NumberProjection) N() int {
-	return v.immutagoProjection3.Unsafe().N
+	return v.immutagoProjection3.Unchecked().N
 }
 
 // NumberCell publishes frozen Number values. Do not copy it.
@@ -76,28 +76,33 @@ func NewRecordProjection(value im3.Projection[*Record]) RecordProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v RecordProjection) IsNil() bool { return im3.IsNil(v.immutagoProjection3) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v RecordProjection) Unsafe() *Record { return v.immutagoProjection3.Unsafe() }
+func (v RecordProjection) Unchecked() *Record { return v.immutagoProjection3.Unchecked() }
 
 // Local reads the Local field.
 func (v RecordProjection) Local() int {
-	return v.immutagoProjection3.Unsafe().Local
+	return v.immutagoProjection3.Unchecked().Local
+}
+
+// Unsafe reads the Unsafe field.
+func (v RecordProjection) Unsafe() int {
+	return v.immutagoProjection3.Unchecked().Unsafe
 }
 
 // immutagoLocal4 reads the immutagoLocal4 field.
 func (v RecordProjection) immutagoLocal4() int {
-	return v.immutagoProjection3.Unsafe().immutagoLocal4
+	return v.immutagoProjection3.Unchecked().immutagoLocal4
 }
 
 // immutagoProjection reads the immutagoProjection field.
 func (v RecordProjection) immutagoProjection() int {
-	return v.immutagoProjection3.Unsafe().immutagoProjection
+	return v.immutagoProjection3.Unchecked().immutagoProjection
 }
 
 // immutagoProjection2 reads the immutagoProjection2 field.
 func (v RecordProjection) immutagoProjection2() int {
-	return v.immutagoProjection3.Unsafe().immutagoProjection2
+	return v.immutagoProjection3.Unchecked().immutagoProjection2
 }
 
 // Grid reads the Grid field.
@@ -110,17 +115,17 @@ func (v RecordProjection) Grid() RecordGridProjection {
 
 // Reader reads the Reader field.
 func (v RecordProjection) Reader() ReaderProjection {
-	return NewReaderProjection(im3.ProjectionOf(v.immutagoProjection3.Unsafe().Reader))
+	return NewReaderProjection(im3.ProjectionOf(v.immutagoProjection3.Unchecked().Reader))
 }
 
 // Foreign reads the Foreign field.
 func (v RecordProjection) Foreign() vpkg.RecordProjection {
-	return vpkg.NewRecordProjection(im3.ProjectionOf(&v.immutagoProjection3.Unsafe().Foreign))
+	return vpkg.NewRecordProjection(im3.ProjectionOf(&v.immutagoProjection3.Unchecked().Foreign))
 }
 
 // Pointer reads the Pointer field.
 func (v RecordProjection) Pointer() vpkg.RecordProjection {
-	return vpkg.NewRecordProjection(im3.ProjectionOf(v.immutagoProjection3.Unsafe().Pointer))
+	return vpkg.NewRecordProjection(im3.ProjectionOf(v.immutagoProjection3.Unchecked().Pointer))
 }
 
 // ForeignArray reads the ForeignArray field.
@@ -179,7 +184,7 @@ func (v RecordForeignArrayProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v RecordForeignArrayProjection) At(index0 int) vpkg.RecordProjection {
-	return vpkg.NewRecordProjection(im3.ProjectionOf(&v.immutagoProjection3.Unsafe().ForeignArray[index0]))
+	return vpkg.NewRecordProjection(im3.ProjectionOf(&v.immutagoProjection3.Unchecked().ForeignArray[index0]))
 }
 
 // RecordPointerArrayProjection reads a fixed array locally.
@@ -193,7 +198,7 @@ func (v RecordPointerArrayProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v RecordPointerArrayProjection) At(index0 int) vpkg.RecordProjection {
-	return vpkg.NewRecordProjection(im3.ProjectionOf(v.immutagoProjection3.Unsafe().PointerArray[index0]))
+	return vpkg.NewRecordProjection(im3.ProjectionOf(v.immutagoProjection3.Unchecked().PointerArray[index0]))
 }
 
 // RecordGridElementProjection reads a fixed array locally.
@@ -209,5 +214,5 @@ func (v RecordGridElementProjection) Len() int { return 3 }
 // At reads the element at index.
 func (v RecordGridElementProjection) At(index1 int) int {
 	index0 := v.index0
-	return v.immutagoProjection3.Unsafe().Grid[index0][index1]
+	return v.immutagoProjection3.Unchecked().Grid[index0][index1]
 }

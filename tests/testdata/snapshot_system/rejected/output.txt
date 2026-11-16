@@ -117,17 +117,17 @@ snapshot_categories.go:40:52: unsupported immutable operation: returning Local p
 snapshot_categories.go:43:6: unsupported immutable operation: example.com/consumer/rejected.Retained is not a read result
   source: im.Value(projection)
   type: rejected.Retained
-  fix: use projection.Unsafe() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
+  fix: use projection.Unchecked() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
 snapshot_categories.go:43:9: immutable type argument: example.com/consumer/rejected.Retained is not a read result
   type: rejected.Retained
-  fix: use projection.Unsafe() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
+  fix: use projection.Unchecked() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
 snapshot_categories.go:44:6: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a read result
   source: im.Value(text)
   type: im.FrozenString
-  fix: use im.StringOfFrozen(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOfFrozen(projection), then Unchecked for shared text or Clone for an independent copy
 snapshot_categories.go:44:9: immutable type argument: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a read result
   type: im.FrozenString
-  fix: use im.StringOfFrozen(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOfFrozen(projection), then Unchecked for shared text or Clone for an independent copy
 snapshot_categories.go:45:6: unsupported immutable operation: string is not a Copied value
   source: values.Clone()
   type: []string
@@ -215,10 +215,10 @@ snapshot_categories.go:88:17: service method NumericArray must return a read res
 snapshot_categories.go:90:6: unsupported immutable operation: example.com/consumer/rejected.Numeric is not a read result
   source: im.Value(value)
   type: rejected.Numeric
-  fix: use projection.Unsafe() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
+  fix: use projection.Unchecked() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
 snapshot_categories.go:90:9: immutable type argument: example.com/consumer/rejected.Numeric is not a read result
   type: rejected.Numeric
-  fix: use projection.Unsafe() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
+  fix: use projection.Unchecked() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
 snapshot_categories.go:91:6: unsupported immutable operation: example.com/consumer/rejected.Numeric is not a Copied value
   source: values.Clone()
   type: []rejected.Numeric
@@ -262,7 +262,7 @@ snapshot_holders.go:33:2: unsupported immutable operation: protected storage req
   source: defer typedCell.Load()
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:17:22: unsupported immutable operation: interior addresses of protected storage are unsupported
-  source: &projection.Unsafe().Names
+  source: &projection.Unchecked().Names
   type: *[2]string
   fix: copy the field into a local; do not take a pointer into immutable storage
 snapshot_projection.go:17:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
@@ -272,31 +272,31 @@ snapshot_projection.go:17:9: immutable type argument: stored pointers require a 
   type: *[2]string
   fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 snapshot_projection.go:18:6: unsupported immutable operation: interior addresses of protected storage are unsupported
-  source: &projection.Unsafe().Next
+  source: &projection.Unchecked().Next
   type: **rejected.Data
   fix: copy the field into a local; do not take a pointer into immutable storage
 snapshot_projection.go:19:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: projection.Unsafe().Name = "changed"
+  source: projection.Unchecked().Name = "changed"
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 snapshot_projection.go:20:9: unsupported immutable operation: method values require ordinary or Frozen receivers and contracts
-  source: projection.Unsafe
+  source: projection.Unchecked
   type: func() *rejected.Data
   fix: call the method directly (value.Method(...)); do not save or pass its method value
 snapshot_projection.go:22:6: unsupported immutable operation: method expressions require ordinary or Frozen receivers and contracts
-  source: im.Projection[*Data].Unsafe(projection)
+  source: im.Projection[*Data].Unchecked(projection)
   type: *rejected.Data
   fix: call the receiver method directly (value.Method(...)); do not call it through the type
 snapshot_projection.go:28:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: go integerCell.Load().Unsafe()
+  source: go integerCell.Load().Unchecked()
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:29:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: defer stringCell.Load().Unsafe()
+  source: defer stringCell.Load().Unchecked()
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:30:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: go identity(stringCell.Load().Unsafe())
+  source: go identity(stringCell.Load().Unchecked())
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:31:2: unsupported immutable operation: protected storage requires synchronous calls
-  source: defer identity(stringCell.Load().Unsafe())
+  source: defer identity(stringCell.Load().Unchecked())
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:32:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go integerCell.Load()

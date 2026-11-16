@@ -7,30 +7,30 @@ import (
 	"unsafe"
 )
 
-// TestProjectionUnsafe checks generated-style field reads and shared storage.
-func TestProjectionUnsafe(t *testing.T) {
+// TestProjectionUnchecked checks generated-style field reads and shared storage.
+func TestProjectionUnchecked(t *testing.T) {
 	input := testFrozen{
 		Text: strings.Repeat("text", 128), Slice: FreezeSlice([]int{2, 4}),
 		Map: FreezeMap(map[int]int{1: 3}), Child: &testChild{Number: 5}, Array: [2]int{6, 7},
 	}
 	projection := ProjectionOf(&input)
-	text := ProjectionOf(projection.Unsafe().Text)
+	text := ProjectionOf(projection.Unchecked().Text)
 	if unsafe.StringData(text.value) != unsafe.StringData(input.Text) {
 		t.Fatal("string read changed storage")
 	}
-	sequence := ProjectionOf(projection.Unsafe().Slice)
+	sequence := ProjectionOf(projection.Unchecked().Slice)
 	if &sequence.value.values[0] != &input.Slice.values[0] {
 		t.Fatal("slice read changed storage")
 	}
-	mapping := ProjectionOf(projection.Unsafe().Map)
+	mapping := ProjectionOf(projection.Unchecked().Map)
 	if reflect.ValueOf(mapping.value.values).UnsafePointer() != reflect.ValueOf(input.Map.values).UnsafePointer() {
 		t.Fatal("map read changed storage")
 	}
-	pointer := ProjectionOf(projection.Unsafe().Child)
+	pointer := ProjectionOf(projection.Unchecked().Child)
 	if pointer.value != input.Child || IsNil(pointer) {
 		t.Fatal("pointer read changed identity")
 	}
-	if projection.Unsafe().Array[1] != 7 {
+	if projection.Unchecked().Array[1] != 7 {
 		t.Fatal("array read changed value")
 	}
 }
@@ -58,8 +58,9 @@ func TestProjectionPublicAPI(t *testing.T) {
 		typeOf  reflect.Type
 		methods []string
 	}{
-		{reflect.TypeFor[Projection[int]](), []string{"Unsafe"}},
-		{reflect.TypeFor[StringProjection](), []string{"At", "Clone", "Equal", "Is", "Len", "Unsafe"}},
+		{reflect.TypeFor[Projection[int]](), []string{"Unchecked"}},
+		{reflect.TypeFor[StringProjection](), []string{"At", "Clone", "Equal", "Is", "Len", "Unchecked"}},
+		{reflect.TypeFor[FrozenString](), []string{"At", "Clone", "Equal", "EqualString", "Len", "Projection", "Unchecked"}},
 		{reflect.TypeFor[SliceProjection[int]](), []string{"All", "At", "AtPointer", "Clone", "Len"}},
 		{reflect.TypeFor[MapProjection[int, int]](), []string{"All", "Clone", "Get", "Len"}},
 	}

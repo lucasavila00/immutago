@@ -24,20 +24,20 @@ type testChild struct {
 // TestCellZero checks the zero snapshot, scalar projection, and nil pointer projection.
 func TestCellZero(t *testing.T) {
 	var scalar Cell[int]
-	if Value(scalar.Load()) != 0 || scalar.Load().Unsafe() != 0 {
+	if Value(scalar.Load()) != 0 || scalar.Load().Unchecked() != 0 {
 		t.Fatal("zero scalar cell changed the zero value")
 	}
 	var pointer Cell[*testChild]
-	if !IsNil(pointer.Load()) || pointer.Load().Unsafe() != nil {
+	if !IsNil(pointer.Load()) || pointer.Load().Unchecked() != nil {
 		t.Fatal("zero pointer cell is not nil")
 	}
 	pointer.Store(&testChild{Number: 1})
 	pointer.Store(nil)
-	if !IsNil(pointer.Load()) || pointer.Load().Unsafe() != nil {
+	if !IsNil(pointer.Load()) || pointer.Load().Unchecked() != nil {
 		t.Fatal("stored nil pointer changed")
 	}
 	var record Cell[testFrozen]
-	if record.Load().Unsafe().Number != 0 {
+	if record.Load().Unchecked().Number != 0 {
 		t.Fatal("zero record cell changed the zero value")
 	}
 }
@@ -52,7 +52,7 @@ func TestCellStore(t *testing.T) {
 	}
 	input.Number = 9
 	first := cell.Load()
-	shared := cell.Load().Unsafe()
+	shared := cell.Load().Unchecked()
 	if first.value.Number != 1 || shared.Number != 1 {
 		t.Fatal("cell root changed with the caller's value")
 	}
@@ -60,11 +60,11 @@ func TestCellStore(t *testing.T) {
 		t.Fatal("cell copied immutable backing storage")
 	}
 	shared.Number = 8
-	if cell.Load().Unsafe().Number != 1 {
+	if cell.Load().Unchecked().Number != 1 {
 		t.Fatal("Value read returned the cell's root storage")
 	}
 	cell.Store(testFrozen{Number: 4})
-	if first.value.Number != 1 || cell.Load().Unsafe().Number != 4 {
+	if first.value.Number != 1 || cell.Load().Unchecked().Number != 4 {
 		t.Fatal("Store changed an earlier snapshot")
 	}
 }
@@ -89,22 +89,22 @@ func TestCellConcurrent(t *testing.T) {
 	workers.Wait()
 }
 
-// TestCellUnsafePointer checks the selected root identity and its lifetime across Store.
-func TestCellUnsafePointer(t *testing.T) {
+// TestCellUncheckedPointer checks the selected root identity and its lifetime across Store.
+func TestCellUncheckedPointer(t *testing.T) {
 	var cell Cell[testFrozen]
-	if cell.LoadPointer().Unsafe() != nil {
+	if cell.LoadPointer().Unchecked() != nil {
 		t.Fatal("empty Cell returned a pointer")
 	}
 	cell.Store(testFrozen{Number: 3})
-	first := cell.LoadPointer().Unsafe()
-	if first != cell.LoadPointer().Unsafe() || first != cell.value.Load() {
+	first := cell.LoadPointer().Unchecked()
+	if first != cell.LoadPointer().Unchecked() || first != cell.value.Load() {
 		t.Fatal("load copied the selected root")
 	}
 	cell.Store(testFrozen{Number: 7})
-	if first.Number != 3 || first == cell.LoadPointer().Unsafe() || cell.LoadPointer().Unsafe().Number != 7 {
+	if first.Number != 3 || first == cell.LoadPointer().Unchecked() || cell.LoadPointer().Unchecked().Number != 7 {
 		t.Fatal("Store changed the saved version")
 	}
-	if got := testing.AllocsPerRun(100, func() { sharedPointerSink = cell.LoadPointer().Unsafe() }); got != 0 {
+	if got := testing.AllocsPerRun(100, func() { sharedPointerSink = cell.LoadPointer().Unchecked() }); got != 0 {
 		t.Fatalf("Pointer escape allocated %g times", got)
 	}
 }

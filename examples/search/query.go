@@ -120,8 +120,8 @@ func searchIndex(index IndexProjection, request query) Response {
 
 // excerpt copies up to 160 characters near the first matching body word.
 func excerpt(body im.StringProjection, first int) string {
-	// Unsafe gives the standard string functions read access. The return value is copied.
-	text := body.Unsafe()
+	// Unchecked gives the standard string functions read access. The return value is copied.
+	text := body.Unchecked()
 	start := max(first, 0)
 	for n := 0; n < 40 && start > 0; n++ {
 		_, size := utf8.DecodeLastRuneInString(text[:start])

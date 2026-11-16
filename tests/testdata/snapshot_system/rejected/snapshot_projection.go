@@ -14,21 +14,21 @@ var integerCell im.Cell[int]
 var stringCell im.Cell[string]
 
 func projection(projection im.Projection[*Data], scalar im.Projection[int]) {
-	_ = im.ProjectionOf(&projection.Unsafe().Names)
-	_ = &projection.Unsafe().Next
-	projection.Unsafe().Name = "changed"
-	raw := projection.Unsafe
+	_ = im.ProjectionOf(&projection.Unchecked().Names)
+	_ = &projection.Unchecked().Next
+	projection.Unchecked().Name = "changed"
+	raw := projection.Unchecked
 	_ = raw
-	_ = im.Projection[*Data].Unsafe(projection)
+	_ = im.Projection[*Data].Unchecked(projection)
 }
 
 func identity(value string) string { return value }
 
 func cellStatements() {
-	go integerCell.Load().Unsafe()
-	defer stringCell.Load().Unsafe()
-	go identity(stringCell.Load().Unsafe())
-	defer identity(stringCell.Load().Unsafe())
+	go integerCell.Load().Unchecked()
+	defer stringCell.Load().Unchecked()
+	go identity(stringCell.Load().Unchecked())
+	defer identity(stringCell.Load().Unchecked())
 	go integerCell.Load()
 	defer stringCell.Load()
 	go stringCell.Store("text")

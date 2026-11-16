@@ -16,12 +16,12 @@ func (*reportingParent) Run(ctx context.Context) { <-ctx.Done() }
 // StartChild starts one child that panics.
 func (p *reportingParent) StartChild(nested bool) {
 	if nested {
-		if _, err := Start[reportingChild](StartGroup(p.UnsafeChildren()), NoArgs{}); err != nil {
+		if _, err := Start[reportingChild](StartGroup(p.UncheckedChildren()), NoArgs{}); err != nil {
 			panic(err)
 		}
 		return
 	}
-	if _, err := Start[reportingChild](p.UnsafeChildren(), NoArgs{}); err != nil {
+	if _, err := Start[reportingChild](p.UncheckedChildren(), NoArgs{}); err != nil {
 		panic(err)
 	}
 }

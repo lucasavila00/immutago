@@ -23,13 +23,13 @@ func NewGoodProjection(value im.Projection[*Good]) GoodProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v GoodProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v GoodProjection) Unsafe() *Good { return v.immutagoProjection.Unsafe() }
+func (v GoodProjection) Unchecked() *Good { return v.immutagoProjection.Unchecked() }
 
 // Value reads the Value field.
 func (v GoodProjection) Value() int {
-	return v.immutagoProjection.Unsafe().Value
+	return v.immutagoProjection.Unchecked().Value
 }
 
 // GoodCell publishes frozen Good values. Do not copy it.

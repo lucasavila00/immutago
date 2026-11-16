@@ -10,7 +10,7 @@ import (
 func TestTupleValues(t *testing.T) {
 	pool := &api.Pool{}
 	first, view, counts, found, last := pool.Read()
-	if first != nil || last != nil || !found || view.Text.Unsafe() != "ready" || counts[1].N != 8 {
+	if first != nil || last != nil || !found || view.Text.Unchecked() != "ready" || counts[1].N != 8 {
 		t.Fatal("tuple result changed")
 	}
 	view, found = pool.Named()

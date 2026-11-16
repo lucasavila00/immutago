@@ -4,8 +4,8 @@
 | --- | --- |
 | FreezeString | Copy a native string handle; no byte copy, allocation, or input consumption. |
 | FreezeSlice, FreezeMap | Copy a native handle; no entry copy or allocation. |
-| Projection.Unsafe | Return T by value with its shared storage; no allocation. A pointer payload remains the same pointer. |
-| Generated record projection.Unsafe | Return the selected pointer; no record copy, allocation, or Cell load. |
+| Projection.Unchecked | Return T by value with its shared storage; no allocation. A pointer payload remains the same pointer. |
+| Generated record projection.Unchecked | Return the selected pointer; no record copy, allocation, or Cell load. |
 | ProjectionOf | Copy the Go value T; no copy of its backing storage. |
 | Generated record field or array element projection | Read through the root pointer and indices; no copy of the containing record or array. |
 | Value | Return a Copied value, opaque handle, pointer to a Frozen handle wrapper, or unnamed array of these values. Records and arrays have their ordinary Go value-copy cost. No allocation. |
@@ -13,7 +13,7 @@
 | ProjectString, frozen Projection methods, generic projection adapters | Copy a native handle; no backing-storage copy or allocation. |
 | FrozenString.Len/At, StringProjection.Len/At, SliceProjection.Len, MapProjection.Len/Get | Native length, indexing, or map lookup; Get wraps its returned value. |
 | FrozenString.Equal/EqualString, StringProjection.Equal/Is | Native string equality; no allocation or byte copy. |
-| FrozenString.Unsafe, StringProjection.Unsafe | Copy the native string handle; no allocation or byte copy. |
+| FrozenString.Unchecked, StringProjection.Unchecked | Copy the native string handle; no allocation or byte copy. |
 | SliceProjection.At | Copy one element into a Projection. |
 | SliceProjection.AtPointer | Return a projection of one record's address without copying the record or allocating. |
 | Direct range over All | O(n); projection iterators copy keys/elements as Go values. |

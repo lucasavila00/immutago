@@ -74,7 +74,7 @@ configuration for generation, the checker, and the build.
 
 The checker rejects a missing directive, missing output, or stale output before
 source checks. Only verified generated code can form interior Frozen-record addresses.
-Projection.Unsafe explicitly returns a Frozen payload for shared use. All normal
+Projection.Unchecked explicitly returns a Frozen payload for shared use. All normal
 type, write, capture, generic, receiver, and transport checks still apply.
 Opaque handles, Local records, and Copied records need no generation.
 Named opaque handles can be declared locally or in test files.

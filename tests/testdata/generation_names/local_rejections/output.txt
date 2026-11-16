@@ -6,7 +6,7 @@ source.go:11:73: unsupported immutable operation: returning Local pointers is un
   source: return p
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 source.go:13:43: unsupported immutable operation: writes to immutable objects are unsupported
-  source: p.Unsafe().Local = 2
+  source: p.Unchecked().Local = 2
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 source.go:5:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: retained accepted.RecordProjection

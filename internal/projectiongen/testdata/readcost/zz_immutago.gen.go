@@ -23,9 +23,9 @@ func NewRecord64KiBProjection(value im.Projection[*Record64KiB]) Record64KiBProj
 // IsNil reports whether the selected pointer is nil.
 func (v Record64KiBProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v Record64KiBProjection) Unsafe() *Record64KiB { return v.immutagoProjection.Unsafe() }
+func (v Record64KiBProjection) Unchecked() *Record64KiB { return v.immutagoProjection.Unchecked() }
 
 // Padding reads the Padding field.
 func (v Record64KiBProjection) Padding() Record64KiBPaddingProjection {
@@ -37,7 +37,7 @@ func (v Record64KiBProjection) Padding() Record64KiBPaddingProjection {
 
 // Count reads the Count field.
 func (v Record64KiBProjection) Count() int {
-	return v.immutagoProjection.Unsafe().Count
+	return v.immutagoProjection.Unchecked().Count
 }
 
 // Record64KiBCell publishes frozen Record64KiB values. Do not copy it.
@@ -65,9 +65,9 @@ func NewRecord8KiBProjection(value im.Projection[*Record8KiB]) Record8KiBProject
 // IsNil reports whether the selected pointer is nil.
 func (v Record8KiBProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v Record8KiBProjection) Unsafe() *Record8KiB { return v.immutagoProjection.Unsafe() }
+func (v Record8KiBProjection) Unchecked() *Record8KiB { return v.immutagoProjection.Unchecked() }
 
 // Padding reads the Padding field.
 func (v Record8KiBProjection) Padding() Record8KiBPaddingProjection {
@@ -79,7 +79,7 @@ func (v Record8KiBProjection) Padding() Record8KiBPaddingProjection {
 
 // Count reads the Count field.
 func (v Record8KiBProjection) Count() int {
-	return v.immutagoProjection.Unsafe().Count
+	return v.immutagoProjection.Unchecked().Count
 }
 
 // Record8KiBCell publishes frozen Record8KiB values. Do not copy it.
@@ -104,7 +104,7 @@ func (v Record64KiBPaddingProjection) Len() int { return 65536 }
 
 // At reads the element at index.
 func (v Record64KiBPaddingProjection) At(index0 int) byte {
-	return v.immutagoProjection.Unsafe().Padding[index0]
+	return v.immutagoProjection.Unchecked().Padding[index0]
 }
 
 // Record8KiBPaddingProjection reads a fixed array locally.
@@ -118,5 +118,5 @@ func (v Record8KiBPaddingProjection) Len() int { return 8192 }
 
 // At reads the element at index.
 func (v Record8KiBPaddingProjection) At(index0 int) byte {
-	return v.immutagoProjection.Unsafe().Padding[index0]
+	return v.immutagoProjection.Unchecked().Padding[index0]
 }

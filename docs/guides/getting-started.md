@@ -34,7 +34,7 @@ var current UserCell
 func main() {
     current.Store(User{Name: im.FreezeString("alice"), Score: 10})
     user := current.Load()
-    println(user.Name().Unsafe(), user.Score())
+    println(user.Name().Unchecked(), user.Score())
 }
 ```
 
@@ -50,7 +50,7 @@ The program prints `alice 10`.
 
 - `im.Frozen` marks immutable stored fields.
 - The generator supplies UserCell and UserProjection. Load returns a local UserProjection.
-- Name returns StringProjection; Unsafe supplies its shared native string to println.
+- Name returns StringProjection; Unchecked supplies its shared native string to println.
 - Score returns a copied integer. FreezeString copies no bytes.
 
 Run generation again after a record changes. Keep the generated file with the

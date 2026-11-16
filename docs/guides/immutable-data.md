@@ -83,7 +83,7 @@ response := Response{
 
 A projection is a Local value: direct calls can pass or return it. Keep it in a
 local variable, Local record, or Local builder; do not save it in a package
-variable, ordinary record, or closure. `Clone` gives independent string storage. `Unsafe`
+variable, ordinary record, or closure. `Clone` gives independent string storage. `Unchecked`
 gives a shared native string when a Go API needs one; the caller can retain that
 string, and the checker does not track its lifetime.
 

@@ -80,8 +80,8 @@ func TestFrozenStringAllocations(t *testing.T) {
 	}
 }
 
-// TestStringComparisonAndUnsafe checks native comparisons and explicit shared access.
-func TestStringComparisonAndUnsafe(t *testing.T) {
+// TestStringComparisonAndUnchecked checks native comparisons and explicit shared access.
+func TestStringComparisonAndUnchecked(t *testing.T) {
 	input := strings.Repeat("abc", 128)
 	frozen := FreezeString(input)
 	projection := StringOfFrozen(ProjectionOf(frozen))
@@ -92,17 +92,17 @@ func TestStringComparisonAndUnsafe(t *testing.T) {
 			t.Fatal("string comparison differs from native equality")
 		}
 	}
-	if unsafe.StringData(frozen.Unsafe()) != unsafe.StringData(input) ||
-		unsafe.StringData(projection.Unsafe()) != unsafe.StringData(input) {
-		t.Fatal("Unsafe copied backing storage")
+	if unsafe.StringData(frozen.Unchecked()) != unsafe.StringData(input) ||
+		unsafe.StringData(projection.Unchecked()) != unsafe.StringData(input) {
+		t.Fatal("Unchecked copied backing storage")
 	}
 	if got := testing.AllocsPerRun(100, func() {
 		benchmarkFound = projection.Is(input) && projection.Equal(StringOfFrozen(ProjectionOf(frozen)))
 		benchmarkFound = benchmarkFound && frozen.EqualString(input) && frozen.Equal(frozen)
-		stringCloneSink = projection.Unsafe()
-		stringCloneSink = frozen.Unsafe()
+		stringCloneSink = projection.Unchecked()
+		stringCloneSink = frozen.Unchecked()
 	}); got != 0 {
-		t.Fatalf("comparison and Unsafe allocations = %g; want zero", got)
+		t.Fatalf("comparison and Unchecked allocations = %g; want zero", got)
 	}
 }
 

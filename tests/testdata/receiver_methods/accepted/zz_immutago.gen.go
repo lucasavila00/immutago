@@ -24,18 +24,18 @@ func NewOrderProjection(value im.Projection[*Order]) OrderProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v OrderProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v OrderProjection) Unsafe() *Order { return v.immutagoProjection.Unsafe() }
+func (v OrderProjection) Unchecked() *Order { return v.immutagoProjection.Unchecked() }
 
 // Product reads the Product field.
 func (v OrderProjection) Product() ProductProjection {
-	return NewProductProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Product))
+	return NewProductProjection(im.ProjectionOf(&v.immutagoProjection.Unchecked().Product))
 }
 
 // Pointer reads the Pointer field.
 func (v OrderProjection) Pointer() ProductProjection {
-	return NewProductProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Pointer))
+	return NewProductProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Pointer))
 }
 
 // OrderCell publishes frozen Order values. Do not copy it.
@@ -61,13 +61,13 @@ func NewPointGroupProjection(value im.Projection[*PointGroup]) PointGroupProject
 // IsNil reports whether the selected pointer is nil.
 func (v PointGroupProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v PointGroupProjection) Unsafe() *PointGroup { return v.immutagoProjection.Unsafe() }
+func (v PointGroupProjection) Unchecked() *PointGroup { return v.immutagoProjection.Unchecked() }
 
 // SnapshotPoint reads the SnapshotPoint field.
 func (v PointGroupProjection) SnapshotPoint() SnapshotPointProjection {
-	return NewSnapshotPointProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().SnapshotPoint))
+	return NewSnapshotPointProjection(im.ProjectionOf(&v.immutagoProjection.Unchecked().SnapshotPoint))
 }
 
 // PointGroupCell publishes frozen PointGroup values. Do not copy it.
@@ -95,13 +95,13 @@ func NewProductProjection(value im.Projection[*Product]) ProductProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ProductProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ProductProjection) Unsafe() *Product { return v.immutagoProjection.Unsafe() }
+func (v ProductProjection) Unchecked() *Product { return v.immutagoProjection.Unchecked() }
 
 // Price reads the Price field.
 func (v ProductProjection) Price() int {
-	return v.immutagoProjection.Unsafe().Price
+	return v.immutagoProjection.Unchecked().Price
 }
 
 // ProductCell publishes frozen Product values. Do not copy it.
@@ -127,18 +127,20 @@ func NewScalarSnapshotProjection(value im.Projection[*ScalarSnapshot]) ScalarSna
 // IsNil reports whether the selected pointer is nil.
 func (v ScalarSnapshotProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ScalarSnapshotProjection) Unsafe() *ScalarSnapshot { return v.immutagoProjection.Unsafe() }
+func (v ScalarSnapshotProjection) Unchecked() *ScalarSnapshot {
+	return v.immutagoProjection.Unchecked()
+}
 
 // Count reads the Count field.
 func (v ScalarSnapshotProjection) Count() Count {
-	return v.immutagoProjection.Unsafe().Count
+	return v.immutagoProjection.Unchecked().Count
 }
 
 // Alias reads the Alias field.
 func (v ScalarSnapshotProjection) Alias() CountAlias {
-	return v.immutagoProjection.Unsafe().Alias
+	return v.immutagoProjection.Unchecked().Alias
 }
 
 // Counts reads the Counts field.
@@ -151,17 +153,17 @@ func (v ScalarSnapshotProjection) Counts() ScalarSnapshotCountsProjection {
 
 // Score reads the Score field.
 func (v ScalarSnapshotProjection) Score() Score {
-	return v.immutagoProjection.Unsafe().Score
+	return v.immutagoProjection.Unchecked().Score
 }
 
 // Flag reads the Flag field.
 func (v ScalarSnapshotProjection) Flag() Flag {
-	return v.immutagoProjection.Unsafe().Flag
+	return v.immutagoProjection.Unchecked().Flag
 }
 
 // Timeout reads the Timeout field.
 func (v ScalarSnapshotProjection) Timeout() time.Duration {
-	return v.immutagoProjection.Unsafe().Timeout
+	return v.immutagoProjection.Unchecked().Timeout
 }
 
 // ScalarSnapshotCell publishes frozen ScalarSnapshot values. Do not copy it.
@@ -189,13 +191,13 @@ func NewSnapshotPointProjection(value im.Projection[*SnapshotPoint]) SnapshotPoi
 // IsNil reports whether the selected pointer is nil.
 func (v SnapshotPointProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v SnapshotPointProjection) Unsafe() *SnapshotPoint { return v.immutagoProjection.Unsafe() }
+func (v SnapshotPointProjection) Unchecked() *SnapshotPoint { return v.immutagoProjection.Unchecked() }
 
 // X reads the X field.
 func (v SnapshotPointProjection) X() int {
-	return v.immutagoProjection.Unsafe().X
+	return v.immutagoProjection.Unchecked().X
 }
 
 // SnapshotPointCell publishes frozen SnapshotPoint values. Do not copy it.
@@ -242,5 +244,5 @@ func (v ScalarSnapshotCountsElementProjection) Len() int { return 2 }
 // At reads the element at index.
 func (v ScalarSnapshotCountsElementProjection) At(index1 int) Count {
 	index0 := v.index0
-	return v.immutagoProjection.Unsafe().Counts[index0][index1]
+	return v.immutagoProjection.Unchecked().Counts[index0][index1]
 }

@@ -10,7 +10,7 @@ These fixed APIs build the [generated typed projections](projections.md). They u
 | `im.ProjectString(value)` | Native string input; returns StringProjection. |
 | `frozen.Projection()` | FrozenString, FrozenSlice[E], or FrozenMap[K,V] receiver; returns StringProjection, SliceProjection[E], or MapProjection[K,V]. |
 | `im.ProjectionOf(value)` | Frozen input; returns Projection[T]. |
-| `projection.Unsafe()` | Requires Projection[T] with Frozen T; returns T by value with its shared storage. A pointer result is the same pointer. |
+| `projection.Unchecked()` | Requires Projection[T] with Frozen T; returns T by value with its shared storage. A pointer result is the same pointer. |
 | `im.CopyRecord(value)` | Requires Projection[T] for a concrete Frozen record T; copies it into a new root and returns Projection[*T]. |
 | `im.Value(projection)` | T must be Frozen and a read result: Copied, opaque handles, pointers to Frozen handle wrappers, or an unnamed array of these values; returns T. |
 | `im.StringOf(projection)` | Requires Projection[S] with underlying string S; returns StringProjection. |
@@ -19,7 +19,7 @@ These fixed APIs build the [generated typed projections](projections.md). They u
 | `im.MapOf(projection)` | Requires Projection[FrozenMap[K,V]]; returns MapProjection[K,V]. |
 | `im.IsNil(projection)` | Requires Projection[*T] for a Frozen record T; reports nil without exposing the pointer. |
 
-Application code uses the listed Value, Unsafe, and adapter forms. Unsafe permits
+Application code uses the listed Value, Unchecked, and adapter forms. Unchecked permits
 retention; it does not change the payload's type rules or permit target writes.
 Only verified generated code can form interior Frozen-record addresses. Value can return an
 opaque handle or a pointer to its Frozen wrapper. Only the payload's declaring package can Unwrap it. Raw slot reads use the [Cell methods](cell.md#raw-cell-methods--exhaustive).
@@ -32,7 +32,7 @@ projection := scores.Projection()
 value, found := projection.Get("alice")
 if found { println(im.Value(value)) }
 for key, value := range projection.All() {
-    println(im.StringOf(key).Unsafe(), im.Value(value))
+    println(im.StringOf(key).Unchecked(), im.Value(value))
 }
 ```
 
@@ -43,7 +43,7 @@ for key, value := range projection.All() {
 | AtPointer | — | Projection[*E]; E must be a concrete Frozen record | — |
 | Equal | Compare with StringProjection | — | — |
 | Is | Compare with native string | — | — |
-| Unsafe | Shared native string | — | — |
+| Unchecked | Shared native string | — | — |
 | Get | — | — | Projection[V], bool |
 | All | — | Index and Projection[E] | Projection[K] and Projection[V] |
 | Clone | Independent native string | Native slice; E must be Copied | Native map; K and V must be Copied |
@@ -65,16 +65,16 @@ contexts. Unlisted operations on protected storage are rejected.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
-| `im.Value(im.ProjectionOf("text"))` | Use `im.ProjectString("text")`; use Unsafe for a shared native string or Clone for independent storage. |
-| `im.Value(record)` with `record im.Projection[Settings]`, including a record with only numeric fields | Use a generated projection for local field reads, or `record.Unsafe()` for a shared Settings value. |
+| `im.Value(im.ProjectionOf("text"))` | Use `im.ProjectString("text")`; use Unchecked for a shared native string or Clone for independent storage. |
+| `im.Value(record)` with `record im.Projection[Settings]`, including a record with only numeric fields | Use a generated projection for local field reads, or `record.Unchecked()` for a shared Settings value. |
 | Clone a projection of a string-key map | Iterate; Clone each key and copy each value into a new map. |
 | Clone a slice or map projection with Frozen record elements | Read record projections and copy the required fields into new data. |
 
 Projection creation copies T, not its backing storage. Large records therefore have
 ordinary Go value-copy costs. Native strings and FrozenString can share source
-bytes. StringProjection.Unsafe returns those bytes as a native string; Clone copies them.
+bytes. StringProjection.Unchecked returns those bytes as a native string; Clone copies them.
 
-Unsafe does not copy backing storage or allocate. The caller controls retention
+Unchecked does not copy backing storage or allocate. The caller controls retention
 and must not give a returned pointer to an API that changes its target. A
 FrozenSlice or FrozenMap result is still a frozen handle, with no mutable native
 storage getter. An UncheckedValue result is still a handle; only its declaring

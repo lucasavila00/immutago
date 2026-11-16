@@ -23,13 +23,13 @@ func NewLevelsProjection(value im.Projection[*Levels]) LevelsProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v LevelsProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v LevelsProjection) Unsafe() *Levels { return v.immutagoProjection.Unsafe() }
+func (v LevelsProjection) Unchecked() *Levels { return v.immutagoProjection.Unchecked() }
 
 // Current reads the Current field.
 func (v LevelsProjection) Current() LevelAlias {
-	return v.immutagoProjection.Unsafe().Current
+	return v.immutagoProjection.Unchecked().Current
 }
 
 // Values reads the Values field.
@@ -42,7 +42,7 @@ func (v LevelsProjection) Values() LevelsValuesProjection {
 
 // Meter reads the Meter field.
 func (v LevelsProjection) Meter() Meter[Seconds] {
-	return v.immutagoProjection.Unsafe().Meter
+	return v.immutagoProjection.Unchecked().Meter
 }
 
 // Meters reads the Meters field.
@@ -55,7 +55,7 @@ func (v LevelsProjection) Meters() LevelsMetersProjection {
 
 // Window reads the Window field.
 func (v LevelsProjection) Window() Range[Seconds] {
-	return v.immutagoProjection.Unsafe().Window
+	return v.immutagoProjection.Unchecked().Window
 }
 
 // LevelsCell publishes frozen Levels values. Do not copy it.
@@ -81,13 +81,13 @@ func NewProductProjection(value im.Projection[*Product]) ProductProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ProductProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ProductProjection) Unsafe() *Product { return v.immutagoProjection.Unsafe() }
+func (v ProductProjection) Unchecked() *Product { return v.immutagoProjection.Unchecked() }
 
 // Price reads the Price field.
 func (v ProductProjection) Price() int {
-	return v.immutagoProjection.Unsafe().Price
+	return v.immutagoProjection.Unchecked().Price
 }
 
 // ProductCell publishes frozen Product values. Do not copy it.
@@ -110,7 +110,7 @@ func (v LevelsValuesProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v LevelsValuesProjection) At(index0 int) Level {
-	return v.immutagoProjection.Unsafe().Values[index0]
+	return v.immutagoProjection.Unchecked().Values[index0]
 }
 
 // LevelsMetersProjection reads a fixed array locally.
@@ -124,5 +124,5 @@ func (v LevelsMetersProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v LevelsMetersProjection) At(index0 int) Meter[Seconds] {
-	return v.immutagoProjection.Unsafe().Meters[index0]
+	return v.immutagoProjection.Unchecked().Meters[index0]
 }

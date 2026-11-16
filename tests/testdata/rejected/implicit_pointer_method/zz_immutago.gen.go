@@ -23,13 +23,13 @@ func NewValueProjection(value im.Projection[*Value]) ValueProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ValueProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ValueProjection) Unsafe() *Value { return v.immutagoProjection.Unsafe() }
+func (v ValueProjection) Unchecked() *Value { return v.immutagoProjection.Unchecked() }
 
 // N reads the N field.
 func (v ValueProjection) N() Count {
-	return v.immutagoProjection.Unsafe().N
+	return v.immutagoProjection.Unchecked().N
 }
 
 // ValueCell publishes frozen Value values. Do not copy it.

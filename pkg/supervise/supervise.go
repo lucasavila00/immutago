@@ -49,11 +49,11 @@ func (p *Service[A]) Args() A { return p.args }
 // stops children created by that setup.
 func (*Service[A]) Init() error { return nil }
 
-// UnsafeChildren returns the child group owned by this service.
+// UncheckedChildren returns the child group owned by this service.
 // Call it on the original service pointer created by Start, never a value copy.
 // Parent shutdown stops and waits for the children.
-// After the parent ends, UnsafeChildren returns a stopped group.
-func (p *Service[A]) UnsafeChildren() *Group {
+// After the parent ends, UncheckedChildren returns a stopped group.
+func (p *Service[A]) UncheckedChildren() *Group {
 	checkGroup(p.owner)
 	p.owner.mu.Lock()
 	defer p.owner.mu.Unlock()

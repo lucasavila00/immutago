@@ -23,18 +23,18 @@ func NewModelProjection(value im.Projection[*Model]) ModelProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ModelProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ModelProjection) Unsafe() *Model { return v.immutagoProjection.Unsafe() }
+func (v ModelProjection) Unchecked() *Model { return v.immutagoProjection.Unchecked() }
 
 // Name reads the Name field.
 func (v ModelProjection) Name() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Name)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Name)
 }
 
 // engine reads the engine field.
 func (v ModelProjection) engine() im.UncheckedValue[baked] {
-	return v.immutagoProjection.Unsafe().engine
+	return v.immutagoProjection.Unchecked().engine
 }
 
 // ModelCell publishes frozen Model values. Do not copy it.

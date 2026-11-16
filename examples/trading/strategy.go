@@ -31,7 +31,7 @@ type Strategy struct {
 func (s *Strategy) Init() error {
 	args := s.Args()
 	for index, market := range args.Spec.Markets {
-		if _, err := supervise.Start[Maker](s.UnsafeChildren(), MakerArgs{
+		if _, err := supervise.Start[Maker](s.UncheckedChildren(), MakerArgs{
 			API: args.API, AccountName: args.Spec.Account, Symbol: market.Symbol, Log: args.Log,
 			Policy: args.Policy, Account: args.Account, Index: index,
 			Parameters: args.Spec.Parameters, StrategyID: args.Spec.ID, StopBot: args.StopBot,

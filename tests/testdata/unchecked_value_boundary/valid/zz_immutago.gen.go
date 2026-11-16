@@ -24,18 +24,20 @@ func NewCounterSnapshotProjection(value im.Projection[*CounterSnapshot]) Counter
 // IsNil reports whether the selected pointer is nil.
 func (v CounterSnapshotProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v CounterSnapshotProjection) Unsafe() *CounterSnapshot { return v.immutagoProjection.Unsafe() }
+func (v CounterSnapshotProjection) Unchecked() *CounterSnapshot {
+	return v.immutagoProjection.Unchecked()
+}
 
 // Counter reads the Counter field.
 func (v CounterSnapshotProjection) Counter() api.Counter {
-	return v.immutagoProjection.Unsafe().Counter
+	return v.immutagoProjection.Unchecked().Counter
 }
 
 // Pointer reads the Pointer field.
 func (v CounterSnapshotProjection) Pointer() *api.Counter {
-	return v.immutagoProjection.Unsafe().Pointer
+	return v.immutagoProjection.Unchecked().Pointer
 }
 
 // CounterSnapshotCell publishes frozen CounterSnapshot values. Do not copy it.
@@ -63,13 +65,13 @@ func NewModelProjection(value im.Projection[*Model]) ModelProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ModelProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ModelProjection) Unsafe() *Model { return v.immutagoProjection.Unsafe() }
+func (v ModelProjection) Unchecked() *Model { return v.immutagoProjection.Unchecked() }
 
 // Table reads the Table field.
 func (v ModelProjection) Table() im.UncheckedValue[api.Table] {
-	return v.immutagoProjection.Unsafe().Table
+	return v.immutagoProjection.Unchecked().Table
 }
 
 // Models reads the Models field.
@@ -122,5 +124,5 @@ func (v ModelModelsElementProjection) Len() int { return 1 }
 // At reads the element at index.
 func (v ModelModelsElementProjection) At(index1 int) Handle {
 	index0 := v.index0
-	return v.immutagoProjection.Unsafe().Models[index0][index1]
+	return v.immutagoProjection.Unchecked().Models[index0][index1]
 }

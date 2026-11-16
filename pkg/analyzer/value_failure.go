@@ -17,18 +17,18 @@ func valueFailure(proofs *checker.Prover, payload types.Type) checker.Failure {
 	}
 	switch {
 	case stringType(payload):
-		failure.Repair = "use im.StringOf(projection), then Unsafe for shared text or Clone for an independent copy"
+		failure.Repair = "use im.StringOf(projection), then Unchecked for shared text or Clone for an independent copy"
 	case checker.IsLibraryType(payload, "FrozenString"):
-		failure.Repair = "use im.StringOfFrozen(projection), then Unsafe for shared text or Clone for an independent copy"
+		failure.Repair = "use im.StringOfFrozen(projection), then Unchecked for shared text or Clone for an independent copy"
 	case checker.IsLibraryType(payload, "FrozenSlice"):
-		failure.Repair = "use im.SliceOf(projection) for element reads, or projection.Unsafe() for the shared FrozenSlice"
+		failure.Repair = "use im.SliceOf(projection) for element reads, or projection.Unchecked() for the shared FrozenSlice"
 	case checker.IsLibraryType(payload, "FrozenMap"):
-		failure.Repair = "use im.MapOf(projection) for entry reads, or projection.Unsafe() for the shared FrozenMap"
+		failure.Repair = "use im.MapOf(projection) for entry reads, or projection.Unchecked() for the shared FrozenMap"
 	case checker.Frozen(payload):
-		failure.Repair = "use projection.Unsafe() for the shared record; for Local field reads, pass " +
+		failure.Repair = "use projection.Unchecked() for the shared record; for Local field reads, pass " +
 			"im.CopyRecord(projection) to its generated projection constructor (copies the root)"
 	default:
-		failure.Repair = "use projection.Unsafe() for shared access; use the matching generated projection " +
+		failure.Repair = "use projection.Unchecked() for shared access; use the matching generated projection " +
 			"for Local reads when available"
 	}
 	return failure

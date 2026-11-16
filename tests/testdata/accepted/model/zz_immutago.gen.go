@@ -23,13 +23,13 @@ func NewCountBoxProjection(value im.Projection[*CountBox]) CountBoxProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v CountBoxProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v CountBoxProjection) Unsafe() *CountBox { return v.immutagoProjection.Unsafe() }
+func (v CountBoxProjection) Unchecked() *CountBox { return v.immutagoProjection.Unchecked() }
 
 // Value reads the Value field.
 func (v CountBoxProjection) Value() int {
-	return v.immutagoProjection.Unsafe().Value
+	return v.immutagoProjection.Unchecked().Value
 }
 
 // CountBoxCell publishes frozen CountBox values. Do not copy it.
@@ -55,18 +55,18 @@ func NewDerivedProjection(value im.Projection[*Derived]) DerivedProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v DerivedProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v DerivedProjection) Unsafe() *Derived { return v.immutagoProjection.Unsafe() }
+func (v DerivedProjection) Unchecked() *Derived { return v.immutagoProjection.Unchecked() }
 
 // Name reads the Name field.
 func (v DerivedProjection) Name() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Name)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Name)
 }
 
 // Count reads the Count field.
 func (v DerivedProjection) Count() Number {
-	return v.immutagoProjection.Unsafe().Count
+	return v.immutagoProjection.Unchecked().Count
 }
 
 // Flags reads the Flags field.
@@ -79,27 +79,27 @@ func (v DerivedProjection) Flags() DerivedFlagsProjection {
 
 // Small reads the Small field.
 func (v DerivedProjection) Small() int8 {
-	return v.immutagoProjection.Unsafe().Small
+	return v.immutagoProjection.Unchecked().Small
 }
 
 // Unsigned reads the Unsigned field.
 func (v DerivedProjection) Unsigned() uint64 {
-	return v.immutagoProjection.Unsafe().Unsigned
+	return v.immutagoProjection.Unchecked().Unsigned
 }
 
 // Address reads the Address field.
 func (v DerivedProjection) Address() uintptr {
-	return v.immutagoProjection.Unsafe().Address
+	return v.immutagoProjection.Unchecked().Address
 }
 
 // Float reads the Float field.
 func (v DerivedProjection) Float() float64 {
-	return v.immutagoProjection.Unsafe().Float
+	return v.immutagoProjection.Unchecked().Float
 }
 
 // Complex reads the Complex field.
 func (v DerivedProjection) Complex() complex128 {
-	return v.immutagoProjection.Unsafe().Complex
+	return v.immutagoProjection.Unchecked().Complex
 }
 
 // DerivedCell publishes frozen Derived values. Do not copy it.
@@ -125,18 +125,18 @@ func NewLeafProjection(value im.Projection[*Leaf]) LeafProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v LeafProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v LeafProjection) Unsafe() *Leaf { return v.immutagoProjection.Unsafe() }
+func (v LeafProjection) Unchecked() *Leaf { return v.immutagoProjection.Unchecked() }
 
 // Name reads the Name field.
 func (v LeafProjection) Name() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Name)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Name)
 }
 
 // Count reads the Count field.
 func (v LeafProjection) Count() Number {
-	return v.immutagoProjection.Unsafe().Count
+	return v.immutagoProjection.Unchecked().Count
 }
 
 // Flags reads the Flags field.
@@ -149,27 +149,27 @@ func (v LeafProjection) Flags() LeafFlagsProjection {
 
 // Small reads the Small field.
 func (v LeafProjection) Small() int8 {
-	return v.immutagoProjection.Unsafe().Small
+	return v.immutagoProjection.Unchecked().Small
 }
 
 // Unsigned reads the Unsigned field.
 func (v LeafProjection) Unsigned() uint64 {
-	return v.immutagoProjection.Unsafe().Unsigned
+	return v.immutagoProjection.Unchecked().Unsigned
 }
 
 // Address reads the Address field.
 func (v LeafProjection) Address() uintptr {
-	return v.immutagoProjection.Unsafe().Address
+	return v.immutagoProjection.Unchecked().Address
 }
 
 // Float reads the Float field.
 func (v LeafProjection) Float() float64 {
-	return v.immutagoProjection.Unsafe().Float
+	return v.immutagoProjection.Unchecked().Float
 }
 
 // Complex reads the Complex field.
 func (v LeafProjection) Complex() complex128 {
-	return v.immutagoProjection.Unsafe().Complex
+	return v.immutagoProjection.Unchecked().Complex
 }
 
 // LeafCell publishes frozen Leaf values. Do not copy it.
@@ -195,23 +195,23 @@ func NewTreeProjection(value im.Projection[*Tree]) TreeProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v TreeProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v TreeProjection) Unsafe() *Tree { return v.immutagoProjection.Unsafe() }
+func (v TreeProjection) Unchecked() *Tree { return v.immutagoProjection.Unchecked() }
 
 // Leaf reads the Leaf field.
 func (v TreeProjection) Leaf() LeafProjection {
-	return NewLeafProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Leaf))
+	return NewLeafProjection(im.ProjectionOf(&v.immutagoProjection.Unchecked().Leaf))
 }
 
 // Children reads the Children field.
 func (v TreeProjection) Children() im.SliceProjection[Tree] {
-	return v.immutagoProjection.Unsafe().Children.Projection()
+	return v.immutagoProjection.Unchecked().Children.Projection()
 }
 
 // Index reads the Index field.
 func (v TreeProjection) Index() im.MapProjection[string, Tree] {
-	return v.immutagoProjection.Unsafe().Index.Projection()
+	return v.immutagoProjection.Unchecked().Index.Projection()
 }
 
 // TreeCell publishes frozen Tree values. Do not copy it.
@@ -234,7 +234,7 @@ func (v DerivedFlagsProjection) Len() int { return 3 }
 
 // At reads the element at index.
 func (v DerivedFlagsProjection) At(index0 int) bool {
-	return v.immutagoProjection.Unsafe().Flags[index0]
+	return v.immutagoProjection.Unchecked().Flags[index0]
 }
 
 // LeafFlagsProjection reads a fixed array locally.
@@ -248,5 +248,5 @@ func (v LeafFlagsProjection) Len() int { return 3 }
 
 // At reads the element at index.
 func (v LeafFlagsProjection) At(index0 int) bool {
-	return v.immutagoProjection.Unsafe().Flags[index0]
+	return v.immutagoProjection.Unchecked().Flags[index0]
 }

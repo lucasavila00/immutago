@@ -13,7 +13,7 @@ type Worker struct {
 func (*Worker) Run(ctx context.Context) { <-ctx.Done() }
 
 func (w Worker) AddChild() bool {
-	_, err := supervise.Start[Worker](w.UnsafeChildren(), supervise.NoArgs{})
+	_, err := supervise.Start[Worker](w.UncheckedChildren(), supervise.NoArgs{})
 	return err == nil
 }
 

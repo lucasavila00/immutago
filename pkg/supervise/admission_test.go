@@ -48,7 +48,7 @@ func checkRunAdmissionOrdersStop(t *testing.T) {
 	ref, err := Start[initializing](parent, &initHooks{
 		init: func(p *initializing) error {
 			inits.Add(1)
-			_, err := Start[initializing](p.UnsafeChildren(), &initHooks{
+			_, err := Start[initializing](p.UncheckedChildren(), &initHooks{
 				init: func(*initializing) error { return nil },
 				run: func(_ *initializing, ctx context.Context) {
 					<-ctx.Done()
@@ -59,7 +59,7 @@ func checkRunAdmissionOrdersStop(t *testing.T) {
 		},
 		run: func(p *initializing, ctx context.Context) {
 			runs.Add(1)
-			children := p.UnsafeChildren()
+			children := p.UncheckedChildren()
 			children.mu.Lock()
 			active := children.active
 			children.mu.Unlock()
@@ -109,7 +109,7 @@ func TestStagedActivationOrdersStop(t *testing.T) {
 		var order []int
 		_, err := Start[initializing](parent, &initHooks{
 			init: func(p *initializing) error {
-				children := p.UnsafeChildren()
+				children := p.UncheckedChildren()
 				for index := range 3 {
 					_, err := Start[initializing](children, &initHooks{
 						init: func(*initializing) error { return nil },

@@ -74,7 +74,7 @@ func TestPendingCleanupOrder(t *testing.T) {
 		_, err := Start[initializing](parent, &initHooks{
 			init: func(p *initializing) error {
 				for _, number := range []int{1, 2} {
-					if _, err := Start[initializing](p.UnsafeChildren(), child(number)); err != nil {
+					if _, err := Start[initializing](p.UncheckedChildren(), child(number)); err != nil {
 						return err
 					}
 				}

@@ -285,13 +285,13 @@ func (s FrozenString) Projection() StringProjection
 
 Projection returns local read access without copying backing storage or allocating.
 
-### func \(FrozenString\) Unsafe
+### func \(FrozenString\) Unchecked
 
 ```go
-func (s FrozenString) Unsafe() string
+func (s FrozenString) Unchecked() string
 ```
 
-Unsafe returns the underlying string without copying or allocating. The caller controls retention of its shared backing storage.
+Unchecked returns the underlying string without copying or allocating. The caller controls retention of its shared backing storage.
 
 ## type Local
 
@@ -377,13 +377,13 @@ func ProjectionOf[T any](value T) Projection[T]
 
 ProjectionOf returns a local projection of value. It copies T by value without copying backing storage or allocating. Run immutago to enforce the local projection rules.
 
-### func \(Projection\[T\]\) Unsafe
+### func \(Projection\[T\]\) Unchecked
 
 ```go
-func (p Projection[T]) Unsafe() T
+func (p Projection[T]) Unchecked() T
 ```
 
-Unsafe returns the selected Frozen value for use outside the local projection. It copies T by value without copying backing storage or allocating. A pointer result is the same pointer. The caller controls retention and must not change its target through reflection, unsafe code, or another API.
+Unchecked returns the selected Frozen value for use outside the local projection. It copies T by value without copying backing storage or allocating. A pointer result is the same pointer. The caller controls retention and must not change its target through reflection, unsafe code, or another API. The result keeps its normal type and write rules.
 
 ## type SliceProjection
 
@@ -517,13 +517,13 @@ func (s StringProjection) Len() int
 
 Len returns the number of bytes in O\(1\) time without allocations.
 
-### func \(StringProjection\) Unsafe
+### func \(StringProjection\) Unchecked
 
 ```go
-func (s StringProjection) Unsafe() string
+func (s StringProjection) Unchecked() string
 ```
 
-Unsafe returns the underlying string without copying or allocating. The checker does not restrict this string; the caller controls its retention.
+Unchecked returns the underlying string without copying or allocating. The checker does not restrict this string; the caller controls its retention.
 
 ## type UncheckedValue
 
