@@ -260,12 +260,14 @@ func (c *subsetChecks) matchSwitch(statement *ast.SwitchStmt) string {
 	return ""
 }
 
-// matchRange matches zero targets, fresh targets, or one existing target, then resolves yielded types.
+// matchRange resolves yielded types and keeps restricted bindings to fresh targets or one existing target.
 func (c *subsetChecks) matchRange(statement *ast.RangeStmt) string {
-	if statement.Tok == token.ASSIGN && statement.Key != nil && statement.Value != nil {
+	source := c.pass.TypesInfo.TypeOf(statement.X)
+	yielded := rangeTypes(source)
+	if statement.Tok == token.ASSIGN && statement.Key != nil && statement.Value != nil &&
+		(c.restrictedOperand(statement.X) || c.queries.Owns(yielded[0]) || c.queries.Owns(yielded[1])) {
 		return "multiple assignments involving protected storage are unsupported"
 	}
-	source := c.pass.TypesInfo.TypeOf(statement.X)
 	if c.queries.Callable(source) {
 		call, ok := ast.Unparen(statement.X).(*ast.CallExpr)
 		if !ok {
@@ -276,7 +278,6 @@ func (c *subsetChecks) matchRange(statement *ast.RangeStmt) string {
 			return "protected iteration requires a direct frozen All call"
 		}
 	}
-	yielded := rangeTypes(source)
 	for index, target := range []ast.Expr{statement.Key, statement.Value} {
 		if target == nil {
 			continue
@@ -342,7 +343,7 @@ func (c *subsetChecks) matchClosure(literal *ast.FuncLit) {
 	})
 }
 
-// exactCollectionMethod recognizes only the fixed library receiver rather than promoted wrapper methods.
+// exactCollectionMethod resolves fixed methods through ordinary holders and direct Local projections.
 func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection == nil || !libraryObject(selection.Obj()) {
@@ -356,8 +357,11 @@ func (c *subsetChecks) exactCollectionMethod(selector *ast.SelectorExpr) bool {
 	if pointer, ok := receiver.Underlying().(*types.Pointer); ok {
 		receiver = pointer.Elem()
 	}
-	if !checker.IsCollection(receiver) && !checker.IsProjection(receiver) {
-		return false
+	if !checker.IsProjection(receiver) {
+		declared := selection.Obj().Type().(*types.Signature).Recv().Type()
+		if !checker.IsCollection(declared) || c.queries.Owns(selection.Recv()) {
+			return false
+		}
 	}
 	switch selection.Obj().Name() {
 	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Is", "Unsafe", "Projection":

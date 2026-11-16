@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"go/ast"
+	"go/token"
 	"go/types"
 )
 
@@ -137,15 +138,7 @@ func (c *subsetChecks) matchStatementNode(statement ast.Stmt) string {
 	case *ast.IfStmt, *ast.ForStmt:
 		return ""
 	case *ast.ExprStmt:
-		if call, ok := ast.Unparen(statement.X).(*ast.CallExpr); ok {
-			return c.matchCall(call)
-		}
-		if switched, ok := c.parents[statement].(*ast.TypeSwitchStmt); ok && switched.Assign == statement {
-			if assertion, ok := ast.Unparen(statement.X).(*ast.TypeAssertExpr); ok && assertion.Type == nil &&
-				!c.restrictedOperand(assertion.X) {
-				return ""
-			}
-		}
+		return c.matchExpressionStatement(statement)
 	case *ast.GoStmt:
 		return c.matchCall(statement.Call)
 	case *ast.DeferStmt:
@@ -160,6 +153,23 @@ func (c *subsetChecks) matchStatementNode(statement ast.Stmt) string {
 			if parent, ok := c.parents[block].(*ast.SwitchStmt); ok {
 				return c.matchSwitch(parent)
 			}
+		}
+	}
+	return "protected operation is outside the supported statement forms"
+}
+
+// matchExpressionStatement permits calls, ordinary channel receives, and no-binding type switches.
+func (c *subsetChecks) matchExpressionStatement(statement *ast.ExprStmt) string {
+	if receive, ok := ast.Unparen(statement.X).(*ast.UnaryExpr); ok && receive.Op == token.ARROW {
+		return c.matchUnary(receive)
+	}
+	if call, ok := ast.Unparen(statement.X).(*ast.CallExpr); ok {
+		return c.matchCall(call)
+	}
+	if switched, ok := c.parents[statement].(*ast.TypeSwitchStmt); ok && switched.Assign == statement {
+		if assertion, ok := ast.Unparen(statement.X).(*ast.TypeAssertExpr); ok && assertion.Type == nil &&
+			!c.restrictedOperand(assertion.X) {
+			return ""
 		}
 	}
 	return "protected operation is outside the supported statement forms"

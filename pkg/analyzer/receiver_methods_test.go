@@ -108,7 +108,7 @@ type Outer struct{im.Frozen;Count Count};func f(p *Outer){_=p.Count.Read()}`, "c
 		{"go", `func f(p *Local){go p.ReadPointer()}`, "synchronous"},
 		{"defer", `func f(p *Local){defer p.ReadPointer()}`, "synchronous"},
 		{"capture", `func f(p *Local){callback:=func()int{return p.ReadPointer()};_=callback}`, "closures require"},
-		{"select", `func f(p *Local,ch chan int){select{case ch<-p.ReadPointer():}}`, "statement forms"},
+		{"select", `func f(p *Local,ch chan int){select{case ch<-p.ReadPointer():}}`, "select communication clauses"},
 
 		{"variadic boxing", `func(v Value)Use(...any){};func f(v Value){v.Use(v)}`, ""},
 		{"unproved receiver", `type Bad struct{im.Frozen;X []int};func(b Bad)ReadBad()int{return len(b.X)}`,

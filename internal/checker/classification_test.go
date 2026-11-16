@@ -318,6 +318,8 @@ func classificationShapes(t *testing.T) []types.Type {
 	receiverOnly := types.NewSignatureType(receiver, nil, nil, nil, nil, false)
 	frozen := sliceType(t, slice, value)
 	frozenAlias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "FrozenAlias", nil), frozen)
+	holder := types.NewStruct([]*types.Var{types.NewField(token.NoPos, nil, "Values",
+		types.NewArray(frozenAlias, 2), false)}, nil)
 	fakeName := types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Frozen", nil)
 	fakeMarker := types.NewNamed(fakeName, types.NewStruct(nil, nil), nil)
 	return []types.Type{
@@ -327,7 +329,9 @@ func classificationShapes(t *testing.T) []types.Type {
 		types.NewMap(types.NewPointer(alias), types.Typ[types.Int]), service,
 		constraint, parameter, ordinary, classificationSignature(parameter),
 		types.NewTuple(types.NewParam(token.NoPos, nil, "value", value)),
-		frozen, frozenAlias, classificationSignature(frozen), resultCall, variadic, receiverOnly,
+		frozen, frozenAlias, holder, types.NewPointer(holder), types.NewSlice(holder),
+		types.NewMap(frozenAlias, holder), types.NewChan(types.SendRecv, holder),
+		classificationSignature(frozen), resultCall, variadic, receiverOnly,
 		classificationSignature(callback), markedType("Pretender", fakeMarker),
 		types.NewStruct([]*types.Var{types.NewField(token.NoPos, nil, "Call", callback, false)}, nil),
 	}

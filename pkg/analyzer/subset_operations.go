@@ -235,26 +235,7 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 // matchUnary permits fresh marked allocations and ordinary scalar operations.
 func (c *subsetChecks) matchUnary(expression *ast.UnaryExpr) string {
 	if expression.Op == token.AND {
-		if !c.protectedStorage(expression.X) {
-			return ""
-		}
-		if c.generatedSource(expression) {
-			pointer, ok := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Pointer)
-			if ok && checker.Frozen(pointer.Elem()) {
-				return ""
-			}
-		}
-		if !c.queries.Owns(c.pass.TypesInfo.TypeOf(expression.X)) {
-			return "interior addresses of protected storage are unsupported"
-		}
-		if _, fresh := ast.Unparen(expression.X).(*ast.CompositeLit); !fresh {
-			return "immutable references require fresh allocation"
-		}
-		pointer, ok := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Pointer)
-		if ok && checker.Marked(pointer.Elem()) {
-			return ""
-		}
-		return "immutable references require a concrete marked struct target"
+		return c.matchAddress(expression)
 	}
 	switch expression.Op {
 	case token.ARROW:
@@ -267,6 +248,27 @@ func (c *subsetChecks) matchUnary(expression *ast.UnaryExpr) string {
 		}
 	}
 	return "protected operation is outside the supported expression forms"
+}
+
+// matchAddress separates ordinary slots, generated field addresses, and fresh protected roots.
+func (c *subsetChecks) matchAddress(expression *ast.UnaryExpr) string {
+	if !c.protectedStorage(expression.X) {
+		return ""
+	}
+	pointer := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Pointer)
+	if c.generatedSource(expression) && checker.Frozen(pointer.Elem()) {
+		return ""
+	}
+	if !c.queries.Owns(c.pass.TypesInfo.TypeOf(expression.X)) {
+		return "interior addresses of protected storage are unsupported"
+	}
+	if _, fresh := ast.Unparen(expression.X).(*ast.CompositeLit); !fresh {
+		return "immutable references require fresh allocation"
+	}
+	if checker.Marked(pointer.Elem()) {
+		return ""
+	}
+	return "immutable references require a concrete marked struct target"
 }
 
 // matchBinary checks implicit comparisons before permitting compiler-checked scalar operators.

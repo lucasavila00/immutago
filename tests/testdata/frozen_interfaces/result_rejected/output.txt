@@ -18,6 +18,3 @@ forms.go:40:9: unsupported owned container values: copying, rebinding, slicing, 
 forms.go:48:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: pointer.Weight = 2
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-forms.go:58:2: unsupported immutable operation: writes to immutable objects are unsupported
-  source: output[0], found = values.Get(0)
-  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

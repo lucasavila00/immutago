@@ -2,6 +2,7 @@
 
 FrozenString, FrozenSlice, and FrozenMap satisfy the [Frozen type rule](types.md).
 They can be copied, stored, and returned.
+They can also occupy [ordinary struct and service fields](common-forms.md#ordinary-frozen-handle-slots--exhaustive).
 Their local projections follow the [projection rules](projections.md).
 
 | Data | Stored value | Local projection | Constructor | Read locally |

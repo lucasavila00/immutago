@@ -11,6 +11,9 @@ signatures.go:20:14: unsupported immutable operation: returning Local pointers i
   source: Pointer
   type: func() (*api.Reply, error)
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+signatures.go:20:56: unsupported immutable operation: returning Local pointers is unsupported
+  source: return nil, nil
+  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 signatures.go:21:14: service method Defined must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: signatures.OtherError
 signatures.go:22:14: service method Interface must return a service result: copied values require bool, numbers, Copied records, arrays, or service references

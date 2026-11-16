@@ -59,7 +59,8 @@ under the ordinary method rules.
 
 Named types, aliases, and named or unnamed parameters use the same rules.
 A variadic parameter follows the native-slice rules for its element type. Native
-slices of protected values remain rejected. Generated methods keep the variadic
+slices of Frozen record values and Local values remain rejected. Frozen handles
+use ordinary slices. Generated methods keep the variadic
 signature and pass the final slice with `...`.
 Implementation methods can retain ordinary inputs. Callback contracts and
 closures can carry persistent Frozen values. Local values and projections cannot
@@ -82,7 +83,7 @@ returned. Local values and projections cannot be boxed or captured. See the comp
 
 | Allowed form | Example |
 | --- | --- |
-| Declare zero or nil | `var scorer Scorer`, `var scorer Scorer = nil` |
+| Declare zero or nil | `var scorer Scorer`, `var scorer Scorer = nil`, `Scorer(nil)` |
 | Convert a proved Frozen record value or pointer | `scorer := Scorer(&Tree{Weight: 2})` |
 | Assign, pass, or return a proved implementation | `var scorer Scorer = &Tree{Weight: 2}`; `use(scorer)`; `return scorer` |
 | Copy or convert between proved Frozen interfaces | `other := scorer`, `other = scorer`, `base := Base(scorer)` |
@@ -91,6 +92,7 @@ returned. Local values and projections cannot be boxed or captured. See the comp
 | Select a method with ordinary or persistent inputs and results | `read := scorer.Score`, `read := Scorer.Score` |
 | Replace the whole interface binding | `scorer = &Tree{Weight: 3}`, `scorer = nil` |
 | Store in Frozen fields, arrays, Cells, or frozen collections | `Model{Scorer: scorer}`, `im.FrozenSlice[Scorer]` |
+| Store in ordinary fields and containers | `struct{ Value Scorer }{scorer}`, `[]Scorer{scorer}`, `make(chan Scorer)`; use the [ordinary handle forms](common-forms.md#ordinary-frozen-handle-slots--exhaustive). |
 | Call a method directly | `score := scorer.Score(features)` |
 | Compare with `==` or `!=` | `scorer == nil`, `scorer == other` |
 | Wrap a local projection | `local := NewScorerProjection(im.ProjectionOf(scorer))` |
@@ -142,7 +144,6 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | A foreign field uses `type Public = privateReader` | Export the original Reader declaration. |
 | An inherited method returns a private type from another package | Export the result type in its declaring package. |
 | An implementation with a mutable slice field | Store `im.FrozenSlice[T]` and freeze an exclusive builder. |
-| `Scorer(nil)` | `var scorer Scorer = nil` |
 | `Apply(...im.StringProjection)` | Use a direct `Apply(im.StringProjection)` parameter. |
 | `reader.Apply(local, nil)` with `local im.StringProjection` | Pass `local.Unsafe()`, or declare a direct `im.StringProjection` parameter. |
 | `reader.Apply(nil, func() int { return local.Len() })` | Read `n := local.Len()` before the closure, then return `n`. |
@@ -155,7 +156,6 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | `Values() []Tree` | Return `[]*Tree`, a FrozenSlice, or a projection. |
 | `value, outputs[0] = local.Read()` | Bind local names first, then assign the ordinary output separately. |
 | Save ScorerProjection in a package variable or Frozen field | Save a Scorer value from an allowed construction. |
-| `chan Scorer` | Use direct calls with a Scorer parameter. |
 
 A generic `im.Projection[Scorer]` can return its Frozen interface with
 `projection.Unsafe()`. The result keeps the Frozen interface rules above. It

@@ -21,6 +21,9 @@ uses.go:39:14: unsupported immutable operation: callbacks require ordinary or pe
   source: api.Read
   type: func() (api.Reply, error)
   fix: call a named, non-generic function directly with a concrete immutable parameter
+uses.go:39:2: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: callback := api.Read
+  fix: call a named, non-generic function directly with a concrete immutable parameter
 uses.go:40:16: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
   source: callback()
   type: (api.Reply, error)

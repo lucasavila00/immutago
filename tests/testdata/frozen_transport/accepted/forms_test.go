@@ -7,3 +7,9 @@ func TestExercise(t *testing.T) {
 		t.Fatalf("Exercise() = %d; want 59", got)
 	}
 }
+
+func TestHandleSlots(t *testing.T) {
+	if got := HandleSlots(); got != 20 {
+		t.Fatalf("HandleSlots() = %d; want 20", got)
+	}
+}

@@ -21,6 +21,9 @@ receiver_bodies.go:16:20: unsupported immutable operation: returning Local point
   source: Nil
   type: func() *rejected.Settings
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+receiver_bodies.go:16:41: unsupported immutable operation: returning Local pointers is unsupported
+  source: return nil
+  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 receiver_bodies.go:17:65: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: s
   type: *rejected.Settings

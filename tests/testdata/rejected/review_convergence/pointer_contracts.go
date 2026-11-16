@@ -7,10 +7,6 @@ type PointerValue struct {
 	N int
 }
 
-var frozenPointer *im.FrozenSlice[int]
-
-func acceptFrozenPointer(*im.FrozenSlice[int]) {}
-func passNilPointer()                          { acceptFrozenPointer(nil) }
 func returnArrayPointer() (result *[1]PointerValue) {
 	return
 }

@@ -50,13 +50,7 @@ func selectFreeze() {
 }
 
 func multipleResults() { first, second := Good{}, Good{}; _ = first; _ = second }
-func scalarSend(ready chan<- int) {
-	var value Good
-	select {
-	case ready <- value.X:
-	}
-}
-func nilReference() { var p *Good = nil; _ = p }
+func nilReference()    { var p *Good = nil; _ = p }
 
 func frozenMapReceive(ready <-chan int) {
 	values := map[string]bool{"first": false}
@@ -79,5 +73,3 @@ func protectedTypeSwitch(input any) {
 	case Good:
 	}
 }
-
-func plainScalarSend(ready chan<- int) { var value Good; ready <- value.X }

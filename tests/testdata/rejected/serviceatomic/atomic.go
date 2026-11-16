@@ -28,14 +28,9 @@ type ProtectedSlot struct {
 	im.Local
 	Current atomic.Pointer[WorkerRef]
 }
-type FrozenSlot struct {
-	Ref    WorkerRef
-	Values im.FrozenSlice[int]
-}
 
 var local atomic.Pointer[LocalSlot]
 var mixed atomic.Pointer[MixedSlot]
-var frozen atomic.Pointer[FrozenSlot]
 
 func Extract(pointer *atomic.Pointer[WorkerRef]) {
 	service := pointer.Load().Borrow()

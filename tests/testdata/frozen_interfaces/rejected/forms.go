@@ -8,9 +8,7 @@ import (
 )
 
 var saved api.ScorerProjection
-var channel chan api.Scorer
 
-type Holder struct{ Value api.Scorer }
 type Worker struct{ supervise.Service[api.Scorer] }
 
 func (w *Worker) Raw() api.Scorer { return w.Args() }
@@ -26,7 +24,6 @@ func forms(s api.Scorer, local api.ScorerProjection) {
 	defer s.Score(nil)
 	_ = func() float64 { return s.Score(nil) }
 	_ = func() float64 { return local.Score(nil) }
-	_ = api.Scorer(nil)
 	var implicit api.Scorer = &implementation.Count{}
 	_ = implicit
 	saved = local
@@ -41,7 +38,6 @@ func identity[T any](v T) T { return v }
 func rawPointer(local im.Projection[api.Scorer]) *implementation.Tree {
 	return local.Unsafe().(*implementation.Tree)
 }
-func many(...api.Scorer)    {}
 func boxed(...any)          {}
 func variadic(s api.Scorer) { boxed(s) }
 

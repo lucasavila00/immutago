@@ -4,6 +4,7 @@ import (
 	"context"
 	atom "sync/atomic"
 
+	"github.com/lucasavila00/immutago/pkg/im"
 	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
@@ -81,3 +82,10 @@ type Defined[T any] atom.Pointer[T]
 
 // identity returns an ordinary Go value.
 func identity[T any](value T) T { return value }
+
+type FrozenSlot struct {
+	Ref    WorkerRef
+	Values im.FrozenSlice[int]
+}
+
+var frozen atom.Pointer[FrozenSlot]

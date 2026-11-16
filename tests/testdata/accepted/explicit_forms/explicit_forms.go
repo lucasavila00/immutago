@@ -85,3 +85,12 @@ func arrayRange() Good {
 	}
 	return result
 }
+
+func scalarSend(ready chan<- int) {
+	var value Good
+	select {
+	case ready <- value.X:
+	}
+}
+
+func plainScalarSend(ready chan<- int) { var value Good; ready <- value.X }

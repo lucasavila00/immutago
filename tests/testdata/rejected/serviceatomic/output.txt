@@ -5,49 +5,37 @@ atomic.go:25:2: unmarked struct contains immutable field Local; embed an immutab
 atomic.go:29:2: immutable field Current: copied values require bool, numbers, Copied records, arrays, or service references
   owner: serviceatomic.ProtectedSlot; field type: atomic.Pointer[serviceatomic.WorkerRef]
   fix: copy scalar fields, or use a generated local projection
-atomic.go:33:2: unmarked struct contains immutable field Values; embed an immutable marker
-  owner: serviceatomic.FrozenSlot; field type: im.FrozenSlice[int]
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-atomic.go:36:11: unmarked struct contains immutable field _; embed an immutable marker
+atomic.go:32:11: unmarked struct contains immutable field _; embed an immutable marker
   owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-atomic.go:36:18: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+atomic.go:32:18: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
   source: Pointer
   type: atomic.Pointer[T any]
   fix: use a direct non-generic function with concrete parameter types
-atomic.go:36:5: unmarked struct contains immutable field _; embed an immutable marker
+atomic.go:32:5: unmarked struct contains immutable field _; embed an immutable marker
   owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-atomic.go:36:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+atomic.go:32:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: local atomic.Pointer[LocalSlot]
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-atomic.go:37:11: unmarked struct contains immutable field _; embed an immutable marker
+atomic.go:33:11: unmarked struct contains immutable field _; embed an immutable marker
   owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-atomic.go:37:18: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+atomic.go:33:18: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
   source: Pointer
   type: atomic.Pointer[T any]
   fix: use a direct non-generic function with concrete parameter types
-atomic.go:37:5: unmarked struct contains immutable field _; embed an immutable marker
+atomic.go:33:5: unmarked struct contains immutable field _; embed an immutable marker
   owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-atomic.go:37:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+atomic.go:33:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: mixed atomic.Pointer[MixedSlot]
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-atomic.go:38:12: unmarked struct contains immutable field _; embed an immutable marker
-  owner: atomic.Pointer[serviceatomic.FrozenSlot]; field type: [0]*serviceatomic.FrozenSlot
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-atomic.go:38:5: unmarked struct contains immutable field _; embed an immutable marker
-  owner: atomic.Pointer[serviceatomic.FrozenSlot]; field type: [0]*serviceatomic.FrozenSlot
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-atomic.go:41:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
+atomic.go:36:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: pointer.Load().Borrow
   type: func() *serviceatomic.Worker
   fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
