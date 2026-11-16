@@ -72,13 +72,18 @@ func (p *proof) categoryNode(t types.Type, category proofCategory) *obligation {
 	}
 	result := &obligation{}
 	(*table)[t] = result
-	switch category {
-	case frozenCategory:
-		p.value(result, t)
-	case copiedCategory:
-		p.copiedValue(result, t)
-	case readCategory:
-		p.readValue(result, t)
+	if reason := MarkerReason(t); reason != "" {
+		result.reason = reason
+		result.repair = "embed exactly one of im.Frozen, im.Local, or im.Copied by value"
+	} else {
+		switch category {
+		case frozenCategory:
+			p.value(result, t)
+		case copiedCategory:
+			p.copiedValue(result, t)
+		case readCategory:
+			p.readValue(result, t)
+		}
 	}
 	if result.reason != "" && result.cause == nil {
 		p.failures = append(p.failures, result)
@@ -250,22 +255,12 @@ func refTargetReason(target types.Type) string {
 // structure requires one marker and checks every stored field.
 func (p *proof) structure(result *obligation, t types.Type, structure *types.Struct) {
 	if Copied(t) {
-		p.copiedRecord(result, t, structure)
+		p.copiedRecord(result, structure)
 		return
 	}
 	if !Frozen(t) {
 		result.reason = "struct does not embed im.Frozen"
 		result.repair = "embed im.Frozen and use Frozen fields, or im.Copied for value-only fields"
-		return
-	}
-	if Frozen(t) && Local(t) {
-		result.reason = "struct cannot embed both im.Frozen and im.Local"
-		result.repair = "embed exactly one marker; use im.Frozen for stored data or im.Local for local results"
-		return
-	}
-	if MarkerCount(t) != 1 {
-		result.reason = "struct must embed exactly one immutable marker"
-		result.repair = "embed exactly one marker by value"
 		return
 	}
 	for field := range structure.Fields() {

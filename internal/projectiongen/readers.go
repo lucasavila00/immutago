@@ -32,13 +32,11 @@ func (g *generator) readPath(typ, root types.Type, path, stem string, indices []
 	if g.proofs.ReadResultReason(typ) == "" {
 		return g.typeName(typ), expression, nil
 	}
-	if basic, ok := typ.Underlying().(*types.Basic); ok && basic.Info()&types.IsString != 0 {
-		return g.imName + ".StringProjection", g.imName + ".ProjectString(" + expression + ")", nil
-	}
 	if result, expression, ok := g.collectionReader(typ, expression); ok {
 		return result, expression, nil
 	}
-	return "", "", fmt.Errorf("%s: no reader for %s", stem, g.typeName(typ))
+	// The Frozen proof leaves only native strings after the other supported forms.
+	return g.imName + ".StringProjection", g.imName + ".ProjectString(" + expression + ")", nil
 }
 
 // frozenPointer identifies pointers to marked immutable records.

@@ -1,1 +1,1 @@
-named_array_field.go:6:6: cannot generate typed projections: Value: N: named array must be wrapped in a struct with an immutable marker
+named_array_field.go:6:6: cannot generate typed projections: Value: N: named array must be wrapped in a struct with an immutable marker; other generation failures may remain

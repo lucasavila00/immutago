@@ -1,1 +1,1 @@
-schema.go:9:6: cannot generate typed projections: DuplicateSnapshot: struct must embed exactly one immutable marker
+schema.go:9:6: cannot generate typed projections: DuplicateSnapshot: struct must embed exactly one immutable marker; each embedded alias counts as a marker; other generation failures may remain

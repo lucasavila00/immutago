@@ -15,7 +15,9 @@ those decisions useful.
 
 The [package boundary](../reference/rules.md#package-boundary) defines selected source.
 A normal Go build adds no Freeze enforcement. Each relevant build configuration
-must run the analyzer.
+must run the analyzer with output generated for that configuration. One output
+file can serve several configurations only when each produces the same bytes.
+See [required generation](../reference/rules.md#required-generation).
 
 ## Evidence for each mechanism
 

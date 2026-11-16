@@ -1,1 +1,1 @@
-schema.go:10:6: cannot generate typed projections: Pointer: Count: Frozen data fields must be named
+schema.go:10:6: cannot generate typed projections: Pointer: Count: Frozen data fields must be named; other generation failures may remain

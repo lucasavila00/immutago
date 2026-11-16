@@ -107,22 +107,32 @@ func generateTypes(pkg *types.Package, fset *token.FileSet, bootstrap bool) ([]b
 			continue
 		}
 		if typ.(*types.Named).TypeParams().Len() != 0 {
-			return nil, fmt.Errorf("%s: user generic declarations cannot define Frozen or Local types; "+
-				"type parameters are unsupported in immutable storage", name)
+			return nil, g.declarationError(typ, fmt.Errorf("user generic declarations cannot define Frozen or Local types; "+
+				"type parameters are unsupported in immutable storage"))
 		}
-		if reason := g.proofs.FrozenReason(typ); reason != "" && !bootstrap {
-			return nil, fmt.Errorf("%s: %s", name, reason)
+		if reason := g.proofs.FrozenReason(typ); reason != "" {
+			return nil, g.declarationError(typ, fmt.Errorf("%s", reason))
 		}
 		if checker.FrozenInterface(typ) {
 			if err := g.addInterface(typ, name+"Projection"); err != nil {
-				return nil, err
+				return nil, g.declarationError(typ, err)
 			}
 		} else if err := g.addRecord(types.NewPointer(typ), name+"Projection"); err != nil {
-			return nil, err
+			return nil, g.declarationError(typ, err)
 		}
 	}
 	g.projectionNames()
 	return g.render()
+}
+
+// declarationError keeps the source position and names the first failed declaration.
+func (g *generator) declarationError(typ types.Type, err error) error {
+	if pointer, ok := types.Unalias(typ).(*types.Pointer); ok {
+		typ = pointer.Elem()
+	}
+	object := types.Unalias(typ).(*types.Named).Obj()
+	return types.Error{Fset: g.fset, Pos: object.Pos(),
+		Msg: object.Name() + ": " + err.Error() + "; other generation failures may remain"}
 }
 
 // generated identifies declarations in the single generated output file.
@@ -307,18 +317,18 @@ func (g *generator) render() ([]byte, error) {
 	}
 	for _, item := range g.interfaces {
 		if err := g.writeInterface(&body, item); err != nil {
-			return nil, err
+			return nil, g.declarationError(item.typ, err)
 		}
 	}
 	for ri, ai := 0, 0; ri < len(g.records) || ai < len(g.arrays); {
 		if ri < len(g.records) {
 			if err := g.writeRecord(&body, g.records[ri]); err != nil {
-				return nil, err
+				return nil, g.declarationError(g.records[ri].typ, err)
 			}
 			ri++
 		} else {
 			if err := g.writeArray(&body, g.arrays[ai]); err != nil {
-				return nil, err
+				return nil, g.declarationError(g.arrays[ai].root, err)
 			}
 			ai++
 		}

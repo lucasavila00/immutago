@@ -1,0 +1,1 @@
+zz_immutago.gen.go:3:1: zz_immutago.gen.go is stale; run go generate in this package with the same build configuration

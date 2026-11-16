@@ -1,1 +1,1 @@
-source.go:7:6: cannot generate typed projections: *Record.IsNil conflicts with a generated projection member
+source.go:7:6: cannot generate typed projections: Record: *Record.IsNil conflicts with a generated projection member; other generation failures may remain

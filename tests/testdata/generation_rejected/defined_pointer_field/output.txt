@@ -1,0 +1,1 @@
+schema.go:8:6: cannot generate typed projections: Bad: Value: defined pointer types are unsupported in Frozen data; use a pointer alias; other generation failures may remain

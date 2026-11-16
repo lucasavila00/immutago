@@ -45,6 +45,45 @@ func TestMarkerIdentities(t *testing.T) {
 	}
 }
 
+// TestMarkerFailures uses one reason for every category, including alias and mixed markers.
+func TestMarkerFailures(t *testing.T) {
+	library := types.NewPackage(LibraryPath, "im")
+	markers := make(map[string]types.Type)
+	for _, name := range []string{"Frozen", "Local", "Copied"} {
+		markers[name] = types.NewNamed(types.NewTypeName(token.NoPos, library, name, nil),
+			types.NewStruct(nil, nil), nil)
+	}
+	for _, pair := range [][2]string{
+		{"Frozen", "Frozen"}, {"Local", "Local"}, {"Copied", "Copied"},
+		{"Frozen", "Local"}, {"Local", "Frozen"}, {"Frozen", "Copied"},
+		{"Copied", "Frozen"}, {"Local", "Copied"}, {"Copied", "Local"},
+	} {
+		t.Run(pair[0]+"_"+pair[1], func(t *testing.T) {
+			alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), markers[pair[1]])
+			value := markedType("Mixed", markers[pair[0]], types.NewField(token.NoPos, nil, "Alias", alias, true))
+			want := "struct must embed exactly one immutable marker; each embedded alias counts as a marker"
+			if pair == [2]string{"Frozen", "Local"} || pair == [2]string{"Local", "Frozen"} {
+				want = "struct cannot embed both im.Frozen and im.Local"
+			}
+			var prover Prover
+			checks := []func(types.Type) Failure{
+				prover.FrozenFailure, prover.ReadResultFailure, prover.CopiedFailure, prover.Failure,
+			}
+			for range 2 {
+				for _, check := range checks {
+					got := check(value)
+					if got.Reason != want {
+						t.Errorf("marker reason = %q; want %q", got.Reason, want)
+					}
+					if got.Repair != "embed exactly one of im.Frozen, im.Local, or im.Copied by value" {
+						t.Errorf("marker repair = %q", got.Repair)
+					}
+				}
+			}
+		})
+	}
+}
+
 // TestLocalPointerIdentity checks that aliases and defined pointer types retain the storage restriction.
 func TestLocalPointerIdentity(t *testing.T) {
 	library := types.NewPackage(LibraryPath, "im")
