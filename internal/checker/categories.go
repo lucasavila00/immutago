@@ -38,7 +38,7 @@ func (p *proof) copiedValue(result *obligation, t types.Type) {
 }
 
 // copiedRecord proves each field through the shared Copied rule.
-func (p *proof) copiedRecord(result *obligation, t types.Type, structure *types.Struct) {
+func (p *proof) copiedRecord(result *obligation, structure *types.Struct) {
 	for field := range structure.Fields() {
 		if field.Embedded() && IsLibraryType(field.Type(), "Copied") {
 			continue

@@ -228,7 +228,7 @@ func refTargetReason(target types.Type) string {
 // structure requires one marker and checks every stored field.
 func (p *proof) structure(result *obligation, t types.Type, structure *types.Struct) {
 	if Copied(t) {
-		p.copiedRecord(result, t, structure)
+		p.copiedRecord(result, structure)
 		return
 	}
 	if !Frozen(t) {
