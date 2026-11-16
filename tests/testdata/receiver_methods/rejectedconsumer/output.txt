@@ -1,7 +1,7 @@
 generic_methods.go:10:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.MapPointer[int](number)
   type: int
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: copy a Copied field or element into a local before calling a pointer method; for a value method on *T, write (*pointer).Method()
 generic_methods.go:9:12: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
   source: Map
   type: func[T any](read func(int) T) T
@@ -17,4 +17,4 @@ generic_methods.go:9:6: unsupported immutable operation: callbacks require ordin
 receiver_rejectedconsumer.go:8:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.ReadCost()
   type: int
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: copy a Copied field or element into a local before calling a pointer method; for a value method on *T, write (*pointer).Method()

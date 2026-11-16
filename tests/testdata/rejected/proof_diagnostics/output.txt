@@ -1,12 +1,12 @@
 diagnostics.go:24:5: Copied record: Text: string is not a Copied value
   type: proofdiagnostics.Label
-  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
 diagnostics.go:31:2: immutable field Text requires a read result: string is not a Copied value
   owner: proofdiagnostics.Reply; field type: string
-  fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
+  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
 diagnostics.go:41:18: service method Name must return a read result or error: string is not a Copied value
   result type: string
-  fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
+  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
 diagnostics.go:46:12: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenSlice[im.StringProjection]
   fix: store Frozen data; keep its Projection or Local result in local bindings
@@ -26,28 +26,28 @@ diagnostics.go:54:12: unsupported immutable operation: use a service reference o
   fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
 diagnostics.go:63:25: unsupported immutable operation: protected storage requires synchronous calls
   source: go use(view)
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 diagnostics.go:70:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
 diagnostics.go:71:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
-  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
 diagnostics.go:72:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
-  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
 diagnostics.go:76:14: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
 diagnostics.go:76:20: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
 diagnostics.go:76:23: immutable type argument: stored pointers require a concrete Frozen record target
   type: *proofdiagnostics.Score
-  fix: replace the pointer field or argument with an owned immutable value
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
 diagnostics.go:76:49: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
 diagnostics.go:83:12: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenMap[string, [1]proofdiagnostics.Name]
   fix: store Frozen data; keep its Projection or Local result in local bindings
@@ -60,6 +60,55 @@ diagnostics.go:83:2: Frozen collection: Frozen storage cannot contain Local valu
 diagnostics.go:84:6: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenMap[string, [1]proofdiagnostics.Name]
   fix: store Frozen data; keep its Projection or Local result in local bindings
+repairs.go:10:16: immutable type argument: stored pointers require a concrete Frozen record target
+  type: *int
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+repairs.go:14:2: immutable field Totals requires a read result: named array must be wrapped in a struct with an immutable marker
+  owner: proofdiagnostics.Summary; field type: proofdiagnostics.Counts
+  fix: use an unnamed array type; to keep a named type, put the unnamed array in a marked struct
+repairs.go:17:16: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: interface { Join(parts ...im.StringProjection) int }
+  type: interface{Join(parts ...im.StringProjection) int}
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+repairs.go:18:13: unsupported immutable operation: native slices of immutable storage are unsupported
+  source: ...im.StringProjection
+  type: []im.StringProjection
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
+repairs.go:18:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: func(parts ...im.StringProjection) int
+  type: func(parts ...im.StringProjection) int
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+repairs.go:23:11: unsupported builder names: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle and read its elements directly; Local builders cannot Freeze
+repairs.go:24:6: unsupported immutable operation: native slices of immutable storage are unsupported
+  source: alias
+  type: []im.StringProjection
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
+repairs.go:29:11: unsupported builder names: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle and read its elements directly; Local builders cannot Freeze
+repairs.go:30:6: unsupported immutable operation: native maps of immutable storage are unsupported
+  source: alias
+  type: map[int]im.StringProjection
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
+repairs.go:40:56: unsupported immutable operation: channels of immutable storage are unsupported
+  source: chan Point
+  type: chan proofdiagnostics.Point
+  fix: send a Frozen pointer or Frozen handle; keep Local data local and do not send Frozen records by value
+repairs.go:41:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: value.Score.Set(2)
+  type: ()
+  fix: copy a Copied field or element into a local before calling a pointer method; for a value method on *T, write (*pointer).Method()
+repairs.go:42:6: unsupported immutable operation: shared pointer conversions are unsupported
+  source: (*LocalScores)(nil)
+  type: *proofdiagnostics.LocalScores
+  fix: keep the original pointer type; for a nil Local pointer, declare var p *T = nil
+repairs.go:43:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go readLocal(p)
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
+repairs.go:8:16: immutable type argument: interface{} is not provably immutable
+  type: any
+  fix: embed im.FrozenInterface in a named interface, or use a concrete Frozen type
+repairs.go:9:15: immutable type argument: struct does not embed im.Frozen
+  type: proofdiagnostics.Plain
+  fix: embed im.Frozen and use Frozen fields, or im.Copied for value-only fields
 storage.go:12:18: service method Retry must return a read result or error: example.com/consumer/proof_diagnostics.Failure is not a Copied value
   result type: proofdiagnostics.Failure
   fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
@@ -84,25 +133,25 @@ storage.go:19:2: unmarked struct field Index contains protected storage
   fix: store the matching im.FrozenMap value; create its projection at the read site
 storage.go:25:18: immutable type argument: defined pointer types are unsupported in Frozen data; use a pointer alias
   type: proofdiagnostics.Selected
-  fix: replace the pointer field or argument with an owned immutable value
+  fix: use a pointer alias such as type Selected = *Settings, where Settings is a Frozen record
 storage.go:28:6: local projection: projection payload 1: defined pointer types are unsupported in Frozen data; use a pointer alias
   type: im.Projection[proofdiagnostics.Selected]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: use a pointer alias such as type Selected = *Settings, where Settings is a Frozen record
 storage.go:28:9: immutable type argument: defined pointer types are unsupported in Frozen data; use a pointer alias
   type: proofdiagnostics.Selected
-  fix: replace the pointer field or argument with an owned immutable value
+  fix: use a pointer alias such as type Selected = *Settings, where Settings is a Frozen record
 storage.go:29:6: Frozen collection: type argument 1: defined pointer types are unsupported in Frozen data; use a pointer alias
   type: im.FrozenSlice[proofdiagnostics.Selected]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: use a pointer alias such as type Selected = *Settings, where Settings is a Frozen record
 storage.go:29:9: immutable type argument: defined pointer types are unsupported in Frozen data; use a pointer alias
   type: proofdiagnostics.Selected
-  fix: replace the pointer field or argument with an owned immutable value
+  fix: use a pointer alias such as type Selected = *Settings, where Settings is a Frozen record
 storage.go:34:11: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 storage.go:37:6: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 storage.go:43:20: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 storage.go:49:6: Frozen collection: type argument 1: stored pointers require a concrete Frozen record target
   type: im.FrozenSlice[*int]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
 storage.go:49:9: immutable type argument: stored pointers require a concrete Frozen record target
   type: *int
-  fix: replace the pointer field or argument with an owned immutable value
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value

@@ -3,7 +3,7 @@ forms.go:10:5: unsupported immutable operation: Local values and pointers cannot
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 forms.go:14:18: service method Raw must return a read result or error: example.com/consumer/api.Scorer is not a Copied value
   result type: api.Scorer
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 forms.go:26:30: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: local
   type: api.ScorerProjection
@@ -20,7 +20,7 @@ forms.go:30:6: unsupported immutable operation: example.com/consumer/api.Scorer 
   fix: copy scalar fields, or use a local projection
 forms.go:30:9: immutable type argument: example.com/consumer/api.Scorer is not a Copied value
   type: api.Scorer
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 forms.go:45:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: tree.Weight = 4
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

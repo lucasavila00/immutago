@@ -5,4 +5,4 @@ channel_wrapper.go:13:18: unmarked struct field Value contains protected storage
 channel_wrapper.go:13:24: unsupported immutable operation: channels of immutable storage are unsupported
   source: chan Good
   type: chan rejected.Good
-  fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset
+  fix: send a Frozen pointer or Frozen handle; keep Local data local and do not send Frozen records by value

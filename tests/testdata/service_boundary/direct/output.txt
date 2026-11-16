@@ -1,6 +1,6 @@
 anonymous.go:7:24: service method Values must return a read result or error: []int is not a Copied value
   result type: []int
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 borrow_calls.go:11:35: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *api.Counter

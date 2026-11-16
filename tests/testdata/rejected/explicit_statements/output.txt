@@ -7,11 +7,11 @@ explicit_statements.go:17:7: unsupported immutable operation: writes to immutabl
 explicit_statements.go:20:17: unsupported immutable operation: channels of immutable storage are unsupported
   source: chan<- Good
   type: chan<- explicit_statements.Good
-  fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset
+  fix: send a Frozen pointer or Frozen handle; keep Local data local and do not send Frozen records by value
 explicit_statements.go:23:7: unsupported immutable operation: channels of immutable storage are unsupported
   source: ready
   type: chan<- explicit_statements.Good
-  fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset
+  fix: send a Frozen pointer or Frozen handle; keep Local data local and do not send Frozen records by value
 explicit_statements.go:30:10: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 explicit_statements.go:30:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: _, values[0] = <-ready

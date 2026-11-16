@@ -4,4 +4,4 @@ bound_array_method.go:12:28: unsupported immutable operation: writes to immutabl
 bound_array_method.go:22:12: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.N.Change
   type: func()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: copy a Copied field or element into a local before calling a pointer method; for a value method on *T, write (*pointer).Method()

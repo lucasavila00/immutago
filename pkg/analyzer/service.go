@@ -38,17 +38,17 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 			if types.Identical(result.Type(), errorType) {
 				continue
 			}
-			reason := c.proofs.ReadResultReason(result.Type())
-			if reason == "" {
+			failure := c.proofs.ReadResultFailure(result.Type())
+			if failure.Reason == "" {
 				continue
 			}
-			fix := structuralFix(result.Type(), reason)
+			fix := failure.Repair
 			if contract, ok := result.Type().Underlying().(*types.Interface); ok &&
 				types.Implements(contract, errorType.Underlying().(*types.Interface)) {
 				fix = "declare the result as Go's predeclared error or an alias such as type Failure = error; " +
 					"rename any declaration that shadows error"
 			}
-			c.report(at, "service method "+method.Name()+" must return a read result or error: "+reason+
+			c.report(at, "service method "+method.Name()+" must return a read result or error: "+failure.Reason+
 				"\n  result type: "+diagnosticType(result.Type())+"\n  fix: "+fix)
 		}
 	}

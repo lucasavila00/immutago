@@ -279,3 +279,25 @@ func TestProverTypeForms(t *testing.T) {
 		}
 	}
 }
+
+// TestFailureRepairFollowsCause checks aliases, cycles, query order, and cached failures.
+func TestFailureRepairFollowsCause(t *testing.T) {
+	roots := competingProofRoots()
+	for first := range roots {
+		var prover Prover
+		for offset := range roots {
+			root := roots[(first+offset)%len(roots)]
+			failure := prover.FrozenFailure(root)
+			want := "im.FrozenSlice"
+			if strings.Contains(failure.Reason, "BadB:") {
+				want = "im.FrozenMap"
+			}
+			if !strings.Contains(failure.Repair, want) {
+				t.Fatalf("reason %q, repair %q", failure.Reason, failure.Repair)
+			}
+			if next := prover.FrozenFailure(root); next != failure {
+				t.Fatalf("cached failure changed: %v -> %v", failure, next)
+			}
+		}
+	}
+}

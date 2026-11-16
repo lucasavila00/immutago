@@ -5,7 +5,7 @@ contracts.go:11:6: unsupported immutable operation: returning Local pointers is 
 contracts.go:15:6: unsupported immutable operation: native slices of immutable storage are unsupported
   source: ...im.StringProjection
   type: []im.StringProjection
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
 contracts.go:19:7: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: func() im.StringProjection
   type: func() im.StringProjection
@@ -33,15 +33,15 @@ contracts.go:37:9: unsupported immutable operation: callbacks require ordinary o
 contracts.go:7:9: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []im.StringProjection
   type: []im.StringProjection
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
 zz_immutago.gen.go:101:31: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []im.StringProjection
   type: []im.StringProjection
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
 zz_immutago.gen.go:101:62: unsupported immutable operation: native slices of immutable storage are unsupported
   source: v.immutagoProjection.Unsafe().Text()
   type: []im.StringProjection
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
 zz_immutago.gen.go:118:26: unsupported immutable operation: returning Local pointers is unsupported
   source: Pair
   type: func() (int, *contracts.Local)
@@ -60,11 +60,11 @@ zz_immutago.gen.go:118:86: unsupported immutable operation: returning Local poin
 zz_immutago.gen.go:135:38: unsupported immutable operation: native slices of immutable storage are unsupported
   source: ...im.StringProjection
   type: []im.StringProjection
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
 zz_immutago.gen.go:136:43: unsupported immutable operation: native slices of immutable storage are unsupported
   source: arg0
   type: []im.StringProjection
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
 zz_immutago.gen.go:27:39: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: func() im.StringProjection
   type: func() im.StringProjection

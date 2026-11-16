@@ -3,21 +3,21 @@ package analyzer
 import (
 	"go/ast"
 	"go/token"
-	"go/types"
 	"strings"
 	"testing"
 
 	"golang.org/x/tools/go/analysis"
 )
 
-// TestCopiedDiagnosticPaths keeps the same repair for nested category failures.
-func TestCopiedDiagnosticPaths(t *testing.T) {
-	for _, prefix := range []string{"", "array element: ", "Result: array element: "} {
-		reason := prefix + "string is not a Copied value"
-		for _, fix := range []string{subsetFix(reason), structuralFix(types.Typ[types.Int], reason)} {
-			if fix != "copy scalar fields, or use a local projection" {
-				t.Fatal(fix)
-			}
+// TestNestedDiagnosticRepair keeps the failed component's repair through array and record paths.
+func TestNestedDiagnosticRepair(t *testing.T) {
+	for _, source := range []string{
+		`type Value struct{im.Local; Text string}`,
+		`type Value struct{im.Local; Text [2]string}`,
+		`type Inner struct{im.Local; Text string}; type Value struct{im.Local; Inner [2]Inner}`,
+	} {
+		if got := checkSource(t, source); !strings.Contains(got, "for Local text, use im.ProjectString(text)") {
+			t.Fatal(got)
 		}
 	}
 }
@@ -49,7 +49,7 @@ func TestStructuralDiagnosticContext(t *testing.T) {
 			"store Frozen pointers or handles; keep Local data in local bindings",
 		}},
 		{`var _ = im.FreezeSlice([]*int{new(int)})`, []string{
-			"immutable type argument", "type: *int", "fix: replace the pointer field or argument with an owned immutable value",
+			"immutable type argument", "type: *int", "fix: point to a Frozen record, or store the value without a pointer",
 		}},
 	}
 	for _, tc := range cases {
@@ -141,7 +141,7 @@ func(w *Worker)Name()string{return ""}
 func(w *Worker)Text()im.StringProjection{return im.ProjectString("")}`)
 	for _, want := range []string{
 		"service method Name must return a read result or error: string is not a Copied value",
-		"fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)",
+		"for Local text, use im.ProjectString(text)",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("missing %q in %s", want, got)
@@ -199,4 +199,32 @@ func checkTypeSource(t *testing.T, source string) string {
 		ast.Inspect(file, c.visit)
 	}
 	return strings.Join(reports, "\n")
+}
+
+// TestRepairMatchesTypeCategory keeps suggested repairs within the failed type's category.
+func TestRepairMatchesTypeCategory(t *testing.T) {
+	cases := []struct{ source, want string }{
+		{`type S struct{im.Copied; N int};func(s *S)Set(){};type L struct{im.Local; S S};func f(l L){l.S.Set()}`,
+			"copy a Copied field or element into a local"},
+		{`type L struct{im.Local};func f(){_=(*L)(nil)}`, "for a nil Local pointer, declare var p *T = nil"},
+		{`type L struct{im.Local};func read(*L){};func f(p *L){go read(p)}`,
+			"keep Local values, Local pointers, and native builders out of go and defer"},
+		{`type L struct{im.Local};func f(chan L){}`, "send a Frozen pointer or Frozen handle"},
+		{`var value im.Cell[any]`, "embed im.FrozenInterface in a named interface, or use a concrete Frozen type"},
+		{`type Plain struct{ N int }; var value im.Cell[Plain]`,
+			"embed im.Frozen and use Frozen fields, or im.Copied for value-only fields"},
+		{`var value im.Cell[*int]`, "point to a Frozen record, or store the value without a pointer"},
+		{`type Counts [2]int; type Summary struct{im.Local; Totals Counts}`, "named array must be wrapped"},
+		{`type Formatter interface{Join(...im.StringProjection) int}`,
+			"pass Local values directly, or use named fields in an im.Local record"},
+		{`func labels(name im.StringProjection){names:=[]im.StringProjection{name};alias:=names;_=alias}`,
+			"Local builders cannot Freeze"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.source, func(t *testing.T) {
+			if got := checkSource(t, tc.source); !strings.Contains(got, tc.want) {
+				t.Fatalf("missing %q in %s", tc.want, got)
+			}
+		})
+	}
 }

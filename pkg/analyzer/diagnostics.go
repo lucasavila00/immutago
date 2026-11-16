@@ -69,15 +69,15 @@ var subsetFixes = map[string]string{
 	"protected iteration requires a direct frozen All call": "use range frozen.All() " +
 		"for protected values; do not create protected references through a custom iterator",
 	"protected storage requires synchronous calls": "call the function or method directly before " +
-		"continuing; do not pass protected values, references, or builders to go or defer",
+		"continuing; keep Local values, Local pointers, and native builders out of go and defer",
 	"protected storage is unsupported in type switches": "keep concrete protected " +
 		"types in named function parameters instead of recovering values or references from interfaces",
 	"immutable methods require a concrete non-generic marked receiver": "declare the method on a proved " +
 		"marked struct or its pointer, or use a named function with concrete parameters",
 	"promoted immutable methods are unsupported": "name the embedded field explicitly and call a method " +
 		"allowed on that field; copy scalar fields to ordinary locals before calling their methods",
-	"immutable method receivers must match their declared type exactly": "use an existing pointer for a pointer " +
-		"receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage",
+	"immutable method receivers must match their declared type exactly": "copy a Copied field or element into a local " +
+		"before calling a pointer method; for a value method on *T, write (*pointer).Method()",
 	"multiple assignments involving protected storage are unsupported": "use one protected destination, " +
 		"or local names for all results of one direct typed call",
 	"protected storage is unsupported in select communication clauses": "keep Local values and native builders " +
@@ -92,15 +92,15 @@ var subsetFixes = map[string]string{
 		"iteration, or build a fresh local slice and consume it with im.FreezeSlice",
 	"native maps of immutable storage are unsupported": "use im.FrozenMap[K, V]; pass an " +
 		"owned local map or fresh literal to im.FreezeMap",
-	"channels of immutable storage are unsupported": "keep immutable values in " +
-		"owned locals or im collections; channels of these values are outside this subset",
+	"channels of immutable storage are unsupported": "send a Frozen pointer or Frozen handle; " +
+		"keep Local data local and do not send Frozen records by value",
 	"pointer indirection is unsupported": "use a direct pointer to a concrete marked struct",
 	"interior addresses of protected storage are unsupported": "copy the field into a local; " +
 		"do not take a pointer into immutable storage",
 	"slice projections of immutable storage are unsupported": "copy the array into local " +
 		"storage before slicing it, or use im.FrozenSlice for immutable sequence values",
-	"shared pointer conversions are unsupported": "keep the original pointer " +
-		"type; copy the value first if a different owned value type is required",
+	"shared pointer conversions are unsupported": "keep the original pointer type; " +
+		"for a nil Local pointer, declare var p *T = nil",
 	"Frozen interface implementations cannot use promoted methods": "convert the explicit embedded Frozen field, " +
 		"or declare the method on the converted record",
 	"Frozen interface method receivers must match the converted type exactly": "convert a value for value methods " +
@@ -127,6 +127,9 @@ var subsetFixes = map[string]string{
 
 // subsetFix gives a supported replacement for each rejected operation.
 func subsetFix(rule string) string {
+	if strings.Contains(rule, "named array") {
+		return "use an unnamed array type; to keep a named type, put the unnamed array in a marked struct"
+	}
 	if strings.Contains(rule, "is not a Copied value") {
 		return "copy scalar fields, or use a local projection"
 	}
@@ -154,45 +157,4 @@ func unmarkedFieldFix(t types.Type) string {
 		}
 	}
 	return "store Frozen pointers or handles; keep Local data in local bindings"
-}
-
-// structuralFix explains how to replace a field or type argument that failed its recursive proof.
-func structuralFix(t types.Type, reason string) string {
-	switch {
-	case checker.IsProjection(t) && strings.Contains(reason, "concrete Frozen record target"):
-		return "for Copied T, use im.Projection[T] with im.Value(projection); " +
-			"use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads"
-	case strings.Contains(reason, "cannot contain Local"):
-		return "store Frozen data; keep its Projection or Local result in local bindings"
-	case strings.Contains(reason, "is not a Copied value"):
-		if basic, ok := t.Underlying().(*types.Basic); ok && basic.Info()&types.IsString != 0 {
-			return "use im.StringProjection for a local string result; construct it with im.ProjectString(text)"
-		}
-		if checker.IsLibraryType(t, "FrozenString") {
-			return "use im.StringProjection for a local string result; construct it with text.Projection()"
-		}
-		return "copy scalar fields, or use a local projection"
-	case strings.Contains(reason, "markers are annotations"):
-		return "embed the marker in a named struct; use data fields for values"
-	case strings.Contains(reason, "named array"):
-		return "use an unnamed array type, or wrap the named array in a struct that embeds im.Frozen or im.Local"
-	case strings.Contains(reason, "type parameters"):
-		return "use a concrete proved type for this immutable field or element"
-	case strings.Contains(reason, "does not embed"):
-		return "embed im.Frozen or im.Local in the struct and make each field immutable"
-	}
-	switch t.Underlying().(type) {
-	case *types.Pointer:
-		return "replace the pointer field or argument with an owned immutable value"
-	case *types.Slice:
-		return "replace the native slice with im.FrozenSlice[T], where T is immutable"
-	case *types.Map:
-		return "replace the native map with im.FrozenMap[K, V], where K and V are immutable"
-	case *types.Interface:
-		return "replace the interface with a concrete immutable type"
-	case *types.Chan, *types.Signature:
-		return "keep channels and callbacks outside immutable values; store their immutable results"
-	}
-	return "use scalar values, unnamed arrays, marked structs, or " +
-		"im.FrozenSlice/im.FrozenMap with immutable type arguments"
 }

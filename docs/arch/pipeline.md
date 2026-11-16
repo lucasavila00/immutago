@@ -75,7 +75,8 @@ type B struct { im.Frozen; Next *A; Bad map[string]int }
 2. Add reverse edges from each field or element proof to its owners.
 3. Expand the reachable graph. A revisit of A reuses its node.
 4. Propagate the map failure to B, then A. New owners also receive cached child failures.
-5. Keep one earlier failed cause per failed node; cache the rendered diagnostic.
+5. Keep one earlier failed cause per failed node. Carry its rule's repair with the
+   cause and cache both; do not infer a repair from the rendered message or outer type.
 
 Cause links cannot form a cycle. Query order can select a different real cause.
 

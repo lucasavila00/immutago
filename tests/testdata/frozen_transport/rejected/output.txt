@@ -63,7 +63,7 @@ forms.go:40:15: unsupported immutable operation: writes to immutable objects are
 forms.go:41:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.Counts[0].Read()
   type: int
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: copy a Copied field or element into a local before calling a pointer method; for a value method on *T, write (*pointer).Method()
 forms.go:45:11: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 forms.go:46:6: unsupported immutable operation: native slices of immutable storage are unsupported
   source: alias
@@ -154,7 +154,7 @@ handles.go:51:7: unsupported immutable operation: protected storage is unsupport
 handles.go:56:19: unsupported immutable operation: channels of immutable storage are unsupported
   source: chan api.Count
   type: chan api.Count
-  fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset
+  fix: send a Frozen pointer or Frozen handle; keep Local data local and do not send Frozen records by value
 handles.go:61:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: for indexes[local.Len()], value = range values { }
   fix: use one protected destination, or local names for all results of one direct typed call

@@ -1,6 +1,6 @@
 projection_adapters.go:10:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer im.StringOfFrozen(frozen)
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 projection_adapters.go:11:37: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: sequence
   type: im.Projection[im.FrozenSlice[int]]
@@ -29,13 +29,13 @@ projection_adapters.go:8:6: unsupported immutable operation: dynamic calls requi
   fix: call a named, non-generic function directly with a concrete immutable parameter
 projection_adapters.go:9:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go im.StringOf(text)
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_categories.go:18:2: immutable field Text requires a read result: string is not a Copied value
   owner: rejected.BadLocal; field type: string
-  fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
+  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
 snapshot_categories.go:19:2: immutable field Frozen requires a read result: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   owner: rejected.BadLocal; field type: im.FrozenString
-  fix: use im.StringProjection for a local string result; construct it with text.Projection()
+  fix: copy bool or numeric fields for Copied data; for Local text, use text.Projection()
 snapshot_categories.go:21:24: unmarked struct field Saved contains protected storage
   owner: rejected.BadNative; field type: im.Projection[string]
   rule: unmarked structs cannot own Frozen records by value or Local data
@@ -90,23 +90,23 @@ snapshot_categories.go:30:5: unsupported immutable operation: Local values and p
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 snapshot_categories.go:36:17: service method Raw must return a read result or error: string is not a Copied value
   result type: string
-  fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
+  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
 snapshot_categories.go:37:17: service method Frozen must return a read result or error: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   result type: im.FrozenString
-  fix: use im.StringProjection for a local string result; construct it with text.Projection()
+  fix: copy bool or numeric fields for Copied data; for Local text, use text.Projection()
 snapshot_categories.go:38:17: service method Retained must return a read result or error: example.com/consumer/rejected.Retained is not a Copied value
   result type: rejected.Retained
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 snapshot_categories.go:39:17: service method Container must return a read result or error: []github.com/lucasavila00/immutago/pkg/im.Projection[int] is not a Copied value
   result type: []im.Projection[int]
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 snapshot_categories.go:39:29: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []im.Projection[int]
   type: []im.Projection[int]
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
 snapshot_categories.go:40:17: service method LocalPointer must return a read result or error: *example.com/consumer/rejected.Local is not a Copied value
   result type: *rejected.Local
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 snapshot_categories.go:40:17: unsupported immutable operation: returning Local pointers is unsupported
   source: LocalPointer
   type: func() *rejected.Local
@@ -120,14 +120,14 @@ snapshot_categories.go:43:6: unsupported immutable operation: example.com/consum
   fix: copy scalar fields, or use a local projection
 snapshot_categories.go:43:9: immutable type argument: example.com/consumer/rejected.Retained is not a Copied value
   type: rejected.Retained
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 snapshot_categories.go:44:6: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   source: im.Value(text)
   type: im.FrozenString
   fix: copy scalar fields, or use a local projection
 snapshot_categories.go:44:9: immutable type argument: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   type: im.FrozenString
-  fix: use im.StringProjection for a local string result; construct it with text.Projection()
+  fix: copy bool or numeric fields for Copied data; for Local text, use text.Projection()
 snapshot_categories.go:45:6: unsupported immutable operation: string is not a Copied value
   source: values.Clone()
   type: []string
@@ -142,11 +142,11 @@ snapshot_categories.go:50:2: unsupported immutable operation: Local values and p
 snapshot_categories.go:51:6: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []Local{value}
   type: []rejected.Local
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
 snapshot_categories.go:52:6: unsupported immutable operation: native maps of immutable storage are unsupported
   source: map[int]Local{1: value}
   type: map[int]rejected.Local
-  fix: use im.FrozenMap[K, V]; pass an owned local map or fresh literal to im.FreezeMap
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
 snapshot_categories.go:53:6: local projection: projection payload 1: Frozen storage cannot contain Local values
   type: im.Projection[rejected.Local]
   fix: store Frozen data; keep its Projection or Local result in local bindings
@@ -164,10 +164,10 @@ snapshot_categories.go:55:6: unsupported immutable operation: ordinary interface
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 snapshot_categories.go:56:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go consume(text)
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_categories.go:57:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer consume(text)
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_categories.go:58:26: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: text
   type: im.StringProjection
@@ -201,24 +201,24 @@ snapshot_categories.go:69:6: Frozen collection: Frozen storage cannot contain Lo
 snapshot_categories.go:72:52: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []im.StringProjection
   type: []im.StringProjection
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-snapshot_categories.go:74:9: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+  fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
+snapshot_categories.go:74:9: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle and read its elements directly; Local builders cannot Freeze
 snapshot_categories.go:84:2: immutable field Value requires a read result: example.com/consumer/rejected.Numeric is not a Copied value
   owner: rejected.BadNumericResult; field type: rejected.Numeric
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 snapshot_categories.go:87:17: service method Numeric must return a read result or error: example.com/consumer/rejected.Numeric is not a Copied value
   result type: rejected.Numeric
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 snapshot_categories.go:88:17: service method NumericArray must return a read result or error: array element: example.com/consumer/rejected.Numeric is not a Copied value
   result type: [0]rejected.Numeric
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 snapshot_categories.go:90:6: unsupported immutable operation: example.com/consumer/rejected.Numeric is not a Copied value
   source: im.Value(value)
   type: rejected.Numeric
   fix: copy scalar fields, or use a local projection
 snapshot_categories.go:90:9: immutable type argument: example.com/consumer/rejected.Numeric is not a Copied value
   type: rejected.Numeric
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 snapshot_categories.go:91:6: unsupported immutable operation: native slices of immutable storage are unsupported
   source: values.Clone()
   type: []rejected.Numeric
@@ -257,20 +257,20 @@ snapshot_holders.go:28:6: unsupported immutable operation: method expressions re
   fix: call the receiver method directly (value.Method(...)); do not call it through the type
 snapshot_holders.go:32:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go typedCell.Load()
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_holders.go:33:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer typedCell.Load()
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:17:22: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &projection.Unsafe().Names
   type: *[2]string
   fix: copy the field into a local; do not take a pointer into immutable storage
 snapshot_projection.go:17:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*[2]string]
-  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
 snapshot_projection.go:17:9: immutable type argument: stored pointers require a concrete Frozen record target
   type: *[2]string
-  fix: replace the pointer field or argument with an owned immutable value
+  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
 snapshot_projection.go:18:6: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &projection.Unsafe().Next
   type: **rejected.Data
@@ -288,21 +288,21 @@ snapshot_projection.go:22:6: unsupported immutable operation: method expressions
   fix: call the receiver method directly (value.Method(...)); do not call it through the type
 snapshot_projection.go:28:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go integerCell.Load().Unsafe()
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:29:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer stringCell.Load().Unsafe()
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:30:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go identity(stringCell.Load().Unsafe())
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:31:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer identity(stringCell.Load().Unsafe())
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:32:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go integerCell.Load()
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:33:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer stringCell.Load()
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 snapshot_projection.go:34:5: Cell.Store requires a direct synchronous statement
 snapshot_projection.go:35:8: Cell.Store requires a direct synchronous statement

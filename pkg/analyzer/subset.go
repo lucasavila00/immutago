@@ -67,8 +67,16 @@ func (c *subsetChecks) checkImmutable(owners map[*types.Var]bool) {
 func (c *subsetChecks) report(n ast.Node, message string) {
 	if !c.reported[n.Pos()] {
 		c.reported[n.Pos()] = true
+		fix := subsetFix(message)
+		if expression, ok := n.(ast.Expr); ok &&
+			(message == "native slices of immutable storage are unsupported" ||
+				message == "native maps of immutable storage are unsupported") &&
+			c.queries.Locals(c.pass.TypesInfo.TypeOf(expression)) {
+			fix = "pass Local values directly, or use named fields in an im.Local record; " +
+				"keep Local builders in their declaring function"
+		}
 		c.pass.Reportf(n.Pos(), "unsupported immutable operation: %s%s\n  fix: %s",
-			message, sourceContext(c.pass, n), subsetFix(message))
+			message, sourceContext(c.pass, n), fix)
 	}
 }
 
