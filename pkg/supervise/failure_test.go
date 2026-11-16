@@ -31,10 +31,10 @@ func (s *failureParent) Init() error {
 	args := s.Args()
 	if args.depth > 0 {
 		args.depth--
-		_, err := Start[failureParent](s.UnsafeChildren(), args)
+		_, err := Start[failureParent](s.UncheckedChildren(), args)
 		return err
 	}
-	_, err := Start[failureLeaf](s.UnsafeChildren(), args.cause)
+	_, err := Start[failureLeaf](s.UncheckedChildren(), args.cause)
 	return err
 }
 

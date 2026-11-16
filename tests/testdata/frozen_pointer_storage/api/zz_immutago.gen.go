@@ -23,18 +23,18 @@ func NewChildProjection(value im.Projection[*Child]) ChildProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ChildProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ChildProjection) Unsafe() *Child { return v.immutagoProjection.Unsafe() }
+func (v ChildProjection) Unchecked() *Child { return v.immutagoProjection.Unchecked() }
 
 // Name reads the Name field.
 func (v ChildProjection) Name() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Name)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Name)
 }
 
 // N reads the N field.
 func (v ChildProjection) N() int {
-	return v.immutagoProjection.Unsafe().N
+	return v.immutagoProjection.Unchecked().N
 }
 
 // ChildCell publishes frozen Child values. Do not copy it.
@@ -60,18 +60,18 @@ func NewSelectionProjection(value im.Projection[*Selection]) SelectionProjection
 // IsNil reports whether the selected pointer is nil.
 func (v SelectionProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v SelectionProjection) Unsafe() *Selection { return v.immutagoProjection.Unsafe() }
+func (v SelectionProjection) Unchecked() *Selection { return v.immutagoProjection.Unchecked() }
 
 // Child reads the Child field.
 func (v SelectionProjection) Child() ChildProjection {
-	return NewChildProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Child))
+	return NewChildProjection(im.ProjectionOf(&v.immutagoProjection.Unchecked().Child))
 }
 
 // Pointer reads the Pointer field.
 func (v SelectionProjection) Pointer() ChildProjection {
-	return NewChildProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Pointer))
+	return NewChildProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Pointer))
 }
 
 // Array reads the Array field.
@@ -84,12 +84,12 @@ func (v SelectionProjection) Array() SelectionArrayProjection {
 
 // List reads the List field.
 func (v SelectionProjection) List() im.SliceProjection[Child] {
-	return v.immutagoProjection.Unsafe().List.Projection()
+	return v.immutagoProjection.Unchecked().List.Projection()
 }
 
 // Table reads the Table field.
 func (v SelectionProjection) Table() im.MapProjection[string, Child] {
-	return v.immutagoProjection.Unsafe().Table.Projection()
+	return v.immutagoProjection.Unchecked().Table.Projection()
 }
 
 // SelectionCell publishes frozen Selection values. Do not copy it.
@@ -117,23 +117,23 @@ func NewSettingsProjection(value im.Projection[*Settings]) SettingsProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v SettingsProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v SettingsProjection) Unsafe() *Settings { return v.immutagoProjection.Unsafe() }
+func (v SettingsProjection) Unchecked() *Settings { return v.immutagoProjection.Unchecked() }
 
 // Limit reads the Limit field.
 func (v SettingsProjection) Limit() int {
-	return v.immutagoProjection.Unsafe().Limit
+	return v.immutagoProjection.Unchecked().Limit
 }
 
 // Count reads the Count field.
 func (v SettingsProjection) Count() Count {
-	return v.immutagoProjection.Unsafe().Count
+	return v.immutagoProjection.Unchecked().Count
 }
 
 // Names reads the Names field.
 func (v SettingsProjection) Names() im.SliceProjection[string] {
-	return v.immutagoProjection.Unsafe().Names.Projection()
+	return v.immutagoProjection.Unchecked().Names.Projection()
 }
 
 // Array reads the Array field.
@@ -164,7 +164,7 @@ func (v SelectionArrayProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v SelectionArrayProjection) At(index0 int) ChildProjection {
-	return NewChildProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Array[index0]))
+	return NewChildProjection(im.ProjectionOf(&v.immutagoProjection.Unchecked().Array[index0]))
 }
 
 // SettingsArrayProjection reads a fixed array locally.
@@ -178,5 +178,5 @@ func (v SettingsArrayProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v SettingsArrayProjection) At(index0 int) int {
-	return v.immutagoProjection.Unsafe().Array[index0]
+	return v.immutagoProjection.Unchecked().Array[index0]
 }

@@ -23,13 +23,13 @@ func NewGoodProjection(value im.Projection[*Good]) GoodProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v GoodProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v GoodProjection) Unsafe() *Good { return v.immutagoProjection.Unsafe() }
+func (v GoodProjection) Unchecked() *Good { return v.immutagoProjection.Unchecked() }
 
 // Value reads the Value field.
 func (v GoodProjection) Value() int {
-	return v.immutagoProjection.Unsafe().Value
+	return v.immutagoProjection.Unchecked().Value
 }
 
 // Array reads the Array field.
@@ -63,13 +63,13 @@ func NewOuterProjection(value im.Projection[*Outer]) OuterProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v OuterProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v OuterProjection) Unsafe() *Outer { return v.immutagoProjection.Unsafe() }
+func (v OuterProjection) Unchecked() *Outer { return v.immutagoProjection.Unchecked() }
 
 // Child reads the Child field.
 func (v OuterProjection) Child() GoodProjection {
-	return NewGoodProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Child))
+	return NewGoodProjection(im.ProjectionOf(&v.immutagoProjection.Unchecked().Child))
 }
 
 // OuterCell publishes frozen Outer values. Do not copy it.
@@ -92,5 +92,5 @@ func (v GoodArrayProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v GoodArrayProjection) At(index0 int) int {
-	return v.immutagoProjection.Unsafe().Array[index0]
+	return v.immutagoProjection.Unchecked().Array[index0]
 }

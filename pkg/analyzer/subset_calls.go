@@ -143,7 +143,7 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 		return checker.Failure{}
 	case "Value":
 		return valueFailure(c.proofs, c.pass.TypesInfo.TypeOf(call))
-	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Is", "Unsafe", "Projection":
+	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Is", "Unchecked", "Projection":
 		return c.matchLibraryMethod(call, object.Name())
 	}
 	return shapeFailure("protected operation is outside the supported expression forms")

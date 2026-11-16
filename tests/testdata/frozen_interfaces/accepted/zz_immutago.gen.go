@@ -24,13 +24,13 @@ func NewModelProjection(value im.Projection[*Model]) ModelProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ModelProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ModelProjection) Unsafe() *Model { return v.immutagoProjection.Unsafe() }
+func (v ModelProjection) Unchecked() *Model { return v.immutagoProjection.Unchecked() }
 
 // Scorer reads the Scorer field.
 func (v ModelProjection) Scorer() api.ScorerProjection {
-	return api.NewScorerProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Scorer))
+	return api.NewScorerProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Scorer))
 }
 
 // Readers reads the Readers field.
@@ -43,12 +43,12 @@ func (v ModelProjection) Readers() ModelReadersProjection {
 
 // List reads the List field.
 func (v ModelProjection) List() im.SliceProjection[api.Scorer] {
-	return v.immutagoProjection.Unsafe().List.Projection()
+	return v.immutagoProjection.Unchecked().List.Projection()
 }
 
 // Map reads the Map field.
 func (v ModelProjection) Map() im.MapProjection[api.Scorer, api.Scorer] {
-	return v.immutagoProjection.Unsafe().Map.Projection()
+	return v.immutagoProjection.Unchecked().Map.Projection()
 }
 
 // ModelCell publishes frozen Model values. Do not copy it.
@@ -71,5 +71,5 @@ func (v ModelReadersProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v ModelReadersProjection) At(index0 int) api.ReaderProjection {
-	return api.NewReaderProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Readers[index0]))
+	return api.NewReaderProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Readers[index0]))
 }

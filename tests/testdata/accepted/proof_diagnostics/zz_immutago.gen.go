@@ -21,7 +21,7 @@ func NewRecordProjection(value im.Projection[Record]) RecordProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v RecordProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v RecordProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // PointProjection provides local read access to *Point.
 type PointProjection struct {
@@ -37,13 +37,13 @@ func NewPointProjection(value im.Projection[*Point]) PointProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v PointProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v PointProjection) Unsafe() *Point { return v.immutagoProjection.Unsafe() }
+func (v PointProjection) Unchecked() *Point { return v.immutagoProjection.Unchecked() }
 
 // X reads the X field.
 func (v PointProjection) X() int {
-	return v.immutagoProjection.Unsafe().X
+	return v.immutagoProjection.Unchecked().X
 }
 
 // PointCell publishes frozen Point values. Do not copy it.

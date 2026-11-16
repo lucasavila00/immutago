@@ -23,13 +23,13 @@ func NewFrozenRouteProjection(value im.Projection[*FrozenRoute]) FrozenRouteProj
 // IsNil reports whether the selected pointer is nil.
 func (v FrozenRouteProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v FrozenRouteProjection) Unsafe() *FrozenRoute { return v.immutagoProjection.Unsafe() }
+func (v FrozenRouteProjection) Unchecked() *FrozenRoute { return v.immutagoProjection.Unchecked() }
 
 // Worker reads the Worker field.
 func (v FrozenRouteProjection) Worker() CounterRef {
-	return v.immutagoProjection.Unsafe().Worker
+	return v.immutagoProjection.Unchecked().Worker
 }
 
 // Workers reads the Workers field.
@@ -65,13 +65,13 @@ func NewSnapshotReplyProjection(value im.Projection[*SnapshotReply]) SnapshotRep
 // IsNil reports whether the selected pointer is nil.
 func (v SnapshotReplyProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v SnapshotReplyProjection) Unsafe() *SnapshotReply { return v.immutagoProjection.Unsafe() }
+func (v SnapshotReplyProjection) Unchecked() *SnapshotReply { return v.immutagoProjection.Unchecked() }
 
 // Count reads the Count field.
 func (v SnapshotReplyProjection) Count() int {
-	return v.immutagoProjection.Unsafe().Count
+	return v.immutagoProjection.Unchecked().Count
 }
 
 // SnapshotReplyCell publishes frozen SnapshotReply values. Do not copy it.
@@ -118,5 +118,5 @@ func (v FrozenRouteWorkersElementProjection) Len() int { return 2 }
 // At reads the element at index.
 func (v FrozenRouteWorkersElementProjection) At(index1 int) CounterRef {
 	index0 := v.index0
-	return v.immutagoProjection.Unsafe().Workers[index0][index1]
+	return v.immutagoProjection.Unchecked().Workers[index0][index1]
 }

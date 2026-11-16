@@ -25,23 +25,24 @@ type Marker = immutable.Frozen
 type Record struct {
  Marker
  Local int
+ Unsafe int
  immutagoLocal4 int
  immutagoProjection int
  immutagoProjection2 int
  Grid [2][3]int
  Reader Reader
 }
-type Reader interface { immutable.FrozenInterface; Local() int; Unsafe() int }
+type Reader interface { immutable.FrozenInterface; Local() int; Unchecked() int }
 type Number struct { immutable.Frozen; N int }
 func (n *Number) Local() int { return n.N }
-func (n *Number) Unsafe() int { return n.N+1 }
+func (n *Number) Unchecked() int { return n.N+1 }
 var current RecordCell
 func main() {
- current.Store(Record{Local:1, immutagoLocal4:2, immutagoProjection:3,
+ current.Store(Record{Local:1, Unsafe:8, immutagoLocal4:2, immutagoProjection:3,
   immutagoProjection2:4, Grid:[2][3]int{{},{0,0,5}}, Reader:&Number{N:6}})
  p := current.Load()
  println(p.Local(), p.immutagoLocal4(), p.immutagoProjection(),
-  p.immutagoProjection2(), p.Grid().At(1).At(2), p.Reader().Local(), p.Reader().Unsafe())
+  p.immutagoProjection2(), p.Grid().At(1).At(2), p.Reader().Local(), p.Reader().Unchecked(), p.Unsafe())
  if unsafe.Sizeof(RecordProjection{}) != unsafe.Sizeof(uintptr(0)) ||
   unsafe.Sizeof(RecordGridProjection{}) != unsafe.Sizeof(uintptr(0)) ||
   unsafe.Sizeof(RecordGridElementProjection{}) != 2*unsafe.Sizeof(uintptr(0)) ||
@@ -60,7 +61,7 @@ func main() {
 	command := exec.Command("go", "run", ".")
 	command.Dir = dir
 	output, err := command.CombinedOutput()
-	if err != nil || string(output) != "1 2 3 4 5 6 7\n" {
+	if err != nil || string(output) != "1 2 3 4 5 6 7 8\n" {
 		t.Fatalf("generated name access: %v\n%s", err, output)
 	}
 }

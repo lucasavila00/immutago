@@ -23,13 +23,13 @@ func NewSnapshotReplyProjection(value im.Projection[*SnapshotReply]) SnapshotRep
 // IsNil reports whether the selected pointer is nil.
 func (v SnapshotReplyProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v SnapshotReplyProjection) Unsafe() *SnapshotReply { return v.immutagoProjection.Unsafe() }
+func (v SnapshotReplyProjection) Unchecked() *SnapshotReply { return v.immutagoProjection.Unchecked() }
 
 // Count reads the Count field.
 func (v SnapshotReplyProjection) Count() int {
-	return v.immutagoProjection.Unsafe().Count
+	return v.immutagoProjection.Unchecked().Count
 }
 
 // SnapshotReplyCell publishes frozen SnapshotReply values. Do not copy it.

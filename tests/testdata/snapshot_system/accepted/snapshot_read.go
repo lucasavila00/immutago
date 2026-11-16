@@ -89,8 +89,8 @@ func typedWrappers(h *api.Holder) {
 	_ = projection.Name().Is("name")
 	typedCell.Store(api.Model{})
 	_ = typedCell.Load().Name().Len()
-	_ = fmt.Sprintf("%s", projection.Name().Unsafe())
-	_ = fmt.Sprintf("%s", storedString.Unsafe())
+	_ = fmt.Sprintf("%s", projection.Name().Unchecked())
+	_ = fmt.Sprintf("%s", storedString.Unchecked())
 }
 
 func localBuilders(value im.StringProjection) {
@@ -126,5 +126,5 @@ func recordEntries(values im.MapProjection[string, api.Entry], pointers im.MapPr
 
 // SharedRead explicitly retains the selected record and its text.
 func SharedRead(value im.Projection[*api.Model]) *api.Model {
-	return value.Unsafe()
+	return value.Unchecked()
 }

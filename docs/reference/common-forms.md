@@ -173,7 +173,7 @@ Local pointers use only the direct-call forms below and cannot escape.
 | Declare a zero or nil pointer | `var p *FrozenPoint`, `var p *LocalPoint = nil` |
 | Create a new object | `p := &FrozenPoint{X: 1}`, `p := new(FrozenPoint)` |
 | Create a new object from a value | `p := new(point)`, `p := new(FrozenPoint{X: 1})` |
-| Keep a selected Frozen root | `p := cell.Load().Unsafe()` |
+| Keep a selected Frozen root | `p := cell.Load().Unchecked()` |
 | Copy, replace, or discard a pointer | `q := p`, `p = q`, `p = nil`, `_ = p` |
 | Read a field or copy the whole value | `x := p.X`, `value := *p` |
 | Compare pointers or nil | `same := p == q`, `if p != nil { ... }` |
@@ -183,7 +183,7 @@ Local pointers use only the direct-call forms below and cannot escape.
 - Type aliases and parentheses preserve these forms.
 - Pointer targets must be structs with `im.Frozen` or `im.Local`.
 - Construct pointers with the listed `new` or `&T{...}` forms.
-  A generated record projection can also supply its selected pointer through Unsafe.
+  A generated record projection can also supply its selected pointer through Unchecked.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |

@@ -30,8 +30,8 @@ func TestDeclarationErrors(t *testing.T) {
 		{"generic_interface", "type Bad[T any] interface { im.FrozenInterface; Read() T }",
 			"Bad: user generic declarations cannot define Frozen or Local types; " +
 				"type parameters are unsupported in immutable storage", 3},
-		{"record_member", "type Bad struct { im.Frozen; Unsafe int }",
-			"Bad: *Bad.Unsafe conflicts with a generated projection member", 3},
+		{"record_member", "type Bad struct { im.Frozen; Unchecked int }",
+			"Bad: *Bad.Unchecked conflicts with a generated projection member", 3},
 		{"interface_member", "type Bad interface { im.FrozenInterface; IsNil() bool }",
 			"Bad: Bad.IsNil conflicts with a generated projection member", 3},
 	} {

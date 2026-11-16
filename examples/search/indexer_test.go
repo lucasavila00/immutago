@@ -235,7 +235,7 @@ func awaitStatus(t *testing.T, indexer supervise.Ref[Indexer], version int, prob
 	}
 	status := indexer.Borrow().Status()
 	t.Fatalf("status = version %d, problem %q; want version %d, problem present %t",
-		status.Version, status.Problem.Unsafe(), version, problem)
+		status.Version, status.Problem.Unchecked(), version, problem)
 }
 
 // writeDocument replaces one complete file, as an editor's save operation can do.

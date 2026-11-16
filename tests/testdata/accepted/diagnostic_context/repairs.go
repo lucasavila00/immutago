@@ -43,16 +43,16 @@ type FrozenText = im.FrozenString
 
 func textReads(title im.Projection[string], named im.Projection[NamedText], alias im.Projection[Text],
 	label im.Projection[im.FrozenString], frozenAlias im.Projection[FrozenText]) {
-	_ = im.StringOf(title).Unsafe()
+	_ = im.StringOf(title).Unchecked()
 	_ = im.StringOf(title).Clone()
-	_ = im.StringOf(named).Unsafe()
+	_ = im.StringOf(named).Unchecked()
 	_ = im.StringOf(alias).Clone()
-	_ = im.StringOfFrozen(label).Unsafe()
+	_ = im.StringOfFrozen(label).Unchecked()
 	_ = im.StringOfFrozen(frozenAlias).Clone()
 }
 
 func recordReads(record im.Projection[Settings], pointer im.Projection[*Settings], scorer im.Projection[Scorer]) {
-	_ = record.Unsafe()
+	_ = record.Unchecked()
 	// CopyRecord makes a new root for the generated pointer projection.
 	_ = NewSettingsProjection(im.CopyRecord(record)).Limit()
 	_ = NewSettingsProjection(pointer).Limit()
@@ -63,7 +63,7 @@ func collectionReads(slice im.Projection[im.FrozenSlice[string]], lookup im.Proj
 	array im.Projection[[2]string]) {
 	_ = im.SliceOf(slice).Len()
 	_ = im.MapOf(lookup).Len()
-	_ = array.Unsafe()
+	_ = array.Unchecked()
 }
 
 func recoverScorer(boxed any) Scorer {
@@ -112,7 +112,7 @@ func cloneMap(values im.MapProjection[string, string]) map[string]string {
 func copyScores(values im.SliceProjection[Settings]) []Score {
 	out := make([]Score, values.Len())
 	for index, value := range values.All() {
-		settings := value.Unsafe()
+		settings := value.Unchecked()
 		out[index] = Score{Value: settings.Limit}
 	}
 	return out

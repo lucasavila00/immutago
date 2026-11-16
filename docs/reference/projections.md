@@ -15,7 +15,7 @@ For a Frozen record named Settings:
 | `NewSettingsProjection(value)` | Takes `im.Projection[*Settings]`; returns SettingsProjection without copying the record. |
 | `var p SettingsProjection` or `SettingsProjection{}` | Nil projection. |
 | `p.IsNil()` | Report whether the projection is empty (has no record). |
-| `p.Unsafe()` | Return the selected *Settings without a record copy or allocation; nil for an empty projection. |
+| `p.Unchecked()` | Return the selected *Settings without a record copy or allocation; nil for an empty projection. |
 | `p.Field()` | Read a declared field using the result table below. |
 | `SettingsLimitsProjection` | Local array projection for the Limits field: `p.Limits()`. Has Len and At. |
 | `SettingsLimitsElementProjection` | Array projection returned by At when Limits contains nested arrays; each deeper array adds Element before Projection. |
@@ -31,7 +31,7 @@ Use the complete [Local transport forms](local.md#value-forms--exhaustive) and
 ## Field results — exhaustive
 
 Each direct field gets a method with the same name, except marker and blank
-fields. An unexported field has an unexported method. Field names IsNil and Unsafe
+fields. An unexported field has an unexported method. Field names IsNil and Unchecked
 conflict with the public projection methods and are rejected. Local and private
 implementation names are allowed: a field `Local int` has the getter `p.Local()`.
 
@@ -55,8 +55,8 @@ field returns a complete value copy. A field read does not copy its containing
 record or array. Reading a field through a nil record projection panics. Array At panics
 if the index is out of range.
 
-Unsafe keeps the exact record selected by the projection. For an inline child,
-`p.Child().Unsafe()` points into its parent; keeping that pointer can keep the
+Unchecked keeps the exact record selected by the projection. For an inline child,
+`p.Child().Unchecked()` points into its parent; keeping that pointer can keep the
 parent alive. For a pointer field, it returns that field's pointer. Neither form
 copies a record. The caller controls retention and must not change the target
 through reflection, unsafe code, or another API. Typed writes remain rejected.
@@ -82,14 +82,14 @@ this map-value copy automatically. See [operation costs](performance.md).
 | --- | --- |
 | `im.Value(raw)` with `raw im.Projection[Settings]` | Use a generated projection to read the required fields. |
 | `NewSettingsProjection(items.At(i))` for a slice of Settings values | `NewSettingsProjection(items.AtPointer(i))` |
-| Change `p.Unsafe().Limit` | Construct another Settings value. |
+| Change `p.Unchecked().Limit` | Construct another Settings value. |
 | Declare SettingsProjection, SettingsCell, or SettingsLimitsProjection before generation | Use another source name. |
 | A Frozen Plan with array field Steps and a Frozen record named PlanSteps | Rename the record to StepSummary or rename the field; both need PlanStepsProjection. |
-| A source field named IsNil or Unsafe | Rename the field; the projection supplies those public methods. |
+| A source field named IsNil or Unchecked | Rename the field; the projection supplies those public methods. |
 | A foreign record field uses `type Public = privateRecord` | Export the original record declaration. |
 
 Only verified generated code can form interior Frozen-record addresses.
-The public Unsafe operation returns the selected value without another Cell load.
+The public Unchecked operation returns the selected value without another Cell load.
 Generated code still receives all normal type, write,
 capture, call, and transport checks. The [architecture](../arch/ownership.md#generated-projections)
 describes those checks.

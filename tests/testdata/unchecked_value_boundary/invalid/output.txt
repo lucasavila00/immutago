@@ -40,24 +40,24 @@ invalid.go:63:88: unsupported immutable operation: github.com/lucasavila00/immut
 invalid.go:66:68: unsupported immutable operation: example.com/consumer/invalid.Snapshot is not a read result
   source: im.Value(value)
   type: invalid.Snapshot
-  fix: use projection.Unsafe() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
+  fix: use projection.Unchecked() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
 invalid.go:66:71: immutable type argument: example.com/consumer/invalid.Snapshot is not a read result
   type: invalid.Snapshot
-  fix: use projection.Unsafe() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
+  fix: use projection.Unchecked() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
 invalid.go:69:71: unsupported immutable operation: *example.com/consumer/invalid.Snapshot is not a read result
   source: im.Value(value)
   type: *invalid.Snapshot
-  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
+  fix: use projection.Unchecked() for shared access; use the matching generated projection for Local reads when available
 invalid.go:69:74: immutable type argument: *example.com/consumer/invalid.Snapshot is not a read result
   type: *invalid.Snapshot
-  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
+  fix: use projection.Unchecked() for shared access; use the matching generated projection for Local reads when available
 invalid.go:72:67: unsupported immutable operation: example.com/consumer/invalid.Scorer is not a read result
   source: im.Value(value)
   type: invalid.Scorer
-  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
+  fix: use projection.Unchecked() for shared access; use the matching generated projection for Local reads when available
 invalid.go:72:70: immutable type argument: example.com/consumer/invalid.Scorer is not a read result
   type: invalid.Scorer
-  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
+  fix: use projection.Unchecked() for shared access; use the matching generated projection for Local reads when available
 invalid.go:75:12: local projection: projection payload 1: Frozen storage cannot contain Local values
   type: im.Projection[valid.Serving]
   fix: store Frozen data; keep its Projection or Local result in local bindings
@@ -80,17 +80,17 @@ invalid.go:75:80: local projection: projection payload 1: Frozen storage cannot 
 invalid.go:78:58: unsupported immutable operation: string is not a read result
   source: im.Value(value)
   type: string
-  fix: use im.StringOf(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOf(projection), then Unchecked for shared text or Clone for an independent copy
 invalid.go:78:61: immutable type argument: string is not a read result
   type: string
-  fix: use im.StringOf(projection), then Unsafe for shared text or Clone for an independent copy
+  fix: use im.StringOf(projection), then Unchecked for shared text or Clone for an independent copy
 invalid.go:81:88: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a read result
   source: im.Value(value)
   type: im.FrozenSlice[int]
-  fix: use im.SliceOf(projection) for element reads, or projection.Unsafe() for the shared FrozenSlice
+  fix: use im.SliceOf(projection) for element reads, or projection.Unchecked() for the shared FrozenSlice
 invalid.go:81:91: immutable type argument: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a read result
   type: im.FrozenSlice[int]
-  fix: use im.SliceOf(projection) for element reads, or projection.Unsafe() for the shared FrozenSlice
+  fix: use im.SliceOf(projection) for element reads, or projection.Unchecked() for the shared FrozenSlice
 invalid.go:84:13: local projection: projection payload 1: immutable markers are annotations, not data
   type: im.Projection[im.Copied]
   fix: embed the marker in a named struct; use data fields for values
@@ -117,15 +117,15 @@ invalid.go:90:58: unsupported immutable operation: interior addresses of protect
   source: &value.Model
   type: *valid.Handle
   fix: copy the field into a local; do not take a pointer into immutable storage
-invalid.go:93:18: local projection: projection payload 1: Frozen storage cannot contain Local values
+invalid.go:93:21: local projection: projection payload 1: Frozen storage cannot contain Local values
   type: im.Projection[valid.Serving]
   fix: store Frozen data; keep its Projection or Local result in local bindings
-invalid.go:93:24: local projection: projection payload 1: Frozen storage cannot contain Local values
+invalid.go:93:27: local projection: projection payload 1: Frozen storage cannot contain Local values
   type: im.Projection[valid.Serving]
   fix: store Frozen data; keep its Projection or Local result in local bindings
-invalid.go:93:27: immutable type argument: Frozen storage cannot contain Local values
+invalid.go:93:30: immutable type argument: Frozen storage cannot contain Local values
   type: valid.Serving
   fix: store Frozen data; keep its Projection or Local result in local bindings
-invalid.go:93:77: local projection: projection payload 1: Frozen storage cannot contain Local values
+invalid.go:93:80: local projection: projection payload 1: Frozen storage cannot contain Local values
   type: im.Projection[valid.Serving]
   fix: store Frozen data; keep its Projection or Local result in local bindings

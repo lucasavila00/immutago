@@ -131,5 +131,5 @@ func identity[T any](value T) T { return value }
 // discard accepts an ordinary handle.
 func discard(Handle) {}
 
-// UnsafeHandle keeps the handle without exposing its payload.
-func UnsafeHandle(value im.Projection[Handle]) Handle { return value.Unsafe() }
+// UncheckedHandle keeps the handle without exposing its payload.
+func UncheckedHandle(value im.Projection[Handle]) Handle { return value.Unchecked() }

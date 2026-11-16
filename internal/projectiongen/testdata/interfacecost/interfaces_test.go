@@ -26,7 +26,7 @@ func TestProjectionCost(t *testing.T) {
 
 func BenchmarkDirectInterface(b *testing.B) {
 	current.Store(Model{Value: &Number{N: 7}})
-	value := current.Load().Unsafe().Value
+	value := current.Load().Unchecked().Value
 	b.ReportAllocs()
 	b.ResetTimer()
 	for b.Loop() {

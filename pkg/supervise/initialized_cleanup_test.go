@@ -72,7 +72,7 @@ func TestPendingCleanupOrder(t *testing.T) {
 		_, err := Start[initializing](parent, &initHooks{
 			init: func(p *initializing) error {
 				for _, number := range []int{1, 2} {
-					if _, err := Start[initializing](p.UnsafeChildren(), child(number)); err != nil {
+					if _, err := Start[initializing](p.UncheckedChildren(), child(number)); err != nil {
 						return err
 					}
 				}
@@ -124,7 +124,7 @@ func checkPendingCleanupFailure(t *testing.T, mode string) {
 	setupError := errors.New("parent setup failed")
 	_, err := Start[initializing](top, &initHooks{
 		init: func(p *initializing) error {
-			if _, err := Start[initializing](p.UnsafeChildren(), child); err != nil {
+			if _, err := Start[initializing](p.UncheckedChildren(), child); err != nil {
 				return err
 			}
 			return setupError

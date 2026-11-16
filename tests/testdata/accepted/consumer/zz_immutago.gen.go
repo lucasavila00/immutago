@@ -24,9 +24,9 @@ func NewNamedIntsProjection(value im.Projection[*NamedInts]) NamedIntsProjection
 // IsNil reports whether the selected pointer is nil.
 func (v NamedIntsProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v NamedIntsProjection) Unsafe() *NamedInts { return v.immutagoProjection.Unsafe() }
+func (v NamedIntsProjection) Unchecked() *NamedInts { return v.immutagoProjection.Unchecked() }
 
 // Values reads the Values field.
 func (v NamedIntsProjection) Values() NamedIntsValuesProjection {
@@ -61,28 +61,28 @@ func NewRecordProjection(value im.Projection[*Record]) RecordProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v RecordProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v RecordProjection) Unsafe() *Record { return v.immutagoProjection.Unsafe() }
+func (v RecordProjection) Unchecked() *Record { return v.immutagoProjection.Unchecked() }
 
 // Model reads the Model field.
 func (v RecordProjection) Model() model.TreeProjection {
-	return model.NewTreeProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Model))
+	return model.NewTreeProjection(im.ProjectionOf(&v.immutagoProjection.Unchecked().Model))
 }
 
 // Names reads the Names field.
 func (v RecordProjection) Names() im.SliceProjection[string] {
-	return v.immutagoProjection.Unsafe().Names.Projection()
+	return v.immutagoProjection.Unchecked().Names.Projection()
 }
 
 // Lookups reads the Lookups field.
 func (v RecordProjection) Lookups() im.MapProjection[[2]int, im.FrozenSlice[model.Leaf]] {
-	return v.immutagoProjection.Unsafe().Lookups.Projection()
+	return v.immutagoProjection.Unchecked().Lookups.Projection()
 }
 
 // Count reads the Count field.
 func (v RecordProjection) Count() model.CountBoxProjection {
-	return model.NewCountBoxProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Count))
+	return model.NewCountBoxProjection(im.ProjectionOf(&v.immutagoProjection.Unchecked().Count))
 }
 
 // RecordCell publishes frozen Record values. Do not copy it.
@@ -108,13 +108,13 @@ func NewScalarProjection(value im.Projection[*Scalar]) ScalarProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ScalarProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ScalarProjection) Unsafe() *Scalar { return v.immutagoProjection.Unsafe() }
+func (v ScalarProjection) Unchecked() *Scalar { return v.immutagoProjection.Unchecked() }
 
 // Value reads the Value field.
 func (v ScalarProjection) Value() int {
-	return v.immutagoProjection.Unsafe().Value
+	return v.immutagoProjection.Unchecked().Value
 }
 
 // ScalarCell publishes frozen Scalar values. Do not copy it.
@@ -137,5 +137,5 @@ func (v NamedIntsValuesProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v NamedIntsValuesProjection) At(index0 int) int {
-	return v.immutagoProjection.Unsafe().Values[index0]
+	return v.immutagoProjection.Unchecked().Values[index0]
 }

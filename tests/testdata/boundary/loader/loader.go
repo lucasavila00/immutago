@@ -20,5 +20,5 @@ func LogVersion(l *Loader) {
 	current := model.NewModelProjection(l.Current.LoadPointer())
 	version := current.Version()
 	weights := current.Weights()
-	logx.Info(version.Unsafe(), weights.Len())
+	logx.Info(version.Unchecked(), weights.Len())
 }

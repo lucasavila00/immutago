@@ -148,7 +148,7 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | A method named IsNil | Use another name; the projection supplies IsNil. |
 | An implementation with a mutable slice field | Store `im.FrozenSlice[T]` and freeze an exclusive builder. |
 | `Apply(...im.StringProjection)` | Use a direct `Apply(im.StringProjection)` parameter. |
-| `reader.Apply(local, nil)` with `local im.StringProjection` | Pass `local.Unsafe()`, or declare a direct `im.StringProjection` parameter. |
+| `reader.Apply(local, nil)` with `local im.StringProjection` | Pass `local.Unchecked()`, or declare a direct `im.StringProjection` parameter. |
 | `reader.Apply(nil, func() int { return local.Len() })` | Read `n := local.Len()` before the closure, then return `n`. |
 | `Apply(func() im.StringProjection)` | Call a named function directly, then pass its projection to a direct typed method. |
 | `boxed.(Scorer)` with `boxed any` | Add an allowed method, or recover a concrete Frozen record value and convert it to Scorer. |
@@ -161,5 +161,5 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | Save ScorerProjection in a package variable or Frozen field | Save a Scorer value from an allowed construction. |
 
 A generic `im.Projection[Scorer]` can return its Frozen interface with
-`projection.Unsafe()`. The result keeps the Frozen interface rules above. It
+`projection.Unchecked()`. The result keeps the Frozen interface rules above. It
 does not remove the implementation proof required for a Frozen interface conversion.

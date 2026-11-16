@@ -25,7 +25,7 @@ func TestTerminalWaitsForInitChildren(t *testing.T) {
 		go func() {
 			_, err := Start[initializing](top, &initHooks{
 				init: func(p *initializing) error {
-					_, err := Start[initializing](p.UnsafeChildren(), &initHooks{
+					_, err := Start[initializing](p.UncheckedChildren(), &initHooks{
 						init: func(*initializing) error { return nil },
 						run: func(_ *initializing, ctx context.Context) {
 							if ctx.Err() == nil {

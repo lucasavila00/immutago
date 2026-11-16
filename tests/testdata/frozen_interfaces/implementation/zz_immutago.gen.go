@@ -21,10 +21,12 @@ func NewTreeReaderProjection(value im.Projection[TreeReader]) TreeReaderProjecti
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v TreeReaderProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v TreeReaderProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // TreePointer calls the checked interface method with its ordinary Go contract.
-func (v TreeReaderProjection) TreePointer() *Tree { return v.immutagoProjection.Unsafe().TreePointer() }
+func (v TreeReaderProjection) TreePointer() *Tree {
+	return v.immutagoProjection.Unchecked().TreePointer()
+}
 
 // CountProjection provides local read access to *Count.
 type CountProjection struct {
@@ -40,13 +42,13 @@ func NewCountProjection(value im.Projection[*Count]) CountProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v CountProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v CountProjection) Unsafe() *Count { return v.immutagoProjection.Unsafe() }
+func (v CountProjection) Unchecked() *Count { return v.immutagoProjection.Unchecked() }
 
 // N reads the N field.
 func (v CountProjection) N() int {
-	return v.immutagoProjection.Unsafe().N
+	return v.immutagoProjection.Unchecked().N
 }
 
 // CountCell publishes frozen Count values. Do not copy it.
@@ -72,23 +74,23 @@ func NewTreeProjection(value im.Projection[*Tree]) TreeProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v TreeProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v TreeProjection) Unsafe() *Tree { return v.immutagoProjection.Unsafe() }
+func (v TreeProjection) Unchecked() *Tree { return v.immutagoProjection.Unchecked() }
 
 // Weight reads the Weight field.
 func (v TreeProjection) Weight() float64 {
-	return v.immutagoProjection.Unsafe().Weight
+	return v.immutagoProjection.Unchecked().Weight
 }
 
 // Text reads the Text field.
 func (v TreeProjection) Text() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Text)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Text)
 }
 
 // Data reads the Data field.
 func (v TreeProjection) Data() im.SliceProjection[byte] {
-	return v.immutagoProjection.Unsafe().Data.Projection()
+	return v.immutagoProjection.Unchecked().Data.Projection()
 }
 
 // TreeCell publishes frozen Tree values. Do not copy it.

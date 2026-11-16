@@ -47,7 +47,7 @@ func (g *generator) writeInterface(out *bytes.Buffer, item record) error {
 		"func %s(value %s.Projection[%s]) %s { return %s{%s:value} }\n",
 		constructorName(item.name), constructorName(item.name), g.imName, source, item.name, item.name, g.projectionField)
 	fmt.Fprintf(out, "// IsNil reports whether the interface is nil; a stored nil pointer is not nil.\n"+
-		"func (v %s) IsNil() bool { return v.%s.Unsafe() == nil }\n", item.name, g.projectionField)
+		"func (v %s) IsNil() bool { return v.%s.Unchecked() == nil }\n", item.name, g.projectionField)
 	if g.bootstrap {
 		return nil
 	}
@@ -93,7 +93,7 @@ func (g *generator) writeInterfaceMethod(out *bytes.Buffer, receiver string, met
 		prefix = "return "
 	}
 	fmt.Fprintf(out, "// %s calls the checked interface method with its ordinary Go contract.\n"+
-		"func (v %s) %s(%s)%s { %sv.%s.Unsafe().%s(%s) }\n",
+		"func (v %s) %s(%s)%s { %sv.%s.Unchecked().%s(%s) }\n",
 		method.Name(), receiver, method.Name(), strings.Join(parameters, ", "), result, prefix,
 		g.projectionField, method.Name(), strings.Join(arguments, ", "))
 }

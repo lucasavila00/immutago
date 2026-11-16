@@ -47,7 +47,7 @@ func checkAcceptedInitStop(t *testing.T, mode string) {
 		defer func() { result.panic = recover(); results <- result }()
 		result.ref, result.err = Start[initializing](top, &initHooks{
 			init: func(p *initializing) error {
-				_, err := Start[initializing](p.UnsafeChildren(), &initHooks{
+				_, err := Start[initializing](p.UncheckedChildren(), &initHooks{
 					init: func(*initializing) error { return nil },
 					run:  func(_ *initializing, ctx context.Context) { <-ctx.Done(); childRuns.Add(1) },
 				})

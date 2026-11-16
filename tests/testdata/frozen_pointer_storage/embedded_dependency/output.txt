@@ -12,7 +12,7 @@ use.go:10:40: local projection: projection payload 1: Count: Frozen data fields 
   type: im.Projection[*embedded.Numeric]
   fix: give each data field a name; embed only im.Frozen
 use.go:10:40: unsupported immutable operation: Count: Frozen data fields must be named
-  source: Cell.LoadPointer().Unsafe()
+  source: Cell.LoadPointer().Unchecked()
   type: *embedded.Numeric
   fix: give each data field a name; embed only im.Frozen
 use.go:4:2: unsupported dependency example.com/consumer/embedded: immutability proof failed

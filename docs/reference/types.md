@@ -66,7 +66,7 @@ projection when reading through a Local value. See the complete
 | `Value(Projection[T])` | T is both Frozen and a read result: Copied, opaque handles, pointers to Frozen handle wrappers, or an unnamed array of these values. |
 | `CopyRecord(Projection[T])` | T is a concrete Frozen record; returns a projection of a new copied root. |
 | `Cell[T].LoadPointer()`, `SliceProjection[T].AtPointer(i)` | T is a concrete Frozen record; the result is Projection[*T]. |
-| `Projection[T].Unsafe()` | T uses the same Frozen proof; the result is T with its shared storage. |
+| `Projection[T].Unchecked()` | T uses the same Frozen proof; the result is T with its shared storage. |
 | `SliceProjection[E].Clone()` | E is Copied. |
 | `MapProjection[K,V].Clone()` | K and V are Copied. |
 | Exported service method data result | Read result; the [result signatures](service-results.md) also permit an error. |
@@ -89,6 +89,6 @@ with only numeric fields still keeps the Frozen rule.
 | `struct { im.Local; Text im.FrozenString }` | Use `im.StringProjection`. |
 | `struct { im.Local; Count FrozenCount }`, where FrozenCount embeds im.Frozen | Use `FrozenCountProjection`, or read its numeric fields into a Local record. |
 | `type Counts [2]int` as protected storage | `type Counts struct { im.Frozen; Values [2]int }`. |
-| `im.Value(textProjection)` with a string or FrozenString payload | Use the matching [projection adapter](projection-primitives.md#projection-operations--exhaustive), then Unsafe for shared access or Clone for independent storage. |
+| `im.Value(textProjection)` with a string or FrozenString payload | Use the matching [projection adapter](projection-primitives.md#projection-operations--exhaustive), then Unchecked for shared access or Clone for independent storage. |
 | `im.Value(countProjection)` with `countProjection im.Projection[FrozenCount]` | Use a generated projection, or copy individual numeric fields. |
 | Save a Local record in a package variable | Use im.Copied when every field meets its value-only rule, or copy the required data into independent storage. |

@@ -17,20 +17,20 @@ versions. Store does not change an earlier selected version.
 
 ## Keep a selected version
 
-Use the projection's Unsafe method to keep its exact pointer in an ordinary
+Use the projection's Unchecked method to keep its exact pointer in an ordinary
 request struct or pooled object:
 
 ```go
 type requestState struct { settings *Settings }
 
 func (s *requestState) begin(cell *SettingsCell) {
-    s.settings = cell.Load().Unsafe()
+    s.settings = cell.Load().Unchecked()
 }
 
 func (s *requestState) end() { s.settings = nil }
 ```
 
-Unsafe does not load the Cell again. It returns nil for an empty projection.
+Unchecked does not load the Cell again. It returns nil for an empty projection.
 The [stored pointer forms](frozen-records.md#stored-pointers--exhaustive) permit
 pointer replacement and reject statically typed writes to the Frozen target.
 The caller controls retention and must not give the pointer to an API that
@@ -40,12 +40,12 @@ unsafe code, or ordinary API calls.
 | Read or copy — exhaustive | Result |
 | --- | --- |
 | `p := cell.Load()` | One selected local projection; no record copy or allocation. |
-| `saved := p.Unsafe()` | The selected *Settings; no record copy or allocation. |
-| `value := *p.Unsafe()` | A Settings value copy; strings, collections, and child pointers keep their shared storage. Dereferencing nil panics. |
-| `saved := new(*p.Unsafe())` | A separate root copy with the same shared fields; one allocation when the nonzero root escapes. |
+| `saved := p.Unchecked()` | The selected *Settings; no record copy or allocation. |
+| `value := *p.Unchecked()` | A Settings value copy; strings, collections, and child pointers keep their shared storage. Dereferencing nil panics. |
+| `saved := new(*p.Unchecked())` | A separate root copy with the same shared fields; one allocation when the nonzero root escapes. |
 
 Use generated field getters for local reads. A service returns the projection;
-a caller can use Unsafe when it needs to keep the selected record. See
+a caller can use Unchecked when it needs to keep the selected record. See
 [generated projections](projections.md) for child and collection reads.
 
 ## Cell storage
@@ -80,8 +80,8 @@ and source rules.
 | Select a pointer-receiver method, or a promoted method on an ordinary field, without copying its holder | `cache.Read()`, `read := cache.Count`, `outer.cache.Read()` |
 | Use a slot or holder variable inside a closure | `func() { v := raw.Load(); _ = v }`, `func() { cache.Calls++ }` |
 | Store through a direct raw slot in its own synchronous statement | `raw.Store(next)`, `slot.value.Store(next)` |
-| Read through a direct raw slot in a common statement form | `v := raw.Load()`, `return slot.value.Load()`, `saved := raw.Load().Unsafe()` |
-| Keep a selected Frozen pointer from a direct raw slot | `saved := raw.LoadPointer().Unsafe()`, `state.settings = raw.LoadPointer().Unsafe()` |
+| Read through a direct raw slot in a common statement form | `v := raw.Load()`, `return slot.value.Load()`, `saved := raw.Load().Unchecked()` |
+| Keep a selected Frozen pointer from a direct raw slot | `saved := raw.LoadPointer().Unchecked()`, `state.settings = raw.LoadPointer().Unchecked()` |
 | Alias, package-qualified slot, or parentheses | `type Current = SettingsCell`, `v := config.Current.Load()`, `v := (raw).Load()` |
 
 Raw slots cannot be copied, addressed, returned, passed to helpers, or embedded.
@@ -134,7 +134,7 @@ body for a function whose contract contains a Cell.
 
 Generated Cell.Load uses raw LoadPointer. Raw Load supports every Frozen payload,
 including scalars, strings, collection handles, record values, and Frozen pointers.
-Use `im.Value(raw.Load())` for a Copied value. Use `raw.Load().Unsafe()` to keep
+Use `im.Value(raw.Load())` for a Copied value. Use `raw.Load().Unchecked()` to keep
 T with its shared storage. A raw Cell[*Settings] returns the stored *Settings
 through that form; it does not use LoadPointer.
 
@@ -149,10 +149,10 @@ through that form; it does not use LoadPointer.
 | `read := settings.Load` | `projection := settings.Load()` |
 | `go raw.Store(next)` or `defer cache.settings.Load()` | Use a function that calls Store or Load synchronously. |
 | `im.Cell[LocalResult]` | Store Frozen data; build local projections when reading. |
-| Return `settings.Load().Unsafe()` from a service | Return `settings.Load()`. |
+| Return `settings.Load().Unchecked()` from a service | Return `settings.Load()`. |
 | `raw.LoadPointer()` with `raw im.Cell[int]` | Use `im.Value(raw.Load())`. |
 
 Store allocates one root for T with nonzero size. Generated Load performs one
 atomic load without a record copy or allocation. Raw Load copies T after one
 atomic load; it does not copy string, collection, or child-pointer storage.
-Unsafe does not add an allocation. See the [operation costs](performance.md).
+Unchecked does not add an allocation. See the [operation costs](performance.md).

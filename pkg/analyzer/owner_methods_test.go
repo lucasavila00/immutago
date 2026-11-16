@@ -5,7 +5,7 @@ import "testing"
 const holderProjectionTypes = `type Model struct{im.Frozen;Name string;Count int}
 type TypedModelProjection struct{im.Local;value im.Projection[*Model]}
 func(v TypedModelProjection) Count()int{return NewModelProjection(v.value).Count()}
-func(v TypedModelProjection) Unsafe()*Model{return v.value.Unsafe()}
+func(v TypedModelProjection) Unchecked()*Model{return v.value.Unchecked()}
 type TypedModelCell struct{value im.Cell[Model]}
 func(c *TypedModelCell) Store(v Model){c.value.Store(v)}
 func(c *TypedModelCell) Load()TypedModelProjection{return TypedModelProjection{value:c.value.LoadPointer()}}
@@ -23,13 +23,13 @@ func TestHolderMethods(t *testing.T) {
 		{"package", `func f(){current.Store(Model{});v:=current.Load();_=v.Count()}`, false},
 		{"local value", `func f(){var c TypedModelCell;c.Store(Model{});_=c.Load()}`, false},
 		{"local pointer", `func f(){c:=&TypedModelCell{};c.Store(Model{});_=c.Load()}`, false},
-		{"pointer parameter", `func f(c *TypedModelCell){c.Store(Model{});_=c.Load().Unsafe()}`, false},
+		{"pointer parameter", `func f(c *TypedModelCell){c.Store(Model{});_=c.Load().Unchecked()}`, false},
 		{"nested holder", `func f(h *Holder){h.Current.Store(Model{});_=h.Current.Load()}`, false},
 		{"nested dereference", `func f(h *Holder){(*h).Current.Store(Model{});_=(*h).Current.Load()}`, false},
 		{"new holder", `func f(){h:=new(Holder);h.Current.Store(Model{});_=h.Current.Load()}`, false},
 		{"existing direct call", `func read(*TypedModelCell){};func f(c *TypedModelCell){read(c)}`, false},
 		{"concrete method argument", `type State struct{value *Model}
-func(s *State) Begin(c *TypedModelCell){s.value=c.Load().Unsafe()}
+func(s *State) Begin(c *TypedModelCell){s.value=c.Load().Unchecked()}
 func f(c *TypedModelCell,s *State){s.Begin(c)}`, false},
 		{"dynamic method argument", `type Reader interface{Read(*TypedModelCell)}
 func f(c *TypedModelCell,r Reader){r.Read(c)}`, false},
@@ -43,7 +43,7 @@ func f(c *TypedModelCell,r Reader){r.Read(c)}`, false},
 		{"method expression", `func f(c *TypedModelCell){_=(*TypedModelCell).Load(c)}`, true},
 		{"promoted method", `type Outer struct{TypedModelCell};func f(o *Outer){_=o.Load()}`, true},
 		{"generic method", `type Generic[T any]struct{value im.Cell[int]}
-func(c *Generic[T]) Read()int{return c.value.Load().Unsafe()};func f(c *Generic[int]){_=c.Read()}`, true},
+func(c *Generic[T]) Read()int{return c.value.Load().Unchecked()};func f(c *Generic[int]){_=c.Read()}`, true},
 		{"generic holder declaration", `type Generic[T any]struct{value im.Cell[int]}`, true},
 		{"generic holder alias", `type Generic[T any]=struct{value im.Cell[int]}`, true},
 		{"unused generic method", `type Generic[T any]struct{value im.Cell[int]};func(c *Generic[T]) Read(){}`, true},

@@ -23,23 +23,23 @@ func NewDocumentProjection(value im.Projection[*Document]) DocumentProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v DocumentProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v DocumentProjection) Unsafe() *Document { return v.immutagoProjection.Unsafe() }
+func (v DocumentProjection) Unchecked() *Document { return v.immutagoProjection.Unchecked() }
 
 // Path reads the Path field.
 func (v DocumentProjection) Path() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Path)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Path)
 }
 
 // Title reads the Title field.
 func (v DocumentProjection) Title() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Title)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Title)
 }
 
 // Body reads the Body field.
 func (v DocumentProjection) Body() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Body)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Body)
 }
 
 // DocumentCell publishes frozen Document values. Do not copy it.
@@ -65,23 +65,23 @@ func NewIndexProjection(value im.Projection[*Index]) IndexProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v IndexProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v IndexProjection) Unsafe() *Index { return v.immutagoProjection.Unsafe() }
+func (v IndexProjection) Unchecked() *Index { return v.immutagoProjection.Unchecked() }
 
 // Version reads the Version field.
 func (v IndexProjection) Version() int {
-	return v.immutagoProjection.Unsafe().Version
+	return v.immutagoProjection.Unchecked().Version
 }
 
 // Documents reads the Documents field.
 func (v IndexProjection) Documents() im.SliceProjection[Document] {
-	return v.immutagoProjection.Unsafe().Documents.Projection()
+	return v.immutagoProjection.Unchecked().Documents.Projection()
 }
 
 // Terms reads the Terms field.
 func (v IndexProjection) Terms() im.MapProjection[string, im.FrozenSlice[Posting]] {
-	return v.immutagoProjection.Unsafe().Terms.Projection()
+	return v.immutagoProjection.Unchecked().Terms.Projection()
 }
 
 // IndexCell publishes frozen Index values. Do not copy it.

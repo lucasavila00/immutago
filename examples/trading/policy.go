@@ -81,7 +81,7 @@ func (p *Policy) reload() error {
 		var previous PolicySnapshot
 		selected := p.current.Load()
 		if !selected.IsNil() {
-			previous = *selected.Unsafe()
+			previous = *selected.Unchecked()
 		}
 		p.current.Store(PolicySnapshot{Version: previous.Version, Limits: previous.Limits, Problem: err.Error()})
 		return err

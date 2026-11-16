@@ -23,23 +23,23 @@ func NewMarketReportProjection(value im.Projection[*MarketReport]) MarketReportP
 // IsNil reports whether the selected pointer is nil.
 func (v MarketReportProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v MarketReportProjection) Unsafe() *MarketReport { return v.immutagoProjection.Unsafe() }
+func (v MarketReportProjection) Unchecked() *MarketReport { return v.immutagoProjection.Unchecked() }
 
 // Symbol reads the Symbol field.
 func (v MarketReportProjection) Symbol() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Symbol)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Symbol)
 }
 
 // Totals reads the Totals field.
 func (v MarketReportProjection) Totals() InstrumentTotals {
-	return v.immutagoProjection.Unsafe().Totals
+	return v.immutagoProjection.Unchecked().Totals
 }
 
 // Problem reads the Problem field.
 func (v MarketReportProjection) Problem() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Problem)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Problem)
 }
 
 // MarketReportCell publishes frozen MarketReport values. Do not copy it.
@@ -67,23 +67,25 @@ func NewPolicySnapshotProjection(value im.Projection[*PolicySnapshot]) PolicySna
 // IsNil reports whether the selected pointer is nil.
 func (v PolicySnapshotProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v PolicySnapshotProjection) Unsafe() *PolicySnapshot { return v.immutagoProjection.Unsafe() }
+func (v PolicySnapshotProjection) Unchecked() *PolicySnapshot {
+	return v.immutagoProjection.Unchecked()
+}
 
 // Version reads the Version field.
 func (v PolicySnapshotProjection) Version() uint64 {
-	return v.immutagoProjection.Unsafe().Version
+	return v.immutagoProjection.Unchecked().Version
 }
 
 // Limits reads the Limits field.
 func (v PolicySnapshotProjection) Limits() Limits {
-	return v.immutagoProjection.Unsafe().Limits
+	return v.immutagoProjection.Unchecked().Limits
 }
 
 // Problem reads the Problem field.
 func (v PolicySnapshotProjection) Problem() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Problem)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Problem)
 }
 
 // PolicySnapshotCell publishes frozen PolicySnapshot values. Do not copy it.
@@ -111,33 +113,33 @@ func NewReportProjection(value im.Projection[*Report]) ReportProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ReportProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ReportProjection) Unsafe() *Report { return v.immutagoProjection.Unsafe() }
+func (v ReportProjection) Unchecked() *Report { return v.immutagoProjection.Unchecked() }
 
 // Active reads the Active field.
 func (v ReportProjection) Active() StrategyReportProjection {
-	return NewStrategyReportProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Active))
+	return NewStrategyReportProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Active))
 }
 
 // Candidate reads the Candidate field.
 func (v ReportProjection) Candidate() StrategyReportProjection {
-	return NewStrategyReportProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Candidate))
+	return NewStrategyReportProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Candidate))
 }
 
 // Problem reads the Problem field.
 func (v ReportProjection) Problem() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Problem)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Problem)
 }
 
 // PolicyVersion reads the PolicyVersion field.
 func (v ReportProjection) PolicyVersion() uint64 {
-	return v.immutagoProjection.Unsafe().PolicyVersion
+	return v.immutagoProjection.Unchecked().PolicyVersion
 }
 
 // PolicyProblem reads the PolicyProblem field.
 func (v ReportProjection) PolicyProblem() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().PolicyProblem)
+	return im.ProjectString(v.immutagoProjection.Unchecked().PolicyProblem)
 }
 
 // ReportCell publishes frozen Report values. Do not copy it.
@@ -163,28 +165,30 @@ func NewStrategyReportProjection(value im.Projection[*StrategyReport]) StrategyR
 // IsNil reports whether the selected pointer is nil.
 func (v StrategyReportProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v StrategyReportProjection) Unsafe() *StrategyReport { return v.immutagoProjection.Unsafe() }
+func (v StrategyReportProjection) Unchecked() *StrategyReport {
+	return v.immutagoProjection.Unchecked()
+}
 
 // ID reads the ID field.
 func (v StrategyReportProjection) ID() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().ID)
+	return im.ProjectString(v.immutagoProjection.Unchecked().ID)
 }
 
 // Account reads the Account field.
 func (v StrategyReportProjection) Account() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Account)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Account)
 }
 
 // Totals reads the Totals field.
 func (v StrategyReportProjection) Totals() Totals {
-	return v.immutagoProjection.Unsafe().Totals
+	return v.immutagoProjection.Unchecked().Totals
 }
 
 // Markets reads the Markets field.
 func (v StrategyReportProjection) Markets() im.SliceProjection[MarketReport] {
-	return v.immutagoProjection.Unsafe().Markets.Projection()
+	return v.immutagoProjection.Unchecked().Markets.Projection()
 }
 
 // StrategyReportCell publishes frozen StrategyReport values. Do not copy it.

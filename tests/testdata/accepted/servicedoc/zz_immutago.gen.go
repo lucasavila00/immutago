@@ -24,18 +24,18 @@ func NewFileArgsProjection(value im.Projection[*FileArgs]) FileArgsProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v FileArgsProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v FileArgsProjection) Unsafe() *FileArgs { return v.immutagoProjection.Unsafe() }
+func (v FileArgsProjection) Unchecked() *FileArgs { return v.immutagoProjection.Unchecked() }
 
 // Path reads the Path field.
 func (v FileArgsProjection) Path() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Path)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Path)
 }
 
 // Every reads the Every field.
 func (v FileArgsProjection) Every() time.Duration {
-	return v.immutagoProjection.Unsafe().Every
+	return v.immutagoProjection.Unchecked().Every
 }
 
 // FileArgsCell publishes frozen FileArgs values. Do not copy it.

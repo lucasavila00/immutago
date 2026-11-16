@@ -23,13 +23,13 @@ func NewCountedProjection(value im.Projection[*Counted]) CountedProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v CountedProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v CountedProjection) Unsafe() *Counted { return v.immutagoProjection.Unsafe() }
+func (v CountedProjection) Unchecked() *Counted { return v.immutagoProjection.Unchecked() }
 
 // Counter reads the Counter field.
 func (v CountedProjection) Counter() Counter {
-	return v.immutagoProjection.Unsafe().Counter
+	return v.immutagoProjection.Unchecked().Counter
 }
 
 // CountedCell publishes frozen Counted values. Do not copy it.
@@ -55,13 +55,13 @@ func NewOrderProjection(value im.Projection[*Order]) OrderProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v OrderProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v OrderProjection) Unsafe() *Order { return v.immutagoProjection.Unsafe() }
+func (v OrderProjection) Unchecked() *Order { return v.immutagoProjection.Unchecked() }
 
 // Product reads the Product field.
 func (v OrderProjection) Product() ProductProjection {
-	return NewProductProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Product))
+	return NewProductProjection(im.ProjectionOf(&v.immutagoProjection.Unchecked().Product))
 }
 
 // OrderCell publishes frozen Order values. Do not copy it.
@@ -87,13 +87,13 @@ func NewProductProjection(value im.Projection[*Product]) ProductProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ProductProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ProductProjection) Unsafe() *Product { return v.immutagoProjection.Unsafe() }
+func (v ProductProjection) Unchecked() *Product { return v.immutagoProjection.Unchecked() }
 
 // Price reads the Price field.
 func (v ProductProjection) Price() int {
-	return v.immutagoProjection.Unsafe().Price
+	return v.immutagoProjection.Unchecked().Price
 }
 
 // ProductCell publishes frozen Product values. Do not copy it.
@@ -119,13 +119,13 @@ func NewTextOwnerProjection(value im.Projection[*TextOwner]) TextOwnerProjection
 // IsNil reports whether the selected pointer is nil.
 func (v TextOwnerProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v TextOwnerProjection) Unsafe() *TextOwner { return v.immutagoProjection.Unsafe() }
+func (v TextOwnerProjection) Unchecked() *TextOwner { return v.immutagoProjection.Unchecked() }
 
 // Text reads the Text field.
 func (v TextOwnerProjection) Text() im.StringProjection {
-	return im.ProjectString(v.immutagoProjection.Unsafe().Text)
+	return im.ProjectString(v.immutagoProjection.Unchecked().Text)
 }
 
 // TextOwnerCell publishes frozen TextOwner values. Do not copy it.

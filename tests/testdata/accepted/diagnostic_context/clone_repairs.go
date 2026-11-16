@@ -21,7 +21,7 @@ func mapLimits(records im.MapProjection[int, Settings]) map[int]int {
 func pairLimits(pairs im.SliceProjection[[2]Settings]) [][2]int {
 	out := make([][2]int, pairs.Len())
 	for index, pair := range pairs.All() {
-		values := pair.Unsafe()
+		values := pair.Unchecked()
 		out[index] = [2]int{values[0].Limit, values[1].Limit}
 	}
 	return out
@@ -46,7 +46,7 @@ func mapScores(records im.MapProjection[int, Scorer]) map[int]int {
 func rebuild(records im.SliceProjection[Settings]) im.FrozenSlice[Settings] {
 	fresh := make([]Settings, 0, records.Len())
 	for _, record := range records.All() {
-		fresh = append(fresh, record.Unsafe())
+		fresh = append(fresh, record.Unchecked())
 	}
 	frozen := im.FreezeSlice(fresh)
 	return frozen
@@ -55,7 +55,7 @@ func rebuild(records im.SliceProjection[Settings]) im.FrozenSlice[Settings] {
 func rebuildMap(records im.MapProjection[int, Settings]) im.FrozenMap[int, Settings] {
 	fresh := make(map[int]Settings, records.Len())
 	for key, record := range records.All() {
-		fresh[im.Value(key)] = record.Unsafe()
+		fresh[im.Value(key)] = record.Unchecked()
 	}
 	frozen := im.FreezeMap(fresh)
 	return frozen

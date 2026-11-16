@@ -31,9 +31,9 @@ func (s StringProjection) Equal(other StringProjection) bool { return s.value ==
 // Is compares the bytes with a native string without copying or allocating.
 func (s StringProjection) Is(other string) bool { return s.value == other }
 
-// Unsafe returns the underlying string without copying or allocating.
+// Unchecked returns the underlying string without copying or allocating.
 // The checker does not restrict this string; the caller controls its retention.
-func (s StringProjection) Unsafe() string { return s.value }
+func (s StringProjection) Unchecked() string { return s.value }
 
 // Clone returns a native string with independent storage in O(n) time and space.
 // An empty result needs no allocation.

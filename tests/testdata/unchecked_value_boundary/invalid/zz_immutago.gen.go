@@ -21,10 +21,10 @@ func NewScorerProjection(value im.Projection[Scorer]) ScorerProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Score calls the checked interface method with its ordinary Go contract.
-func (v ScorerProjection) Score() int { return v.immutagoProjection.Unsafe().Score() }
+func (v ScorerProjection) Score() int { return v.immutagoProjection.Unchecked().Score() }
 
 // SnapshotProjection provides local read access to *Snapshot.
 type SnapshotProjection struct {
@@ -40,13 +40,13 @@ func NewSnapshotProjection(value im.Projection[*Snapshot]) SnapshotProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v SnapshotProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v SnapshotProjection) Unsafe() *Snapshot { return v.immutagoProjection.Unsafe() }
+func (v SnapshotProjection) Unchecked() *Snapshot { return v.immutagoProjection.Unchecked() }
 
 // N reads the N field.
 func (v SnapshotProjection) N() int {
-	return v.immutagoProjection.Unsafe().N
+	return v.immutagoProjection.Unchecked().N
 }
 
 // SnapshotCell publishes frozen Snapshot values. Do not copy it.

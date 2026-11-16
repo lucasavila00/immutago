@@ -21,15 +21,15 @@ func NewScorerProjection(value im.Projection[Scorer]) ScorerProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Lookup calls the checked interface method with its ordinary Go contract.
 func (v ScorerProjection) Lookup(arg0 []byte) (int, bool, []byte, error) {
-	return v.immutagoProjection.Unsafe().Lookup(arg0)
+	return v.immutagoProjection.Unchecked().Lookup(arg0)
 }
 
 // Score calls the checked interface method with its ordinary Go contract.
-func (v ScorerProjection) Score() int { return v.immutagoProjection.Unsafe().Score() }
+func (v ScorerProjection) Score() int { return v.immutagoProjection.Unchecked().Score() }
 
 // ModelProjection provides local read access to *Model.
 type ModelProjection struct {
@@ -45,13 +45,13 @@ func NewModelProjection(value im.Projection[*Model]) ModelProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ModelProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ModelProjection) Unsafe() *Model { return v.immutagoProjection.Unsafe() }
+func (v ModelProjection) Unchecked() *Model { return v.immutagoProjection.Unchecked() }
 
 // Value reads the Value field.
 func (v ModelProjection) Value() ScorerProjection {
-	return NewScorerProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Value))
+	return NewScorerProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Value))
 }
 
 // ModelCell publishes frozen Model values. Do not copy it.
@@ -77,13 +77,13 @@ func NewNumberProjection(value im.Projection[*Number]) NumberProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v NumberProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v NumberProjection) Unsafe() *Number { return v.immutagoProjection.Unsafe() }
+func (v NumberProjection) Unchecked() *Number { return v.immutagoProjection.Unchecked() }
 
 // N reads the N field.
 func (v NumberProjection) N() int {
-	return v.immutagoProjection.Unsafe().N
+	return v.immutagoProjection.Unchecked().N
 }
 
 // NumberCell publishes frozen Number values. Do not copy it.

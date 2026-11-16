@@ -23,18 +23,18 @@ func NewHolderProjection(value im.Projection[*Holder]) HolderProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v HolderProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v HolderProjection) Unsafe() *Holder { return v.immutagoProjection.Unsafe() }
+func (v HolderProjection) Unchecked() *Holder { return v.immutagoProjection.Unchecked() }
 
 // Node reads the Node field.
 func (v HolderProjection) Node() NodeProjection {
-	return NewNodeProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Node))
+	return NewNodeProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Node))
 }
 
 // Items reads the Items field.
 func (v HolderProjection) Items() im.SliceProjection[*Node] {
-	return v.immutagoProjection.Unsafe().Items.Projection()
+	return v.immutagoProjection.Unchecked().Items.Projection()
 }
 
 // HolderCell publishes frozen Holder values. Do not copy it.
@@ -60,18 +60,18 @@ func NewNodeProjection(value im.Projection[*Node]) NodeProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v NodeProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v NodeProjection) Unsafe() *Node { return v.immutagoProjection.Unsafe() }
+func (v NodeProjection) Unchecked() *Node { return v.immutagoProjection.Unchecked() }
 
 // Value reads the Value field.
 func (v NodeProjection) Value() int {
-	return v.immutagoProjection.Unsafe().Value
+	return v.immutagoProjection.Unchecked().Value
 }
 
 // Next reads the Next field.
 func (v NodeProjection) Next() NodeProjection {
-	return NewNodeProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Next))
+	return NewNodeProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Next))
 }
 
 // NodeCell publishes frozen Node values. Do not copy it.

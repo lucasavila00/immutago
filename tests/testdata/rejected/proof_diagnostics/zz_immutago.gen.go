@@ -23,13 +23,13 @@ func NewPointProjection(value im.Projection[*Point]) PointProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v PointProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v PointProjection) Unsafe() *Point { return v.immutagoProjection.Unsafe() }
+func (v PointProjection) Unchecked() *Point { return v.immutagoProjection.Unchecked() }
 
 // X reads the X field.
 func (v PointProjection) X() int {
-	return v.immutagoProjection.Unsafe().X
+	return v.immutagoProjection.Unchecked().X
 }
 
 // PointCell publishes frozen Point values. Do not copy it.

@@ -24,13 +24,13 @@ func NewSnapshotProjection(value im.Projection[*Snapshot]) SnapshotProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v SnapshotProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v SnapshotProjection) Unsafe() *Snapshot { return v.immutagoProjection.Unsafe() }
+func (v SnapshotProjection) Unchecked() *Snapshot { return v.immutagoProjection.Unchecked() }
 
 // Point reads the Point field.
 func (v SnapshotProjection) Point() api.Point {
-	return v.immutagoProjection.Unsafe().Point
+	return v.immutagoProjection.Unchecked().Point
 }
 
 // Points reads the Points field.
@@ -43,12 +43,12 @@ func (v SnapshotProjection) Points() SnapshotPointsProjection {
 
 // Score reads the Score field.
 func (v SnapshotProjection) Score() api.Score {
-	return v.immutagoProjection.Unsafe().Score
+	return v.immutagoProjection.Unchecked().Score
 }
 
 // Summary reads the Summary field.
 func (v SnapshotProjection) Summary() api.Summary {
-	return v.immutagoProjection.Unsafe().Summary
+	return v.immutagoProjection.Unchecked().Summary
 }
 
 // SnapshotCell publishes frozen Snapshot values. Do not copy it.
@@ -71,5 +71,5 @@ func (v SnapshotPointsProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v SnapshotPointsProjection) At(index0 int) api.Point {
-	return v.immutagoProjection.Unsafe().Points[index0]
+	return v.immutagoProjection.Unchecked().Points[index0]
 }

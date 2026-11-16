@@ -23,13 +23,13 @@ func NewRecordProjection(value im.Projection[*Record]) RecordProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v RecordProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v RecordProjection) Unsafe() *Record { return v.immutagoProjection.Unsafe() }
+func (v RecordProjection) Unchecked() *Record { return v.immutagoProjection.Unchecked() }
 
 // N reads the N field.
 func (v RecordProjection) N() int {
-	return v.immutagoProjection.Unsafe().N
+	return v.immutagoProjection.Unchecked().N
 }
 
 // RecordCell publishes frozen Record values. Do not copy it.

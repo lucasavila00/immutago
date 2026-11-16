@@ -15,7 +15,7 @@ func (g *generator) readPath(typ, root types.Type, path, stem string, indices []
 	if fixed, ok := typ.Underlying().(*types.Array); ok {
 		return g.arrayReader(fixed, root, path, stem, indices)
 	}
-	expression := "v." + g.projectionField + ".Unsafe()" + strings.TrimPrefix(path, "value")
+	expression := "v." + g.projectionField + ".Unchecked()" + strings.TrimPrefix(path, "value")
 	if g.proofs.ReadResultReason(typ) == "" {
 		return g.typeName(typ), expression, nil
 	}
@@ -96,16 +96,16 @@ func (g *generator) writeRecord(out *bytes.Buffer, item record) error {
 		constructorName(item.name), g.imName, source, item.name, item.name, g.projectionField)
 	fmt.Fprintf(out, "// IsNil reports whether the selected pointer is nil.\n"+
 		"func (v %s) IsNil() bool { return %s.IsNil(v.%s) }\n", item.name, g.imName, g.projectionField)
-	fmt.Fprintf(out, "// Unsafe returns the selected pointer without a record copy or allocation.\n"+
+	fmt.Fprintf(out, "// Unchecked returns the selected pointer without a record copy or allocation.\n"+
 		"// The caller controls retention and must not change the target.\n"+
-		"func (v %s) Unsafe() %s { return v.%s.Unsafe() }\n", item.name, source, g.projectionField)
+		"func (v %s) Unchecked() %s { return v.%s.Unchecked() }\n", item.name, source, g.projectionField)
 	target := types.Unalias(item.typ).(*types.Pointer).Elem()
 	structure := target.Underlying().(*types.Struct)
 	for field := range structure.Fields() {
 		if field.Name() == "_" || checker.IsLibraryType(field.Type(), "Frozen") {
 			continue
 		}
-		if field.Name() == "IsNil" || field.Name() == "Unsafe" {
+		if field.Name() == "IsNil" || field.Name() == "Unchecked" {
 			return fmt.Errorf("%s.%s conflicts with a generated projection member", source, field.Name())
 		}
 		if err := g.writeField(out, item, field); err != nil {

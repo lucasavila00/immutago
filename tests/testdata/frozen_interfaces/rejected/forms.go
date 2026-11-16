@@ -36,7 +36,7 @@ func forms(s api.Scorer, local api.ScorerProjection) {
 
 func identity[T any](v T) T { return v }
 func rawPointer(local im.Projection[api.Scorer]) *implementation.Tree {
-	return local.Unsafe().(*implementation.Tree)
+	return local.Unchecked().(*implementation.Tree)
 }
 func boxed(...any)          {}
 func variadic(s api.Scorer) { boxed(s) }

@@ -31,7 +31,7 @@ Keep initialized services and Groups behind pointers, including after Stop.
 Use pointer receivers. Do not copy their values or containing structs and arrays.
 Ref values can be copied.
 
-UnsafeChildren requires the original service pointer created by Start. The caller
+UncheckedChildren requires the original service pointer created by Start. The caller
 must obey this Go contract. Standard `go vet ./...` reports common owner copies;
 immutago does not enforce this contract.
 
@@ -114,8 +114,8 @@ Borrow returns that same value, including after it stops.
 | --- | --- |
 | `root := supervise.NewRoot(report)` | Application group, until root.Stop. Pass nil to write failure reports and their original stacks to standard error. |
 | `group := supervise.StartGroup(parent)` | Lifetime group; stop these services and their children together. |
-| `s.UnsafeChildren()` | Child group owned by this service. Use the original pointer created by Start. |
-| `new(Worker).UnsafeChildren()` | Panic with `supervise: nil or zero Group` in the caller. Use Start to create a service that needs child groups. |
+| `s.UncheckedChildren()` | Child group owned by this service. Use the original pointer created by Start. |
+| `new(Worker).UncheckedChildren()` | Panic with `supervise: nil or zero Group` in the caller. Use Start to create a service that needs child groups. |
 
 Create groups with these APIs and keep their pointers. A nil or zero Group cannot
 run or stop. Groups follow the copy contract above and ordinary Go rules.

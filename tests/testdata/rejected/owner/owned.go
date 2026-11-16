@@ -17,7 +17,7 @@ func badUses(l *Loader) {
 	copy := *l
 	_ = copy
 	saved = l.Current.Load()
-	m := l.Current.Load().Unsafe()
+	m := l.Current.Load().Unchecked()
 	m.X = 2
 }
 

@@ -25,9 +25,9 @@ func TestChildrenRequiresStart(t *testing.T) {
 		name     string
 		children func() *Group
 	}{
-		{"Service", new(Service[NoArgs]).UnsafeChildren},
-		{"embedded", new(serviceBase).UnsafeChildren},
-		{"nested", new(struct{ serviceBase }).UnsafeChildren},
+		{"Service", new(Service[NoArgs]).UncheckedChildren},
+		{"embedded", new(serviceBase).UncheckedChildren},
+		{"nested", new(struct{ serviceBase }).UncheckedChildren},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			expectPanic(t, "supervise: nil or zero Group", func() { test.children() })

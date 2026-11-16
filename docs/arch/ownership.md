@@ -70,8 +70,8 @@ viewB ───────┘
 | [Cell.Store](../../pkg/im/cell.go) | A private copy of T behind `atomic.Pointer[T]`; referenced frozen storage stays shared. |
 | Generated Cell.Load | A Local projection around `Projection[*T]`; no copy of T. |
 | Raw Cell.Load | `Projection[T]` containing a copy of T; no copy of backing storage. |
-| Generated projection.Unsafe | The selected *T; no record copy, allocation, or second Cell load. |
-| Raw Projection.Unsafe | T by value; referenced storage stays shared. |
+| Generated projection.Unchecked | The selected *T; no record copy, allocation, or second Cell load. |
+| Raw Projection.Unchecked | T by value; referenced storage stays shared. |
 | A retained projection | Its pointer keeps the selected value reachable for Go's garbage collector. |
 
 Cell source checks prevent copies of the atomic slot. The cached slot query follows
@@ -94,7 +94,7 @@ For a Frozen Rates record with a frozen integer slice, the getter reads directly
 
 ```go
 func (v RatesProjection) Values() im.SliceProjection[int] {
-    return v.immutagoProjection.Unsafe().Values.Projection()
+    return v.immutagoProjection.Unchecked().Values.Projection()
 }
 ```
 

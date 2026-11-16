@@ -71,11 +71,11 @@ func TestGeneratedBridgeValidation(t *testing.T) {
 	const declarations = `type Child struct{im.Frozen;Number int}
 type Data struct{im.Frozen;Name string;Numbers [2]int;Number int;Child Child}`
 	for _, body := range []string{
-		`func raw(v DataProjection)string{return v.immutagoProjection.Unsafe().Name}`,
-		`func raw(v DataProjection)[]int{return v.immutagoProjection.Unsafe().Numbers[:]}`,
-		`func raw(v DataProjection)*int{return &v.immutagoProjection.Unsafe().Number}`,
-		`func raw(v DataProjection)*Child{return &v.immutagoProjection.Unsafe().Child}`,
-		`func raw(v DataProjection){v.immutagoProjection.Unsafe().Number=1}`,
+		`func raw(v DataProjection)string{return v.immutagoProjection.Unchecked().Name}`,
+		`func raw(v DataProjection)[]int{return v.immutagoProjection.Unchecked().Numbers[:]}`,
+		`func raw(v DataProjection)*int{return &v.immutagoProjection.Unchecked().Number}`,
+		`func raw(v DataProjection)*Child{return &v.immutagoProjection.Unchecked().Child}`,
+		`func raw(v DataProjection){v.immutagoProjection.Unchecked().Number=1}`,
 	} {
 		t.Run(body, func(t *testing.T) {
 			pass := sourcePass(t, declarations)
@@ -186,7 +186,7 @@ func TestLocalGeneratedFileNeedsSchema(t *testing.T) {
 	pass := sourcePass(t, `type Reply struct{im.Local;Text im.StringProjection}`)
 	replaceGeneratedSource(t, pass, projectiongen.Filename, `package sample
 import "github.com/lucasavila00/immutago/pkg/im"
-func raw(value im.Projection[string])string{return value.Unsafe()}`)
+func raw(value im.Projection[string])string{return value.Unchecked()}`)
 	var reports []string
 	pass.Report = func(d analysis.Diagnostic) { reports = append(reports, d.Message) }
 	if _, err := run(pass); err != nil {

@@ -64,7 +64,7 @@ Frozen collections reject Local keys and elements, so these builders cannot Free
 | `type Reply struct { im.Local; Value Settings }` with Frozen Settings | Use SettingsProjection, or copy its required numeric fields. |
 | `callback := func() float64 { return p.Score }` | Copy `score := p.Score` before the closure. |
 | `go read(p)` or `defer read(p)` | Call `read(p)` synchronously. |
-| `fmt.Sprintf("%s", name)` with StringProjection | Use `name.Unsafe()` for shared string access or `name.Clone()` for independent storage. |
+| `fmt.Sprintf("%s", name)` with StringProjection | Use `name.Unchecked()` for shared string access or `name.Clone()` for independent storage. |
 | `return &Prediction{}` | Return a Prediction value. |
 | `im.FreezeSlice(names)` for `names []im.StringProjection` | Read the local builder directly; construct independent stored data when needed. |
 | `return names` for a native Local builder | Return a Local record with the required projections. |

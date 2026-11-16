@@ -23,13 +23,13 @@ func NewFrozenProjection(value im.Projection[*Frozen]) FrozenProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v FrozenProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v FrozenProjection) Unsafe() *Frozen { return v.immutagoProjection.Unsafe() }
+func (v FrozenProjection) Unchecked() *Frozen { return v.immutagoProjection.Unchecked() }
 
 // N reads the N field.
 func (v FrozenProjection) N() int {
-	return v.immutagoProjection.Unsafe().N
+	return v.immutagoProjection.Unchecked().N
 }
 
 // FrozenCell publishes frozen Frozen values. Do not copy it.

@@ -22,7 +22,7 @@ func TestFileCacheRefresh(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := cache.Borrow().Text(); !got.Is("initial\n") {
-		t.Fatalf("initial text = %q", got.Unsafe())
+		t.Fatalf("initial text = %q", got.Unchecked())
 	}
 	if err := os.WriteFile(path, []byte("updated\n"), 0600); err != nil {
 		t.Fatal(err)

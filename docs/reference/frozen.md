@@ -36,14 +36,14 @@ println(text, projection.Len(), projection.Is("standard"))
 | Wrap a native string | `text := im.FreezeString(source)` |
 | Read byte count or one byte | `n := text.Len()`, `value := text.At(i)` |
 | Compare with FrozenString or native string | `text.Equal(other)`, `text.EqualString("standard")` |
-| Expose the shared native string | `fmt.Sprintf("%s", text.Unsafe())` |
+| Expose the shared native string | `fmt.Sprintf("%s", text.Unchecked())` |
 | Read bytes in a loop | `for i := 0; i < text.Len(); i++ { println(text.At(i)) }` |
 | Copy into independent native string storage | `saved := text.Clone()` |
 | Create a local StringProjection | `projection := text.Projection()` |
 
 Equal and EqualString use native string equality without allocating. Clone is
 not needed to compare text. The zero value is empty. At has Go's normal bounds
-panic. Unsafe lets the caller keep the shared bytes; the checker does not track
+panic. Unchecked lets the caller keep the shared bytes; the checker does not track
 the returned native string. There is no substring operation or implicit string
 conversion. For a native string projection, use `im.ProjectString(source)`.
 
@@ -147,7 +147,7 @@ or passed to a function. Iterators from local projections require a
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
-| `text[0]`, `text[1:]`, or `string(text)` with FrozenString | Use At for a byte, Unsafe for a shared native string, or Clone for independent storage. |
+| `text[0]`, `text[1:]`, or `string(text)` with FrozenString | Use At for a byte, Unchecked for a shared native string, or Clone for independent storage. |
 | Return FrozenString from an exported service method | Return `text.Projection()`. |
 | `read := local.At` with SliceProjection | `value := local.At(0)` |
 | `im.SliceProjection[int].At(local, 0)` | `local.At(0)` |

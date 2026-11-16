@@ -22,7 +22,7 @@ func (p *copyParent) Run(ctx context.Context) { close(p.Args().parentStarted); <
 
 // AddChild keeps the first child group on the service value owned by the runtime.
 func (p *copyParent) AddChild() bool {
-	group := p.UnsafeChildren()
+	group := p.UncheckedChildren()
 	p.Args().groups <- group
 	_, err := Start[copyChild](group, p.Args())
 	return err == nil

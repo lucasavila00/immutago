@@ -126,7 +126,7 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	child := &initHooks{
 		init: func(p *initializing) error {
 			candidates = append(candidates, p)
-			p.UnsafeChildren()
+			p.UncheckedChildren()
 			return nil
 		},
 		run: func(_ *initializing, ctx context.Context) {
@@ -138,10 +138,10 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	}
 	hooks := &initHooks{init: func(p *initializing) error {
 		candidates = append(candidates, p)
-		if _, err := Start[initializing](p.UnsafeChildren(), child); err != nil {
+		if _, err := Start[initializing](p.UncheckedChildren(), child); err != nil {
 			return err
 		}
-		nested = StartGroup(p.UnsafeChildren())
+		nested = StartGroup(p.UncheckedChildren())
 		if _, err := Start[initializing](nested, child); err != nil {
 			return err
 		}
@@ -195,7 +195,7 @@ func TestInitStopBeforePublication(t *testing.T) {
 		var runs atomic.Int32
 		hooks := &initHooks{
 			init: func(p *initializing) error {
-				p.UnsafeChildren()
+				p.UncheckedChildren()
 				entered <- p
 				<-release
 				return nil
@@ -269,10 +269,10 @@ func TestInitStopsStagedGroup(t *testing.T) {
 		root := NewRoot(nil)
 		var child *initializing
 		hooks := &initHooks{init: func(p *initializing) error {
-			nested := StartGroup(p.UnsafeChildren())
+			nested := StartGroup(p.UncheckedChildren())
 			_, err := Start[initializing](nested, &initHooks{init: func(p *initializing) error {
 				child = p
-				p.UnsafeChildren()
+				p.UncheckedChildren()
 				return nil
 			}})
 			<-nested.Stop()

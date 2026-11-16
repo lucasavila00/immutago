@@ -23,13 +23,13 @@ func NewEntryProjection(value im.Projection[*Entry]) EntryProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v EntryProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v EntryProjection) Unsafe() *Entry { return v.immutagoProjection.Unsafe() }
+func (v EntryProjection) Unchecked() *Entry { return v.immutagoProjection.Unchecked() }
 
 // Count reads the Count field.
 func (v EntryProjection) Count() int {
-	return v.immutagoProjection.Unsafe().Count
+	return v.immutagoProjection.Unchecked().Count
 }
 
 // EntryCell publishes frozen Entry values. Do not copy it.

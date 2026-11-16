@@ -52,7 +52,7 @@ var current im.Cell[Model]
 
 func Publish(value Model)         { current.Store(value) }
 func Read() im.Projection[*Model] { return current.LoadPointer() }
-func Current() *Model             { return current.LoadPointer().Unsafe() }
+func Current() *Model             { return current.LoadPointer().Unchecked() }
 
 type Catalog struct {
 	supervise.Service[supervise.NoArgs]

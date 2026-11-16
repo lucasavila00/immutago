@@ -21,31 +21,31 @@ func NewInputReaderProjection(value im.Projection[InputReader]) InputReaderProje
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v InputReaderProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v InputReaderProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Aliased calls the checked interface method with its ordinary Go contract.
 func (v InputReaderProjection) Aliased(arg0 ReaderAlias, arg1 CallbackAlias) int {
-	return v.immutagoProjection.Unsafe().Aliased(arg0, arg1)
+	return v.immutagoProjection.Unchecked().Aliased(arg0, arg1)
 }
 
 // Apply calls the checked interface method with its ordinary Go contract.
 func (v InputReaderProjection) Apply(arg0 any, arg1 func() int) int {
-	return v.immutagoProjection.Unsafe().Apply(arg0, arg1)
+	return v.immutagoProjection.Unchecked().Apply(arg0, arg1)
 }
 
 // Named calls the checked interface method with its ordinary Go contract.
 func (v InputReaderProjection) Named(arg0 NumberReader, arg1 Callback) int {
-	return v.immutagoProjection.Unsafe().Named(arg0, arg1)
+	return v.immutagoProjection.Unchecked().Named(arg0, arg1)
 }
 
 // ReadLocal calls the checked interface method with its ordinary Go contract.
 func (v InputReaderProjection) ReadLocal(arg0 im.StringProjection) int {
-	return v.immutagoProjection.Unsafe().ReadLocal(arg0)
+	return v.immutagoProjection.Unchecked().ReadLocal(arg0)
 }
 
 // WithScorer calls the checked interface method with its ordinary Go contract.
 func (v InputReaderProjection) WithScorer(arg0 Scorer) int {
-	return v.immutagoProjection.Unsafe().WithScorer(arg0)
+	return v.immutagoProjection.Unchecked().WithScorer(arg0)
 }
 
 // ReaderProjection provides local method access to Reader.
@@ -60,47 +60,47 @@ func NewReaderProjection(value im.Projection[Reader]) ReaderProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v ReaderProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v ReaderProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Clone calls the checked interface method with its ordinary Go contract.
-func (v ReaderProjection) Clone() []byte { return v.immutagoProjection.Unsafe().Clone() }
+func (v ReaderProjection) Clone() []byte { return v.immutagoProjection.Unchecked().Clone() }
 
 // Lookup calls the checked interface method with its ordinary Go contract.
 func (v ReaderProjection) Lookup(arg0 []byte, arg1 []byte) (float64, bool, []byte, error) {
-	return v.immutagoProjection.Unsafe().Lookup(arg0, arg1)
+	return v.immutagoProjection.Unchecked().Lookup(arg0, arg1)
 }
 
 // Name calls the checked interface method with its ordinary Go contract.
-func (v ReaderProjection) Name() im.StringProjection { return v.immutagoProjection.Unsafe().Name() }
+func (v ReaderProjection) Name() im.StringProjection { return v.immutagoProjection.Unchecked().Name() }
 
 // Ordinary calls the checked interface method with its ordinary Go contract.
 func (v ReaderProjection) Ordinary(arg0 Input) (string, any, func() int, map[int]int, [][]byte, error) {
-	return v.immutagoProjection.Unsafe().Ordinary(arg0)
+	return v.immutagoProjection.Unchecked().Ordinary(arg0)
 }
 
 // Read calls the checked interface method with its ordinary Go contract.
 func (v ReaderProjection) Read() (im.StringProjection, bool) {
-	return v.immutagoProjection.Unsafe().Read()
+	return v.immutagoProjection.Unchecked().Read()
 }
 
 // Score calls the checked interface method with its ordinary Go contract.
 func (v ReaderProjection) Score(arg0 []float32) float64 {
-	return v.immutagoProjection.Unsafe().Score(arg0)
+	return v.immutagoProjection.Unchecked().Score(arg0)
 }
 
 // Self calls the checked interface method with its ordinary Go contract.
-func (v ReaderProjection) Self() Reader { return v.immutagoProjection.Unsafe().Self() }
+func (v ReaderProjection) Self() Reader { return v.immutagoProjection.Unchecked().Self() }
 
 // Summary calls the checked interface method with its ordinary Go contract.
-func (v ReaderProjection) Summary() Summary { return v.immutagoProjection.Unsafe().Summary() }
+func (v ReaderProjection) Summary() Summary { return v.immutagoProjection.Unchecked().Summary() }
 
 // SummaryLookup calls the checked interface method with its ordinary Go contract.
 func (v ReaderProjection) SummaryLookup(arg0 Buffer) (Summary, bool, Buffer, Failure) {
-	return v.immutagoProjection.Unsafe().SummaryLookup(arg0)
+	return v.immutagoProjection.Unchecked().SummaryLookup(arg0)
 }
 
 // Visit calls the checked interface method with its ordinary Go contract.
-func (v ReaderProjection) Visit() { v.immutagoProjection.Unsafe().Visit() }
+func (v ReaderProjection) Visit() { v.immutagoProjection.Unchecked().Visit() }
 
 // ScorerProjection provides local method access to Scorer.
 type ScorerProjection struct {
@@ -114,11 +114,11 @@ func NewScorerProjection(value im.Projection[Scorer]) ScorerProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v ScorerProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Score calls the checked interface method with its ordinary Go contract.
 func (v ScorerProjection) Score(arg0 []float32) float64 {
-	return v.immutagoProjection.Unsafe().Score(arg0)
+	return v.immutagoProjection.Unchecked().Score(arg0)
 }
 
 // VariadicReaderProjection provides local method access to VariadicReader.
@@ -133,27 +133,29 @@ func NewVariadicReaderProjection(value im.Projection[VariadicReader]) VariadicRe
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v VariadicReaderProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v VariadicReaderProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Add calls the checked interface method with its ordinary Go contract.
 func (v VariadicReaderProjection) Add(arg0 int, arg1 ...AmountAlias) int {
-	return v.immutagoProjection.Unsafe().Add(arg0, arg1...)
+	return v.immutagoProjection.Unchecked().Add(arg0, arg1...)
 }
 
 // Box calls the checked interface method with its ordinary Go contract.
 func (v VariadicReaderProjection) Box(arg0 ...any) int {
-	return v.immutagoProjection.Unsafe().Box(arg0...)
+	return v.immutagoProjection.Unchecked().Box(arg0...)
 }
 
 // Call calls the checked interface method with its ordinary Go contract.
 func (v VariadicReaderProjection) Call(arg0 ...func() int) int {
-	return v.immutagoProjection.Unsafe().Call(arg0...)
+	return v.immutagoProjection.Unchecked().Call(arg0...)
 }
 
 // Retain calls the checked interface method with its ordinary Go contract.
-func (v VariadicReaderProjection) Retain(arg0 ...int) { v.immutagoProjection.Unsafe().Retain(arg0...) }
+func (v VariadicReaderProjection) Retain(arg0 ...int) {
+	v.immutagoProjection.Unchecked().Retain(arg0...)
+}
 
 // Sum calls the checked interface method with its ordinary Go contract.
 func (v VariadicReaderProjection) Sum(arg0 ...int) int {
-	return v.immutagoProjection.Unsafe().Sum(arg0...)
+	return v.immutagoProjection.Unchecked().Sum(arg0...)
 }

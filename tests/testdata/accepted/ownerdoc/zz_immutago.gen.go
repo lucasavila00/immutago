@@ -23,18 +23,18 @@ func NewConfigProjection(value im.Projection[*Config]) ConfigProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v ConfigProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v ConfigProjection) Unsafe() *Config { return v.immutagoProjection.Unsafe() }
+func (v ConfigProjection) Unchecked() *Config { return v.immutagoProjection.Unchecked() }
 
 // Ready reads the Ready field.
 func (v ConfigProjection) Ready() bool {
-	return v.immutagoProjection.Unsafe().Ready
+	return v.immutagoProjection.Unchecked().Ready
 }
 
 // Limit reads the Limit field.
 func (v ConfigProjection) Limit() int {
-	return v.immutagoProjection.Unsafe().Limit
+	return v.immutagoProjection.Unchecked().Limit
 }
 
 // ConfigCell publishes frozen Config values. Do not copy it.

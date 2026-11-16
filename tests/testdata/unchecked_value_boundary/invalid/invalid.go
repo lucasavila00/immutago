@@ -89,5 +89,5 @@ func Write(value valid.Serving) { value.Model = valid.Handle{} }
 // Address cannot expose the storage of a handle inside a Local owner.
 func Address(value valid.Serving) *valid.Handle { return &value.Model }
 
-// LocalUnsafe still requires a Frozen projection payload.
-func LocalUnsafe(value im.Projection[valid.Serving]) valid.Serving { return value.Unsafe() }
+// LocalUnchecked still requires a Frozen projection payload.
+func LocalUnchecked(value im.Projection[valid.Serving]) valid.Serving { return value.Unchecked() }

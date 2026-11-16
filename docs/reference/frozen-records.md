@@ -38,7 +38,7 @@ of a private record does not expose its generated projection or constructor.
 | Store or return a fresh Frozen pointer | `return &Settings{Limit: 100}` |
 | Publish through a Cell | `cell.Store(settings)` |
 | Read through a generated Cell | `projection := cell.Load()` |
-| Keep the selected root without a record copy | `saved := cell.Load().Unsafe()` |
+| Keep the selected root without a record copy | `saved := cell.Load().Unchecked()` |
 
 Use the [common source forms](common-forms.md) for statements, calls, methods,
 and pointer construction. The [projection generator](projections.md) generates
@@ -56,7 +56,7 @@ type requestState struct {
 }
 
 func (s *requestState) begin(cell *SettingsCell) {
-    s.settings = cell.Load().Unsafe()
+    s.settings = cell.Load().Unchecked()
     s.calls++
 }
 ```

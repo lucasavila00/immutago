@@ -21,10 +21,10 @@ func NewReaderProjection(value im.Projection[Reader]) ReaderProjection {
 }
 
 // IsNil reports whether the interface is nil; a stored nil pointer is not nil.
-func (v ReaderProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+func (v ReaderProjection) IsNil() bool { return v.immutagoProjection.Unchecked() == nil }
 
 // Number calls the checked interface method with its ordinary Go contract.
-func (v ReaderProjection) Number() int { return v.immutagoProjection.Unsafe().Number() }
+func (v ReaderProjection) Number() int { return v.immutagoProjection.Unchecked().Number() }
 
 // CountProjection provides local read access to *Count.
 type CountProjection struct {
@@ -40,13 +40,13 @@ func NewCountProjection(value im.Projection[*Count]) CountProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v CountProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v CountProjection) Unsafe() *Count { return v.immutagoProjection.Unsafe() }
+func (v CountProjection) Unchecked() *Count { return v.immutagoProjection.Unchecked() }
 
 // N reads the N field.
 func (v CountProjection) N() int {
-	return v.immutagoProjection.Unsafe().N
+	return v.immutagoProjection.Unchecked().N
 }
 
 // CountCell publishes frozen Count values. Do not copy it.
@@ -72,13 +72,13 @@ func NewDataProjection(value im.Projection[*Data]) DataProjection {
 // IsNil reports whether the selected pointer is nil.
 func (v DataProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
 
-// Unsafe returns the selected pointer without a record copy or allocation.
+// Unchecked returns the selected pointer without a record copy or allocation.
 // The caller controls retention and must not change the target.
-func (v DataProjection) Unsafe() *Data { return v.immutagoProjection.Unsafe() }
+func (v DataProjection) Unchecked() *Data { return v.immutagoProjection.Unchecked() }
 
 // Text reads the Text field.
 func (v DataProjection) Text() im.StringProjection {
-	return v.immutagoProjection.Unsafe().Text.Projection()
+	return v.immutagoProjection.Unchecked().Text.Projection()
 }
 
 // Counts reads the Counts field.
@@ -91,17 +91,17 @@ func (v DataProjection) Counts() DataCountsProjection {
 
 // List reads the List field.
 func (v DataProjection) List() im.SliceProjection[int] {
-	return v.immutagoProjection.Unsafe().List.Projection()
+	return v.immutagoProjection.Unchecked().List.Projection()
 }
 
 // Map reads the Map field.
 func (v DataProjection) Map() im.MapProjection[string, int] {
-	return v.immutagoProjection.Unsafe().Map.Projection()
+	return v.immutagoProjection.Unchecked().Map.Projection()
 }
 
 // Reader reads the Reader field.
 func (v DataProjection) Reader() ReaderProjection {
-	return NewReaderProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Reader))
+	return NewReaderProjection(im.ProjectionOf(v.immutagoProjection.Unchecked().Reader))
 }
 
 // DataCell publishes frozen Data values. Do not copy it.
@@ -124,5 +124,5 @@ func (v DataCountsProjection) Len() int { return 2 }
 
 // At reads the element at index.
 func (v DataCountsProjection) At(index0 int) CountProjection {
-	return NewCountProjection(im.ProjectionOf(&v.immutagoProjection.Unsafe().Counts[index0]))
+	return NewCountProjection(im.ProjectionOf(&v.immutagoProjection.Unchecked().Counts[index0]))
 }
