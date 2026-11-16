@@ -48,7 +48,8 @@ The examples use `api.Worker`, declared in another package.
 | A Ref call, including indirect calls | `worker := ref.Borrow()`, `worker := selected.Borrow()`, `worker := next()` |
 | A factory or variable from the declaring package | `worker := api.NewWorker()`, `worker := api.Current` |
 | A direct typed parameter | `func read(worker *api.Worker) int { return worker.Count() }` |
-| Ordinary construction or a local address | `worker := new(api.Worker)`, `worker := &api.Worker{}`, `worker := &value` |
+| Construct ordinary service storage | `new(api.Worker)`, `new(value)`, `new(api.Worker{})`, `&api.Worker{}` |
+| Address an ordinary service value: local, field, array/slice element, or package variable | `&value`, `&state.Worker`, `&workers[i]`, `&api.CurrentValue` |
 | A zero declaration or nil | `var worker *api.Worker`, `worker = nil` |
 
 A function or interface that produces service pointers can use ordinary Go call
