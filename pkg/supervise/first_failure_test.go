@@ -10,31 +10,31 @@ import (
 	"time"
 )
 
-// terminalHooks controls the first and only attempt of a terminal service.
-type terminalHooks struct {
-	init func(*terminalWorker) error
-	run  func(*terminalWorker, context.Context)
+// failureHooks controls the single attempt of a service.
+type failureHooks struct {
+	init func(*failureWorker) error
+	run  func(*failureWorker, context.Context)
 }
 
-// terminalWorker exposes setup and background work to the runtime tests.
-type terminalWorker struct {
-	TerminalService[*terminalHooks]
+// failureWorker exposes setup and background work to the runtime tests.
+type failureWorker struct {
+	Service[*failureHooks]
 }
 
 // Init calls the test's setup function.
-func (p *terminalWorker) Init() error { return p.Args().init(p) }
+func (p *failureWorker) Init() error { return p.Args().init(p) }
 
 // Run calls the test's background function.
-func (p *terminalWorker) Run(ctx context.Context) { p.Args().run(p, ctx) }
+func (p *failureWorker) Run(ctx context.Context) { p.Args().run(p, ctx) }
 
-// terminalCause supplies a typed original error for errors.As.
-type terminalCause struct{ message string }
+// runCause supplies a typed original error for errors.As.
+type runCause struct{ message string }
 
 // Error returns the original panic text.
-func (e *terminalCause) Error() string { return e.message }
+func (e *runCause) Error() string { return e.message }
 
-// TestTerminalServiceFailure preserves the first failure without a retry or delay.
-func TestTerminalServiceFailure(t *testing.T) {
+// TestFirstRunFailure preserves the first failure without another attempt or delay.
+func TestFirstRunFailure(t *testing.T) {
 	for _, mode := range []string{"panic", "error", "Goexit"} {
 		for _, reporting := range []bool{false, true} {
 			name := mode + "/silent"
@@ -42,18 +42,18 @@ func TestTerminalServiceFailure(t *testing.T) {
 				name = mode + "/report"
 			}
 			t.Run(name, func(t *testing.T) {
-				synctest.Test(t, func(t *testing.T) { checkTerminalServiceFailure(t, mode, reporting) })
+				synctest.Test(t, func(t *testing.T) { checkFirstRunFailure(t, mode, reporting) })
 			})
 		}
 	}
 }
 
-// checkTerminalServiceFailure checks the error, stack, reports, and attempt count.
-func checkTerminalServiceFailure(t *testing.T, mode string, reporting bool) {
+// checkFirstRunFailure checks the error, stack, reports, and attempt count.
+func checkFirstRunFailure(t *testing.T, mode string, reporting bool) {
 	t.Helper()
 	var cause any = "ledger: balance underflow"
 	if mode == "error" {
-		cause = &terminalCause{message: cause.(string)}
+		cause = &runCause{message: cause.(string)}
 	} else if mode == "Goexit" {
 		cause = errGoexit
 	}
@@ -73,9 +73,9 @@ func checkTerminalServiceFailure(t *testing.T, mode string, reporting bool) {
 	parent := StartGroup(StartGroup(top))
 	trigger := make(chan struct{})
 	inits, runs := 0, 0
-	ref, err := Start[terminalWorker](parent, &terminalHooks{
-		init: func(*terminalWorker) error { inits++; return nil },
-		run: func(*terminalWorker, context.Context) {
+	ref, err := Start[failureWorker](parent, &failureHooks{
+		init: func(*failureWorker) error { inits++; return nil },
+		run: func(*failureWorker, context.Context) {
 			runs++
 			<-trigger
 			if mode == "Goexit" {
@@ -96,17 +96,17 @@ func checkTerminalServiceFailure(t *testing.T, mode string, reporting bool) {
 	if !ok {
 		t.Fatalf("terminal value = %T; want *Failure", value)
 	}
-	if failure.Service != "supervise.terminalWorker" || failure.Value != cause {
+	if failure.Service != "supervise.failureWorker" || failure.Value != cause {
 		t.Errorf("failure = %#v", failure)
 	}
-	if !bytes.Contains(failure.Stack, []byte("checkTerminalServiceFailure.func")) {
+	if !bytes.Contains(failure.Stack, []byte("checkFirstRunFailure.func")) {
 		t.Errorf("original Run stack was lost:\n%s", failure.Stack)
 	}
 	if err, ok := cause.(error); ok && !errors.Is(failure, err) {
 		t.Errorf("original error was lost: %v", failure)
 	}
 	if mode == "error" {
-		var originalError *terminalCause
+		var originalError *runCause
 		if !errors.As(failure, &originalError) || originalError != cause {
 			t.Errorf("original error type was lost: %v", failure)
 		}

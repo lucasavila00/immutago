@@ -8,7 +8,7 @@ import "github.com/lucasavila00/immutago/pkg/supervise"
 
 Package supervise runs services with independent retries and owned child lifetimes.
 
-Embed Service\[A\] for retries or TerminalService\[A\] to stop on the first failure. Supply Run\(context.Context\), and optionally declare Init\(\) error. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. Groups control lifetime and stop order. They do not restart services together.
+Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\) error. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. Groups control lifetime and stop order. They do not restart services together.
 
 ## type Failure
 
@@ -54,7 +54,7 @@ type Group struct {
 func NewRoot(report func(any, []byte)) *Group
 ```
 
-NewRoot creates an active lifetime group. A terminal failure stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered panic, restart Init error, or Goexit with its original stack, then the selected terminal \*Failure before cleanup waits. A nil report disables attempt reports; terminal failures still go to standard error. Reports can overlap, must return, and must not wait for their group to stop.
+NewRoot creates an active lifetime group. An exhausted service or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered panic, restart Init error, or Goexit with its original stack, then the selected terminal \*Failure before cleanup waits. A nil report disables attempt reports; terminal failures still go to standard error. Reports can overlap, must return, and must not wait for their group to stop.
 
 ### func StartGroup
 
@@ -97,7 +97,10 @@ func Start[T, A any, P interface {
     *T
     Init() error
     Run(context.Context)
-    bind(A, *Group) (*service[A], int)
+    bind(A, *Group)
+    begin(context.Context) (context.Context, bool)
+    halt()
+    end()
 }](parent *Group, args A) (Ref[T], error)
 ```
 
@@ -121,7 +124,7 @@ IsZero reports whether this reference is unset.
 
 ## type Service
 
-Service supplies start arguments, owned children, and retries after a Run panic. Embed it by value. Start creates and initializes each fresh service value. Do not copy an initialized Service or a struct that contains it. Declare service methods with pointer receivers. Run go vet to check for copies.
+Service supplies start arguments and the children owned by one service attempt. Embed it by value. Start creates and initializes each fresh service value. Do not copy an initialized Service or a struct that contains it. Declare service methods with pointer receivers. Run go vet to check for copies.
 
 ```go
 type Service[A any] struct {
@@ -143,46 +146,12 @@ Args returns the arguments supplied to Start. Every retry receives the same argu
 func (p *Service[A]) Children() *Group
 ```
 
-Children returns the child group for this attempt. Children wait for Run admission. The runtime stops and waits for them before it replaces the parent. After this attempt ends, Children returns a stopped group. Children panics if Start did not create the service.
+Children returns the group owned by this service attempt. Its services wait until the parent is admitted to Run, or run with cancelled contexts during cleanup. The runtime stops and waits for these children before it replaces the parent. A later attempt owns a new group. After this attempt ends, Children returns a stopped group. Children panics if Start did not create the service.
 
 ### func \(\*Service\[A\]\) Init
 
 ```go
 func (*Service[A]) Init() error
-```
-
-Init supplies empty setup when the service does not declare Init. A declared Init must release application resources if it fails. The runtime stops children created by that setup attempt.
-
-## type TerminalService
-
-TerminalService supplies start arguments and owned children without retries. Embed it by value when a fresh service cannot restore the required state. A Run panic or runtime.Goexit stops the root with the original failure and stack. Init and Stop use the same rules as Service. Do not copy an initialized TerminalService or a struct that contains it. Declare service methods with pointer receivers. Run go vet to check for copies.
-
-```go
-type TerminalService[A any] struct {
-    // contains filtered or unexported fields
-}
-```
-
-### func \(\*TerminalService\[A\]\) Args
-
-```go
-func (p *TerminalService[A]) Args() A
-```
-
-Args returns the arguments supplied to Start.
-
-### func \(\*TerminalService\[A\]\) Children
-
-```go
-func (p *TerminalService[A]) Children() *Group
-```
-
-Children returns the child group for this attempt. Children wait for Run admission. The runtime stops and waits for them before this attempt ends. After this attempt ends, Children returns a stopped group. Children panics if Start did not create the service.
-
-### func \(\*TerminalService\[A\]\) Init
-
-```go
-func (*TerminalService[A]) Init() error
 ```
 
 Init supplies empty setup when the service does not declare Init. A declared Init must release application resources if it fails. The runtime stops children created by that setup attempt.

@@ -88,7 +88,7 @@ func run(pass *analysis.Pass) (any, error) {
 // checkLibraryArguments proves im type arguments and protected runtime storage.
 func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance) {
 	obj := c.pass.TypesInfo.Uses[ident]
-	if checker.IsServiceBase(instance.Type) {
+	if runtimeObject(obj) && obj.Name() == "Service" {
 		c.checkServiceStorage(ident, instance.TypeArgs.At(0))
 		return
 	}
@@ -212,7 +212,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if t == nil || checker.IsCollection(t) || checker.IsProjection(t) ||
 		checker.IsLibraryType(t, "Cell") || checker.IsUncheckedValue(t) ||
-		checker.IsServiceBase(t) || checker.IsRuntimeType(t, "Ref") {
+		checker.IsRuntimeType(t, checker.ServiceMarker) || checker.IsRuntimeType(t, "Ref") {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)

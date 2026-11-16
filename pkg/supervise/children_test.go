@@ -107,11 +107,11 @@ func TestChildrenDuringHalt(t *testing.T) {
 		entered := make(chan struct{})
 		resume := make(chan struct{})
 		var once sync.Once
-		p := &service[NoArgs]{
+		p := &Service[NoArgs]{
 			cancel:  func() { once.Do(func() { close(entered); <-resume }) },
 			unwatch: func() bool { return true },
 		}
-		p.owner = parent
+		p.bind(NoArgs{}, parent)
 		halted := make(chan struct{})
 		go func() { p.halt(); close(halted) }()
 		<-entered
