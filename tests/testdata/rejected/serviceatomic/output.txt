@@ -4,7 +4,7 @@ atomic.go:25:2: unmarked struct field Local contains protected storage
   fix: store Frozen pointers or handles; keep Local data in local bindings
 atomic.go:29:2: immutable field Current requires a read result: sync/atomic.Pointer[example.com/consumer/serviceatomic.WorkerRef] is not a read result
   owner: serviceatomic.ProtectedSlot; field type: atomic.Pointer[serviceatomic.WorkerRef]
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 atomic.go:32:11: unmarked struct field _ contains protected storage
   owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
   rule: unmarked structs cannot own Frozen records by value or Local data

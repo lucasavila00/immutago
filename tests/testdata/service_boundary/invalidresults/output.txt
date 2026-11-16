@@ -1,6 +1,6 @@
 use.go:3:8: unsupported dependency example.com/consumer/invalidapi: immutability proof failed
   representative failure: example.com/consumer/invalidapi/api.go:7:17: service method Values must return a read result or error: []int is not a read result
     result type: []int
-    fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+    fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/invalidapi, correct its errors, then rerun immutago on this package

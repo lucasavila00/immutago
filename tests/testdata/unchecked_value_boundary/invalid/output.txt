@@ -14,10 +14,10 @@ invalid.go:38:16: service method Named must return a read result or error: named
   fix: use an unnamed array type; to keep a named type, put the unnamed array in a Frozen, Local, or Copied record
 invalid.go:41:16: service method Pointer must return a read result or error: *example.com/consumer/valid.Handle is not a read result
   result type: *valid.Handle
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 invalid.go:44:16: service method Native must return a read result or error: []example.com/consumer/valid.Handle is not a read result
   result type: []valid.Handle
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 invalid.go:47:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved valid.Serving
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it

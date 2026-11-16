@@ -5,10 +5,10 @@ copied_fields.go:101:5: Copied record: struct must embed exactly one immutable m
   fix: embed exactly one of im.Frozen, im.Local, or im.Copied by value
 copied_fields.go:105:16: service method Bad must return a read result or error: *example.com/consumer/api.Point is not a read result
   result type: *api.Point
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 copied_fields.go:106:16: service method Unmarked must return a read result or error: struct{N int} is not a read result
   result type: struct{N int}
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 copied_fields.go:107:16: service method Marker must return a read result or error: immutable markers are annotations, not data
   result type: im.Copied
   fix: embed the marker in a named struct; use data fields for values

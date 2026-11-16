@@ -224,10 +224,10 @@ operations.go:56:6: unsupported immutable operation: github.com/lucasavila00/imm
   fix: iterate the projection with All; read or clone each element into a new native collection
 results.go:12:2: immutable field Value requires a read result: example.com/consumer/diagnostic_context.Settings is not a read result
   owner: diagnosticcontext.SettingsReply; field type: diagnosticcontext.Settings
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 results.go:21:18: service method Read must return a read result or error: example.com/consumer/diagnostic_context.Settings is not a read result
   result type: diagnosticcontext.Settings
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 wording.go:17:30: unsupported immutable operation: protected value conversions are unsupported
   source: B(a)
   type: diagnosticcontext.B
@@ -236,4 +236,4 @@ wording.go:19:40: start argument: Frozen storage cannot contain Local values
   fix: store Frozen data; keep its Projection or Local result in local bindings
 wording.go:23:18: service method Self must return a read result or error: *example.com/consumer/diagnostic_context.Worker is not a read result
   result type: *diagnosticcontext.Worker
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results

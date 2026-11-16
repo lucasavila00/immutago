@@ -50,7 +50,7 @@ func rejectCopied(result *obligation, t types.Type) {
 // rejectRead states the complete result rule shared by Local fields and service results.
 func rejectRead(result *obligation, t types.Type) {
 	result.reason = fmt.Sprintf("%s is not a read result", types.TypeString(t, nil))
-	result.repair = "use a read result: a Copied or Local value, an opaque handle, " +
+	result.repair = "use a read result: a Copied value, a Local record or matching projection, an opaque handle, " +
 		"a pointer to a Frozen handle wrapper, or an unnamed array of read results"
 }
 

@@ -96,17 +96,17 @@ snapshot_categories.go:37:17: service method Frozen must return a read result or
   fix: for Local text, use text.Projection()
 snapshot_categories.go:38:17: service method Retained must return a read result or error: example.com/consumer/rejected.Retained is not a read result
   result type: rejected.Retained
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 snapshot_categories.go:39:17: service method Container must return a read result or error: []github.com/lucasavila00/immutago/pkg/im.Projection[int] is not a read result
   result type: []im.Projection[int]
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 snapshot_categories.go:39:29: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []im.Projection[int]
   type: []im.Projection[int]
   fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
 snapshot_categories.go:40:17: service method LocalPointer must return a read result or error: *example.com/consumer/rejected.Local is not a read result
   result type: *rejected.Local
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 snapshot_categories.go:40:17: unsupported immutable operation: returning Local pointers is unsupported
   source: LocalPointer
   type: func() *rejected.Local
@@ -205,13 +205,13 @@ snapshot_categories.go:72:52: unsupported immutable operation: native slices of 
 snapshot_categories.go:74:9: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle and read its elements directly; Local builders cannot Freeze
 snapshot_categories.go:84:2: immutable field Value requires a read result: example.com/consumer/rejected.Numeric is not a read result
   owner: rejected.BadNumericResult; field type: rejected.Numeric
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 snapshot_categories.go:87:17: service method Numeric must return a read result or error: example.com/consumer/rejected.Numeric is not a read result
   result type: rejected.Numeric
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 snapshot_categories.go:88:17: service method NumericArray must return a read result or error: array element: example.com/consumer/rejected.Numeric is not a read result
   result type: [0]rejected.Numeric
-  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 snapshot_categories.go:90:6: unsupported immutable operation: example.com/consumer/rejected.Numeric is not a read result
   source: im.Value(value)
   type: rejected.Numeric
