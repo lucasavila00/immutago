@@ -1,24 +1,24 @@
 copied_dependency.go:3:8: unsupported dependency example.com/consumer/badapi: immutability proof failed
   representative failure: example.com/consumer/badapi/copied_badapi.go:11:5: Copied record: Value: array element: Names: array element: string is not a Copied value
     type: badapi.Nested
-    fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+    fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/badapi, correct its errors, then rerun immutago on this package
 copied_dependency.go:5:11: Copied record: Value: array element: Names: array element: string is not a Copied value
   type: badapi.Alias
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 copied_dependency.go:5:18: Copied record: Value: array element: Names: array element: string is not a Copied value
   type: badapi.Alias
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 copied_dependency.go:5:5: Copied record: Value: array element: Names: array element: string is not a Copied value
   type: badapi.Alias
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 copied_dependency.go:7:13: Copied record: Value: array element: Names: array element: string is not a Copied value
   type: badapi.Alias
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 copied_dependency.go:7:20: Copied record: Value: array element: Names: array element: string is not a Copied value
   type: badapi.Alias
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 copied_dependency.go:7:35: Copied record: Value: array element: Names: array element: string is not a Copied value
   type: badapi.Alias
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection

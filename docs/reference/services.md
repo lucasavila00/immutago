@@ -67,7 +67,7 @@ Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
 | Start after the group or an ancestor closes admission | Return a zero Ref and `context.Canceled`. Do not call Init or Run. |
 | Stop after Start is accepted | Wait for Init before stopping registered services. Successful Init still registers and returns Ref; Run can receive a cancelled context. |
 | Nil or zero Group passed to Start or StartGroup | Panic with `supervise: nil or zero Group` before Init. |
-| Pointer on the selected Service embedding path | Panic before Init with `supervise: embed Service by value through each embedded field`. |
+| Pointer on the selected Service embedding path | An accepted Start panics before Init with `supervise: embed Service by value through each embedded field`. |
 
 Go infers A from the argument's type. An untyped constant supplies its default
 type. If that type differs from the service's A, specify A or convert the argument:
@@ -87,6 +87,25 @@ It must return without waiting for its owning group or an ancestor to stop, or
 for cancellation that needs that shutdown. Init can stop and wait for its own
 child group to undo setup. It must release application resources that it opened
 if setup fails.
+
+Init must return if a dependency stops answering. Bound each blocking operation
+with an application timeout or a context cancelled independently of tree shutdown.
+For example, create a timeout before a request/reply exchange:
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+defer cancel()
+reply := make(chan string, 1)
+```
+
+| Init operation | Bound the wait with that context |
+| --- | --- |
+| Send a request | `select { case requests <- reply: case <-ctx.Done(): return ctx.Err() }` |
+| Receive a reply | `select { case s.value = <-reply: return nil; case <-ctx.Done(): return ctx.Err() }` |
+
+The buffered reply lets the peer send one response after Init times out.
+A called API must also return when its context ends.
+
 Every successful Init gets exactly one Run call. Run can use defer to release those
 resources. Check its context before starting work: it can already be cancelled.
 Successful Start means that Init completed; it does not mean that Run is still active.
@@ -97,13 +116,13 @@ Successful Start means that Init completed; it does not mean that Run is still a
 | --- | --- |
 | Run returns normally | Stop its children, then remove the service from its group. Other services continue. |
 | Run receives cancellation | Return normally to end without a failure. |
-| Run panics | Report the original panic and stack. Stop the entire root tree, wait for cleanup, then panic with `*supervise.Failure`. |
+| Run panics | Report the original panic and stack. Stop the entire root tree, wait for accepted Init calls and cleanup, then panic with `*supervise.Failure`. |
 | Run calls `runtime.Goexit()` | Stop the root through the same failure path. Failure.Value is an error with the text `supervise: service called runtime.Goexit`. |
 | A child fails under nested groups or services | Its failure goes directly to the root. |
 | A direct service method panics | The panic stays in its caller's goroutine. If called from Run, it fails that Run. |
 | Run panics or calls Goexit during shutdown or cleanup | Use the same terminal failure path. Stop and a parent's normal return cannot suppress a failure. |
 | Several Run failures occur | Keep the first failure recorded by the runtime. Report each failure once. |
-| Terminal panic | It runs in a runtime goroutine after reporting and cleanup. A caller cannot recover it. |
+| Terminal panic | It runs in a runtime goroutine after accepted Init calls, reporting, and cleanup. A caller cannot recover it. |
 
 Each accepted Start creates one service value and calls Run once after successful Init.
 Borrow returns that same value, including after it stops.
@@ -172,7 +191,7 @@ The report argument to NewRoot has type `func(value any, stack []byte)`:
 | --- | --- |
 | Report payload | Each recovered Run panic or Goexit supplies one `*Failure` and its original stack. |
 | Failure selection | Record the first terminal failure before calling the reporter. |
-| Child cleanup blocks | Reporting does not wait for child cleanup. |
+| An accepted Init or child cleanup blocks | Reporting does not wait for it. The terminal panic does. |
 | Several failures | Reports can overlap. Nested groups use the same callback. |
 | Callback calls Stop | It can request Stop, but must not wait for completion. It cannot suppress the failure. |
 | Callback returns | Required before its service completes. Callback panics are not recovered. |

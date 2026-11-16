@@ -53,8 +53,10 @@ The program prints `alice 10`.
 - Name returns StringProjection; Unchecked supplies its shared native string to println.
 - Score returns a copied integer. FreezeString copies no bytes.
 
-Run generation again after a record changes. Keep the generated file with the
-source. Missing or stale output fails the checker. After the last Frozen declaration
+Run `go generate ./...` after Frozen records or interfaces change, and after an
+upgrade to the Immutago library or tools. Keep the generated file with the source.
+Go type checking runs first. Type errors in `zz_immutago.gen.go` can mean stale
+output; regenerate, then run the checker again. After the last Frozen declaration
 is removed, remove the directive and generated file together, or keep the directive
 and generate once more. See [required generation](../reference/rules.md#required-generation).
 

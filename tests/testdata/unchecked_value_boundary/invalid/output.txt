@@ -8,7 +8,7 @@ counter.go:9:57: unsupported immutable operation: immutable method receivers mus
   fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 invalid.go:25:5: Copied record: Model: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Table] is not a Copied value
   type: invalid.Copied
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 invalid.go:38:16: service method Named must return a read result or error: named array must be wrapped in a struct with an immutable marker
   result type: invalid.Named
   fix: use an unnamed array type; to keep a named type, put the unnamed array in a Frozen, Local, or Copied record

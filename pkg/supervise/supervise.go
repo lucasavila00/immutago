@@ -45,8 +45,10 @@ type Service[A any] struct {
 func (p *Service[A]) Args() A { return p.args }
 
 // Init supplies empty setup when the service does not declare Init.
-// A declared Init must release application resources if it fails. The runtime
-// stops children created by that setup.
+// A declared Init must return if a dependency stops answering. Bound blocking
+// operations with an application timeout or an independently cancelled context.
+// Init must release application resources if it fails. The runtime stops children
+// created by that setup.
 func (*Service[A]) Init() error { return nil }
 
 // UncheckedChildren returns the child group owned by this service.
@@ -293,7 +295,7 @@ func bindService[A any, P interface{ bind(A, *Group) }](value P, args A, parent 
 // accepted Init calls, then stops children in reverse registration order and
 // removes a nested group from its parent. Init must return without waiting for
 // shutdown of its owning group or an ancestor, or cancellation that needs it.
-// It does not wait for ordinary direct method calls. A service can request its
+// Stop does not wait for ordinary direct method calls. A service can request its
 // group's stop, but must not wait for that group from its own Run.
 func (s *Group) Stop() <-chan struct{} {
 	checkGroup(s)

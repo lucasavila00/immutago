@@ -6,7 +6,8 @@ import (
 )
 
 // Failure describes one service Run panic or runtime.Goexit call.
-// The root panics with the first recorded *Failure after reporting and cleanup.
+// The root panics with the first recorded *Failure after accepted Init calls,
+// reporting, and cleanup.
 // Value is the original panic value, or an error with the text
 // "supervise: service called runtime.Goexit" for Goexit.
 // Stack is captured in that service's goroutine. Groups pass the same failure

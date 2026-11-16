@@ -14,8 +14,8 @@ Use local runs for focused debugging. Push the branch and use
 
 | Command | Purpose |
 | --- | --- |
-| `make build` | Build `bin/immutago`. |
-| `go generate ./path/to/package` | Update typed projections and required output after Frozen records change. |
+| `make build` | Build `bin/immutago` and `bin/immutago-gen`. |
+| `go generate ./path/to/package` | Update required output after Frozen records or interfaces change, or after an upgrade to the Immutago library or tools. |
 | `go test ./internal/freeze -run TestFreezeOwnership -count=1` | Debug builder ownership. |
 | `go test ./tests -run '^TestCLI/documentation$' -count=1` | Check guide fixtures through the CLI. |
 | `make docs` | Generate package references from Go comments. |

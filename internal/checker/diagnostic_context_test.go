@@ -37,8 +37,8 @@ func checkMarkerPayload(t *testing.T, name string, payload types.Type) {
 			"embed im.FrozenInterface in a named interface; use that interface as the payload",
 			"use bool, numbers, unnamed arrays, or Copied records; " +
 				"for Local fields or results, use matching projections; " +
-				"if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local " +
-				"and use read-result fields such as im.StringProjection",
+				"if a Copied record needs text, opaque handles, or Local fields, " +
+				"replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection",
 			"embed im.FrozenInterface in a named interface; use its generated projection as the read result",
 		}
 	}
