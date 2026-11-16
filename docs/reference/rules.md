@@ -36,8 +36,9 @@ Service references and Borrow results use ordinary Go rules.
 
 ### Required generation
 
-Declare Frozen records and Frozen interfaces as named types at package scope in
-non-test Go files. Every package with these declarations needs one exact directive:
+Declare Frozen records other than opaque handles, and Frozen interfaces, as named
+types at package scope in non-test Go files. Every package with these declarations
+needs one exact directive:
 
 ```go
 //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
@@ -45,13 +46,13 @@ non-test Go files. Every package with these declarations needs one exact directi
 
 | Package setup — exhaustive | Requirement |
 | --- | --- |
-| Frozen record or interface declaration | Named package-scope type in a `.go` file that does not end in `_test.go`. |
+| Frozen record other than an opaque handle, or Frozen interface declaration | Named package-scope type in a `.go` file that does not end in `_test.go`. |
 | Directive | Use exactly one copy of the command above, at column 1 in a non-test package source file. |
 | Output | Keep `zz_immutago.gen.go` from the current declarations and build configuration. |
-| Frozen records | Generate typed field projections, Projection constructors, and Cells. |
+| Frozen records other than opaque handles | Generate typed field projections, Projection constructors, and Cells. |
 | Frozen interfaces | Generate local method projections and Projection constructors. |
 
-Run `go generate ./...` after a record or interface changes. If no Frozen declarations
+Run `go generate ./...` after a record or interface changes. If no declarations that require generation
 remain, either keep the directive and generate once more to write an empty package
 file, or remove both the directive and `zz_immutago.gen.go`. You can remove the
 directive after generation writes the empty file. If the directive is already gone,
@@ -66,7 +67,7 @@ configuration for generation, the checker, and the build.
 | --- | --- |
 | Same generated declarations, field types, array lengths, and interface methods | Keep one output file if all configurations generate the same bytes. Constrained files can use its projections and Cells. |
 | Different generated output | Regenerate before each configuration's check and build. Use separate checkouts or build directories for concurrent configurations. |
-| A configuration excludes all Frozen declarations | Keep the directive in an unconstrained file, or use the direct generator command above to replace stale output with an empty package file. |
+| A configuration excludes all declarations that require generation | Keep the directive in an unconstrained file, or use the direct generator command above to replace stale output with an empty package file. |
 | Imported Frozen types | Generate their owning packages for the same configuration. `go generate ./...` does not generate dependencies outside the selected packages. |
 
 The checker rejects a missing directive, missing output, or stale output before
@@ -74,10 +75,11 @@ source checks. Only verified generated code can form interior Frozen-record addr
 Projection.Unsafe explicitly returns a Frozen payload for shared use. All normal
 type, write, capture, generic, receiver, and transport checks still apply.
 Opaque handles, Local records, and Copied records need no generation.
+Named opaque handles can be declared locally or in test files.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
-| A Frozen record with no generation directive | Add the exact directive and run generation. |
+| A Frozen record other than an opaque handle with no generation directive | Add the exact directive and run generation. |
 | A Frozen type inside a function or `_test.go` file | Move its declaration to a non-test Go file at package scope. |
 | An anonymous Frozen record, including a field type | Declare a named package-scope record and use that type. |
 | An alternate generation command in the directive | Use the canonical command above. |

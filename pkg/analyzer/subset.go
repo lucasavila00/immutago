@@ -31,7 +31,7 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checke
 	}
 }
 
-// newSubsetChecks records parents once for service references and immutable source forms.
+// newSubsetChecks records parents once for immutable source forms.
 func newSubsetChecks(pass *analysis.Pass, proofs *checker.Prover) *subsetChecks {
 	c := &subsetChecks{pass: pass, proofs: proofs, parents: make(map[ast.Node]ast.Node),
 		exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool),

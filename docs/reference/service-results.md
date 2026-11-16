@@ -27,13 +27,13 @@ General im checks still reject boxing protected storage in an error.
 | Copied scalar or unnamed array | `bool`, `int`, `[2]int` |
 | Copied record or unnamed array of Copied records | `Score` with `im.Copied`, `[2]Score` |
 | Opaque handle or unnamed array of handles | `im.UncheckedValue[Model]`, `[2]im.UncheckedValue[Model]` |
-| Frozen handle wrapper or unnamed array of wrappers | A Frozen record with one UncheckedValue field; `supervise.Ref[Worker]` uses this shape. |
+| Frozen handle wrapper, pointer to a wrapper, or unnamed array of these | A Frozen record with one UncheckedValue field; `supervise.Ref[Worker]` uses this shape. |
 | Local projection | Generated `SettingsProjection`, `im.StringProjection`, `im.MapProjection[string, int]` |
 | Local record or unnamed array of read results | `Usage` with `im.Local` and numeric fields, `[2]im.StringProjection` |
 
 There is no separate field rule for services. Cell[T] and Projection[T] require the
-same Frozen T. The shared read-result rule checks Copied values, Local values, unchecked handles,
-and unnamed arrays recursively. Other Frozen records are not read results, even when all fields are
+same Frozen T. The shared read-result rule checks Copied values, Local values, opaque handles,
+pointers to Frozen handle wrappers, and unnamed arrays recursively. Other Frozen records are not read results, even when all fields are
 numbers. Use [im.Copied](copied.md) for an independent value record, or im.Local
 for a record that includes projections. Neither marker requires generation.
 

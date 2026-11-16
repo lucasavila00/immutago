@@ -74,6 +74,12 @@ func (p *proof) readValue(result *obligation, t types.Type) {
 		return
 	}
 	switch value := t.Underlying().(type) {
+	case *types.Pointer:
+		if IsHandle(value.Elem()) {
+			p.dependCategory(result, t, "", frozenCategory)
+			return
+		}
+
 	case *types.Basic:
 		if value.Info()&types.IsString != 0 {
 			rejectCopied(result, t)

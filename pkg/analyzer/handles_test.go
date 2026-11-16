@@ -12,9 +12,14 @@ func (h Handle) Pointer() *state { return im.Unwrap(h.payload) }
 // TestOpaqueHandles checks ordinary storage and immutable wrapper fields.
 func TestOpaqueHandles(t *testing.T) {
 	for _, source := range []string{
-		`type Holder struct{ H Handle }; var stored Handle; func use(h Handle) *state { stored=h; h.Pointer().N++; return h.Pointer() }`,
+		`type Holder struct{ H Handle }; var stored Handle
+        func use(h Handle) *state { stored=h; h.Pointer().N++; return h.Pointer() }`,
 		`type HandleReply struct { im.Local; H Handle }; func(c *Counter) Handle() Handle {return Make()}`,
 		`type Wrapper struct{im.Frozen; H Handle};func use(w Wrapper) Handle{return w.H}`,
+		`type Wrapper struct{im.Frozen; H *Handle}
+         func use(p im.Projection[*Handle]) *Handle{return im.Value(p)}
+         func(c *Counter) Handle() *Handle{return new(Make())}`,
+
 		`func use(h Handle){ var boxed any=h; _=boxed; f:=func()*state{return h.Pointer()};go f() }`,
 		`type data[T any] struct{Value T}; type Generic[T any] struct{im.Frozen; payload im.UncheckedValue[data[T]]}
     func (h Generic[T]) Pointer()*data[T]{return im.Unwrap(h.payload)}

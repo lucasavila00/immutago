@@ -122,7 +122,7 @@ IsRuntimeType identifies a service runtime type by package identity and name, no
 func IsUncheckedValue(t types.Type) bool
 ```
 
-IsUncheckedValue reports whether t is the library's unchecked immutable value wrapper.
+IsUncheckedValue reports whether t is the library's opaque pointer handle.
 
 ## func Local
 
@@ -265,7 +265,7 @@ CopiedFailure returns the failed type rule and its repair from the same proof.
 func (p *Prover) CopiedReason(t types.Type) string
 ```
 
-CopiedReason proves bool, numbers, Copied records, unnamed arrays, or opaque service references.
+CopiedReason proves bool, numbers, Copied records, or unnamed arrays.
 
 ### func \(\*Prover\) Failure
 

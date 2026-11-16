@@ -73,7 +73,9 @@ func categoryCases(t *testing.T) []categoryCase {
 		return types.NewNamed(types.NewTypeName(token.NoPos, pkg, "UncheckedValue", nil),
 			types.NewStruct([]*types.Var{field(types.NewPointer(payload))}, nil), nil)
 	}
-	cases := []categoryCase{
+	method := types.NewFunc(token.NoPos, nil, "Read", types.NewSignatureType(nil, nil, nil, nil,
+		types.NewTuple(types.NewParam(token.NoPos, nil, "", reply)), false))
+	return []categoryCase{
 		{types.Typ[types.Bool], [3]bool{true, true, true}}, {types.Typ[types.Int], [3]bool{true, true, true}},
 		{types.Typ[types.String], [3]bool{true, false, false}}, {frozenText, [3]bool{true, false, false}},
 		{score, [3]bool{true, true, true}}, {settings, [3]bool{true, false, false}},
@@ -88,16 +90,6 @@ func categoryCases(t *testing.T) []categoryCase {
 		{sliceType(t, slice, reply), [3]bool{}}, {sliceType(t, slice, score), [3]bool{true, false, false}},
 		{frozen, [3]bool{}}, {local, [3]bool{}}, {copied, [3]bool{}},
 		{markedType("Mixed", copied, types.NewField(token.NoPos, nil, "Local", local, true)), [3]bool{}},
-	}
-	return append(cases, categoryReferenceCases(t, reply)...)
-}
-
-// categoryReferenceCases covers a Local method contract.
-func categoryReferenceCases(t *testing.T, reply types.Type) []categoryCase {
-	t.Helper()
-	method := types.NewFunc(token.NoPos, nil, "Read", types.NewSignatureType(nil, nil, nil, nil,
-		types.NewTuple(types.NewParam(token.NoPos, nil, "", reply)), false))
-	return []categoryCase{
 		{frozenContract("Reader", method), [3]bool{true, false, false}},
 	}
 }

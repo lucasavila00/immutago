@@ -53,7 +53,6 @@ run the standard vet checks.
 | `type Worker struct { *supervise.Service[Args] }` | Embed `supervise.Service[Args]` as a value. |
 | `type Pointer = *supervise.Service[Args]`; `type Worker struct { Pointer }` | Alias `supervise.Service[Args]` without `*`. |
 | `type Worker struct { *Base }` where Base embeds Service | Embed `Base` as a value. |
-| `supervise.Ref[int]` | Use a concrete service struct as the type argument. |
 | `func (s *Worker) Name() string` | Return `im.StringProjection`; see [service results](service-results.md). |
 | Save a Local projection in start arguments | Supply Frozen data and create a projection when reading. |
 

@@ -164,7 +164,7 @@ do not copy parent values during field reads.
 CopyRecord is the explicit root copy for a record value, including a map result.
 Use ProjectString for native strings and Projection methods for frozen strings,
 slices, and maps. Keep generic projection adapters in the low-level reference.
-Normal projection reads return Copied values, UncheckedValue handles, or further projections. StringProjection.Unsafe and
+Normal projection reads return Copied values, opaque handles, pointers to Frozen handle wrappers, or further projections. StringProjection.Unsafe and
 FrozenString.Unsafe explicitly return a shared native string; trust the caller
 and add no string provenance or lifetime analysis. Native collection builders keep
 exclusive-use and consume-on-Freeze checks. Freeze copies no backing storage;
@@ -179,8 +179,8 @@ Do not add runtime-specific handle proofs or another trust annotation.
 
 Every package with user-declared Frozen records other than opaque handles must have this directive:
 `//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen`.
-Declare Frozen records as named package-scope types in non-test Go files.
-Reject function-local, anonymous, and test-only Frozen declarations.
+Declare Frozen records other than opaque handles as named package-scope types in non-test Go files.
+Reject anonymous Frozen declarations. Named opaque handles can be declared locally or in test files; other Frozen records cannot.
 Keep the exact current `zz_immutago.gen.go` output. Frozen records get typed
 projections and Cells. Opaque handles, Local records, and Copied records need no generation. Keep the
 generated-only address operation above separate from the normal checks; do not skip

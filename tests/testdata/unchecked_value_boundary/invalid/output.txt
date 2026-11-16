@@ -1,3 +1,11 @@
+counter.go:12:69: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: value.Pointer
+  type: func() *api.Counter
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
+counter.go:9:57: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: value.Pointer
+  type: func() *api.Counter
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 invalid.go:25:5: Copied record: Model: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Table] is not a Copied value
   type: invalid.Copied
   fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection

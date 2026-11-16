@@ -95,4 +95,4 @@ func (c *Counter) Visit(f func(*Counter)) { f(c) }
 
 This method passes result checks; its callback can retain `c`. Review locks,
 state changes, and input use in service code. The
-[service reference](../reference/services.md) defines the complete public forms.
+[service reference](../reference/service-references.md) defines the complete public forms.

@@ -91,7 +91,21 @@ type Data struct{im.Frozen; N int};func(*Worker) Run(context.Context){};func rea
 func(*Server) OnFailure(error){};var _ interface{OnFailure(error)}=(*Server)(nil)`},
 		{"named pointer conversion", `type Server struct{cache Handle};type Pointer *Server
 func use(p *Server){_=Pointer(p);_=(*Server)(Pointer(p))}`},
-		{"implementation", `func(c *Counter) Add(){self:=c;f:=func(){self.count++};f()}`}, {"recovered pointer", `func use(v any)*Counter{return v.(Handle).Borrow()}`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := checkSource(t, handleDefinitions+tc.source); got != "" {
+				t.Fatal(got)
+			}
+		})
+	}
+}
+
+// TestServiceHandleOrdinaryGo checks access to the trusted service pointer.
+func TestServiceHandleOrdinaryGo(t *testing.T) {
+	cases := []struct{ name, source string }{
+		{"implementation", `func(c *Counter) Add(){self:=c;f:=func(){self.count++};f()}`},
+		{"recovered pointer", `func use(v any)*Counter{return v.(Handle).Borrow()}`},
 		{"pointer binding", `func use(r Handle){p:=r.Borrow();_=p}`},
 		{"pointer return", `func use(r Handle)*Counter{return r.Borrow()}`},
 		{"field read", `func use(r Handle)int{return r.Borrow().count}`},
@@ -110,6 +124,7 @@ func use(p *Server){_=Pointer(p);_=(*Server)(Pointer(p))}`},
 		{"nonservice parameter", `func use(supervise.Ref[int]){}`},
 		{"pointer target", `var ref supervise.Ref[*Counter]`},
 		{"promoted accessor", `type Wrapper struct{Handle};func use(r Wrapper){r.Borrow().Count()}`},
+		{"pointer field", `type PointerReply struct{im.Local;Worker *Handle}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -130,7 +145,6 @@ func use(r supervise.Ref[struct{supervise.Service[supervise.NoArgs];Bad}])[]int{
 		{"unused anonymous result", `type Bad struct{};func(Bad) Read()[]int{return nil}
 var ref supervise.Ref[struct{supervise.Service[supervise.NoArgs];Bad}]`},
 		{"protected field write", `func use(r *Route,h Handle){r.Worker=h}`},
-		{"pointer field", `type Bad struct{im.Local;Worker *Handle}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

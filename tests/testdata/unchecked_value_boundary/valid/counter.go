@@ -28,3 +28,27 @@ func KeepCounter(value api.Counter) func() int64 {
 	holder.Counter = value
 	return func() int64 { return holder.Counter.Add(1) }
 }
+
+// CounterSnapshot reads stored handles without generating a projection for each handle.
+type CounterSnapshot struct {
+	im.Frozen
+	Counter api.Counter
+	Pointer *api.Counter
+}
+
+// ReadCounterSnapshot returns the same persistent handle from both generated getters.
+func ReadCounterSnapshot(snapshot CounterSnapshotProjection) (api.Counter, *api.Counter) {
+	return snapshot.Counter(), snapshot.Pointer()
+}
+
+// EmbeddedCounter permits promoted value methods.
+type EmbeddedCounter struct{ api.Counter }
+
+// EmbeddedCounterPointer permits promoted pointer methods on stored pointers.
+type EmbeddedCounterPointer struct{ *api.Counter }
+
+// ReadEmbeddedCounter copies the wrapper for a value receiver call.
+func ReadEmbeddedCounter(value EmbeddedCounter) int64 { return value.Add(1) }
+
+// KeepEmbeddedCounter uses an existing pointer without taking an embedded field address.
+func KeepEmbeddedCounter(value EmbeddedCounterPointer) *api.Counter { return value.Pointer() }

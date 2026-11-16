@@ -9,13 +9,14 @@ import (
 // TestHandleShape checks the public shape without using a runtime type name.
 func TestHandleShape(t *testing.T) {
 	marker, _ := testTypes()
+	valueField := types.NewField(token.NoPos, nil, "value", types.NewPointer(types.Typ[types.Int]), false)
 	unchecked := types.NewNamed(types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "UncheckedValue", nil),
-		types.NewStruct([]*types.Var{types.NewField(token.NoPos, nil, "value", types.NewPointer(types.Typ[types.Int]), false)}, nil), nil)
+		types.NewStruct([]*types.Var{valueField}, nil), nil)
 	payload := types.NewField(token.NoPos, nil, "payload", unchecked, false)
 	handle := markedType("Handle", marker, payload)
 	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), handle)
 	extra := markedType("Extra", marker, payload, types.NewField(token.NoPos, nil, "N", types.Typ[types.Int], false))
-	raw := markedType("Raw", marker, types.NewField(token.NoPos, nil, "value", types.NewPointer(types.Typ[types.Int]), false))
+	raw := markedType("Raw", marker, valueField)
 	for _, test := range []struct {
 		typ    types.Type
 		handle bool
@@ -26,13 +27,14 @@ func TestHandleShape(t *testing.T) {
 			t.Errorf("IsHandle(%s) = %v", test.typ, !test.handle)
 		}
 	}
-	for _, typ := range []types.Type{handle, alias, types.NewArray(handle, 2)} {
+	for _, typ := range []types.Type{handle, alias, types.NewPointer(handle), types.NewArray(handle, 2)} {
 		var proofs Prover
 		if proofs.FrozenReason(typ) != "" || proofs.ReadResultReason(typ) != "" || proofs.CopiedReason(typ) == "" {
 			t.Errorf("handle categories disagree for %s", typ)
 		}
 		var queries Classifier
-		if !queries.Contains(typ) || queries.Owns(typ) || queries.Transport(typ) || queries.Callable(typ) {
+		if queries.Contains(typ) != !FrozenPointer(typ) ||
+			queries.Owns(typ) || queries.Transport(typ) || queries.Callable(typ) {
 			t.Errorf("handle classification disagrees for %s", typ)
 		}
 	}

@@ -8,7 +8,7 @@ The target can be mutable; review its API and synchronization in that package.
 | Form | Meaning |
 | --- | --- |
 | `im.UncheckedValue[T]` | The raw opaque handle. Only the package that declares T can call Trust or Unwrap. |
-| A named struct with `im.Frozen` and one named `im.UncheckedValue[T]` field | A handle with its own API. Generic types and aliases work. No projection generation is needed. |
+| A named struct with `im.Frozen` and one named `im.UncheckedValue[T]` field | A handle with its own API. Generic types and aliases work. Named declarations can be at package scope, local, or in test files. No projection generation is needed. |
 
 ```go
 type counter struct { value atomic.Int64 }
@@ -42,10 +42,10 @@ the counter itself.
 | `im.Trust(pointer)` | T must be a named type declared in this package. Store its pointer. |
 | `im.Unwrap(value)` | Same package rule. Return the stored pointer. The package may expose it through its API. |
 | Change a handle variable or an ordinary holder's handle field | Replace the whole handle. |
-| Change a field inside the Frozen handle | Rejected. Construct another handle. |
+| Call methods, including promoted methods | Value receivers copy the handle. Pointer receivers need an existing Frozen pointer; calls must not take the address of a replaceable handle field. |
 | Use a pointer to the Frozen handle | Apply the normal [Frozen pointer rules](frozen-records.md#stored-pointers--exhaustive). |
 
-Handles are Frozen and read results. They are not Copied: copying one keeps an
+Handles and pointers to their Frozen wrappers are Frozen and read results. They are not Copied: copying one keeps an
 edge to its target. Their payload cannot contain Local data. An extra field makes
 a Frozen struct an ordinary Frozen record, with its normal generation and result rules.
 
@@ -69,3 +69,4 @@ used as function values in that package. UncheckedValue has no reader methods.
 | `im.Trust(&rows)` for a native slice variable | Declare a named payload type. |
 | `c.state = im.Trust(&counter{})` | Construct another Counter. |
 | Store a handle inside an im.Copied record | Use a Local result or an ordinary holder. |
+| `holder.Pointer()` when Holder embeds Counter by value and Pointer has a `*Counter` receiver | Embed `*Counter` and construct it with `new(counter)`, or use a value receiver. |

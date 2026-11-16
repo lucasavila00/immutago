@@ -14,3 +14,16 @@ func TestCounterCopiesShareTarget(t *testing.T) {
 		t.Fatal("counter copies did not share one target")
 	}
 }
+
+// TestCounterGettersKeepTarget checks generated value and pointer getters.
+func TestCounterGettersKeepTarget(t *testing.T) {
+	value := api.NewCounter()
+	pointer := new(value)
+	var cell CounterSnapshotCell
+	cell.Store(CounterSnapshot{Counter: value, Pointer: pointer})
+	projection := cell.Load()
+	copied, retained := ReadCounterSnapshot(projection)
+	if retained != pointer || copied.Add(1) != 1 || retained.Add(1) != 2 {
+		t.Fatal("generated getters changed the handle target")
+	}
+}

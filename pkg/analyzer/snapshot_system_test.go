@@ -173,7 +173,7 @@ func use(any){};func f(){` + call + `}`
 	}
 }
 
-// TestReferenceProjection applies the normal copied-value rules to generated reference getters.
+// TestReferenceProjection applies the normal read-result rules to generated reference getters.
 func TestReferenceProjection(t *testing.T) {
 	const record = `type Route struct{im.Frozen;Worker supervise.Ref[Counter];Count int}
 func f(value im.Projection[*Route]){`
