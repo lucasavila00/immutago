@@ -53,8 +53,14 @@ func BenchmarkServiceAttempt(b *testing.B) {
 		if err := value.Init(); err != nil {
 			panic(err)
 		}
+		parent.mu.Lock()
+		run, admitted := value.begin(ctx)
 		ref.value.Store(value)
-		value.Run(value.begin(ctx))
+		parent.mu.Unlock()
+		if !admitted {
+			b.Fatal("service attempt was not admitted")
+		}
+		value.Run(run)
 	}
 	b.ReportAllocs()
 	for b.Loop() {

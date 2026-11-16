@@ -32,7 +32,9 @@ func TestFirstRunAfterPolicyCancellation(t *testing.T) {
 		run := entry.run
 		entered, release := make(chan struct{}), make(chan struct{})
 		entry.run = func(ctx context.Context) { close(entered); <-release; run(ctx) }
+		parent.mu.Lock()
 		parent.activate()
+		parent.mu.Unlock()
 		<-entered
 		cleanup, slowRelease := make(chan struct{}), make(chan struct{})
 		_, err = Start[initializing](parent, &initHooks{
