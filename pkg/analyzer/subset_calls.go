@@ -153,7 +153,7 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 func (c *subsetChecks) matchLibraryMethod(call *ast.CallExpr, method string) checker.Failure {
 	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 	if !ok || !c.exactCollectionMethod(selector) {
-		return shapeFailure("method expressions require ordinary or persistent Frozen receivers and contracts")
+		return shapeFailure("collection and projection calls require a supported receiver")
 	}
 	receiver := c.pass.TypesInfo.TypeOf(selector.X)
 	if checker.IsProjection(receiver) && method == "Clone" {

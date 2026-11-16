@@ -219,14 +219,14 @@ snapshot_categories.go:90:6: unsupported immutable operation: example.com/consum
 snapshot_categories.go:90:9: immutable type argument: example.com/consumer/rejected.Numeric is not a Copied value
   type: rejected.Numeric
   fix: use projection.Unsafe() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
-snapshot_categories.go:91:6: unsupported immutable operation: native slices of immutable storage are unsupported
+snapshot_categories.go:91:6: unsupported immutable operation: example.com/consumer/rejected.Numeric is not a Copied value
   source: values.Clone()
   type: []rejected.Numeric
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-snapshot_categories.go:92:6: unsupported immutable operation: native maps of immutable storage are unsupported
+  fix: iterate the projection with All; read or clone each element into a new native collection
+snapshot_categories.go:92:6: unsupported immutable operation: example.com/consumer/rejected.Numeric is not a Copied value
   source: entries.Clone()
   type: map[rejected.Numeric]int
-  fix: use im.FrozenMap[K, V]; pass an owned local map or fresh literal to im.FreezeMap
+  fix: iterate the projection with All; read or clone each element into a new native collection
 snapshot_holders.go:10:15: Cell slots and holders require direct named fields
 snapshot_holders.go:11:12: Cell slots and holders require direct named fields
 snapshot_holders.go:11:26: containers of Cell slots or holders are unsupported

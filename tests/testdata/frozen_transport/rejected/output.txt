@@ -42,10 +42,10 @@ forms.go:30:6: unsupported immutable operation: ordinary interfaces require ordi
 forms.go:33:33: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: a, b = b, a
   fix: use one protected destination, or local names for all results of one direct typed call
-forms.go:35:33: unsupported immutable operation: containers of Local pointers are unsupported
+forms.go:35:33: unsupported immutable operation: Local pointers cannot enter aggregate storage
   source: [1]*View{value}
   type: [1]*rejected.View
-  fix: keep Local values in local bindings, or store im.Frozen pointers
+  fix: keep a Local value in a local binding, or store a Frozen pointer
 forms.go:35:42: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: value
   type: *rejected.View

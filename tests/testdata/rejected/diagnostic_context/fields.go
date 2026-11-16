@@ -51,3 +51,26 @@ type InterfaceMarkerData struct {
 	im.Local
 	Markers [0]im.FrozenInterface
 }
+
+type InterfaceMarker = im.FrozenInterface
+
+type InterfaceReply struct {
+	im.Local
+	Model InterfaceMarker
+}
+
+type InterfaceSummary struct {
+	im.Copied
+	Count  int
+	Models [0]InterfaceMarker
+}
+
+type NestedInterfaceReply struct {
+	im.Local
+	Replies [2]InterfaceReply
+}
+
+type NestedInterfaceSummary struct {
+	im.Copied
+	Summaries [2]InterfaceSummary
+}

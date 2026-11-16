@@ -122,6 +122,8 @@ var subsetFixes = map[string]string{
 		"function directly with a concrete immutable parameter",
 	"callbacks require ordinary or persistent Frozen parameters and results": "call a named, non-generic " +
 		"function directly with a concrete immutable parameter",
+	"collection and projection calls require a supported receiver": "call value.Method(...); for an embedded " +
+		"collection or projection, use holder.Field.Method(...); do not call through the type",
 	"method expressions require ordinary or persistent Frozen receivers and contracts": "call the receiver method " +
 		"directly (value.Method(...)); do not call it through the type",
 	"method values require ordinary or persistent Frozen receivers and contracts": "call the method directly " +

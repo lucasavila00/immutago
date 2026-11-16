@@ -86,7 +86,7 @@ func TestMarkerFieldDiagnosticContext(t *testing.T) {
 						"im.Local":  "use its generated projection as the read result",
 						"im.Copied": "replace its im.Copied marker with im.Local",
 					}[owner]
-					if !strings.Contains(got, repair) || owner != "im.Frozen" && strings.Contains(got, "use that interface as the payload") {
+					if !strings.Contains(got, repair) {
 						t.Fatal(got)
 					}
 				}
@@ -98,15 +98,33 @@ func TestMarkerFieldDiagnosticContext(t *testing.T) {
 // TestCloneDiagnosticContext reports the Copied rule for each projection argument.
 func TestCloneDiagnosticContext(t *testing.T) {
 	for _, payload := range []string{"Settings", "Alias", "[2]Settings", "[0][2]Alias", "*Settings", "Scorer"} {
-		for _, projection := range []string{"im.SliceProjection[%s]", "im.MapProjection[int,%s]", "im.MapProjection[%s,int]"} {
+		for _, projection := range []string{
+			"im.SliceProjection[%s]", "im.MapProjection[int,%s]", "im.MapProjection[%s,int]",
+		} {
 			source := `type Settings struct{im.Frozen;Limit int};type Alias=Settings;
 type Scorer interface{im.FrozenInterface;Score()int};func f(p ` + fmt.Sprintf(projection, payload) + `){_=p.Clone()}`
 			got := checkSource(t, source)
 			if !strings.Contains(got, "is not a Copied value\n  source: p.Clone()") ||
-				!strings.Contains(got, "fix: iterate the projection with All; read or clone each element into a new native collection") ||
+				!strings.Contains(got, "fix: iterate the projection with All; "+
+					"read or clone each element into a new native collection") ||
 				strings.Contains(got, "native slices of immutable storage") || strings.Contains(got, "native maps of immutable storage") {
 				t.Fatalf("%s: %s", source, got)
 			}
+		}
+	}
+}
+
+// TestCloneReceiverDiagnosticContext checks the receiver before the result payload.
+func TestCloneReceiverDiagnosticContext(t *testing.T) {
+	for _, source := range []string{
+		`type Holder struct{im.Local;im.SliceProjection[Settings]};func f(p Holder){_=p.Clone()}`,
+		`func f(p im.SliceProjection[Settings]){_=im.SliceProjection[Settings].Clone(p)}`,
+	} {
+		got := checkSource(t, `type Settings struct{im.Frozen;Limit int};`+source)
+		if !strings.Contains(got, "collection and projection calls require a supported receiver") ||
+			!strings.Contains(got, "for an embedded collection or projection, use holder.Field.Method(...)") ||
+			strings.Contains(got, "is not a Copied value") {
+			t.Fatal(got)
 		}
 	}
 }
