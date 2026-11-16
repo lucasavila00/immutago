@@ -54,7 +54,8 @@ needs one exact directive:
 | Frozen records other than opaque handles | Generate typed field projections, Projection constructors, and Cells. |
 | Frozen interfaces | Generate local method projections and Projection constructors. |
 
-Run `go generate ./...` after a record or interface changes. If no declarations that require generation
+Run `go generate ./...` after Frozen records or interfaces change, and after an
+upgrade to the Immutago library or tools. If no declarations that require generation
 remain, either keep the directive and generate once more to write an empty package
 file, or remove both the directive and `zz_immutago.gen.go`. You can remove the
 directive after generation writes the empty file. If the directive is already gone,
@@ -72,8 +73,11 @@ configuration for generation, the checker, and the build.
 | A configuration excludes all declarations that require generation | Keep the directive in an unconstrained file, or use the direct generator command above to replace stale output with an empty package file. |
 | Imported Frozen types | Generate their owning packages for the same configuration. `go generate ./...` does not generate dependencies outside the selected packages. |
 
-The checker rejects a missing directive, missing output, or stale output before
-source checks. Only verified generated code can form interior Frozen-record addresses.
+Go type checking runs first. If stale `zz_immutago.gen.go` does not compile, the
+command reports Go type errors instead of the stale-output diagnostic. Regenerate,
+then run the checker again. Once the package compiles, the checker rejects a missing
+directive, missing output, or stale output before its source checks.
+Only verified generated code can form interior Frozen-record addresses.
 Projection.Unchecked explicitly returns a Frozen payload for shared use. All normal
 type, write, capture, generic, receiver, and transport checks still apply.
 Opaque handles, Local records, and Copied records need no generation.
