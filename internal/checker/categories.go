@@ -44,9 +44,10 @@ func (p *proof) copiedValue(result *obligation, t types.Type) {
 // rejectCopied states the complete field rule and the required owner change for Local data.
 func rejectCopied(result *obligation, t types.Type) {
 	result.reason = fmt.Sprintf("%s is not a Copied value", types.TypeString(t, nil))
-	result.repair = "use bool, numbers, unnamed arrays, or Copied records for Copied fields; " +
-		"to keep text or Local data, change its owning record to im.Local and use read-result fields " +
-		"such as im.StringProjection"
+	result.repair = "use bool, numbers, unnamed arrays, or Copied records; " +
+		"for Local fields or results, use matching projections; " +
+		"if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local " +
+		"and use read-result fields such as im.StringProjection"
 }
 
 // copiedRecord proves each field through the shared Copied rule.

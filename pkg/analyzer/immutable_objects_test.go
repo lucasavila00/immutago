@@ -64,7 +64,7 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"Local return", `func f()*Local{return &Local{}}`, "returning Local pointers"},
 		{"Local nil result", `func f()*Local{return nil}`, "returning Local pointers"},
 		{"Local global", `var p *Local`, "package variables"},
-		{"Local stored field", `type Cell struct{im.Frozen;P *Local}`, "Frozen storage cannot contain Local values"},
+		{"Local stored field", `type Cell struct{im.Frozen;P *Local}`, "Cell: P: Local pointers cannot be stored"},
 		{"Local stored array", `func f(){p:=&Local{};_=[1]*Local{p}}`, "Local"},
 		{"Local stored slice", `func f(){p:=&Local{};values:=[]*Local{p};_=len(values)}`,
 			"containers of Local pointers"},

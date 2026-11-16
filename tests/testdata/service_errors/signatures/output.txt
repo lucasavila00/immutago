@@ -1,9 +1,9 @@
 signatures.go:19:14: service method Text must return a read result or error: string is not a Copied value
   result type: string
-  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
+  fix: for Local text, use im.ProjectString(text)
 signatures.go:20:14: service method Pointer must return a read result or error: *example.com/consumer/api.Reply is not a Copied value
   result type: *api.Reply
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 signatures.go:20:14: unsupported immutable operation: returning Local pointers is unsupported
   source: Pointer
   type: func() (*api.Reply, error)

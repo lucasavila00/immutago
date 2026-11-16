@@ -74,7 +74,7 @@ func checkLocalFailureQuery(t *testing.T, first, score, outer, settings types.Ty
 		failure := prover.CopiedFailure(owner)
 		if !strings.Contains(failure.Reason, "Label: ") ||
 			!strings.Contains(failure.Reason, "is not a Copied value") ||
-			!strings.Contains(failure.Repair, "change its owning record to im.Local") {
+			!strings.Contains(failure.Repair, "replace its im.Copied marker with im.Local") {
 			t.Errorf("%s after %s: %v", owner, first, failure)
 		}
 		if again := prover.CopiedFailure(owner); again != failure {

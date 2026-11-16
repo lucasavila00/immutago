@@ -1,9 +1,9 @@
 inferred_map.go:13:11: Frozen collection: type argument 2: []int is not provably immutable
   type: im.FrozenMap[string, []int]
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
 inferred_map.go:13:14: immutable type argument: []int is not provably immutable
   type: []int
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
 inferred_map.go:13:5: Frozen collection: type argument 2: []int is not provably immutable
   type: im.FrozenMap[string, []int]
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings

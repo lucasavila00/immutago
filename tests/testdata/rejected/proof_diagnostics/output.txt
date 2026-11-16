@@ -1,22 +1,22 @@
 diagnostics.go:24:5: Copied record: Text: string is not a Copied value
   type: proofdiagnostics.Label
-  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 diagnostics.go:31:2: immutable field Text requires a read result: string is not a Copied value
   owner: proofdiagnostics.Reply; field type: string
-  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
+  fix: for Local text, use im.ProjectString(text)
 diagnostics.go:41:18: service method Name must return a read result or error: string is not a Copied value
   result type: string
-  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
-diagnostics.go:46:12: Frozen collection: Frozen storage cannot contain Local values
+  fix: for Local text, use im.ProjectString(text)
+diagnostics.go:46:12: Frozen collection: type argument 1: Frozen storage cannot contain Local values
   type: im.FrozenSlice[im.StringProjection]
   fix: store Frozen data; keep its Projection or Local result in local bindings
 diagnostics.go:46:15: immutable type argument: Frozen storage cannot contain Local values
   type: im.StringProjection
   fix: store Frozen data; keep its Projection or Local result in local bindings
-diagnostics.go:46:2: Frozen collection: Frozen storage cannot contain Local values
+diagnostics.go:46:2: Frozen collection: type argument 1: Frozen storage cannot contain Local values
   type: im.FrozenSlice[im.StringProjection]
   fix: store Frozen data; keep its Projection or Local result in local bindings
-diagnostics.go:47:6: Frozen collection: Frozen storage cannot contain Local values
+diagnostics.go:47:6: Frozen collection: type argument 1: Frozen storage cannot contain Local values
   type: im.FrozenSlice[im.StringProjection]
   fix: store Frozen data; keep its Projection or Local result in local bindings
 diagnostics.go:51:5: native builder points requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
@@ -48,16 +48,16 @@ diagnostics.go:76:23: immutable type argument: stored pointers require a concret
 diagnostics.go:76:49: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
   fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
-diagnostics.go:83:12: Frozen collection: Frozen storage cannot contain Local values
+diagnostics.go:83:12: Frozen collection: type argument 2: Frozen storage cannot contain Local values
   type: im.FrozenMap[string, [1]proofdiagnostics.Name]
   fix: store Frozen data; keep its Projection or Local result in local bindings
 diagnostics.go:83:15: immutable type argument: Frozen storage cannot contain Local values
   type: [1]proofdiagnostics.Name
   fix: store Frozen data; keep its Projection or Local result in local bindings
-diagnostics.go:83:2: Frozen collection: Frozen storage cannot contain Local values
+diagnostics.go:83:2: Frozen collection: type argument 2: Frozen storage cannot contain Local values
   type: im.FrozenMap[string, [1]proofdiagnostics.Name]
   fix: store Frozen data; keep its Projection or Local result in local bindings
-diagnostics.go:84:6: Frozen collection: Frozen storage cannot contain Local values
+diagnostics.go:84:6: Frozen collection: type argument 2: Frozen storage cannot contain Local values
   type: im.FrozenMap[string, [1]proofdiagnostics.Name]
   fix: store Frozen data; keep its Projection or Local result in local bindings
 repairs.go:10:16: immutable type argument: stored pointers require a concrete Frozen record target
@@ -146,11 +146,11 @@ repairs.go:62:9: immutable type argument: immutable markers are annotations, not
 repairs.go:67:59: unsupported immutable operation: string is not a Copied value
   source: value.Clone()
   type: []string
-  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
+  fix: iterate the projection with All; read or clone each element into a new native collection
 repairs.go:68:59: unsupported immutable operation: string is not a Copied value
   source: value.Clone()
   type: []proofdiagnostics.Text
-  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
+  fix: iterate the projection with All; read or clone each element into a new native collection
 repairs.go:8:16: immutable type argument: interface{} is not provably immutable
   type: any
   fix: embed im.FrozenInterface in a named interface, or use a concrete Frozen type

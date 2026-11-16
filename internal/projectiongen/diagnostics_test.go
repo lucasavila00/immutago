@@ -14,6 +14,8 @@ func TestDeclarationErrors(t *testing.T) {
 		line                 int
 	}{
 		{"slice", "type Table struct { im.Frozen; Rows []int }", "Table: Rows: []int is not provably immutable", 3},
+		{"local_field", "type Bad struct { im.Frozen; Title im.StringProjection }",
+			"Bad: Title: Frozen storage cannot contain Local values", 3},
 		{"defined_pointer", "type Selected *Settings\ntype Bad struct { im.Frozen; S Selected }",
 			"Bad: S: defined pointer types are unsupported in Frozen data; use a pointer alias", 4},
 		{"mixed", "type Mixed struct { im.Frozen; im.Local; N int }",
