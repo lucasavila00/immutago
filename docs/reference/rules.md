@@ -119,8 +119,8 @@ The checker checks a package in any of these cases, including its test files:
 | Imports a package that failed its checks, directly or through another package | Import a package with an invalid immutable field. |
 
 - Aliases, type arguments, and generic constraints also count.
-- A package that uses only supervise receives service result and reference checks.
-  Importing or using im also selects the immutable-source checks.
+- A package that uses only supervise receives service type and result checks.
+  Using im types, including the Frozen fields of Ref, also selects the im source checks.
 - The CLI and `go vet` use the same rules.
 - Other packages are trusted to obey Go contracts, including immutable strings.
 - The `im`, `supervise`, and standard-library implementations are trusted.
@@ -137,14 +137,14 @@ The checker checks a package in any of these cases, including its test files:
 | Rejected examples — non-exhaustive | Use instead |
 | --- | --- |
 | Cgo in a package that imports or uses im | Ordinary typed Go code. Cgo produces one error at the source package line. |
-| A function without a body whose signature contains an im type other than Copied | Supply a Go body to check its protected operations. |
+| A function without a body whose signature contains an im type other than Copied or an opaque handle | Supply a Go body to check its protected operations. |
 
 An imported package's error includes one cause and a command to see its other errors.
 
 Functions without a body use ordinary Go rules when their compiler-resolved
 receiver, parameters, results, and generic constraints contain no im type other
-than Copied. Copied records and their ordinary holders can use functions without
-a Go body. For example, `func cpuID() uint64` and
+than Copied or an opaque handle. Their ordinary holders can also use functions
+without a Go body. For example, `func cpuID() uint64` and
 `func checksum(data []byte) uint64` can use assembly implementations in a checked
 package. A declaration such as `func read(value *Config) int`, where Config embeds
 im.Frozen, needs a Go body.

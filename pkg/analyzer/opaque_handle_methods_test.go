@@ -52,7 +52,8 @@ type GenericPointerHolder struct { *Generic[int] }
 		`func use() *Handle { h := Holder{Handle: Make()}; kept := h.Self(); h.Handle = Make(); return kept }`,
 	} {
 		t.Run(source, func(t *testing.T) {
-			if got := checkSource(t, definitions+source); !strings.Contains(got, "receivers must match their declared type exactly") {
+			got := checkSource(t, definitions+source)
+			if !strings.Contains(got, "receivers must match their declared type exactly") {
 				t.Fatalf("implicit Frozen address accepted: %s", got)
 			}
 		})
