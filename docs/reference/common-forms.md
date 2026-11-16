@@ -225,11 +225,20 @@ forms on this page.
 | Pointer receiver on a marked struct | `func (p *LocalPoint) ReadX() int { return p.X }` |
 | Direct call on a value or pointer of the declared receiver type | `point.XValue()`, `p.ReadX()`, `(*p).XValue()` |
 | Explicit field or element as receiver | `group.FrozenPoint.XValue()`, `points[i].XValue()` |
+| Exact value receiver on a Copied field or array element | `snapshot.Count.Read()`, `snapshot.Counts[i].Read()`, `settings.Timeout.Seconds()` with a time.Duration field. |
+| Method value or expression that copies a Copied field, with ordinary or persistent inputs and results | `read := reply.Count.Read`, `Count.Read(reply.Count)`; Count is a defined integer type. |
 | Direct fixed supervise method on a protected field or element | `route.Worker.IsZero()`, `route.Workers[i].IsZero()` for Ref fields and elements; the [service-reference rules](service-references.md) apply. |
 | Constructed value, new pointer, or direct call result as receiver | `FrozenPoint{X: 3}.XValue()`, `(&FrozenPoint{X: 3}).ReadX()`, `makePoint().XValue()` |
 | Direct method on an ordinary concrete receiver with protected inputs or results | `reader.Read(p)` with `func (r *Reader) Read(p *LocalPoint) int`; `r` can have an ordinary mutable type. |
 | Direct call through a proved Frozen interface | `scorer.Score(features)`; use the [complete interface rules](frozen-interfaces.md). |
 | Alias or parentheses in these forms | `type Position = FrozenPoint`, `(p).ReadX()` |
+
+The Copied receiver rule includes defined boolean and numeric types, their aliases,
+and Copied records. The method can come from another package. A value receiver or
+bound method copies the field; it does not retain the Frozen or Local owner.
+The field read still follows the owner's statement rules. For example,
+`go reply.Count.Read()` is rejected when reply is Local; copy Count to an ordinary
+local first. A closure that reads `reply.Count` retains reply and is rejected.
 
 | Method receiver | Body rules |
 | --- | --- |
@@ -245,7 +254,8 @@ forms on this page.
 | `point.ReadX()` adds an implicit address | Construct `p := &FrozenPoint{X: 3}`, then call `p.ReadX()`. |
 | `p.XValue()` adds an implicit dereference for a Local pointer | `(*p).XValue()` |
 | `type PointGroup struct { im.Frozen; FrozenPoint }` embeds data | Give the field a name, then call `group.FrozenPoint.XValue()`. |
-| `p.Counter.Inc()` calls a method on a protected scalar field | Copy the scalar first: `count := p.Counter; count.Inc()`. |
+| `p.Counter.Inc()` with `func (c *Counter) Inc()` takes the address of a protected field | Copy the scalar first: `count := p.Counter; count.Inc()`. |
+| `p.Text.Read()` with a defined string type as receiver | Copy the string first: `text := p.Text; text.Read()`. Native strings are not Copied. |
 | `read := local.ReadX` or `(*LocalPoint).ReadX(local)` | `local.ReadX()` |
 | `go local.ReadX()` or `defer local.ReadX()` | `local.ReadX()` |
 

@@ -93,9 +93,7 @@ func f(o Outer){_=o.Read()}`, "Frozen data fields must be named"},
 		{"promoted scalar", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Frozen;Count};
 func f(p *Outer){p.Inc()}`, "Frozen data fields must be named"},
 		{"scalar field pointer", `type Count int;func(c *Count)Inc(){*c++};type Outer struct{im.Frozen;Count Count};
-func f(p *Outer){p.Count.Inc()}`, "concrete non-generic marked receiver"},
-		{"scalar field value", `type Count int;func(c Count)Read()int{return int(c)};
-type Outer struct{im.Frozen;Count Count};func f(p *Outer){_=p.Count.Read()}`, "concrete non-generic marked receiver"},
+func f(p *Outer){p.Count.Inc()}`, "receivers must match"},
 		{"bound value", `func f(v Value){callback:=v.Read;_=callback}`, ""},
 		{"bound pointer", `func f(p *Local){callback:=(p.ReadPointer);_=callback}`, "method values require"},
 		{"returned bound method", `func f(p *Local)func()int{return p.ReadPointer}`, "method values require"},

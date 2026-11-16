@@ -79,3 +79,14 @@ func frozenZeroForms(route FrozenRoute) func() bool {
 }
 
 func localBoundZero(route Route) func() bool { return route.Worker.IsZero }
+
+type Status int
+
+func (s Status) IsZero() bool { return s == 0 }
+
+type MarkedStatus struct {
+	im.Local
+	Status
+}
+
+func userZero(status MarkedStatus) bool { return status.Status.IsZero() }

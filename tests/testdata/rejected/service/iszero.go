@@ -37,15 +37,4 @@ func promotedZero(route EmbeddedZeroRoute) bool { return route.IsZero() }
 
 func protectedBorrow(route ZeroRoute) *Counter { return route.Worker.Borrow() }
 
-type Status int
-
-func (s Status) IsZero() bool { return s == 0 }
-
-type MarkedStatus struct {
-	im.Local
-	Status
-}
-
-func userZero(status MarkedStatus) bool { return status.Status.IsZero() }
-
 func addressedZero(route *ZeroRoute) bool { return (&route.Worker).IsZero() }
