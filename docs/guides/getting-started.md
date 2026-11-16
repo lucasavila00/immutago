@@ -69,8 +69,8 @@ immutago ./...
 
 - Errors make the command fail.
 - Run it for each platform and set of build tags you use.
-- Generate with the same build configuration first. Use separate checkouts if
-  configurations need different generated output.
+- Generate with the same build configuration first. Use separate checkouts for
+  concurrent configurations that need different generated output.
 - `go build` does not run the checker.
 
 Or use `go vet`:
