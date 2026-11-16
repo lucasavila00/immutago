@@ -139,15 +139,16 @@ protected storage keeps its owner's write and address rules, including implicit
 pointer-receiver calls. Copy it into ordinary storage to change it. Pointer fields
 remain outside the Copied proof.
 Frozen records are not Copied,
-even when their fields contain only numbers. Struct results require Copied, Local, an UncheckedValue handle,
-a Frozen handle wrapper, or a generated projection.
+even when their fields contain only numbers. Struct results require Copied, Local,
+an opaque handle, or a generated projection.
 Embed Frozen, Local, and Copied markers to declare record categories. The markers
 themselves do not satisfy Frozen, Copied, or ReadResult payload proofs.
 
 Frozen records embed only their marker; all data fields must be named.
-Frozen and Local fields are immutable from construction. Local values cannot
-enter persistent storage, including through nested records or arrays. Local
-pointers stay local or pass to direct typed calls; never store or return them.
+Frozen and Local fields are immutable from construction. Local variables, Local
+records, and Local builders can hold Local values; package variables, ordinary
+records, and closures cannot. This rule also applies through nested records and
+arrays. Local pointers stay local or pass to direct typed calls; never store or return them.
 Ordinary protected pointers originate from fresh storage or projection Unsafe. Fixed projection APIs
 and verified generated getters can select record addresses inside frozen storage.
 Do not add mutable construction, loan tracking, string provenance, or runtime

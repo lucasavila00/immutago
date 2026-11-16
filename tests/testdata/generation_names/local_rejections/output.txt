@@ -14,4 +14,4 @@ source.go:5:5: unsupported immutable operation: Local values and pointers cannot
 source.go:8:29: unsupported immutable operation: closures require ordinary or Frozen captures
   source: p
   type: accepted.RecordProjection
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter

@@ -1,13 +1,13 @@
 atomic.go:25:2: unmarked struct field Local contains protected storage
   owner: serviceatomic.MixedSlot; field type: serviceatomic.LocalSlot
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 atomic.go:29:2: immutable field Current requires a read result: sync/atomic.Pointer[example.com/consumer/serviceatomic.WorkerRef] is not a read result
   owner: serviceatomic.ProtectedSlot; field type: atomic.Pointer[serviceatomic.WorkerRef]
   fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 atomic.go:32:11: unmarked struct field _ contains protected storage
   owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 atomic.go:32:18: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: Pointer
@@ -15,14 +15,14 @@ atomic.go:32:18: unsupported immutable operation: user generic instantiations re
   fix: use a direct non-generic function with concrete parameter types
 atomic.go:32:5: unmarked struct field _ contains protected storage
   owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 atomic.go:32:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: local atomic.Pointer[LocalSlot]
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 atomic.go:33:11: unmarked struct field _ contains protected storage
   owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 atomic.go:33:18: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: Pointer
@@ -30,7 +30,7 @@ atomic.go:33:18: unsupported immutable operation: user generic instantiations re
   fix: use a direct non-generic function with concrete parameter types
 atomic.go:33:5: unmarked struct field _ contains protected storage
   owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 atomic.go:33:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: mixed atomic.Pointer[MixedSlot]

@@ -66,7 +66,7 @@ func (s *requestState) begin(cell *SettingsCell) {
 | Frozen pointer handle or ordinary carrier | All Go storage and transport forms are allowed. The examples below include pointer slots, methods, interfaces, generics, and channels. |
 | Selected or dereferenced Frozen object | Use the [common forms](common-forms.md). Reads and value copies are allowed; target writes and interior addresses are rejected. |
 | Native slice or map passed to Freeze | Use an exclusive [builder](frozen.md#build-before-freezing). Freeze consumes it. |
-| Exported service method result | Use the [service result signatures](service-results.md). A Frozen pointer is not a read result. |
+| Exported service method result | Use the [service result signatures](service-results.md). A Frozen pointer is a read result only when it points to a Frozen handle wrapper. |
 
 | Ordinary Go examples | Source |
 | --- | --- |

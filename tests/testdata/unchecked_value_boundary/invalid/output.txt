@@ -24,11 +24,11 @@ invalid.go:47:5: unsupported immutable operation: Local values and pointers cann
 invalid.go:51:38: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: valid.Serving
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 invalid.go:56:38: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: valid.ModelProjection
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 invalid.go:60:76: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Table] is not a Copied value
   source: value.Clone()
   type: []valid.Handle

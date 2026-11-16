@@ -5,7 +5,7 @@ constant_operands.go:12:33: unsupported immutable operation: Local pointers cann
 constant_operands.go:12:51: unsupported immutable operation: closures require ordinary or Frozen captures
   source: local
   type: *docrejected.ConstantLocal
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 constant_operands.go:16:7: unsupported immutable operation: protected operation is outside the supported statement forms
   source: constantLength = len([1]Point{})
   fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
@@ -40,7 +40,7 @@ reference_forms.go:22:2: unsupported immutable operation: writes to immutable ob
 reference_forms.go:32:34: unsupported immutable operation: closures require ordinary or Frozen captures
   source: point
   type: *docrejected.LocalPoint
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 reference_forms.go:48:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: points[0], found = makePair()
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

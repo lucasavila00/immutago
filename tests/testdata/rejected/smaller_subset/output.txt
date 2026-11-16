@@ -44,4 +44,4 @@ smaller_subset.go:21:69: unsupported immutable operation: immutable references r
 smaller_subset.go:32:29: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: smaller_subset.Local
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter

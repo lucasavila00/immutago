@@ -1,4 +1,4 @@
 wrapper.go:13:18: unmarked struct field Value contains protected storage
   owner: rejected.Bad; field type: rejected.Good
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store *rejected.Good; or make the containing struct a Frozen record with Frozen fields

@@ -19,7 +19,8 @@ type Loader struct {
 `Init` reads and validates the first catalog. An error prevents startup. `Run`
 uses a ticker to try later reloads and returns when its context ends. Expected
 file errors are logged; the last valid catalog stays available. A panic in Run
-stops the root, waits for cleanup, and terminates the process with the original failure.
+stops the root and waits for cleanup before it terminates the process. The
+[failure report](../reference/services.md#failure-reports) keeps the panic value and stack.
 
 The [command](../../examples/shipping/cmd/shipping/main.go) starts the loader
 under a root group and waits for shutdown when it returns:

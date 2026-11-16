@@ -62,11 +62,12 @@ See [Cells](../reference/cell.md) for empty values and allowed storage forms.
 
 ## Calculate a quote and keep its result
 
-The [HTTP handler](../../examples/shipping/http.go) selects once and passes the
+The [HTTP handler](../../examples/shipping/http.go) saves `worker := loader.Borrow()`
+when it is created. For each request, it selects one catalog and passes the
 projection to the calculation:
 
 ```go
-catalog := loader.Borrow().Catalog()
+catalog := worker.Catalog()
 response := Quote(catalog, request)
 ```
 

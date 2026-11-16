@@ -1,6 +1,6 @@
 channel_wrapper.go:13:18: unmarked struct field Value contains protected storage
   owner: rejected.Bad; field type: chan rejected.Good
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 channel_wrapper.go:13:24: unsupported immutable operation: channels of immutable storage are unsupported
   source: chan Good
