@@ -1,17 +1,17 @@
 signatures.go:15:14: service method Pair must return no value, one read result, error, or (read result, error)
 signatures.go:16:14: service method Reverse must return no value, one read result, error, or (read result, error)
 signatures.go:17:14: service method Three must return no value, one read result, error, or (read result, error)
-signatures.go:18:14: service method Errors must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+signatures.go:18:14: service method Errors must return a read result: error is not a Copied value
   result type: error
-signatures.go:19:14: service method Text must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+signatures.go:19:14: service method Text must return a read result: string is not a Copied value
   result type: string
-signatures.go:20:14: service method Pointer must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+signatures.go:20:14: service method Pointer must return a read result: *example.com/consumer/api.Reply is not a Copied value
   result type: *api.Reply
 signatures.go:20:14: unsupported immutable operation: returning Local pointers is unsupported
   source: Pointer
   type: func() (*api.Reply, error)
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
-signatures.go:21:14: service method Defined must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+signatures.go:21:14: service method Defined must return a read result: example.com/consumer/signatures.OtherError is not a Copied value
   result type: signatures.OtherError
-signatures.go:22:14: service method Interface must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+signatures.go:22:14: service method Interface must return a read result: interface{Error() string} is not a Copied value
   result type: interface{Error() string}

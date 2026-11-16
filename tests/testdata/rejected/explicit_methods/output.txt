@@ -62,23 +62,23 @@ explicit_methods.go:34:6: unsupported immutable operation: promoted immutable me
   source: value.Clone()
   type: int
   fix: name the embedded field explicitly and call a method allowed on that field; copy scalar fields to ordinary locals before calling their methods
-zz_immutago.gen.go:12:21: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:12:21: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 zz_immutago.gen.go:12:24: immutable type argument: Counter: Frozen data fields must be named
   type: *explicit_methods.Good
   fix: replace the pointer field or argument with an owned immutable value
-zz_immutago.gen.go:12:2: immutable field immutagoProjection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:12:2: immutable field immutagoProjection requires a read result: projection payload 1: Counter: Frozen data fields must be named
   owner: explicit_methods.GoodProjection; field type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 zz_immutago.gen.go:12:35: unsupported immutable operation: Counter: Frozen data fields must be named
   source: *Good
   type: *explicit_methods.Good
   fix: use the documented immutable value and reference forms
-zz_immutago.gen.go:16:24: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:16:24: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-zz_immutago.gen.go:16:30: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:16:30: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 zz_immutago.gen.go:16:33: immutable type argument: Counter: Frozen data fields must be named
@@ -88,10 +88,10 @@ zz_immutago.gen.go:16:44: unsupported immutable operation: Counter: Frozen data 
   source: *Good
   type: *explicit_methods.Good
   fix: use the documented immutable value and reference forms
-zz_immutago.gen.go:17:24: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:17:24: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-zz_immutago.gen.go:17:44: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:17:44: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 zz_immutago.gen.go:21:25: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
@@ -101,10 +101,10 @@ zz_immutago.gen.go:21:25: unsupported immutable operation: immutable methods req
 zz_immutago.gen.go:21:50: immutable type argument: Counter: Frozen data fields must be named
   type: explicit_methods.Good
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-zz_immutago.gen.go:21:56: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:21:56: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-zz_immutago.gen.go:21:58: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:21:58: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 zz_immutago.gen.go:25:25: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
@@ -115,24 +115,24 @@ zz_immutago.gen.go:25:34: unsupported immutable operation: Counter: Frozen data 
   source: *Good
   type: *explicit_methods.Good
   fix: use the documented immutable value and reference forms
-zz_immutago.gen.go:25:49: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:25:49: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 zz_immutago.gen.go:25:49: unsupported immutable operation: Counter: Frozen data fields must be named
   source: v.immutagoProjection.Unsafe()
   type: *explicit_methods.Good
   fix: use the documented immutable value and reference forms
-zz_immutago.gen.go:25:51: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:25:51: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 zz_immutago.gen.go:28:25: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
   source: Counter
   type: func() explicit_methods.Counter
   fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
-zz_immutago.gen.go:29:11: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:29:11: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-zz_immutago.gen.go:29:9: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:29:9: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 zz_immutago.gen.go:29:9: unsupported immutable operation: Counter: Frozen data fields must be named
@@ -142,6 +142,6 @@ zz_immutago.gen.go:29:9: unsupported immutable operation: Counter: Frozen data f
 zz_immutago.gen.go:33:32: immutable type argument: Counter: Frozen data fields must be named
   type: explicit_methods.Good
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-zz_immutago.gen.go:39:69: immutable collection: projection payload 1: Counter: Frozen data fields must be named
+zz_immutago.gen.go:39:69: local projection: projection payload 1: Counter: Frozen data fields must be named
   type: im.Projection[*explicit_methods.Good]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments

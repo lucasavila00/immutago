@@ -1,7 +1,7 @@
 uses.go:14:38: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: return LocalError{}
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-uses.go:18:2: immutable field Err: copied values require bool, numbers, Copied records, arrays, or service references
+uses.go:18:2: immutable field Err requires a read result: error is not a Copied value
   owner: uses.WithError; field type: error
   fix: copy scalar fields, or use a generated local projection
 uses.go:21:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables

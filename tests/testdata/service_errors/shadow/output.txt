@@ -1,2 +1,2 @@
-shadow.go:14:16: service method Restart must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+shadow.go:14:16: service method Restart must return a read result: example.com/consumer/shadow.error is not a Copied value
   result type: shadow.error

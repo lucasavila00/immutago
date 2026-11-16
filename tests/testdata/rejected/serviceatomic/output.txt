@@ -2,7 +2,7 @@ atomic.go:25:2: unmarked struct contains immutable field Local; embed an immutab
   owner: serviceatomic.MixedSlot; field type: serviceatomic.LocalSlot
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-atomic.go:29:2: immutable field Current: copied values require bool, numbers, Copied records, arrays, or service references
+atomic.go:29:2: immutable field Current requires a read result: sync/atomic.Pointer[example.com/consumer/serviceatomic.WorkerRef] is not a Copied value
   owner: serviceatomic.ProtectedSlot; field type: atomic.Pointer[serviceatomic.WorkerRef]
   fix: copy scalar fields, or use a generated local projection
 atomic.go:33:2: unmarked struct contains immutable field Values; embed an immutable marker
@@ -50,4 +50,4 @@ atomic.go:38:5: unmarked struct contains immutable field _; embed an immutable m
 atomic.go:41:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: pointer.Load().Borrow
   type: func() *serviceatomic.Worker
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md

@@ -28,25 +28,25 @@ diagnostics.go:63:25: unsupported immutable operation: protected storage require
   fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
 diagnostics.go:70:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: for Copied data, use im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
 diagnostics.go:71:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
-  fix: for Copied data, use im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
 diagnostics.go:72:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
-  fix: for Copied data, use im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
 diagnostics.go:76:14: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: for Copied data, use im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
 diagnostics.go:76:20: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: for Copied data, use im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
 diagnostics.go:76:23: immutable type argument: stored pointers require a concrete Frozen record target
   type: *proofdiagnostics.Score
   fix: replace the pointer field or argument with an owned immutable value
 diagnostics.go:76:49: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: for Copied data, use im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
 diagnostics.go:83:12: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenMap[string, [1]proofdiagnostics.Name]
   fix: store Frozen data; keep its Projection or Local result in local bindings

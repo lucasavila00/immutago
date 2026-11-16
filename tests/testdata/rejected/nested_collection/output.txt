@@ -1,15 +1,15 @@
 nested_collection.go:13:12: immutable type argument: type argument 2: []int is not provably immutable
   type: im.FrozenMap[string, []int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-nested_collection.go:13:24: immutable collection: type argument 2: []int is not provably immutable
+nested_collection.go:13:24: Frozen collection: type argument 2: []int is not provably immutable
   type: im.FrozenMap[string, []int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 nested_collection.go:13:27: immutable type argument: []int is not provably immutable
   type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable
-nested_collection.go:13:5: immutable collection: type argument 1: type argument 2: []int is not provably immutable
+nested_collection.go:13:5: Frozen collection: type argument 1: type argument 2: []int is not provably immutable
   type: im.FrozenSlice[im.FrozenMap[string, []int]]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-nested_collection.go:13:9: immutable collection: type argument 1: type argument 2: []int is not provably immutable
+nested_collection.go:13:9: Frozen collection: type argument 1: type argument 2: []int is not provably immutable
   type: im.FrozenSlice[im.FrozenMap[string, []int]]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments

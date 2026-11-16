@@ -2,7 +2,7 @@ generic_any.go:11:6: unsupported immutable operation: user generic declarations 
   source: Bad
   type: rejected.Bad[T any]
   fix: declare a concrete Frozen or Local type without type parameters
-generic_any.go:13:2: immutable field Value: type parameters are unsupported in immutable storage
+generic_any.go:13:2: immutable field Value requires a Frozen type: type parameters are unsupported in immutable storage
   owner: rejected.Bad[T any]; field type: T
   fix: use a concrete proved type for this immutable field or element
 generic_any.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

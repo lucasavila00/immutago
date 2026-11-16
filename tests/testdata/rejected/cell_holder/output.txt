@@ -82,4 +82,4 @@ holder.go:74:6: unsupported immutable operation: callbacks require ordinary or p
   fix: call a named, non-generic function directly with a concrete immutable parameter
 holder.go:75:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go h.View()
-  fix: call the reader directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer

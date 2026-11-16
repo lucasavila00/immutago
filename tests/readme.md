@@ -53,3 +53,8 @@ fixture needs its empty assembly file so Go can load it before analyzer checks.
 `TestServiceErrors` checks service error signatures, protected result/error
 bindings, ordinary saved errors, and rejected signatures and Local uses through
 the CLI and vet driver.
+
+`TestCLI/proof_diagnostics` checks the proof category, failure cause, and repair
+text for invalid fields, collections, projections, service results, builder
+placement, service references, and direct calls. Its accepted fixture checks the
+replacement forms. Both fixtures also run in the full CLI and vet checks.

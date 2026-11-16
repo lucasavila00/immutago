@@ -55,11 +55,13 @@ func TestProofDiagnosticCategories(t *testing.T) {
 		want   string
 	}{
 		{`type Label struct{im.Copied;Text string}`, "Copied record: Text: string is not a Copied value"},
-		{`type Reply struct{im.Local;Text string}`, "immutable field Text requires a read result: string is not a Copied value"},
+		{`type Reply struct{im.Local;Text string}`,
+			"immutable field Text requires a read result: string is not a Copied value"},
 		{`func f(value im.StringProjection){frozen:=im.FreezeSlice([]im.StringProjection{value});_=frozen}`,
 			"Frozen collection: Frozen storage cannot contain Local values"},
 		{`type Point struct{im.Frozen};var points []Point`, "native builder points requires a fresh local"},
-		{`func f(value im.Projection[*int]){_=value}`, "local projection: projection payload 1: stored pointers require a concrete Frozen record target"},
+		{`func f(value im.Projection[*int]){_=value}`,
+			"local projection: projection payload 1: stored pointers require a concrete Frozen record target"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.source, func(t *testing.T) {

@@ -3,44 +3,44 @@ copied_fields.go:100:6: struct must embed exactly one immutable marker; each emb
 copied_fields.go:101:5: Copied record: Frozen storage cannot contain Local values
   type: fields.BadLocalMarker
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:105:16: service method Bad must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:105:16: service method Bad must return a read result: *example.com/consumer/api.Point is not a Copied value
   result type: *api.Point
-copied_fields.go:106:16: service method Unmarked must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:106:16: service method Unmarked must return a read result: struct{N int} is not a Copied value
   result type: struct{N int}
-copied_fields.go:107:16: service method Marker must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:107:16: service method Marker must return a read result: github.com/lucasavila00/immutago/pkg/im.Copied is not a Copied value
   result type: im.Copied
 copied_fields.go:109:16: service method Pair must return no value, one read result, error, or (read result, error)
-copied_fields.go:13:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:13:5: Copied record: Value: string is not a Copied value
   type: fields.BadString
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:17:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:17:5: Copied record: Value: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   type: fields.BadFrozenString
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:21:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:21:5: Copied record: Value: *example.com/consumer/api.Point is not a Copied value
   type: fields.BadPointer
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:25:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:25:5: Copied record: Value: []int is not a Copied value
   type: fields.BadSlice
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:29:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:29:5: Copied record: Value: map[int]int is not a Copied value
   type: fields.BadMap
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:33:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:33:5: Copied record: Value: chan int is not a Copied value
   type: fields.BadChannel
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:37:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:37:5: Copied record: Value: func() is not a Copied value
   type: fields.BadFunction
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:41:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:41:5: Copied record: Value: interface{} is not a Copied value
   type: fields.BadInterface
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:45:5: Copied record: Value: array element: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:45:5: Copied record: Value: array element: string is not a Copied value
   type: fields.BadZeroArray
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:49:5: Copied record: Value: array element: array element: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:49:5: Copied record: Value: array element: array element: *example.com/consumer/api.Point is not a Copied value
   type: fields.BadNestedArray
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:53:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:53:5: Copied record: Value: struct{N int} is not a Copied value
   type: fields.BadRecord
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
 copied_fields.go:57:5: Copied record: Value: Copied records cannot contain service references
@@ -49,25 +49,25 @@ copied_fields.go:57:5: Copied record: Value: Copied records cannot contain servi
 copied_fields.go:61:5: Copied record: Value: Copied records cannot contain service references
   type: fields.BadReferenceArray
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:65:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:65:5: Copied record: Value: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a Copied value
   type: fields.BadCollection
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
 copied_fields.go:69:5: Copied record: Frozen storage cannot contain Local values
   type: fields.BadProjection
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:73:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:73:5: Copied record: Value: github.com/lucasavila00/immutago/pkg/im.Cell[int] is not a Copied value
   type: fields.BadCell
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:77:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:77:5: Copied record: Value: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Point] is not a Copied value
   type: fields.BadTrust
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:81:5: Copied record: Value: array element: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:81:5: Copied record: Value: array element: github.com/lucasavila00/immutago/pkg/im.Copied is not a Copied value
   type: fields.BadMarker
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:86:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:86:5: Copied record: Value: example.com/consumer/fields.Array is not a Copied value
   type: fields.BadNamedArray
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:90:5: Copied record: Value: copied values require bool, numbers, Copied records, arrays, or service references
+copied_fields.go:90:5: Copied record: Value: T is not a Copied value
   type: fields.BadGeneric[T any]
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
 copied_fields.go:93:29: immutable markers must be embedded by value

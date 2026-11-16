@@ -148,7 +148,7 @@ func subsetFix(rule string) string {
 func structuralFix(t types.Type, reason string) string {
 	switch {
 	case checker.IsProjection(t) && strings.Contains(reason, "concrete Frozen record target"):
-		return "for Copied data, use im.Value(projection); " +
+		return "for Copied T, use im.Projection[T] with im.Value(projection); " +
 			"use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads"
 	case strings.Contains(reason, "cannot contain Local"):
 		return "store Frozen data; keep its Projection or Local result in local bindings"
