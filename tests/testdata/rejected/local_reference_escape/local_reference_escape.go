@@ -46,6 +46,3 @@ func frozenValues() im.FrozenSlice[Local] {
 	frozen := im.FreezeSlice(builder)
 	return frozen
 }
-
-
-//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
