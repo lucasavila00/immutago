@@ -19,9 +19,10 @@ it or wait for direct method calls.
 
 | Stage | Execution owner | Action |
 | --- | --- | --- |
+| Start admission | Start caller, under the tree mutex | Reject closed admission before Init, or count one accepted Start. |
 | Setup | Start caller | Allocate T; bind arguments and parent group; call Init once. |
-| Init failure | Start caller | Stop staged children. Return a zero Ref and error, or propagate the panic. |
-| Publication | Start caller | Create Ref for initialized T; register a watcher with the group. |
+| Init failure | Start caller | Stop staged children before removing the accepted Start count. Return a zero Ref and error, propagate the panic, or continue Goexit. |
+| Publication | Start caller | Register the initialized value before removing the accepted Start count. Return Ref even if Stop has since closed admission. |
 | Run admission | Watcher, under the tree mutex | Check admission and activate staged child groups as one decision ordered against Stop. |
 | Background work | Watcher, outside the mutex | Call Run once after successful Init. |
 | Stopped or pending initialized service | Watcher | Wait for its entry's shutdown turn; stop children, then call Run with an already-cancelled context for cleanup. |
@@ -40,9 +41,10 @@ the watcher reports one `*Failure`, then stops and waits for its children.
 | Returns | Stop and wait for its children, then remove the service entry. |
 | Panics or calls `runtime.Goexit`, including during cleanup | Keep the root's first failure. Report this failure once. Complete ordered shutdown, then panic with the selected Failure. |
 
-Init precedes watcher registration, so group shutdown cannot wait for
-that setup. Successful setup always reaches Run. If a stopped group cannot
-register the service, Start waits for its cleanup watcher.
+Each group has a WaitGroup for accepted Start calls. Admission checks and Add
+use the same tree mutex as Stop, so no Add can follow the start of Wait.
+The deferred Done follows registration or failed-Init child cleanup. This keeps
+staged children owned through their parent's Init, before its watcher exists.
 
 ## Groups and shutdown order
 
@@ -56,33 +58,36 @@ Init: children pending ──> Run admission: activate ──> Run ends: stop an
 | Group state | Purpose |
 | --- | --- |
 | Shared tree mutex | Protect admission, child links, activation, service state, and Stop across all descendant groups. |
-| Doubly linked child list | Preserve start order; unlink a completed child without searching. |
+| Accepted Start count | Wait for Init and failed-Init child cleanup before stopping the group's registered entries. |
+| Doubly linked child list | Preserve registration order after Init; unlink a completed child without searching. |
 | Admission context | Close admission throughout the subtree immediately. Failure selection does not use this context. |
 | Separate entry contexts | Keep reverse shutdown order for admitted and pending services. Each service stops its children before it cancels its Run context. |
-| Root failure and its entry's completion channel | Keep the first failure and wait for that service, including an unregistered start. Reuse its existing completion channel. |
+| Root failure | Keep the first failure. Every Run belongs to the owned tree, so ordered shutdown waits for all reports and cleanup. |
 
 Shutdown follows this order:
 
 1. Close admission under the tree mutex. Start one shutdown worker.
-2. Select the last child under the mutex, then release the mutex.
+2. Wait for accepted Start calls. Select the last registered child under the mutex,
+   then release the mutex.
 3. Start a pending child's watcher if needed, cancel that entry, and wait.
    A service's children stop before its Run context is cancelled or its cleanup Run begins.
 4. The watcher removes its entry before it publishes completion. Repeat until the list is empty.
-5. Under the mutex, read the root failure. With no failure, close the completion channel.
-   With a failure, release the mutex, wait for its entry, and run the terminal action
+5. Under the mutex, unlink a nested group and close its completion channel, even
+   if the root has failed. For the root, read its first failure. With no failure,
+   close the channel. With a failure, release the mutex and run the terminal action
    before closing the channel.
 
-Only ordered shutdown cancels registered entries. A rejected, unregistered start
-is cancelled by the add path. Launch does not read admission or cancel an entry.
+Only ordered shutdown cancels registered entries. A rejected Start runs no user
+code. Launch does not read admission or cancel an entry.
 No user code, reporting, or cleanup waits run under the tree mutex. Run can enter
 its function after Stop if its admission decision came first. Root Stop and
 terminal failure use the same mutex. This keeps the final shutdown decision and
 failure recording in one order, including a failure during ordinary Stop.
 
-| Root state when the first failure is recorded | Terminal action owner |
-| --- | --- |
-| Shutdown is running or has not started | The shutdown worker waits for the selected entry, then calls the terminal action before closing the root's completion channel. |
-| Shutdown is complete | The failed watcher reports, completes its cleanup, and calls the terminal action before its entry finishes. A late Start cannot return first. |
+The Init barrier applies to each group before cancellation of its registered
+entries. Init must not wait for that shutdown or for cancellation that depends
+on it. It can stop its own child group to undo setup; the child group does not
+wait for its parent Init.
 
 ## Analyzer boundary
 

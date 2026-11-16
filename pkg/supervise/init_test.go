@@ -178,13 +178,8 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	if runs.Load() != 2 {
 		t.Fatal("staged children did not each run cleanup after failed Init")
 	}
-	retained := nested.children.count
-	late, lateErr := Start[initializing](nested, child)
-	if lateErr != context.Canceled || !late.IsZero() {
-		t.Fatalf("stopped child Start = %v, %v", late, lateErr)
-	}
-	if nested.children.count != retained {
-		t.Error("failed Init left a nested group that retains late children")
+	if nested.children.count != 0 {
+		t.Error("failed Init left children in its nested group")
 	}
 	<-nested.Stop()
 	<-root.Stop()

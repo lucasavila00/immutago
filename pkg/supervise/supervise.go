@@ -292,7 +292,7 @@ func bindService[A any, P interface{ bind(A, *Group) }](value P, args A, parent 
 // It returns the same completion channel on every call. Shutdown waits for
 // accepted Init calls, then stops children in reverse registration order and
 // removes a nested group from its parent. Init must return without waiting for
-// shutdown of its owning group or an ancestor.
+// shutdown of its owning group or an ancestor, or cancellation that needs it.
 // It does not wait for ordinary direct method calls. A service can request its
 // group's stop, but must not wait for that group from its own Run.
 func (s *Group) Stop() <-chan struct{} {

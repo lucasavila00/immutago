@@ -21,5 +21,5 @@
 | Opaque handle | UncheckedValue, or a named Frozen struct with one UncheckedValue field. Copies share a target whose access rules belong to its package. |
 | Service reference | `supervise.Ref[T]`; a copyable reference to the service created by Start. |
 | Service run | One service value's background execution and child group. |
-| Group; child | A `supervise.Group` owns services and nested groups and stops them in reverse start order. Each is a child of its parent group. |
+| Group; child | A `supervise.Group` owns services and nested groups and stops them in reverse registration order. Each is a child of its parent group. |
 | Allowed form; matcher | A documented source shape; the checker code that validates its syntax, resolved types, and context. |

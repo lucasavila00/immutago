@@ -82,7 +82,7 @@ func (p *failingParent) Run(ctx context.Context) {
 	record("stop parent")
 }
 
-// TestChildrenStopBeforeRun verifies that a stopped service stops its children last started first
+// TestChildrenStopBeforeRun verifies that a stopped service stops children in reverse registration order
 // before the context of its run ends.
 func TestChildrenStopBeforeRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {

@@ -145,7 +145,7 @@ func TestStart(t *testing.T) {
 	})
 }
 
-// TestStopOrder verifies reverse start order for services and nested groups.
+// TestStopOrder verifies reverse registration order for services and nested groups.
 func TestStopOrder(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
