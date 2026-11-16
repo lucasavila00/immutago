@@ -1,14 +1,15 @@
 # Example applications
 
-These applications read local files and serve HTTP requests. Each includes sample
-data, a command, request and response examples, and tests for its application
-behavior. They run in the repository's Go module without an external service.
+These examples show complete application workflows. Shipping and search read
+local files and serve HTTP requests. The market maker receives prices and fills
+through a trading API; its tests drive the complete bot with a deterministic
+fake. No live trading adapter is included.
 
 | Application | Task |
 | --- | --- |
 | [Delivery quotes](shipping/README.md) | Price a shipment of several parcels, compare carrier services, and apply changes to zones and weight bands. |
 | [Document search](search/README.md) | Search a directory of Markdown documents, rank results, and update the index when files change. |
-| [Live release gate](rollout/README.md) | Compare release health from replica access logs, change policy, and add or retire deployment trees. |
+| [HFT market maker bot](trading/README.md) | Quote prices, handle fills, share cash across instrument workers, and replace a strategy with its owned subscriptions and orders. |
 
 Run a command from the repository root:
 
@@ -21,22 +22,22 @@ go run ./examples/search/cmd/search
 ```
 
 ```sh
-go run ./examples/rollout/cmd/rollout
+go test ./examples/trading -run TestBotQuotesFillsAndPolicy -count=1
 ```
 
-Shipping listens on `127.0.0.1:8080`, search on `127.0.0.1:8081`, and the
-release gate on `127.0.0.1:8082`.
-Each README gives a request to send from another terminal and a change to try
-while the application runs. Press Ctrl+C to stop.
+Shipping listens on `127.0.0.1:8080`; search listens on `127.0.0.1:8081`.
+Their READMEs give HTTP requests and changes to try. Press Ctrl+C to stop.
+The market maker README explains its host API, trading contract, strategy
+selection, and event-path cost tests.
 
-Read an application's HTTP handler first, then follow its calculation and loader.
-Each request selects one complete immutable version. Shipping and search each
-use one supervised loader. The release gate runs a simple policy service beside
-a tree of deployments and log readers. Failed configuration updates leave the
-last valid data available to requests.
+For shipping and search, read the HTTP handler, then its calculation and loader.
+Each request selects one complete immutable version. Each application uses one
+supervised loader. For the market maker, read the trading API and Maker event
+loop. Its independent policy service runs beside a tree of strategy and
+instrument workers. Failed configuration edits keep the last valid settings.
 
 Use the [language reference](../docs/reference/rules.md) for exact API forms. The application tests check
-prices, search results, release decisions, failed updates, concurrent reads, and shutdown. Checker
+prices, search results, orders, fills, failed updates, concurrent reads, and shutdown. Checker
 source forms and diagnostics belong in [the CLI fixtures](../tests/readme.md).
 
 To regenerate records and check the examples:

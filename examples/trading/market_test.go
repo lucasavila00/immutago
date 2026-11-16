@@ -6,8 +6,8 @@ import (
 )
 
 // testAccount creates funded state for direct risk and fill tests.
-func testAccount(cash, budget int64, symbols ...string) *account {
-	spec := strategySpec{Budget: budget}
+func testAccount(cash, maxReservedCash int64, symbols ...string) *account {
+	spec := strategySpec{MaxReservedCash: maxReservedCash}
 	for _, symbol := range symbols {
 		spec.Markets = append(spec.Markets, marketSpec{Symbol: symbol})
 	}
@@ -56,13 +56,13 @@ func TestCumulativeFillsIgnoreDuplicates(t *testing.T) {
 	}
 }
 
-// TestBudgetAndInventoryLimits checks the risk boundaries without a venue transport.
-func TestBudgetAndInventoryLimits(t *testing.T) {
+// TestMaxReservedCashAndInventoryLimits checks the risk boundaries without a venue transport.
+func TestMaxReservedCashAndInventoryLimits(t *testing.T) {
 	account := testAccount(1000, 100, "AAA", "BBB")
 	limits := Limits{MaxInventory: 1, MaxSpread: 10}
 	order, _ := account.reserve(0, Buy, 99, limits)
 	if _, ok := account.reserve(1, Buy, 99, limits); ok {
-		t.Fatal("quote budget was spent twice")
+		t.Fatal("cash commitment limit was exceeded")
 	}
 	account.apply(0, OrderState{ID: order.ID, Filled: 1, Value: 99})
 	if _, ok := account.reserve(0, Buy, 99, limits); ok {

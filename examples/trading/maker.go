@@ -43,16 +43,18 @@ func (m *Maker) onEvent(ctx context.Context, event Event) (Quote, error) {
 	if !fresh {
 		return desired, nil
 	}
+	previous := args.Account.readQuote(args.Index)
+	if previous.Bid == desired.Bid && previous.Ask == desired.Ask {
+		return previous, nil
+	}
+	if err := errors.Join(m.cancel(ctx, Buy), m.cancel(ctx, Sell)); err != nil {
+		return args.Account.readQuote(args.Index), err
+	}
+	desired = args.Account.replan(args.Index, args.Parameters, limits)
 	for _, side := range [2]Side{Buy, Sell} {
 		price := desired.Bid
 		if side == Sell {
 			price = desired.Ask
-		}
-		previous := args.Account.currentOrder(args.Index, side)
-		if previous.ID.Sequence != 0 && previous.Price != price {
-			if err := m.cancel(ctx, side); err != nil {
-				return args.Account.readQuote(args.Index), err
-			}
 		}
 		order, needed := args.Account.reserve(args.Index, side, price, limits)
 		if needed {

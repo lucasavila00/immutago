@@ -12,16 +12,16 @@ type marketSpec struct {
 	Symbol string `json:"symbol"`
 }
 
-// strategySpec fixes one trial's budget, quoting rule, and market subscriptions.
+// strategySpec fixes one trial's cash commitment limit, quoting rule, and market subscriptions.
 type strategySpec struct {
-	ID         string       `json:"id"`
-	Account    string       `json:"account"`
-	Budget     int64        `json:"budget"`
-	Parameters Parameters   `json:"parameters"`
-	Markets    []marketSpec `json:"markets"`
+	ID              string       `json:"id"`
+	Account         string       `json:"account"`
+	MaxReservedCash int64        `json:"max_reserved_cash"`
+	Parameters      Parameters   `json:"parameters"`
+	Markets         []marketSpec `json:"markets"`
 }
 
-// configuration selects the active strategy and an optional paper trial.
+// configuration selects the active strategy and an optional candidate on a separate funded account.
 type configuration struct {
 	Active    strategySpec  `json:"active"`
 	Candidate *strategySpec `json:"candidate"`
@@ -53,9 +53,9 @@ func readConfiguration(files fs.FS) (configuration, error) {
 
 // checkStrategy requires bounded parameters and distinct named instruments.
 func checkStrategy(spec strategySpec) error {
-	if spec.ID == "" || spec.Account == "" || spec.Budget <= 0 || spec.Budget > 1_000_000_000_000 || len(spec.Markets) == 0 ||
+	if spec.ID == "" || spec.Account == "" || spec.MaxReservedCash <= 0 || spec.MaxReservedCash > 1_000_000_000_000 || len(spec.Markets) == 0 ||
 		spec.Parameters.Edge <= 0 || spec.Parameters.Edge > 1_000_000 || spec.Parameters.Skew < 0 || spec.Parameters.Skew > 1_000_000 {
-		return fmt.Errorf("strategy needs an ID, account, markets, budget 1..1000000000000, edge 1..1000000, and skew 0..1000000")
+		return fmt.Errorf("strategy needs an ID, account, markets, max_reserved_cash 1..1000000000000, edge 1..1000000, and skew 0..1000000")
 	}
 	for i, market := range spec.Markets {
 		if market.Symbol == "" {
@@ -72,5 +72,5 @@ func checkStrategy(spec strategySpec) error {
 
 // sameStrategy permits promotion without resetting the trial account or its workers.
 func sameStrategy(a, b strategySpec) bool {
-	return a.ID == b.ID && a.Account == b.Account && a.Budget == b.Budget && a.Parameters == b.Parameters && slices.Equal(a.Markets, b.Markets)
+	return a.ID == b.ID && a.Account == b.Account && a.MaxReservedCash == b.MaxReservedCash && a.Parameters == b.Parameters && slices.Equal(a.Markets, b.Markets)
 }

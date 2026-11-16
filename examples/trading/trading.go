@@ -47,10 +47,11 @@ type runningStrategy struct {
 // Trading owns strategy selection and publishes it before retiring old workers.
 type Trading struct {
 	supervise.Service[tradingArgs]
-	running [2]runningStrategy
-	updates chan struct{}
-	problem string
-	current ReportCell
+	running  [2]runningStrategy
+	updates  chan struct{}
+	problem  string
+	stopping bool
+	current  ReportCell
 }
 
 // Init rebuilds owned services with the same account state after a retry.
@@ -81,6 +82,9 @@ func (t *Trading) Run(ctx context.Context) {
 			if err == nil {
 				err = t.selectStrategies(config)
 			}
+			if t.stopping {
+				return
+			}
 			if err != nil && t.problem != err.Error() {
 				t.problem = err.Error()
 				args.Log.Printf("configuration: %v", err)
@@ -98,7 +102,7 @@ func (t *Trading) selectStrategies(config configuration) error {
 	args := t.Args()
 	desired := []*strategySpec{&config.Active, config.Candidate}
 	var next [2]runningStrategy
-	var added []*supervise.Group
+	var added []runningStrategy
 	for index, spec := range desired {
 		if spec == nil {
 			continue
@@ -117,23 +121,20 @@ func (t *Trading) selectStrategies(config configuration) error {
 			next[index], err = t.startStrategy(saved)
 		}
 		if err != nil {
-			for _, group := range added {
-				<-group.Stop()
+			for _, started := range added {
+				t.retire(started)
 			}
 			return err
 		}
-		added = append(added, next[index].group)
+		added = append(added, next[index])
 	}
 	old := t.running
 	t.running, t.problem = next, ""
 	args.State.selected = [2]savedAccount{next[0].saved, next[1].saved}
 	t.publish()
-	for index, previous := range old {
+	for _, previous := range old {
 		if previous.group != nil && previous.group != next[0].group && previous.group != next[1].group {
-			<-previous.group.Stop()
-			if previous.saved.account.hasOrders() {
-				args.State.unresolved[index] = previous.saved
-			}
+			t.retire(previous)
 		}
 	}
 	return nil
@@ -193,4 +194,19 @@ func (t *Trading) publish() {
 		Active: active.Unsafe(), Candidate: candidate, Problem: t.problem,
 		PolicyVersion: policy.Version(), PolicyProblem: policy.Problem().Unsafe(),
 	})
+}
+
+// retire retains uncertain orders on both rollback and ordinary replacement paths.
+func (t *Trading) retire(previous runningStrategy) {
+	<-previous.group.Stop()
+	if !previous.saved.account.hasOrders() {
+		return
+	}
+	t.stopping = true
+	for index, saved := range t.Args().State.unresolved {
+		if saved.account == nil {
+			t.Args().State.unresolved[index] = previous.saved
+			return
+		}
+	}
 }

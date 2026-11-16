@@ -3,6 +3,7 @@ package trading
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"errors"
 	"io/fs"
 	"log"
 	"sync"
@@ -21,11 +22,13 @@ type Options struct {
 
 // Bot owns the service root and retains unresolved account state after failed cleanup.
 type Bot struct {
-	root    *supervise.Group
-	ref     supervise.Ref[Trading]
-	state   state
-	mu      sync.Mutex
-	problem error
+	root     *supervise.Group
+	ref      supervise.Ref[Trading]
+	state    state
+	mu       sync.Mutex
+	problem  error
+	stopOnce sync.Once
+	done     chan struct{}
 }
 
 // Start starts policy before the strategy tree, so policy stops after its consumers.
@@ -34,7 +37,7 @@ func Start(options Options) (*Bot, error) {
 	if _, err := rand.Read(nonce[:]); err != nil {
 		return nil, err
 	}
-	bot := &Bot{state: state{session: binary.LittleEndian.Uint64(nonce[:])}}
+	bot := &Bot{state: state{session: binary.LittleEndian.Uint64(nonce[:])}, done: make(chan struct{})}
 	bot.root = supervise.NewRoot(func(value any, _ []byte) { options.Log.Printf("attempt failed: %v", value) })
 	policy, err := supervise.Start[Policy](bot.root, PolicyArgs{Files: options.Files, Every: options.Every, Log: options.Log})
 	if err == nil {
@@ -56,18 +59,31 @@ func (b *Bot) Read() ReportProjection { return b.ref.Borrow().Read() }
 // Stop waits for reverse-order cleanup and reports any unconfirmed venue cancellation.
 // The error names the account, instrument, and unresolved IDs. Their state remains in Bot.
 func (b *Bot) Stop() error {
-	<-b.root.Stop()
+	b.requestStop()
+	<-b.done
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	return b.problem
 }
 
-// stopWithError records the first cleanup failure and requests shutdown without waiting on its caller.
+// stopWithError records cleanup failures and requests shutdown without waiting on its caller.
 func (b *Bot) stopWithError(err error) {
 	b.mu.Lock()
-	if b.problem == nil {
-		b.problem = err
-	}
+	b.problem = errors.Join(b.problem, err)
 	b.mu.Unlock()
-	b.root.Stop()
+	b.requestStop()
+}
+
+// Done closes after requested or failed-cleanup shutdown has finished.
+func (b *Bot) Done() <-chan struct{} { return b.done }
+
+// requestStop starts one waiter outside the service tree and never waits on a child caller.
+func (b *Bot) requestStop() {
+	b.stopOnce.Do(func() {
+		finished := b.root.Stop()
+		go func() {
+			<-finished
+			close(b.done)
+		}()
+	})
 }

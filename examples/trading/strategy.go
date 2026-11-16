@@ -56,10 +56,9 @@ func (s *Strategy) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if s.publish() {
-				args.Log.Printf("strategy updated: %s", args.Spec.ID)
-				notify(args.Updates)
-			}
+			s.publish()
+			args.Log.Printf("strategy updated: %s", args.Spec.ID)
+			notify(args.Updates)
 		}
 	}
 }
@@ -68,7 +67,7 @@ func (s *Strategy) Run(ctx context.Context) {
 func (s *Strategy) Read() StrategyReportProjection { return s.current.Load() }
 
 // publish copies account and instrument results under their one shared lock.
-func (s *Strategy) publish() bool {
+func (s *Strategy) publish() {
 	args := s.Args()
 	account := args.Account
 	account.mu.Lock()
@@ -86,7 +85,6 @@ func (s *Strategy) publish() bool {
 	account.mu.Unlock()
 	frozen := im.FreezeSlice(markets)
 	s.current.Store(StrategyReport{ID: args.Spec.ID, Account: args.Spec.Account, Totals: totals, Markets: frozen})
-	return true
 }
 
 // notify coalesces periodic report changes; it is not called for individual ticks.

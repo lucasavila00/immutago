@@ -23,25 +23,29 @@ type fakeAccount struct {
 
 // fakeVenue drives full application tests. It is not a production trading adapter.
 type fakeVenue struct {
-	mu             sync.Mutex
-	accounts       map[string]*fakeAccount
-	streams        map[string]*fakeStream
-	starts         map[string]int
-	active         map[string]int
-	peak           map[string]int
-	events         []string
-	unknownPlace   bool
-	cancelFailures int
-	fillOnCancel   int64
-	blockAccount   string
-	entered        chan struct{}
-	release        chan struct{}
+	subscribeFailures map[string]int
+	failAccount       string
+	accountEntered    chan struct{}
+	accountRelease    chan struct{}
+	mu                sync.Mutex
+	accounts          map[string]*fakeAccount
+	streams           map[string]*fakeStream
+	starts            map[string]int
+	active            map[string]int
+	peak              map[string]int
+	events            []string
+	unknownPlace      bool
+	cancelFailures    int
+	fillOnCancel      int64
+	blockAccount      string
+	entered           chan struct{}
+	release           chan struct{}
 }
 
 // newFakeVenue funds two independent accounts before the bot starts.
 func newFakeVenue() *fakeVenue {
 	v := &fakeVenue{accounts: map[string]*fakeAccount{}, streams: map[string]*fakeStream{},
-		starts: map[string]int{}, active: map[string]int{}, peak: map[string]int{}}
+		subscribeFailures: map[string]int{}, starts: map[string]int{}, active: map[string]int{}, peak: map[string]int{}}
 	for _, name := range []string{"desk-a", "desk-b"} {
 		v.accounts[name] = &fakeAccount{cash: 1000, positions: map[string]int64{}, orders: map[OrderID]*fakeOrder{}}
 	}
@@ -49,8 +53,20 @@ func newFakeVenue() *fakeVenue {
 }
 
 // Account returns actual fake-venue balances and the number of open orders.
-func (v *fakeVenue) Account(_ context.Context, name string) (Balance, error) {
+func (v *fakeVenue) Account(ctx context.Context, name string) (Balance, error) {
 	v.mu.Lock()
+	if v.failAccount == name {
+		entered, release := v.accountEntered, v.accountRelease
+		v.failAccount = ""
+		v.mu.Unlock()
+		close(entered)
+		select {
+		case <-release:
+			return Balance{}, errors.New("account admission failed")
+		case <-ctx.Done():
+			return Balance{}, ctx.Err()
+		}
+	}
 	defer v.mu.Unlock()
 	account := v.accounts[name]
 	if account == nil {
@@ -73,6 +89,12 @@ func (v *fakeVenue) Subscribe(_ context.Context, account, symbol string) (Stream
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	key := account + "/" + symbol
+	if v.subscribeFailures[key] != 0 {
+		if v.subscribeFailures[key] > 0 {
+			v.subscribeFailures[key]--
+		}
+		return nil, errors.New("subscription failed")
+	}
 	stream := &fakeStream{venue: v, key: key, items: make(chan fakeItem, 64)}
 	v.streams[key] = stream
 	v.starts[key]++
@@ -196,13 +218,6 @@ func (v *fakeVenue) blockCancel(account string) {
 	v.mu.Unlock()
 }
 
-// snapshot copies the venue resource events for shutdown checks.
-func (v *fakeVenue) snapshot() []string {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	return append([]string(nil), v.events...)
-}
-
 type fakeItem struct {
 	event Event
 	err   error
@@ -232,4 +247,18 @@ func (s *fakeStream) Close(_ context.Context) error {
 	s.venue.active[s.key]--
 	s.venue.events = append(s.venue.events, "unsubscribe "+s.key)
 	return nil
+}
+
+// failAdmission holds one account query until a staged strategy has started work.
+func (v *fakeVenue) failAdmission(name string) {
+	v.mu.Lock()
+	v.failAccount, v.accountEntered, v.accountRelease = name, make(chan struct{}), make(chan struct{})
+	v.mu.Unlock()
+}
+
+// fund adds a distinct venue account for a replacement test.
+func (v *fakeVenue) fund(name string) {
+	v.mu.Lock()
+	v.accounts[name] = &fakeAccount{cash: 1000, positions: map[string]int64{}, orders: map[OrderID]*fakeOrder{}}
+	v.mu.Unlock()
 }

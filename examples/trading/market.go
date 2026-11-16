@@ -51,15 +51,15 @@ type InstrumentTotals struct {
 // Totals reports actual account cash and cash reserved for pending or resting bids.
 type Totals struct {
 	im.Copied
-	Budget    int64  `json:"budget"`
-	Cash      int64  `json:"cash"`
-	Reserved  int64  `json:"reserved"`
-	Inventory int64  `json:"inventory"`
-	Events    uint64 `json:"events"`
-	Orders    uint64 `json:"orders"`
-	Buys      int64  `json:"buys"`
-	Sells     int64  `json:"sells"`
-	Cancels   uint64 `json:"cancels"`
+	MaxReservedCash int64  `json:"max_reserved_cash"`
+	Cash            int64  `json:"cash"`
+	Reserved        int64  `json:"reserved"`
+	Inventory       int64  `json:"inventory"`
+	Events          uint64 `json:"events"`
+	Orders          uint64 `json:"orders"`
+	Buys            int64  `json:"buys"`
+	Sells           int64  `json:"sells"`
+	Cancels         uint64 `json:"cancels"`
 }
 
 // orderSlot retains an uncertain placement until the venue confirms its outcome.
@@ -74,6 +74,7 @@ type orderSlot struct {
 // instrument retains holdings and at most one pending or resting order per side.
 type instrument struct {
 	totals  InstrumentTotals
+	last    Tick
 	buy     orderSlot
 	sell    orderSlot
 	problem error
@@ -82,18 +83,18 @@ type instrument struct {
 // account survives service retries. One lock owns cash and all instrument orders.
 // Calls to the venue run outside this lock while their reservations remain held.
 type account struct {
-	mu       sync.Mutex
-	budget   int64
-	cash     int64
-	reserved int64
-	session  uint64
-	sequence *atomic.Uint64
-	markets  []instrument
+	mu              sync.Mutex
+	maxReservedCash int64
+	cash            int64
+	reserved        int64
+	session         uint64
+	sequence        *atomic.Uint64
+	markets         []instrument
 }
 
 // newAccount copies venue balances into the selected account's persistent state.
 func newAccount(spec strategySpec, balance Balance, session uint64, sequence *atomic.Uint64) *account {
-	result := &account{budget: spec.Budget, cash: balance.Cash, session: session, sequence: sequence,
+	result := &account{maxReservedCash: spec.MaxReservedCash, cash: balance.Cash, session: session, sequence: sequence,
 		markets: make([]instrument, len(spec.Markets))}
 	for index, market := range spec.Markets {
 		result.markets[index].totals.Inventory = balance.Positions[market.Symbol]
@@ -109,23 +110,38 @@ func (a *account) plan(index int, tick Tick, parameters Parameters, limits Limit
 	if tick.Sequence <= market.totals.Quote.Sequence {
 		return a.quote(index), false
 	}
+	market.last = tick
 	market.totals.Events++
 	market.totals.Mid = (tick.Bid + tick.Ask) / 2
 	market.totals.Quote.Sequence, market.totals.Quote.PolicyVersion = tick.Sequence, version
-	result := Quote{Sequence: tick.Sequence, PolicyVersion: version}
+	return a.desired(index, parameters, limits), true
+}
+
+// desired computes one quote pair under the caller's account lock.
+func (a *account) desired(index int, parameters Parameters, limits Limits) Quote {
+	market := &a.markets[index]
+	tick := market.last
+	result := Quote{Sequence: tick.Sequence, PolicyVersion: market.totals.Quote.PolicyVersion}
 	if tick.Ask-tick.Bid > limits.MaxSpread {
-		return result, true
+		return result
 	}
 	fair := market.totals.Mid - market.totals.Inventory*parameters.Skew
 	bid := min(tick.Bid, fair-parameters.Edge)
 	if market.totals.Inventory < limits.MaxInventory && bid > 0 &&
-		bid <= min(a.cash, a.budget)-a.reserved+market.buy.reserved {
+		bid <= min(a.cash, a.maxReservedCash)-a.reserved+market.buy.reserved {
 		result.Bid = bid
 	}
 	if market.totals.Inventory > 0 {
 		result.Ask = max(tick.Ask, fair+parameters.Edge)
 	}
-	return result, true
+	return result
+}
+
+// replan includes fills confirmed while canceling the previous quote pair.
+func (a *account) replan(index int, parameters Parameters, limits Limits) Quote {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.desired(index, parameters, limits)
 }
 
 // reserve checks shared cash again after earlier cancellation calls have completed.
@@ -140,7 +156,7 @@ func (a *account) reserve(index int, side Side, price int64, limits Limits) (Ord
 	if price == 0 || slot.order.ID.Sequence != 0 {
 		return Order{}, false
 	}
-	if side == Buy && (market.totals.Inventory >= limits.MaxInventory || price > min(a.cash, a.budget)-a.reserved) {
+	if side == Buy && (market.totals.Inventory >= limits.MaxInventory || price > min(a.cash, a.maxReservedCash)-a.reserved) {
 		return Order{}, false
 	}
 	if side == Sell && market.totals.Inventory <= 0 {
@@ -241,7 +257,7 @@ func (a *account) read() Totals {
 
 // totals reads fields under the caller's account lock.
 func (a *account) totals() Totals {
-	result := Totals{Budget: a.budget, Cash: a.cash, Reserved: a.reserved}
+	result := Totals{MaxReservedCash: a.maxReservedCash, Cash: a.cash, Reserved: a.reserved}
 	for _, market := range a.markets {
 		result.Inventory += market.totals.Inventory
 		result.Events += market.totals.Events

@@ -10,7 +10,7 @@ import (
 // Place is idempotent by Order.ID. Cancel confirms a terminal order state, including
 // all fills. A zero-fill terminal result confirms that the ID was never accepted
 // or was canceled without a fill; an ambiguous "not found" must be an error.
-// An error can have an unknown outcome. Methods must honor ctx deadlines.
+// An error can have an unknown outcome. Methods must return when ctx is canceled or its deadline expires.
 // Normalized prices are positive cents below 1e9; quantities are whole units below 1e6.
 // Cumulative fill quantities and values never decrease. Execution has no fees:
 // buy value cannot exceed its limit times filled quantity; sell value cannot be less.

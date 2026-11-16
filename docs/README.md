@@ -23,7 +23,7 @@ forms and package selection rules. Use the [glossary](reference/glossary.md) for
 
 ## Examples
 
-[Delivery quotes, document search, and a live release gate](../examples/README.md) are complete Go
+[Delivery quotes, document search, and a market maker bot](../examples/README.md) are complete Go
 applications. Each has sample data, commands, HTTP requests, and tests.
 
 ## Maintainers

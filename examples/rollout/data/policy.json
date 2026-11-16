@@ -1,6 +1,0 @@
-{
-  "version": "standard",
-  "min_requests": 10,
-  "max_error_increase_percent": 1,
-  "max_p95_increase_ms": 50
-}

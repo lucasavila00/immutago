@@ -15,27 +15,24 @@ import (
 )
 
 const candidateConfig = `{
- "active":{"id":"wide","account":"desk-a","budget":1000,"parameters":{"edge":3,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]},
- "candidate":{"id":"tight","account":"desk-b","budget":1000,"parameters":{"edge":1,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]}
+ "active":{"id":"wide","account":"desk-a","max_reserved_cash":1000,"parameters":{"edge":3,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]},
+ "candidate":{"id":"tight","account":"desk-b","max_reserved_cash":1000,"parameters":{"edge":1,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]}
 }`
 
-const promotedConfig = `{"active":{"id":"tight","account":"desk-b","budget":1000,"parameters":{"edge":1,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]}}`
+const promotedConfig = `{"active":{"id":"tight","account":"desk-b","max_reserved_cash":1000,"parameters":{"edge":1,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]}}`
 
-// testFiles supplies appendable streams and controlled failures in ordinary file APIs.
+// testFiles supplies operator configuration and controlled read failures.
 type testFiles struct {
 	mu     sync.Mutex
 	data   map[string][]byte
 	errors map[string]int
 	panics map[string]int
-	active map[string]int
-	peak   map[string]int
 }
 
 // sampleFiles reads the same data used by the command before a test starts.
 func sampleFiles(t *testing.T) *testFiles {
 	t.Helper()
-	f := &testFiles{data: map[string][]byte{}, errors: map[string]int{}, panics: map[string]int{},
-		active: map[string]int{}, peak: map[string]int{}}
+	f := &testFiles{data: map[string][]byte{}, errors: map[string]int{}, panics: map[string]int{}}
 	entries, err := os.ReadDir("data")
 	if err != nil {
 		t.Fatal(err)
@@ -50,15 +47,13 @@ func sampleFiles(t *testing.T) *testFiles {
 	return f
 }
 
-// Open creates an independent offset into an appendable file.
+// Open creates an independent offset into a configuration file.
 func (f *testFiles) Open(name string) (fs.File, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if _, ok := f.data[name]; !ok {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist}
 	}
-	f.active[name]++
-	f.peak[name] = max(f.peak[name], f.active[name])
 	return &testFile{files: f, name: name}, nil
 }
 
@@ -80,7 +75,7 @@ func (f *testFiles) fail(name string, count int, panicRead bool) {
 	}
 }
 
-// testFile reads the current bytes, including later appends.
+// testFile reads one configuration file with its own offset.
 type testFile struct {
 	files  *testFiles
 	name   string
@@ -108,13 +103,8 @@ func (f *testFile) Read(dst []byte) (int, error) {
 	return n, nil
 }
 
-// Close releases a configuration file descriptor.
-func (f *testFile) Close() error {
-	f.files.mu.Lock()
-	f.files.active[f.name]--
-	f.files.mu.Unlock()
-	return nil
-}
+// Close finishes the in-memory configuration read.
+func (f *testFile) Close() error { return nil }
 
 // Stat supplies the current stream size to fs.ReadFile.
 func (f *testFile) Stat() (fs.FileInfo, error) {

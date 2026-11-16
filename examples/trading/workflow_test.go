@@ -49,3 +49,61 @@ func TestBotQuotesFillsAndPolicy(t *testing.T) {
 		}
 	})
 }
+
+// TestSharedCashAcrossWorkers sends concurrent instrument updates against one funded account.
+func TestSharedCashAcrossWorkers(t *testing.T) {
+	files := sampleFiles(t)
+	synctest.Test(t, func(t *testing.T) {
+		venue := newFakeVenue()
+		venue.accounts["desk-a"].cash = 100
+		bot := startBot(t, files, venue, new(eventLog))
+		defer func() { _ = bot.Stop() }()
+		for _, symbol := range []string{"AAA", "BBB"} {
+			venue.emit("desk-a", symbol, Event{Kind: PriceEvent, Tick: Tick{Sequence: 1, Bid: 99, Ask: 101}})
+		}
+		synctest.Wait()
+		advance()
+		totals := bot.Read().Active().Totals()
+		if totals.Orders != 1 || totals.Reserved != 97 || totals.Cash != 100 {
+			t.Fatal("workers spent the same cash", totals)
+		}
+	})
+}
+
+// TestInvalidEditsKeepTheCurrentBot preserves workers and the last valid policy.
+func TestInvalidEditsKeepTheCurrentBot(t *testing.T) {
+	files := sampleFiles(t)
+	original := string(files.data["trading.json"])
+	synctest.Test(t, func(t *testing.T) {
+		venue, events := newFakeVenue(), new(eventLog)
+		bot := startBot(t, files, venue, events)
+		defer func() { _ = bot.Stop() }()
+		files.set("trading.json", "{")
+		advance()
+		bad := bot.Read()
+		if bad.Problem().Len() == 0 || !bad.Active().ID().Is("wide") {
+			t.Fatal("invalid selection replaced the current strategy")
+		}
+		files.set("trading.json", original)
+		advance()
+		files.fail("trading.json", 1, false)
+		advance()
+		files.set("policy.json", "{")
+		advance()
+		policy := bot.Read()
+		if policy.PolicyVersion() != 1 || policy.PolicyProblem().Len() == 0 {
+			t.Fatal("bad policy replaced valid limits")
+		}
+		files.set("policy.json", `{"version":2,"max_inventory":2,"max_spread":10}`)
+		advance()
+		restored := bot.Read()
+		if restored.Problem().Len() != 0 || restored.PolicyProblem().Len() != 0 || restored.PolicyVersion() != 2 {
+			t.Fatal("valid edits did not clear errors")
+		}
+		for _, line := range []string{"policy started", "trading started", "strategy started: wide", "maker started: wide/AAA"} {
+			if events.count(line) != 1 {
+				t.Fatal("configuration restarted a service", line)
+			}
+		}
+	})
+}
