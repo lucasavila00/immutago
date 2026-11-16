@@ -71,13 +71,17 @@ func (p *proof) categoryNode(t types.Type, category proofCategory) *obligation {
 	}
 	result := &obligation{}
 	(*table)[t] = result
-	switch category {
-	case frozenCategory:
-		p.value(result, t)
-	case copiedCategory:
-		p.copiedValue(result, t)
-	case readCategory:
-		p.readValue(result, t)
+	if reason := MarkerReason(t); reason != "" {
+		result.reason = reason
+	} else {
+		switch category {
+		case frozenCategory:
+			p.value(result, t)
+		case copiedCategory:
+			p.copiedValue(result, t)
+		case readCategory:
+			p.readValue(result, t)
+		}
 	}
 	if result.reason != "" && result.cause == nil {
 		p.failures = append(p.failures, result)
@@ -229,14 +233,6 @@ func (p *proof) structure(result *obligation, t types.Type, structure *types.Str
 	}
 	if !Frozen(t) {
 		result.reason = "struct does not embed im.Frozen"
-		return
-	}
-	if Frozen(t) && Local(t) {
-		result.reason = "struct cannot embed both im.Frozen and im.Local"
-		return
-	}
-	if MarkerCount(t) != 1 {
-		result.reason = "struct must embed exactly one immutable marker"
 		return
 	}
 	for field := range structure.Fields() {

@@ -1,1 +1,1 @@
-slice_field.go:5:6: cannot generate typed projections: Bad: Value: []string is not provably immutable
+slice_field.go:5:6: cannot generate typed projections: Bad: Value: []string is not provably immutable; other generation failures may remain

@@ -47,7 +47,7 @@ non-test Go files. Every package with these declarations needs one exact directi
 | --- | --- |
 | Frozen record or interface declaration | Named package-scope type in a `.go` file that does not end in `_test.go`. |
 | Directive | Use exactly one copy of the command above, at column 1 in a non-test package source file. |
-| Output | Keep `zz_immutago.gen.go` from the current declarations. |
+| Output | Keep `zz_immutago.gen.go` from the current declarations and build configuration. |
 | Frozen records | Generate typed field projections, Projection constructors, and Cells. |
 | Frozen interfaces | Generate local method projections and Projection constructors. |
 
@@ -57,6 +57,20 @@ file, or remove both the directive and `zz_immutago.gen.go`. You can remove the
 directive after generation writes the empty file. If the directive is already gone,
 remove the stale output or run `go run github.com/lucasavila00/immutago/cmd/immutago-gen`
 in that package.
+
+Generation uses the active `GOOS`, `GOARCH`, and build tags. The output has no
+build constraint. Use the same configuration for generation, the checker, and
+the build. A single checked-in file can serve several configurations only when
+they generate the same bytes. This requires the same generated declarations,
+field types, array lengths, and interface methods, including imported types.
+Constrained files can use projections and Cells without changing their output.
+
+If configurations need different generated output, generate and check each in a
+separate checkout or build directory. Generate the owning packages of imported
+Frozen types for that configuration too; `go generate ./...` does not generate
+dependencies outside the selected packages. Keep the directive in an unconstrained
+file if a configuration can exclude all Frozen declarations. Otherwise, use the
+direct generator command above to replace stale output with an empty package file.
 
 The checker rejects a missing directive, missing output, or stale output before
 source checks. Only verified generated code can form interior Frozen-record addresses.
@@ -70,7 +84,8 @@ Local and Copied records need no generation.
 | A Frozen type inside a function or `_test.go` file | Move its declaration to a non-test Go file at package scope. |
 | An anonymous Frozen record, including a field type | Declare a named package-scope record and use that type. |
 | An alternate generation command in the directive | Use the canonical command above. |
-| A manually changed or stale generated file | Regenerate from the source declarations. |
+| A manually changed or stale generated file | Regenerate from the source declarations with the same build configuration. |
+| Output made with `GOFLAGS=-tags=audit`, checked with different schema types and no tag | Regenerate without the tag, or keep the schema and its type dependencies the same in both configurations. |
 
 ### Trusted immutable values
 

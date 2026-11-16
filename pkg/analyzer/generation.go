@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"bytes"
+	"errors"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -38,11 +39,17 @@ func (c *subsetChecks) checkGeneration() bool {
 	}
 	expected, err := projectiongen.GenerateTypes(sourcePackage, c.pass.Fset)
 	if err != nil {
-		c.pass.Reportf(position, "cannot generate typed projections: %s", err)
+		message := err.Error()
+		var sourceError types.Error
+		if errors.As(err, &sourceError) {
+			position, message = sourceError.Pos, sourceError.Msg
+		}
+		c.pass.Reportf(position, "cannot generate typed projections: %s", message)
 		return false
 	}
 	if generated == nil {
-		c.pass.Reportf(position, "missing %s; run go generate in this package", projectiongen.Filename)
+		c.pass.Reportf(position, "missing %s; run go generate in this package with the same build configuration",
+			projectiongen.Filename)
 		return false
 	}
 	readFile := c.pass.ReadFile
@@ -52,7 +59,8 @@ func (c *subsetChecks) checkGeneration() bool {
 	actual, err := readFile(c.physicalFile(generated.Pos()))
 	if err != nil || !bytes.Equal(bytes.ReplaceAll(actual, []byte("\r\n"), []byte("\n")), expected) {
 		if hasDeclarations {
-			c.pass.Reportf(generated.Pos(), "%s is stale; run go generate in this package", projectiongen.Filename)
+			c.pass.Reportf(generated.Pos(), "%s is stale; run go generate in this package with the same build configuration",
+				projectiongen.Filename)
 		} else {
 			c.pass.Reportf(generated.Pos(), "%s has no source Frozen declarations; remove it or run %s in this package",
 				projectiongen.Filename, strings.TrimPrefix(projectiongen.Directive, "//go:generate "))

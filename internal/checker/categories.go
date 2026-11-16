@@ -39,10 +39,6 @@ func (p *proof) copiedValue(result *obligation, t types.Type) {
 
 // copiedRecord proves each field through the shared Copied rule.
 func (p *proof) copiedRecord(result *obligation, t types.Type, structure *types.Struct) {
-	if MarkerCount(t) != 1 {
-		result.reason = "Copied record must embed exactly one marker"
-		return
-	}
 	for field := range structure.Fields() {
 		if field.Embedded() && IsLibraryType(field.Type(), "Copied") {
 			continue
@@ -79,10 +75,6 @@ func (p *proof) readValue(result *obligation, t types.Type) {
 		}
 	case *types.Struct:
 		if Local(t) {
-			if MarkerCount(t) != 1 {
-				result.reason = "Local struct must embed exactly one marker"
-				return
-			}
 			for field := range value.Fields() {
 				if field.Embedded() && IsLibraryType(field.Type(), "Local") {
 					continue

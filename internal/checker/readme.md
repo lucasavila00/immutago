@@ -140,6 +140,14 @@ func MarkerCount(t types.Type) int
 
 MarkerCount counts direct embedded marker identities, including aliases of the same marker.
 
+## func MarkerReason
+
+```go
+func MarkerReason(t types.Type) string
+```
+
+MarkerReason reports conflicting embedded marker identities, including aliases.
+
 ## func Reason
 
 ```go

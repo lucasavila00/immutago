@@ -45,6 +45,39 @@ func TestMarkerIdentities(t *testing.T) {
 	}
 }
 
+// TestMarkerFailures uses one reason for every category, including alias and mixed markers.
+func TestMarkerFailures(t *testing.T) {
+	library := types.NewPackage(LibraryPath, "im")
+	markers := make(map[string]types.Type)
+	for _, name := range []string{"Frozen", "Local", "Copied"} {
+		markers[name] = types.NewNamed(types.NewTypeName(token.NoPos, library, name, nil),
+			types.NewStruct(nil, nil), nil)
+	}
+	for first, marker := range markers {
+		for second, other := range markers {
+			t.Run(first+"_"+second, func(t *testing.T) {
+				alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), other)
+				value := markedType("Mixed", marker, types.NewField(token.NoPos, nil, "Alias", alias, true))
+				want := "struct must embed exactly one immutable marker; each embedded alias counts as a marker"
+				if first == "Frozen" && second == "Local" || first == "Local" && second == "Frozen" {
+					want = "struct cannot embed both im.Frozen and im.Local"
+				}
+				var prover Prover
+				checks := []func(types.Type) string{
+					prover.FrozenReason, prover.ReadResultReason, prover.CopiedReason, prover.Reason,
+				}
+				for range 2 {
+					for _, check := range checks {
+						if got := check(value); got != want {
+							t.Errorf("marker reason = %q; want %q", got, want)
+						}
+					}
+				}
+			})
+		}
+	}
+}
+
 // TestLocalPointerIdentity checks that aliases and defined pointer types retain the storage restriction.
 func TestLocalPointerIdentity(t *testing.T) {
 	library := types.NewPackage(LibraryPath, "im")

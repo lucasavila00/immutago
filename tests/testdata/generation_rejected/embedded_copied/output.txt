@@ -1,1 +1,1 @@
-schema.go:13:6: cannot generate typed projections: Record: Stats: Frozen data fields must be named
+schema.go:13:6: cannot generate typed projections: Record: Stats: Frozen data fields must be named; other generation failures may remain
