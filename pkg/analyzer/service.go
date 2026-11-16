@@ -38,15 +38,17 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 			if types.Identical(result.Type(), errorType) {
 				continue
 			}
-			if reason := c.proofs.ReadResultReason(result.Type()); reason != "" {
-				fix := structuralFix(result.Type(), reason)
-				if contract, ok := result.Type().Underlying().(*types.Interface); ok &&
-					types.Implements(contract, errorType.Underlying().(*types.Interface)) {
-					fix = "declare the result as error or a type alias such as type Failure = error"
-				}
-				c.report(at, "service method "+method.Name()+" must return a read result or error: "+reason+
-					"\n  result type: "+diagnosticType(result.Type())+"\n  fix: "+fix)
+			reason := c.proofs.ReadResultReason(result.Type())
+			if reason == "" {
+				continue
 			}
+			fix := structuralFix(result.Type(), reason)
+			if contract, ok := result.Type().Underlying().(*types.Interface); ok &&
+				types.Implements(contract, errorType.Underlying().(*types.Interface)) {
+				fix = "declare the result as error or a type alias such as type Failure = error"
+			}
+			c.report(at, "service method "+method.Name()+" must return a read result or error: "+reason+
+				"\n  result type: "+diagnosticType(result.Type())+"\n  fix: "+fix)
 		}
 	}
 }
