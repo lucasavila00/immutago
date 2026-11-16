@@ -128,7 +128,7 @@ func TestStagedActivationOrdersStop(t *testing.T) {
 						return err
 					}
 				}
-				children.policy = &stopOnRead{Context: children.policy, group: parent}
+				children.admission = &stopOnRead{Context: children.admission, group: parent}
 				return nil
 			},
 		})

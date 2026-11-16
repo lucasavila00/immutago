@@ -9,17 +9,17 @@ import (
 	"testing/synctest"
 )
 
-// TestInitializedAttemptCleanup gives each successful Init exactly one Run for cleanup.
-func TestInitializedAttemptCleanup(t *testing.T) {
+// TestInitializedServiceCleanup gives each successful Init exactly one Run for cleanup.
+func TestInitializedServiceCleanup(t *testing.T) {
 	for _, state := range []string{"stopped", "admitted", "pending", "terminal"} {
 		t.Run(state, func(t *testing.T) {
-			synctest.Test(t, func(t *testing.T) { checkInitializedAttemptCleanup(t, state) })
+			synctest.Test(t, func(t *testing.T) { checkInitializedServiceCleanup(t, state) })
 		})
 	}
 }
 
-// checkInitializedAttemptCleanup checks one setup resource through group shutdown.
-func checkInitializedAttemptCleanup(t *testing.T, state string) {
+// checkInitializedServiceCleanup checks one setup resource through group shutdown.
+func checkInitializedServiceCleanup(t *testing.T, state string) {
 	t.Helper()
 	top := root(func(any) {}, func(any, []byte) {})
 	parent := top
@@ -93,42 +93,46 @@ func TestPendingCleanupOrder(t *testing.T) {
 	})
 }
 
-// TestPendingCleanupFailure keeps a cleanup panic or Goexit inside its watcher.
+// TestPendingCleanupFailure keeps a cleanup panic or Goexit terminal.
 func TestPendingCleanupFailure(t *testing.T) {
 	for _, mode := range []string{"panic", "Goexit"} {
 		t.Run(mode, func(t *testing.T) {
-			synctest.Test(t, func(t *testing.T) {
-				var reports atomic.Int32
-				terminal := make(chan any, 1)
-				top := root(func(value any) { terminal <- value },
-					func(any, []byte) { reports.Add(1) })
-				parent := newGroup(top, false)
-				var open atomic.Int32
-				_, err := Start[initializing](parent, &initHooks{
-					init: func(*initializing) error { open.Add(1); return nil },
-					run: func(_ *initializing, ctx context.Context) {
-						defer open.Add(-1)
-						if ctx.Err() == nil {
-							t.Error("pending cleanup activated its Run")
-						}
-						if mode == "Goexit" {
-							runtime.Goexit()
-						}
-						panic("cleanup")
-					},
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
-				<-parent.Stop()
-				<-top.Stop()
-				if failure := (<-terminal).(*Failure); failure.Value == nil {
-					t.Fatal("cleanup lost its failure")
-				}
-				if open.Load() != 0 || reports.Load() != 1 {
-					t.Fatalf("open resources = %d, reports = %d; want 0 and 1", open.Load(), reports.Load())
-				}
-			})
+			synctest.Test(t, func(t *testing.T) { checkPendingCleanupFailure(t, mode) })
 		})
+	}
+}
+
+// checkPendingCleanupFailure checks cleanup and one report for a pending service.
+func checkPendingCleanupFailure(t *testing.T, mode string) {
+	t.Helper()
+	var reports atomic.Int32
+	terminal := make(chan any, 1)
+	top := root(func(value any) { terminal <- value },
+		func(any, []byte) { reports.Add(1) })
+	parent := newGroup(top, false)
+	var open atomic.Int32
+	_, err := Start[initializing](parent, &initHooks{
+		init: func(*initializing) error { open.Add(1); return nil },
+		run: func(_ *initializing, ctx context.Context) {
+			defer open.Add(-1)
+			if ctx.Err() == nil {
+				t.Error("pending cleanup activated its Run")
+			}
+			if mode == "Goexit" {
+				runtime.Goexit()
+			}
+			panic("cleanup")
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	<-parent.Stop()
+	<-top.Stop()
+	if failure := (<-terminal).(*Failure); failure.Value == nil {
+		t.Fatal("cleanup lost its failure")
+	}
+	if open.Load() != 0 || reports.Load() != 1 {
+		t.Fatalf("open resources = %d, reports = %d; want 0 and 1", open.Load(), reports.Load())
 	}
 }

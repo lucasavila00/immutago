@@ -65,7 +65,7 @@ Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
 | Init returns an error | Start returns a zero Ref and the error. |
 | Init panics | The panic reaches the caller. |
 | Start under a stopped group | Init still runs. If it succeeds, Run receives an already-cancelled context. Start waits for cleanup, then returns the initialized Ref. |
-| Stop while Init runs | Stop waits only for registered services. If Init succeeds after Stop, Start waits for its cancelled Run and child cleanup. |
+| Stop while Init runs | Stop waits only for registered services. If Init succeeds after Stop, Start waits for its cancelled Run and child cleanup. A failure in that Run remains terminal. |
 | Nil or zero Group passed to Start or StartGroup | Panic with `supervise: nil or zero Group` before Init. |
 | Pointer on the selected Service embedding path | Panic before Init with `supervise: embed Service by value through each embedded field`. |
 
@@ -84,11 +84,14 @@ resources. Check its context before starting work: it can already be cancelled.
 | Event | Behavior |
 | --- | --- |
 | Run returns normally | Stop its children, then remove the service from its group. Other services continue. |
+| Run receives cancellation | Return normally to end without a failure. |
 | Run panics | Report the original panic and stack. Stop the entire root tree, wait for cleanup, then panic with `*supervise.Failure`. |
 | Run calls `runtime.Goexit()` | Stop the root through the same failure path; Failure.Value identifies Goexit. |
 | A child fails under nested groups or services | Its failure goes directly to the root. |
 | A direct service method panics | The panic stays in its caller's goroutine. If called from Run, it fails that Run. |
-| Stop of the failing subtree is accepted before the failure | Report the failure and complete shutdown without a terminal root panic. |
+| Run panics or calls Goexit during shutdown or cleanup | Use the same terminal failure path. Stop and a parent's normal return cannot suppress a failure. |
+| Several Run failures occur | Keep the first failure recorded by the runtime. Report each failure once. |
+| Terminal panic | It runs in a runtime goroutine after reporting and cleanup. A caller cannot recover it. |
 
 Each Start creates one service value and calls Run once after successful Init.
 Borrow returns that same value, including after it stops.
@@ -97,7 +100,7 @@ Borrow returns that same value, including after it stops.
 
 | Parent | Lifetime |
 | --- | --- |
-| `root := supervise.NewRoot(report)` | Application group, until root.Stop. Pass nil to disable individual Run reports; selected terminal failures still go to standard error. |
+| `root := supervise.NewRoot(report)` | Application group, until root.Stop. Pass nil to write failure reports and their original stacks to standard error. |
 | `group := supervise.StartGroup(parent)` | Lifetime group; stop these services and their children together. |
 | `s.UnsafeChildren()` | Child group owned by this service. Use the original pointer created by Start. |
 | `new(Worker).UnsafeChildren()` | Panic with `supervise: nil or zero Group` in the caller. Use Start to create a service that needs child groups. |
@@ -129,7 +132,7 @@ Stop does not wait for requests already using the old reference.
 | --- | --- |
 | `done := root.Stop()` | Request shutdown without waiting. Repeated calls return the same channel. |
 | Stop on a nil or zero Group | Panic with `supervise: nil or zero Group`. |
-| `<-root.Stop()` | Wait until all children stop. |
+| `<-root.Stop()` | Wait until all registered children stop. A terminal failure prevents normal completion. |
 | `<-group.Stop()` on a nested group | Also wait for removal from the parent. Other groups continue. |
 | Stop is requested | Close admission immediately; cancel services in reverse start order. |
 | A registered service has not been admitted to Run when Stop is requested | Wait for its turn, stop its children, then call Run with an already-cancelled context. |
@@ -137,7 +140,7 @@ Stop does not wait for requests already using the old reference.
 Shutdown gives pending initialized services a cancelled Run through the same
 watcher used for active services. It waits for children in reverse start order
 before it enters a parent's cancelled Run. It does not activate staged children
-with live contexts. Cleanup panics are reported; cleanup Goexit ends its watcher.
+with live contexts. Cleanup panics and Goexit are terminal failures.
 
 Stop does not interrupt work already admitted. Registered work must finish
 before the completion channel closes. Run must return when its context ends.
@@ -152,12 +155,15 @@ that child's group to stop.
 
 The report argument to NewRoot has type `func(value any, stack []byte)`:
 
-- It receives each recovered Run panic or Goexit before the service waits for child cleanup.
-- It also receives the selected terminal `*Failure` before the root waits for shutdown.
-- Nested groups use the same function. Each failed Run is reported once; the
-  selected terminal failure is a separate report.
-- Reports for different children can run concurrently.
-- It must return. The group waits for it and does not recover its panics.
+| Event or item | Behavior |
+| --- | --- |
+| Report payload | Each recovered Run panic or Goexit supplies one `*Failure` and its original stack. |
+| Failure selection | Record the first terminal failure before calling the reporter. |
+| Child cleanup blocks | Reporting does not wait for child cleanup. |
+| Several failures | Reports can overlap. Nested groups use the same callback. |
+| Callback calls Stop | It can request Stop, but must not wait for completion. It cannot suppress the failure. |
+| Callback returns | Required before its service completes. Callback panics are not recovered. |
+| Nil callback | Write each Failure and its original stack to standard error. |
 
 The root's terminal panic is `*supervise.Failure`:
 
@@ -167,12 +173,5 @@ The root's terminal panic is `*supervise.Failure`:
 | `Value` | Original panic or Goexit error. |
 | `Stack` | Stack from the failing service's goroutine. |
 
-In the report callback, use `errors.As` on an error value to identify Failure and
-`errors.Is` to match its original error. A nil callback suppresses individual Run reports,
-but the runtime writes the selected terminal Failure and its original stack to
-standard error before cleanup. A blocked service cannot hide that report.
-
-The root selects one terminal failure. Ordered shutdown completes before it
-panics. A Stop request for the failing service's subtree, accepted first, prevents that
-failure from terminating the process. Stopping an unrelated group does not.
-The final panic runs in the root's shutdown goroutine; a caller cannot recover it.
+`supervisetest.NewRoot(t)` adds automatic test cleanup with a 5-second timeout.
+It uses the same terminal failure rule. Use a subprocess to test Run panics or Goexit.

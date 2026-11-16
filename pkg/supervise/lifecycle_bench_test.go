@@ -26,48 +26,48 @@ func BenchmarkServiceStartStop(b *testing.B) {
 	}
 }
 
-// attemptWorker supplies a small Init and Run for the successful-attempt benchmark.
-type attemptWorker struct {
+// runWorker supplies a small Init and Run for the service run benchmark.
+type runWorker struct {
 	Service[NoArgs]
 	state int
 }
 
 // Init prepares one value before publication.
-func (s *attemptWorker) Init() error { s.state = 1; return nil }
+func (s *runWorker) Init() error { s.state = 1; return nil }
 
-// Run completes this benchmark attempt.
-func (*attemptWorker) Run(context.Context) {}
+// Run completes this benchmark Run.
+func (*runWorker) Run(context.Context) {}
 
-// BenchmarkServiceAttempt measures fresh value setup, publication, Run, and cleanup.
+// BenchmarkServiceRun measures fresh value setup, publication, Run, and cleanup.
 // It excludes watcher creation, registry work, and failure reports.
-func BenchmarkServiceAttempt(b *testing.B) {
+func BenchmarkServiceRun(b *testing.B) {
 	parent := NewRoot(nil)
 	defer func() { <-parent.Stop() }()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	var ref Ref[attemptWorker]
-	var value *attemptWorker
+	var ref Ref[runWorker]
+	var value *runWorker
 	run := func(ctx context.Context) {
-		value = new(attemptWorker)
+		value = new(runWorker)
 		value.bind(NoArgs{}, parent)
 		if err := value.Init(); err != nil {
 			panic(err)
 		}
 		parent.mu.Lock()
 		run, admitted := value.begin(ctx)
-		ref = Ref[attemptWorker]{value: im.Trust(value)}
+		ref = Ref[runWorker]{value: im.Trust(value)}
 		parent.mu.Unlock()
 		if !admitted {
-			b.Fatal("service attempt was not admitted")
+			b.Fatal("service was not admitted")
 		}
 		value.Run(run)
 	}
 	b.ReportAllocs()
 	done := completedRun()
 	for b.Loop() {
-		watch(parent, ctx, done, "attemptWorker", run, func() { value.end() })
+		watch(parent, ctx, done, "runWorker", run, func() { value.end() })
 		if ref.IsZero() {
-			b.Fatal("service attempt did not publish its value")
+			b.Fatal("service did not publish its value")
 		}
 	}
 }

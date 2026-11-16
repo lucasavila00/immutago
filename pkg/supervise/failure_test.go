@@ -14,7 +14,7 @@ import (
 // failureLeaf fails with the error supplied at startup.
 type failureLeaf struct{ Service[error] }
 
-// Run fails on each attempt.
+// Run fails with its supplied cause.
 func (s *failureLeaf) Run(context.Context) { panic(s.Args()) }
 
 // failureTreeArgs sets the parent depth above one failing leaf.

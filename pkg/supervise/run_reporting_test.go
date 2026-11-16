@@ -7,8 +7,8 @@ import (
 	"testing/synctest"
 )
 
-// TestFirstRunAfterPolicyCancellation keeps a delayed first attempt in shutdown order.
-func TestFirstRunAfterPolicyCancellation(t *testing.T) {
+// TestRunAfterAdmissionCloses keeps a delayed Run in shutdown order.
+func TestRunAfterAdmissionCloses(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		top := NewRoot(nil)
 		parent := newGroup(top, false)
@@ -18,7 +18,7 @@ func TestFirstRunAfterPolicyCancellation(t *testing.T) {
 			run: func(_ *initializing, ctx context.Context) {
 				runs++
 				if ctx.Err() == nil {
-					t.Error("first attempt entered Run after its policy stopped with a live context")
+					t.Error("service entered Run after admission closed with a live context")
 				}
 			},
 		})
@@ -52,13 +52,13 @@ func TestFirstRunAfterPolicyCancellation(t *testing.T) {
 		close(release)
 		synctest.Wait()
 		if runs != 0 {
-			t.Error("first attempt ran cleanup before the newer service stopped")
+			t.Error("service ran cleanup before the newer service stopped")
 		}
 		close(slowRelease)
 		<-done
 		<-top.Stop()
 		if inits != 1 || runs != 1 || ref.Borrow() != original {
-			t.Fatalf("first attempt: Init calls=%d, Run calls=%d, changed=%t", inits, runs, ref.Borrow() != original)
+			t.Fatalf("service: Init calls=%d, Run calls=%d, changed=%t", inits, runs, ref.Borrow() != original)
 		}
 	})
 }
@@ -72,7 +72,7 @@ func TestTerminalBeforeOwnChildCleanup(t *testing.T) {
 	}
 }
 
-// checkTerminalBeforeOwnChildCleanup holds one terminal attempt's child open.
+// checkTerminalBeforeOwnChildCleanup holds one failed service's child open.
 func checkTerminalBeforeOwnChildCleanup(t *testing.T, mode string) {
 	t.Helper()
 	reported, release := make(chan struct{}), make(chan struct{})

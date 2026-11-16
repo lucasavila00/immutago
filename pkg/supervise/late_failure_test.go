@@ -10,14 +10,16 @@ import (
 // TestLateRunFailure waits for cleanup and terminal action before late Start returns.
 func TestLateRunFailure(t *testing.T) {
 	for _, mode := range []string{"panic", "Goexit"} {
-		t.Run(mode, func(t *testing.T) {
-			synctest.Test(t, func(t *testing.T) { checkLateRunFailure(t, mode) })
-		})
+		for _, state := range []string{"stopping", "stopped"} {
+			t.Run(mode+"/"+state, func(t *testing.T) {
+				synctest.Test(t, func(t *testing.T) { checkLateRunFailure(t, mode, state) })
+			})
+		}
 	}
 }
 
 // checkLateRunFailure holds Init, child cleanup, reporting, and exit in that order.
-func checkLateRunFailure(t *testing.T, mode string) {
+func checkLateRunFailure(t *testing.T, mode, state string) {
 	t.Helper()
 	initReady, releaseInit := make(chan struct{}), make(chan struct{})
 	childCleanup, releaseChild := make(chan struct{}), make(chan struct{})
@@ -28,6 +30,7 @@ func checkLateRunFailure(t *testing.T, mode string) {
 		close(reported)
 		<-releaseReport
 	})
+	releaseStop := holdRootStop(t, top)
 	go func() {
 		_, err := Start[initializing](top, &initHooks{
 			init: func(p *initializing) error {
@@ -58,7 +61,11 @@ func checkLateRunFailure(t *testing.T, mode string) {
 		started <- err
 	}()
 	<-initReady
-	<-top.Stop()
+	stopped := top.Stop()
+	if state == "stopped" {
+		close(releaseStop)
+		<-stopped
+	}
 	close(releaseInit)
 	<-childCleanup
 	synctest.Wait()
@@ -69,6 +76,15 @@ func checkLateRunFailure(t *testing.T, mode string) {
 	}
 	close(releaseChild)
 	<-reported
+	if state == "stopping" {
+		close(releaseStop)
+		synctest.Wait()
+		select {
+		case <-stopped:
+			t.Error("Stop missed the unregistered service failure")
+		default:
+		}
+	}
 	synctest.Wait()
 	if len(exiting) != 0 {
 		t.Error("terminal action ran before reporting ended")
@@ -76,14 +92,29 @@ func checkLateRunFailure(t *testing.T, mode string) {
 	close(releaseReport)
 	failure := <-exiting
 	synctest.Wait()
-	if len(started) != 0 {
+	if state == "stopped" && len(started) != 0 {
 		t.Error("late Start returned before its terminal action")
 	}
 	close(releaseExit)
+	<-stopped
 	if err := <-started; err != nil {
 		t.Fatal(err)
 	}
 	if mode == "Goexit" && failure.Value != errGoexit || mode == "panic" && failure.Value != "late failure" {
 		t.Fatalf("terminal failure = %v", failure)
 	}
+}
+
+// holdRootStop keeps one registered service in cleanup until the returned channel closes.
+func holdRootStop(t *testing.T, top *Group) chan struct{} {
+	t.Helper()
+	release := make(chan struct{})
+	_, err := Start[initializing](top, &initHooks{
+		init: func(*initializing) error { return nil },
+		run:  func(_ *initializing, ctx context.Context) { <-ctx.Done(); <-release },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return release
 }

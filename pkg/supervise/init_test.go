@@ -247,8 +247,8 @@ func TestInitPendingActivation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		top := NewRoot(nil)
 		parent := newGroup(top, false)
-		var attempts atomic.Int32
-		hooks := &initHooks{init: func(p *initializing) error { p.state = int(attempts.Add(1)); return nil }}
+		var inits atomic.Int32
+		hooks := &initHooks{init: func(p *initializing) error { p.state = int(inits.Add(1)); return nil }}
 		ref, err := Start[initializing](parent, hooks)
 		if err != nil {
 			t.Fatal(err)
@@ -261,7 +261,7 @@ func TestInitPendingActivation(t *testing.T) {
 		parent.activate()
 		parent.mu.Unlock()
 		synctest.Wait()
-		if ref.Borrow() != before || attempts.Load() != 1 {
+		if ref.Borrow() != before || inits.Load() != 1 {
 			t.Fatal("activation replaced pending setup")
 		}
 		<-parent.Stop()

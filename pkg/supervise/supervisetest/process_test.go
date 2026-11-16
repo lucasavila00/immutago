@@ -17,7 +17,7 @@ import (
 // processService fails after it creates a child that must finish cleanup.
 type processService struct{ supervise.Service[string] }
 
-// Init starts a child in this attempt's group.
+// Init starts a child in its child group.
 func (s *processService) Init() error {
 	_, err := supervise.Start[processChild](s.UnsafeChildren(), supervise.NoArgs{})
 	return err
@@ -36,7 +36,7 @@ type processChild struct {
 	supervise.Service[supervise.NoArgs]
 }
 
-// Run stops when its attempt ends.
+// Run stops when its parent ends.
 func (*processChild) Run(ctx context.Context) {
 	<-ctx.Done()
 	fmt.Println("child cleanup complete")

@@ -73,7 +73,7 @@ func (s *processFailure) Run(context.Context) {
 	panic("original panic")
 }
 
-// TestTerminalProcessOutput checks original stacks when attempt reports are disabled.
+// TestTerminalProcessOutput checks original stacks with the default reporter.
 func TestTerminalProcessOutput(t *testing.T) {
 	if mode := os.Getenv("IMMUTAGO_TERMINAL_PROCESS"); mode != "" {
 		synctest.Test(t, func(t *testing.T) {

@@ -17,10 +17,10 @@ type alwaysFails struct {
 	Service[shutdownArgs]
 }
 
-// Init counts each setup attempt.
+// Init counts its setup call.
 func (s *alwaysFails) Init() error { s.Args().inits.Add(1); return nil }
 
-// Run fails each attempt.
+// Run fails after the test releases it.
 func (s *alwaysFails) Run(context.Context) { <-s.Args().fail; panic("fail") }
 
 type slowToStop struct {

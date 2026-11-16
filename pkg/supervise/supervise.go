@@ -78,7 +78,7 @@ func (p *Service[A]) bind(args A, owner *Group) {
 func (p *Service[A]) begin(ctx context.Context) (context.Context, bool) {
 	run, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	p.cancel = cancel
-	if p.owner.policy.Err() != nil || ctx.Err() != nil {
+	if p.owner.admission.Err() != nil || ctx.Err() != nil {
 		p.ended = true
 		return run, false
 	}
@@ -131,7 +131,7 @@ type Group struct {
 	active      bool
 	stopping    bool
 	stopped     chan struct{}
-	policy      context.Context
+	admission   context.Context
 	cancel      context.CancelFunc
 	root        *Group
 	parent      *Group
@@ -195,18 +195,18 @@ func root(exit func(any), report func(any, []byte)) *Group {
 	return s
 }
 
-// newGroup creates a pending or active group with its owner's admission policy.
+// newGroup creates a pending or active group with its owner's admission context.
 func newGroup(owner *Group, active bool) *Group {
 	parent := context.Background()
 	var mu *sync.Mutex
 	var top *Group
 	if owner != nil {
-		parent, top, mu = owner.policy, owner.root, owner.mu
+		parent, top, mu = owner.admission, owner.root, owner.mu
 	} else {
 		mu = new(sync.Mutex)
 	}
-	policy, cancel := context.WithCancel(parent)
-	return &Group{mu: mu, active: active, stopped: make(chan struct{}), policy: policy, cancel: cancel, root: top}
+	admission, cancel := context.WithCancel(parent)
+	return &Group{mu: mu, active: active, stopped: make(chan struct{}), admission: admission, cancel: cancel, root: top}
 }
 
 // StartGroup creates a lifetime group for selective shutdown.
@@ -236,21 +236,21 @@ func Start[T, A any, P interface {
 	end()
 }](parent *Group, args A) (Ref[T], error) {
 	checkGroup(parent)
-	first := new(T)
-	bindService(P(first), args, parent)
+	value := new(T)
+	bindService(P(value), args, parent)
 	ready := false
 	defer func() {
 		if !ready {
-			P(first).end()
+			P(value).end()
 		}
 	}()
-	if err := P(first).Init(); err != nil {
+	if err := P(value).Init(); err != nil {
 		return Ref[T]{}, err
 	}
 	ready = true
-	ref := Ref[T]{value: im.Trust(first)}
+	ref := Ref[T]{value: im.Trust(value)}
 	run := func(ctx context.Context) {
-		service := P(first)
+		service := P(value)
 		parent.mu.Lock()
 		run, admitted := service.begin(ctx)
 		parent.mu.Unlock()
@@ -260,7 +260,7 @@ func Start[T, A any, P interface {
 		}
 		service.Run(run)
 	}
-	cleanup := func() { P(first).end() }
+	cleanup := func() { P(value).end() }
 	parent.add(func(ctx context.Context, done <-chan struct{}) {
 		watch(parent, ctx, done, reflect.TypeFor[T]().String(), run, cleanup)
 	}, nil)
@@ -344,14 +344,14 @@ func (s *Group) fail(failure *Failure, done <-chan struct{}) bool {
 	}
 }
 
-// add registers pending setup or starts one lifetime. Initial Init is already complete.
+// add registers pending setup or starts one lifetime. Init is already complete.
 func (s *Group) add(run func(context.Context, <-chan struct{}), group *Group) {
 	c := &child{run: run, group: group}
 	if group != nil {
 		group.entry = c
 	}
 	s.mu.Lock()
-	if s.policy.Err() != nil {
+	if s.admission.Err() != nil {
 		if group != nil {
 			s.mu.Unlock()
 			<-group.Stop()
@@ -381,7 +381,7 @@ func (s *Group) add(run func(context.Context, <-chan struct{}), group *Group) {
 // activate launches pending entries once. The caller holds the tree lock.
 // Parent shutdown keeps them pending for cleanup.
 func (s *Group) activate() {
-	if s.active || s.policy.Err() != nil {
+	if s.active || s.admission.Err() != nil {
 		return
 	}
 	s.active = true

@@ -16,7 +16,7 @@ type runCause struct{ message string }
 // Error returns the original panic text.
 func (e *runCause) Error() string { return e.message }
 
-// TestFirstRunFailure preserves the first failure without another attempt or delay.
+// TestFirstRunFailure preserves the first failure without another Run or delay.
 func TestFirstRunFailure(t *testing.T) {
 	for _, mode := range []string{"panic", "error", "Goexit"} {
 		for _, reporting := range []bool{false, true} {
@@ -31,7 +31,7 @@ func TestFirstRunFailure(t *testing.T) {
 	}
 }
 
-// checkFirstRunFailure checks the error, stack, reports, and attempt count.
+// checkFirstRunFailure checks the error, stack, reports, and Run count.
 func checkFirstRunFailure(t *testing.T, mode string, reporting bool) {
 	t.Helper()
 	var cause any = "ledger: balance underflow"
@@ -41,9 +41,9 @@ func checkFirstRunFailure(t *testing.T, mode string, reporting bool) {
 		cause = errGoexit
 	}
 	reports := make(chan any, 2)
-	var attemptStack []byte
+	var runStack []byte
 	report := func(value any, stack []byte) {
-		attemptStack = stack
+		runStack = stack
 		reports <- value
 	}
 	if !reporting {
@@ -84,8 +84,8 @@ func checkFirstRunFailure(t *testing.T, mode string, reporting bool) {
 		if len(reports) != 1 || <-reports != failure {
 			t.Error("expected one Failure report")
 		}
-		if !bytes.Equal(attemptStack, failure.Stack) {
-			t.Error("terminal Failure changed the attempt stack")
+		if !bytes.Equal(runStack, failure.Stack) {
+			t.Error("terminal Failure changed the Run stack")
 		}
 	}
 }

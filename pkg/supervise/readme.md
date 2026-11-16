@@ -54,7 +54,7 @@ type Group struct {
 func NewRoot(report func(any, []byte)) *Group
 ```
 
-NewRoot creates an active lifetime group. A Run panic or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered Run panic or Goexit with its original stack, then the selected terminal \*Failure before cleanup waits. A nil report disables attempt reports; terminal failures still go to standard error. Reports can overlap, must return, and must not wait for their group to stop.
+NewRoot creates an active lifetime group. A Run panic or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered Run panic or Goexit once as \*Failure, with its original stack, before that service waits for child cleanup. A nil report writes failures to standard error. Stop does not suppress failures. Reports can overlap, must return, and must not wait for their group to stop.
 
 ### func StartGroup
 
@@ -105,7 +105,7 @@ func Start[T, A any, P interface {
 }](parent *Group, args A) (Ref[T], error)
 ```
 
-Start creates T, calls Init in the caller, and publishes the initialized value. A first Init error returns a zero Ref and the error; a first Init panic reaches the caller. The runtime stops staged children in both cases. Each successful Init gets one Run call, with a cancelled context if its attempt cannot activate. Start under a stopped parent waits for that cleanup Run. Stop waits for registered children, not an initial Init that has not registered yet.
+Start creates T, calls Init in the caller, and publishes the initialized value. An Init error returns a zero Ref and the error; an Init panic reaches the caller. The runtime stops staged children in both cases. Each successful Init gets one Run call, with a cancelled context if the service cannot activate. Start under a stopped parent waits for that cleanup Run. Stop waits for registered children, not an Init that has not registered yet.
 
 ### func \(Ref\[T\]\) Borrow
 
@@ -125,7 +125,7 @@ IsZero reports whether this reference is unset.
 
 ## type Service
 
-Service supplies start arguments and the children owned by one service attempt. Embed it by value. Start creates and initializes the service value. Do not copy an initialized Service or a struct that contains it. Declare service methods with pointer receivers. Run go vet to check for copies.
+Service supplies start arguments and the children owned by one service run. Embed it by value. Start creates and initializes the service value. Do not copy an initialized Service or a struct that contains it. Declare service methods with pointer receivers. Run go vet to check for copies.
 
 ```go
 type Service[A any] struct {
@@ -147,7 +147,7 @@ Args returns the arguments supplied to Start.
 func (*Service[A]) Init() error
 ```
 
-Init supplies empty setup when the service does not declare Init. A declared Init must release application resources if it fails. The runtime stops children created by that setup attempt.
+Init supplies empty setup when the service does not declare Init. A declared Init must release application resources if it fails. The runtime stops children created during setup.
 
 ### func \(\*Service\[A\]\) UnsafeChildren
 
