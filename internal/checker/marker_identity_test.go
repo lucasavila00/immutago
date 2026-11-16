@@ -61,7 +61,7 @@ func TestLocalPointerIdentity(t *testing.T) {
 	}
 	constraint := types.NewInterfaceType(nil, []types.Type{value}).Complete()
 	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "T", nil), constraint)
-	if reason := Reason(types.NewPointer(parameter)); !strings.Contains(reason, "concrete marked struct target") {
+	if reason := Reason(types.NewPointer(parameter)); !strings.Contains(reason, "concrete Frozen record target") {
 		t.Fatalf("type parameter admitted as a pointer target: %s", reason)
 	}
 }

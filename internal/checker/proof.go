@@ -207,7 +207,7 @@ func (p *proof) frozenPointer(result *obligation, pointer *types.Pointer) {
 		return
 	}
 	if !Marked(pointer.Elem()) {
-		result.reason = "stored pointers require a concrete marked struct target"
+		result.reason = "stored pointers require a concrete Frozen record target"
 		return
 	}
 	p.depend(result, pointer.Elem(), "")

@@ -90,9 +90,9 @@ func TestCopiedRejectedForms(t *testing.T) {
 		{`func f(){values:=map[int]Score{};alias:=values;_=alias;_=im.FreezeMap(values)}`, "copying"},
 
 		{`type Worker struct{supervise.Service[supervise.NoArgs]};` +
-			`func(w *Worker)Last()*Score{return nil}`, "service result"},
+			`func(w *Worker)Last()*Score{return nil}`, "read result"},
 		{`type Worker struct{supervise.Service[supervise.NoArgs]};` +
-			`func(w *Worker)Last()Holder{return Holder{}}`, "service result"},
+			`func(w *Worker)Last()Holder{return Holder{}}`, "read result"},
 		{`type Counts [2]int;type Bad struct{im.Copied;N Counts}`, "Copied record:"},
 		{`type Bad[T any]struct{im.Copied;N T}`, "Copied record:"},
 		{`type Bad struct{Marker im.Copied}`, "markers must be embedded by value"},

@@ -73,7 +73,7 @@ _=s}`, "package-level declarations"},
 func f(){var s Scorer=Outer{};_=s}`, "Frozen data fields must be named"},
 		{"unmarked wrapper", `type Outer struct{Scorer};
 func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.Frozen"},
-		{"pointer interface", `func f(){var s *Scorer;_=s}`, "concrete marked struct target"},
+		{"pointer interface", `func f(){var s *Scorer;_=s}`, "concrete Frozen record target"},
 		{"typed nil", `func f(){_=Scorer(nil)}`, "protected value conversions"},
 		{"ordinary interface", `func f(s Scorer){var other any=s;_=other}`, ""},
 		{"assertion", `func f(s Scorer){_=s.(*Tree)}`, ""},
@@ -88,7 +88,7 @@ func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.
 
 		{"variadic interface input", `func take(...Scorer){};func f(){take(&Tree{})}`, "native slices"},
 		{"variadic boxing", `func take(...any){};func f(s Scorer){take(s)}`, ""},
-		{"Copied interface field", `type Bad struct{im.Copied;Scorer Scorer}`, "copied values require"},
+		{"Copied interface field", `type Bad struct{im.Copied;Scorer Scorer}`, "is not a Copied value"},
 
 		{"unexported method", `type Bad interface{im.FrozenInterface;read()int}`, "must be exported"},
 		{"marker payload", `func f(){var s im.FrozenInterface=&Tree{};_=s}`, "markers are annotations"},

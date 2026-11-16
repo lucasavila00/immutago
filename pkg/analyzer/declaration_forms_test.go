@@ -8,9 +8,9 @@ import (
 // TestDeclaredStorageForms checks the contract when no protected runtime source exists.
 func TestDeclaredStorageForms(t *testing.T) {
 	cases := []struct{ source, want string }{
-		{`var p *im.FrozenSlice[int]`, "concrete marked struct target"},
-		{`func read(*[1]Value){};func f(){read(nil)}`, "concrete marked struct target"},
-		{`func f()(p *[1]Value){return}`, "concrete marked struct target"},
+		{`var p *im.FrozenSlice[int]`, "concrete Frozen record target"},
+		{`func read(*[1]Value){};func f(){read(nil)}`, "concrete Frozen record target"},
+		{`func f()(p *[1]Value){return}`, "concrete Frozen record target"},
 		{`var callback func(Value)`, "callbacks require"},
 		{`func read(callback func(Value)){};func f(){read(nil)}`, "callbacks require"},
 		{`func f()(callback func(Value)){return}`, "callbacks require"},

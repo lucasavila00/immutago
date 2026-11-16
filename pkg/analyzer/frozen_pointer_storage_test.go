@@ -112,7 +112,7 @@ func TestFrozenPointerTargets(t *testing.T) {
 func TestCellPointerPayload(t *testing.T) {
 	for _, payload := range []string{"int", "*Data", "[2]Data", "im.FrozenString"} {
 		source := "var raw im.Cell[" + payload + "];func f(){_=raw.LoadPointer().Unsafe()}"
-		if got := checkSource(t, frozenPointerStorageTypes+source); !strings.Contains(got, "concrete marked struct target") {
+		if got := checkSource(t, frozenPointerStorageTypes+source); !strings.Contains(got, "concrete Frozen record target") {
 			t.Fatalf("payload %s: diagnostics = %q", payload, got)
 		}
 	}
