@@ -1,6 +1,7 @@
 // Package supervise runs services with independent retries and owned child lifetimes.
 //
-// Embed Service[A], supply Run(context.Context), and optionally declare Init() error.
+// Embed Service[A] for retries or TerminalService[A] to stop on the first failure.
+// Supply Run(context.Context), and optionally declare Init() error.
 // Start initializes the service and returns Ref[T]. Calls through Borrow run in
 // the caller's goroutine; review shared fields, locks, and inputs in service code.
 // Groups control lifetime and stop order. They do not restart services together.
@@ -33,19 +34,11 @@ func (*noCopy) Lock() {}
 // Unlock completes the lock method set for the copylocks check.
 func (*noCopy) Unlock() {}
 
-// Service supplies start arguments and the children owned by one service attempt.
+// Service supplies start arguments, owned children, and retries after a Run panic.
 // Embed it by value. Start creates and initializes each fresh service value.
 // Do not copy an initialized Service or a struct that contains it.
 // Declare service methods with pointer receivers. Run go vet to check for copies.
-type Service[A any] struct {
-	_        noCopy
-	args     A
-	owner    *Group
-	cancel   context.CancelFunc
-	unwatch  func() bool
-	children *Group
-	ended    bool
-}
+type Service[A any] struct{ service[A] }
 
 // Args returns the arguments supplied to Start. Every retry receives the same arguments.
 func (p *Service[A]) Args() A { return p.args }
@@ -55,13 +48,59 @@ func (p *Service[A]) Args() A { return p.args }
 // stops children created by that setup attempt.
 func (*Service[A]) Init() error { return nil }
 
-// Children returns the group owned by this service attempt. Its services wait
-// until the parent is admitted to Run, or run with cancelled contexts during cleanup.
-// The runtime stops and waits for these children
-// before it replaces the parent. A later attempt owns a new group.
+// Children returns the child group for this attempt. Children wait for Run admission.
+// The runtime stops and waits for them before it replaces the parent.
 // After this attempt ends, Children returns a stopped group.
 // Children panics if Start did not create the service.
-func (p *Service[A]) Children() *Group {
+func (p *Service[A]) Children() *Group { return p.service.Children() }
+
+// bind supplies the shared state and retry limit for this service type.
+func (p *Service[A]) bind(args A, owner *Group) (*service[A], int) {
+	p.args, p.owner = args, owner
+	return &p.service, restartLimit
+}
+
+// TerminalService supplies start arguments and owned children without retries.
+// Embed it by value when a fresh service cannot restore the required state.
+// A Run panic or runtime.Goexit stops the root with the original failure and stack.
+// Init and Stop use the same rules as Service.
+// Do not copy an initialized TerminalService or a struct that contains it.
+// Declare service methods with pointer receivers. Run go vet to check for copies.
+type TerminalService[A any] struct{ service[A] }
+
+// Args returns the arguments supplied to Start.
+func (p *TerminalService[A]) Args() A { return p.args }
+
+// Init supplies empty setup when the service does not declare Init.
+// A declared Init must release application resources if it fails. The runtime
+// stops children created by that setup attempt.
+func (*TerminalService[A]) Init() error { return nil }
+
+// Children returns the child group for this attempt. Children wait for Run admission.
+// The runtime stops and waits for them before this attempt ends.
+// After this attempt ends, Children returns a stopped group.
+// Children panics if Start did not create the service.
+func (p *TerminalService[A]) Children() *Group { return p.service.Children() }
+
+// bind supplies the shared state and zero retries for this service type.
+func (p *TerminalService[A]) bind(args A, owner *Group) (*service[A], int) {
+	p.args, p.owner = args, owner
+	return &p.service, 0
+}
+
+// service keeps the arguments and child lifetime for one initialized attempt.
+type service[A any] struct {
+	_        noCopy
+	args     A
+	owner    *Group
+	cancel   context.CancelFunc
+	unwatch  func() bool
+	children *Group
+	ended    bool
+}
+
+// Children returns the attempt's child group under the shared tree lock.
+func (p *service[A]) Children() *Group {
 	checkGroup(p.owner)
 	p.owner.mu.Lock()
 	defer p.owner.mu.Unlock()
@@ -77,13 +116,8 @@ func (p *Service[A]) Children() *Group {
 	return p.children
 }
 
-// bind supplies arguments and lifetime ownership before Init.
-func (p *Service[A]) bind(args A, owner *Group) {
-	p.args, p.owner = args, owner
-}
-
 // begin admits Run and activates children under the tree lock held by Start.
-func (p *Service[A]) begin(ctx context.Context) (context.Context, bool) {
+func (p *service[A]) begin(ctx context.Context) (context.Context, bool) {
 	run, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	p.cancel = cancel
 	if p.owner.policy.Err() != nil || ctx.Err() != nil {
@@ -98,7 +132,7 @@ func (p *Service[A]) begin(ctx context.Context) (context.Context, bool) {
 }
 
 // halt stops children before it cancels the parent's Run context.
-func (p *Service[A]) halt() {
+func (p *service[A]) halt() {
 	p.owner.mu.Lock()
 	p.ended = true
 	children := p.children
@@ -110,7 +144,7 @@ func (p *Service[A]) halt() {
 }
 
 // end closes child admission and waits for cleanup after Init or Run ends.
-func (p *Service[A]) end() {
+func (p *service[A]) end() {
 	if p.unwatch != nil {
 		p.unwatch()
 	}
@@ -181,8 +215,8 @@ func (p Ref[T]) Borrow() *T {
 	return p.value.Load()
 }
 
-// NewRoot creates an active lifetime group. An exhausted service or Goexit stops
-// the root, waits for ordered cleanup, and panics with *Failure.
+// NewRoot creates an active lifetime group. A terminal failure stops the root,
+// waits for ordered cleanup, and panics with *Failure.
 // report receives each recovered panic, restart Init error, or Goexit with its original
 // stack, then the selected terminal *Failure before cleanup waits. A nil report
 // disables attempt reports; terminal failures still go to standard error.
@@ -233,22 +267,19 @@ func Start[T, A any, P interface {
 	*T
 	Init() error
 	Run(context.Context)
-	bind(A, *Group)
-	begin(context.Context) (context.Context, bool)
-	halt()
-	end()
+	bind(A, *Group) (*service[A], int)
 }](parent *Group, args A) (Ref[T], error) {
 	checkGroup(parent)
-	create := func() *T {
+	create := func() (*T, *service[A], int) {
 		value := new(T)
-		bindService(P(value), args, parent)
-		return value
+		state, limit := bindService(P(value), args, parent)
+		return value, state, limit
 	}
-	first := create()
+	first, state, limit := create()
 	ready := false
 	defer func() {
 		if !ready {
-			P(first).end()
+			state.end()
 		}
 	}()
 	if err := P(first).Init(); err != nil {
@@ -267,45 +298,46 @@ func Start[T, A any, P interface {
 			if stopped {
 				return
 			}
-			value = create()
+			value, state, _ = create()
 			current = value
 			if err := P(value).Init(); err != nil {
 				panic(err)
 			}
 		}
-		service := P(value)
 		parent.mu.Lock()
-		run, admitted := service.begin(ctx)
+		run, admitted := state.begin(ctx)
 		if admitted {
 			ref.value.Store(value)
 		}
 		parent.mu.Unlock()
 		if !admitted {
 			<-ctx.Done()
-			service.halt()
+			state.halt()
 		}
-		service.Run(run)
+		P(value).Run(run)
 	}
 	cleanup := func() {
 		if current != nil {
-			P(current).end()
+			state.end()
 			current = nil
 		}
 	}
 	parent.add(func(ctx context.Context) {
-		watch(parent, ctx, reflect.TypeFor[T]().String(), run, cleanup)
+		watch(parent, ctx, reflect.TypeFor[T]().String(), limit, run, cleanup)
 	}, nil)
 	return ref, nil
 }
 
 // bindService reports an invalid embedding path without catching application Init panics.
-func bindService[A any, P interface{ bind(A, *Group) }](value P, args A, parent *Group) {
+func bindService[A any, P interface {
+	bind(A, *Group) (*service[A], int)
+}](value P, args A, parent *Group) (*service[A], int) {
 	defer func() {
 		if recover() != nil {
-			panic("supervise: embed Service by value through each embedded field")
+			panic("supervise: embed Service or TerminalService by value through each embedded field")
 		}
 	}()
-	value.bind(args, parent)
+	return value.bind(args, parent)
 }
 
 // Stop prevents new retries in the subtree and requests ordered shutdown.
@@ -486,7 +518,7 @@ func (s *Group) halt() {
 }
 
 // watch owns one service's retry budget. Every return ends that service entry.
-func watch(parent *Group, ctx context.Context, name string, run func(context.Context), cleanup func()) {
+func watch(parent *Group, ctx context.Context, name string, limit int, run func(context.Context), cleanup func()) {
 	report := parent.root.report
 	var restarts []time.Time
 	var failureAt time.Time
@@ -502,12 +534,12 @@ func watch(parent *Group, ctx context.Context, name string, run func(context.Con
 			return
 		}
 		restarts = slices.DeleteFunc(restarts, func(at time.Time) bool { return failureAt.Sub(at) >= restartWindow })
-		if goexit || len(restarts) == restartLimit {
+		if goexit || len(restarts) == limit {
 			parent.fail(&Failure{Service: name, Value: value, Stack: stack})
 		}
 	}
 	for {
-		panicked := attempt(ctx, run, cleanup, report != nil || len(restarts) == restartLimit, failed)
+		panicked := attempt(ctx, run, cleanup, report != nil || len(restarts) == limit, failed)
 		if !panicked || parent.policy.Err() != nil || ctx.Err() != nil {
 			return
 		}

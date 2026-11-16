@@ -38,6 +38,24 @@ server only after Start succeeds. On shutdown, it closes the HTTP server before
 it stops the root group. `<-root.Stop()` waits for background work; it does not
 wait for HTTP handlers or other direct method calls.
 
+## Stop on the first failure
+
+Use `supervise.TerminalService[A]` when a fresh service cannot restore its state.
+For example, a ledger that keeps received events only in memory must stop instead
+of restarting with an empty balance:
+
+```go
+type Ledger struct {
+    supervise.TerminalService[supervise.NoArgs]
+}
+```
+
+Supply Run and optionally Init, then call `supervise.Start[Ledger](root, supervise.NoArgs{})`.
+The first Run panic stops the root with the original panic value and stack in
+`*supervise.Failure`. There is no restart or backoff. Initial Init errors and
+panics still return to the Start caller. The
+[runtime reference](../reference/services.md) defines failure reporting and Stop order.
+
 ## Keep a reference and call a method
 
 The handler keeps `supervise.Ref[Loader]`. Each request calls:

@@ -134,7 +134,7 @@ func (c *Classifier) expand(node *classificationNode) {
 		c.callableEdges(node)
 		return
 	}
-	if IsLibraryType(node.key.typ, "Cell") || IsRuntimeType(node.key.typ, ServiceMarker) ||
+	if IsLibraryType(node.key.typ, "Cell") || IsServiceBase(node.key.typ) ||
 		IsUncheckedValue(node.key.typ) {
 		return
 	}

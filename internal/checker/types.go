@@ -14,9 +14,6 @@ const LibraryPath = "github.com/lucasavila00/immutago/pkg/im"
 // RuntimePath is the package whose supervised service runtime is trusted.
 const RuntimePath = "github.com/lucasavila00/immutago/pkg/supervise"
 
-// ServiceMarker identifies supervise.Service, the generic type embedded by services.
-const ServiceMarker = "Service"
-
 // IsLibraryType identifies a library type by package identity and name, not spelling at its use site.
 func IsLibraryType(t types.Type, name string) bool {
 	n, ok := types.Unalias(t).(*types.Named)
@@ -27,6 +24,11 @@ func IsLibraryType(t types.Type, name string) bool {
 func IsRuntimeType(t types.Type, name string) bool {
 	n, ok := types.Unalias(t).(*types.Named)
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == RuntimePath && n.Obj().Name() == name
+}
+
+// IsServiceBase identifies either runtime type that supplies service state and retries.
+func IsServiceBase(t types.Type) bool {
+	return IsRuntimeType(t, "Service") || IsRuntimeType(t, "TerminalService")
 }
 
 // IsUncheckedValue reports whether t is the library's unchecked immutable value wrapper.
@@ -58,7 +60,7 @@ func Local(t types.Type) bool { return embedsMarker(t, "Local") }
 // Copied reports the presence of an embedded im.Copied value, not type validity.
 func Copied(t types.Type) bool { return embedsMarker(t, "Copied") }
 
-// Service reports whether a struct embeds supervise.Service, directly or indirectly.
+// Service reports whether a struct embeds a runtime service base, directly or indirectly.
 func Service(t types.Type) bool {
 	seen := make(map[types.Type]bool)
 	pending := []types.Type{t}
@@ -72,7 +74,7 @@ func Service(t types.Type) bool {
 			continue
 		}
 		seen[current] = true
-		if IsRuntimeType(current, ServiceMarker) {
+		if IsServiceBase(current) {
 			return true
 		}
 		if structure, ok := current.Underlying().(*types.Struct); ok {

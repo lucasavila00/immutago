@@ -16,7 +16,7 @@
 | Clone | Make independent native storage. It does not recursively copy arbitrary fields. |
 | Protected storage | Frozen and Local records, Local projections, and containers that own them. Frozen pointers, Frozen interfaces, and frozen collection handles occupy ordinary replaceable slots; their selected Frozen data stay immutable. Fields inside protected owners keep the owner's write and address rules. |
 | Checked package | A package selected by the [package boundary](rules.md#package-boundary). |
-| Service | A struct that embeds `supervise.Service[A]`. Init sets it up; Run does background work. |
+| Service | A struct that embeds `supervise.Service[A]` or `supervise.TerminalService[A]`. Init sets it up; Run does background work. |
 | Service method | A declared or promoted method on a service. Exported methods have the [result signature rule](service-results.md). |
 | Service reference | `supervise.Ref[T]`; each Borrow call selects the current service after any restart. |
 | Service run | One service value's background execution and child group. |

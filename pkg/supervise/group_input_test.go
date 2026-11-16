@@ -76,6 +76,6 @@ func TestInvalidEmbedding(t *testing.T) {
 		func() { _, _ = Start[pointerBase](parent, NoArgs{}) },
 		func() { _, _ = Start[indirectService](parent, NoArgs{}) },
 	} {
-		expectPanic(t, "supervise: embed Service by value through each embedded field", start)
+		expectPanic(t, "supervise: embed Service or TerminalService by value through each embedded field", start)
 	}
 }
