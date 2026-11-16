@@ -47,7 +47,7 @@ func TestRequiredGeneration(t *testing.T) {
 				return append(content, []byte("\n// changed\n")...), err
 			}
 		}, "is stale"},
-		{"generated-only records", func(p *analysis.Pass) { p.Files = p.Files[1:] }, "no source Frozen records"},
+		{"generated-only records", func(p *analysis.Pass) { p.Files = p.Files[1:] }, "is stale"},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
@@ -184,7 +184,7 @@ func TestLocalRecordsNeedNoGeneration(t *testing.T) {
 	}
 }
 
-// TestLocalGeneratedFileNeedsSchema rejects a generated-file name without a Frozen schema.
+// TestLocalGeneratedFileNeedsSchema rejects declarations in output that should be empty.
 func TestLocalGeneratedFileNeedsSchema(t *testing.T) {
 	pass := sourcePass(t, `type Reply struct{im.Local;Text im.StringProjection}`)
 	replaceGeneratedSource(t, pass, projectiongen.Filename, `package sample
@@ -196,7 +196,7 @@ func raw(value im.Projection[string])string{return value.Unsafe()}`)
 		t.Fatal(err)
 	}
 	got := strings.Join(reports, "\n")
-	if !strings.Contains(got, "no source Frozen records") {
+	if !strings.Contains(got, "is stale") {
 		t.Fatal(got)
 	}
 }

@@ -86,8 +86,8 @@ func TestPrimitiveProofs(t *testing.T) {
 	}
 }
 
-// TestCellshipGraph checks containers, recursive unmarked structs, aliases, and exact marker identity.
-func TestCellshipGraph(t *testing.T) {
+// TestOwnershipGraph checks containers, recursive unmarked structs, aliases, and exact marker identity.
+func TestOwnershipGraph(t *testing.T) {
 	marker, slice := testTypes()
 	value := markedType("Value", marker)
 	for _, typ := range []types.Type{

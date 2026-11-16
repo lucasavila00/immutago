@@ -205,43 +205,62 @@ Use the operations above inside these statement forms:
 | --- | --- |
 | Declare one variable or assign one destination | `var value FrozenPoint`, `value := FrozenPoint{X: 1}`, `value = FrozenPoint{X: 2}` |
 | Change a native builder slot or its Copied fields | `values[0] = value`, `counts[0]++`, `counts[0] += 2`, `scores[0].Value++` |
-| Bind several results from a direct named function, concrete method, or proved Frozen interface method to local names or blanks | `value, found, out := reader.Lookup(key, buf)`, `value, found, out = read()`, `var value, found, out = read()` |
+| Bind several results from one direct named function, concrete method, or proved Frozen interface method; check each destination separately | `value, found, out := reader.Lookup(key, buf)`, `value, state.Found, out = read()`, `var value, found, out = read()` |
 | Freeze a slice or map in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
 | Call a direct named function | `read(p)`, `n := read(p)` |
 | Call a method in the list above | `n := p.ReadX()` |
 | Return values or Frozen pointers, including multiple results | `return point`, `return p, true` |
-| Forward named results directly | `return makePair()`, `takePair(makePair())` |
+| Return named results, or forward call results to a return or direct typed call | `func read() (value LocalPoint, found bool) { value, found = makePair(); return }`, `return makePair()`, `takePair(makePair())` |
 | Conditional or value switch | `if ready { p = makeFrozenPoint() }`, `switch p.X { ... }` |
 | Condition, three-clause, or unconditional loop | `for p.X > 0 { ... }`, `for i := 0; i < p.X; i++ { ... }`, `for { ... }` |
 | Range with fresh loop variables | `for i, value := range values { ... }`, `for i := range count { ... }` |
 | Assign one existing writable loop target, using the assignment rules above | `for i = range count { ... }`, `for a[point.X] = range a { ... }` |
 | Use checked operations in a select case body | `case <-ready: values[0] = value` |
 
-- Local value, Local pointer, and builder assignments have one destination, except for the
-  result-call forms above. Frozen values also use the forms above.
+- Local value and builder-slot assignments have one destination, except for the
+  result-call forms above. Local-pointer and builder-handle bindings have one
+  destination. Local pointers cannot be returned. Frozen values also use the forms above.
   Returns can have several results.
 - Fixed calls such as FrozenMap.Get, MapProjection.Get, and supervise.Start use
   the same result binding forms. For example, `value, found = frozen.Get(key)`
   can reuse local names, and `var ref, err = supervise.Start[Worker](root, args)`
   can declare the results.
-- Multiple-result bindings with Local values, Local pointers, or builders
-  require one direct typed call that supplies all results.
+- Multiple-result bindings with Local values or builder-slot operations require
+  one direct typed call that supplies all results.
   Each result keeps its type, write, and storage checks.
-  All destinations must be local names or blanks. The `:=`, `=`, and `var` forms
-  are allowed, including reused locals in `:=`. Aliases and parentheses keep
-  these forms. For example, `local, found := makeLocalPair()` can bind a Local record,
-  and `pointer, found := findLocal()` can bind a Local pointer. An assignment cannot
-  store a Local value in persistent storage. Persistent Frozen results can be boxed in `any`.
-- The [service result signatures](service-results.md) still limit service methods
-  to at most one data result and an optional error. Result binding does not change
-  a method's declared API contract. Calls with only ordinary values keep Go rules.
+  The `:=`, `=`, and `var` forms are allowed, including reused locals in `:=`.
+  Each Local result needs a local name or blank. Ordinary results can use local
+  or package names, ordinary fields, elements, or pointer targets. A native builder
+  slot can receive an allowed element; the builder handle cannot come from a tuple.
+  Aliases and parentheses keep these forms. For example, `local, found := makeLocalPair()`
+  can bind a Local record, and `local, state.Found = makeLocalPair()` can store the bool.
+  `var _, found = makeLocalPair()` can discard the Local result at package scope.
+  An assignment cannot store a Local value in persistent storage or change a protected
+  field. Persistent Frozen results can be boxed in `any`.
+- Each [service result](service-results.md) must be a read result or the predeclared
+  error type. There is no result count or order limit. Calls with only ordinary
+  values keep Go rules. Tuple callbacks and generics keep each component's normal
+  rules: persistent Frozen values are allowed, while Local values need direct typed calls.
 - Blocks, `break`, and `continue` follow ordinary Go rules.
 - Local values and pointers need the exact parameter type, such as
   `func read(p *LocalPoint) int`. Call directly, without `go` or `defer`.
 
+| Multiple-result destinations — exhaustive | Example |
+| --- | --- |
+| Local names or blanks | `view, found := readPair()`, `var view, found = readPair()`, `view, _ = readPair()` |
+| Package names for ordinary results | `view, savedFound = readPair()`, `var _, savedFound = readPair()` |
+| Ordinary fields | `view, state.Found = readPair()` |
+| Ordinary array, slice, or map elements | `view, foundByKey[key] = readPair()` |
+| Ordinary pointer targets | `view, *found = readPair()` |
+| Native builder slots with allowed element types | `points[0], view = readPoint()` |
+
+The normal write and type rules apply to every destination. Unlisted restricted
+binding forms are rejected.
+
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
-| `points[0], found = makePair()` returning `(FrozenPoint, bool)` | Bind local names first, then assign each allowed destination separately. |
+| `point.X, found = readPair()` when point is Frozen | Bind local names, then construct a new point. |
+| `values, found := readSlice(); _ = im.FreezeSlice(values)` | Construct a fresh builder or Clone first, then Freeze it. |
 | `value, p = LocalPoint{}, &LocalPoint{}` | Use two statements. |
 | `Other(point)` where `type Other FrozenPoint` | Construct `Other{X: point.X}`. |
 | `OtherFrozen(frozen)` where `type OtherFrozen im.FrozenSlice[int]` | Keep the frozen type; use `Clone` for mutable storage. |

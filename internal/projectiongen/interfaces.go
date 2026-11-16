@@ -11,10 +11,11 @@ import (
 
 // addInterface queues a local method reader and its constructor.
 func (g *generator) addInterface(typ types.Type, name string) error {
-	if err := g.reserve(name); err != nil {
+	source := "interface " + g.typeName(typ)
+	if err := g.reserve(name, source); err != nil {
 		return err
 	}
-	if err := g.reserve(constructorName(name)); err != nil {
+	if err := g.reserve(constructorName(name), source); err != nil {
 		return err
 	}
 	g.interfaces = append(g.interfaces, record{typ: typ, name: name})
