@@ -5,8 +5,10 @@ import (
 	"os"
 )
 
-// Failure identifies the service whose terminal failure stopped the root.
-// Value is its original Run panic value or a runtime.Goexit error.
+// Failure describes one service Run panic or runtime.Goexit call.
+// The root panics with the first recorded *Failure after reporting and cleanup.
+// Value is the original panic value, or an error with the text
+// "supervise: service called runtime.Goexit" for Goexit.
 // Stack is captured in that service's goroutine. Groups pass the same failure
 // to the root without wrapping it.
 type Failure struct {

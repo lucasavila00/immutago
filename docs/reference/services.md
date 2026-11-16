@@ -61,13 +61,21 @@ Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
 
 | Operation or event | Behavior |
 | --- | --- |
-| `ref, err := supervise.Start[Worker](parent, args)` | Create a fresh Worker, call Init, then make it available through Ref and schedule Run. Only Worker needs an explicit type argument. |
+| `ref, err := supervise.Start[Worker](parent, args)` | Create a fresh Worker, call Init, then make it available through Ref and schedule Run. |
 | Init returns an error | Start returns a zero Ref and the error. |
 | Init panics | The panic reaches the caller. |
 | Start under a stopped group | Init still runs. If it succeeds, Run receives an already-cancelled context. Start waits for cleanup, then returns the initialized Ref. |
 | Stop while Init runs | Stop waits only for registered services. If Init succeeds after Stop, Start waits for its cancelled Run and child cleanup. A failure in that Run remains terminal. |
 | Nil or zero Group passed to Start or StartGroup | Panic with `supervise: nil or zero Group` before Init. |
 | Pointer on the selected Service embedding path | Panic before Init with `supervise: embed Service by value through each embedded field`. |
+
+Go infers A from the argument's type. An untyped constant supplies its default
+type. If that type differs from the service's A, specify A or convert the argument:
+
+| Service declaration | Specify A | Convert the argument |
+| --- | --- | --- |
+| `type Indexer struct { supervise.Service[fs.FS] }` | `supervise.Start[Indexer, fs.FS](root, fstest.MapFS{})` | `supervise.Start[Indexer](root, fs.FS(fstest.MapFS{}))` |
+| `type Counter struct { supervise.Service[int64] }` | `supervise.Start[Counter, int64](root, 5)` | `supervise.Start[Counter](root, int64(5))` |
 
 After setup, the runtime admits Run and activates its staged child groups in one
 decision ordered against Stop. An admitted Run can enter its function after Stop
@@ -86,7 +94,7 @@ resources. Check its context before starting work: it can already be cancelled.
 | Run returns normally | Stop its children, then remove the service from its group. Other services continue. |
 | Run receives cancellation | Return normally to end without a failure. |
 | Run panics | Report the original panic and stack. Stop the entire root tree, wait for cleanup, then panic with `*supervise.Failure`. |
-| Run calls `runtime.Goexit()` | Stop the root through the same failure path; Failure.Value identifies Goexit. |
+| Run calls `runtime.Goexit()` | Stop the root through the same failure path. Failure.Value is an error with the text `supervise: service called runtime.Goexit`. |
 | A child fails under nested groups or services | Its failure goes directly to the root. |
 | A direct service method panics | The panic stays in its caller's goroutine. If called from Run, it fails that Run. |
 | Run panics or calls Goexit during shutdown or cleanup | Use the same terminal failure path. Stop and a parent's normal return cannot suppress a failure. |

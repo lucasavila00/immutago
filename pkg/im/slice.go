@@ -3,7 +3,7 @@ package im
 import "slices"
 
 // FrozenSlice is a read-only slice. Its zero value is empty.
-// T must be immutable. Copies share the same read-only entries.
+// T must be a Frozen type. Copies share the same read-only entries.
 type FrozenSlice[T any] struct {
 	values []T
 }
@@ -22,9 +22,9 @@ func (s FrozenSlice[T]) Len() int { return len(s.values) }
 func (s FrozenSlice[T]) At(index int) T { return s.values[index] }
 
 // Clone returns an independent native slice in O(n) time and space.
-// It copies elements by value and preserves nil. Mutating the copy does not
-// change the frozen slice. Pointers still point to the same immutable objects;
-// immutable element types make deeper copying unnecessary.
+// It copies elements by value and preserves nil. Replacing entries in the copy
+// does not change the frozen slice. Pointers still point to the same Frozen
+// objects. Opaque handles keep the same targets, which can be mutable.
 func (s FrozenSlice[T]) Clone() []T { return slices.Clone(s.values) }
 
 // Projection returns local read access without copying backing storage or allocating.

@@ -48,7 +48,7 @@ generic_copied.go:20:2: unsupported immutable operation: protected storage requi
 generic_copied.go:21:26: unsupported immutable operation: closures require ordinary or Frozen captures
   source: reply
   type: api.LevelReply
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 generic_copied.go:22:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: first, second := reply.Meter.Read(), 1
   fix: use one protected destination, or local names for all results of one direct typed call

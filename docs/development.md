@@ -43,7 +43,8 @@ A passing snapshot is not proof of the rule. Check the accepted forms and nearby
 rejections. Consumer-only dependency cases must also pass through CLI and vet.
 
 The checker requires the exact generation directive and current output in every
-package with source Frozen records. Check changed documentation links
+package that declares Frozen records other than opaque handles, or Frozen interfaces.
+Check changed documentation links
 and run complete examples through the CLI.
 Keep language rules in the reference and implementation facts in architecture.
 [Source checks](../scripts/README.md) define comment and size requirements.

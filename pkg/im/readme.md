@@ -105,7 +105,7 @@ type FrozenInterface interface {
 
 ## type FrozenMap
 
-FrozenMap is a read\-only map. Its zero value is empty. K and V must be immutable. Copies share the same read\-only entries.
+FrozenMap is a read\-only map. Its zero value is empty. K and V must be Frozen types. Copies share the same read\-only entries.
 
 ```go
 type FrozenMap[K comparable, V any] struct {
@@ -135,7 +135,7 @@ All returns an iterator over key\-value pairs in unspecified order. It reads fro
 func (m FrozenMap[K, V]) Clone() map[K]V
 ```
 
-Clone returns an independent native map in O\(n\) time and space. It copies keys and values by value and preserves nil. Mutating the copy does not change the frozen map. Pointers still point to the same immutable objects; immutable types make deeper copying unnecessary.
+Clone returns an independent native map in O\(n\) time and space. It copies keys and values by value and preserves nil. Replacing entries in the copy does not change the frozen map. Pointers still point to the same Frozen objects. Opaque handles keep the same targets, which can be mutable.
 
 ### func \(FrozenMap\[K, V\]\) Get
 
@@ -163,7 +163,7 @@ Projection returns local read access without copying backing storage or allocati
 
 ## type FrozenSlice
 
-FrozenSlice is a read\-only slice. Its zero value is empty. T must be immutable. Copies share the same read\-only entries.
+FrozenSlice is a read\-only slice. Its zero value is empty. T must be a Frozen type. Copies share the same read\-only entries.
 
 ```go
 type FrozenSlice[T any] struct {
@@ -201,7 +201,7 @@ At returns the element at index in O\(1\) time without allocations. It panics if
 func (s FrozenSlice[T]) Clone() []T
 ```
 
-Clone returns an independent native slice in O\(n\) time and space. It copies elements by value and preserves nil. Mutating the copy does not change the frozen slice. Pointers still point to the same immutable objects; immutable element types make deeper copying unnecessary.
+Clone returns an independent native slice in O\(n\) time and space. It copies elements by value and preserves nil. Replacing entries in the copy does not change the frozen slice. Pointers still point to the same Frozen objects. Opaque handles keep the same targets, which can be mutable.
 
 ### func \(FrozenSlice\[T\]\) Len
 
