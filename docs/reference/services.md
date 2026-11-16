@@ -32,8 +32,17 @@ Use pointer receivers. Do not copy their values or containing structs and arrays
 Ref values can be copied.
 
 UnsafeChildren requires the original service pointer created by Start. The caller
-must obey this Go contract. Standard `go vet ./...` reports common owner copies;
-immutago does not enforce this contract.
+must obey this Go contract; immutago does not enforce it. `go vet` reports some
+copies, but misses copies made by dereferencing a call result, such as
+`*ref.Borrow()`. A clean vet result does not prove that services and Groups were
+not copied.
+
+| Invalid copies — examples, not analyzer errors | Keep the pointer instead |
+| --- | --- |
+| `worker := *ref.Borrow()` | `worker := ref.Borrow()` |
+| `take(*ref.Borrow())` or `return *ref.Borrow()` | Pass or return `*Worker`: `take(ref.Borrow())` or `return ref.Borrow()`. |
+| `group := *supervise.StartGroup(root)` | `group := supervise.StartGroup(root)` |
+| `group := *ref.Borrow().UnsafeChildren()` | `group := ref.Borrow().UnsafeChildren()` |
 
 | Rejected examples — non-exhaustive | Allowed replacement |
 | --- | --- |
