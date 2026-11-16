@@ -111,18 +111,22 @@ The CLI's own `-tags` flag does not select tagged files. See
 
 ### Read diagnostics
 
-An operation error can include these context lines:
+A diagnostic can include these context fields:
 
 | Line | Meaning |
 | --- | --- |
 | `source:` | The source expression or statement for the rejected operation. |
-| `type:` | The compiler-resolved type of that expression, when available. |
+| `type:` | The compiler-resolved expression type, or the type checked by a type or package rule. |
+| `owner:` | The record that declares the field. |
+| `field:` | The record and field name for a declaration error. |
+| `field type:` | The compiler-resolved field type, on the same line as its owner. |
+| `result type:` | The compiler-resolved service method result type. |
+| `rule:` | The rule that failed. |
 | `fix:` | A supported replacement for the failed rule. |
 
 If `Ptr` returns `int64`, `source: r.C.Ptr()` has `type: int64`, even when the
 rule rejects the receiver operation. A method value such as `h.Ptr` has type
-`func() int64`. Field and service-result errors can name their field or result
-type instead.
+`func() int64`.
 
 ### Package boundary
 

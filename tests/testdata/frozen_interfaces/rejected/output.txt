@@ -7,7 +7,7 @@ forms.go:14:18: service method Raw must return a read result or error: example.c
 forms.go:26:30: unsupported immutable operation: closures require ordinary or Frozen captures
   source: local
   type: api.ScorerProjection
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 forms.go:27:6: unsupported immutable operation: Frozen interface method receivers must match the converted type exactly
   source: implicit api.Scorer = &implementation.Count{}
   fix: convert a value for value methods or a fresh pointer for pointer methods; do not rely on implicit dereferences
@@ -58,11 +58,11 @@ parameters.go:17:6: unsupported immutable operation: ordinary interfaces require
 parameters.go:28:44: unsupported immutable operation: closures require ordinary or Frozen captures
   source: text
   type: im.StringProjection
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 parameters.go:29:43: unsupported immutable operation: closures require ordinary or Frozen captures
   source: text
   type: im.StringProjection
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 parameters.go:30:19: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: protectedInput
   type: func() im.StringProjection
@@ -94,15 +94,15 @@ variadic.go:13:6: unsupported immutable operation: ordinary interfaces require o
 variadic.go:14:38: unsupported immutable operation: closures require ordinary or Frozen captures
   source: text
   type: im.StringProjection
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 variadic.go:15:36: unsupported immutable operation: closures require ordinary or Frozen captures
   source: text
   type: im.StringProjection
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 variadic.go:16:37: unsupported immutable operation: closures require ordinary or Frozen captures
   source: text
   type: im.StringProjection
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 variadic.go:17:17: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: protectedInput
   type: func() im.StringProjection

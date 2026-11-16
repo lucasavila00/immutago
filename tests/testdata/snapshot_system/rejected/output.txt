@@ -4,7 +4,7 @@ projection_adapters.go:10:2: unsupported immutable operation: protected storage 
 projection_adapters.go:11:37: unsupported immutable operation: closures require ordinary or Frozen captures
   source: sequence
   type: im.Projection[im.FrozenSlice[int]]
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 projection_adapters.go:12:6: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: boxed any = im.MapOf(mapping)
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
@@ -38,7 +38,7 @@ snapshot_categories.go:19:2: immutable field Frozen requires a read result: gith
   fix: for Local text, use text.Projection()
 snapshot_categories.go:21:24: unmarked struct field Saved contains protected storage
   owner: rejected.BadNative; field type: im.Projection[string]
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 snapshot_categories.go:24:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved Local
@@ -171,7 +171,7 @@ snapshot_categories.go:57:2: unsupported immutable operation: protected storage 
 snapshot_categories.go:58:26: unsupported immutable operation: closures require ordinary or Frozen captures
   source: text
   type: im.StringProjection
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 snapshot_categories.go:63:61: unsupported immutable operation: writes to immutable objects are unsupported
   source: value.Text = im.StringProjection{}
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

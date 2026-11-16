@@ -3,7 +3,7 @@ package im
 import "maps"
 
 // FrozenMap is a read-only map. Its zero value is empty.
-// K and V must be immutable. Copies share the same read-only entries.
+// K and V must be Frozen types. Copies share the same read-only entries.
 type FrozenMap[K comparable, V any] struct {
 	values map[K]V
 }
@@ -24,9 +24,9 @@ func (m FrozenMap[K, V]) Len() int { return len(m.values) }
 func (m FrozenMap[K, V]) Get(key K) (V, bool) { value, found := m.values[key]; return value, found }
 
 // Clone returns an independent native map in O(n) time and space.
-// It copies keys and values by value and preserves nil. Mutating the copy does
-// not change the frozen map. Pointers still point to the same immutable objects;
-// immutable types make deeper copying unnecessary.
+// It copies keys and values by value and preserves nil. Replacing entries in the
+// copy does not change the frozen map. Pointers still point to the same Frozen
+// objects. Opaque handles keep the same targets, which can be mutable.
 func (m FrozenMap[K, V]) Clone() map[K]V { return maps.Clone(m.values) }
 
 // Projection returns local read access without copying backing storage or allocating.

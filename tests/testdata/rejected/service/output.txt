@@ -1,7 +1,7 @@
 handles.go:10:34: unsupported immutable operation: closures require ordinary or Frozen captures
   source: route
   type: service.ZeroRoute
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 handles.go:7:68: unsupported immutable operation: writes to immutable objects are unsupported
   source: route.Worker = next
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -15,7 +15,7 @@ interfaces.go:17:45: unsupported immutable operation: ordinary interfaces requir
 iszero.go:16:30: unsupported immutable operation: closures require ordinary or Frozen captures
   source: route
   type: service.ZeroRoute
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 iszero.go:20:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go route.Worker.IsZero()
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
@@ -39,7 +39,7 @@ result_uses.go:17:2: unsupported immutable operation: writes to immutable object
 result_uses.go:23:27: unsupported immutable operation: closures require ordinary or Frozen captures
   source: pointer
   type: *service.Reply
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 result_uses.go:7:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved *Reply
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
@@ -71,7 +71,7 @@ results.go:28:50: unsupported immutable operation: writes to immutable objects a
 results.go:29:75: unsupported immutable operation: closures require ordinary or Frozen captures
   source: p
   type: *service.Reply
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 results.go:30:17: service method Frozen must return a read result or error: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[[]int] is not a read result
   result type: im.FrozenSlice[[]int]
   fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results

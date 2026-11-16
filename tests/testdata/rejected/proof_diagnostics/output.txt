@@ -161,19 +161,19 @@ storage.go:13:18: service method RetryCode must return a read result or error: e
   fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
 storage.go:16:2: unmarked struct field Point contains protected storage
   owner: proofdiagnostics.Saved; field type: proofdiagnostics.Point
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store *proofdiagnostics.Point; or make the containing struct a Frozen record with Frozen fields
 storage.go:17:2: unmarked struct field Text contains protected storage
   owner: proofdiagnostics.Saved; field type: im.StringProjection
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store the matching im.FrozenString value; create its projection at the read site
 storage.go:18:2: unmarked struct field Values contains protected storage
   owner: proofdiagnostics.Saved; field type: im.SliceProjection[int]
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store the matching im.FrozenSlice value; create its projection at the read site
 storage.go:19:2: unmarked struct field Index contains protected storage
   owner: proofdiagnostics.Saved; field type: im.MapProjection[int, int]
-  rule: unmarked structs cannot own Frozen records by value or Local data
+  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
   fix: store the matching im.FrozenMap value; create its projection at the read site
 storage.go:25:18: immutable type argument: defined pointer types are unsupported in Frozen data; use a pointer alias
   type: proofdiagnostics.Selected

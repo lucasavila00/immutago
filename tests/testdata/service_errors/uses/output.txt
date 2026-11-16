@@ -16,7 +16,7 @@ uses.go:28:2: unsupported immutable operation: writes to immutable objects are u
 uses.go:35:29: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: api.Reply
-  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
 uses.go:39:14: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: api.Read
   type: func() (api.Reply, error)
