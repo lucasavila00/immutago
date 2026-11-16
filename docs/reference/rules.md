@@ -66,7 +66,7 @@ configuration for generation, the checker, and the build.
 | --- | --- |
 | Same generated declarations, field types, array lengths, and interface methods | Keep one output file if all configurations generate the same bytes. Constrained files can use its projections and Cells. |
 | Different generated output | Generate and check each configuration in a separate checkout or build directory. |
-| A configuration excludes all Frozen declarations | Keep the directive in an unconstrained file, or use the direct generator command above to write an empty package file. |
+| A configuration excludes all Frozen declarations | Keep the directive in an unconstrained file, or use the direct generator command above to replace stale output with an empty package file. |
 | Imported Frozen types | Generate their owning packages for the same configuration. `go generate ./...` does not generate dependencies outside the selected packages. |
 
 The checker rejects a missing directive, missing output, or stale output before
