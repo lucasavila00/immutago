@@ -126,7 +126,9 @@ type Record struct { im.Frozen; Number foreign.Number; Grid [2][3]int }
 
 // TestImportLocalNames prevents generated locals and imports from hiding each other.
 func TestImportLocalNames(t *testing.T) {
-	for _, name := range []string{"v", "c", "value", "arg", "arg0", "index", "index0", "index1", "int", "bool", "nil", "panic"} {
+	for _, name := range []string{
+		"v", "c", "value", "arg", "arg0", "index", "index0", "index1", "int", "bool", "nil", "panic",
+	} {
 		t.Run(name, func(t *testing.T) {
 			dir := module(t, `package consumer
 import (
