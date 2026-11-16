@@ -1,9 +1,9 @@
-alias_collection.go:13:12: immutable collection: type argument 1: []int is not provably immutable
+alias_collection.go:13:12: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 alias_collection.go:13:15: immutable type argument: []int is not provably immutable
   type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable
-alias_collection.go:13:6: immutable collection: type argument 1: []int is not provably immutable
+alias_collection.go:13:6: Frozen collection: type argument 1: []int is not provably immutable
   type: rejected.Bad
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments

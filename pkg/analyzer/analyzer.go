@@ -184,8 +184,12 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 		}
 	}
 	if checker.IsCollection(t) || checker.IsProjection(t) {
-		if reason := c.proofs.Reason(t); reason != "" {
-			c.report(pos, "immutable collection: "+reason+"\n  type: "+diagnosticType(t)+
+		kind, prove := "Frozen collection", c.proofs.FrozenReason
+		if checker.IsProjection(t) {
+			kind, prove = "local projection", c.proofs.ReadResultReason
+		}
+		if reason := prove(t); reason != "" {
+			c.report(pos, kind+": "+reason+"\n  type: "+diagnosticType(t)+
 				"\n  fix: "+structuralFix(t, reason))
 		}
 	}
@@ -214,9 +218,9 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		return
 	}
 	marked := checker.Marked(t)
-	proveField := c.proofs.FrozenReason
+	fieldRule, proveField := "Frozen type", c.proofs.FrozenReason
 	if checker.Local(t) {
-		proveField = c.proofs.ReadResultReason
+		fieldRule, proveField = "read result", c.proofs.ReadResultReason
 	}
 	if checker.Frozen(t) && checker.Local(t) {
 		c.report(pos, "struct cannot embed both im.Frozen and im.Local")
@@ -235,7 +239,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		}
 		if marked {
 			if reason := proveField(ft); reason != "" {
-				c.report(fieldPos, "immutable field "+field.Name()+": "+reason+
+				c.report(fieldPos, "immutable field "+field.Name()+" requires a "+fieldRule+": "+reason+
 					"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 					"\n  fix: "+structuralFix(ft, reason))
 				continue

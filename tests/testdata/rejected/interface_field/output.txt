@@ -1,4 +1,4 @@
-interface_field.go:13:2: immutable field Value: interface{} is not provably immutable
+interface_field.go:13:2: immutable field Value requires a Frozen type: interface{} is not provably immutable
   owner: rejected.Bad; field type: any
   fix: replace the interface with a concrete immutable type
 interface_field.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

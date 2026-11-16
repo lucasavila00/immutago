@@ -2,41 +2,41 @@ smaller_subset.go:14:6: unsupported immutable operation: user generic declaratio
   source: Box
   type: smaller_subset.Box[T ~int | ~string]
   fix: declare a concrete Frozen or Local type without type parameters
-smaller_subset.go:16:2: immutable field Value: type parameters are unsupported in immutable storage
+smaller_subset.go:16:2: immutable field Value requires a Frozen type: type parameters are unsupported in immutable storage
   owner: smaller_subset.Box[T ~int | ~string]; field type: T
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:17:2: immutable field Next: Value: type parameters are unsupported in immutable storage
+smaller_subset.go:17:2: immutable field Next requires a Frozen type: Value: type parameters are unsupported in immutable storage
   owner: smaller_subset.Box[T ~int | ~string]; field type: *smaller_subset.Box[T]
   fix: use a concrete proved type for this immutable field or element
 smaller_subset.go:17:8: unsupported immutable operation: Value: type parameters are unsupported in immutable storage
   source: *Box[T]
   type: *smaller_subset.Box[T]
   fix: use the documented immutable value and reference forms
-smaller_subset.go:19:29: immutable collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:19:29: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete proved type for this immutable field or element
 smaller_subset.go:19:32: immutable type argument: type parameters are unsupported in immutable storage
   type: T
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:19:6: immutable collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:19:6: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: smaller_subset.GenericAlias[T ~int]
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:21:36: immutable collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:21:36: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete proved type for this immutable field or element
 smaller_subset.go:21:39: immutable type argument: type parameters are unsupported in immutable storage
   type: T
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:22:12: immutable collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:22:12: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete proved type for this immutable field or element
 smaller_subset.go:22:15: immutable type argument: type parameters are unsupported in immutable storage
   type: T
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:22:2: immutable collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:22:2: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:23:9: immutable collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:23:9: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete proved type for this immutable field or element
 smaller_subset.go:25:35: unsupported immutable operation: immutable references require a concrete marked struct target

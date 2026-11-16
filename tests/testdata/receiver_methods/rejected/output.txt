@@ -30,7 +30,7 @@ receiver_bodies.go:23:6: unsupported immutable operation: user generic declarati
   source: Generic
   type: rejected.Generic[T any]
   fix: declare a concrete Frozen or Local type without type parameters
-receiver_bodies.go:25:2: immutable field Value: type parameters are unsupported in immutable storage
+receiver_bodies.go:25:2: immutable field Value requires a Frozen type: type parameters are unsupported in immutable storage
   owner: rejected.Generic[T any]; field type: T
   fix: use a concrete proved type for this immutable field or element
 receiver_bodies.go:28:21: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver

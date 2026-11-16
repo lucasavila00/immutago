@@ -1,5 +1,5 @@
 invalid.go:10:6: cannot generate typed projections: Mutable: Values: []int is not provably immutable
-invalid.go:12:2: immutable field Values: []int is not provably immutable
+invalid.go:12:2: immutable field Values requires a Frozen type: []int is not provably immutable
   owner: invalid.Mutable; field type: []int
   fix: replace the native slice with im.FrozenSlice[T], where T is immutable
 invalid.go:15:9: unsupported immutable operation: Values: []int is not provably immutable
