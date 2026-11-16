@@ -16,7 +16,7 @@ import (
 func TestGoexitStopsWatcher(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		root.add(func(context.Context, <-chan struct{}) { runtime.Goexit() }, nil)
+		root.add(func(context.Context) { runtime.Goexit() }, nil)
 		synctest.Wait()
 		done := root.Stop()
 		synctest.Wait()

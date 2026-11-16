@@ -15,13 +15,6 @@ type initHooks struct {
 	run  func(*initializing, context.Context)
 }
 
-// completedRun supplies completion for tests that submit a failure directly.
-func completedRun() <-chan struct{} {
-	done := make(chan struct{})
-	close(done)
-	return done
-}
-
 // initializing records the state that Init sets before the runtime publishes it.
 type initializing struct {
 	Service[*initHooks]

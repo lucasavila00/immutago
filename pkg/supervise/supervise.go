@@ -125,21 +125,21 @@ type NoArgs struct{}
 // It activates at most once and stops at most once. The zero value is not usable.
 // Do not copy an initialized Group. Pass its pointer. Run go vet to check for copies.
 type Group struct {
-	_           noCopy
-	mu          *sync.Mutex
-	children    childList
-	active      bool
-	stopping    bool
-	stopped     chan struct{}
-	admission   context.Context
-	cancel      context.CancelFunc
-	root        *Group
-	parent      *Group
-	entry       *child
-	report      func(any, []byte)
-	exit        func(any)
-	failure     *Failure
-	failureDone <-chan struct{}
+	_         noCopy
+	mu        *sync.Mutex
+	children  childList
+	starts    sync.WaitGroup
+	active    bool
+	stopping  bool
+	stopped   chan struct{}
+	admission context.Context
+	cancel    context.CancelFunc
+	root      *Group
+	parent    *Group
+	entry     *child
+	report    func(any, []byte)
+	exit      func(any)
+	failure   *Failure
 }
 
 // childList preserves start order and permits constant-time removal under Group.mu.
@@ -151,7 +151,7 @@ type childList struct {
 // child is pending while done is nil. Activation or shutdown starts its watcher.
 // Nested groups own their own completion channel.
 type child struct {
-	run        func(context.Context, <-chan struct{})
+	run        func(context.Context)
 	stop       func()
 	done       chan struct{}
 	group      *Group
@@ -223,9 +223,10 @@ func StartGroup(parent *Group) *Group {
 // Start creates T, calls Init once in the caller, and publishes the initialized value.
 // An Init error returns a zero Ref and the error; an Init panic reaches
 // the caller. The runtime stops staged children in both cases.
-// Each successful Init gets one Run call, with a cancelled context if the service
-// cannot activate. Start under a stopped parent waits for that cleanup Run.
-// Stop waits for registered children, not an Init that has not registered yet.
+// A stopped parent returns a zero Ref and context.Canceled before Init.
+// Each accepted, successful Init gets one Run call. Start returns after Init and
+// registration; Run can receive a cancelled context if Stop closes admission.
+// Stop waits for accepted Init calls and their staged children before shutdown.
 func Start[T, A any, P interface {
 	*T
 	Init() error
@@ -236,6 +237,16 @@ func Start[T, A any, P interface {
 	end()
 }](parent *Group, args A) (Ref[T], error) {
 	checkGroup(parent)
+	parent.mu.Lock()
+	err := parent.admission.Err()
+	if err == nil {
+		parent.starts.Add(1)
+	}
+	parent.mu.Unlock()
+	if err != nil {
+		return Ref[T]{}, err
+	}
+	defer parent.starts.Done()
 	value := new(T)
 	bindService(P(value), args, parent)
 	ready := false
@@ -261,8 +272,8 @@ func Start[T, A any, P interface {
 		service.Run(run)
 	}
 	cleanup := func() { P(value).end() }
-	parent.add(func(ctx context.Context, done <-chan struct{}) {
-		watch(parent, ctx, done, reflect.TypeFor[T]().String(), run, cleanup)
+	parent.add(func(ctx context.Context) {
+		watch(parent, ctx, reflect.TypeFor[T]().String(), run, cleanup)
 	}, nil)
 	return ref, nil
 }
@@ -279,7 +290,9 @@ func bindService[A any, P interface{ bind(A, *Group) }](value P, args A, parent 
 
 // Stop closes admission in the subtree and requests ordered shutdown.
 // It returns the same completion channel on every call. Shutdown waits for
-// children in reverse start order, then removes a nested group from its parent.
+// accepted Init calls, then stops children in reverse registration order and
+// removes a nested group from its parent. Init must return without waiting for
+// shutdown of its owning group or an ancestor.
 // It does not wait for ordinary direct method calls. A service can request its
 // group's stop, but must not wait for that group from its own Run.
 func (s *Group) Stop() <-chan struct{} {
@@ -305,9 +318,10 @@ func (s *Group) stop() {
 	s.stopping = true
 	s.cancel()
 	go func() {
+		s.starts.Wait()
 		s.halt()
 		s.mu.Lock()
-		failure, done := s.failure, s.failureDone
+		failure := s.failure
 		if failure == nil {
 			if s.parent != nil {
 				s.parent.unlink(s.entry)
@@ -318,43 +332,33 @@ func (s *Group) stop() {
 			return
 		}
 		s.mu.Unlock()
-		<-done
 		s.exit(failure)
 		close(s.stopped)
 	}()
 }
 
 // fail records the first failure before reporting or cleanup can run.
-// done includes the failing service's children, even for a start after Stop.
-func (s *Group) fail(failure *Failure, done <-chan struct{}) {
+func (s *Group) fail(failure *Failure) {
 	top := s.root
 	top.mu.Lock()
 	defer top.mu.Unlock()
 	if top.failure != nil {
 		return
 	}
-	top.failure, top.failureDone = failure, done
+	top.failure = failure
 	top.stop()
 }
 
-// add registers pending setup or starts one lifetime. Init is already complete.
-func (s *Group) add(run func(context.Context, <-chan struct{}), group *Group) {
+// add registers an accepted service after Init, or admits a new nested group.
+func (s *Group) add(run func(context.Context), group *Group) {
 	c := &child{run: run, group: group}
 	if group != nil {
 		group.entry = c
 	}
 	s.mu.Lock()
-	if s.admission.Err() != nil {
-		if group != nil {
-			s.mu.Unlock()
-			<-group.Stop()
-		} else {
-			s.launch(c)
-			c.stop()
-			done := c.done
-			s.mu.Unlock()
-			<-done
-		}
+	if group != nil && s.admission.Err() != nil {
+		s.mu.Unlock()
+		<-group.Stop()
 		return
 	}
 	defer s.mu.Unlock()
@@ -383,24 +387,12 @@ func (s *Group) activate() {
 	}
 }
 
-// finish handles a late terminal failure before it publishes completion and removal.
-// If exit panics, Start must remain blocked.
+// finish publishes completion and removal in one parent-list operation.
 func (s *Group) finish(c *child, done chan struct{}) {
 	s.mu.Lock()
-	top := s.root
-	if top.failureDone == done {
-		select {
-		case <-top.stopped:
-			failure := top.failure
-			s.mu.Unlock()
-			top.exit(failure)
-			s.mu.Lock()
-		default:
-		}
-	}
+	defer s.mu.Unlock()
 	s.unlink(c)
 	close(done)
-	s.mu.Unlock()
 }
 
 // unlink removes an entry in constant time. The caller holds s.mu.
@@ -436,7 +428,7 @@ func (s *Group) launch(c *child) {
 	go func() {
 		defer s.finish(c, done)
 		defer cancel()
-		run(ctx, done)
+		run(ctx)
 	}()
 }
 
@@ -464,8 +456,7 @@ func (s *Group) halt() {
 }
 
 // watch reports a Run failure before cleanup can wait for children.
-func watch(parent *Group, ctx context.Context, done <-chan struct{}, name string,
-	run func(context.Context), cleanup func()) {
+func watch(parent *Group, ctx context.Context, name string, run func(context.Context), cleanup func()) {
 	defer cleanup()
 	completed := false
 	defer func() {
@@ -478,7 +469,7 @@ func watch(parent *Group, ctx context.Context, done <-chan struct{}, name string
 		}
 		stack := debug.Stack()
 		failure := &Failure{Service: name, Value: value, Stack: stack}
-		parent.fail(failure, done)
+		parent.fail(failure)
 		parent.root.reportFailure(failure)
 	}()
 	run(ctx)

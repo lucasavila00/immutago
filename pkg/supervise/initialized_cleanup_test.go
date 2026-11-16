@@ -45,7 +45,7 @@ func checkInitializedServiceCleanup(t *testing.T, state string) {
 		t.Fatal(err)
 	}
 	if state == "terminal" {
-		top.fail(&Failure{Service: "peer", Value: "failed"}, completedRun())
+		top.fail(&Failure{Service: "peer", Value: "failed"})
 	}
 	<-parent.Stop()
 	<-top.Stop()
