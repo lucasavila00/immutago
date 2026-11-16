@@ -56,7 +56,7 @@ and compilation must use the same configuration.
 
 Generated code keeps the normal type and source rules. Only the exact current
 generated file can form interior Frozen-record addresses.
-See [generation commands and build configurations](../guides/getting-started.md#check-in-ci).
+See [generation commands and build configurations](../../cmd/immutago/usage.md#build-configurations).
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |

@@ -24,7 +24,7 @@ func (s FrozenSlice[T]) At(index int) T { return s.values[index] }
 // Clone returns an independent native slice in O(n) time and space.
 // It copies elements by value and preserves nil. Replacing entries in the copy
 // does not change the frozen slice. Pointers still point to the same Frozen
-// objects. Opaque handles keep the same targets, which can be mutable.
+// objects. UncheckedValue targets remain shared and can be mutable.
 func (s FrozenSlice[T]) Clone() []T { return slices.Clone(s.values) }
 
 // Projection returns local read access without copying backing storage or allocating.

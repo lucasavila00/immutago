@@ -27,6 +27,10 @@ forms and package selection rules. Use the [glossary](reference/glossary.md) for
 | im | [API](../pkg/im/readme.md), [operation costs](../pkg/im/costs.md) |
 | supervise | [API](../pkg/supervise/readme.md), [runtime contract](../pkg/supervise/contract.md) |
 
+## Tools
+
+- [Checker commands and diagnostics](../cmd/immutago/usage.md).
+
 ## Examples
 
 [Delivery quotes, document search, and a market maker bot](../examples/README.md) are complete Go

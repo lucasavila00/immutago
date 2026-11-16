@@ -37,7 +37,7 @@ func checkMarkerPayload(t *testing.T, name string, payload types.Type) {
 			"embed im.FrozenInterface in a named interface; use that interface as the payload",
 			"use bool, numbers, unnamed arrays, or Copied records; " +
 				"for Local fields or results, use matching projections; " +
-				"if a Copied record needs text, opaque handles, or Local fields, " +
+				"if a Copied record needs text, UncheckedValue, or Local fields, " +
 				"replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection",
 			"embed im.FrozenInterface in a named interface; use its generated projection as the read result",
 		}
@@ -117,12 +117,12 @@ func TestReadResultFailurePaths(t *testing.T) {
 		reason string
 		repair string
 	}{
-		{pointer, "*Worker is not a read result", "an opaque handle"},
-		{alias, "*Worker is not a read result", "an opaque handle"},
+		{pointer, "*Worker is not a read result", "im.UncheckedValue"},
+		{alias, "*Worker is not a read result", "im.UncheckedValue"},
 		{types.NewArray(types.NewArray(alias, 2), 0),
-			"array element: array element: *Worker is not a read result", "an opaque handle"},
+			"array element: array element: *Worker is not a read result", "im.UncheckedValue"},
 		{markedType("Reply", local, types.NewField(token.NoPos, nil, "Worker", pointer, false)),
-			"Worker: *Worker is not a read result", "an opaque handle"},
+			"Worker: *Worker is not a read result", "im.UncheckedValue"},
 		{markedType("Score", copied, text),
 			"Text: string is not a Copied value", "replace its im.Copied marker with im.Local"},
 		{types.NewNamed(types.NewTypeName(token.NoPos, nil, "Counts", nil), types.NewArray(types.Typ[types.Int], 2), nil),

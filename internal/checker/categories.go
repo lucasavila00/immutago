@@ -38,20 +38,21 @@ func (p *proof) copiedValue(result *obligation, t types.Type) {
 	rejectCopied(result, t)
 }
 
-// rejectCopied states the complete field rule and the owner change for text, handles, or Local data.
+// rejectCopied states the complete field rule and the owner change for other read-result fields.
 func rejectCopied(result *obligation, t types.Type) {
 	result.reason = fmt.Sprintf("%s is not a Copied value", types.TypeString(t, nil))
 	result.repair = "use bool, numbers, unnamed arrays, or Copied records; " +
 		"for Local fields or results, use matching projections; " +
-		"if a Copied record needs text, opaque handles, or Local fields, " +
+		"if a Copied record needs text, UncheckedValue, or Local fields, " +
 		"replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection"
 }
 
 // rejectRead states the complete result rule shared by Local fields and service results.
 func rejectRead(result *obligation, t types.Type) {
 	result.reason = fmt.Sprintf("%s is not a read result", types.TypeString(t, nil))
-	result.repair = "use a read result: a Copied value, a Local record or matching projection, an opaque handle, " +
-		"a pointer to a Frozen handle wrapper, or an unnamed array of read results"
+	result.repair = "use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, " +
+		"a named Frozen record with one named im.UncheckedValue field and no other data fields, " +
+		"a pointer to that record, or an unnamed array of read results"
 }
 
 // copiedRecord proves each field through the shared Copied rule.

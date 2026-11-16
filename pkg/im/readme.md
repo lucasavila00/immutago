@@ -41,7 +41,7 @@ Unwrap returns the wrapped pointer, or nil for the zero UncheckedValue. Only the
 func Value[T any](value Projection[T]) T
 ```
 
-Value returns the value from a projection. The checker requires a Frozen read result: a Copied value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of these values. Value does not allocate.
+Value returns the value from a projection. T must be Frozen and a read result. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/types.md for the complete type list. Value does not allocate.
 
 ## type Cell
 
@@ -135,7 +135,7 @@ All returns an iterator over key\-value pairs in unspecified order. It reads fro
 func (m FrozenMap[K, V]) Clone() map[K]V
 ```
 
-Clone returns an independent native map in O\(n\) time and space. It copies keys and values by value and preserves nil. Replacing entries in the copy does not change the frozen map. Pointers still point to the same Frozen objects. Opaque handles keep the same targets, which can be mutable.
+Clone returns an independent native map in O\(n\) time and space. It copies keys and values by value and preserves nil. Replacing entries in the copy does not change the frozen map. Pointers still point to the same Frozen objects. UncheckedValue targets remain shared and can be mutable.
 
 ### func \(FrozenMap\[K, V\]\) Get
 
@@ -201,7 +201,7 @@ At returns the element at index in O\(1\) time without allocations. It panics if
 func (s FrozenSlice[T]) Clone() []T
 ```
 
-Clone returns an independent native slice in O\(n\) time and space. It copies elements by value and preserves nil. Replacing entries in the copy does not change the frozen slice. Pointers still point to the same Frozen objects. Opaque handles keep the same targets, which can be mutable.
+Clone returns an independent native slice in O\(n\) time and space. It copies elements by value and preserves nil. Replacing entries in the copy does not change the frozen slice. Pointers still point to the same Frozen objects. UncheckedValue targets remain shared and can be mutable.
 
 ### func \(FrozenSlice\[T\]\) Len
 
@@ -527,7 +527,7 @@ Unchecked returns the underlying string without copying or allocating. The check
 
 ## type UncheckedValue
 
-UncheckedValue holds an opaque pointer whose access rules belong to its declaring package. The target can be mutable. The checker does not prove its state or synchronization. UncheckedValue is Frozen and a read result, but not Copied. Any package can store, copy, pass, and return the handle. Only the package that declares T can use Trust and Unwrap. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/unchecked-values.md for the complete forms.
+UncheckedValue stores a pointer whose access rules belong to the package that declares T. The target can be mutable. The checker does not prove its state or synchronization. UncheckedValue is Frozen and a read result, but not Copied. Any package can store, copy, pass, and return the value. Only the package that declares T can use Trust and Unwrap. See https://github.com/lucasavila00/immutago/blob/main/docs/reference/unchecked-values.md for the complete forms.
 
 ```go
 type UncheckedValue[T any] struct {

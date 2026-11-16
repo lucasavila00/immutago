@@ -248,7 +248,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		} else if c.queries.Owns(ft) {
 			c.report(fieldPos, "unmarked struct field "+field.Name()+" contains protected storage"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
-				"\n  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data"+
+				"\n  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data"+
 				"\n  fix: "+unmarkedFieldFix(ft))
 			continue
 		}

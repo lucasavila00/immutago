@@ -4,6 +4,7 @@
 // Start initializes the service and returns Ref[T]. Calls through Borrow run in
 // the caller's goroutine; review shared fields, locks, and inputs in service code.
 // A Run failure stops the root. Groups control lifetime and stop order.
+// See https://github.com/lucasavila00/immutago/blob/main/pkg/supervise/contract.md for the runtime contract.
 package supervise
 
 import (

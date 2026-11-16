@@ -69,64 +69,7 @@ publication, and reads in the shipping application.
 immutago ./...
 ```
 
-- Errors make the command fail.
-- Run it for each platform and set of build tags you use.
-- Generate with the same build configuration first. Use separate checkouts for
-  concurrent configurations that need different generated output.
-- `go build` does not run the checker.
-
-Or use `go vet`:
-
-```sh
-go vet -vettool=/absolute/path/to/immutago ./...
-```
-
-For build tags, set `GOFLAGS` for the CLI or pass `-tags` to `go vet`:
-
-```sh
-GOFLAGS=-tags=integration go generate ./...
-GOFLAGS=-tags=integration immutago ./...
-go vet -vettool=/absolute/path/to/immutago -tags=integration ./...
-```
-
-`immutago -tags integration ./...` does not select tagged files. Use one of the
-commands above to check them, including packages whose files all require a tag.
-One generated file can serve all configurations when the generated declarations
-and their type dependencies stay the same. See
-[required generation](../reference/rules.md#required-generation) for configurations
-with different schemas and packages whose declarations all require a tag.
-
-Run generation and checks on each target platform in CI. For a cross build of one
-package, first build the tools for the host, then select the target:
-
-```sh
-go build -o ./bin/immutago-gen github.com/lucasavila00/immutago/cmd/immutago-gen
-go build -o ./bin/immutago github.com/lucasavila00/immutago/cmd/immutago
-GOOS=windows GOARCH=amd64 ./bin/immutago-gen
-GOOS=windows GOARCH=amd64 ./bin/immutago .
-```
-
-Do not use the `go run` generation directive to execute a cross-built tool.
-
-Do not use `-json` as a CI pass/fail check: it can return exit code 0 with errors.
-
-## Read diagnostics
-
-A diagnostic can include these context fields:
-
-| Line | Meaning |
-| --- | --- |
-| `source:` | The source expression or statement for the rejected operation. |
-| `type:` | The compiler-resolved expression type, or the type checked by a type or package rule. |
-| `owner:` | The record that declares the field. |
-| `field:` | The record and field name for a declaration error. |
-| `field type:` | The compiler-resolved field type, on the same line as its owner. |
-| `result type:` | The compiler-resolved service method result type. |
-| `rule:` | The rule that failed. |
-| `representative failure:` | One original diagnostic from a failed dependency, with its location and indented context lines. |
-| `note:` | Other errors can exist in that dependency. |
-| `fix:` | A supported replacement for the failed rule. |
-
-If `Ptr` returns `int64`, `source: r.C.Ptr()` has `type: int64`, even when the
-rule rejects the receiver operation. A method value such as `h.Ptr` has type
-`func() int64`.
+Generate and check each target platform and set of build tags. Errors make the
+command fail. `go build` does not run the checker.
+See the [CLI reference](../../cmd/immutago/usage.md) for build configurations,
+vet commands, and diagnostics.

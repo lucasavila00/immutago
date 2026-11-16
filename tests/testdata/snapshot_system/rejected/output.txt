@@ -4,7 +4,7 @@ projection_adapters.go:10:2: unsupported immutable operation: protected storage 
 projection_adapters.go:11:37: unsupported immutable operation: closures require ordinary or Frozen captures
   source: sequence
   type: im.Projection[im.FrozenSlice[int]]
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 projection_adapters.go:12:6: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: boxed any = im.MapOf(mapping)
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
@@ -38,7 +38,7 @@ snapshot_categories.go:19:2: immutable field Frozen requires a read result: gith
   fix: for Local text, use text.Projection()
 snapshot_categories.go:21:24: unmarked struct field Saved contains protected storage
   owner: rejected.BadNative; field type: im.Projection[string]
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 snapshot_categories.go:24:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved Local
@@ -96,17 +96,17 @@ snapshot_categories.go:37:17: service method Frozen must return a read result or
   fix: for Local text, use text.Projection()
 snapshot_categories.go:38:17: service method Retained must return a read result or error: example.com/consumer/rejected.Retained is not a read result
   result type: rejected.Retained
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 snapshot_categories.go:39:17: service method Container must return a read result or error: []github.com/lucasavila00/immutago/pkg/im.Projection[int] is not a read result
   result type: []im.Projection[int]
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 snapshot_categories.go:39:29: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []im.Projection[int]
   type: []im.Projection[int]
   fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
 snapshot_categories.go:40:17: service method LocalPointer must return a read result or error: *example.com/consumer/rejected.Local is not a read result
   result type: *rejected.Local
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 snapshot_categories.go:40:17: unsupported immutable operation: returning Local pointers is unsupported
   source: LocalPointer
   type: func() *rejected.Local
@@ -171,7 +171,7 @@ snapshot_categories.go:57:2: unsupported immutable operation: protected storage 
 snapshot_categories.go:58:26: unsupported immutable operation: closures require ordinary or Frozen captures
   source: text
   type: im.StringProjection
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 snapshot_categories.go:63:61: unsupported immutable operation: writes to immutable objects are unsupported
   source: value.Text = im.StringProjection{}
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -205,13 +205,13 @@ snapshot_categories.go:72:52: unsupported immutable operation: native slices of 
 snapshot_categories.go:74:9: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle and read its elements directly; Local builders cannot Freeze
 snapshot_categories.go:84:2: immutable field Value requires a read result: example.com/consumer/rejected.Numeric is not a read result
   owner: rejected.BadNumericResult; field type: rejected.Numeric
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 snapshot_categories.go:87:17: service method Numeric must return a read result or error: example.com/consumer/rejected.Numeric is not a read result
   result type: rejected.Numeric
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 snapshot_categories.go:88:17: service method NumericArray must return a read result or error: array element: example.com/consumer/rejected.Numeric is not a read result
   result type: [0]rejected.Numeric
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 snapshot_categories.go:90:6: unsupported immutable operation: example.com/consumer/rejected.Numeric is not a read result
   source: im.Value(value)
   type: rejected.Numeric

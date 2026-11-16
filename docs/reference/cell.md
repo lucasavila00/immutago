@@ -118,7 +118,7 @@ body for a function whose contract contains a Cell.
 | `LoadPointer()` | Return Projection[*T] without copying T; T must be a concrete Frozen record. An empty slot returns a nil pointer projection. |
 
 Generated Cell.Load uses raw LoadPointer. Raw Load supports every Frozen payload,
-including scalars, strings, collection handles, record values, and Frozen pointers.
+including scalars, strings, frozen collections, record values, and Frozen pointers.
 Use `im.Value(raw.Load())` for a Copied value. Use `raw.Load().Unchecked()` to keep
 T with its shared storage. A raw Cell[*Settings] returns the stored *Settings
 through that form; it does not use LoadPointer.

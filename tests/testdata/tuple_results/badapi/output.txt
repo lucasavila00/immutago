@@ -3,13 +3,13 @@ api.go:19:14: service method First must return a read result or error: string is
   fix: for Local text, use im.ProjectString(text)
 api.go:20:14: service method Middle must return a read result or error: []int is not a read result
   result type: []int
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 api.go:21:14: service method Last must return a read result or error: map[int]int is not a read result
   result type: map[int]int
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 api.go:22:14: service method Pointer must return a read result or error: *example.com/consumer/api.View is not a read result
   result type: *api.View
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 api.go:22:14: unsupported immutable operation: returning Local pointers is unsupported
   source: Pointer
   type: func() (bool, *api.View)
@@ -19,7 +19,7 @@ api.go:22:54: unsupported immutable operation: returning Local pointers is unsup
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 api.go:23:14: service method Record must return a read result or error: example.com/consumer/badapi.Unmarked is not a read result
   result type: badapi.Unmarked
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 api.go:24:14: service method ErrorType must return a read result or error: example.com/consumer/badapi.DefinedError is not a read result
   result type: badapi.DefinedError
   fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
@@ -34,7 +34,7 @@ api.go:27:14: service method Frozen must return a read result or error: github.c
   fix: for Local text, use text.Projection()
 api.go:28:14: service method Nested must return a read result or error: array element: array element: *example.com/consumer/api.View is not a read result
   result type: [2][1]*api.View
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 api.go:28:30: unsupported immutable operation: containers of Local pointers are unsupported
   source: [2][1]*api.View
   type: [2][1]*api.View
@@ -53,4 +53,4 @@ api.go:28:71: unsupported immutable operation: containers of Local pointers are 
   fix: keep Local values in local bindings, or store im.Frozen pointers
 api.go:29:14: service method FrozenRecord must return a read result or error: example.com/consumer/api.Frozen is not a read result
   result type: api.Frozen
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results

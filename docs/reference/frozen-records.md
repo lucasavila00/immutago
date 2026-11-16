@@ -65,11 +65,10 @@ changing that object.
 | Use go, defer, channels, or select | `go use(p)`, `defer use(p)`, `ready <- p` |
 | Use aliases or defined pointer types | `type Pointer = *Settings`, `type Selected *Settings` |
 
-The checker rejects statically typed writes to the Frozen target, including
+Typed writes to the Frozen target are rejected, including
 after a type assertion, a generic call, or a promoted field selection. Ordinary Go
 API contracts still apply: do not pass the pointer to an API that changes its
-target, such as `json.Unmarshal(data, p)`. The checker does not prove mutation
-effects through ordinary interfaces, reflection, unsafe code, or dependencies.
+target, such as `json.Unmarshal(data, p)`.
 A defined pointer such as `type Selected *Settings` can use the forms above,
 but cannot be a Frozen field, Cell payload, or frozen collection argument.
 Use `type Selected = *Settings` for those [Frozen type requirements](types.md).

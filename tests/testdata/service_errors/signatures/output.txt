@@ -3,7 +3,7 @@ signatures.go:19:14: service method Text must return a read result or error: str
   fix: for Local text, use im.ProjectString(text)
 signatures.go:20:14: service method Pointer must return a read result or error: *example.com/consumer/api.Reply is not a read result
   result type: *api.Reply
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 signatures.go:20:14: unsupported immutable operation: returning Local pointers is unsupported
   source: Pointer
   type: func() (*api.Reply, error)

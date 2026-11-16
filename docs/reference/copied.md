@@ -26,7 +26,7 @@ of these types, including blank and embedded data fields:
 | --- | --- |
 | Boolean or number, including a defined scalar type or alias | `OK bool`, `Value float64`, `Flags uint8` |
 | Unnamed array of allowed fields, recursively | `Values [4]int`, `Grid [2][3]Score` |
-| Another proved Copied record by value | `Score Score` |
+| Another Copied record by value | `Score Score` |
 
 Strings, pointers, and UncheckedValue are not Copied. A string copy shares its
 bytes; an UncheckedValue copy shares its target.

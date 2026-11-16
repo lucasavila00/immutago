@@ -13,7 +13,7 @@ local_reference_escape.go:15:13: unsupported immutable operation: Local pointers
   type: []*local_reference_escape.Local
   fix: keep a Local value in a local binding, or store a Frozen pointer
 local_reference_escape.go:15:2: unsupported native builder: *example.com/consumer/local_reference_escape.Local is not a read result
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 local_reference_escape.go:16:12: Frozen collection: type argument 1: Local pointers cannot be stored
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: keep the Local pointer in a local binding; store a Frozen pointer for shared data
@@ -33,7 +33,7 @@ local_reference_escape.go:17:6: Frozen collection: type argument 1: Local pointe
 local_reference_escape.go:21:34: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: *local_reference_escape.Local
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 local_reference_escape.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: value.Value = 2
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -48,7 +48,7 @@ local_reference_escape.go:35:2: unsupported immutable operation: protected stora
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 local_reference_escape.go:40:2: immutable field Pointer requires a read result: *example.com/consumer/local_reference_escape.Local is not a read result
   owner: local_reference_escape.LocalStored; field type: *local_reference_escape.Local
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 local_reference_escape.go:44:21: Frozen collection: type argument 1: Frozen storage cannot contain Local values
   type: im.FrozenSlice[local_reference_escape.Local]
   fix: store Frozen data; keep its Projection or Local result in local bindings

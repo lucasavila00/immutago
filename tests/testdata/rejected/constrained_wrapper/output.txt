@@ -1,4 +1,4 @@
 constrained_wrapper.go:11:26: unmarked struct field Value contains protected storage
   owner: rejected.Bad[T rejected.Good]; field type: T
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings

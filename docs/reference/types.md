@@ -62,7 +62,7 @@ but is not a read result or a field type in Frozen, Local, or Copied records.
 - Native containers, unmarked interfaces, functions, and Local values are not Frozen fields.
 - A Cell is mutable storage, not a Frozen value or read result.
 
-Embed `im.FrozenInterface` in a named interface to permit proved Frozen record
+Embed `im.FrozenInterface` in a named interface to permit Frozen record
 implementations. It is a Frozen type, not a read result. Use its generated local
 projection when reading through a Local value. See the complete
 [interface forms](frozen-interfaces.md).

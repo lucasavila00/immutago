@@ -52,7 +52,7 @@ call. The pointer must stay local. It cannot be stored, returned, or captured.
 Local builders use the complete [builder operations](frozen.md#build-before-freezing).
 Their keys and elements must be Frozen types or read results; map keys must also
 be Go-comparable. A Local value can be a key: `counts := map[im.StringProjection]int{name: 1}`.
-The builder handle cannot be copied, passed, returned, captured, or saved.
+The builder cannot be copied, passed, returned, captured, or saved.
 Frozen collections reject Local keys and elements, so these builders cannot Freeze.
 
 ## Rejected examples — non-exhaustive

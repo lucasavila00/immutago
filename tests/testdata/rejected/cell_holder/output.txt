@@ -4,7 +4,7 @@ holder.go:13:30: containers of Cell slots or holders are unsupported
 holder.go:14:33: pointers to Cell slots are unsupported
 holder.go:15:23: unmarked struct field View contains protected storage
   owner: cell_holder.BadLocal; field type: im.Projection[int]
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 holder.go:16:6: unsupported immutable operation: user generic declarations require ordinary or Frozen contracts
   source: Generic
@@ -74,7 +74,7 @@ holder.go:70:2: unsupported immutable operation: Local values and pointers canno
 holder.go:72:19: unsupported immutable operation: closures require ordinary or Frozen captures
   source: view
   type: im.Projection[int]
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 holder.go:73:10: unsupported immutable operation: method values require ordinary or Frozen receivers and contracts
   source: h.View
   type: func() im.Projection[int]

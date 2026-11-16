@@ -26,7 +26,7 @@ func (m FrozenMap[K, V]) Get(key K) (V, bool) { value, found := m.values[key]; r
 // Clone returns an independent native map in O(n) time and space.
 // It copies keys and values by value and preserves nil. Replacing entries in the
 // copy does not change the frozen map. Pointers still point to the same Frozen
-// objects. Opaque handles keep the same targets, which can be mutable.
+// objects. UncheckedValue targets remain shared and can be mutable.
 func (m FrozenMap[K, V]) Clone() map[K]V { return maps.Clone(m.values) }
 
 // Projection returns local read access without copying backing storage or allocating.

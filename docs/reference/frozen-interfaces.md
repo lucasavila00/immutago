@@ -82,15 +82,15 @@ returned. Local values and projections cannot be boxed or captured. See the comp
 | Allowed form | Example |
 | --- | --- |
 | Declare zero or nil | `var scorer Scorer`, `var scorer Scorer = nil`, `Scorer(nil)` |
-| Convert a proved Frozen record value or pointer | `scorer := Scorer(&Tree{Weight: 2})` |
-| Assign, pass, or return a proved implementation | `var scorer Scorer = &Tree{Weight: 2}`; `use(scorer)`; `return scorer` |
-| Copy or convert between proved Frozen interfaces | `other := scorer`, `other = scorer`, `base := Base(scorer)` |
+| Convert a Frozen record value or pointer with the required method receivers | `scorer := Scorer(&Tree{Weight: 2})` |
+| Assign, pass, or return that implementation | `var scorer Scorer = &Tree{Weight: 2}`; `use(scorer)`; `return scorer` |
+| Copy or convert between Frozen interfaces | `other := scorer`, `other = scorer`, `base := Base(scorer)` |
 | Pass and capture Frozen values | `var boxed any = scorer`, `identity(scorer)`, `read := func() float64 { return scorer.Score(features) }`; see the [complete value forms](common-forms.md#use-frozen-values). |
 | Recover a concrete Frozen value or pointer | `scorer.(*Tree)`, `switch scorer.(type) { case *Tree: }` |
 | Select a method with ordinary or Frozen inputs and results | `read := scorer.Score`, `read := Scorer.Score` |
 | Replace the whole interface binding | `scorer = &Tree{Weight: 3}`, `scorer = nil` |
 | Store in Frozen fields, arrays, Cells, or frozen collections | `Model{Scorer: scorer}`, `im.FrozenSlice[Scorer]` |
-| Store in ordinary fields and containers | `struct{ Value Scorer }{scorer}`, `[]Scorer{scorer}`, `make(chan Scorer)`; use the [ordinary handle forms](common-forms.md#ordinary-collection-and-interface-slots--exhaustive). |
+| Store in ordinary fields and containers | `struct{ Value Scorer }{scorer}`, `[]Scorer{scorer}`, `make(chan Scorer)`; use the [ordinary storage forms](common-forms.md#ordinary-collection-and-interface-slots--exhaustive). |
 | Call a method directly | `score := scorer.Score(features)` |
 | Compare with `==` or `!=` | `scorer == nil`, `scorer == other` |
 | Wrap a local projection | `local := NewScorerProjection(im.ProjectionOf(scorer))` |

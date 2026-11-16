@@ -1,3 +1,3 @@
 anonymous.go:7:24: service method Values must return a read result or error: []int is not a read result
   result type: []int
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
