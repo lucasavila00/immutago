@@ -3,10 +3,13 @@ invalid.go:25:5: Copied record: Model: github.com/lucasavila00/immutago/pkg/im.U
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
 invalid.go:38:16: service method Named must return a read result: example.com/consumer/invalid.Named is not a Copied value
   result type: invalid.Named
+  fix: copy scalar fields, or use a generated local projection
 invalid.go:41:16: service method Pointer must return a read result: *example.com/consumer/valid.Handle is not a Copied value
   result type: *valid.Handle
+  fix: copy scalar fields, or use a generated local projection
 invalid.go:44:16: service method Native must return a read result: []example.com/consumer/valid.Handle is not a Copied value
   result type: []valid.Handle
+  fix: copy scalar fields, or use a generated local projection
 invalid.go:47:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved valid.Serving
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it

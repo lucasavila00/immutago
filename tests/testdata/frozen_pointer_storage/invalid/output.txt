@@ -70,6 +70,7 @@ invalid.go:69:32: unsupported immutable operation: writes to immutable objects a
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 invalid.go:75:18: service method Read must return a read result: *example.com/consumer/api.Settings is not a Copied value
   result type: *api.Settings
+  fix: copy scalar fields, or use a generated local projection
 invalid.go:9:25: unmarked struct contains immutable field Value; embed an immutable marker
   owner: invalid.ValueOwner; field type: api.Settings
   rule: a struct that owns immutable storage must itself have an immutable field proof

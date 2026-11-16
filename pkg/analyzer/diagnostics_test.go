@@ -95,6 +95,22 @@ func TestProjectionDiagnosticRepairs(t *testing.T) {
 	}
 }
 
+// TestServiceDiagnosticRepair uses the same read-result repair as a Local field.
+func TestServiceDiagnosticRepair(t *testing.T) {
+	got := checkSource(t, `import "github.com/lucasavila00/immutago/pkg/supervise"
+type Worker struct{supervise.Service[supervise.NoArgs]}
+func(w *Worker)Name()string{return ""}
+func(w *Worker)Text()im.StringProjection{return im.ProjectString("")}`)
+	for _, want := range []string{
+		"service method Name must return a read result: string is not a Copied value",
+		"fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("missing %q in %s", want, got)
+		}
+	}
+}
+
 // TestDependencyWitnessSelection keeps the first cause without changing local errors or imported facts.
 func TestDependencyWitnessSelection(t *testing.T) {
 	failures := [...]proofFailure{

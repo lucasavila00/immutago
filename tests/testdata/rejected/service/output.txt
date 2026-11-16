@@ -63,14 +63,19 @@ result_uses.go:7:5: unsupported immutable operation: Local values and pointers c
 results.go:22:17: service method Pair must return no value, one read result, error, or (read result, error)
 results.go:23:17: service method Map must return a read result: map[string]int is not a Copied value
   result type: map[string]int
+  fix: copy scalar fields, or use a generated local projection
 results.go:24:17: service method Slice must return a read result: []int is not a Copied value
   result type: []int
+  fix: copy scalar fields, or use a generated local projection
 results.go:25:17: service method Interface must return a read result: interface{} is not a Copied value
   result type: any
+  fix: copy scalar fields, or use a generated local projection
 results.go:26:17: service method Pointer must return a read result: *example.com/consumer/service.SnapshotReply is not a Copied value
   result type: *service.SnapshotReply
+  fix: copy scalar fields, or use a generated local projection
 results.go:27:17: service method LocalPointer must return a read result: *example.com/consumer/service.Reply is not a Copied value
   result type: *service.Reply
+  fix: copy scalar fields, or use a generated local projection
 results.go:27:17: unsupported immutable operation: returning Local pointers is unsupported
   source: LocalPointer
   type: func() *service.Reply
@@ -84,6 +89,7 @@ results.go:29:75: unsupported immutable operation: closures require ordinary or 
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
 results.go:30:17: service method Frozen must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[[]int] is not a Copied value
   result type: im.FrozenSlice[[]int]
+  fix: copy scalar fields, or use a generated local projection
 results.go:30:26: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
@@ -104,21 +110,30 @@ results.go:30:91: Frozen collection: type argument 1: []int is not provably immu
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 results.go:34:17: service method Struct must return a read result: example.com/consumer/service.Unmarked is not a Copied value
   result type: service.Unmarked
+  fix: copy scalar fields, or use a generated local projection
 results.go:38:16: service method Mutable must return a read result: []int is not a Copied value
   result type: []int
+  fix: copy scalar fields, or use a generated local projection
 results.go:46:23: service method Mutable must return a read result: []int is not a Copied value
   result type: []int
+  fix: copy scalar fields, or use a generated local projection
 results.go:49:38: stored im argument: Frozen storage cannot contain Local values
   fix: pass an immutable value or a Frozen pointer; Local pointers cannot be stored
 results.go:51:17: service method PointerArray must return a read result: array element: *example.com/consumer/service.SnapshotReply is not a Copied value
   result type: [1]*service.SnapshotReply
+  fix: copy scalar fields, or use a generated local projection
 results.go:52:17: service method List must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a Copied value
   result type: im.FrozenSlice[int]
+  fix: copy scalar fields, or use a generated local projection
 results.go:53:17: service method MapResult must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenMap[string, int] is not a Copied value
   result type: im.FrozenMap[string, int]
+  fix: copy scalar fields, or use a generated local projection
 results.go:58:17: service method FrozenRecord must return a read result: example.com/consumer/service.SnapshotReply is not a Copied value
   result type: service.SnapshotReply
+  fix: copy scalar fields, or use a generated local projection
 results.go:59:17: service method FrozenArray must return a read result: array element: example.com/consumer/service.SnapshotReply is not a Copied value
   result type: [1]service.SnapshotReply
+  fix: copy scalar fields, or use a generated local projection
 results.go:60:17: service method Marker must return a read result: immutable markers are annotations, not data
   result type: im.Local
+  fix: embed the marker in a named struct; use data fields for values

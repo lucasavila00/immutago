@@ -93,18 +93,23 @@ snapshot_categories.go:34:5: unsupported immutable operation: Local values and p
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 snapshot_categories.go:40:17: service method Raw must return a read result: string is not a Copied value
   result type: string
+  fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
 snapshot_categories.go:41:17: service method Frozen must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   result type: im.FrozenString
+  fix: use im.StringProjection for a local string result; construct it with text.Projection()
 snapshot_categories.go:42:17: service method Retained must return a read result: example.com/consumer/rejected.Retained is not a Copied value
   result type: rejected.Retained
+  fix: copy scalar fields, or use a generated local projection
 snapshot_categories.go:43:17: service method Container must return a read result: []github.com/lucasavila00/immutago/pkg/im.Projection[int] is not a Copied value
   result type: []im.Projection[int]
+  fix: copy scalar fields, or use a generated local projection
 snapshot_categories.go:43:29: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []im.Projection[int]
   type: []im.Projection[int]
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
 snapshot_categories.go:44:17: service method LocalPointer must return a read result: *example.com/consumer/rejected.Local is not a Copied value
   result type: *rejected.Local
+  fix: copy scalar fields, or use a generated local projection
 snapshot_categories.go:44:17: unsupported immutable operation: returning Local pointers is unsupported
   source: LocalPointer
   type: func() *rejected.Local
@@ -207,8 +212,10 @@ snapshot_categories.go:88:2: immutable field Value requires a read result: examp
 snapshot_categories.go:8:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 snapshot_categories.go:91:17: service method Numeric must return a read result: example.com/consumer/rejected.Numeric is not a Copied value
   result type: rejected.Numeric
+  fix: copy scalar fields, or use a generated local projection
 snapshot_categories.go:92:17: service method NumericArray must return a read result: array element: example.com/consumer/rejected.Numeric is not a Copied value
   result type: [0]rejected.Numeric
+  fix: copy scalar fields, or use a generated local projection
 snapshot_categories.go:94:6: unsupported immutable operation: example.com/consumer/rejected.Numeric is not a Copied value
   source: im.Value(value)
   type: rejected.Numeric

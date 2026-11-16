@@ -73,7 +73,7 @@ _=s}`, "package-level declarations"},
 func f(){var s Scorer=Outer{};_=s}`, "Frozen data fields must be named"},
 		{"unmarked wrapper", `type Outer struct{Scorer};
 func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.Frozen"},
-		{"pointer interface", `func f(){var s *Scorer;_=s}`, "concrete Frozen record target"},
+		{"pointer interface", `func f(){var s *Scorer;_=s}`, "concrete marked struct target"},
 		{"typed nil", `func f(){_=Scorer(nil)}`, "protected value conversions"},
 		{"ordinary interface", `func f(s Scorer){var other any=s;_=other}`, ""},
 		{"assertion", `func f(s Scorer){_=s.(*Tree)}`, ""},

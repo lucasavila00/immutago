@@ -6,6 +6,7 @@ diagnostics.go:31:2: immutable field Text requires a read result: string is not 
   fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
 diagnostics.go:41:18: service method Name must return a read result: string is not a Copied value
   result type: string
+  fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
 diagnostics.go:46:12: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenSlice[im.StringProjection]
   fix: store Frozen data; keep its Projection or Local result in local bindings

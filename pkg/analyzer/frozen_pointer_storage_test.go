@@ -108,7 +108,7 @@ func TestFrozenPointerTargets(t *testing.T) {
 	}
 }
 
-// TestCellPointerPayload requires a concrete marked struct target for persistent pointer loads.
+// TestCellPointerPayload requires a concrete Frozen record for persistent pointer loads.
 func TestCellPointerPayload(t *testing.T) {
 	for _, payload := range []string{"int", "*Data", "[2]Data", "im.FrozenString"} {
 		source := "var raw im.Cell[" + payload + "];func f(){_=raw.LoadPointer().Unsafe()}"
