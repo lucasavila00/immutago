@@ -59,6 +59,11 @@ Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
 | Nil or zero Group passed to Start or StartGroup | Panic with `supervise: nil or zero Group` before Init. |
 | Pointer on the selected Service embedding path | Panic before Init with `supervise: embed Service by value through each embedded field`. |
 
+After setup, the runtime admits Run and activates its staged child groups in one
+decision. That decision also permits publication of a replacement. Stop is ordered
+against this decision. An admitted Run can enter its function after Stop is requested;
+its context still ends at its turn in shutdown.
+
 Init must not wait for an unstarted peer or child Run. For readiness that depends
 on Run, expose a method such as `Ready() bool`. Init has no cancellation context.
 It must return and must release application resources that it opened if setup fails.
@@ -99,7 +104,8 @@ ordinary Go rules. A stopped parent supplies a stopped nested group.
 | Event | Effect |
 | --- | --- |
 | Parent Init returns an error or panics | Stop children from that setup attempt. Application resources remain Init's responsibility. |
-| A method starts a child before parent Run begins | Child Init runs immediately. Child Run waits for normal activation or receives a cancelled context during cleanup. |
+| A method starts a child before parent Run is admitted | Child Init runs immediately. Child Run waits for normal activation or receives a cancelled context during cleanup. |
+| Stop races with staged child activation | Activation completes before Stop or leaves the children pending. In both cases, children wait for their reverse-order shutdown turns. |
 | Parent is stopped | Stop children last started first and wait for them before cancelling the parent's Run context. |
 | Parent Run returns or panics | Stop and wait for children before the attempt ends or a replacement starts. |
 | A child exceeds its restart limit | Stop the whole root tree. No parent retries that failure. |
@@ -124,7 +130,7 @@ Stop does not wait for requests already using the old reference.
 | `<-root.Stop()` | Wait until all children stop. |
 | `<-group.Stop()` on a nested group | Also wait for removal from the parent. Other groups continue. |
 | Stop is requested | Prevent new retries in that subtree immediately; cancel services in reverse start order. |
-| A registered service has not entered its first Run when Stop is requested | Wait for its turn, stop its children, then call Run with an already-cancelled context. |
+| A registered service has not been admitted to Run when Stop is requested | Wait for its turn, stop its children, then call Run with an already-cancelled context. |
 | Restart Init is already running when Stop is requested | Let Init finish. If it succeeds, wait for its turn, stop its children, and call Run with an already-cancelled context. Do not publish the replacement. |
 
 Shutdown gives pending initialized services a cancelled Run through the same

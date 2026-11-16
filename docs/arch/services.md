@@ -19,10 +19,11 @@ Ref copy ─┴──> shared slot ──> latest initialized *T
 | Initial setup | Start caller | Allocate T; bind arguments and parent group; call Init. |
 | Initial Init failure | Start caller | Stop staged children. Return a zero Ref and error, or propagate the panic. |
 | Initial publication | Start caller | Store initialized T; register a watcher with the group. |
-| Background work | Watcher | Activate the service's child group; call Run once after successful Init. |
+| Run admission | Watcher, under the tree mutex | Check policy, activate staged child groups, and publish a replacement as one decision ordered against Stop. |
+| Background work | Watcher, outside the mutex | Call Run once after successful Init. |
 | Stopped or pending initialized attempt | Watcher | Wait for its entry's shutdown turn; stop children, then call Run with an already-cancelled context for cleanup. |
 | `ref.Borrow().Method(args)` | Method caller | Load the slot; call the method directly on that T. |
-| Replacement setup | Same watcher | Allocate a fresh T with the same arguments; publish only after successful Init. |
+| Replacement setup | Same watcher | Check policy under the tree mutex; allocate a fresh T and call Init outside the mutex. Successful Init still needs Run admission. |
 
 | Slot change | Effect on callers |
 | --- | --- |
@@ -56,28 +57,31 @@ runs cleanup without replacing the published reference.
 Each service attempt owns a separate child group:
 
 ```text
-Init: children pending ──> parent Run: activate ──> attempt ends: stop and wait
+Init: children pending ──> Run admission: activate ──> attempt ends: stop and wait
                      └──> shutdown: cancelled Run for cleanup
 next attempt: new child group
 ```
 
 | Group state | Purpose |
 | --- | --- |
-| Mutex | Protect admission, child links, activation, and the stop decision. |
+| Shared tree mutex | Protect admission, publication, child links, activation, service attempt state, and Stop across all descendant groups. |
 | Doubly linked child list | Preserve start order; unlink a completed child without searching. |
 | Policy context | Disable retries throughout the subtree immediately. |
 | Separate entry contexts | Keep reverse shutdown order, including attempts that finish Init after policy stops. Each service stops its children before it cancels its Run context. |
 
 Shutdown follows this order:
 
-1. Close admission and cancel policy under the group mutex. Start one shutdown worker.
+1. Close admission and cancel policy under the tree mutex. Start one shutdown worker.
 2. Select the last child under the mutex, then release the mutex.
-3. Stop that child and wait. Start a pending child's watcher with a cancelled context.
+3. Start a pending child's watcher if needed, cancel that entry, and wait.
    A service's children stop before its Run context is cancelled or its cleanup Run begins.
 4. Remove the completed child and repeat until the list is empty.
 
-Waiting outside the mutex lets watchers remove their entries. Root Stop and
-terminal failure share one decision lock; groups do not add retry budgets.
+Only ordered shutdown cancels registered entries. A rejected, unregistered start
+is cancelled by the add path. Launch does not read policy or cancel an entry.
+No user code, reporting, or cleanup waits run under the tree mutex. Run can enter
+its function after Stop if its admission decision came first. Root Stop and
+terminal failure use the same mutex; groups do not add retry budgets.
 The shutdown worker reports a selected Failure before its first cleanup wait.
 It uses the existing callback, or standard error when the callback is nil.
 
