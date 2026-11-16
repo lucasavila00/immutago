@@ -3,7 +3,7 @@ uses.go:14:38: unsupported immutable operation: ordinary interfaces require ordi
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 uses.go:18:2: immutable field Err requires a read result: error is not a Copied value
   owner: uses.WithError; field type: error
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 uses.go:21:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: Saved api.Reply
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it

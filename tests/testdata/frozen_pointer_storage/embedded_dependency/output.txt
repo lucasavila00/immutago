@@ -1,7 +1,7 @@
 use.go:10:13: unsupported immutable operation: Count: Frozen data fields must be named
   source: *embedded.Numeric
   type: *embedded.Numeric
-  fix: use the documented immutable value and reference forms
+  fix: give each data field a name; embed only im.Frozen
 use.go:10:14: Frozen data fields must be named
   field: embedded.Numeric.Count
   fix: give the field a name, such as Count example.com/consumer/embedded.Count
@@ -14,7 +14,7 @@ use.go:10:40: local projection: projection payload 1: Count: Frozen data fields 
 use.go:10:40: unsupported immutable operation: Count: Frozen data fields must be named
   source: Cell.LoadPointer().Unsafe()
   type: *embedded.Numeric
-  fix: use the documented immutable value and reference forms
+  fix: give each data field a name; embed only im.Frozen
 use.go:4:2: unsupported dependency example.com/consumer/embedded: immutability proof failed
   representative failure: example.com/consumer/embedded/embedded.go:19:6: cannot generate typed projections: Numeric: Count: Frozen data fields must be named
   note: other dependency errors may exist

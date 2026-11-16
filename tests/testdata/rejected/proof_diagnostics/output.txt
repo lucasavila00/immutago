@@ -29,25 +29,25 @@ diagnostics.go:63:25: unsupported immutable operation: protected storage require
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 diagnostics.go:70:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 diagnostics.go:71:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 diagnostics.go:72:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 diagnostics.go:76:14: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 diagnostics.go:76:20: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 diagnostics.go:76:23: immutable type argument: stored pointers require a concrete Frozen record target
   type: *proofdiagnostics.Score
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 diagnostics.go:76:49: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 diagnostics.go:83:12: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenMap[string, [1]proofdiagnostics.Name]
   fix: store Frozen data; keep its Projection or Local result in local bindings
@@ -62,7 +62,7 @@ diagnostics.go:84:6: Frozen collection: Frozen storage cannot contain Local valu
   fix: store Frozen data; keep its Projection or Local result in local bindings
 repairs.go:10:16: immutable type argument: stored pointers require a concrete Frozen record target
   type: *int
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 repairs.go:14:2: immutable field Totals requires a read result: named array must be wrapped in a struct with an immutable marker
   owner: proofdiagnostics.Summary; field type: proofdiagnostics.Counts
   fix: use an unnamed array type; to keep a named type, put the unnamed array in a marked struct
@@ -106,10 +106,51 @@ repairs.go:43:2: unsupported immutable operation: protected storage requires syn
 repairs.go:48:24: immutable type argument: immutable markers are annotations, not data
   type: im.FrozenInterface
   fix: embed im.FrozenInterface in a named interface; use that interface as the payload
-repairs.go:52:48: unsupported immutable operation: immutable method receivers must match their declared type exactly
+repairs.go:51:6: local projection: projection payload 1: immutable markers are annotations, not data
+  type: im.Projection[im.FrozenInterface]
+  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+repairs.go:51:6: unsupported immutable operation: immutable markers are annotations, not data
+  source: im.ProjectionOf(value)
+  type: im.Projection[im.FrozenInterface]
+  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+repairs.go:51:9: immutable type argument: immutable markers are annotations, not data
+  type: im.FrozenInterface
+  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+repairs.go:56:48: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.ReadPointer()
   type: int
   fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
+repairs.go:61:16: local projection: projection payload 1: immutable markers are annotations, not data
+  type: im.Projection[proofdiagnostics.InterfaceMarker]
+  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+repairs.go:61:16: unsupported immutable operation: immutable markers are annotations, not data
+  source: im.ProjectionOf(value)
+  type: im.Projection[proofdiagnostics.InterfaceMarker]
+  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+repairs.go:61:19: immutable type argument: immutable markers are annotations, not data
+  type: proofdiagnostics.InterfaceMarker
+  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+repairs.go:61:2: local projection: projection payload 1: immutable markers are annotations, not data
+  type: im.Projection[proofdiagnostics.InterfaceMarker]
+  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+repairs.go:62:15: local projection: projection payload 1: immutable markers are annotations, not data
+  type: im.Projection[proofdiagnostics.InterfaceMarker]
+  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+repairs.go:62:6: unsupported immutable operation: immutable markers are annotations, not data
+  source: im.Value(projection)
+  type: proofdiagnostics.InterfaceMarker
+  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+repairs.go:62:9: immutable type argument: immutable markers are annotations, not data
+  type: proofdiagnostics.InterfaceMarker
+  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+repairs.go:67:59: unsupported immutable operation: string is not a Copied value
+  source: value.Clone()
+  type: []string
+  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
+repairs.go:68:59: unsupported immutable operation: string is not a Copied value
+  source: value.Clone()
+  type: []proofdiagnostics.Text
+  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
 repairs.go:8:16: immutable type argument: interface{} is not provably immutable
   type: any
   fix: embed im.FrozenInterface in a named interface, or use a concrete Frozen type
@@ -158,7 +199,7 @@ storage.go:37:6: use of consumed builder values: Freeze transferred its storage;
 storage.go:43:20: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 storage.go:49:6: Frozen collection: type argument 1: stored pointers require a concrete Frozen record target
   type: im.FrozenSlice[*int]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 storage.go:49:9: immutable type argument: stored pointers require a concrete Frozen record target
   type: *int
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))

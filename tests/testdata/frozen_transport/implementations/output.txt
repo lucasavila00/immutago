@@ -1,28 +1,28 @@
 forms.go:11:46: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
   source: return api.Identity(value)
-  fix: use the documented immutable value and reference forms
+  fix: embed im.Frozen and use Frozen fields, or im.Copied for value-only fields
 forms.go:13:29: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
   source: return value
-  fix: use the documented immutable value and reference forms
+  fix: embed im.Frozen and use Frozen fields, or im.Copied for value-only fields
 forms.go:16:6: unsupported immutable operation: Frozen interface implementation: interface{} is not provably immutable
   source: value.(api.Reader)
   type: api.Reader
-  fix: use the documented immutable value and reference forms
+  fix: embed im.FrozenInterface in a named interface, or use a concrete Frozen type
 forms.go:17:16: unsupported immutable operation: Frozen interface implementation: interface{} is not provably immutable
   source: value.(api.Reader)
   type: (api.Reader, bool)
-  fix: use the documented immutable value and reference forms
+  fix: embed im.FrozenInterface in a named interface, or use a concrete Frozen type
 forms.go:22:7: unsupported immutable operation: protected storage is unsupported in type switches
   source: api.Reader
   type: api.Reader
   fix: keep concrete protected types in named function parameters instead of recovering values or references from interfaces
 forms.go:26:50: unsupported immutable operation: Frozen interface implementation: type parameters are unsupported in immutable storage
   source: return value
-  fix: use the documented immutable value and reference forms
+  fix: use a concrete proved type for this immutable field or element
 forms.go:7:6: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
   source: reader api.Reader = value
-  fix: use the documented immutable value and reference forms
+  fix: embed im.Frozen and use Frozen fields, or im.Copied for value-only fields
 forms.go:9:2: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
   source: take(api.Identity(value))
   type: ()
-  fix: use the documented immutable value and reference forms
+  fix: embed im.Frozen and use Frozen fields, or im.Copied for value-only fields

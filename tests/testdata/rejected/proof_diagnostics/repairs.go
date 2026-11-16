@@ -54,3 +54,15 @@ func markerProjection(value im.FrozenInterface) {
 func (p *Point) ReadPointer() int { return p.X }
 
 func pointerReceiver(value Point) int { return value.ReadPointer() }
+
+type InterfaceMarker = im.FrozenInterface
+
+func markerAlias(value InterfaceMarker) {
+	projection := im.ProjectionOf(value)
+	_ = im.Value(projection)
+}
+
+type Text = string
+
+func cloneText(value im.SliceProjection[string])    { _ = value.Clone() }
+func cloneTextAlias(value im.SliceProjection[Text]) { _ = value.Clone() }

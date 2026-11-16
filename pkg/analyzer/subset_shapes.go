@@ -1,10 +1,11 @@
 package analyzer
 
 import (
-	"github.com/lucasavila00/immutago/internal/checker"
 	"go/ast"
 	"go/token"
 	"go/types"
+
+	"github.com/lucasavila00/immutago/internal/checker"
 )
 
 // statementOperation identifies the statement or declaration that owns an operand.

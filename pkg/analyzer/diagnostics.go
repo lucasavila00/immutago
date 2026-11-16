@@ -78,8 +78,8 @@ var subsetFixes = map[string]string{
 		"continuing; keep Local values, Local pointers, and native builders out of go and defer",
 	"protected storage is unsupported in type switches": "keep concrete protected " +
 		"types in named function parameters instead of recovering values or references from interfaces",
-	"immutable methods require a concrete non-generic marked receiver": "declare the method on a proved " +
-		"marked struct or its pointer, or use a named function with concrete parameters",
+	"immutable methods require a proved marked or Copied receiver": "use a proved marked or Copied receiver " +
+		"type without type parameters; for other field or element types, copy to an ordinary local before calling the method",
 	"promoted immutable methods are unsupported": "name the embedded field explicitly and call a method " +
 		"allowed on that field; copy scalar fields to ordinary locals before calling their methods",
 	"immutable method receivers must match their declared type exactly": "use an exact pointer or new(value) for a " +

@@ -39,11 +39,7 @@ iszero.go:38:57: unsupported immutable operation: use a service reference only a
   source: route.Worker.Borrow
   type: func() *service.Counter
   fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-iszero.go:49:50: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
-  source: status.Status.IsZero()
-  type: bool
-  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
-iszero.go:51:53: unsupported immutable operation: interior addresses of protected storage are unsupported
+iszero.go:40:53: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &route.Worker
   type: *supervise.Ref[service.Counter]
   fix: copy the field into a local; do not take a pointer into immutable storage

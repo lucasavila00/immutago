@@ -78,8 +78,8 @@ func (c *subsetChecks) builderTypeFailure(t types.Type) checker.Failure {
 	case *types.Slice:
 		return c.proofs.Failure(storage.Elem())
 	case *types.Map:
-		if reason := c.proofs.Failure(storage.Key()); reason.Reason != "" {
-			return reason
+		if failure := c.proofs.Failure(storage.Key()); failure.Reason != "" {
+			return failure
 		}
 		return c.proofs.Failure(storage.Elem())
 	}

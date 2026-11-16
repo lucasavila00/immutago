@@ -108,8 +108,8 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) checke
 		return c.subsetPointer(t, u, seen)
 	case *types.Array:
 		if c.queries.Owns(t) {
-			if reason := c.proofs.Failure(t); reason.Reason != "" {
-				return reason
+			if failure := c.proofs.Failure(t); failure.Reason != "" {
+				return failure
 			}
 		}
 		return c.subsetType(u.Elem(), seen)
@@ -134,8 +134,8 @@ func (c *subsetChecks) subsetPointer(t types.Type, pointer *types.Pointer, seen 
 		return shapeFailure("immutable references require a concrete marked struct target")
 	}
 	if checker.Marked(pointer.Elem()) {
-		if reason := c.proofs.Failure(pointer.Elem()); reason.Reason != "" {
-			return reason
+		if failure := c.proofs.Failure(pointer.Elem()); failure.Reason != "" {
+			return failure
 		}
 	}
 	return c.subsetType(pointer.Elem(), seen)
@@ -219,8 +219,8 @@ func subsetResults(results *types.Tuple) checker.Failure {
 // subsetTuple checks each inferred result type without losing tuple context.
 func (c *subsetChecks) subsetTuple(tuple *types.Tuple, seen map[types.Type]bool) checker.Failure {
 	for i := 0; i < tuple.Len(); i++ {
-		if reason := c.subsetType(tuple.At(i).Type(), seen); reason.Reason != "" {
-			return reason
+		if failure := c.subsetType(tuple.At(i).Type(), seen); failure.Reason != "" {
+			return failure
 		}
 	}
 	return checker.Failure{}
@@ -252,8 +252,8 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return
 	}
-	if reason := c.subsetType(t, make(map[types.Type]bool)); reason.Reason != "" {
-		c.reportFailure(expression, reason)
+	if failure := c.subsetType(t, make(map[types.Type]bool)); failure.Reason != "" {
+		c.reportFailure(expression, failure)
 	}
 }
 

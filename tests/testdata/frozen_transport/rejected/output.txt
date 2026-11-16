@@ -63,7 +63,7 @@ forms.go:40:15: unsupported immutable operation: writes to immutable objects are
 forms.go:41:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.Counts[0].Read()
   type: int
-  fix: copy a Copied field or element into a local before calling a pointer method; for a value method on *T, write (*pointer).Method()
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 forms.go:45:11: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 forms.go:46:6: unsupported immutable operation: native slices of immutable storage are unsupported
   source: alias
@@ -104,35 +104,35 @@ handles.go:15:26: unmarked struct field Values contains protected storage
 handles.go:18:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: unprovedReader(&BadAlias{})
   type: ()
-  fix: use the documented immutable value and reference forms
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 handles.go:19:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: return &BadAlias{}
-  fix: use the documented immutable value and reference forms
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 handles.go:21:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: return unprovedPair()
-  fix: use the documented immutable value and reference forms
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 handles.go:22:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: h.Reader = &BadAlias{}
-  fix: use the documented immutable value and reference forms
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 handles.go:23:50: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: StateAlias{Reader: &BadAlias{}}
   type: rejected.StateAlias
-  fix: use the documented immutable value and reference forms
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 handles.go:24:50: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: map[string]api.Reader{"bad": &BadAlias{}}
   type: map[string]api.Reader
-  fix: use the documented immutable value and reference forms
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 handles.go:25:55: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: append(values, &BadAlias{})
   type: []api.Reader
-  fix: use the documented immutable value and reference forms
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 handles.go:26:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: ready <- &BadAlias{}
-  fix: use the documented immutable value and reference forms
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 handles.go:27:50: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: Box[api.Reader]{Value: &BadAlias{}}
   type: rejected.Box[api.Reader]
-  fix: use the documented immutable value and reference forms
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 handles.go:29:51: unsupported immutable operation: writes to immutable objects are unsupported
   source: h.At(0).N++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

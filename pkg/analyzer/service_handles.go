@@ -39,8 +39,8 @@ func (c *subsetChecks) visitHandle(node ast.Node) bool {
 // checkReference proves the concrete service target without restricting value transport.
 func (c *subsetChecks) checkReference(node ast.Node, typ types.Type) {
 	if checker.IsRuntimeType(typ, "Ref") {
-		if reason := c.proofs.Failure(typ); reason.Reason != "" {
-			c.reportFailure(node, reason)
+		if failure := c.proofs.Failure(typ); failure.Reason != "" {
+			c.reportFailure(node, failure)
 		}
 	}
 }

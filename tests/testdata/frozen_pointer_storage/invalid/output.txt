@@ -8,10 +8,10 @@ invalid.go:15:30: unmarked struct field Value contains protected storage
   fix: store Frozen pointers or handles; keep Local data in local bindings
 invalid.go:21:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 invalid.go:22:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*[2]int]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 invalid.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: state.Settings.Limit = 1
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -31,10 +31,10 @@ invalid.go:31:6: unsupported immutable operation: interior addresses of protecte
   source: &state.Settings.Limit
   type: *int
   fix: copy the field into a local; do not take a pointer into immutable storage
-invalid.go:32:2: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
+invalid.go:32:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: state.Settings.Count.Inc()
   type: ()
-  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 invalid.go:36:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: outer.Limit++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -45,10 +45,10 @@ invalid.go:38:6: unsupported immutable operation: interior addresses of protecte
   source: &outer.Limit
   type: *int
   fix: copy the field into a local; do not take a pointer into immutable storage
-invalid.go:39:2: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
+invalid.go:39:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: outer.Count.Inc()
   type: ()
-  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 invalid.go:44:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: value.(*api.Settings).Limit++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

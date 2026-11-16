@@ -143,8 +143,8 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 		return checker.Failure{}
 	case "Value":
 		typ := c.pass.TypesInfo.TypeOf(call)
-		if reason := c.proofs.FrozenFailure(typ); reason.Reason != "" {
-			return reason
+		if failure := c.proofs.FrozenFailure(typ); failure.Reason != "" {
+			return failure
 		}
 		return c.proofs.ReadResultFailure(typ)
 	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Is", "Unsafe", "Projection":
@@ -163,8 +163,8 @@ func (c *subsetChecks) matchLibraryMethod(call *ast.CallExpr, method string) che
 	if checker.IsProjection(receiver) && method == "Clone" {
 		args := types.Unalias(receiver).(*types.Named).TypeArgs()
 		for index := 0; index < args.Len(); index++ {
-			if reason := c.proofs.CopiedFailure(args.At(index)); reason.Reason != "" {
-				return reason
+			if failure := c.proofs.CopiedFailure(args.At(index)); failure.Reason != "" {
+				return failure
 			}
 		}
 	}

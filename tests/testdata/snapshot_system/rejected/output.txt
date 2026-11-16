@@ -117,25 +117,25 @@ snapshot_categories.go:40:52: unsupported immutable operation: returning Local p
 snapshot_categories.go:43:6: unsupported immutable operation: example.com/consumer/rejected.Retained is not a Copied value
   source: im.Value(projection)
   type: rejected.Retained
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 snapshot_categories.go:43:9: immutable type argument: example.com/consumer/rejected.Retained is not a Copied value
   type: rejected.Retained
   fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 snapshot_categories.go:44:6: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   source: im.Value(text)
   type: im.FrozenString
-  fix: copy scalar fields, or use a local projection
+  fix: copy bool or numeric fields for Copied data; for Local text, use text.Projection()
 snapshot_categories.go:44:9: immutable type argument: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   type: im.FrozenString
   fix: copy bool or numeric fields for Copied data; for Local text, use text.Projection()
 snapshot_categories.go:45:6: unsupported immutable operation: string is not a Copied value
   source: values.Clone()
   type: []string
-  fix: copy scalar fields, or use a local projection
+  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
 snapshot_categories.go:46:6: unsupported immutable operation: string is not a Copied value
   source: entries.Clone()
   type: map[string]int
-  fix: copy scalar fields, or use a local projection
+  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
 snapshot_categories.go:50:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = value
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
@@ -215,7 +215,7 @@ snapshot_categories.go:88:17: service method NumericArray must return a read res
 snapshot_categories.go:90:6: unsupported immutable operation: example.com/consumer/rejected.Numeric is not a Copied value
   source: im.Value(value)
   type: rejected.Numeric
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 snapshot_categories.go:90:9: immutable type argument: example.com/consumer/rejected.Numeric is not a Copied value
   type: rejected.Numeric
   fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
@@ -267,10 +267,10 @@ snapshot_projection.go:17:22: unsupported immutable operation: interior addresse
   fix: copy the field into a local; do not take a pointer into immutable storage
 snapshot_projection.go:17:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*[2]string]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 snapshot_projection.go:17:9: immutable type argument: stored pointers require a concrete Frozen record target
   type: *[2]string
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 snapshot_projection.go:18:6: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &projection.Unsafe().Next
   type: **rejected.Data

@@ -24,29 +24,29 @@ invalid.go:56:38: unsupported immutable operation: closures require ordinary or 
 invalid.go:60:76: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Table] is not a Copied value
   source: value.Clone()
   type: []valid.Handle
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 invalid.go:63:88: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Table] is not a Copied value
   source: value.Clone()
   type: map[int]valid.Handle
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 invalid.go:66:68: unsupported immutable operation: example.com/consumer/invalid.Snapshot is not a Copied value
   source: im.Value(value)
   type: invalid.Snapshot
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 invalid.go:66:71: immutable type argument: example.com/consumer/invalid.Snapshot is not a Copied value
   type: invalid.Snapshot
   fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 invalid.go:69:71: unsupported immutable operation: *example.com/consumer/invalid.Snapshot is not a Copied value
   source: im.Value(value)
   type: *invalid.Snapshot
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 invalid.go:69:74: immutable type argument: *example.com/consumer/invalid.Snapshot is not a Copied value
   type: *invalid.Snapshot
   fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 invalid.go:72:67: unsupported immutable operation: example.com/consumer/invalid.Scorer is not a Copied value
   source: im.Value(value)
   type: invalid.Scorer
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 invalid.go:72:70: immutable type argument: example.com/consumer/invalid.Scorer is not a Copied value
   type: invalid.Scorer
   fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
@@ -62,7 +62,7 @@ invalid.go:75:21: immutable type argument: Frozen storage cannot contain Local v
 invalid.go:75:71: unsupported immutable operation: Frozen storage cannot contain Local values
   source: im.Value(value)
   type: valid.Serving
-  fix: use the documented immutable value and reference forms
+  fix: store Frozen data; keep its Projection or Local result in local bindings
 invalid.go:75:74: immutable type argument: Frozen storage cannot contain Local values
   type: valid.Serving
   fix: store Frozen data; keep its Projection or Local result in local bindings
@@ -72,14 +72,14 @@ invalid.go:75:80: local projection: projection payload 1: Frozen storage cannot 
 invalid.go:78:58: unsupported immutable operation: string is not a Copied value
   source: im.Value(value)
   type: string
-  fix: copy scalar fields, or use a local projection
+  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
 invalid.go:78:61: immutable type argument: string is not a Copied value
   type: string
   fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
 invalid.go:81:88: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a Copied value
   source: im.Value(value)
   type: im.FrozenSlice[int]
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 invalid.go:81:91: immutable type argument: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a Copied value
   type: im.FrozenSlice[int]
   fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results

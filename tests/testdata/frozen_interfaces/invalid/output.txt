@@ -1,3 +1,3 @@
 invalid.go:9:45: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
   source: return Hidden{Scorer: s}
-  fix: use the documented immutable value and reference forms
+  fix: embed im.Frozen and use Frozen fields, or im.Copied for value-only fields

@@ -93,3 +93,19 @@ func markerProjection(value Record) {
 func (p *Point) ReadPointer() int { return p.X }
 
 func pointerReceiver(value Point) int { return new(value).ReadPointer() }
+
+type RecordAlias = Record
+
+func markerAlias(value RecordAlias) {
+	_ = im.ProjectionOf(value)
+}
+
+func copiedValue(value Score) {
+	projection := im.ProjectionOf(value)
+	_ = im.Value(projection)
+}
+
+type Count = int
+
+func cloneCount(value im.SliceProjection[int])        { _ = value.Clone() }
+func cloneCountAlias(value im.SliceProjection[Count]) { _ = value.Clone() }

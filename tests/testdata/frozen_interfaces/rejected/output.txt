@@ -17,7 +17,7 @@ forms.go:29:2: unsupported immutable operation: Local values and pointers cannot
 forms.go:30:6: unsupported immutable operation: example.com/consumer/api.Scorer is not a Copied value
   source: im.Value(im.ProjectionOf(s))
   type: api.Scorer
-  fix: copy scalar fields, or use a local projection
+  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 forms.go:30:9: immutable type argument: example.com/consumer/api.Scorer is not a Copied value
   type: api.Scorer
   fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results

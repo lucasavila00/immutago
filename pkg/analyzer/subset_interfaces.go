@@ -10,15 +10,15 @@ import (
 // matchFrozenInterface proves every value placed in a sealed interface.
 // Exact method receivers exclude promoted calls and implicit dereferences.
 func (c *subsetChecks) matchFrozenInterface(source, destination types.Type) checker.Failure {
-	if reason := c.proofs.FrozenFailure(destination); reason.Reason != "" {
-		return reason
+	if failure := c.proofs.FrozenFailure(destination); failure.Reason != "" {
+		return failure
 	}
 	if source == types.Typ[types.UntypedNil] {
 		return checker.Failure{}
 	}
-	if reason := c.proofs.FrozenFailure(source); reason.Reason != "" {
-		reason.Reason = "Frozen interface implementation: " + reason.Reason
-		return reason
+	if failure := c.proofs.FrozenFailure(source); failure.Reason != "" {
+		failure.Reason = "Frozen interface implementation: " + failure.Reason
+		return failure
 	}
 	if checker.FrozenInterface(source) {
 		return checker.Failure{}
@@ -64,8 +64,8 @@ func (c *subsetChecks) frozenInterfaceMethodType(expression ast.Expr) bool {
 // matchFrozenInterfaceMethod requires a direct call through a proved named contract.
 func (c *subsetChecks) matchFrozenInterfaceMethod(selector *ast.SelectorExpr) checker.Failure {
 	typ := c.pass.TypesInfo.TypeOf(selector.X)
-	if reason := c.proofs.FrozenFailure(typ); reason.Reason != "" {
-		return reason
+	if failure := c.proofs.FrozenFailure(typ); failure.Reason != "" {
+		return failure
 	}
 	selection := c.pass.TypesInfo.Selections[selector]
 	if len(selection.Index()) != 1 || !types.Identical(typ, selection.Recv()) {
