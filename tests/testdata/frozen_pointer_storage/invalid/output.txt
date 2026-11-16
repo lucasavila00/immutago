@@ -1,11 +1,11 @@
-invalid.go:14:25: unmarked struct contains immutable field Value; embed an immutable marker
+invalid.go:14:25: unmarked struct field Value contains protected storage
   owner: invalid.LocalOwner; field type: *invalid.Local
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-invalid.go:15:30: unmarked struct contains immutable field Value; embed an immutable marker
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store Frozen pointers or handles; keep Local data in local bindings
+invalid.go:15:30: unmarked struct field Value contains protected storage
   owner: invalid.ProjectionOwner; field type: im.Projection[*api.Settings]
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store Frozen pointers or handles; keep Local data in local bindings
 invalid.go:21:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
   fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
@@ -55,7 +55,7 @@ invalid.go:44:2: unsupported immutable operation: writes to immutable objects ar
 invalid.go:46:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Limit++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-invalid.go:53:11: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+invalid.go:53:11: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 invalid.go:58:45: unsupported immutable operation: writes to immutable objects are unsupported
   source: (*p).Limit++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -68,10 +68,10 @@ invalid.go:64:2: unsupported immutable operation: writes to immutable objects ar
 invalid.go:69:32: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Limit++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-invalid.go:75:18: service method Read must return a read result: *example.com/consumer/api.Settings is not a Copied value
+invalid.go:75:18: service method Read must return a read result or error: *example.com/consumer/api.Settings is not a Copied value
   result type: *api.Settings
   fix: copy scalar fields, or use a local projection
-invalid.go:9:25: unmarked struct contains immutable field Value; embed an immutable marker
+invalid.go:9:25: unmarked struct field Value contains protected storage
   owner: invalid.ValueOwner; field type: api.Settings
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store *api.Settings; or make the containing struct a Frozen record with Frozen fields

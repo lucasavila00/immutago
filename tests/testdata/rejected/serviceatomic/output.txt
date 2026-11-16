@@ -1,37 +1,37 @@
-atomic.go:25:2: unmarked struct contains immutable field Local; embed an immutable marker
+atomic.go:25:2: unmarked struct field Local contains protected storage
   owner: serviceatomic.MixedSlot; field type: serviceatomic.LocalSlot
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store Frozen pointers or handles; keep Local data in local bindings
 atomic.go:29:2: immutable field Current requires a read result: sync/atomic.Pointer[example.com/consumer/serviceatomic.WorkerRef] is not a Copied value
   owner: serviceatomic.ProtectedSlot; field type: atomic.Pointer[serviceatomic.WorkerRef]
   fix: copy scalar fields, or use a local projection
-atomic.go:32:11: unmarked struct contains immutable field _; embed an immutable marker
+atomic.go:32:11: unmarked struct field _ contains protected storage
   owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store Frozen pointers or handles; keep Local data in local bindings
 atomic.go:32:18: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
   source: Pointer
   type: atomic.Pointer[T any]
   fix: use a direct non-generic function with concrete parameter types
-atomic.go:32:5: unmarked struct contains immutable field _; embed an immutable marker
+atomic.go:32:5: unmarked struct field _ contains protected storage
   owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store Frozen pointers or handles; keep Local data in local bindings
 atomic.go:32:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: local atomic.Pointer[LocalSlot]
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-atomic.go:33:11: unmarked struct contains immutable field _; embed an immutable marker
+atomic.go:33:11: unmarked struct field _ contains protected storage
   owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store Frozen pointers or handles; keep Local data in local bindings
 atomic.go:33:18: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
   source: Pointer
   type: atomic.Pointer[T any]
   fix: use a direct non-generic function with concrete parameter types
-atomic.go:33:5: unmarked struct contains immutable field _; embed an immutable marker
+atomic.go:33:5: unmarked struct field _ contains protected storage
   owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store Frozen pointers or handles; keep Local data in local bindings
 atomic.go:33:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: mixed atomic.Pointer[MixedSlot]
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it

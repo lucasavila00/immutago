@@ -15,7 +15,7 @@ func TestCoreSourceStress(t *testing.T) {
 			}
 			want := "writes to immutable objects"
 			if shape == "builders" {
-				want = "use of consumed owned container"
+				want = "use of consumed builder"
 			}
 			if got := checkSource(t, stressSource(shape, 128, true)); !strings.Contains(got, want) {
 				t.Fatalf("missing %q in diagnostics: %s", want, got)

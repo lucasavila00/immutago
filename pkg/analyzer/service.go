@@ -23,6 +23,7 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 		return
 	}
 	methods := types.NewMethodSet(types.NewPointer(t))
+	errorType := types.Universe.Lookup("error").Type()
 	for i := 0; i < methods.Len(); i++ {
 		method := methods.At(i).Obj()
 		if !method.Exported() || method.Name() == "Init" || method.Name() == "Run" || runtimeObject(method) {
@@ -34,12 +35,17 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 		}
 		signature := methods.At(i).Type().(*types.Signature)
 		for result := range signature.Results().Variables() {
-			if types.Identical(result.Type(), types.Universe.Lookup("error").Type()) {
+			if types.Identical(result.Type(), errorType) {
 				continue
 			}
 			if reason := c.proofs.ReadResultReason(result.Type()); reason != "" {
-				c.report(at, "service method "+method.Name()+" must return a read result: "+reason+
-					"\n  result type: "+diagnosticType(result.Type())+"\n  fix: "+structuralFix(result.Type(), reason))
+				fix := structuralFix(result.Type(), reason)
+				if contract, ok := result.Type().Underlying().(*types.Interface); ok &&
+					types.Implements(contract, errorType.Underlying().(*types.Interface)) {
+					fix = "declare the result as error or a type alias such as type Failure = error"
+				}
+				c.report(at, "service method "+method.Name()+" must return a read result or error: "+reason+
+					"\n  result type: "+diagnosticType(result.Type())+"\n  fix: "+fix)
 			}
 		}
 	}

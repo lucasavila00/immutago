@@ -64,27 +64,27 @@ forms.go:41:6: unsupported immutable operation: immutable method receivers must 
   source: value.Counts[0].Read()
   type: int
   fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
-forms.go:45:11: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+forms.go:45:11: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 forms.go:46:6: unsupported immutable operation: native slices of immutable storage are unsupported
   source: alias
   type: []api.Count
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-forms.go:52:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+forms.go:52:2: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 forms.go:55:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: boxed any = value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-forms.go:59:25: unmarked struct contains immutable field Value; embed an immutable marker
+forms.go:59:25: unmarked struct field Value contains protected storage
   owner: rejected.Box[api.Count]; field type: api.Count
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-handles.go:14:27: unmarked struct contains immutable field Value; embed an immutable marker
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store *api.Count; or make the containing struct a Frozen record with Frozen fields
+handles.go:14:27: unmarked struct field Value contains protected storage
   owner: rejected.RecordHolder; field type: api.Count
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-handles.go:15:26: unmarked struct contains immutable field Values; embed an immutable marker
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store *api.Count; or make the containing struct a Frozen record with Frozen fields
+handles.go:15:26: unmarked struct field Values contains protected storage
   owner: rejected.LocalHolder; field type: [0]im.StringProjection
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store Frozen pointers or handles; keep Local data in local bindings
 handles.go:18:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: unprovedReader(&BadAlias{})
   type: ()
@@ -127,8 +127,8 @@ handles.go:32:6: unsupported immutable operation: interior addresses of protecte
   source: &root.Text
   type: *im.FrozenString
   fix: copy the field into a local; do not take a pointer into immutable storage
-handles.go:36:11: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
-handles.go:45:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+handles.go:36:11: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+handles.go:45:2: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 handles.go:49:2: unsupported immutable operation: protected operation is outside the supported statement forms
   source: ready <- value.Len()
   fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form

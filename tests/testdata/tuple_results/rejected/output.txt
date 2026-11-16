@@ -52,15 +52,15 @@ forms.go:30:43: unsupported immutable operation: native builders require fresh l
   source: _, values = reversedSlices()
   fix: declare one fresh local builder; use values = append(values, element) to extend it
 forms.go:30:46: native builder values requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+forms.go:31:58: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 forms.go:31:58: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: values, _ = slices()
   fix: declare one fresh local builder; use values = append(values, element) to extend it
-forms.go:31:58: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 forms.go:32:58: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: _, values = reversedSlices()
   fix: declare one fresh local builder; use values = append(values, element) to extend it
-forms.go:32:61: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
-forms.go:37:8: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+forms.go:32:61: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+forms.go:37:8: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 forms.go:8:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: Saved, Found = api.Pair()
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it

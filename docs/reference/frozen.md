@@ -64,12 +64,13 @@ An exclusive [Local builder](local.md) uses these operations but cannot be froze
 | Change a scalar element or a field inside a Copied slice element | `counts[i]++`, `values[i].Score.Value++`, `values[i].Flags[0] = true` |
 | Read length or slice capacity | `len(values)`, `cap(values)` |
 | Append individual elements to the same variable | `values = append(values, 1, 2)` |
-| Delete, clear, or copy | `delete(scores, key)`, `clear(values)`, `copy(destination, source)` |
+| Delete or clear | `delete(scores, key)`, `clear(values)` |
+| Copy elements between slices | `copy(destination, source)`; each builder keeps its own rules, and an ordinary slice keeps ordinary Go rules. |
+| Copy string bytes into a byte-slice builder | `copy(bytes, text)` |
 | Range over elements | `for i, value := range values { ... }` |
 | Freeze the slice or map | `frozen := im.FreezeSlice(values)`, `frozen := im.FreezeMap(scores)` |
 
 - `var` declarations also work.
-- Both `copy` operands must satisfy the builder rules.
 - Bare `nil` means Go's predeclared `nil`; `(nil)` also works.
 - Freeze needs its own assignment or declaration.
 
