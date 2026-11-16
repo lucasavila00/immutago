@@ -10,14 +10,14 @@ explicit_statements.go:20:17: unsupported immutable operation: channels of immut
   fix: send a Frozen pointer or Frozen handle; keep Local data local and do not send Frozen records by value
 explicit_statements.go:23:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: ready <- value
-  fix: keep Local values and native builders out of channel expressions and receive targets; use them in the selected case body
+  fix: use ordinary values or Frozen pointers or handles in select communication; do Local reads, builder edits, and Cell calls before select or in the selected case body
 explicit_statements.go:30:10: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 explicit_statements.go:30:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: _, values[0] = <-ready
-  fix: keep Local values and native builders out of channel expressions and receive targets; use them in the selected case body
+  fix: use ordinary values or Frozen pointers or handles in select communication; do Local reads, builder edits, and Cell calls before select or in the selected case body
 explicit_statements.go:37:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: _, values[0] = <-ready
-  fix: keep Local values and native builders out of channel expressions and receive targets; use them in the selected case body
+  fix: use ordinary values or Frozen pointers or handles in select communication; do Local reads, builder edits, and Cell calls before select or in the selected case body
 explicit_statements.go:41:79: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeSlice(values)
   type: im.FrozenSlice[int]
@@ -33,7 +33,7 @@ explicit_statements.go:48:15: unsupported immutable operation: Freeze requires a
 explicit_statements.go:59:10: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 explicit_statements.go:59:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: _, values["first"] = <-ready
-  fix: keep Local values and native builders out of channel expressions and receive targets; use them in the selected case body
+  fix: use ordinary values or Frozen pointers or handles in select communication; do Local reads, builder edits, and Cell calls before select or in the selected case body
 explicit_statements.go:65:9: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeMap(values)
   type: im.FrozenMap[string, int]
