@@ -47,6 +47,13 @@ func rejectCopied(result *obligation, t types.Type) {
 		"and use read-result fields such as im.StringProjection"
 }
 
+// rejectRead states the complete result rule shared by Local fields and service results.
+func rejectRead(result *obligation, t types.Type) {
+	result.reason = fmt.Sprintf("%s is not a read result", types.TypeString(t, nil))
+	result.repair = "use a read result: a Copied or Local value, an opaque handle, " +
+		"a pointer to a Frozen handle wrapper, or an unnamed array of read results"
+}
+
 // copiedRecord proves each field through the shared Copied rule.
 func (p *proof) copiedRecord(result *obligation, structure *types.Struct) {
 	for field := range structure.Fields() {
@@ -70,7 +77,7 @@ func (p *proof) readValue(result *obligation, t types.Type) {
 		}
 		return
 	case IsLibraryType(t, "FrozenString"):
-		rejectCopied(result, t)
+		rejectRead(result, t)
 		result.repair = "for Local text, use text.Projection()"
 		return
 	}
@@ -83,15 +90,21 @@ func (p *proof) readValue(result *obligation, t types.Type) {
 
 	case *types.Basic:
 		if value.Info()&types.IsString != 0 {
-			rejectCopied(result, t)
+			rejectRead(result, t)
 			result.repair = "for Local text, use im.ProjectString(text)"
+			return
+		}
+		if value.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex) != 0 {
+			p.dependCategory(result, t, "", copiedCategory)
 			return
 		}
 	case *types.Array:
 		if _, named := t.(*types.Named); !named {
 			p.dependCategory(result, value.Elem(), "array element: ", readCategory)
-			return
+		} else {
+			p.dependCategory(result, t, "", copiedCategory)
 		}
+		return
 	case *types.Struct:
 		if Local(t) {
 			for field := range value.Fields() {
@@ -102,6 +115,10 @@ func (p *proof) readValue(result *obligation, t types.Type) {
 			}
 			return
 		}
+		if Copied(t) {
+			p.dependCategory(result, t, "", copiedCategory)
+			return
+		}
 	}
-	p.dependCategory(result, t, "", copiedCategory)
+	rejectRead(result, t)
 }

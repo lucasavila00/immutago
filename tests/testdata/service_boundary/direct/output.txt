@@ -1,3 +1,3 @@
-anonymous.go:7:24: service method Values must return a read result or error: []int is not a Copied value
+anonymous.go:7:24: service method Values must return a read result or error: []int is not a read result
   result type: []int
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use a read result: a Copied or Local value, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results

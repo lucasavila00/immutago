@@ -1,10 +1,10 @@
 diagnostics.go:24:5: Copied record: Text: string is not a Copied value
   type: proofdiagnostics.Label
   fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
-diagnostics.go:31:2: immutable field Text requires a read result: string is not a Copied value
+diagnostics.go:31:2: immutable field Text requires a read result: string is not a read result
   owner: proofdiagnostics.Reply; field type: string
   fix: for Local text, use im.ProjectString(text)
-diagnostics.go:41:18: service method Name must return a read result or error: string is not a Copied value
+diagnostics.go:41:18: service method Name must return a read result or error: string is not a read result
   result type: string
   fix: for Local text, use im.ProjectString(text)
 diagnostics.go:46:12: Frozen collection: type argument 1: Frozen storage cannot contain Local values
@@ -153,10 +153,10 @@ repairs.go:8:16: immutable type argument: interface{} is not provably immutable
 repairs.go:9:15: immutable type argument: struct does not embed im.Frozen
   type: proofdiagnostics.Plain
   fix: embed im.Frozen and use Frozen fields, or im.Copied for value-only fields
-storage.go:12:18: service method Retry must return a read result or error: example.com/consumer/proof_diagnostics.Failure is not a Copied value
+storage.go:12:18: service method Retry must return a read result or error: example.com/consumer/proof_diagnostics.Failure is not a read result
   result type: proofdiagnostics.Failure
   fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
-storage.go:13:18: service method RetryCode must return a read result or error: example.com/consumer/proof_diagnostics.CodedFailure is not a Copied value
+storage.go:13:18: service method RetryCode must return a read result or error: example.com/consumer/proof_diagnostics.CodedFailure is not a read result
   result type: proofdiagnostics.CodedFailure
   fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
 storage.go:16:2: unmarked struct field Point contains protected storage

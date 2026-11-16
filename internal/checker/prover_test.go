@@ -256,7 +256,7 @@ func TestProverTypeForms(t *testing.T) {
 	}{
 		{types.Typ[types.Int], ""}, {shared, ""}, {byValue, ""}, {alias, ""},
 		{types.NewPointer(shared), ""}, {types.NewArray(alias, 0), ""}, {sliceType(t, slice, shared), ""},
-		{types.NewPointer(byValue), "is not a Copied value"},
+		{types.NewPointer(byValue), "is not a read result"},
 		{owner, "Cell slots are mutable"}, {parameter, "type parameters are unsupported"},
 		{types.NewPointer(types.Typ[types.Int]), "concrete Frozen record target"},
 		{types.NewStruct(nil, nil), "struct does not embed"},

@@ -94,7 +94,7 @@ func TestProofDiagnosticCategories(t *testing.T) {
 	}{
 		{`type Label struct{im.Copied;Text string}`, "Copied record: Text: string is not a Copied value"},
 		{`type Reply struct{im.Local;Text string}`,
-			"immutable field Text requires a read result: string is not a Copied value"},
+			"immutable field Text requires a read result: string is not a read result"},
 		{`func f(value im.StringProjection){frozen:=im.FreezeSlice([]im.StringProjection{value});_=frozen}`,
 			"Frozen collection: type argument 1: Frozen storage cannot contain Local values"},
 		{`type Point struct{im.Frozen};var points []Point`, "native builder points requires a fresh local"},
@@ -140,7 +140,7 @@ type Worker struct{supervise.Service[supervise.NoArgs]}
 func(w *Worker)Name()string{return ""}
 func(w *Worker)Text()im.StringProjection{return im.ProjectString("")}`)
 	for _, want := range []string{
-		"service method Name must return a read result or error: string is not a Copied value",
+		"service method Name must return a read result or error: string is not a read result",
 		"for Local text, use im.ProjectString(text)",
 	} {
 		if !strings.Contains(got, want) {
