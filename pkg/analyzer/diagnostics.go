@@ -40,8 +40,8 @@ func diagnosticType(t types.Type) string {
 var subsetFixes = map[string]string{
 	"protected operation is outside the supported expression forms": "use a documented concrete value, pointer, " +
 		"projection, or builder operation",
-	"protected value conversions are unsupported": "construct the destination Frozen or Local record from copied fields; " +
-		"initialize arrays and builders directly",
+	"protected value conversions are unsupported": "construct the destination Frozen or Local record " +
+		"from copied fields; initialize arrays and builders directly",
 	"native builders require fresh local bindings or append to the same handle": "declare one fresh local builder; " +
 		"use values = append(values, element) to extend it",
 	"Local pointers cannot enter aggregate storage": "keep a Local value in a local binding, or store a Frozen pointer",

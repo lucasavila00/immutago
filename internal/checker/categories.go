@@ -70,6 +70,9 @@ func (p *proof) readValue(result *obligation, t types.Type) {
 	case IsUncheckedValue(t), IsHandle(t):
 		p.dependCategory(result, t, "", frozenCategory)
 		return
+	case Copied(t):
+		p.dependCategory(result, t, "", copiedCategory)
+		return
 	case IsProjection(t):
 		args := t.(*types.Named).TypeArgs()
 		for index := 0; index < args.Len(); index++ {
@@ -89,13 +92,13 @@ func (p *proof) readValue(result *obligation, t types.Type) {
 		}
 
 	case *types.Basic:
-		if value.Info()&types.IsString != 0 {
+		switch {
+		case value.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex) != 0:
+			p.dependCategory(result, t, "", copiedCategory)
+			return
+		case value.Info()&types.IsString != 0:
 			rejectRead(result, t)
 			result.repair = "for Local text, use im.ProjectString(text)"
-			return
-		}
-		if value.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex) != 0 {
-			p.dependCategory(result, t, "", copiedCategory)
 			return
 		}
 	case *types.Array:
@@ -106,19 +109,16 @@ func (p *proof) readValue(result *obligation, t types.Type) {
 		}
 		return
 	case *types.Struct:
-		if Local(t) {
-			for field := range value.Fields() {
-				if field.Embedded() && IsLibraryType(field.Type(), "Local") {
-					continue
-				}
-				p.dependCategory(result, field.Type(), field.Name()+": ", readCategory)
+		if !Local(t) {
+			break
+		}
+		for field := range value.Fields() {
+			if field.Embedded() && IsLibraryType(field.Type(), "Local") {
+				continue
 			}
-			return
+			p.dependCategory(result, field.Type(), field.Name()+": ", readCategory)
 		}
-		if Copied(t) {
-			p.dependCategory(result, t, "", copiedCategory)
-			return
-		}
+		return
 	}
 	rejectRead(result, t)
 }
