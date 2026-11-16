@@ -90,7 +90,7 @@ const testRuntime = `package supervise
  func (p *Service[A]) Init() error { return nil }
  func (p *Service[A]) Args() A { return p.args }
  func (p *Service[A]) bind(args A) { p.args = args }
- func (p *Service[A]) Children() *Group { return nil }
+ func (p *Service[A]) UnsafeChildren() *Group { return nil }
  type NoArgs struct{}
  type Group struct{}
  func NewRoot(func(any, []byte)) *Group { return nil }

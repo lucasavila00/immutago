@@ -47,13 +47,11 @@ func (p *Service[A]) Args() A { return p.args }
 // stops children created by that setup attempt.
 func (*Service[A]) Init() error { return nil }
 
-// Children returns the group owned by this service attempt. Its services wait
-// until the parent is admitted to Run, or run with cancelled contexts during cleanup.
-// The runtime stops and waits for these children
-// before the parent ends.
-// After this attempt ends, Children returns a stopped group.
-// Children panics if Start did not create the service.
-func (p *Service[A]) Children() *Group {
+// UnsafeChildren returns the child group owned by this service.
+// Call it on the original service pointer created by Start, never a value copy.
+// Parent shutdown stops and waits for the children.
+// After the parent ends, UnsafeChildren returns a stopped group.
+func (p *Service[A]) UnsafeChildren() *Group {
 	checkGroup(p.owner)
 	p.owner.mu.Lock()
 	defer p.owner.mu.Unlock()

@@ -75,9 +75,9 @@ calls. See [service results](../reference/service-results.md) for the full list.
 ## Choose a group lifetime
 
 The example has one service under the root. Use `supervise.StartGroup(parent)`
-when several services must stop together. Inside a service, use `s.Children()`
-for work that must end with that service. Stopping a nested group leaves other
-groups running. A Run failure stops the entire root.
+when several services must stop together. Inside a service, use `s.UnsafeChildren()`
+on the original service pointer for work that must end with that service.
+Stopping a nested group leaves other groups running. A Run failure stops the entire root.
 
 The [runtime reference](../reference/services.md) defines child shutdown order,
 completion and failure reports. In tests,
