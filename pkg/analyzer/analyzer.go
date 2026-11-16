@@ -107,13 +107,13 @@ func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance
 	}
 	for i := 0; i < instance.TypeArgs.Len(); i++ {
 		argument := instance.TypeArgs.At(i)
-		reason := c.proofs.FrozenReason(argument)
-		if obj.Name() == "Value" && reason == "" {
-			reason = c.proofs.ReadResultReason(argument)
+		failure := c.proofs.FrozenFailure(argument)
+		if obj.Name() == "Value" && failure.Reason == "" {
+			failure = c.proofs.ReadResultFailure(argument)
 		}
-		if reason != "" {
+		if failure.Reason != "" {
 			c.report(ident.Pos(), fmt.Sprintf("immutable type argument: %s\n  type: %s\n  fix: %s",
-				reason, diagnosticType(instance.TypeArgs.At(i)), structuralFix(instance.TypeArgs.At(i), reason)))
+				failure.Reason, diagnosticType(argument), failure.Repair))
 		}
 	}
 }
@@ -178,19 +178,19 @@ func (c *checks) checkFunctionBody(declaration *ast.FuncDecl) {
 func (c *checks) checkType(pos token.Pos, t types.Type) {
 	if checker.FrozenInterface(t) && !checker.IsLibraryType(t, "FrozenInterface") {
 		if _, named := types.Unalias(t).(*types.Named); named {
-			if reason := c.proofs.FrozenReason(t); reason != "" {
-				c.report(pos, "immutable interface: "+reason+"\n  fix: use exported methods with ordinary Go contracts")
+			if failure := c.proofs.FrozenFailure(t); failure.Reason != "" {
+				c.report(pos, "immutable interface: "+failure.Reason+"\n  fix: "+failure.Repair)
 			}
 		}
 	}
 	if checker.IsCollection(t) || checker.IsProjection(t) {
-		kind, prove := "Frozen collection", c.proofs.FrozenReason
+		kind, prove := "Frozen collection", c.proofs.FrozenFailure
 		if checker.IsProjection(t) {
-			kind, prove = "local projection", c.proofs.ReadResultReason
+			kind, prove = "local projection", c.proofs.ReadResultFailure
 		}
-		if reason := prove(t); reason != "" {
-			c.report(pos, kind+": "+reason+"\n  type: "+diagnosticType(t)+
-				"\n  fix: "+structuralFix(t, reason))
+		if failure := prove(t); failure.Reason != "" {
+			c.report(pos, kind+": "+failure.Reason+"\n  type: "+diagnosticType(t)+
+				"\n  fix: "+failure.Repair)
 		}
 	}
 	// Defined types can inherit a struct without a struct literal in this package.
@@ -218,9 +218,9 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		return
 	}
 	marked := checker.Marked(t)
-	fieldRule, proveField := "Frozen type", c.proofs.FrozenReason
+	fieldRule, proveField := "Frozen type", c.proofs.FrozenFailure
 	if checker.Local(t) {
-		fieldRule, proveField = "read result", c.proofs.ReadResultReason
+		fieldRule, proveField = "read result", c.proofs.ReadResultFailure
 	}
 	if reason := checker.MarkerReason(t); reason != "" {
 		c.report(pos, reason)
@@ -236,10 +236,10 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			continue
 		}
 		if marked {
-			if reason := proveField(ft); reason != "" {
-				c.report(fieldPos, "immutable field "+field.Name()+" requires a "+fieldRule+": "+reason+
+			if failure := proveField(ft); failure.Reason != "" {
+				c.report(fieldPos, "immutable field "+field.Name()+" requires a "+fieldRule+": "+failure.Reason+
 					"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
-					"\n  fix: "+structuralFix(ft, reason))
+					"\n  fix: "+failure.Repair)
 				continue
 			}
 		} else if c.queries.Owns(ft) {
@@ -260,9 +260,9 @@ func (c *checks) checkCopiedRecord(pos token.Pos, t types.Type, structure *types
 			pos = fieldPos
 		}
 	}
-	if reason := c.proofs.CopiedReason(t); reason != "" {
-		c.report(pos, "Copied record: "+reason+"\n  type: "+diagnosticType(t)+
-			"\n  fix: use bool, numbers, unnamed arrays, or other Copied records for every field")
+	if failure := c.proofs.CopiedFailure(t); failure.Reason != "" {
+		c.report(pos, "Copied record: "+failure.Reason+"\n  type: "+diagnosticType(t)+
+			"\n  fix: "+failure.Repair)
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 type obligation struct {
 	users  []proofUse
 	reason string
+	repair string
 	cause  *obligation
 }
 
@@ -73,6 +74,7 @@ func (p *proof) categoryNode(t types.Type, category proofCategory) *obligation {
 	(*table)[t] = result
 	if reason := MarkerReason(t); reason != "" {
 		result.reason = reason
+		result.repair = "embed exactly one of im.Frozen, im.Local, or im.Copied by value"
 	} else {
 		switch category {
 		case frozenCategory:
@@ -145,14 +147,17 @@ func (p *proof) drainFailures() {
 func (p *proof) value(result *obligation, t types.Type) {
 	if IsLibraryType(t, "Cell") {
 		result.reason = "Cell slots are mutable"
+		result.repair = "keep the Cell in ordinary storage; use its Frozen payload as data"
 		return
 	}
 	if p.queries.Locals(t) {
 		result.reason = "Frozen storage cannot contain Local values"
+		result.repair = "store Frozen data; keep its Projection or Local result in local bindings"
 		return
 	}
 	if IsLibraryType(t, "Frozen") || IsLibraryType(t, "Copied") {
 		result.reason = "immutable markers are annotations, not data"
+		result.repair = "embed the marker in a named struct; use data fields for values"
 		return
 	}
 	if IsUncheckedValue(t) {
@@ -160,6 +165,7 @@ func (p *proof) value(result *obligation, t types.Type) {
 	}
 	if IsRuntimeType(t, "Ref") {
 		result.reason = refTargetReason(t.(*types.Named).TypeArgs().At(0))
+		result.repair = "use a concrete service struct that embeds supervise.Service by value"
 		return
 	}
 	if IsCollection(t) {
@@ -171,15 +177,18 @@ func (p *proof) value(result *obligation, t types.Type) {
 	}
 	if _, generic := t.(*types.TypeParam); generic {
 		result.reason = "type parameters are unsupported in immutable storage"
+		result.repair = "use a concrete proved type for this immutable field or element"
 		return
 	}
 	if _, named := t.(*types.Named); named {
 		switch t.Underlying().(type) {
 		case *types.Array:
 			result.reason = "named array must be wrapped in a struct with an immutable marker"
+			result.repair = "use an unnamed array type; to keep a named type, put the unnamed array in a marked struct"
 			return
 		case *types.Pointer:
 			result.reason = "defined pointer types are unsupported in Frozen data; use a pointer alias"
+			result.repair = "use a pointer alias such as type Selected = *Settings, where Settings is a Frozen record"
 			return
 		}
 	}
@@ -201,17 +210,35 @@ func (p *proof) value(result *obligation, t types.Type) {
 		p.frozenInterface(result, t)
 		return
 	}
+	unsupportedFrozen(result, t)
+}
+
+// unsupportedFrozen rejects native storage without a Frozen representation.
+func unsupportedFrozen(result *obligation, t types.Type) {
 	result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
+	switch t.Underlying().(type) {
+	case *types.Slice:
+		result.repair = "replace the native slice with im.FrozenSlice[T], where T is a Frozen type"
+	case *types.Map:
+		result.repair = "replace the native map with im.FrozenMap[K, V], where K and V are Frozen types"
+	case *types.Chan, *types.Signature:
+		result.repair = "keep channels and callbacks outside immutable data; store their Frozen results"
+	default:
+		result.repair = "use a type from the Frozen category in docs/reference/types.md"
+	}
 }
 
 // frozenPointer proves the concrete record target and excludes stored Local pointers.
 func (p *proof) frozenPointer(result *obligation, pointer *types.Pointer) {
 	if Local(pointer.Elem()) {
 		result.reason = "Local pointers cannot be stored"
+		result.repair = "keep the Local pointer in a local binding; store a Frozen pointer for shared data"
 		return
 	}
 	if !Marked(pointer.Elem()) {
 		result.reason = "stored pointers require a concrete Frozen record target"
+		result.repair = "point to a Frozen record, or store the value without a pointer; " +
+			"for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))"
 		return
 	}
 	p.depend(result, pointer.Elem(), "")
@@ -233,6 +260,7 @@ func (p *proof) structure(result *obligation, t types.Type, structure *types.Str
 	}
 	if !Frozen(t) {
 		result.reason = "struct does not embed im.Frozen"
+		result.repair = "embed im.Frozen and use Frozen fields, or im.Copied for value-only fields"
 		return
 	}
 	for field := range structure.Fields() {
@@ -241,6 +269,7 @@ func (p *proof) structure(result *obligation, t types.Type, structure *types.Str
 		}
 		if field.Embedded() {
 			result.reason = field.Name() + ": Frozen data fields must be named"
+			result.repair = "give each data field a name; embed only im.Frozen"
 			return
 		}
 		p.depend(result, field.Type(), field.Name()+": ")

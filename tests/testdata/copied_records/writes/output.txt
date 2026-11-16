@@ -58,23 +58,23 @@ copied_writes.go:32:6: unsupported immutable operation: interior addresses of pr
 copied_writes.go:36:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: stored.Point.Set(2)
   type: ()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 copied_writes.go:37:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: stored.Summary.Points[0][0].Set(3)
   type: ()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 copied_writes.go:38:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: local.Point.Set(2)
   type: ()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 copied_writes.go:39:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: local.Rows[0].Points[0][0].Set(3)
   type: ()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 copied_writes.go:40:12: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: stored.Point.Set
   type: func(x int)
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 copied_writes.go:42:19: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &stored.Point
   type: *api.Point
@@ -98,14 +98,14 @@ copied_writes.go:73:2: unsupported builder values: copying, rebinding, slicing, 
 copied_writes.go:73:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: values[0].Set(2)
   type: ()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 copied_writes.go:80:2: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 copied_writes.go:84:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*api.Point]
-  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 copied_writes.go:85:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*api.Point]
-  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 copied_writes.go:95:12: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &stored.Point.X
   type: *int

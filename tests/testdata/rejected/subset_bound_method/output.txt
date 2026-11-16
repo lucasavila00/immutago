@@ -1,4 +1,4 @@
 subset_bound_method.go:21:33: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: v.Read
   type: func() int
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver

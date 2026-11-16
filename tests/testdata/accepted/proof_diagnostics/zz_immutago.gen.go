@@ -9,6 +9,20 @@ import (
 // immutagoLocal keeps the Local marker private.
 type immutagoLocal = im.Local
 
+// RecordProjection provides local method access to Record.
+type RecordProjection struct {
+	immutagoLocal
+	immutagoProjection im.Projection[Record]
+}
+
+// NewRecordProjection wraps a checked local interface projection.
+func NewRecordProjection(value im.Projection[Record]) RecordProjection {
+	return RecordProjection{immutagoProjection: value}
+}
+
+// IsNil reports whether the interface is nil; a stored nil pointer is not nil.
+func (v RecordProjection) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }
+
 // PointProjection provides local read access to *Point.
 type PointProjection struct {
 	immutagoLocal

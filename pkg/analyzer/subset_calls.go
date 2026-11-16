@@ -23,7 +23,7 @@ func (c *subsetChecks) calledObject(e ast.Expr) types.Object {
 }
 
 // matchCall accepts fixed im APIs, restricted direct calls, and ordinary calls with persistent values.
-func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
+func (c *subsetChecks) matchCall(call *ast.CallExpr) checker.Failure {
 	object := c.calledObject(call.Fun)
 	if builtin, ok := object.(*types.Builtin); ok {
 		return c.matchBuiltin(call, builtin)
@@ -33,16 +33,16 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 	}
 	signature, ok := c.pass.TypesInfo.TypeOf(call.Fun).Underlying().(*types.Signature)
 	if !ok {
-		return "protected operation is outside the supported expression forms"
+		return shapeFailure("protected operation is outside the supported expression forms")
 	}
-	if rule := c.matchCallArguments(call, signature); rule != "" {
+	if rule := c.matchCallArguments(call, signature); rule.Reason != "" {
 		return rule
 	}
 	if libraryObject(object) {
 		return c.matchLibraryCall(call, object)
 	}
 	if runtimeObject(object) {
-		return ""
+		return checker.Failure{}
 	}
 	protected := c.queries.Callable(signature) || c.protectedCallArguments(call)
 	if selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok {
@@ -52,66 +52,66 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) string {
 		}
 	}
 	if !protected {
-		return ""
+		return checker.Failure{}
 	}
 	function, direct := object.(*types.Func)
 	if !direct {
-		return "dynamic calls require ordinary or persistent Frozen parameters and results"
+		return shapeFailure("dynamic calls require ordinary or persistent Frozen parameters and results")
 	}
 	origin := function.Origin().Type().(*types.Signature)
 	if genericSignature(origin) {
-		return "user generic instantiations require ordinary or persistent Frozen type arguments"
+		return shapeFailure("user generic instantiations require ordinary or persistent Frozen type arguments")
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // matchConversion permits ordinary scalar conversions and checks both protected endpoints.
-func (c *subsetChecks) matchConversion(call *ast.CallExpr) string {
+func (c *subsetChecks) matchConversion(call *ast.CallExpr) checker.Failure {
 
 	if c.protectedReference(c.pass.TypesInfo.TypeOf(call)) {
-		return "shared pointer conversions are unsupported"
+		return shapeFailure("shared pointer conversions are unsupported")
 	}
 	if len(call.Args) == 1 {
 		source, destination := c.pass.TypesInfo.TypeOf(call.Args[0]), c.pass.TypesInfo.TypeOf(call)
-		if rule := c.matchTransport(source, destination); rule != "" {
+		if rule := c.matchTransport(source, destination); rule.Reason != "" {
 			return rule
 		}
 		if checker.FrozenInterface(destination) && source != types.Typ[types.UntypedNil] {
-			return ""
+			return checker.Failure{}
 		}
 		if _, boxed := destination.Underlying().(*types.Interface); boxed &&
 			!checker.FrozenInterface(destination) && !c.queries.Transport(source) {
-			return ""
+			return checker.Failure{}
 		}
 		if c.queries.Owns(source) || c.queries.Owns(destination) {
-			return "protected value conversions are unsupported"
+			return shapeFailure("protected value conversions are unsupported")
 		}
-		return ""
+		return checker.Failure{}
 	}
-	return "protected operation is outside the supported expression forms"
+	return shapeFailure("protected operation is outside the supported expression forms")
 }
 
 // matchBuiltin lists the documented allocation and native builder operations.
-func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) string {
+func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) checker.Failure {
 	switch builtin.Name() {
 	case "new":
 		if pointer, ok := c.pass.TypesInfo.TypeOf(call).Underlying().(*types.Pointer); ok &&
 			(checker.Marked(pointer.Elem()) || !c.queries.Owns(pointer.Elem())) {
-			return ""
+			return checker.Failure{}
 		}
 	case "make":
 		if c.exempt[call] || !c.queries.Owns(c.pass.TypesInfo.TypeOf(call)) {
-			return ""
+			return checker.Failure{}
 		}
 	case "len", "cap":
 		if c.matchBuilderBuiltin(call, builtin.Name()) {
-			return ""
+			return checker.Failure{}
 		}
 		if _, array := c.pass.TypesInfo.TypeOf(call.Args[0]).Underlying().(*types.Array); array {
-			return ""
+			return checker.Failure{}
 		}
 		if !c.queries.Owns(c.pass.TypesInfo.TypeOf(call.Args[0])) {
-			return ""
+			return checker.Failure{}
 		}
 	case "append", "delete", "clear", "copy":
 		if c.matchBuilderBuiltin(call, builtin.Name()) || !c.protectedStorage(call.Args[0]) {
@@ -120,89 +120,92 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 		}
 	}
 	if !c.protectedCallArguments(call) && !c.queries.Owns(c.pass.TypesInfo.TypeOf(call)) {
-		return ""
+		return checker.Failure{}
 	}
-	return "protected operation is outside the supported expression forms"
+	return shapeFailure("protected operation is outside the supported expression forms")
 }
 
 // matchLibraryCall matches fixed function identities, receivers, and result contexts.
-func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object) string {
+func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object) checker.Failure {
 	switch object.Name() {
 	case "Load", "LoadPointer", "Store":
 		if c.ownedSlotCall(call) {
-			return ""
+			return checker.Failure{}
 		}
-		return "Cell requires a direct slot call"
+		return shapeFailure("Cell requires a direct slot call")
 	case "FreezeMap", "FreezeSlice":
 		if c.standaloneFreeze(call) {
-			return ""
+			return checker.Failure{}
 		}
-		return "Freeze requires a standalone single binding"
+		return shapeFailure("Freeze requires a standalone single binding")
 	case "Trust", "Unwrap", "ProjectionOf", "CopyRecord", "FreezeString", "ProjectString", "IsNil",
 		"StringOf", "StringOfFrozen", "SliceOf", "MapOf":
-		return ""
+		return checker.Failure{}
 	case "Value":
 		typ := c.pass.TypesInfo.TypeOf(call)
-		if reason := c.proofs.FrozenReason(typ); reason != "" {
-			return reason
+		if failure := c.proofs.FrozenFailure(typ); failure.Reason != "" {
+			return failure
 		}
-		return c.proofs.ReadResultReason(typ)
+		return c.proofs.ReadResultFailure(typ)
 	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Is", "Unsafe", "Projection":
 		return c.matchLibraryMethod(call, object.Name())
 	}
-	return "protected operation is outside the supported expression forms"
+	return shapeFailure("protected operation is outside the supported expression forms")
 }
 
 // matchLibraryMethod checks the sealed receiver and any result storage restriction.
-func (c *subsetChecks) matchLibraryMethod(call *ast.CallExpr, method string) string {
+func (c *subsetChecks) matchLibraryMethod(call *ast.CallExpr, method string) checker.Failure {
 	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 	if !ok || !c.exactCollectionMethod(selector) {
-		return "method expressions require ordinary or persistent Frozen receivers and contracts"
+		return shapeFailure("method expressions require ordinary or persistent Frozen receivers and contracts")
 	}
 	receiver := c.pass.TypesInfo.TypeOf(selector.X)
 	if checker.IsProjection(receiver) && method == "Clone" {
 		args := types.Unalias(receiver).(*types.Named).TypeArgs()
 		for index := 0; index < args.Len(); index++ {
-			if reason := c.proofs.CopiedReason(args.At(index)); reason != "" {
-				return reason
+			if failure := c.proofs.CopiedFailure(args.At(index)); failure.Reason != "" {
+				return failure
 			}
 		}
 	}
 	if method == "All" && (checker.IsProjection(receiver) || c.queries.Callable(c.pass.TypesInfo.TypeOf(call))) {
 		statement, ok := c.unparenthesizedParent(call).(*ast.RangeStmt)
 		if !ok || ast.Unparen(statement.X) != call {
-			return "immutable iterators must be consumed by direct range"
+			return shapeFailure("immutable iterators must be consumed by direct range")
 		}
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // matchCallArguments resolves every actual parameter, including forwarded tuples and variadic elements.
-func (c *subsetChecks) matchCallArguments(call *ast.CallExpr, signature *types.Signature) string {
+func (c *subsetChecks) matchCallArguments(call *ast.CallExpr, signature *types.Signature) checker.Failure {
 	for index, argument := range call.Args {
 		source := c.pass.TypesInfo.TypeOf(argument)
 		if tuple, ok := source.(*types.Tuple); ok {
 			for item := 0; item < tuple.Len(); item++ {
-				if rule := c.matchArgument(tuple.At(item).Type(), callParameter(signature, item, false)); rule != "" {
+				if rule := c.matchArgument(tuple.At(item).Type(), callParameter(signature, item, false)); rule.Reason != "" {
 					return rule
 				}
 			}
-		} else if rule := c.matchArgument(source, callParameter(signature, index, call.Ellipsis.IsValid())); rule != "" {
-			return rule
+		} else {
+			parameter := callParameter(signature, index, call.Ellipsis.IsValid())
+			if rule := c.matchArgument(source, parameter); rule.Reason != "" {
+				return rule
+			}
 		}
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // matchArgument permits protected pointers only with the exact concrete parameter type.
-func (c *subsetChecks) matchArgument(source, destination types.Type) string {
-	if rule := c.matchTransport(source, destination); rule != "" {
+func (c *subsetChecks) matchArgument(source, destination types.Type) checker.Failure {
+	if rule := c.matchTransport(source, destination); rule.Reason != "" {
 		return rule
 	}
 	if c.protectedReference(source) && !types.Identical(source, destination) && !checker.FrozenInterface(destination) {
-		return "reference operation is outside the supported allowlist"
+		return shapeFailure("reference operation is outside the supported allowlist")
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // protectedCallArguments includes protected tuple components without treating scalar field reads as pointers.
@@ -217,23 +220,23 @@ func (c *subsetChecks) protectedCallArguments(call *ast.CallExpr) bool {
 }
 
 // matchTransport proves Frozen interface implementations and rejects restricted value erasure.
-func (c *subsetChecks) matchTransport(source, destination types.Type) string {
+func (c *subsetChecks) matchTransport(source, destination types.Type) checker.Failure {
 	if checker.FrozenInterface(destination) {
 		return c.matchFrozenInterface(source, destination)
 	}
 	if !c.queries.Transport(source) && !c.queries.Callable(source) {
-		return ""
+		return checker.Failure{}
 	}
 	if destination == nil {
-		return ""
+		return checker.Failure{}
 	}
 	if _, boxed := destination.Underlying().(*types.Interface); boxed {
-		return "ordinary interfaces require ordinary or persistent Frozen values"
+		return shapeFailure("ordinary interfaces require ordinary or persistent Frozen values")
 	}
 	if c.queries.Callable(source) {
-		return "callbacks require ordinary or persistent Frozen parameters and results"
+		return shapeFailure("callbacks require ordinary or persistent Frozen parameters and results")
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // unparenthesizedParent finds the consuming operation through parentheses.

@@ -1,4 +1,4 @@
 implicit_pointer_method.go:19:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.N.Change()
   type: ()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver

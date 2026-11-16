@@ -45,3 +45,67 @@ func copyInputs(source, destination []int, text string) {
 	copy(bytes, text)
 	_ = im.FreezeSlice(bytes)
 }
+
+// Frozen storage can use a concrete Frozen type, a Frozen interface, or a Copied record.
+type Record interface{ im.FrozenInterface }
+
+var payload im.Cell[Record]
+var detail im.Cell[Score]
+var retries im.Cell[int]
+var pointer im.Cell[*Point]
+
+type Summary struct {
+	im.Local
+	Totals [2]int
+}
+
+func label(name im.StringProjection) {
+	names := []im.StringProjection{name}
+	_ = names[0].Len()
+}
+
+func mapped(name im.StringProjection) {
+	names := map[int]im.StringProjection{0: name}
+	_ = names[0].Len()
+}
+
+func (s *Score) Set(value float64) { s.Value = value }
+
+type LocalScores struct {
+	im.Local
+	Score Score
+}
+
+func goodCalls(value LocalScores, p *LocalScores, queue chan *Point) {
+	score := value.Score
+	score.Set(2)
+	var missing *LocalScores = nil
+	_ = missing
+	_ = readLocal(p)
+}
+
+func readLocal(p *LocalScores) float64 { return p.Score.Value }
+
+func markerProjection(value Record) {
+	_ = im.ProjectionOf(value)
+}
+
+func (p *Point) ReadPointer() int { return p.X }
+
+func pointerReceiver(value Point) int { return new(value).ReadPointer() }
+
+type RecordAlias = Record
+
+func markerAlias(value RecordAlias) {
+	_ = im.ProjectionOf(value)
+}
+
+func copiedValue(value Score) {
+	projection := im.ProjectionOf(value)
+	_ = im.Value(projection)
+}
+
+type Count = int
+
+func cloneCount(value im.SliceProjection[int])        { _ = value.Clone() }
+func cloneCountAlias(value im.SliceProjection[Count]) { _ = value.Clone() }

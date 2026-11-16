@@ -66,13 +66,17 @@ func TestMarkerFailures(t *testing.T) {
 				want = "struct cannot embed both im.Frozen and im.Local"
 			}
 			var prover Prover
-			checks := []func(types.Type) string{
-				prover.FrozenReason, prover.ReadResultReason, prover.CopiedReason, prover.Reason,
+			checks := []func(types.Type) Failure{
+				prover.FrozenFailure, prover.ReadResultFailure, prover.CopiedFailure, prover.Failure,
 			}
 			for range 2 {
 				for _, check := range checks {
-					if got := check(value); got != want {
-						t.Errorf("marker reason = %q; want %q", got, want)
+					got := check(value)
+					if got.Reason != want {
+						t.Errorf("marker reason = %q; want %q", got.Reason, want)
+					}
+					if got.Repair != "embed exactly one of im.Frozen, im.Local, or im.Copied by value" {
+						t.Errorf("marker repair = %q", got.Repair)
 					}
 				}
 			}

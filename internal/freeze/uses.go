@@ -36,8 +36,11 @@ func (p *proof) checkUses() {
 
 // reject explains the conservative unique-owner boundary rather than silently assuming an alias is dead.
 func (p *proof) reject(node ast.Node, variable *types.Var, reason string) {
-	p.report(node.Pos(), "unsupported builder "+variable.Name()+": "+reason+
-		"; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder")
+	fix := "; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder"
+	if p.queries.Locals(variable.Type()) {
+		fix = "; keep one local handle and read its elements directly; Local builders cannot Freeze"
+	}
+	p.report(node.Pos(), "unsupported builder "+variable.Name()+": "+reason+fix)
 }
 
 // unparenParent skips syntax-only parentheses when classifying a handle use.

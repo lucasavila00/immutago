@@ -19,7 +19,7 @@ type subsetChecks struct {
 	exempt    map[ast.Node]bool
 	reported  map[token.Pos]bool
 	owners    map[*types.Var]bool
-	literals  map[*ast.CompositeLit]string
+	literals  map[*ast.CompositeLit]checker.Failure
 	generated *token.File
 }
 
@@ -35,7 +35,7 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checke
 func newSubsetChecks(pass *analysis.Pass, proofs *checker.Prover) *subsetChecks {
 	c := &subsetChecks{pass: pass, proofs: proofs, parents: make(map[ast.Node]ast.Node),
 		exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool),
-		literals: make(map[*ast.CompositeLit]string)}
+		literals: make(map[*ast.CompositeLit]checker.Failure)}
 	for _, file := range pass.Files {
 		var stack []ast.Node
 		ast.Inspect(file, func(n ast.Node) bool {
@@ -63,12 +63,17 @@ func (c *subsetChecks) checkImmutable(owners map[*types.Var]bool) {
 	}
 }
 
-// report emits one boundary failure per source position.
+// report pairs a fixed source rule with its repair before reporting it.
 func (c *subsetChecks) report(n ast.Node, message string) {
+	c.reportFailure(n, shapeFailure(message))
+}
+
+// reportFailure emits the selected rule and repair without changing their category.
+func (c *subsetChecks) reportFailure(n ast.Node, failure checker.Failure) {
 	if !c.reported[n.Pos()] {
 		c.reported[n.Pos()] = true
 		c.pass.Reportf(n.Pos(), "unsupported immutable operation: %s%s\n  fix: %s",
-			message, sourceContext(c.pass, n), subsetFix(message))
+			failure.Reason, sourceContext(c.pass, n), failure.Repair)
 	}
 }
 
@@ -85,17 +90,17 @@ func (c *subsetChecks) visit(node ast.Node) bool {
 	}
 	c.expressionType(expression)
 	if c.operationExpression(expression) {
-		if operation, rule := c.matchOperation(expression); rule != "" {
-			c.report(operation, rule)
+		if operation, rule := c.matchOperation(expression); rule.Reason != "" {
+			c.reportFailure(operation, rule)
 		}
 	}
 	return true
 }
 
 // subsetType rejects hidden references and native containers, including inferred result types.
-func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string {
+func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) checker.Failure {
 	if t == nil || seen[t] || checker.IsCollection(t) || checker.IsProjection(t) {
-		return ""
+		return checker.Failure{}
 	}
 	seen[t] = true
 	switch u := t.Underlying().(type) {
@@ -103,8 +108,8 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 		return c.subsetPointer(t, u, seen)
 	case *types.Array:
 		if c.queries.Owns(t) {
-			if reason := c.proofs.Reason(t); reason != "" {
-				return reason
+			if failure := c.proofs.Failure(t); failure.Reason != "" {
+				return failure
 			}
 		}
 		return c.subsetType(u.Elem(), seen)
@@ -118,19 +123,19 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 }
 
 // subsetPointer proves the concrete target and rejects hidden pointer forms.
-func (c *subsetChecks) subsetPointer(t types.Type, pointer *types.Pointer, seen map[types.Type]bool) string {
+func (c *subsetChecks) subsetPointer(t types.Type, pointer *types.Pointer, seen map[types.Type]bool) checker.Failure {
 	if _, named := types.Unalias(t).(*types.Named); named && c.queries.Owns(t) {
-		return "defined pointer types are unsupported in protected storage; use a pointer alias"
+		return shapeFailure("defined pointer types are unsupported in protected storage; use a pointer alias")
 	}
 	if _, nested := pointer.Elem().Underlying().(*types.Pointer); nested && c.queries.Owns(t) {
-		return "pointer indirection is unsupported"
+		return shapeFailure("pointer indirection is unsupported")
 	}
 	if c.queries.Owns(t) && !checker.Marked(pointer.Elem()) {
-		return "immutable references require a concrete marked struct target"
+		return shapeFailure("immutable references require a concrete marked struct target")
 	}
 	if checker.Marked(pointer.Elem()) {
-		if reason := c.proofs.Reason(pointer.Elem()); reason != "" {
-			return reason
+		if failure := c.proofs.Failure(pointer.Elem()); failure.Reason != "" {
+			return failure
 		}
 	}
 	return c.subsetType(pointer.Elem(), seen)
@@ -178,42 +183,47 @@ func stringType(t types.Type) bool {
 }
 
 // subsetContainer checks the three native container forms excluded from immutable storage.
-func (c *subsetChecks) subsetContainer(t types.Type) string {
+func (c *subsetChecks) subsetContainer(t types.Type) checker.Failure {
+	var failure checker.Failure
 	switch u := t.(type) {
 	case *types.Slice:
 		if c.queries.Owns(u.Elem()) {
-			return "native slices of immutable storage are unsupported"
+			failure = shapeFailure("native slices of immutable storage are unsupported")
 		}
 	case *types.Map:
 		if c.queries.Owns(u.Key()) || c.queries.Owns(u.Elem()) {
-			return "native maps of immutable storage are unsupported"
+			failure = shapeFailure("native maps of immutable storage are unsupported")
 		}
 	case *types.Chan:
 		if c.queries.Owns(u.Elem()) {
-			return "channels of immutable storage are unsupported"
+			return shapeFailure("channels of immutable storage are unsupported")
 		}
 	}
-	return ""
+	if failure.Reason != "" && c.queries.Locals(t) {
+		failure.Repair = "pass Local values directly, or use named fields in an im.Local record; " +
+			"keep Local builders in their declaring function"
+	}
+	return failure
 }
 
 // subsetResults rejects local-only references in function results.
-func subsetResults(results *types.Tuple) string {
+func subsetResults(results *types.Tuple) checker.Failure {
 	for i := 0; i < results.Len(); i++ {
 		if localReference(results.At(i).Type()) {
-			return "returning Local pointers is unsupported"
+			return shapeFailure("returning Local pointers is unsupported")
 		}
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // subsetTuple checks each inferred result type without losing tuple context.
-func (c *subsetChecks) subsetTuple(tuple *types.Tuple, seen map[types.Type]bool) string {
+func (c *subsetChecks) subsetTuple(tuple *types.Tuple, seen map[types.Type]bool) checker.Failure {
 	for i := 0; i < tuple.Len(); i++ {
-		if reason := c.subsetType(tuple.At(i).Type(), seen); reason != "" {
-			return reason
+		if failure := c.subsetType(tuple.At(i).Type(), seen); failure.Reason != "" {
+			return failure
 		}
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // expressionType checks resolved types while admitting native builders checked by ownership analysis.
@@ -242,8 +252,8 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
 		return
 	}
-	if reason := c.subsetType(t, make(map[types.Type]bool)); reason != "" {
-		c.report(expression, reason)
+	if failure := c.subsetType(t, make(map[types.Type]bool)); failure.Reason != "" {
+		c.reportFailure(expression, failure)
 	}
 }
 

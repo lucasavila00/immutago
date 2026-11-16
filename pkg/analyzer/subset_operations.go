@@ -47,14 +47,14 @@ func (c *subsetChecks) operationExpression(expression ast.Expr) bool {
 }
 
 // matchOperation requires a known producer, consuming operation, and complete statement.
-func (c *subsetChecks) matchOperation(expression ast.Expr) (ast.Node, string) {
-	if rule := c.matchSource(expression); rule != "" {
+func (c *subsetChecks) matchOperation(expression ast.Expr) (ast.Node, checker.Failure) {
+	if rule := c.matchSource(expression); rule.Reason != "" {
 		if call := c.directCall(expression); call != nil {
 			return call, rule
 		}
 		return expression, rule
 	}
-	if rule := c.matchUse(expression); rule != "" {
+	if rule := c.matchUse(expression); rule.Reason != "" {
 		operation := c.parents[expression]
 		if _, pair := operation.(*ast.KeyValueExpr); pair {
 			operation = c.parents[operation]
@@ -65,16 +65,16 @@ func (c *subsetChecks) matchOperation(expression ast.Expr) (ast.Node, string) {
 }
 
 // matchSource lists the complete producers of protected values and pointers.
-func (c *subsetChecks) matchSource(expression ast.Expr) string {
+func (c *subsetChecks) matchSource(expression ast.Expr) checker.Failure {
 	if pointer, ok := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Pointer); ok &&
 		c.protectedReference(pointer) && !checker.Marked(pointer.Elem()) {
-		return "immutable references require a concrete marked struct target"
+		return shapeFailure("immutable references require a concrete marked struct target")
 	}
 	switch source := expression.(type) {
 	case *ast.Ident:
 		return c.matchIdentifier(source)
 	case *ast.ParenExpr:
-		return ""
+		return checker.Failure{}
 	case *ast.SelectorExpr:
 		return c.matchSelector(source)
 	case *ast.IndexExpr:
@@ -87,60 +87,60 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 		return c.matchCall(source)
 	case *ast.StarExpr:
 		if c.readablePointer(source.X) {
-			return ""
+			return checker.Failure{}
 		}
 	case *ast.UnaryExpr:
 		return c.matchUnary(source)
 	case *ast.SliceExpr:
 		if stringType(c.pass.TypesInfo.TypeOf(source.X)) || !c.protectedStorage(source.X) {
-			return ""
+			return checker.Failure{}
 		}
-		return "slice projections of immutable storage are unsupported"
+		return shapeFailure("slice projections of immutable storage are unsupported")
 	case *ast.TypeAssertExpr:
 		return c.matchAssertion(source)
 	case *ast.FuncLit:
 		if !c.queries.Callable(c.pass.TypesInfo.TypeOf(source)) {
-			return ""
+			return checker.Failure{}
 		}
-		return "callbacks require ordinary or persistent Frozen parameters and results"
+		return shapeFailure("callbacks require ordinary or persistent Frozen parameters and results")
 	}
-	return "protected operation is outside the supported expression forms"
+	return shapeFailure("protected operation is outside the supported expression forms")
 }
 
 // matchAssertion checks known Frozen contracts before recovering a persistent concrete value.
-func (c *subsetChecks) matchAssertion(expression *ast.TypeAssertExpr) string {
+func (c *subsetChecks) matchAssertion(expression *ast.TypeAssertExpr) checker.Failure {
 	destination := c.pass.TypesInfo.TypeOf(expression.Type)
 	if checker.FrozenInterface(destination) {
 		return c.matchFrozenInterface(c.pass.TypesInfo.TypeOf(expression.X), destination)
 	}
 	if c.queries.Transport(destination) {
-		return "interface assertions require ordinary or persistent Frozen values"
+		return shapeFailure("interface assertions require ordinary or persistent Frozen values")
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // matchIdentifier separates variable reads from direct function and builtin callees.
-func (c *subsetChecks) matchIdentifier(name *ast.Ident) string {
+func (c *subsetChecks) matchIdentifier(name *ast.Ident) checker.Failure {
 	switch c.pass.TypesInfo.ObjectOf(name).(type) {
 	case *types.Var, *types.Nil:
 		if !c.queries.Callable(c.pass.TypesInfo.TypeOf(name)) {
-			return ""
+			return checker.Failure{}
 		}
 		return c.matchFunctionValue(name)
 	case *types.Func, *types.Builtin:
 		return c.matchFunctionValue(name)
 	}
-	return "protected operation is outside the supported expression forms"
+	return shapeFailure("protected operation is outside the supported expression forms")
 }
 
 // matchUse resolves the complete operation that consumes a protected operand.
-func (c *subsetChecks) matchUse(expression ast.Expr) string {
+func (c *subsetChecks) matchUse(expression ast.Expr) checker.Failure {
 	if _, statement := c.parents[expression].(ast.Stmt); statement {
 		return c.matchStatement(expression)
 	}
 	switch parent := c.parents[expression].(type) {
 	case *ast.ParenExpr:
-		return ""
+		return checker.Failure{}
 	case *ast.SelectorExpr:
 		return c.matchSelector(parent)
 	case *ast.IndexExpr:
@@ -149,7 +149,7 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 		return c.matchFunctionValue(parent)
 	case *ast.StarExpr:
 		if parent.X == expression && c.readablePointer(expression) {
-			return ""
+			return checker.Failure{}
 		}
 	case *ast.UnaryExpr:
 		return c.matchUnary(parent)
@@ -157,9 +157,9 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 		return c.matchBinary(parent)
 	case *ast.SliceExpr:
 		if stringType(c.pass.TypesInfo.TypeOf(parent.X)) || !c.protectedStorage(parent.X) {
-			return ""
+			return checker.Failure{}
 		}
-		return "slice projections of immutable storage are unsupported"
+		return shapeFailure("slice projections of immutable storage are unsupported")
 	case *ast.CallExpr:
 		return c.matchCall(parent)
 	case *ast.CompositeLit:
@@ -172,9 +172,9 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 		return c.matchDeclaration(parent)
 	}
 	if !c.restrictedOperand(expression) {
-		return ""
+		return checker.Failure{}
 	}
-	return "protected operation is outside the supported expression forms"
+	return shapeFailure("protected operation is outside the supported expression forms")
 }
 
 // readablePointer permits checked protected pointers and ordinary holder pointers.
@@ -183,26 +183,26 @@ func (c *subsetChecks) readablePointer(expression ast.Expr) bool {
 }
 
 // matchFunctionValue permits protected functions only as direct callees.
-func (c *subsetChecks) matchFunctionValue(expression ast.Expr) string {
+func (c *subsetChecks) matchFunctionValue(expression ast.Expr) checker.Failure {
 	if call := c.directCall(expression); call != nil {
 		return c.matchCall(call)
 	}
 	object := c.calledObject(expression)
 	if libraryObject(object) && (object.Name() == "FreezeMap" || object.Name() == "FreezeSlice") {
-		return "freeze functions must be called directly"
+		return shapeFailure("freeze functions must be called directly")
 	}
 	if !c.queries.Callable(c.pass.TypesInfo.TypeOf(expression)) {
-		return ""
+		return checker.Failure{}
 	}
-	return "callbacks require ordinary or persistent Frozen parameters and results"
+	return shapeFailure("callbacks require ordinary or persistent Frozen parameters and results")
 }
 
 // matchSelector distinguishes fields, package variables, and the supported method calls.
-func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
+func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) checker.Failure {
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection == nil {
 		if _, variable := c.pass.TypesInfo.ObjectOf(selector.Sel).(*types.Var); variable {
-			return ""
+			return checker.Failure{}
 		}
 		return c.matchFunctionValue(selector)
 	}
@@ -210,100 +210,100 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 		if c.queries.Callable(c.pass.TypesInfo.TypeOf(selector)) {
 			return c.matchFunctionValue(selector)
 		}
-		return ""
+		return checker.Failure{}
 	}
 	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) &&
 		c.queries.Callable(c.pass.TypesInfo.TypeOf(selector)) {
-		return "method expressions require ordinary or persistent Frozen receivers and contracts"
+		return shapeFailure("method expressions require ordinary or persistent Frozen receivers and contracts")
 	}
 	if refAccessor(selection.Obj()) {
 		return c.matchBorrow(selector)
 	}
 	if c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
-		return ""
+		return checker.Failure{}
 	}
 	if c.exactCollectionMethod(selector) {
 		if c.directCall(selector) == nil && (c.queries.Transport(selection.Recv()) ||
 			c.queries.Callable(c.pass.TypesInfo.TypeOf(selector))) {
-			return "method values require ordinary or persistent Frozen receivers and contracts"
+			return shapeFailure("method values require ordinary or persistent Frozen receivers and contracts")
 		}
-		return ""
+		return checker.Failure{}
 	}
 	return c.matchMethod(selector)
 }
 
 // matchUnary permits fresh marked allocations and ordinary scalar operations.
-func (c *subsetChecks) matchUnary(expression *ast.UnaryExpr) string {
+func (c *subsetChecks) matchUnary(expression *ast.UnaryExpr) checker.Failure {
 	if expression.Op == token.AND {
 		return c.matchAddress(expression)
 	}
 	switch expression.Op {
 	case token.ARROW:
 		if !c.protectedStorage(expression.X) {
-			return ""
+			return checker.Failure{}
 		}
 	case token.ADD, token.SUB, token.NOT, token.XOR:
 		if _, scalar := c.pass.TypesInfo.TypeOf(expression.X).Underlying().(*types.Basic); scalar {
-			return ""
+			return checker.Failure{}
 		}
 	}
-	return "protected operation is outside the supported expression forms"
+	return shapeFailure("protected operation is outside the supported expression forms")
 }
 
 // matchAddress separates ordinary slots, generated field addresses, and fresh protected roots.
-func (c *subsetChecks) matchAddress(expression *ast.UnaryExpr) string {
+func (c *subsetChecks) matchAddress(expression *ast.UnaryExpr) checker.Failure {
 	if !c.protectedStorage(expression.X) {
-		return ""
+		return checker.Failure{}
 	}
 	pointer := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Pointer)
 	if c.generatedSource(expression) && checker.Frozen(pointer.Elem()) {
-		return ""
+		return checker.Failure{}
 	}
 	if !c.queries.Owns(c.pass.TypesInfo.TypeOf(expression.X)) {
-		return "interior addresses of protected storage are unsupported"
+		return shapeFailure("interior addresses of protected storage are unsupported")
 	}
 	if _, fresh := ast.Unparen(expression.X).(*ast.CompositeLit); !fresh {
-		return "immutable references require fresh allocation"
+		return shapeFailure("immutable references require fresh allocation")
 	}
 	if checker.Marked(pointer.Elem()) {
-		return ""
+		return checker.Failure{}
 	}
-	return "immutable references require a concrete marked struct target"
+	return shapeFailure("immutable references require a concrete marked struct target")
 }
 
 // matchBinary checks implicit comparisons before permitting compiler-checked scalar operators.
-func (c *subsetChecks) matchBinary(expression *ast.BinaryExpr) string {
+func (c *subsetChecks) matchBinary(expression *ast.BinaryExpr) checker.Failure {
 	left, right := c.pass.TypesInfo.TypeOf(expression.X), c.pass.TypesInfo.TypeOf(expression.Y)
-	if rule := c.matchTransport(left, right); rule != "" {
+	if rule := c.matchTransport(left, right); rule.Reason != "" {
 		return rule
 	}
-	if rule := c.matchTransport(right, left); rule != "" {
+	if rule := c.matchTransport(right, left); rule.Reason != "" {
 		return rule
 	}
 	if c.queries.Owns(left) || c.queries.Owns(right) {
 		if expression.Op != token.EQL && expression.Op != token.NEQ {
-			return "protected operation is outside the supported expression forms"
+			return shapeFailure("protected operation is outside the supported expression forms")
 		}
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // matchIndex permits value-array reads and native builder reads with concrete map keys.
-func (c *subsetChecks) matchIndex(expression *ast.IndexExpr) string {
+func (c *subsetChecks) matchIndex(expression *ast.IndexExpr) checker.Failure {
 	if _, callable := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Signature); callable {
 		return c.matchFunctionValue(expression)
 	}
 	switch source := c.pass.TypesInfo.TypeOf(expression.X).Underlying().(type) {
 	case *types.Array:
-		return ""
+		return checker.Failure{}
 	case *types.Map:
 		return c.matchTransport(c.pass.TypesInfo.TypeOf(expression.Index), source.Key())
 	case *types.Slice, *types.Basic:
-		return ""
+		return checker.Failure{}
 	case *types.Pointer:
 		if _, array := source.Elem().Underlying().(*types.Array); array && !c.queries.Owns(source) {
-			return ""
+			return checker.Failure{}
 		}
 	}
-	return "reference operation is outside the supported allowlist"
+	return shapeFailure("reference operation is outside the supported allowlist")
 }

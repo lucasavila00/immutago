@@ -1,19 +1,19 @@
 copied_methods.go:23:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: snapshot.Counter.Inc()
   type: ()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 copied_methods.go:24:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: reply.Counter.Inc()
   type: ()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 copied_methods.go:25:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: reply.Values[0].Inc()
   type: ()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 copied_methods.go:26:11: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: snapshot.Counter.Inc
   type: func()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 copied_methods.go:28:3: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &reply.Counter
   type: *rejected.Counter
@@ -23,10 +23,10 @@ copied_methods.go:29:2: unsupported immutable operation: writes to immutable obj
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 copied_methods.go:33:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go reply.Counter.Read()
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 copied_methods.go:34:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer reply.Counter.Read()
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 copied_methods.go:35:26: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: reply
   type: rejected.ScalarReply
@@ -45,15 +45,15 @@ copied_methods.go:50:2: unsupported builder values: copying, rebinding, slicing,
 copied_methods.go:50:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: values[0].Inc()
   type: ()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 copied_methods.go:57:6: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 copied_methods.go:62:11: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 copied_methods.go:69:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go values[0].Read()
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 copied_methods.go:70:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer values[0].Read()
-  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
 generic_methods.go:10:18: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
   source: KeepLocal
   type: func[T rejected.Settings](value T) T
@@ -86,7 +86,7 @@ generic_methods.go:21:6: unsupported immutable operation: callbacks require ordi
 generic_methods.go:25:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.MapPointer[int](number)
   type: int
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 generic_methods.go:5:19: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
   source: Map
   type: func[T any](read func(int) T) T
@@ -140,12 +140,12 @@ receiver_bodies.go:17:65: unsupported immutable operation: closures require ordi
 receiver_calls.go:30:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.ReadCost()
   type: int
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 receiver_calls.go:32:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: order.Product.ReadCost()
   type: int
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 receiver_calls.go:33:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: counted.Counter.Inc()
   type: ()
-  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver

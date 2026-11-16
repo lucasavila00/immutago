@@ -230,6 +230,17 @@ func (c *Classifier) Transport(t types.Type) bool
 
 Transport reports values that need restricted calls, bindings, and captures. Frozen values and pointers can persist. Local values and protected native container uses stay restricted.
 
+## type Failure
+
+Failure contains a rejected rule and the repair supplied by that rule. An empty Reason means that the proof passed.
+
+```go
+type Failure struct {
+    Reason string
+    Repair string
+}
+```
+
 ## type Prover
 
 Prover reuses immutable type obligations within one analysis pass. Its zero value is ready for use. Types must be complete and must not change. A Prover must not be used by concurrent passes.
@@ -240,6 +251,14 @@ type Prover struct {
 }
 ```
 
+### func \(\*Prover\) CopiedFailure
+
+```go
+func (p *Prover) CopiedFailure(t types.Type) Failure
+```
+
+CopiedFailure returns the failed type rule and its repair from the same proof.
+
 ### func \(\*Prover\) CopiedReason
 
 ```go
@@ -248,6 +267,22 @@ func (p *Prover) CopiedReason(t types.Type) string
 
 CopiedReason proves bool, numbers, Copied records, unnamed arrays, or opaque service references.
 
+### func \(\*Prover\) Failure
+
+```go
+func (p *Prover) Failure(t types.Type) Failure
+```
+
+Failure returns the failed storage rule and its repair from the same proof.
+
+### func \(\*Prover\) FrozenFailure
+
+```go
+func (p *Prover) FrozenFailure(t types.Type) Failure
+```
+
+FrozenFailure returns the failed type rule and its repair from the same proof.
+
 ### func \(\*Prover\) FrozenReason
 
 ```go
@@ -255,6 +290,14 @@ func (p *Prover) FrozenReason(t types.Type) string
 ```
 
 FrozenReason proves the shared payload contract used by Cell and Projection.
+
+### func \(\*Prover\) ReadResultFailure
+
+```go
+func (p *Prover) ReadResultFailure(t types.Type) Failure
+```
+
+ReadResultFailure returns the failed type rule and its repair from the same proof.
 
 ### func \(\*Prover\) ReadResultReason
 
