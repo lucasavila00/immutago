@@ -31,10 +31,10 @@ invalid.go:31:6: unsupported immutable operation: interior addresses of protecte
   source: &state.Settings.Limit
   type: *int
   fix: copy the field into a local; do not take a pointer into immutable storage
-invalid.go:32:2: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
+invalid.go:32:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: state.Settings.Count.Inc()
   type: ()
-  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
 invalid.go:36:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: outer.Limit++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -45,10 +45,10 @@ invalid.go:38:6: unsupported immutable operation: interior addresses of protecte
   source: &outer.Limit
   type: *int
   fix: copy the field into a local; do not take a pointer into immutable storage
-invalid.go:39:2: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
+invalid.go:39:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: outer.Count.Inc()
   type: ()
-  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
 invalid.go:44:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: value.(*api.Settings).Limit++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

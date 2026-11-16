@@ -1,4 +1,4 @@
-bound_pointer_method.go:19:12: unsupported immutable operation: immutable methods require a concrete non-generic marked receiver
+bound_pointer_method.go:19:12: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.N.Change
   type: func()
-  fix: declare the method on a proved marked struct or its pointer, or use a named function with concrete parameters
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage

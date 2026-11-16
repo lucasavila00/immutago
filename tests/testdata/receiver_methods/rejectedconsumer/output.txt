@@ -1,3 +1,25 @@
+copied_methods.go:11:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go reply.Current.Urgent()
+  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+copied_methods.go:12:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: defer reply.Values[0].Urgent()
+  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+copied_methods.go:6:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: levels.Current.Raise()
+  type: ()
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+copied_methods.go:7:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: levels.Values[0].Raise()
+  type: ()
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+copied_methods.go:8:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: reply.Current.Raise()
+  type: ()
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+copied_methods.go:9:11: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: levels.Current.Raise
+  type: func()
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
 generic_methods.go:10:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.MapPointer[int](number)
   type: int
