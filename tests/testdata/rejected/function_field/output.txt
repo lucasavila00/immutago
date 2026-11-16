@@ -1,1 +1,1 @@
-function_field.go:5:6: cannot generate typed projections: Bad: Value: func() is not provably immutable; other generation failures may remain
+function_field.go:11:6: cannot generate typed projections: Bad: Value: func() is not provably immutable; other generation failures may remain

@@ -1,1 +1,1 @@
-generic_union.go:5:6: cannot generate typed projections: Bad: user generic declarations cannot define Frozen or Local types; type parameters are unsupported in immutable storage; other generation failures may remain
+generic_union.go:11:6: cannot generate typed projections: Bad: user generic declarations cannot define Frozen or Local types; type parameters are unsupported in immutable storage; other generation failures may remain

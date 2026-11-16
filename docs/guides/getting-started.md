@@ -94,4 +94,16 @@ and their type dependencies stay the same. See
 [required generation](../reference/rules.md#required-generation) for configurations
 with different schemas and packages whose declarations all require a tag.
 
+Run generation and checks on each target platform in CI. For a cross build of one
+package, first build the tools for the host, then select the target:
+
+```sh
+go build -o ./bin/immutago-gen github.com/lucasavila00/immutago/cmd/immutago-gen
+go build -o ./bin/immutago github.com/lucasavila00/immutago/cmd/immutago
+GOOS=windows GOARCH=amd64 ./bin/immutago-gen
+GOOS=windows GOARCH=amd64 ./bin/immutago .
+```
+
+Do not use the `go run` generation directive to execute a cross-built tool.
+
 Do not use `-json` as a CI pass/fail check: it can return exit code 0 with errors.

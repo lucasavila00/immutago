@@ -58,19 +58,16 @@ directive after generation writes the empty file. If the directive is already go
 remove the stale output or run `go run github.com/lucasavila00/immutago/cmd/immutago-gen`
 in that package.
 
-Generation uses the active `GOOS`, `GOARCH`, and build tags. The output has no
-build constraint. Use the same configuration for generation, the checker, and
-the build. A single checked-in file can serve several configurations only when
-they generate the same bytes. This requires the same generated declarations,
-field types, array lengths, and interface methods, including imported types.
-Constrained files can use projections and Cells without changing their output.
+Generation uses the active `GOOS`, `GOARCH`, and build tags. Build constraints can
+select Frozen declarations; the generated file has no constraint. Use the same
+configuration for generation, the checker, and the build.
 
-If configurations need different generated output, generate and check each in a
-separate checkout or build directory. Generate the owning packages of imported
-Frozen types for that configuration too; `go generate ./...` does not generate
-dependencies outside the selected packages. Keep the directive in an unconstrained
-file if a configuration can exclude all Frozen declarations. Otherwise, use the
-direct generator command above to replace stale output with an empty package file.
+| Configurations | Required workflow |
+| --- | --- |
+| Same generated declarations, field types, array lengths, and interface methods | Keep one output file if all configurations generate the same bytes. Constrained files can use its projections and Cells. |
+| Different generated output | Generate and check each configuration in a separate checkout or build directory. |
+| A configuration excludes all Frozen declarations | Keep the directive in an unconstrained file, or use the direct generator command above to write an empty package file. |
+| Imported Frozen types | Generate their owning packages for the same configuration. `go generate ./...` does not generate dependencies outside the selected packages. |
 
 The checker rejects a missing directive, missing output, or stale output before
 source checks. Only verified generated code can form interior Frozen-record addresses.
