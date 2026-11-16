@@ -58,19 +58,19 @@ result_uses.go:7:5: unsupported immutable operation: Local values and pointers c
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 results.go:23:17: service method Map must return a read result or error: map[string]int is not a Copied value
   result type: map[string]int
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:24:17: service method Slice must return a read result or error: []int is not a Copied value
   result type: []int
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:25:17: service method Interface must return a read result or error: interface{} is not a Copied value
   result type: any
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:26:17: service method Pointer must return a read result or error: *example.com/consumer/service.SnapshotReply is not a Copied value
   result type: *service.SnapshotReply
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:27:17: service method LocalPointer must return a read result or error: *example.com/consumer/service.Reply is not a Copied value
   result type: *service.Reply
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:27:17: unsupported immutable operation: returning Local pointers is unsupported
   source: LocalPointer
   type: func() *service.Reply
@@ -87,51 +87,51 @@ results.go:29:75: unsupported immutable operation: closures require ordinary or 
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
 results.go:30:17: service method Frozen must return a read result or error: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[[]int] is not a Copied value
   result type: im.FrozenSlice[[]int]
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:30:26: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
 results.go:30:29: immutable type argument: []int is not provably immutable
   type: []int
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
 results.go:30:54: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
 results.go:30:61: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
 results.go:30:64: immutable type argument: []int is not provably immutable
   type: []int
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
 results.go:30:91: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
 results.go:34:17: service method Struct must return a read result or error: example.com/consumer/service.Unmarked is not a Copied value
   result type: service.Unmarked
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:38:16: service method Mutable must return a read result or error: []int is not a Copied value
   result type: []int
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:46:23: service method Mutable must return a read result or error: []int is not a Copied value
   result type: []int
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
-results.go:49:38: stored im argument: Frozen storage cannot contain Local values
-  fix: store Frozen data; keep its Projection or Local result in local bindings
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+results.go:49:38: stored im argument: Local pointers cannot be stored
+  fix: keep the Local pointer in a local binding; store a Frozen pointer for shared data
 results.go:51:17: service method PointerArray must return a read result or error: array element: *example.com/consumer/service.SnapshotReply is not a Copied value
   result type: [1]*service.SnapshotReply
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:52:17: service method List must return a read result or error: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a Copied value
   result type: im.FrozenSlice[int]
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:53:17: service method MapResult must return a read result or error: github.com/lucasavila00/immutago/pkg/im.FrozenMap[string, int] is not a Copied value
   result type: im.FrozenMap[string, int]
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:58:17: service method FrozenRecord must return a read result or error: example.com/consumer/service.SnapshotReply is not a Copied value
   result type: service.SnapshotReply
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:59:17: service method FrozenArray must return a read result or error: array element: example.com/consumer/service.SnapshotReply is not a Copied value
   result type: [1]service.SnapshotReply
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 results.go:60:17: service method Marker must return a read result or error: immutable markers are annotations, not data
   result type: im.Local
   fix: embed the marker in a named struct; use data fields for values

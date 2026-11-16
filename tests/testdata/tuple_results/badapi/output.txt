@@ -1,15 +1,15 @@
 api.go:19:14: service method First must return a read result or error: string is not a Copied value
   result type: string
-  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
+  fix: for Local text, use im.ProjectString(text)
 api.go:20:14: service method Middle must return a read result or error: []int is not a Copied value
   result type: []int
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 api.go:21:14: service method Last must return a read result or error: map[int]int is not a Copied value
   result type: map[int]int
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 api.go:22:14: service method Pointer must return a read result or error: *example.com/consumer/api.View is not a Copied value
   result type: *api.View
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 api.go:22:14: unsupported immutable operation: returning Local pointers is unsupported
   source: Pointer
   type: func() (bool, *api.View)
@@ -19,7 +19,7 @@ api.go:22:54: unsupported immutable operation: returning Local pointers is unsup
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 api.go:23:14: service method Record must return a read result or error: example.com/consumer/badapi.Unmarked is not a Copied value
   result type: badapi.Unmarked
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 api.go:24:14: service method ErrorType must return a read result or error: example.com/consumer/badapi.DefinedError is not a Copied value
   result type: badapi.DefinedError
   fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
@@ -31,10 +31,10 @@ api.go:26:14: service method Array must return a read result or error: array ele
   fix: use an unnamed array type; to keep a named type, put the unnamed array in a marked struct
 api.go:27:14: service method Frozen must return a read result or error: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   result type: im.FrozenString
-  fix: copy bool or numeric fields for Copied data; for Local text, use text.Projection()
+  fix: for Local text, use text.Projection()
 api.go:28:14: service method Nested must return a read result or error: array element: array element: *example.com/consumer/api.View is not a Copied value
   result type: [2][1]*api.View
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 api.go:28:30: unsupported immutable operation: containers of Local pointers are unsupported
   source: [2][1]*api.View
   type: [2][1]*api.View
@@ -53,4 +53,4 @@ api.go:28:71: unsupported immutable operation: containers of Local pointers are 
   fix: keep Local values in local bindings, or store im.Frozen pointers
 api.go:29:14: service method FrozenRecord must return a read result or error: example.com/consumer/api.Frozen is not a Copied value
   result type: api.Frozen
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection

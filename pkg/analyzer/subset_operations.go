@@ -111,7 +111,13 @@ func (c *subsetChecks) matchSource(expression ast.Expr) checker.Failure {
 func (c *subsetChecks) matchAssertion(expression *ast.TypeAssertExpr) checker.Failure {
 	destination := c.pass.TypesInfo.TypeOf(expression.Type)
 	if checker.FrozenInterface(destination) {
-		return c.matchFrozenInterface(c.pass.TypesInfo.TypeOf(expression.X), destination)
+		source := c.pass.TypesInfo.TypeOf(expression.X)
+		failure := c.matchFrozenInterface(source, destination)
+		if failure.Reason != "" && !checker.FrozenInterface(source) && c.proofs.FrozenReason(destination) == "" {
+			failure.Repair = "assert the concrete Frozen record value or pointer first, then convert it " +
+				"to the Frozen interface; for example, tree := boxed.(*Tree); scorer := Scorer(tree)"
+		}
+		return failure
 	}
 	if c.queries.Transport(destination) {
 		return shapeFailure("interface assertions require ordinary or persistent Frozen values")

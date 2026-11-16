@@ -142,11 +142,7 @@ func (c *subsetChecks) matchLibraryCall(call *ast.CallExpr, object types.Object)
 		"StringOf", "StringOfFrozen", "SliceOf", "MapOf":
 		return checker.Failure{}
 	case "Value":
-		typ := c.pass.TypesInfo.TypeOf(call)
-		if failure := c.proofs.FrozenFailure(typ); failure.Reason != "" {
-			return failure
-		}
-		return c.proofs.ReadResultFailure(typ)
+		return valueFailure(c.proofs, c.pass.TypesInfo.TypeOf(call))
 	case "Get", "At", "AtPointer", "Len", "All", "Clone", "Equal", "EqualString", "Is", "Unsafe", "Projection":
 		return c.matchLibraryMethod(call, object.Name())
 	}
@@ -164,6 +160,10 @@ func (c *subsetChecks) matchLibraryMethod(call *ast.CallExpr, method string) che
 		args := types.Unalias(receiver).(*types.Named).TypeArgs()
 		for index := 0; index < args.Len(); index++ {
 			if failure := c.proofs.CopiedFailure(args.At(index)); failure.Reason != "" {
+				if c.proofs.FrozenReason(args.At(index)) == "" {
+					failure.Repair = "iterate the projection with All; read or clone each element " +
+						"into a new native collection"
+				}
 				return failure
 			}
 		}

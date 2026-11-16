@@ -1,15 +1,15 @@
 invalid.go:25:5: Copied record: Model: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Table] is not a Copied value
   type: invalid.Copied
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 invalid.go:38:16: service method Named must return a read result or error: named array must be wrapped in a struct with an immutable marker
   result type: invalid.Named
   fix: use an unnamed array type; to keep a named type, put the unnamed array in a marked struct
 invalid.go:41:16: service method Pointer must return a read result or error: *example.com/consumer/valid.Handle is not a Copied value
   result type: *valid.Handle
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 invalid.go:44:16: service method Native must return a read result or error: []example.com/consumer/valid.Handle is not a Copied value
   result type: []valid.Handle
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 invalid.go:47:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved valid.Serving
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
@@ -24,32 +24,32 @@ invalid.go:56:38: unsupported immutable operation: closures require ordinary or 
 invalid.go:60:76: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Table] is not a Copied value
   source: value.Clone()
   type: []valid.Handle
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: iterate the projection with All; read or clone each element into a new native collection
 invalid.go:63:88: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Table] is not a Copied value
   source: value.Clone()
   type: map[int]valid.Handle
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: iterate the projection with All; read or clone each element into a new native collection
 invalid.go:66:68: unsupported immutable operation: example.com/consumer/invalid.Snapshot is not a Copied value
   source: im.Value(value)
   type: invalid.Snapshot
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use projection.Unsafe() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
 invalid.go:66:71: immutable type argument: example.com/consumer/invalid.Snapshot is not a Copied value
   type: invalid.Snapshot
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use projection.Unsafe() for the shared record; for Local field reads, pass im.CopyRecord(projection) to its generated projection constructor (copies the root)
 invalid.go:69:71: unsupported immutable operation: *example.com/consumer/invalid.Snapshot is not a Copied value
   source: im.Value(value)
   type: *invalid.Snapshot
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
 invalid.go:69:74: immutable type argument: *example.com/consumer/invalid.Snapshot is not a Copied value
   type: *invalid.Snapshot
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
 invalid.go:72:67: unsupported immutable operation: example.com/consumer/invalid.Scorer is not a Copied value
   source: im.Value(value)
   type: invalid.Scorer
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
 invalid.go:72:70: immutable type argument: example.com/consumer/invalid.Scorer is not a Copied value
   type: invalid.Scorer
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
 invalid.go:75:12: local projection: projection payload 1: Frozen storage cannot contain Local values
   type: im.Projection[valid.Serving]
   fix: store Frozen data; keep its Projection or Local result in local bindings
@@ -72,17 +72,17 @@ invalid.go:75:80: local projection: projection payload 1: Frozen storage cannot 
 invalid.go:78:58: unsupported immutable operation: string is not a Copied value
   source: im.Value(value)
   type: string
-  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
+  fix: use im.StringOf(projection), then Unsafe for shared text or Clone for an independent copy
 invalid.go:78:61: immutable type argument: string is not a Copied value
   type: string
-  fix: copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)
+  fix: use im.StringOf(projection), then Unsafe for shared text or Clone for an independent copy
 invalid.go:81:88: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a Copied value
   source: im.Value(value)
   type: im.FrozenSlice[int]
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use im.SliceOf(projection) for element reads, or projection.Unsafe() for the shared FrozenSlice
 invalid.go:81:91: immutable type argument: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a Copied value
   type: im.FrozenSlice[int]
-  fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
+  fix: use im.SliceOf(projection) for element reads, or projection.Unsafe() for the shared FrozenSlice
 invalid.go:84:13: local projection: projection payload 1: immutable markers are annotations, not data
   type: im.Projection[im.Copied]
   fix: embed the marker in a named struct; use data fields for values

@@ -41,11 +41,6 @@ func (p *proof) frozenInterface(result *obligation, t types.Type) {
 		result.repair = "declare a named interface without type parameters and embed im.FrozenInterface"
 		return
 	}
-	if IsLibraryType(t, "FrozenInterface") {
-		result.reason = "immutable markers are annotations, not data"
-		result.repair = "embed im.FrozenInterface in a named interface; use that interface as the payload"
-		return
-	}
 	contract := named.Underlying().(*types.Interface)
 	if !contract.IsMethodSet() {
 		result.reason = "Frozen interfaces require a method set without type terms"

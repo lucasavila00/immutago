@@ -1,1 +1,1 @@
-schema.go:13:6: cannot generate typed projections: Stored: Frozen storage cannot contain Local values; other generation failures may remain
+schema.go:13:6: cannot generate typed projections: Stored: Pointer: Local pointers cannot be stored; other generation failures may remain

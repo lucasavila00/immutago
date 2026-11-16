@@ -1,9 +1,9 @@
 mutable_slice_element.go:13:12: immutable type argument: []int is not provably immutable
   type: []int
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
 mutable_slice_element.go:13:5: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
 mutable_slice_element.go:13:9: Frozen collection: type argument 1: []int is not provably immutable
   type: im.FrozenSlice[[]int]
-  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings

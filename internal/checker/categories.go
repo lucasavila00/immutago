@@ -15,8 +15,8 @@ const (
 
 // copiedValue excludes retained data through the same recursive rule for every use.
 func (p *proof) copiedValue(result *obligation, t types.Type) {
-	p.depend(result, t, "")
 	if IsRuntimeType(t, "Ref") {
+		p.depend(result, t, "")
 		return
 	}
 	switch value := t.Underlying().(type) {
@@ -34,17 +34,20 @@ func (p *proof) copiedValue(result *obligation, t types.Type) {
 		return
 	case *types.Struct:
 		if Copied(t) {
+			p.depend(result, t, "")
 			return
 		}
 	}
+	rejectCopied(result, t)
+}
+
+// rejectCopied states the complete field rule and the required owner change for Local data.
+func rejectCopied(result *obligation, t types.Type) {
 	result.reason = fmt.Sprintf("%s is not a Copied value", types.TypeString(t, nil))
-	result.repair = "use bool, numbers, unnamed arrays, or Copied records for copied data; use " +
-		"projections for Local results"
-	if basic, ok := t.Underlying().(*types.Basic); ok && basic.Info()&types.IsString != 0 {
-		result.repair = "copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)"
-	} else if IsLibraryType(t, "FrozenString") {
-		result.repair = "copy bool or numeric fields for Copied data; for Local text, use text.Projection()"
-	}
+	result.repair = "use bool, numbers, unnamed arrays, or Copied records; " +
+		"for Local fields or results, use matching projections; " +
+		"if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local " +
+		"and use read-result fields such as im.StringProjection"
 }
 
 // copiedRecord proves each field through the shared Copied rule.
@@ -75,12 +78,18 @@ func (p *proof) readValue(result *obligation, t types.Type) {
 			p.depend(result, args.At(index), fmt.Sprintf("projection payload %d: ", index+1))
 		}
 		return
-	case IsLibraryType(t, "Local"):
-		result.reason = "immutable markers are annotations, not data"
-		result.repair = "embed the marker in a named struct; use data fields for values"
+	case IsLibraryType(t, "FrozenString"):
+		rejectCopied(result, t)
+		result.repair = "for Local text, use text.Projection()"
 		return
 	}
 	switch value := t.Underlying().(type) {
+	case *types.Basic:
+		if value.Info()&types.IsString != 0 {
+			rejectCopied(result, t)
+			result.repair = "for Local text, use im.ProjectString(text)"
+			return
+		}
 	case *types.Array:
 		if _, named := t.(*types.Named); !named {
 			p.dependCategory(result, value.Elem(), "array element: ", readCategory)

@@ -75,6 +75,12 @@ func (p *proof) categoryNode(t types.Type, category proofCategory) *obligation {
 	if reason := MarkerReason(t); reason != "" {
 		result.reason = reason
 		result.repair = "embed exactly one of im.Frozen, im.Local, or im.Copied by value"
+	} else if IsLibraryType(t, "Frozen") || IsLibraryType(t, "Local") || IsLibraryType(t, "Copied") {
+		result.reason = "immutable markers are annotations, not data"
+		result.repair = "embed the marker in a named struct; use data fields for values"
+	} else if IsLibraryType(t, "FrozenInterface") {
+		result.reason = "immutable markers are annotations, not data"
+		result.repair = "embed im.FrozenInterface in a named interface; use that interface as the payload"
 	} else {
 		switch category {
 		case frozenCategory:
@@ -150,14 +156,9 @@ func (p *proof) value(result *obligation, t types.Type) {
 		result.repair = "keep the Cell in ordinary storage; use its Frozen payload as data"
 		return
 	}
-	if p.queries.Locals(t) {
+	if Local(t) || IsProjection(t) || IsUncheckedValue(t) && p.queries.Locals(t) {
 		result.reason = "Frozen storage cannot contain Local values"
 		result.repair = "store Frozen data; keep its Projection or Local result in local bindings"
-		return
-	}
-	if IsLibraryType(t, "Frozen") || IsLibraryType(t, "Copied") {
-		result.reason = "immutable markers are annotations, not data"
-		result.repair = "embed the marker in a named struct; use data fields for values"
 		return
 	}
 	if IsUncheckedValue(t) {
@@ -218,9 +219,11 @@ func unsupportedFrozen(result *obligation, t types.Type) {
 	result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
 	switch t.Underlying().(type) {
 	case *types.Slice:
-		result.repair = "replace the native slice with im.FrozenSlice[T], where T is a Frozen type"
+		result.repair = "replace the native slice with im.FrozenSlice[T], where T is a Frozen type; " +
+			"keep Local elements in local bindings"
 	case *types.Map:
-		result.repair = "replace the native map with im.FrozenMap[K, V], where K and V are Frozen types"
+		result.repair = "replace the native map with im.FrozenMap[K, V], where K and V are Frozen types; " +
+			"keep Local keys and values in local bindings"
 	case *types.Chan, *types.Signature:
 		result.repair = "keep channels and callbacks outside immutable data; store their Frozen results"
 	default:

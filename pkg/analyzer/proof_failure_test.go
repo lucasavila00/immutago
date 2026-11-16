@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// TestOperationFailureRepair keeps the terminal proof repair through operation matchers.
+// TestOperationFailureRepair preserves invalid type repairs and replaces valid-payload operation repairs.
 func TestOperationFailureRepair(t *testing.T) {
 	cases := []struct{ name, source, repair string }{
 		{"interface marker", `func f(v im.FrozenInterface){p:=im.ProjectionOf(v);_=im.Value(p)}`,
@@ -14,9 +14,9 @@ func TestOperationFailureRepair(t *testing.T) {
 func f(v Marker){p:=im.ProjectionOf(v);_=im.Value(p)}`,
 			"embed im.FrozenInterface in a named interface; use that interface as the payload"},
 		{"Clone string", `func f(p im.SliceProjection[string]){_=p.Clone()}`,
-			"copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)"},
+			"iterate the projection with All; read or clone each element into a new native collection"},
 		{"Clone string alias", `type Text=string;func f(p im.SliceProjection[Text]){_=p.Clone()}`,
-			"copy bool or numeric fields for Copied data; for Local text, use im.ProjectString(text)"},
+			"iterate the projection with All; read or clone each element into a new native collection"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
