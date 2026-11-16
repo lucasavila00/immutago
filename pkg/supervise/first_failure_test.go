@@ -43,9 +43,7 @@ func checkFirstRunFailure(t *testing.T, mode string, reporting bool) {
 	reports := make(chan any, 2)
 	var attemptStack []byte
 	report := func(value any, stack []byte) {
-		if _, terminal := value.(*Failure); !terminal {
-			attemptStack = stack
-		}
+		attemptStack = stack
 		reports <- value
 	}
 	if !reporting {
@@ -83,70 +81,13 @@ func checkFirstRunFailure(t *testing.T, mode string, reporting bool) {
 		t.Error("stopped reference changed its service value")
 	}
 	if reporting {
-		if len(reports) != 2 || <-reports != cause || <-reports != failure {
-			t.Error("expected one attempt report followed by the terminal Failure")
+		if len(reports) != 1 || <-reports != failure {
+			t.Error("expected one Failure report")
 		}
 		if !bytes.Equal(attemptStack, failure.Stack) {
 			t.Error("terminal Failure changed the attempt stack")
 		}
 	}
-}
-
-// TestFailureStopOrder orders the attempt report, Stop, and terminal selection.
-func TestFailureStopOrder(t *testing.T) {
-	for _, mode := range []string{"root first", "subtree first", "unrelated first", "failure first"} {
-		t.Run(mode, func(t *testing.T) {
-			synctest.Test(t, func(t *testing.T) { checkFailureStopOrder(t, mode) })
-		})
-	}
-}
-
-// checkFailureStopOrder holds the attempt report before the terminal decision.
-func checkFailureStopOrder(t *testing.T, mode string) {
-	t.Helper()
-	attempt, release := make(chan struct{}), make(chan struct{})
-	terminal, exited := make(chan any, 1), make(chan any, 1)
-	top := root(func(value any) { exited <- value }, func(value any, _ []byte) {
-		if _, failed := value.(*Failure); failed {
-			terminal <- value
-			return
-		}
-		close(attempt)
-		<-release
-	})
-	parent := StartGroup(top)
-	_, err := Start[initializing](parent, &initHooks{
-		init: func(*initializing) error { return nil },
-		run:  func(*initializing, context.Context) { panic("first failure") },
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	<-attempt
-	var stopped <-chan struct{}
-	switch mode {
-	case "root first":
-		stopped = top.Stop()
-	case "subtree first":
-		stopped = parent.Stop()
-	case "unrelated first":
-		<-StartGroup(top).Stop()
-	}
-	close(release)
-	if stopped != nil {
-		<-stopped
-		synctest.Wait()
-		if len(terminal) != 0 || len(exited) != 0 {
-			t.Error("an earlier Stop did not suppress the terminal failure")
-		}
-	} else {
-		failure := (<-terminal).(*Failure)
-		<-top.Stop()
-		if value := <-exited; value != failure || failure.Value != "first failure" {
-			t.Errorf("terminal failure = %v, exit = %v", failure, value)
-		}
-	}
-	<-top.Stop()
 }
 
 // checkFirstFailureDetails checks the original value, error type, and Run stack.

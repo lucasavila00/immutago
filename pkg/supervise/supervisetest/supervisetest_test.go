@@ -2,10 +2,6 @@ package supervisetest
 
 import (
 	"context"
-	"fmt"
-	"strings"
-	"sync"
-	"sync/atomic"
 	"testing"
 	"testing/synctest"
 
@@ -25,22 +21,15 @@ func (*stuck) Run(context.Context) { <-release }
 // recorder records the cleanups and the errors of a test.
 type recorder struct {
 	testing.TB
-	mu       sync.Mutex
 	cleanups []func()
 	errors   int
-	messages []string
 }
 
 // Cleanup records a cleanup function.
 func (r *recorder) Cleanup(cleanup func()) { r.cleanups = append(r.cleanups, cleanup) }
 
 // Errorf counts an error.
-func (r *recorder) Errorf(format string, args ...any) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.errors++
-	r.messages = append(r.messages, fmt.Sprintf(format, args...))
-}
+func (r *recorder) Errorf(string, ...any) { r.errors++ }
 
 // TestNewRoot verifies that NewRoot fails a test whose tree does not stop.
 func TestNewRoot(t *testing.T) {
@@ -61,98 +50,5 @@ func TestNewRoot(t *testing.T) {
 		}
 		close(release)
 		<-root.Stop()
-	})
-}
-
-// failing records setup and fails in Run.
-type failing struct {
-	supervise.Service[*atomic.Int32]
-}
-
-// Init records the one setup call.
-func (s *failing) Init() error {
-	s.Args().Add(1)
-	return nil
-}
-
-// Run supplies a failure that must fail the owning test.
-func (*failing) Run(context.Context) { panic("Run failed") }
-
-// TestReportsFailTest uses Stop to prevent the terminal root panic.
-func TestReportsFailTest(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		var inits atomic.Int32
-		recorder := &recorder{TB: t}
-		root := NewRoot(recorder)
-		if _, err := supervise.Start[failing](root, &inits); err != nil {
-			t.Fatal(err)
-		}
-		synctest.Wait()
-		select {
-		case <-root.Stop():
-		default:
-			t.Fatal("failed test root did not stop")
-		}
-		recorder.cleanups[0]()
-		if recorder.errors != 1 || inits.Load() != 1 {
-			t.Fatalf("test failures = %d, Init calls = %d; want 1 each", recorder.errors, inits.Load())
-		}
-		if message := recorder.messages[0]; !strings.Contains(message, "Run failed") ||
-			!strings.Contains(message, "failing).Run") {
-			t.Errorf("test failure lost its value or frame: %s", message)
-		}
-	})
-}
-
-// lateFailure waits until test cleanup has already reported its timeout.
-type lateFailure struct {
-	supervise.Service[chan struct{}]
-}
-
-// Run fails after the test has stopped accepting reports.
-func (s *lateFailure) Run(context.Context) { <-s.Args(); panic("late panic") }
-
-// TestConcurrentFailures reports both attempts while root shutdown starts once.
-func TestConcurrentFailures(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		recorder := &recorder{TB: t}
-		root := NewRoot(recorder)
-		release := make(chan struct{})
-		for range 2 {
-			if _, err := supervise.Start[lateFailure](root, release); err != nil {
-				t.Fatal(err)
-			}
-		}
-		synctest.Wait()
-		close(release)
-		synctest.Wait()
-		select {
-		case <-root.Stop():
-		default:
-			t.Fatal("concurrent failures did not stop the root")
-		}
-		recorder.cleanups[0]()
-		if recorder.errors != 2 {
-			t.Fatalf("test failures = %d; want 2", recorder.errors)
-		}
-	})
-}
-
-// TestReportsAfterCleanup ignores failures after a cleanup timeout.
-func TestReportsAfterCleanup(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		recorder := &recorder{TB: t}
-		root := NewRoot(recorder)
-		release := make(chan struct{})
-		if _, err := supervise.Start[lateFailure](root, release); err != nil {
-			t.Fatal(err)
-		}
-		synctest.Wait()
-		recorder.cleanups[0]()
-		close(release)
-		<-root.Stop()
-		if recorder.errors != 1 || !strings.Contains(recorder.messages[0], "did not stop") {
-			t.Fatalf("reports after cleanup changed the test: %v", recorder.messages)
-		}
 	})
 }

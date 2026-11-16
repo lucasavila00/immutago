@@ -45,7 +45,7 @@ func checkInitializedAttemptCleanup(t *testing.T, state string) {
 		t.Fatal(err)
 	}
 	if state == "terminal" {
-		top.fail(&Failure{Service: "peer", Value: "failed"})
+		top.fail(&Failure{Service: "peer", Value: "failed"}, completedRun())
 	}
 	<-parent.Stop()
 	<-top.Stop()
@@ -99,7 +99,8 @@ func TestPendingCleanupFailure(t *testing.T) {
 		t.Run(mode, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
 				var reports atomic.Int32
-				top := root(func(any) { t.Error("stopped attempt became terminal") },
+				terminal := make(chan any, 1)
+				top := root(func(value any) { terminal <- value },
 					func(any, []byte) { reports.Add(1) })
 				parent := newGroup(top, false)
 				var open atomic.Int32
@@ -121,6 +122,9 @@ func TestPendingCleanupFailure(t *testing.T) {
 				}
 				<-parent.Stop()
 				<-top.Stop()
+				if failure := (<-terminal).(*Failure); failure.Value == nil {
+					t.Fatal("cleanup lost its failure")
+				}
 				if open.Load() != 0 || reports.Load() != 1 {
 					t.Fatalf("open resources = %d, reports = %d; want 0 and 1", open.Load(), reports.Load())
 				}

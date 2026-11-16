@@ -63,8 +63,9 @@ func BenchmarkServiceAttempt(b *testing.B) {
 		value.Run(run)
 	}
 	b.ReportAllocs()
+	done := completedRun()
 	for b.Loop() {
-		watch(parent, ctx, "attemptWorker", run, func() { value.end() })
+		watch(parent, ctx, done, "attemptWorker", run, func() { value.end() })
 		if ref.IsZero() {
 			b.Fatal("service attempt did not publish its value")
 		}

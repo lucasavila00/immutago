@@ -7,8 +7,8 @@ import (
 	"testing/synctest"
 )
 
-// TestIssue240Probe holds a child failure until its parent starts child cleanup.
-func TestIssue240Probe(t *testing.T) {
+// TestChildFailureAfterParentReturn holds a child failure until its parent starts child cleanup.
+func TestChildFailureAfterParentReturn(t *testing.T) {
 	for _, where := range []string{"defer", "report"} {
 		for _, cause := range []string{"panic", "Goexit"} {
 			t.Run(where+"/"+cause, func(t *testing.T) {
@@ -18,10 +18,8 @@ func TestIssue240Probe(t *testing.T) {
 					var report func(any, []byte)
 					if where == "report" {
 						report = func(value any, _ []byte) {
-							if _, terminal := value.(*Failure); !terminal {
-								close(held)
-								<-release
-							}
+							close(held)
+							<-release
 						}
 					}
 					top := root(func(value any) { exited <- value }, report)

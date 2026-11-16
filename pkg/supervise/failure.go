@@ -26,7 +26,7 @@ func (f *Failure) Unwrap() error {
 	return err
 }
 
-// reportFailure makes the selected failure visible before ordered cleanup can wait.
+// reportFailure reports one recovered failure before its service waits for children.
 func (s *Group) reportFailure(failure *Failure) {
 	if s.report != nil {
 		s.report(failure, failure.Stack)

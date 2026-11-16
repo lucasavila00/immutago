@@ -257,7 +257,7 @@ func TestPanicReport(t *testing.T) {
 		takeEvents()
 		mu.Lock()
 		defer mu.Unlock()
-		want := []any{int64(1), failure}
+		want := []any{failure}
 		if !slices.Equal(reported, want) {
 			t.Fatalf("reported %v, want %v", reported, want)
 		}
@@ -274,7 +274,7 @@ func TestNestedPanicReport(t *testing.T) {
 		if _, err := Start[failing](nested, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
-		if value := <-reported; value != int64(1) {
+		if value := (<-reported).(*Failure).Value; value != int64(1) {
 			t.Fatalf("reported %v, want 1", value)
 		}
 		<-root.Stop()

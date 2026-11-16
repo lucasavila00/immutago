@@ -16,7 +16,7 @@ import (
 func TestGoexitStopsWatcher(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		root.add(func(context.Context) { runtime.Goexit() }, nil)
+		root.add(func(context.Context, <-chan struct{}) { runtime.Goexit() }, nil)
 		synctest.Wait()
 		done := root.Stop()
 		synctest.Wait()
@@ -429,11 +429,12 @@ func (p *stoppingParent) Run(ctx context.Context) {
 	record("stop parent")
 }
 
-// TestChildFailsDuringStop checks that Stop suppresses a later child failure.
+// TestChildFailsDuringStop preserves a failure while children stop in order.
 func TestChildFailsDuringStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
-		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
+		terminal := make(chan any, 1)
+		root := root(func(value any) { terminal <- value }, nil)
 		release := make(chan struct{})
 		if _, err := Start[stoppingParent](root, release); err != nil {
 			t.Fatal(err)
@@ -443,6 +444,9 @@ func TestChildFailsDuringStop(t *testing.T) {
 		done := root.Stop()
 		close(release)
 		<-done
+		if failure := (<-terminal).(*Failure); failure.Value != "during Stop" {
+			t.Fatalf("terminal failure = %v", failure)
+		}
 		expectEvents(t, "stop slow", "stop parent")
 	})
 }

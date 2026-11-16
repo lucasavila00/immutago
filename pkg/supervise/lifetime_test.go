@@ -63,10 +63,7 @@ func TestGoexitIsTerminal(t *testing.T) {
 		terminal := make(chan any, 1)
 		reported := make(chan []byte, 1)
 		parent := root(func(value any) { terminal <- value }, func(value any, stack []byte) {
-			if _, terminal := value.(*Failure); terminal {
-				return
-			}
-			if value != errGoexit {
+			if value.(*Failure).Value != errGoexit {
 				t.Errorf("Goexit report = %v", value)
 			}
 			reported <- stack
@@ -91,23 +88,6 @@ func TestGoexitIsTerminal(t *testing.T) {
 	})
 }
 
-// TestStopRejectsLateFailure checks both subtree and root admission after Stop.
-func TestStopRejectsLateFailure(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		var exits atomic.Int32
-		parent := root(func(any) { exits.Add(1) }, nil)
-		nested := StartGroup(parent)
-		<-nested.Stop()
-		nested.fail(&Failure{Service: "stopped subtree", Value: "late failure"})
-		<-parent.Stop()
-		parent.fail(&Failure{Service: "stopped root", Value: "late failure"})
-		synctest.Wait()
-		if exits.Load() != 0 {
-			t.Fatal("Stop accepted a later terminal failure")
-		}
-	})
-}
-
 // TestTerminalExitPrecedesStopCompletion prevents a caller from exiting before the failure hook.
 func TestTerminalExitPrecedesStopCompletion(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
@@ -121,7 +101,7 @@ func TestTerminalExitPrecedesStopCompletion(t *testing.T) {
 			t.Fatal(err)
 		}
 		synctest.Wait()
-		parent.fail(&Failure{Service: "worker", Value: "terminal"})
+		parent.fail(&Failure{Service: "worker", Value: "terminal"}, completedRun())
 		<-exiting
 		select {
 		case <-cleaned:
@@ -174,8 +154,8 @@ func TestPendingSubtreeCleanup(t *testing.T) {
 	})
 }
 
-// TestAncestorStopRejectsFailure checks propagation without early Run cancellation.
-func TestAncestorStopRejectsFailure(t *testing.T) {
+// TestAncestorStopKeepsFailure checks propagation without early Run cancellation.
+func TestAncestorStopKeepsFailure(t *testing.T) {
 	for _, where := range []string{"group", "Init", "Run"} {
 		t.Run(where, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) { checkAncestorStop(t, where) })
@@ -186,7 +166,8 @@ func TestAncestorStopRejectsFailure(t *testing.T) {
 // checkAncestorStop holds a newer child open while the older subtree reports a failure.
 func checkAncestorStop(t *testing.T, where string) {
 	t.Helper()
-	parent := root(func(value any) { t.Errorf("root escalated: %v", value) }, nil)
+	terminal := make(chan any, 1)
+	parent := root(func(value any) { terminal <- value }, nil)
 	var inits atomic.Int32
 	fail := make(chan struct{})
 	child := &initHooks{
@@ -243,4 +224,7 @@ func checkAncestorStop(t *testing.T, where string) {
 	}
 	close(release)
 	<-done
+	if failure := (<-terminal).(*Failure); failure.Value != "child failure" {
+		t.Fatalf("terminal failure = %v", failure)
+	}
 }

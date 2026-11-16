@@ -35,12 +35,11 @@ func TestFirstServiceFailure(t *testing.T) {
 			output, err := command.CombinedOutput()
 			text := string(output)
 			failure := "supervise: terminal failure in trading." + test.service + ": " + test.value
-			if err == nil || strings.Count(text, "service failed: "+test.value) != 1 ||
-				strings.Count(text, "terminal failure: "+failure) != 1 ||
+			if err == nil || strings.Count(text, "service failed: "+failure) != 1 ||
 				strings.Count(text, "panic: "+failure) != 1 {
 				t.Fatalf("terminal failure = %v\n%s", err, text)
 			}
-			report := strings.Index(text, "service failed: "+test.value)
+			report := strings.Index(text, "service failed: "+failure)
 			stack := strings.Index(text, "(*"+test.service+").Run(")
 			cleanup := strings.Index(text, "terminal cleanup verified")
 			fatal := strings.Index(text, "panic: "+failure)

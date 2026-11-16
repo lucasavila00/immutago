@@ -27,7 +27,7 @@ func (*noCopy) Lock() {}
 // Unlock completes the lock method set for the copylocks check.
 func (*noCopy) Unlock() {}
 
-// Service supplies start arguments and the children owned by one service attempt.
+// Service supplies start arguments and the children owned by one service run.
 // Embed it by value. Start creates and initializes the service value.
 // Do not copy an initialized Service or a struct that contains it.
 // Declare service methods with pointer receivers. Run go vet to check for copies.
@@ -46,7 +46,7 @@ func (p *Service[A]) Args() A { return p.args }
 
 // Init supplies empty setup when the service does not declare Init.
 // A declared Init must release application resources if it fails. The runtime
-// stops children created by that setup attempt.
+// stops children created during setup.
 func (*Service[A]) Init() error { return nil }
 
 // UnsafeChildren returns the child group owned by this service.
@@ -61,7 +61,7 @@ func (p *Service[A]) UnsafeChildren() *Group {
 		p.children = newGroup(p.owner, false)
 		switch {
 		case p.ended:
-			p.children.stop(nil)
+			p.children.stop()
 		case p.cancel != nil:
 			p.children.activate()
 		}
@@ -125,19 +125,21 @@ type NoArgs struct{}
 // It activates at most once and stops at most once. The zero value is not usable.
 // Do not copy an initialized Group. Pass its pointer. Run go vet to check for copies.
 type Group struct {
-	_        noCopy
-	mu       *sync.Mutex
-	children childList
-	active   bool
-	stopping bool
-	stopped  chan struct{}
-	policy   context.Context
-	cancel   context.CancelFunc
-	root     *Group
-	parent   *Group
-	entry    *child
-	report   func(any, []byte)
-	exit     func(any)
+	_           noCopy
+	mu          *sync.Mutex
+	children    childList
+	active      bool
+	stopping    bool
+	stopped     chan struct{}
+	policy      context.Context
+	cancel      context.CancelFunc
+	root        *Group
+	parent      *Group
+	entry       *child
+	report      func(any, []byte)
+	exit        func(any)
+	failure     *Failure
+	failureDone <-chan struct{}
 }
 
 // childList preserves start order and permits constant-time removal under Group.mu.
@@ -149,7 +151,7 @@ type childList struct {
 // child is pending while done is nil. Activation or shutdown starts its watcher.
 // Nested groups own their own completion channel.
 type child struct {
-	run        func(context.Context)
+	run        func(context.Context, <-chan struct{})
 	stop       func()
 	done       chan struct{}
 	group      *Group
@@ -178,9 +180,9 @@ func (p Ref[T]) Borrow() *T {
 
 // NewRoot creates an active lifetime group. A Run panic or Goexit stops the root,
 // waits for ordered cleanup, and panics with *Failure.
-// report receives each recovered Run panic or Goexit with its original
-// stack, then the selected terminal *Failure before cleanup waits. A nil report
-// disables attempt reports; terminal failures still go to standard error.
+// report receives each recovered Run panic or Goexit once as *Failure, with its
+// original stack, before that service waits for child cleanup. A nil report
+// writes failures to standard error. Stop does not suppress failures.
 // Reports can overlap, must return, and must not wait for their group to stop.
 func NewRoot(report func(any, []byte)) *Group {
 	return root(func(value any) { panic(value) }, report)
@@ -219,11 +221,11 @@ func StartGroup(parent *Group) *Group {
 }
 
 // Start creates T, calls Init in the caller, and publishes the initialized value.
-// A first Init error returns a zero Ref and the error; a first Init panic reaches
+// An Init error returns a zero Ref and the error; an Init panic reaches
 // the caller. The runtime stops staged children in both cases.
-// Each successful Init gets one Run call, with a cancelled context if its attempt
+// Each successful Init gets one Run call, with a cancelled context if the service
 // cannot activate. Start under a stopped parent waits for that cleanup Run.
-// Stop waits for registered children, not an initial Init that has not registered yet.
+// Stop waits for registered children, not an Init that has not registered yet.
 func Start[T, A any, P interface {
 	*T
 	Init() error
@@ -259,8 +261,8 @@ func Start[T, A any, P interface {
 		service.Run(run)
 	}
 	cleanup := func() { P(first).end() }
-	parent.add(func(ctx context.Context) {
-		watch(parent, ctx, reflect.TypeFor[T]().String(), run, cleanup)
+	parent.add(func(ctx context.Context, done <-chan struct{}) {
+		watch(parent, ctx, done, reflect.TypeFor[T]().String(), run, cleanup)
 	}, nil)
 	return ref, nil
 }
@@ -284,7 +286,7 @@ func (s *Group) Stop() <-chan struct{} {
 	checkGroup(s)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.stop(nil)
+	s.stop()
 	return s.stopped
 }
 
@@ -296,42 +298,54 @@ func checkGroup(s *Group) {
 }
 
 // stop starts one shutdown worker. The caller holds s.mu.
-func (s *Group) stop(failure *Failure) {
+func (s *Group) stop() {
 	if s.stopping {
 		return
 	}
 	s.stopping = true
 	s.cancel()
 	go func() {
-		if failure != nil {
-			s.reportFailure(failure)
-		}
 		s.halt()
-		if failure != nil {
-			s.exit(failure)
-		}
-		if s.parent != nil {
-			parent, entry := s.parent, s.entry
-			s.parent, s.entry = nil, nil
-			parent.finish(entry, s.stopped)
-		} else {
+		s.mu.Lock()
+		failure, done := s.failure, s.failureDone
+		if failure == nil {
+			if s.parent != nil {
+				s.parent.unlink(s.entry)
+				s.parent, s.entry = nil, nil
+			}
 			close(s.stopped)
+			s.mu.Unlock()
+			return
 		}
+		s.mu.Unlock()
+		<-done
+		s.exit(failure)
+		close(s.stopped)
 	}()
 }
 
-// fail submits one terminal failure. Root Stop and failure use the same decision lock.
-func (s *Group) fail(failure *Failure) {
+// fail records the first failure before reporting or cleanup can run.
+// done includes the failing service's children, even for a start after Stop.
+// It returns true when the root has stopped and the watcher must call exit.
+func (s *Group) fail(failure *Failure, done <-chan struct{}) bool {
 	top := s.root
 	top.mu.Lock()
 	defer top.mu.Unlock()
-	if s.policy.Err() == nil {
-		top.stop(failure)
+	if top.failure != nil {
+		return false
+	}
+	top.failure, top.failureDone = failure, done
+	select {
+	case <-top.stopped:
+		return true
+	default:
+		top.stop()
+		return false
 	}
 }
 
 // add registers pending setup or starts one lifetime. Initial Init is already complete.
-func (s *Group) add(run func(context.Context), group *Group) {
+func (s *Group) add(run func(context.Context, <-chan struct{}), group *Group) {
 	c := &child{run: run, group: group}
 	if group != nil {
 		group.entry = c
@@ -376,13 +390,6 @@ func (s *Group) activate() {
 	}
 }
 
-// forget removes an entry whose work has already ended.
-func (s *Group) forget(c *child) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.unlink(c)
-}
-
 // finish publishes completion and removal in one parent-list operation.
 func (s *Group) finish(c *child, done chan struct{}) {
 	s.mu.Lock()
@@ -424,7 +431,7 @@ func (s *Group) launch(c *child) {
 	go func() {
 		defer s.finish(c, done)
 		defer cancel()
-		run(ctx)
+		run(ctx, done)
 	}()
 }
 
@@ -448,13 +455,19 @@ func (s *Group) halt() {
 		}
 		stop()
 		<-done
-		s.forget(c)
 	}
 }
 
 // watch reports a Run failure before cleanup can wait for children.
-func watch(parent *Group, ctx context.Context, name string, run func(context.Context), cleanup func()) {
-	defer cleanup()
+func watch(parent *Group, ctx context.Context, done <-chan struct{}, name string,
+	run func(context.Context), cleanup func()) {
+	var terminal *Failure
+	defer func() {
+		cleanup()
+		if terminal != nil {
+			parent.root.exit(terminal)
+		}
+	}()
 	completed := false
 	defer func() {
 		if completed {
@@ -465,12 +478,11 @@ func watch(parent *Group, ctx context.Context, name string, run func(context.Con
 			value = errGoexit
 		}
 		stack := debug.Stack()
-		if report := parent.root.report; report != nil {
-			report(value, stack)
+		failure := &Failure{Service: name, Value: value, Stack: stack}
+		if parent.fail(failure, done) {
+			terminal = failure
 		}
-		if ctx.Err() == nil {
-			parent.fail(&Failure{Service: name, Value: value, Stack: stack})
-		}
+		parent.root.reportFailure(failure)
 	}()
 	run(ctx)
 	completed = true

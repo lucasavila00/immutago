@@ -7,6 +7,13 @@ import (
 	"testing"
 )
 
+// forget removes one test entry under its group lock.
+func (s *Group) forget(c *child) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.unlink(c)
+}
+
 // TestForgetUnlinksChild checks removal at each position and repeated removal.
 func TestForgetUnlinksChild(t *testing.T) {
 	for _, order := range [][]int{{0, 1, 2, 3}, {3, 2, 1, 0}, {1, 2, 0, 3}} {
@@ -14,7 +21,7 @@ func TestForgetUnlinksChild(t *testing.T) {
 		children := make([]*child, 4)
 		for i := range children {
 			nested := &Group{}
-			parent.add(func(context.Context) {}, nested)
+			parent.add(func(context.Context, <-chan struct{}) {}, nested)
 			children[i] = nested.entry
 		}
 		remaining := slices.Clone(children)
@@ -63,7 +70,7 @@ func TestForgetDoesNotAllocate(t *testing.T) {
 		parents[i] = newGroup(nil, false)
 		for j := range children[i] {
 			nested := &Group{}
-			parents[i].add(func(context.Context) {}, nested)
+			parents[i].add(func(context.Context, <-chan struct{}) {}, nested)
 			children[i][j] = nested.entry
 		}
 	}
@@ -90,7 +97,7 @@ func BenchmarkGroupForget(b *testing.B) {
 				children := make([]*child, size)
 				for i := range children {
 					nested := &Group{}
-					parent.add(func(context.Context) {}, nested)
+					parent.add(func(context.Context, <-chan struct{}) {}, nested)
 					children[i] = nested.entry
 				}
 				b.StartTimer()
