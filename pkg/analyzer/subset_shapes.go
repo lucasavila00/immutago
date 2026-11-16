@@ -114,6 +114,10 @@ func (c *subsetChecks) matchRestrictedStatement(statement ast.Stmt) string {
 		if (len(statement.Lhs) != 1 || len(statement.Rhs) != 1) && !c.resultAssignment(statement) {
 			return "multiple assignments involving protected storage are unsupported"
 		}
+	case *ast.RangeStmt:
+		if statement.Tok == token.ASSIGN && statement.Key != nil && statement.Value != nil {
+			return "multiple assignments involving protected storage are unsupported"
+		}
 	case *ast.GoStmt, *ast.DeferStmt:
 		return "protected storage requires synchronous calls"
 	case *ast.SendStmt:

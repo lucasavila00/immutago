@@ -294,6 +294,7 @@ Use the operations above inside these statement forms:
 | `value, p = LocalPoint{}, &LocalPoint{}` | Use two statements. |
 | `Other(point)` where `type Other FrozenPoint` | Construct `Other{X: point.X}`. |
 | `for i, point = range points { ... }` with Frozen record elements | Bind fresh loop locals, then assign each destination separately. |
+| `for indexes[local.X], text = range texts { ... }` with LocalPoint | Read `index := local.X` before the loop, then use `indexes[index]`. |
 | `use(im.FreezeSlice(values))` | Bind Freeze to a local, then call `use`. |
 | `case _, values[0] = <-ready:` where values is a builder | Receive first; write in the case body. |
 | `ready <- local.X` or `case ready <- local.X:` with LocalPoint | Read `x := local.X` before the send or select. |

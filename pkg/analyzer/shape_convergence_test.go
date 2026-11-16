@@ -7,28 +7,32 @@ import (
 
 // TestStatementShapeRejects checks complete bindings around nested protected operands.
 func TestStatementShapeRejects(t *testing.T) {
-	cases := []struct{ name, source string }{
-		{"binary binding", `func f(){var v V;a,b:=v.X+1,2;_,_=a,b}`},
-		{"binary declaration", `func f(){var v V;var a,b=v.X+1,2;_,_=a,b}`},
-		{"call binding", `func f(){var v V;a,b:=read(new(v)),2;_,_=a,b}`},
-		{"call declaration", `func f(){var v V;var a,b=read(new(v)),2;_,_=a,b}`},
-		{"length binding", `func f(){s:=[]int{1};a,b:=len(s),2;_,_=a,b;_=im.FreezeSlice(s)}`},
-		{"length declaration", `func f(){s:=[]int{1};var a,b=len(s),2;_,_=a,b;_=im.FreezeSlice(s)}`},
-		{"nested builder binding", `func f(){s:=[]int{1};a,b:=(s[0]+1)*2,2;_,_=a,b;_=im.FreezeSlice(s)}`},
-		{"nested builder declaration", `func f(){s:=[]int{1};var a,b=(s[0]+1)*2,2;_,_=a,b;_=im.FreezeSlice(s)}`},
+	const multiple = "multiple assignments involving protected storage are unsupported"
+	cases := []struct{ name, source, want string }{
+		{"binary binding", `func f(){var v V;a,b:=v.X+1,2;_,_=a,b}`, multiple},
+		{"binary declaration", `func f(){var v V;var a,b=v.X+1,2;_,_=a,b}`, multiple},
+		{"call binding", `func f(){var v V;a,b:=read(new(v)),2;_,_=a,b}`, multiple},
+		{"call declaration", `func f(){var v V;var a,b=read(new(v)),2;_,_=a,b}`, multiple},
+		{"length binding", `func f(){s:=[]int{1};a,b:=len(s),2;_,_=a,b;_=im.FreezeSlice(s)}`, multiple},
+		{"length declaration", `func f(){s:=[]int{1};var a,b=len(s),2;_,_=a,b;_=im.FreezeSlice(s)}`, multiple},
+		{"nested builder binding", `func f(){s:=[]int{1};a,b:=(s[0]+1)*2,2;_,_=a,b;_=im.FreezeSlice(s)}`, multiple},
+		{"nested builder declaration", `func f(){s:=[]int{1};var a,b=(s[0]+1)*2,2;_,_=a,b;_=im.FreezeSlice(s)}`, multiple},
 
-		{"range targets", `func f(){var v V;for v.X,v.Y=range []int{2}{};_=v}`},
-		{"nested range index", `func f(){var v V;var a [1]int;var n int;for a[v.X],n=range []int{2}{};_=a;_=n}`},
-		{"nested range call", `func f(){var v V;var a [1]int;var n int;for a[read(new(v))],n=range []int{2}{};_=a;_=n}`},
+		{"range targets", `func f(){var v V;for v.X,v.Y=range []int{2}{};_=v}`,
+			"writes to immutable objects are unsupported"},
+		{"nested range index", `func f(){var v V;var a [1]int;var n int;for a[v.X],n=range []int{2}{};_=a;_=n}`, multiple},
+		{"nested range call", `func f(){var v V;var a [1]int;var n int;
+for a[read(new(v))],n=range []int{2}{};_=a;_=n}`, multiple},
 		{"nested range builder", `func f(){s:=[]int{0};var a [1]int;var n int;
-   for a[s[0]],n=range []int{2}{};_=a;_=n;_=im.FreezeSlice(s)}`},
-		{"range mixed targets", `func f(){var v V;var n int;for n,v.X=range []int{2}{};_=n}`},
+   for a[s[0]],n=range []int{2}{};_=a;_=n;_=im.FreezeSlice(s)}`, multiple},
+		{"range mixed targets", `func f(){var v V;var n int;for n,v.X=range []int{2}{};_=n}`,
+			"writes to immutable objects are unsupported"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := checkSource(t, `type V struct{im.Local;X,Y int};func read(p *V)int{return p.X};`+tc.source)
-			if !strings.Contains(got, "multiple assignments involving protected storage are unsupported") {
-				t.Fatalf("multiple protected bindings accepted: %s", got)
+			if !strings.Contains(got, tc.want) {
+				t.Fatalf("diagnostics = %s; want %s", got, tc.want)
 			}
 		})
 	}

@@ -103,3 +103,12 @@ func (w *HandleWorker) Rename(text Text)        { w.State.Rename(text) }
 func startHandleWorker(root *supervise.Group, args Handles) (supervise.Ref[HandleWorker], error) {
 	return supervise.Start[HandleWorker](root, args)
 }
+
+func copiedRangeIndex(values []Text, local im.StringProjection) {
+	index := local.Len()
+	var indexes [1]int
+	var value Text
+	for indexes[index], value = range values {
+	}
+	_ = value
+}

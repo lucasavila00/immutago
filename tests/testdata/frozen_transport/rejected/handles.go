@@ -54,3 +54,21 @@ func localSend(ready chan<- int, value im.StringProjection) {
 }
 
 var recordChannel chan api.Count
+
+func localRangeIndex(values []im.FrozenString, local im.StringProjection) {
+	var indexes [1]int
+	var value im.FrozenString
+	for indexes[local.Len()], value = range values {
+	}
+	_ = value
+}
+
+func builderRangeIndex(values []im.FrozenString) {
+	builder := []int{0}
+	var indexes [1]int
+	var value im.FrozenString
+	for indexes[builder[0]], value = range values {
+	}
+	_ = value
+	_ = im.FreezeSlice(builder)
+}

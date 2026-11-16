@@ -139,3 +139,9 @@ handles.go:56:19: unsupported immutable operation: channels of immutable storage
   source: chan api.Count
   type: chan api.Count
   fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset
+handles.go:61:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: for indexes[local.Len()], value = range values { }
+  fix: use one protected destination, or local names for all results of one direct typed call
+handles.go:70:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: for indexes[builder[0]], value = range values { }
+  fix: use one protected destination, or local names for all results of one direct typed call
