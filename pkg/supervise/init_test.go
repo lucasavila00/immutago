@@ -130,7 +130,12 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 			p.Children()
 			return nil
 		},
-		run: func(*initializing, context.Context) { runs.Add(1) },
+		run: func(_ *initializing, ctx context.Context) {
+			if ctx.Err() == nil {
+				t.Error("staged child started with an active context after failed Init")
+			}
+			runs.Add(1)
+		},
 	}
 	hooks := &initHooks{init: func(p *initializing) error {
 		candidates = append(candidates, p)
@@ -171,8 +176,8 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	for _, candidate := range candidates {
 		expectInitEnded(t, candidate)
 	}
-	if runs.Load() != 0 {
-		t.Fatal("a staged child ran after failed Init")
+	if runs.Load() != 2 {
+		t.Fatal("staged children did not each run cleanup after failed Init")
 	}
 	retained := nested.children.count
 	late, lateErr := Start[initializing](nested, child)
@@ -319,7 +324,12 @@ func TestInitStopBeforePublication(t *testing.T) {
 				<-release
 				return nil
 			},
-			run: func(*initializing, context.Context) { runs.Add(1) },
+			run: func(_ *initializing, ctx context.Context) {
+				if ctx.Err() == nil {
+					t.Error("late setup ran with an active context")
+				}
+				runs.Add(1)
+			},
 		}
 		var ref Ref[initializing]
 		go func() {
@@ -336,22 +346,23 @@ func TestInitStopBeforePublication(t *testing.T) {
 		if err := <-result; err != nil {
 			t.Fatal(err)
 		}
-		if ref.Borrow() != candidate || runs.Load() != 0 {
+		if ref.Borrow() != candidate || runs.Load() != 1 {
 			t.Fatal("first Init did not keep the stopped-parent start contract")
 		}
 		expectInitEnded(t, candidate)
 	})
 }
 
-// TestInitStopDuringRestart waits for Init, then cleans its candidate without publication or Run.
+// TestInitStopDuringRestart gives an unpublished replacement one cancelled Run for cleanup.
 func TestInitStopDuringRestart(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
 		entered := make(chan *initializing, 1)
 		release := make(chan struct{})
-		var attempts, runs atomic.Int32
+		var attempts, runs, open atomic.Int32
 		hooks := &initHooks{
 			init: func(p *initializing) error {
+				open.Add(1)
 				if attempts.Add(1) == 1 {
 					return nil
 				}
@@ -360,7 +371,13 @@ func TestInitStopDuringRestart(t *testing.T) {
 				<-release
 				return nil
 			},
-			run: func(*initializing, context.Context) { runs.Add(1); panic("restart") },
+			run: func(_ *initializing, ctx context.Context) {
+				defer open.Add(-1)
+				if runs.Add(1) > 1 && ctx.Err() == nil {
+					t.Error("stopped restart ran with an active context")
+				}
+				panic("restart")
+			},
 		}
 		ref, err := Start[initializing](root, hooks)
 		if err != nil {
@@ -378,8 +395,8 @@ func TestInitStopDuringRestart(t *testing.T) {
 		}
 		close(release)
 		<-stopped
-		if ref.Borrow() != before || runs.Load() != 1 {
-			t.Fatal("stopped restart published or ran its candidate")
+		if ref.Borrow() != before || runs.Load() != 2 || open.Load() != 0 {
+			t.Fatal("stopped restart published its candidate or missed cleanup")
 		}
 		expectInitEnded(t, candidate)
 	})
