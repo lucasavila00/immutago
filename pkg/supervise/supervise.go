@@ -24,9 +24,21 @@ const (
 
 var errGoexit = errors.New("supervise: service called runtime.Goexit")
 
+// noCopy lets go vet report copies of values that own runtime state.
+type noCopy struct{}
+
+// Lock marks the pointer as a lock for the copylocks check; it does no runtime work.
+func (*noCopy) Lock() {}
+
+// Unlock completes the lock method set for the copylocks check.
+func (*noCopy) Unlock() {}
+
 // Service supplies start arguments and the children owned by one service attempt.
 // Embed it by value. Start creates and initializes each fresh service value.
+// Do not copy an initialized Service or a struct that contains it.
+// Declare service methods with pointer receivers. Run go vet to check for copies.
 type Service[A any] struct {
+	_        noCopy
 	args     A
 	owner    *Group
 	cancel   context.CancelFunc
@@ -119,7 +131,9 @@ type NoArgs struct{}
 
 // Group owns an ordered set of service lifetimes and nested groups.
 // It activates at most once and stops at most once. The zero value is not usable.
+// Do not copy an initialized Group. Pass its pointer. Run go vet to check for copies.
 type Group struct {
+	_        noCopy
 	mu       *sync.Mutex
 	children childList
 	active   bool

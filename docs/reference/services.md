@@ -11,6 +11,7 @@ other calls. Use the [service guide](../guides/services.md) for a walkthrough.
 | Service type | A concrete struct embeds `supervise.Service[A]` through value fields; see the embedding forms below. |
 | Setup | `*Worker` supplies `Init() error`, or uses the default Init from Service[A]. |
 | Background work | `*Worker` supplies `Run(context.Context)`. |
+| Runtime ownership | Do not copy an initialized service or Group. Declare service methods with pointer receivers and pass service and group pointers; see the copy contract below. |
 | Start arguments | `s.Args()` reads A. The runtime saves the same arguments for each restart. Ordinary Go types are allowed; protected arguments require [Frozen types](types.md). |
 | No arguments | Embed `supervise.Service[supervise.NoArgs]` and pass `supervise.NoArgs{}` to Start. |
 | Exported methods | Use the [service result signatures](service-results.md), including promoted methods. Init, Run, and runtime methods are exempt. |
@@ -23,6 +24,36 @@ calls, and protected im operations. Their linked references give the complete
 allowed forms; unlisted protected operations and direct Borrow forms are rejected.
 Other service code follows ordinary Go rules. Runtime obligations below, including
 returning when a context ends, require implementation review.
+
+### Copy contract
+
+`Service[A]` and `Group` own mutable runtime state. Do not copy either value after
+initialization, including through a containing struct or array. Start initializes
+the embedded Service before Init. NewRoot, StartGroup, and Children return initialized
+groups. This obligation still applies after the service or group stops.
+
+Declare service methods with pointer receivers, including Init and Run. Pass service
+and group pointers to other functions. Ref values can be copied; each copy selects
+the same current service. A zero service or Group has no runtime ownership. Copying
+it does not initialize it. Start always creates a fresh service; it does not initialize
+an existing value or its copies.
+
+| Invalid copy examples — non-exhaustive | Allowed replacement |
+| --- | --- |
+| `func (s Worker) AddChild() bool` | `func (s *Worker) AddChild() bool` |
+| `copy := *worker` | `same := worker`, where worker is `*Worker`. |
+| `use(*worker)`, where use takes Worker | `use(worker)`, where use takes `*Worker`. |
+| `copy := *group` | `same := group`, where group is `*supervise.Group`. |
+| `Owner{Group: *group}` | Give Owner a `*supervise.Group` field and use `Owner{Group: group}`. |
+
+Run standard `go vet ./...` in addition to immutago. The runtime types contain a
+zero-size marker for vet's `copylocks` check. Vet reports common copy forms, including
+value receivers, assignments, arguments, returns, and copies of containing values.
+It does not prove that every possible copy is absent. For example, its copy check
+does not inspect channel sends. The runtime does not detect copies or make them safe.
+Immutago checks service signatures and protected operations; it does not enforce
+this Go copy contract. `go vet -vettool=/path/to/immutago ./...` runs immutago and does
+not replace standard `go vet ./...`.
 
 | Rejected examples — non-exhaustive | Allowed replacement |
 | --- | --- |
@@ -96,8 +127,9 @@ has its own retry count. Groups do not restart.
 | `s.Children()` | Children of one service run; a restart creates a new group. Start must have created s. |
 | `new(Worker).Children()` | Panic with `supervise: nil or zero Group` in the caller. Use Start to create a service that needs child groups. |
 
-Create groups with these APIs. A nil or zero Group cannot run or stop. Groups otherwise follow
-ordinary Go rules. A stopped parent supplies a stopped nested group.
+Create groups with these APIs and keep their pointers. A nil or zero Group cannot
+run or stop. Groups follow the copy contract above and ordinary Go rules.
+A stopped parent supplies a stopped nested group.
 
 ### Child lifetimes
 
