@@ -261,24 +261,25 @@ func checkStopDuringAdmittedRestartInit(t *testing.T, fail bool) {
 	var inits, runs, childRuns atomic.Int32
 	ref, _ := Start[initializing](parent, &initHooks{
 		init: func(p *initializing) error {
-			if inits.Add(1) > 1 {
-				_, err := Start[initializing](p.Children(), &initHooks{
-					init: func(*initializing) error { return nil },
-					run: func(_ *initializing, ctx context.Context) {
-						if ctx.Err() == nil {
-							t.Error("pending child ran with an active context")
-						}
-						childRuns.Add(1)
-					},
-				})
-				if err != nil {
-					return err
-				}
-				entered <- p
-				<-initRelease
-				if fail {
-					return errors.New("setup failure")
-				}
+			if inits.Add(1) == 1 {
+				return nil
+			}
+			_, err := Start[initializing](p.Children(), &initHooks{
+				init: func(*initializing) error { return nil },
+				run: func(_ *initializing, ctx context.Context) {
+					if ctx.Err() == nil {
+						t.Error("pending child ran with an active context")
+					}
+					childRuns.Add(1)
+				},
+			})
+			if err != nil {
+				return err
+			}
+			entered <- p
+			<-initRelease
+			if fail {
+				return errors.New("setup failure")
 			}
 			return nil
 		},
