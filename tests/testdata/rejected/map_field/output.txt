@@ -1,4 +1,4 @@
-map_field.go:13:2: immutable field Value: map[string]int is not provably immutable
+map_field.go:13:2: immutable field Value requires a Frozen type: map[string]int is not provably immutable
   owner: rejected.Bad; field type: map[string]int
   fix: replace the native map with im.FrozenMap[K, V], where K and V are immutable
 map_field.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

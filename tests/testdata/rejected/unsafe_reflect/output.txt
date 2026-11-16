@@ -1,5 +1,5 @@
 protected.go:10:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
-protected.go:26:2: immutable field Pointer: unsafe.Pointer is not provably immutable
+protected.go:26:2: immutable field Pointer requires a Frozen type: unsafe.Pointer is not provably immutable
   owner: protected.UnsafeField; field type: unsafe.Pointer
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 protected.go:36:31: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values

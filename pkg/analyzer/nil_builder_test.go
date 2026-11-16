@@ -41,14 +41,14 @@ func TestNilBuilderForms(t *testing.T) {
 // rejectNilConversionSites rejects conversion syntax at every checked construction boundary.
 func rejectNilConversionSites(t *testing.T, declarations, target, source, freeze string) {
 	t.Helper()
-	for _, body := range []string{
-		"values := %s; _ = im.%s(values)",
-		"var values = %s; _ = im.%s(values)",
-		"var values " + target + " = %s; _ = im.%s(values)",
-		"_ = im.%[2]s(%[1]s)",
+	for _, test := range []struct{ body, want string }{
+		{"values := %s; _ = im.%s(values)", "native builder values requires a fresh local"},
+		{"var values = %s; _ = im.%s(values)", "native builder values requires a fresh local"},
+		{"var values " + target + " = %s; _ = im.%s(values)", "native builder values requires a fresh local"},
+		{"_ = im.%[2]s(%[1]s)", "cannot freeze"},
 	} {
-		program := declarations + "\nfunc f(){" + fmt.Sprintf(body, source, freeze) + "}"
-		if got := checkSource(t, program); !strings.Contains(got, "cannot freeze") {
+		program := declarations + "\nfunc f(){" + fmt.Sprintf(test.body, source, freeze) + "}"
+		if got := checkSource(t, program); !strings.Contains(got, test.want) {
 			t.Fatalf("missing conversion-source rejection:\n%s\n%s", program, got)
 		}
 	}

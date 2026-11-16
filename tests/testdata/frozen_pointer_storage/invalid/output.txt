@@ -6,12 +6,12 @@ invalid.go:15:30: unmarked struct contains immutable field Value; embed an immut
   owner: invalid.ProjectionOwner; field type: im.Projection[*api.Settings]
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-invalid.go:21:6: immutable collection: projection payload 1: stored pointers require a concrete marked struct target
+invalid.go:21:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-invalid.go:22:6: immutable collection: projection payload 1: stored pointers require a concrete marked struct target
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+invalid.go:22:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*[2]int]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
 invalid.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: state.Settings.Limit = 1
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -68,8 +68,9 @@ invalid.go:64:2: unsupported immutable operation: writes to immutable objects ar
 invalid.go:69:32: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Limit++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-invalid.go:75:18: service method Read must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+invalid.go:75:18: service method Read must return a read result: *example.com/consumer/api.Settings is not a Copied value
   result type: *api.Settings
+  fix: copy scalar fields, or use a local projection
 invalid.go:9:25: unmarked struct contains immutable field Value; embed an immutable marker
   owner: invalid.ValueOwner; field type: api.Settings
   rule: a struct that owns immutable storage must itself have an immutable field proof

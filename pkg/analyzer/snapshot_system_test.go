@@ -58,11 +58,11 @@ value:=cell.Load().Unsafe();_=im.Unwrap(value.Raw).values[0]}`,
 // TestSnapshotCategories rejects the same invalid payload in each consuming API.
 func TestSnapshotCategories(t *testing.T) {
 	cases := []struct{ source, want string }{
-		{`type Result struct{im.Local; Name string}`, "copied values require"},
-		{`type Result struct{im.Local; Values im.FrozenSlice[int]}`, "copied values require"},
-		{`type Result struct{im.Local; Text im.FrozenString}`, "copied values require"},
+		{`type Result struct{im.Local; Name string}`, "is not a Copied value"},
+		{`type Result struct{im.Local; Values im.FrozenSlice[int]}`, "is not a Copied value"},
+		{`type Result struct{im.Local; Text im.FrozenString}`, "is not a Copied value"},
 		{`func f(){_=im.Value(im.ProjectionOf(im.FreezeString("text")))}`,
-			"copied values require"},
+			"is not a Copied value"},
 		{`type Result struct{im.Local; Text im.StringProjection};var cell im.Cell[Result]`,
 			"Frozen storage cannot contain Local values"},
 		{`type Result struct{im.Local; Text im.StringProjection};func f(){_=im.ProjectionOf(Result{})}`,
@@ -75,10 +75,10 @@ func TestSnapshotCategories(t *testing.T) {
 		{`var values [0]im.Projection[string]`, "package variables"},
 		{`var marker im.Local`, "package variables"},
 		{`type Data struct{im.Local};type Pointer *Data`, "defined pointer types"},
-		{`func f(){_=im.Value(im.ProjectionOf("text"))}`, "copied values require"},
+		{`func f(){_=im.Value(im.ProjectionOf("text"))}`, "is not a Copied value"},
 		{`func f(){frozen:=im.FreezeMap(map[string]int{});projection:=frozen.Projection()
 copy:=projection.Clone();_=copy}`,
-			"copied values require"},
+			"is not a Copied value"},
 		{`func f(){frozen:=im.FreezeSlice([]int{1});projection:=frozen.Projection()
 all:=projection.All();_=all}`,
 			"direct range"},
@@ -209,7 +209,7 @@ func TestCopiedRecordBoundary(t *testing.T) {
 		`func f(v im.MapProjection[int,Count]){copy:=v.Clone();_=copy}`,
 		`func f(v im.MapProjection[Count,int]){copy:=v.Clone();_=copy}`,
 	} {
-		if got := checkSource(t, record+source); !strings.Contains(got, "copied values require") {
+		if got := checkSource(t, record+source); !strings.Contains(got, "is not a Copied value") {
 			t.Fatal(got)
 		}
 	}

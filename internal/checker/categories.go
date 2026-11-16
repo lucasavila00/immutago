@@ -34,7 +34,7 @@ func (p *proof) copiedValue(result *obligation, t types.Type) {
 			return
 		}
 	}
-	result.reason = "copied values require bool, numbers, Copied records, arrays, or service references"
+	result.reason = fmt.Sprintf("%s is not a Copied value", types.TypeString(t, nil))
 }
 
 // copiedRecord proves each field through the shared Copied rule.

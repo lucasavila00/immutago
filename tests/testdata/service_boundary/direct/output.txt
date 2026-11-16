@@ -1,30 +1,31 @@
-anonymous.go:7:24: service method Values must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+anonymous.go:7:24: service method Values must return a read result: []int is not a Copied value
   result type: []int
+  fix: copy scalar fields, or use a local projection
 borrow_calls.go:11:35: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
 borrow_calls.go:14:59: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: api.Handle.Borrow
   type: func(api.Handle) *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
 borrow_calls.go:8:54: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: value.(api.Handle).Borrow
   type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
 handles.go:5:48: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
 handles.go:6:38: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
 init_calls.go:6:33: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *api.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
 init_calls.go:9:44: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
   source: ref.Borrow
   type: func() *api.ReadyCounter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); see docs/reference/service-references.md
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md

@@ -38,8 +38,8 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 				continue
 			}
 			if reason := c.proofs.ReadResultReason(result.Type()); reason != "" {
-				c.report(at, "service method "+method.Name()+" must return a service result: "+reason+
-					"\n  result type: "+diagnosticType(result.Type()))
+				c.report(at, "service method "+method.Name()+" must return a read result: "+reason+
+					"\n  result type: "+diagnosticType(result.Type())+"\n  fix: "+structuralFix(result.Type(), reason))
 			}
 		}
 	}

@@ -45,8 +45,8 @@ func Check(pass *analysis.Pass) map[*types.Var]bool {
 		item := p.owners[variable]
 		result[variable] = true
 		if item.body == nil || !item.fresh {
-			p.report(variable.Pos(), "cannot freeze "+variable.Name()+
-				": ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first")
+			p.report(variable.Pos(), "native builder "+variable.Name()+
+				" requires a fresh local make, literal, bare nil, or Clone result; create a local builder first")
 		}
 	}
 	p.checkUses()
