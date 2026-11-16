@@ -17,7 +17,7 @@ The [glossary](glossary.md) defines marked structs, protected storage, and build
 ## Markers and stored types
 
 The [type rules](types.md) define Frozen, Copied, Local, and read results.
-Every package that declares Frozen records uses the
+Every package that declares Frozen records other than [opaque handles](unchecked-values.md) uses the
 [required generation step](rules.md#required-generation).
 Embed exactly one marker by value:
 
@@ -227,7 +227,7 @@ forms on this page.
 | Explicit field or element as receiver | `group.FrozenPoint.XValue()`, `points[i].XValue()` |
 | Exact value receiver on a Copied field or array element | `snapshot.Count.Read()`, `snapshot.Counts[i].Read()`, `settings.Timeout.Seconds()` with a time.Duration field. |
 | Method value or expression that copies a Copied field, with ordinary or persistent inputs and results | `read := reply.Count.Read`, `Count.Read(reply.Count)`; Count is a defined integer type. |
-| Direct fixed supervise method on a protected field or element | `route.Worker.IsZero()`, `route.Workers[i].IsZero()` for Ref fields and elements; the [service-reference rules](service-references.md) apply. |
+| Exact value receiver on an opaque handle field or array element | `route.Worker.Borrow()`, `route.Workers[i].IsZero()`, `reply.Counter.Add(1)`; the field read keeps its owner's rules. |
 | Constructed value, new pointer, or direct call result as receiver | `FrozenPoint{X: 3}.XValue()`, `(&FrozenPoint{X: 3}).ReadX()`, `makePoint().XValue()` |
 | Direct method on an ordinary concrete receiver with protected inputs or results | `reader.Read(p)` with `func (r *Reader) Read(p *LocalPoint) int`; `r` can have an ordinary mutable type. |
 | Direct call through a proved Frozen interface | `scorer.Score(features)`; use the [complete interface rules](frozen-interfaces.md). |
@@ -243,8 +243,9 @@ local first. A closure that reads `reply.Count` retains reply and is rejected.
 | Method receiver | Body rules |
 | --- | --- |
 | Struct with `im.Frozen` | Same checks as named functions; can return its pointer. |
+| Generic opaque handle | Methods use the concrete instantiated receiver type, such as `Counter[int]`; fields stay fixed. |
 | Struct with `im.Local` | Its value stays Local. Its pointer can only be used in local direct calls. |
-| Frozen or Local record | Cannot change protected fields. The receiver record cannot declare type parameters. Method type parameters use the [generic rules](#generics) above. |
+| Frozen or Local record | Cannot change protected fields. The receiver record cannot declare type parameters, except for an [opaque handle](unchecked-values.md). Method type parameters use the [generic rules](#generics) above. |
 | Copied field inside a protected owner | Exact value-receiver calls copy the field. Pointer-receiver calls that address the field are rejected. |
 | Ordinary concrete receiver with Local inputs or results | Direct, non-generic calls. Local inputs and results keep their im rules. Persistent values use the forms above. |
 | Fixed library type | Listed API forms. |

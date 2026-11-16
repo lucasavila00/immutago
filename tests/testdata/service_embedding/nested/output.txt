@@ -1,5 +1,1 @@
 nested.go:14:13: service must embed supervise.Service by value through each embedded field
-nested.go:18:19: unsupported immutable operation: service must embed supervise.Service by value through each embedded field
-  source: Ref
-  type: supervise.Ref[T any]
-  fix: use a concrete service struct that embeds supervise.Service by value

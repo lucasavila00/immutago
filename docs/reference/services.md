@@ -19,9 +19,9 @@ other calls. Use the [service guide](../guides/services.md) for a walkthrough.
 | Reference calls | Use the complete [service-reference forms](service-references.md). |
 
 Start requires the Init and Run signatures through Go's type
-checker. The analyzer checks exported results, reference targets, direct Borrow
-calls, and protected im operations. Their linked references give the complete
-allowed forms; unlisted protected operations and direct Borrow forms are rejected.
+checker. The analyzer checks exported results, handle fields, and protected im
+operations. Their linked references give the complete allowed forms; unlisted
+protected operations are rejected.
 Other service code follows ordinary Go rules. Runtime obligations below, including
 returning when a context ends, require implementation review.
 
@@ -53,7 +53,6 @@ run the standard vet checks.
 | `type Worker struct { *supervise.Service[Args] }` | Embed `supervise.Service[Args]` as a value. |
 | `type Pointer = *supervise.Service[Args]`; `type Worker struct { Pointer }` | Alias `supervise.Service[Args]` without `*`. |
 | `type Worker struct { *Base }` where Base embeds Service | Embed `Base` as a value. |
-| `supervise.Ref[int]` | Use a concrete service struct as the type argument. |
 | `func (s *Worker) Name() string` | Return `im.StringProjection`; see [service results](service-results.md). |
 | Save a Local projection in start arguments | Supply Frozen data and create a projection when reading. |
 

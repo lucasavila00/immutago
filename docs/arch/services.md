@@ -14,7 +14,8 @@ for example, it does not inspect channel sends.
 
 ## Initialization, publication, and calls
 
-[Ref[T]](../../pkg/supervise/supervise.go) contains `*T`. Start initializes T once
+[Ref[T]](../../pkg/supervise/supervise.go) embeds Frozen and stores its pointer
+in UncheckedValue[T]. Start initializes T once
 before it creates the reference. Borrow returns that pointer; Stop does not change
 it or wait for direct method calls.
 
@@ -81,12 +82,12 @@ It uses the existing callback, or standard error when the callback is nil.
 | Source | Compiler-resolved check |
 | --- | --- |
 | `Service[A]` embedding | The selected runtime embedding path uses value fields. |
-| `Ref[T]` | T is a concrete service struct; application fields use Go rules. |
-| Direct `Borrow` use | Match the immediate exported method call; exclude lifecycle and runtime methods. |
+| `Ref[T]` | Apply the general Frozen wrapper and UncheckedValue field rules. Start constrains the constructed service type. |
+| `Borrow` result | Ordinary Go pointer use; retain im checks for protected fields. |
 | Exported service methods | Check each result with the shared ReadResult proof, or compiler identity with predeclared error. Apply no result count or order limit. |
 | Retained start arguments | Protected data or callbacks carrying it must pass Frozen; ordinary arguments use Go contracts. |
 
-[Reference matching](../../pkg/analyzer/service_handles.go) and
+[Type proofs](../../internal/checker/proof.go) and
 [result checks](../../pkg/analyzer/service.go) do not prove that the receiver stays private:
 
 ```go
@@ -95,4 +96,4 @@ func (c *Counter) Visit(f func(*Counter)) { f(c) }
 
 This method passes result checks; its callback can retain `c`. Review locks,
 state changes, and input use in service code. The
-[service reference](../reference/services.md) defines the complete public forms.
+[service reference](../reference/service-references.md) defines the complete public forms.

@@ -34,9 +34,8 @@ FrozenString, pointers, slices, maps, channels, functions, interfaces, service
 references, and other im handles are not Copied record fields. A Go string copy
 shares its bytes. There is no owned-string field form.
 
-The general [Copied category](types.md) also permits opaque service references
-and arrays of those references. This handle rule does not permit reference
-fields in a Copied record.
+[Opaque handles](unchecked-values.md), including service references, are read
+results but are not Copied. Copies share their target.
 
 ## Operations — exhaustive
 

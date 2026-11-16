@@ -86,6 +86,7 @@ Ref holds an initialized service value. Copies select the same value. Stop does 
 
 ```go
 type Ref[T any] struct {
+    im.Frozen
     // contains filtered or unexported fields
 }
 ```
@@ -112,7 +113,7 @@ Start creates T, calls Init in the caller, and publishes the initialized value. 
 func (p Ref[T]) Borrow() *T
 ```
 
-Borrow returns the initialized service value, including after Stop. Borrow is shared, not exclusive. A zero reference panics with "supervise: zero Ref".
+Borrow returns the initialized service value, including after Stop. The pointer can be stored and reused. Calls use ordinary Go synchronization. A zero reference panics with "supervise: zero Ref".
 
 ### func \(Ref\[T\]\) IsZero
 

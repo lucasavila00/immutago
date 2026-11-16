@@ -10,7 +10,7 @@ import (
 
 // opaqueStorage identifies the library and runtime types whose fields are not walked.
 func opaqueStorage(t types.Type) bool {
-	return IsLibraryType(t, "Cell") || IsRuntimeType(t, ServiceMarker)
+	return IsLibraryType(t, "Cell") || IsRuntimeType(t, ServiceMarker) || IsUncheckedValue(t)
 }
 
 // classificationStorageOracle checks source relevance without shared query state.
@@ -63,7 +63,8 @@ func classificationSourceSignatureOracle(signature *types.Signature, seen map[ty
 
 // classificationOwnershipOracle checks protected storage without using cached answers.
 func classificationOwnershipOracle(t types.Type, seen map[types.Type]bool) bool {
-	if t == nil || seen[t] || FrozenPointer(t) || opaqueStorage(t) || IsCollection(t) || FrozenInterface(t) {
+	if t == nil || seen[t] || FrozenPointer(t) || opaqueStorage(t) || IsHandle(t) ||
+		IsCollection(t) || FrozenInterface(t) {
 		return false
 	}
 	seen[t] = true
@@ -113,7 +114,7 @@ func classificationConstraintOracle(t types.Type, seen map[types.Type]bool) bool
 
 // classificationCallableOracle retains the original callback walk and fresh storage queries.
 func classificationCallableOracle(t types.Type, seen map[types.Type]bool) bool {
-	if t == nil || seen[t] {
+	if t == nil || seen[t] || IsHandle(t) || opaqueStorage(t) {
 		return false
 	}
 	seen[t] = true
@@ -320,10 +321,16 @@ func classificationShapes(t *testing.T) []types.Type {
 	frozenAlias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "FrozenAlias", nil), frozen)
 	holder := types.NewStruct([]*types.Var{types.NewField(token.NoPos, nil, "Values",
 		types.NewArray(frozenAlias, 2), false)}, nil)
+	unchecked := types.NewNamed(types.NewTypeName(token.NoPos, marker.Obj().Pkg(), "UncheckedValue", nil),
+		types.NewStruct([]*types.Var{types.NewField(token.NoPos, nil, "payload", callback, false)}, nil), nil)
+	handle := markedType("Handle", marker, types.NewField(token.NoPos, nil, "value", unchecked, false))
+	handleHolder := types.NewStruct([]*types.Var{types.NewField(token.NoPos, nil, "Handle", handle, true)}, nil)
 	fakeName := types.NewTypeName(token.NoPos, types.NewPackage("other", "im"), "Frozen", nil)
 	fakeMarker := types.NewNamed(fakeName, types.NewStruct(nil, nil), nil)
 	return []types.Type{
-		nil, value, alias, types.NewPointer(alias), types.NewArray(alias, 0), local, types.NewPointer(local),
+		nil, handle, types.NewPointer(handle), types.NewArray(handle, 2), types.NewSlice(handle),
+		handleHolder, classificationSignature(handle), unchecked, value, alias, types.NewPointer(alias),
+		types.NewArray(alias, 0), local, types.NewPointer(local),
 		callback, types.NewPointer(callback), types.NewArray(callback, 0), types.NewSlice(callback),
 		types.NewChan(types.SendRecv, callback), types.NewMap(types.Typ[types.String], callback),
 		types.NewMap(types.NewPointer(alias), types.Typ[types.Int]), service,

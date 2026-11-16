@@ -12,7 +12,7 @@ These fixed APIs build the [generated typed projections](projections.md). They u
 | `im.ProjectionOf(value)` | Frozen input; returns Projection[T]. |
 | `projection.Unsafe()` | Requires Projection[T] with Frozen T; returns T by value with its shared storage. A pointer result is the same pointer. |
 | `im.CopyRecord(value)` | Requires Projection[T] for a concrete Frozen record T; copies it into a new root and returns Projection[*T]. |
-| `im.Value(projection)` | T must be Frozen and a read result: Copied, UncheckedValue, or an unnamed array of these values; returns T. |
+| `im.Value(projection)` | T must be Frozen and a read result: Copied, opaque handles, pointers to Frozen handle wrappers, or an unnamed array of these values; returns T. |
 | `im.StringOf(projection)` | Requires Projection[S] with underlying string S; returns StringProjection. |
 | `im.StringOfFrozen(projection)` | Requires Projection[FrozenString]; returns StringProjection. |
 | `im.SliceOf(projection)` | Requires Projection[FrozenSlice[E]]; returns SliceProjection[E]. |
@@ -22,7 +22,7 @@ These fixed APIs build the [generated typed projections](projections.md). They u
 Application code uses the listed Value, Unsafe, and adapter forms. Unsafe permits
 retention; it does not change the payload's type rules or permit target writes.
 Only verified generated code can form interior Frozen-record addresses. Value can return an
-UncheckedValue handle; only its declaring package can Unwrap the payload. Raw slot reads use the [Cell methods](cell.md#raw-cell-methods--exhaustive).
+opaque handle or a pointer to its Frozen wrapper. Only the payload's declaring package can Unwrap it. Raw slot reads use the [Cell methods](cell.md#raw-cell-methods--exhaustive).
 
 ## Collection projections — exhaustive
 

@@ -84,6 +84,14 @@ func IsCollection(t types.Type) bool
 
 IsCollection reports whether t is one of the library's sealed collection types.
 
+## func IsHandle
+
+```go
+func IsHandle(t types.Type) bool
+```
+
+IsHandle matches a named Frozen record with one named UncheckedValue payload.
+
 ## func IsLibraryType
 
 ```go
@@ -114,7 +122,7 @@ IsRuntimeType identifies a service runtime type by package identity and name, no
 func IsUncheckedValue(t types.Type) bool
 ```
 
-IsUncheckedValue reports whether t is the library's unchecked immutable value wrapper.
+IsUncheckedValue reports whether t is the library's opaque pointer handle.
 
 ## func Local
 
@@ -174,7 +182,7 @@ ServiceEmbeddingReason requires a value path to the selected runtime bind method
 
 ## type Classifier
 
-Classifier caches protected storage, callback, and service reference queries for one analysis pass. Its zero value is ready for use. Types must not change after their first query. A Classifier must not be used by concurrent passes.
+Classifier caches protected storage, callback, and local storage queries for one analysis pass. Its zero value is ready for use. Types must not change after their first query. A Classifier must not be used by concurrent passes.
 
 ```go
 type Classifier struct {
@@ -197,14 +205,6 @@ func (c *Classifier) Contains(t types.Type) bool
 ```
 
 Contains reports values that need im source checks, including their holders and containers. Frozen pointer handles and Copied records use ordinary Go storage rules.
-
-### func \(\*Classifier\) Handles
-
-```go
-func (c *Classifier) Handles(t types.Type) bool
-```
-
-Handles reports whether storage or a callable contract contains a service reference.
 
 ### func \(\*Classifier\) Locals
 
@@ -265,7 +265,7 @@ CopiedFailure returns the failed type rule and its repair from the same proof.
 func (p *Prover) CopiedReason(t types.Type) string
 ```
 
-CopiedReason proves bool, numbers, Copied records, unnamed arrays, or opaque service references.
+CopiedReason proves bool, numbers, Copied records, or unnamed arrays.
 
 ### func \(\*Prover\) Failure
 
@@ -305,7 +305,7 @@ ReadResultFailure returns the failed type rule and its repair from the same proo
 func (p *Prover) ReadResultReason(t types.Type) string
 ```
 
-ReadResultReason proves Copied values, local values, and unchecked handles through one type rule.
+ReadResultReason proves Copied values, local values, and opaque handles through one type rule.
 
 ### func \(\*Prover\) Reason
 
