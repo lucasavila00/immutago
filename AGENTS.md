@@ -281,7 +281,8 @@ Keep source restrictions and examples there. Keep analysis details in the
 - Check each exported service method result with ReadResult or predeclared error,
   with no result count or order limit. Init, Run, and runtime methods are exempt. Identify the
   predeclared error type by compiler identity; aliases work. Error values use Go
-  contracts without origin checks. Error is not a ReadResult or a marked field type.
+  contracts without origin checks. Error is not a ReadResult or an allowed field
+  in a Frozen, Local, or Copied record.
   Direct typed calls can bind results with :=, =, or var. Check each result and
   destination with the normal im type, write, builder, and transport rules.
   Frozen interface methods use ordinary method result rules; they have no separate

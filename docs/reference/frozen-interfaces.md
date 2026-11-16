@@ -63,7 +63,7 @@ slices of Frozen record values and Local values remain rejected. Frozen handles
 use ordinary slices. Generated methods keep the variadic
 signature and pass the final slice with `...`.
 Implementation methods can retain ordinary inputs. Callback contracts and
-closures can carry persistent Frozen values. Local values and projections cannot
+closures can carry Frozen values. Local values and projections cannot
 be boxed or captured. These rules also apply to generated projection calls and concrete
 implementation methods. The checker does not infer callback effects.
 
@@ -89,7 +89,7 @@ returned. Local values and projections cannot be boxed or captured. See the comp
 | Copy or convert between proved Frozen interfaces | `other := scorer`, `other = scorer`, `base := Base(scorer)` |
 | Pass and capture Frozen values | `var boxed any = scorer`, `identity(scorer)`, `read := func() float64 { return scorer.Score(features) }`; see the [complete value forms](common-forms.md#use-frozen-values). |
 | Recover a concrete Frozen value or pointer | `scorer.(*Tree)`, `switch scorer.(type) { case *Tree: }` |
-| Select a method with ordinary or persistent inputs and results | `read := scorer.Score`, `read := Scorer.Score` |
+| Select a method with ordinary or Frozen inputs and results | `read := scorer.Score`, `read := Scorer.Score` |
 | Replace the whole interface binding | `scorer = &Tree{Weight: 3}`, `scorer = nil` |
 | Store in Frozen fields, arrays, Cells, or frozen collections | `Model{Scorer: scorer}`, `im.FrozenSlice[Scorer]` |
 | Store in ordinary fields and containers | `struct{ Value Scorer }{scorer}`, `[]Scorer{scorer}`, `make(chan Scorer)`; use the [ordinary handle forms](common-forms.md#ordinary-frozen-handle-slots--exhaustive). |
@@ -115,9 +115,9 @@ Go interface equality and map-key rules still apply. A nil interface and an
 interface containing a nil pointer are different values. IsNil checks the
 interface itself. Calling a method on a nil interface has Go's usual panic.
 
-Frozen interfaces can be service inputs and persistent Frozen fields. Exported
-service methods return their generated local projection, not the persistent
-interface. Methods retain the normal body checks and ordinary Go input contracts. For
+Frozen interfaces can be service inputs and Frozen fields. Exported
+service methods return their generated local projection. Methods retain the
+normal body checks and ordinary Go input contracts. For
 example, an implementation can save its own Frozen receiver in a package
 variable. A declared method can return that receiver as a Frozen pointer or interface.
 The returned value keeps its Frozen storage rules.

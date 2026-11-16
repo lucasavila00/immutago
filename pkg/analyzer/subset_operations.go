@@ -68,7 +68,7 @@ func (c *subsetChecks) matchOperation(expression ast.Expr) (ast.Node, checker.Fa
 func (c *subsetChecks) matchSource(expression ast.Expr) checker.Failure {
 	if pointer, ok := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Pointer); ok &&
 		c.protectedReference(pointer) && !checker.Marked(pointer.Elem()) {
-		return shapeFailure("immutable references require a concrete marked struct target")
+		return shapeFailure("immutable references require a concrete Frozen or Local record target")
 	}
 	switch source := expression.(type) {
 	case *ast.Ident:
@@ -102,12 +102,12 @@ func (c *subsetChecks) matchSource(expression ast.Expr) checker.Failure {
 		if !c.queries.Callable(c.pass.TypesInfo.TypeOf(source)) {
 			return checker.Failure{}
 		}
-		return shapeFailure("callbacks require ordinary or persistent Frozen parameters and results")
+		return shapeFailure("callbacks require ordinary or Frozen parameters and results")
 	}
 	return shapeFailure("protected operation is outside the supported expression forms")
 }
 
-// matchAssertion checks known Frozen contracts before recovering a persistent concrete value.
+// matchAssertion checks known Frozen contracts before recovering a concrete Frozen value.
 func (c *subsetChecks) matchAssertion(expression *ast.TypeAssertExpr) checker.Failure {
 	destination := c.pass.TypesInfo.TypeOf(expression.Type)
 	if checker.FrozenInterface(destination) {
@@ -120,7 +120,7 @@ func (c *subsetChecks) matchAssertion(expression *ast.TypeAssertExpr) checker.Fa
 		return failure
 	}
 	if c.queries.Transport(destination) {
-		return shapeFailure("interface assertions require ordinary or persistent Frozen values")
+		return shapeFailure("interface assertions require ordinary or Frozen values")
 	}
 	return checker.Failure{}
 }
@@ -200,7 +200,7 @@ func (c *subsetChecks) matchFunctionValue(expression ast.Expr) checker.Failure {
 	if !c.queries.Callable(c.pass.TypesInfo.TypeOf(expression)) {
 		return checker.Failure{}
 	}
-	return shapeFailure("callbacks require ordinary or persistent Frozen parameters and results")
+	return shapeFailure("callbacks require ordinary or Frozen parameters and results")
 }
 
 // matchSelector distinguishes fields, package variables, and the supported method calls.
@@ -220,7 +220,7 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) checker.Failure
 	}
 	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) &&
 		c.queries.Callable(c.pass.TypesInfo.TypeOf(selector)) {
-		return shapeFailure("method expressions require ordinary or persistent Frozen receivers and contracts")
+		return shapeFailure("method expressions require ordinary or Frozen receivers and contracts")
 	}
 	if refAccessor(selection.Obj()) {
 		return c.matchBorrow(selector)
@@ -231,7 +231,7 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) checker.Failure
 	if c.exactCollectionMethod(selector) {
 		if c.directCall(selector) == nil && (c.queries.Transport(selection.Recv()) ||
 			c.queries.Callable(c.pass.TypesInfo.TypeOf(selector))) {
-			return shapeFailure("method values require ordinary or persistent Frozen receivers and contracts")
+			return shapeFailure("method values require ordinary or Frozen receivers and contracts")
 		}
 		return checker.Failure{}
 	}
@@ -274,7 +274,7 @@ func (c *subsetChecks) matchAddress(expression *ast.UnaryExpr) checker.Failure {
 	if checker.Marked(pointer.Elem()) {
 		return checker.Failure{}
 	}
-	return shapeFailure("immutable references require a concrete marked struct target")
+	return shapeFailure("immutable references require a concrete Frozen or Local record target")
 }
 
 // matchBinary checks implicit comparisons before permitting compiler-checked scalar operators.

@@ -36,7 +36,7 @@ frozen := im.FreezeSlice(values)
 
 [Source matching](../../pkg/analyzer/subset_operations.go) checks the expression
 that creates a value, the operation that uses it, and the complete statement.
-Each restricted operation has a rejecting fallback. Persistent Frozen values can
+Each restricted operation has a rejecting fallback. Frozen values can
 use ordinary interfaces, generics, callbacks, and captures. Target writes and
 addresses still use the protected-storage checks.
 
@@ -87,7 +87,7 @@ Cause links cannot form a cycle. Query order can select a different real cause.
 | Type proof | Type + Frozen, Copied, or ReadResult | A component failed the requested category. |
 | [Source classification](../../internal/checker/classification.go) | Type + source | A stored component or callable contract needs im source checks. |
 | Ownership classification | Type + ownership | A component owns Frozen records or Local storage; Frozen handle slots stay ordinary. |
-| Transport classification | Type + transport | A component needs restricted movement; persistent Frozen values stop this walk. |
+| Transport classification | Type + transport | A component needs restricted movement; Frozen values stop this walk. |
 | Callback classification | Type + callback | A parameter or result needs restricted transport. |
 | Local and service-reference classification | Type + query | A component contains Local values or service references. |
 

@@ -131,7 +131,7 @@ func (c *subsetChecks) subsetPointer(t types.Type, pointer *types.Pointer, seen 
 		return shapeFailure("pointer indirection is unsupported")
 	}
 	if c.queries.Owns(t) && !checker.Marked(pointer.Elem()) {
-		return shapeFailure("immutable references require a concrete marked struct target")
+		return shapeFailure("immutable references require a concrete Frozen or Local record target")
 	}
 	if checker.Marked(pointer.Elem()) {
 		if failure := c.proofs.Failure(pointer.Elem()); failure.Reason != "" {
@@ -243,7 +243,7 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 	t := c.pass.TypesInfo.TypeOf(expression)
 	if c.pass.TypesInfo.Types[expression].IsType() && c.queries.Callable(t) {
 		if _, declaration := c.parents[expression].(*ast.FuncDecl); !declaration && !c.frozenInterfaceMethodType(expression) {
-			c.report(expression, "callbacks require ordinary or persistent Frozen parameters and results")
+			c.report(expression, "callbacks require ordinary or Frozen parameters and results")
 		}
 	}
 	if storedLocalReference(t, make(map[types.Type]bool)) {

@@ -6,15 +6,15 @@ contracts.go:15:6: unsupported immutable operation: native slices of immutable s
   source: ...im.StringProjection
   type: []im.StringProjection
   fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
-contracts.go:19:7: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+contracts.go:19:7: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: func() im.StringProjection
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-contracts.go:23:21: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+contracts.go:23:21: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: func() im.StringProjection
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-contracts.go:23:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+contracts.go:23:6: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: interface{ Read() im.StringProjection }
   type: interface{Read() im.StringProjection}
   fix: call a named, non-generic function directly with a concrete immutable parameter
@@ -22,11 +22,11 @@ contracts.go:33:6: unsupported immutable operation: containers of Local pointers
   source: ...*Local
   type: []*contracts.Local
   fix: keep Local values in local bindings, or store im.Frozen pointers
-contracts.go:37:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+contracts.go:37:6: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: ...func() im.StringProjection
   type: []func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-contracts.go:37:9: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+contracts.go:37:9: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: func() im.StringProjection
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
@@ -65,47 +65,47 @@ zz_immutago.gen.go:136:43: unsupported immutable operation: native slices of imm
   source: arg0
   type: []im.StringProjection
   fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
-zz_immutago.gen.go:27:39: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+zz_immutago.gen.go:27:39: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: func() im.StringProjection
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-zz_immutago.gen.go:28:2: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+zz_immutago.gen.go:28:2: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: v.immutagoProjection.Unsafe().Call(arg0)
   type: ()
   fix: call a named, non-generic function directly with a concrete immutable parameter
-zz_immutago.gen.go:28:37: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+zz_immutago.gen.go:28:37: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: arg0
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-zz_immutago.gen.go:46:46: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+zz_immutago.gen.go:46:46: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: ...func() im.StringProjection
   type: []func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-zz_immutago.gen.go:46:49: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+zz_immutago.gen.go:46:49: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: func() im.StringProjection
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-zz_immutago.gen.go:47:2: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+zz_immutago.gen.go:47:2: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: v.immutagoProjection.Unsafe().Use(arg0...)
   type: ()
   fix: call a named, non-generic function directly with a concrete immutable parameter
-zz_immutago.gen.go:47:36: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+zz_immutago.gen.go:47:36: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: arg0
   type: []func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-zz_immutago.gen.go:65:37: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+zz_immutago.gen.go:65:37: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: interface{ Read() im.StringProjection }
   type: interface{Read() im.StringProjection}
   fix: call a named, non-generic function directly with a concrete immutable parameter
-zz_immutago.gen.go:65:52: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+zz_immutago.gen.go:65:52: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: func() im.StringProjection
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-zz_immutago.gen.go:66:2: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+zz_immutago.gen.go:66:2: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: v.immutagoProjection.Unsafe().Use(arg0)
   type: ()
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-zz_immutago.gen.go:66:36: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+zz_immutago.gen.go:66:36: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: arg0
   type: interface{Read() im.StringProjection}
   fix: call a named, non-generic function directly with a concrete immutable parameter

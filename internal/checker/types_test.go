@@ -19,7 +19,7 @@ func testTypes() (*types.Named, *types.Named) {
 	return marker, slice
 }
 
-// markedType creates a named marked struct whose fields can later be set for a recursive test.
+// markedType creates a named Frozen or Local record whose fields can later be set for a recursive test.
 func markedType(name string, marker types.Type, fields ...*types.Var) *types.Named {
 	fields = append([]*types.Var{types.NewField(token.NoPos, nil, "Frozen", marker, true)}, fields...)
 	return types.NewNamed(types.NewTypeName(token.NoPos, nil, name, nil), types.NewStruct(fields, nil), nil)

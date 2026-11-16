@@ -22,15 +22,15 @@ func (c *subsetChecks) provedMethodReceiver(signature *types.Signature) bool {
 }
 
 // matchMethod checks receiver shapes and restricted calls.
-// Persistent receivers also permit method values and expressions with the same shape.
+// Ordinary and Frozen receivers also permit method values and expressions with the same shape.
 func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) checker.Failure {
 	selection := c.pass.TypesInfo.Selections[selector]
 	restricted := c.queries.Transport(selection.Recv()) || c.queries.Callable(c.pass.TypesInfo.TypeOf(selector))
 	if selection.Kind() != types.MethodVal && restricted {
-		return shapeFailure("method expressions require ordinary or persistent Frozen receivers and contracts")
+		return shapeFailure("method expressions require ordinary or Frozen receivers and contracts")
 	}
 	if c.directCall(selector) == nil && restricted {
-		return shapeFailure("method values require ordinary or persistent Frozen receivers and contracts")
+		return shapeFailure("method values require ordinary or Frozen receivers and contracts")
 	}
 	if _, parameter := types.Unalias(selection.Recv()).(*types.TypeParam); parameter && !restricted {
 		return checker.Failure{}
@@ -42,7 +42,7 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) checker.Failure {
 		if !restricted {
 			return checker.Failure{}
 		}
-		return shapeFailure("dynamic calls require ordinary or persistent Frozen parameters and results")
+		return shapeFailure("dynamic calls require ordinary or Frozen parameters and results")
 	}
 	signature := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
 	if !c.protectedStorage(selector.X) && !c.queries.Owns(signature.Recv().Type()) {
@@ -54,7 +54,7 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) checker.Failure {
 	if runtimeObject(selection.Obj()) {
 		signature = selection.Obj().Type().(*types.Signature)
 	} else if !c.provedMethodReceiver(signature) {
-		return shapeFailure("immutable methods require a proved marked or Copied receiver")
+		return shapeFailure("immutable methods require a proved Frozen, Local, or Copied receiver")
 	}
 	if !types.Identical(c.pass.TypesInfo.TypeOf(selector.X), signature.Recv().Type()) {
 		return shapeFailure("immutable method receivers must match their declared type exactly")

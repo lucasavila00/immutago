@@ -1,42 +1,42 @@
-forms.go:19:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+forms.go:19:6: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: boxed any = value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-forms.go:21:10: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+forms.go:21:10: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: Identity
   type: func[T any](value T) T
   fix: use a direct non-generic function with concrete parameter types
-forms.go:21:6: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+forms.go:21:6: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: api.Identity(value)
   type: rejected.Alias
   fix: use a direct non-generic function with concrete parameter types
-forms.go:22:26: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+forms.go:22:26: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: rejected.Alias
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-forms.go:23:26: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+forms.go:23:26: unsupported immutable operation: closures require ordinary or Frozen captures
   source: nested
   type: rejected.Nested
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-forms.go:24:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+forms.go:24:6: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: []any{value}
   type: []any
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-forms.go:26:25: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+forms.go:26:25: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: func(im.StringProjection)
   type: func(im.StringProjection)
   fix: call a named, non-generic function directly with a concrete immutable parameter
-forms.go:26:81: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
+forms.go:26:81: unsupported immutable operation: dynamic calls require ordinary or Frozen parameters and results
   source: call(value)
   type: ()
   fix: call a named, non-generic function directly with a concrete immutable parameter
-forms.go:27:6: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+forms.go:27:6: unsupported immutable operation: user generic declarations require ordinary or Frozen contracts
   source: localGeneric
   type: func[T rejected.View](value T) any
   fix: use a non-generic declaration with concrete field and parameter types
-forms.go:27:81: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+forms.go:27:81: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: return value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-forms.go:30:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+forms.go:30:6: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: boxed any = local
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 forms.go:33:33: unsupported immutable operation: multiple assignments involving protected storage are unsupported
@@ -46,7 +46,7 @@ forms.go:35:33: unsupported immutable operation: Local pointers cannot enter agg
   source: [1]*View{value}
   type: [1]*rejected.View
   fix: keep a Local value in a local binding, or store a Frozen pointer
-forms.go:35:42: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+forms.go:35:42: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: *rejected.View
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
@@ -70,7 +70,7 @@ forms.go:46:6: unsupported immutable operation: native slices of immutable stora
   type: []api.Count
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
 forms.go:52:2: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-forms.go:55:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+forms.go:55:6: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: boxed any = value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 forms.go:59:25: unmarked struct field Value contains protected storage

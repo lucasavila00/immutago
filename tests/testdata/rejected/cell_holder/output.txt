@@ -6,7 +6,7 @@ holder.go:15:23: unmarked struct field View contains protected storage
   owner: cell_holder.BadLocal; field type: im.Projection[int]
   rule: unmarked structs cannot own Frozen records by value or Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
-holder.go:16:6: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+holder.go:16:6: unsupported immutable operation: user generic declarations require ordinary or Frozen contracts
   source: Generic
   type: cell_holder.Generic[T any]
   fix: use a non-generic declaration with concrete field and parameter types
@@ -45,7 +45,7 @@ holder.go:46:10: Cell slots and their holders cannot be copied by a value receiv
 holder.go:48:6: Cell slots and their holders cannot be copied by a value receiver
 holder.go:49:6: Cell slots and their holders cannot be copied by a value receiver
 holder.go:54:41: Cell slots and their holders cannot be copied or transported by value
-holder.go:56:35: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+holder.go:56:35: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: PointerHelper
   type: func(p *cell_holder.Holder) *cell_holder.Holder
   fix: use a direct non-generic function with concrete parameter types
@@ -55,14 +55,14 @@ holder.go:60:6: Cell slots cannot be addressed or transported as pointers
 holder.go:61:6: Cell slots cannot be addressed or transported as pointers
 holder.go:62:6: Cell calls require a direct field or package slot
 holder.go:63:10: Cell slots and their holders cannot be copied or transported by value
-holder.go:63:10: unsupported immutable operation: method values require ordinary or persistent Frozen receivers and contracts
+holder.go:63:10: unsupported immutable operation: method values require ordinary or Frozen receivers and contracts
   source: h.Slot.Load
   type: func() im.Projection[int]
   fix: call the method directly (value.Method(...)); do not save or pass its method value
-holder.go:63:2: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+holder.go:63:2: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: load := h.Slot.Load
   fix: call a named, non-generic function directly with a concrete immutable parameter
-holder.go:64:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+holder.go:64:6: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: load
   type: func() im.Projection[int]
   fix: call a named, non-generic function directly with a concrete immutable parameter
@@ -71,18 +71,18 @@ holder.go:66:8: Cell.Store requires a direct synchronous statement
 holder.go:70:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = h.View()
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-holder.go:72:19: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+holder.go:72:19: unsupported immutable operation: closures require ordinary or Frozen captures
   source: view
   type: im.Projection[int]
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-holder.go:73:10: unsupported immutable operation: method values require ordinary or persistent Frozen receivers and contracts
+holder.go:73:10: unsupported immutable operation: method values require ordinary or Frozen receivers and contracts
   source: h.View
   type: func() im.Projection[int]
   fix: call the method directly (value.Method(...)); do not save or pass its method value
-holder.go:73:2: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+holder.go:73:2: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: read := h.View
   fix: call a named, non-generic function directly with a concrete immutable parameter
-holder.go:74:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+holder.go:74:6: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: read
   type: func() im.Projection[int]
   fix: call a named, non-generic function directly with a concrete immutable parameter

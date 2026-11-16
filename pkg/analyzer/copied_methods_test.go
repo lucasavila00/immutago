@@ -99,7 +99,8 @@ func TestCopiedMethodBoundaries(t *testing.T) {
 		{"Local method value contract", `func(c Count)Reply(value Reply)Reply{return value};
 func f(v Snapshot){read:=v.Count.Reply;_=read}`, "method values require"},
 		{"non-Copied string", `type Text string;func(t Text)Read()string{return string(t)};
-type TextOwner struct{im.Frozen;Text Text};func f(v TextOwner){_=v.Text.Read()}`, "proved marked or Copied receiver"},
+type TextOwner struct{im.Frozen;Text Text};func f(v TextOwner){_=v.Text.Read()}`,
+			"proved Frozen, Local, or Copied receiver"},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {

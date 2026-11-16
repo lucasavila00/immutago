@@ -192,7 +192,8 @@ func (p *proof) value(result *obligation, t types.Type) {
 		switch t.Underlying().(type) {
 		case *types.Array:
 			result.reason = "named array must be wrapped in a struct with an immutable marker"
-			result.repair = "use an unnamed array type; to keep a named type, put the unnamed array in a marked struct"
+			result.repair = "use an unnamed array type; to keep a named type, " +
+				"put the unnamed array in a Frozen, Local, or Copied record"
 			return
 		case *types.Pointer:
 			result.reason = "defined pointer types are unsupported in Frozen data; use a pointer alias"

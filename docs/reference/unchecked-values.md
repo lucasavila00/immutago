@@ -33,7 +33,7 @@ follows the [common forms](common-forms.md).
 
 | Allowed form | Example |
 | --- | --- |
-| Use as an allowed stored type in a marked struct, a frozen collection, or ordinary Go | `type Pattern struct { im.Frozen; compiled im.UncheckedValue[compiled] }` |
+| Use as an allowed stored type in a Frozen or Local record, a frozen collection, or ordinary Go | `type Pattern struct { im.Frozen; compiled im.UncheckedValue[compiled] }` |
 | Copy, store, pass, or return the handle in any package | `other := p.compiled` |
 | Use as a service result or Local field | `func (l *Loader) Current() im.UncheckedValue[Model]`; `type Reply struct { im.Local; Model im.UncheckedValue[Model] }` |
 | Read a handle from a generated field or array getter | `handle := modelProjection.Handle()`; `handle := modelProjection.Handles().At(i)` |

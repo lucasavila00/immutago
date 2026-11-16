@@ -12,7 +12,7 @@ that error does not belong to these categories.
 | Read result | Copied, Local, UncheckedValue handles, and unnamed arrays of read results. |
 
 Defined scalar types and aliases keep their category. Named arrays need a
-marked struct wrapper in these categories. Copied excludes native strings and
+Frozen, Local, or Copied record wrapper. Copied excludes native strings and
 pointers. Its structs require `im.Copied`, except opaque service references.
 Frozen records are not Copied.
 Defined pointer types such as `type Selected *Settings` can be stored under the

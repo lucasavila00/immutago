@@ -1,4 +1,4 @@
-frozen.go:11:2: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+frozen.go:11:2: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: logx.Info("weights", frozen.Projection())
   type: ()
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

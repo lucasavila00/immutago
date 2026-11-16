@@ -28,7 +28,7 @@ api.go:25:14: service method Marker must return a read result or error: immutabl
   fix: embed the marker in a named struct; use data fields for values
 api.go:26:14: service method Array must return a read result or error: array element: named array must be wrapped in a struct with an immutable marker
   result type: [2]badapi.Names
-  fix: use an unnamed array type; to keep a named type, put the unnamed array in a marked struct
+  fix: use an unnamed array type; to keep a named type, put the unnamed array in a Frozen, Local, or Copied record
 api.go:27:14: service method Frozen must return a read result or error: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   result type: im.FrozenString
   fix: for Local text, use text.Projection()

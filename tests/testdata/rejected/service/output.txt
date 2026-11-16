@@ -10,14 +10,14 @@ handles.go:8:13: unsupported immutable operation: use a service reference only a
   source: ref.Borrow
   type: func() *service.Counter
   fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-interfaces.go:14:34: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+interfaces.go:14:34: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: return route
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-interfaces.go:17:45: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+interfaces.go:17:45: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: any(route)
   type: any
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-iszero.go:16:30: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+iszero.go:16:30: unsupported immutable operation: closures require ordinary or Frozen captures
   source: route
   type: service.ZeroRoute
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
@@ -49,7 +49,7 @@ result_uses.go:12:2: unsupported immutable operation: Local values and pointers 
 result_uses.go:17:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: message.Count = 1
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-result_uses.go:23:27: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+result_uses.go:23:27: unsupported immutable operation: closures require ordinary or Frozen captures
   source: pointer
   type: *service.Reply
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
@@ -81,7 +81,7 @@ results.go:27:50: unsupported immutable operation: returning Local pointers is u
 results.go:28:50: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Count++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-results.go:29:75: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+results.go:29:75: unsupported immutable operation: closures require ordinary or Frozen captures
   source: p
   type: *service.Reply
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

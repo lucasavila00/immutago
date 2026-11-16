@@ -34,7 +34,7 @@ func TestDirectCollectionCallBoundaries(t *testing.T) {
    s:=frozen.Projection();fn:=(s.Len);_=fn()}`, "method values require"},
 		{
 			`func f(){frozen:=im.FreezeSlice([]int{1});s:=frozen.Projection();_=im.SliceProjection[int].Len(s)}`,
-			"method expressions require ordinary or persistent Frozen receivers and contracts",
+			"method expressions require ordinary or Frozen receivers and contracts",
 		},
 		{
 			`func f(){frozen:=im.FreezeMap(map[int]V{});m:=frozen.Projection();v,ok:=im.MapProjection[int,V].Get(m,1);_=v;_=ok}`,

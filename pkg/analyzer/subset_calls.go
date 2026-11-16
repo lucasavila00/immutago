@@ -22,7 +22,7 @@ func (c *subsetChecks) calledObject(e ast.Expr) types.Object {
 	return nil
 }
 
-// matchCall accepts fixed im APIs, restricted direct calls, and ordinary calls with persistent values.
+// matchCall accepts fixed im APIs, restricted direct calls, and calls with ordinary or Frozen values.
 func (c *subsetChecks) matchCall(call *ast.CallExpr) checker.Failure {
 	object := c.calledObject(call.Fun)
 	if builtin, ok := object.(*types.Builtin); ok {
@@ -56,11 +56,11 @@ func (c *subsetChecks) matchCall(call *ast.CallExpr) checker.Failure {
 	}
 	function, direct := object.(*types.Func)
 	if !direct {
-		return shapeFailure("dynamic calls require ordinary or persistent Frozen parameters and results")
+		return shapeFailure("dynamic calls require ordinary or Frozen parameters and results")
 	}
 	origin := function.Origin().Type().(*types.Signature)
 	if genericSignature(origin) {
-		return shapeFailure("user generic instantiations require ordinary or persistent Frozen type arguments")
+		return shapeFailure("user generic instantiations require ordinary or Frozen type arguments")
 	}
 	return checker.Failure{}
 }
@@ -231,10 +231,10 @@ func (c *subsetChecks) matchTransport(source, destination types.Type) checker.Fa
 		return checker.Failure{}
 	}
 	if _, boxed := destination.Underlying().(*types.Interface); boxed {
-		return shapeFailure("ordinary interfaces require ordinary or persistent Frozen values")
+		return shapeFailure("ordinary interfaces require ordinary or Frozen values")
 	}
 	if c.queries.Callable(source) {
-		return shapeFailure("callbacks require ordinary or persistent Frozen parameters and results")
+		return shapeFailure("callbacks require ordinary or Frozen parameters and results")
 	}
 	return checker.Failure{}
 }

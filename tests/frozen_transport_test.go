@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// TestFrozenTransport checks persistent values and Local restrictions with both drivers.
+// TestFrozenTransport checks Frozen values and Local restrictions with both drivers.
 func TestFrozenTransport(t *testing.T) {
 	root, err := filepath.Abs("..")
 	if err != nil {
