@@ -89,7 +89,8 @@ func run(pass *analysis.Pass) (any, error) {
 func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance) {
 	obj := c.pass.TypesInfo.Uses[ident]
 	if checker.IsServiceBase(instance.Type) {
-		c.checkServiceStorage(ident, instance.TypeArgs.At(0))
+		base := types.Unalias(instance.Type).(*types.Named)
+		c.checkServiceStorage(ident, base.TypeArgs().At(0))
 		return
 	}
 	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {

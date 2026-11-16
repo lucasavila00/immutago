@@ -42,8 +42,8 @@ var subsetFixes = map[string]string{
 		"do not extract the accessor or service pointer": "keep a concrete supervise.Ref[Service] " +
 		"and call ref.Borrow().Method(args); " +
 		"see docs/reference/service-references.md",
-	"Ref requires a service target that embeds supervise.Service": "use a concrete service struct " +
-		"that embeds supervise.Service by value",
+	"Ref requires a service target that embeds supervise.Service or supervise.TerminalService": "use a concrete " +
+		"service struct that embeds supervise.Service or supervise.TerminalService by value",
 	"protected operation is outside the supported expression forms": "use a documented concrete value, pointer, " +
 		"projection, or builder operation",
 	"protected value conversions are unsupported": "construct the destination marked value from copied fields",

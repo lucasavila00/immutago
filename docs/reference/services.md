@@ -67,7 +67,7 @@ run the standard vet checks.
 | Alias to a service struct | `type Alias = Worker` | `type Alias = Ledger` |
 | Defined struct with the same value fields | `type Another Worker`; declare its own Run method. | `type Another Ledger`; declare its own Run method. |
 | Anonymous struct with value embedding | `type Anonymous = struct { Worker }` | `type Anonymous = struct { Ledger }` |
-| One selected base with another base at a deeper path | `type Worker struct { supervise.Service[Args]; Ledger }` | `type Ledger struct { supervise.TerminalService[Args]; Worker }` |
+| One selected base with another base at a deeper path | `type RetrySelected struct { supervise.Service[Args]; Ledger }` | `type TerminalSelected struct { supervise.TerminalService[Args]; Worker }` |
 | Value embedding through another struct | `type Base struct { supervise.Service[Args] }`; `type Worker struct { Base }` | `type Base struct { supervise.TerminalService[Args] }`; `type Ledger struct { Base }` |
 
 Every field on the selected path to the runtime methods must be a value field.

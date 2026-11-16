@@ -1,0 +1,36 @@
+aliases.go:10:30: stored im argument: []example.com/consumer/aliasapi.Point is not provably immutable
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
+aliases.go:11:27: stored im argument: []example.com/consumer/aliasapi.Point is not provably immutable
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
+aliases.go:11:35: unsupported immutable operation: native slices of immutable storage are unsupported
+  source: []aliasapi.Point
+  type: []aliasapi.Point
+  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+aliases.go:12:30: stored im argument: []example.com/consumer/aliasapi.Point is not provably immutable
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings
+aliases.go:12:46: unsupported immutable operation: native slices of immutable storage are unsupported
+  source: []aliasapi.Point
+  type: []aliasapi.Point
+  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+aliases.go:16:29: stored im argument: Frozen storage cannot contain Local values
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+aliases.go:16:29: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+  source: RetryReordered
+  type: aliasapi.RetryReordered[A, B any]
+  fix: use a direct non-generic function with concrete parameter types
+aliases.go:17:32: stored im argument: Frozen storage cannot contain Local values
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+aliases.go:17:32: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+  source: TerminalReordered
+  type: aliasapi.TerminalReordered[A, B any]
+  fix: use a direct non-generic function with concrete parameter types
+aliases.go:18:26: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+  source: RetryUnused
+  type: aliasapi.RetryUnused[A any]
+  fix: use a direct non-generic function with concrete parameter types
+aliases.go:19:29: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+  source: TerminalUnused
+  type: aliasapi.TerminalUnused[A any]
+  fix: use a direct non-generic function with concrete parameter types
+aliases.go:9:27: stored im argument: []example.com/consumer/aliasapi.Point is not provably immutable
+  fix: replace the native slice with im.FrozenSlice[T], where T is a Frozen type; keep Local elements in local bindings

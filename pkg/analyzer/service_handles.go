@@ -77,7 +77,7 @@ func (c *subsetChecks) matchBorrow(selector *ast.SelectorExpr) checker.Failure {
 		return shapeFailure(rejected)
 	}
 	if !checker.Service(method.Recv()) {
-		return shapeFailure("Ref requires a service target that embeds supervise.Service")
+		return shapeFailure("Ref requires a service target that embeds supervise.Service or supervise.TerminalService")
 	}
 	return checker.Failure{}
 }

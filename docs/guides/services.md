@@ -46,14 +46,40 @@ of restarting with an empty balance:
 
 ```go
 type Ledger struct {
-    supervise.TerminalService[supervise.NoArgs]
+    supervise.TerminalService[<-chan int]
+}
+
+func (s *Ledger) Run(ctx context.Context) {
+    balance := 0
+    for {
+        select {
+        case amount, ok := <-s.Args():
+            if !ok {
+                return
+            }
+            balance += amount
+            if balance < 0 {
+                panic("ledger: balance underflow")
+            }
+        case <-ctx.Done():
+            return
+        }
+    }
 }
 ```
 
-Supply Run and optionally Init, then call `supervise.Start[Ledger](root, supervise.NoArgs{})`.
-The first Run panic stops the root with the original panic value and stack in
-`*supervise.Failure`. There is no restart or backoff. An initial Init error returns to the Start caller; an initial Init panic reaches
-that caller. The
+The ledger uses the default empty Init. Start it with an incoming event channel:
+
+```go
+_, err := supervise.Start[Ledger](root, events) // events has type <-chan int
+```
+
+A new Run would start with a zero balance and lose the consumed events. The first
+Run panic or `runtime.Goexit` therefore stops the root with the original failure
+and stack in `*supervise.Failure`. There is no restart or backoff. An initial Init
+error returns to the Start caller; an initial Init panic reaches that caller.
+The [complete example](../../tests/testdata/terminal_service/ledger/ledger.go)
+passes the CLI and vet checks. The
 [runtime reference](../reference/services.md) defines failure reporting and Stop order.
 
 ## Keep a reference and call a method

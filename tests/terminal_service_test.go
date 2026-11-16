@@ -18,10 +18,13 @@ func TestTerminalServiceRules(t *testing.T) {
 	}
 	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
 	for _, mode := range []string{"cli", "vet"} {
-		for _, target := range []string{"api", "valid", "results", "storage", "calls", "dependency"} {
+		for _, target := range []string{
+			"api", "valid", "ledger", "results", "storage", "calls", "dependency", "aliasapi", "aliasvalid", "aliasrejected",
+		} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
 				dir := consumerModule(t, root, "terminal_service")
-				valid := target == "api" || target == "valid"
+				valid := target == "api" || target == "valid" || target == "ledger" ||
+					target == "aliasapi" || target == "aliasvalid"
 				output := runBoundary(t, dir, binary, mode, valid, "./"+target)
 				checkFixtureSnapshots(t, root, "terminal_service/"+target, output)
 			})

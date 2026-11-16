@@ -37,7 +37,8 @@ A Local value cannot be hidden in persistent storage.
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Fixed im types and functions | `im.FrozenSlice[FrozenPoint]`, `im.FreezeSlice([]FrozenPoint{})` |
-| Fixed supervise APIs with protected values | `supervise.Service[FrozenPoint]`, `supervise.Start[Worker](root, args)`; saved protected arguments must be Frozen values, never Local values. |
+| Fixed supervise APIs with protected values | `supervise.Service[FrozenPoint]`, `supervise.TerminalService[FrozenPoint]`, `supervise.Start[Worker](root, args)`; saved protected arguments must be Frozen values, never Local values. |
+| Generic aliases of a service base | `type Base[A any] = supervise.TerminalService[A]`, `type Pair[A, B any] = supervise.Service[[2]B]`; saved protected arguments use the same Frozen proof after alias resolution. Each source argument also keeps the user-generic rules. |
 | User generics with ordinary or persistent Frozen parameters, results, constraints, receivers, and type arguments | `identity(text)`, `identity[im.FrozenString](text)`, `func keep[T FrozenPoint](value T) T { return value }` |
 | Method type parameters on a concrete Frozen value or pointer receiver | `func (p FrozenPoint) Map[T any](read func(int) T) T { return read(p.X) }` |
 | Call or select these methods with inferred or explicit type arguments | `point.Map(read)`, `point.Map[string](read)`, `mapValue := point.Map[string]`, `mapValue := FrozenPoint.Map[string]` |
@@ -47,6 +48,7 @@ A Local value cannot be hidden in persistent storage.
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | `type Box[T any] struct { im.Frozen; Value T }` | `type Box struct { im.Frozen; Value FrozenPoint }` |
+| `type Base[A any] = supervise.TerminalService[[]A]`; `var worker Base[FrozenPoint]` | Use `supervise.TerminalService[im.FrozenSlice[FrozenPoint]]` for stored protected elements. |
 | `Plain[FrozenPoint]` stores a Frozen field in an unmarked record | Use a concrete Frozen record for this stored field. |
 | `identity(local)` with a Local record or projection | Copy it directly, or use a direct function with a concrete parameter. |
 | `func use[T LocalPoint](value T)` | Use `func use(value LocalPoint)`. |

@@ -43,7 +43,8 @@ Ref copy ─┴──> shared slot ──> latest initialized *T
 
 Service and TerminalService embed the same private service state. Their sealed
 bind methods return that state and a fixed retry limit: five for Service, zero for
-TerminalService. Start uses the returned state for the complete attempt lifetime.
+TerminalService. Start keeps the service value and that state in one current-attempt record.
+Cleanup clears both pointers after the attempt ends.
 The same watcher applies either limit. It retains restart timestamps within five
 minutes; the delay is `1s << recentRestartCount`.
 It records and reports the failure before child cleanup can wait. The retry
@@ -104,7 +105,7 @@ It uses the existing callback, or standard error when the callback is nil.
 | `Ref[T]` | T is a concrete service struct; application fields use Go rules. |
 | Direct `Borrow` use | Match the immediate exported method call; exclude lifecycle and runtime methods. |
 | Exported service methods | Check each result with the shared ReadResult proof, or compiler identity with predeclared error. Apply no result count or order limit. |
-| Retained start arguments | Protected data or callbacks carrying it must pass Frozen; ordinary arguments use Go contracts. |
+| Retained start arguments | Resolve aliases to the runtime base and prove its stored argument with Frozen when it contains protected data or callbacks carrying it; ordinary arguments use Go contracts. |
 
 [Reference matching](../../pkg/analyzer/service_handles.go) and
 [result checks](../../pkg/analyzer/service.go) do not prove that the receiver stays private:
