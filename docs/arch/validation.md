@@ -9,7 +9,7 @@ those decisions useful.
 | --- | --- |
 | Go compiler | Supplies valid ASTs, resolved types, object identities, and method selections. |
 | Fixed im and supervise packages | Their reviewed implementations obey API contracts; their source is excluded from analysis. |
-| Generated readers | Verify exact bytes for interior Frozen-record addresses; retain all other source checks. |
+| Generated projections | Verify exact bytes for interior Frozen-record addresses; retain all other source checks. |
 | Ordinary Go APIs | Obey their contracts, including string immutability and callback behavior. A Frozen pointer must not enter an API that changes its target; reflection and unsafe mutation effects are not proved. |
 | `UncheckedValue[T]` | The declaring package promises that the opaque payload never changes. |
 

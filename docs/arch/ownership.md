@@ -55,7 +55,7 @@ to the Frozen record. Pointer handles and their ordinary containers use Go
 transport rules; selections and dereferences still identify the protected target.
 [Pointer and placement rules](../reference/rules.md) supply the complete source forms.
 
-## Cell publication and retained readers
+## Cell publication and retained projections
 
 After Store replaces A with B:
 
@@ -68,17 +68,17 @@ viewB ───────┘
 | Runtime operation | Stored or returned representation |
 | --- | --- |
 | [Cell.Store](../../pkg/im/cell.go) | A private copy of T behind `atomic.Pointer[T]`; referenced frozen storage stays shared. |
-| Generated Cell.Load | A Local reader around `Projection[*T]`; no copy of T. |
+| Generated Cell.Load | A Local projection around `Projection[*T]`; no copy of T. |
 | Raw Cell.Load | `Projection[T]` containing a copy of T; no copy of backing storage. |
 | Generated projection.Unsafe | The selected *T; no record copy, allocation, or second Cell load. |
 | Raw Projection.Unsafe | T by value; referenced storage stays shared. |
-| A retained reader | Its pointer keeps the selected value reachable for Go's garbage collector. |
+| A retained projection | Its pointer keeps the selected value reachable for Go's garbage collector. |
 
 Cell source checks prevent copies of the atomic slot. The cached slot query follows
 value fields and containers, and stops at pointers. Holder pointers use ordinary Go
 transport. A holder value can select a field, form an address, or select a pointer
 method without a copy. The checker also checks resolved method receivers to reject
-implicit value copies. Readers need no registration or runtime ownership flag.
+implicit value copies. Projections need no registration or runtime ownership flag.
 
 ## Generated projections
 
@@ -90,7 +90,7 @@ func (v RatesProjection) Values() im.SliceProjection[int] {
 }
 ```
 
-| Selected data | Reader representation | Copy made |
+| Selected data | Projection representation | Copy made |
 | --- | --- | --- |
 | Nested Frozen record | Pointer to the selected field. | No parent record copy. |
 | Array | Retained record pointer and required indices. | No parent record or array copy. |
@@ -98,9 +98,9 @@ func (v RatesProjection) Values() im.SliceProjection[int] {
 | Record returned by map lookup | `CopyRecord` creates a private addressable record. | Explicit record copy; map slots cannot supply an address. |
 
 [The generator](../../internal/projectiongen/generate.go) loads source without stale
-output, supplies provisional reader names, then resolves complete compiler types.
+output, supplies provisional projection names, then resolves complete compiler types.
 [Field generation](../../internal/projectiongen/readers.go) uses those types to write
-getters and indexed array readers.
+getters and indexed array projections.
 
 [The analyzer verifies the output](../../pkg/analyzer/generation.go) before source checks:
 
@@ -111,4 +111,4 @@ getters and indexed array readers.
 
 The verified file still passes all other source checks.
 See the [projection reference](../reference/projections.md) for generated declarations
-and public reader forms.
+and public projection forms.

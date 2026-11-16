@@ -28,8 +28,8 @@ type libraryImporter struct{ library *types.Package }
 // Import supplies the test library without loading implementation dependencies.
 func (i libraryImporter) Import(string) (*types.Package, error) { return i.library, nil }
 
-// TestFreezeCellship exercises fresh ownership, forbidden aliases, and control-flow consumption.
-func TestFreezeCellship(t *testing.T) {
+// TestFreezeOwnership exercises fresh ownership, forbidden aliases, and control-flow consumption.
+func TestFreezeOwnership(t *testing.T) {
 	cases := []struct {
 		name, body string
 		reject     bool

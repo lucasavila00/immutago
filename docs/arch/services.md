@@ -78,7 +78,7 @@ terminal failure share one decision lock; groups do not add retry budgets.
 | `Service[A]` embedding | The selected runtime embedding path uses value fields. |
 | `Ref[T]` | T is a concrete service struct; application fields use Go rules. |
 | Direct `Borrow` use | Match the immediate exported method call; exclude lifecycle and runtime methods. |
-| Exported service methods | Apply the [result signature rule](../reference/service-results.md), using the shared ReadResult proof. |
+| Exported service methods | Check each result with the shared ReadResult proof, or compiler identity with predeclared error. Apply no result count or order limit. |
 | Retained start arguments | Protected data or callbacks carrying it must pass Frozen; ordinary arguments use Go contracts. |
 
 [Reference matching](../../pkg/analyzer/service_handles.go) and

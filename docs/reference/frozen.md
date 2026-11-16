@@ -114,11 +114,10 @@ Zero frozen values are empty: `var values im.FrozenSlice[int]` or
 | Local projection | `projection := frozen.Projection()` |
 | Independent mutable copy | `next := frozen.Clone()` |
 
-- Call methods on a local variable, a struct field, or a named function's result.
-- Pass frozen collections to functions by value.
-- Parentheses around a call or range expression are allowed.
-- Iterators of persistent Frozen values use the [value forms](common-forms.md#use-frozen-values).
-- Iterators of protected pointers still require direct `range frozen.All()`.
+Frozen collections and their iterators use the [Frozen value forms](common-forms.md#use-frozen-values),
+including iterators of Frozen pointers: `items := frozen.All()` can be stored
+or passed to a function. Iterators from local projections require a
+[direct range](projection-primitives.md).
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |

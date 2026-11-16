@@ -60,7 +60,6 @@ result_uses.go:23:27: unsupported immutable operation: closures require ordinary
 result_uses.go:7:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved *Reply
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-results.go:22:17: service method Pair must return no value, one read result, error, or (read result, error)
 results.go:23:17: service method Map must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: map[string]int
 results.go:24:17: service method Slice must return a service result: copied values require bool, numbers, Copied records, arrays, or service references

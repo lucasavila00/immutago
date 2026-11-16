@@ -51,7 +51,8 @@ non-test Go files. Every package with these declarations needs one exact directi
 | Frozen records | Generate typed field projections, Projection constructors, and Cells. |
 | Frozen interfaces | Generate local method projections and Projection constructors. |
 
-Run `go generate ./...` after a record or interface changes. The checker rejects a missing
+Run `go generate ./...` after a record or interface changes. If no Frozen declarations
+remain, generation writes an empty package file; the directive can stay. The checker rejects a missing
 directive, missing output, or stale output. Only verified generated code can form interior Frozen-record addresses.
 Projection.Unsafe explicitly returns a Frozen payload for shared use. All normal
 type, write, capture, generic, receiver, and transport checks still apply.
