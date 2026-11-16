@@ -34,6 +34,8 @@ Ref copy ─┴──> shared slot ──> latest initialized *T
 
 The watcher retains restart timestamps within five minutes. It permits five
 restarts; the delay is `1s << recentRestartCount`.
+It records and reports the failure before child cleanup can wait. The retry
+window uses the failure time, so cleanup does not move an old failure forward.
 
 | Attempt outcome | Cleanup | Next action |
 | --- | --- | --- |

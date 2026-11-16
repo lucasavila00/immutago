@@ -100,7 +100,7 @@ ordinary Go rules. A stopped parent supplies a stopped nested group.
 | Parent Init returns an error or panics | Stop children from that setup attempt. Application resources remain Init's responsibility. |
 | A method starts a child before parent Run begins | Child Init runs immediately. Child Run waits for normal activation or receives a cancelled context during cleanup. |
 | Parent is stopped | Stop children last started first and wait for them before cancelling the parent's Run context. |
-| Parent Run returns or panics | Stop and wait for children before the run ends or the restart delay begins. |
+| Parent Run returns or panics | Stop and wait for children before the attempt ends or a replacement starts. |
 | A child exceeds its restart limit | Stop the whole root tree. No parent retries that failure. |
 | A method starts a child after the parent run ends | Init can succeed. The call waits for the child's cancelled Run, then returns its reference. A saved group from that run uses the same rule. |
 
@@ -143,7 +143,7 @@ that child's group to stop.
 
 The report argument to NewRoot has type `func(value any, stack []byte)`:
 
-- It receives each recovered panic or restart Init error before the delay, and each Goexit failure.
+- It receives each recovered panic, restart Init error, or Goexit before the attempt waits for child cleanup.
 - It also receives the selected terminal `*Failure` before the root waits for shutdown.
 - Nested groups use the same function. Each failed attempt is reported once; the
   selected terminal failure is a separate report.

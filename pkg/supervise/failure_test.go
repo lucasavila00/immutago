@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -110,16 +111,12 @@ func checkFailureOrigin(t *testing.T, shape string, reporting bool) {
 	}
 	mu.Lock()
 	defer mu.Unlock()
-	if reporting && (len(reports) != 7 || reports[6] != failure) {
-		t.Errorf("reports = %v, want six attempts and the selected terminal Failure", reports)
+	var want []any
+	if reporting {
+		want = []any{cause, cause, cause, cause, cause, cause, failure}
 	}
-	for index, reported := range reports {
-		if index == 6 {
-			continue
-		}
-		if reported != cause {
-			t.Errorf("attempt report changed the original panic: %v", reported)
-		}
+	if !slices.Equal(reports, want) {
+		t.Errorf("reports = %v, want %v", reports, want)
 	}
 }
 

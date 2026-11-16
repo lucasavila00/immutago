@@ -46,20 +46,20 @@ func BenchmarkServiceAttempt(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ref := Ref[attemptWorker]{value: new(atomic.Pointer[attemptWorker])}
+	var value *attemptWorker
 	run := func(ctx context.Context) {
-		value := new(attemptWorker)
+		value = new(attemptWorker)
 		value.bind(NoArgs{}, parent)
 		if err := value.Init(); err != nil {
 			panic(err)
 		}
-		defer value.end()
 		ref.value.Store(value)
 		value.Run(value.begin(ctx))
 	}
 	b.ReportAllocs()
 	for b.Loop() {
-		if value, _, failed := attempt(ctx, run, false, nil); failed {
-			b.Fatal(value)
+		if attempt(ctx, run, func() { value.end() }, false, func(value any, _ []byte, _ bool) { b.Fatal(value) }) {
+			b.Fatal("service attempt failed")
 		}
 	}
 }

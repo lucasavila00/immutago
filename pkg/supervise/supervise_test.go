@@ -329,9 +329,15 @@ func TestPanicReport(t *testing.T) {
 func TestPanicStackCapture(t *testing.T) {
 	run := func(context.Context) { panic("failure") }
 	for _, capture := range []bool{false, true} {
-		value, stack, failed := attempt(context.Background(), run, capture, nil)
-		if !failed || value != "failure" || (len(stack) != 0) != capture {
-			t.Fatalf("capture %t: value %v, stack length %d, failed %t", capture, value, len(stack), failed)
+		reported := false
+		failed := attempt(context.Background(), run, func() {}, capture, func(value any, stack []byte, goexit bool) {
+			reported = true
+			if value != "failure" || (len(stack) != 0) != capture || goexit {
+				t.Errorf("capture %t: value %v, stack length %d, Goexit %t", capture, value, len(stack), goexit)
+			}
+		})
+		if !failed || !reported {
+			t.Fatal("panic was not reported")
 		}
 	}
 }

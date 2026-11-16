@@ -26,7 +26,7 @@ func TestRetryExhaustion(t *testing.T) {
 	command.Env = append(os.Environ(), "IMMUTAGO_ROLLOUT_FAILURE_TEST=1")
 	output, err := command.CombinedOutput()
 	text := string(output)
-	if err == nil || strings.Count(text, "attempt failed:") != 6 || strings.Count(text, "panic: supervise:") != 1 {
+	if err == nil || strings.Count(text, "attempt failed:") != 7 || strings.Count(text, "panic: supervise:") != 1 {
 		t.Fatalf("terminal failure = %v\n%s", err, text)
 	}
 	fatal := strings.Index(text, "panic: supervise:")

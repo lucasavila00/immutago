@@ -247,57 +247,61 @@ func checkAncestorStop(t *testing.T, where string) {
 func TestStopDuringAdmittedRestartInit(t *testing.T) {
 	for _, fail := range []bool{false, true} {
 		t.Run(map[bool]string{false: "success", true: "error"}[fail], func(t *testing.T) {
-			synctest.Test(t, func(t *testing.T) {
-				parent := NewRoot(nil)
-				entered := make(chan *initializing, 1)
-				initRelease, slowRelease, cleanup := make(chan struct{}), make(chan struct{}), make(chan struct{})
-				var inits, runs atomic.Int32
-				ref, _ := Start[initializing](parent, &initHooks{
-					init: func(p *initializing) error {
-						if inits.Add(1) > 1 {
-							p.Children()
-							entered <- p
-							<-initRelease
-							if fail {
-								return errors.New("setup failure")
-							}
-						}
-						return nil
-					},
-					run: func(_ *initializing, ctx context.Context) {
-						if runs.Add(1) > 1 && ctx.Err() == nil {
-							t.Error("stopped replacement ran with an active context")
-						}
-						panic("retry")
-					},
-				})
-				original := ref.Borrow()
-				candidate := <-entered
-				_, _ = Start[initializing](parent, &initHooks{
-					init: func(*initializing) error { return nil },
-					run: func(_ *initializing, ctx context.Context) {
-						<-ctx.Done()
-						close(cleanup)
-						<-slowRelease
-					},
-				})
-				synctest.Wait()
-				done := parent.Stop()
-				<-cleanup
-				close(initRelease)
-				synctest.Wait()
-				expectInitEnded(t, candidate)
-				wantRuns := int32(2)
-				if fail {
-					wantRuns = 1
-				}
-				if ref.Borrow() != original || runs.Load() != wantRuns || inits.Load() != 2 {
-					t.Errorf("restart after stop: changed=%t, runs=%d, Init calls=%d",
-						ref.Borrow() != original, runs.Load(), inits.Load())
-				}
-				close(slowRelease)
-				<-done
-			})
+			synctest.Test(t, func(t *testing.T) { checkStopDuringAdmittedRestartInit(t, fail) })
 		})
 	}
+}
+
+// checkStopDuringAdmittedRestartInit holds restart setup open during ordered shutdown.
+func checkStopDuringAdmittedRestartInit(t *testing.T, fail bool) {
+	t.Helper()
+	parent := NewRoot(nil)
+	entered := make(chan *initializing, 1)
+	initRelease, slowRelease, cleanup := make(chan struct{}), make(chan struct{}), make(chan struct{})
+	var inits, runs atomic.Int32
+	ref, _ := Start[initializing](parent, &initHooks{
+		init: func(p *initializing) error {
+			if inits.Add(1) > 1 {
+				p.Children()
+				entered <- p
+				<-initRelease
+				if fail {
+					return errors.New("setup failure")
+				}
+			}
+			return nil
+		},
+		run: func(_ *initializing, ctx context.Context) {
+			if runs.Add(1) > 1 && ctx.Err() == nil {
+				t.Error("stopped replacement ran with an active context")
+			}
+			panic("retry")
+		},
+	})
+	original := ref.Borrow()
+	candidate := <-entered
+	_, _ = Start[initializing](parent, &initHooks{
+		init: func(*initializing) error { return nil },
+		run: func(_ *initializing, ctx context.Context) {
+			<-ctx.Done()
+			close(cleanup)
+			<-slowRelease
+		},
+	})
+	synctest.Wait()
+	done := parent.Stop()
+	<-cleanup
+	close(initRelease)
+	synctest.Wait()
+	expectInitEnded(t, candidate)
+	wantRuns := int32(2)
+	if fail {
+		wantRuns = 1
+	}
+	if ref.Borrow() != original || runs.Load() != wantRuns || inits.Load() != 2 {
+		t.Errorf("restart after stop: changed=%t, runs=%d, Init calls=%d",
+			ref.Borrow() != original, runs.Load(), inits.Load())
+	}
+	close(slowRelease)
+	<-done
 }

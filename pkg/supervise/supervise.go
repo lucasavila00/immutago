@@ -224,34 +224,25 @@ func Start[T, A any, P interface {
 	end()
 }](parent *Group, args A) (Ref[T], error) {
 	checkGroup(parent)
-	create := func() (*T, error) {
+	create := func() *T {
 		value := new(T)
-		func() {
-			defer func() {
-				if recover() != nil {
-					panic("supervise: embed Service by value through each embedded field")
-				}
-			}()
-			P(value).bind(args, parent)
-		}()
-		ready := false
-		defer func() {
-			if !ready {
-				P(value).end()
-			}
-		}()
-		if err := P(value).Init(); err != nil {
-			return nil, err
-		}
-		ready = true
-		return value, nil
+		bindService(P(value), args, parent)
+		return value
 	}
-	first, err := create()
-	if err != nil {
+	first := create()
+	ready := false
+	defer func() {
+		if !ready {
+			P(first).end()
+		}
+	}()
+	if err := P(first).Init(); err != nil {
 		return Ref[T]{}, err
 	}
+	ready = true
 	ref := Ref[T]{value: new(atomic.Pointer[T])}
 	ref.value.Store(first)
+	current := first
 	run := func(ctx context.Context) {
 		value := first
 		first = nil
@@ -259,26 +250,41 @@ func Start[T, A any, P interface {
 			if parent.policy.Err() != nil || ctx.Err() != nil {
 				return
 			}
-			var err error
-			value, err = create()
-			if err != nil {
+			value = create()
+			current = value
+			if err := P(value).Init(); err != nil {
 				panic(err)
-			}
-			if parent.policy.Err() != nil {
-				ctx = parent.policy
 			}
 		}
 		service := P(value)
-		defer service.end()
+		if parent.policy.Err() != nil {
+			ctx = parent.policy
+		}
 		if parent.policy.Err() == nil && ctx.Err() == nil {
 			ref.value.Store(value)
 		}
 		service.Run(service.begin(ctx))
 	}
+	cleanup := func() {
+		if current != nil {
+			P(current).end()
+			current = nil
+		}
+	}
 	parent.add(func(ctx context.Context) {
-		watch(parent, ctx, reflect.TypeFor[T]().String(), run)
+		watch(parent, ctx, reflect.TypeFor[T]().String(), run, cleanup)
 	}, nil)
 	return ref, nil
+}
+
+// bindService reports an invalid embedding path without catching application Init panics.
+func bindService[A any, P interface{ bind(A, *Group) }](value P, args A, parent *Group) {
+	defer func() {
+		if recover() != nil {
+			panic("supervise: embed Service by value through each embedded field")
+		}
+	}()
+	value.bind(args, parent)
 }
 
 // Stop prevents new retries in the subtree and requests ordered shutdown.
@@ -464,31 +470,35 @@ func (s *Group) halt() {
 }
 
 // watch owns one service's retry budget. Every return ends that service entry.
-func watch(parent *Group, ctx context.Context, name string, run func(context.Context)) {
+func watch(parent *Group, ctx context.Context, name string, run func(context.Context), cleanup func()) {
 	report := parent.root.report
-	goexit := func(stack []byte) {
-		if report != nil {
-			report(errGoexit, stack)
-		}
-		parent.fail(&Failure{Service: name, Value: errGoexit, Stack: stack})
-	}
 	var restarts []time.Time
-	for {
-		value, stack, failed := attempt(ctx, run, report != nil || len(restarts) == restartLimit, goexit)
-		if failed && report != nil {
+	var failureAt time.Time
+	terminal := false
+	failed := func(value any, stack []byte, goexit bool) {
+		failureAt = time.Now()
+		if goexit {
+			value = errGoexit
+		}
+		if report != nil {
 			report(value, stack)
 		}
-		if !failed || parent.policy.Err() != nil || ctx.Err() != nil {
+		if parent.policy.Err() != nil || ctx.Err() != nil {
 			return
 		}
-		now := time.Now()
-		restarts = slices.DeleteFunc(restarts, func(at time.Time) bool { return now.Sub(at) >= restartWindow })
-		if len(restarts) == restartLimit {
+		restarts = slices.DeleteFunc(restarts, func(at time.Time) bool { return failureAt.Sub(at) >= restartWindow })
+		if goexit || len(restarts) == restartLimit {
+			terminal = true
 			parent.fail(&Failure{Service: name, Value: value, Stack: stack})
+		}
+	}
+	for {
+		panicked := attempt(ctx, run, cleanup, report != nil || len(restarts) == restartLimit, failed)
+		if !panicked || terminal || parent.policy.Err() != nil || ctx.Err() != nil {
 			return
 		}
 		delay := time.NewTimer(time.Second << len(restarts))
-		restarts = append(restarts, now)
+		restarts = append(restarts, failureAt)
 		select {
 		case <-delay.C:
 		case <-parent.policy.Done():
@@ -501,22 +511,22 @@ func watch(parent *Group, ctx context.Context, name string, run func(context.Con
 	}
 }
 
-// attempt recovers a panic and handles Goexit before the watcher leaves its goroutine.
-func attempt(ctx context.Context, run func(context.Context), captureStack bool,
-	goexit func([]byte),
-) (value any, stack []byte, failed bool) {
+// attempt reports panic or Goexit before cleanup can wait for children.
+func attempt(ctx context.Context, run func(context.Context), cleanup func(), captureStack bool,
+	report func(any, []byte, bool),
+) (failed bool) {
+	defer cleanup()
 	defer func() {
 		if failed {
-			value = recover()
+			value := recover()
+			var stack []byte
 			if captureStack || value == nil {
 				stack = debug.Stack()
 			}
-			if value == nil && goexit != nil {
-				goexit(stack)
-			}
+			report(value, stack, value == nil)
 		}
 	}()
 	failed = true
 	run(ctx)
-	return nil, nil, false
+	return false
 }
