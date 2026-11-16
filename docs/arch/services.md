@@ -96,7 +96,7 @@ It uses the existing callback, or standard error when the callback is nil.
 | --- | --- |
 | [Reference checks](../../pkg/analyzer/service_handles.go) | Validate Ref targets. |
 | [Source classifier](../../internal/checker/classification.go) | Keep one fixed package context; classify external service pointers as Local. |
-| Context-free field classifier | Keep im field proofs unchanged. Check owner-package service fields at their declaration. |
+| Field classifiers | Keep im field proofs context-free. Reject ordinary carriers of Local service pointers, including imported and anonymous results. Keep service values and Ref representations ordinary. |
 | Source matcher | Check actual pointer values by resolved type, including factory, interface, and generic call results. |
 | Producer contracts | Keep service-pointer producers ordinary. Restrict Local-pointer inputs and im.Local outputs with the common call rules. |
 | Service implementation | Synchronize mutable state and review input use. The checker does not prove isolation or synchronization. |

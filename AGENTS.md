@@ -294,7 +294,8 @@ Keep source restrictions and examples there. Keep analysis details in the
   and dereference copies. Pointer producers use resolved types, not Borrow syntax.
   Inside T's package, service pointers keep ordinary Go rules. Service values and
   Ref values stay ordinary; im field and Cell copy rules still apply. Keep im field
-  proofs context-free and check service-pointer field placement at its declaration.
+  proofs context-free. Reject ordinary carriers with Local service-pointer fields,
+  including imported and anonymous carriers; preserve ordinary service values.
   Producer contracts can return service pointers without restricting the producer;
   their actual pointer results are Local. Local-pointer inputs and im.Local outputs
   keep the existing restricted call forms. See the complete
