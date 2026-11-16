@@ -98,3 +98,28 @@ type Public = private
 		})
 	}
 }
+
+// TestImportProjectionNames keeps an imported package name clear of generated array types.
+func TestImportProjectionNames(t *testing.T) {
+	dir := module(t, `package consumer
+import (
+ foreign "example.test/projections/foreign"
+ "github.com/lucasavila00/immutago/pkg/im"
+)
+type Record struct { im.Frozen; Number foreign.Number; Grid [2][3]int }
+`)
+	foreign := filepath.Join(dir, "foreign")
+	if err := os.Mkdir(foreign, 0700); err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(foreign, "number.go"), "package RecordGridElementProjection\ntype Number int\n")
+	output, err := Generate(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(dir, Filename), string(output))
+	second, err := Generate(dir)
+	if err != nil || !bytes.Equal(output, second) {
+		t.Fatalf("import name changed after generation: %v", err)
+	}
+}

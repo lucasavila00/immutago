@@ -7,15 +7,27 @@ import (
 	"strings"
 )
 
+// reserveArrays fixes array projection names before imports receive their names.
+func (g *generator) reserveArrays(typ types.Type, stem, source string) error {
+	for index := 0; ; index++ {
+		array, ok := typ.Underlying().(*types.Array)
+		if !ok {
+			return nil
+		}
+		if err := g.reserve(stem+"Projection", "field "+source); err != nil {
+			return err
+		}
+		typ = array.Elem()
+		stem += "Element"
+		source += fmt.Sprintf("[index%d]", index)
+	}
+}
+
 // arrayReader retains only the immutable root pointer and existing indices.
 func (g *generator) arrayReader(
 	typ *types.Array, root types.Type, path, stem string, indices []string,
 ) (string, string, error) {
 	name := stem + "Projection"
-	source := "field " + g.typeName(types.Unalias(root).(*types.Pointer).Elem()) + strings.TrimPrefix(path, "value")
-	if err := g.reserve(name, source); err != nil {
-		return "", "", err
-	}
 	g.arrays = append(g.arrays, array{typ: typ, name: name, root: root, path: path, indices: indices})
 	fields := []string{g.projectionField + ":v." + g.projectionField}
 	for _, index := range indices {

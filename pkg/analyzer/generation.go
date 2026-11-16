@@ -14,10 +14,11 @@ import (
 )
 
 // checkGeneration verifies the exact generated source before it can form interior Frozen-record addresses.
-func (c *subsetChecks) checkGeneration() {
+func (c *subsetChecks) checkGeneration() bool {
 	position, valid := c.generationSource()
+	hasDeclarations := position.IsValid()
 	if !valid {
-		return
+		return false
 	}
 	var generated *ast.File
 	for _, file := range c.pass.Files {
@@ -28,21 +29,21 @@ func (c *subsetChecks) checkGeneration() {
 	sourcePackage := c.pass.Pkg
 	if !position.IsValid() {
 		if generated == nil {
-			return
+			return true
 		}
 		position = generated.Pos()
 		sourcePackage = types.NewPackage(c.pass.Pkg.Path(), c.pass.Pkg.Name())
 	} else if !c.generationDirective(position) {
-		return
+		return false
 	}
 	expected, err := projectiongen.GenerateTypes(sourcePackage, c.pass.Fset)
 	if err != nil {
 		c.pass.Reportf(position, "cannot generate typed projections: %s", err)
-		return
+		return false
 	}
 	if generated == nil {
 		c.pass.Reportf(position, "missing %s; run go generate in this package", projectiongen.Filename)
-		return
+		return false
 	}
 	readFile := c.pass.ReadFile
 	if readFile == nil {
@@ -50,10 +51,16 @@ func (c *subsetChecks) checkGeneration() {
 	}
 	actual, err := readFile(c.physicalFile(generated.Pos()))
 	if err != nil || !bytes.Equal(bytes.ReplaceAll(actual, []byte("\r\n"), []byte("\n")), expected) {
-		c.pass.Reportf(generated.Pos(), "%s is stale; run go generate in this package", projectiongen.Filename)
-		return
+		if hasDeclarations {
+			c.pass.Reportf(generated.Pos(), "%s is stale; run go generate in this package", projectiongen.Filename)
+		} else {
+			c.pass.Reportf(generated.Pos(), "%s has no source Frozen declarations; remove it or run %s in this package",
+				projectiongen.Filename, strings.TrimPrefix(projectiongen.Directive, "//go:generate "))
+		}
+		return false
 	}
 	c.generated = c.pass.Fset.File(generated.Pos())
+	return true
 }
 
 // generatedSource recognizes only the physical file whose complete bytes passed validation.

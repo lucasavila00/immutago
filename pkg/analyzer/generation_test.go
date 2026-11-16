@@ -47,7 +47,7 @@ func TestRequiredGeneration(t *testing.T) {
 				return append(content, []byte("\n// changed\n")...), err
 			}
 		}, "is stale"},
-		{"generated-only records", func(p *analysis.Pass) { p.Files = p.Files[1:] }, "is stale"},
+		{"generated-only records", func(p *analysis.Pass) { p.Files = p.Files[1:] }, "has no source Frozen declarations"},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
@@ -66,7 +66,7 @@ func TestRequiredGeneration(t *testing.T) {
 	}
 }
 
-// TestGeneratedBridgeValidation keeps source checks after generated output changes.
+// TestGeneratedBridgeValidation rejects changed output before further source checks.
 func TestGeneratedBridgeValidation(t *testing.T) {
 	const declarations = `type Child struct{im.Frozen;Number int}
 type Data struct{im.Frozen;Name string;Numbers [2]int;Number int;Child Child}`
@@ -90,10 +90,7 @@ type Data struct{im.Frozen;Name string;Numbers [2]int;Number int;Child Child}`
 				t.Fatal(err)
 			}
 			got := strings.Join(reports, "\n")
-			if !strings.Contains(got, "is stale") {
-				t.Fatal(got)
-			}
-			if strings.Contains(body, "Number=1") && !strings.Contains(got, "writes to immutable objects") {
+			if len(reports) != 1 || !strings.Contains(got, "is stale") {
 				t.Fatal(got)
 			}
 		})
@@ -114,7 +111,7 @@ func TestGeneratedPhysicalOrigin(t *testing.T) {
 		if _, err := run(pass); err != nil {
 			t.Fatal(err)
 		}
-		if got := strings.Join(reports, "\n"); !strings.Contains(got, "fresh allocation") {
+		if got := strings.Join(reports, "\n"); !strings.Contains(got, "conflicts between") {
 			t.Fatal(got)
 		}
 	}
@@ -196,7 +193,7 @@ func raw(value im.Projection[string])string{return value.Unsafe()}`)
 		t.Fatal(err)
 	}
 	got := strings.Join(reports, "\n")
-	if !strings.Contains(got, "is stale") {
+	if len(reports) != 1 || !strings.Contains(got, "has no source Frozen declarations") {
 		t.Fatal(got)
 	}
 }

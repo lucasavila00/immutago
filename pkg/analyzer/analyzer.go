@@ -67,16 +67,16 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 	}()
 	c := &checks{pass: pass, reported: make(map[token.Pos]bool)}
+	forms := newSubsetChecks(pass, &c.proofs)
+	if immutable && !forms.checkGeneration() {
+		return nil, nil
+	}
 	for _, file := range pass.Files {
 		if immutable {
 			ast.Inspect(file, c.visit)
 		} else {
 			ast.Inspect(file, c.visitService)
 		}
-	}
-	forms := newSubsetChecks(pass, &c.proofs)
-	if immutable {
-		forms.checkGeneration()
 	}
 	forms.checkHandles()
 	if immutable {

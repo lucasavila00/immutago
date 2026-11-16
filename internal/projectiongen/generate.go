@@ -192,6 +192,13 @@ func (g *generator) addRecord(typ types.Type, name string) error {
 	if err := g.reserve(strings.TrimSuffix(name, "Projection")+"Cell", source); err != nil {
 		return err
 	}
+	structure := types.Unalias(typ).(*types.Pointer).Elem().Underlying().(*types.Struct)
+	for field := range structure.Fields() {
+		if err := g.reserveArrays(field.Type(), strings.TrimSuffix(name, "Projection")+field.Name(),
+			strings.TrimPrefix(source, "record ")+"."+field.Name()); err != nil {
+			return err
+		}
+	}
 	g.records = append(g.records, record{typ: typ, name: name})
 	return nil
 }
