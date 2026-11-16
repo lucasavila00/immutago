@@ -9,6 +9,46 @@ import (
 // immutagoLocal keeps the Local marker private.
 type immutagoLocal = im.Local
 
+// LevelsProjection provides local read access to *Levels.
+type LevelsProjection struct {
+	immutagoLocal
+	immutagoProjection im.Projection[*Levels]
+}
+
+// NewLevelsProjection wraps a checked local projection without copying backing storage.
+func NewLevelsProjection(value im.Projection[*Levels]) LevelsProjection {
+	return LevelsProjection{immutagoProjection: value}
+}
+
+// IsNil reports whether the selected pointer is nil.
+func (v LevelsProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
+
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v LevelsProjection) Unsafe() *Levels { return v.immutagoProjection.Unsafe() }
+
+// Current reads the Current field.
+func (v LevelsProjection) Current() LevelAlias {
+	return v.immutagoProjection.Unsafe().Current
+}
+
+// Values reads the Values field.
+func (v LevelsProjection) Values() LevelsValuesProjection {
+	if im.IsNil(v.immutagoProjection) {
+		panic("nil frozen record")
+	}
+	return LevelsValuesProjection{immutagoProjection: v.immutagoProjection}
+}
+
+// LevelsCell publishes frozen Levels values. Do not copy it.
+type LevelsCell struct{ value im.Cell[Levels] }
+
+// Store publishes value.
+func (c *LevelsCell) Store(value Levels) { c.value.Store(value) }
+
+// Load reads the current value through a local projection.
+func (c *LevelsCell) Load() LevelsProjection { return NewLevelsProjection(c.value.LoadPointer()) }
+
 // ProductProjection provides local read access to *Product.
 type ProductProjection struct {
 	immutagoLocal
@@ -40,3 +80,17 @@ func (c *ProductCell) Store(value Product) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ProductCell) Load() ProductProjection { return NewProductProjection(c.value.LoadPointer()) }
+
+// LevelsValuesProjection reads a fixed array locally.
+type LevelsValuesProjection struct {
+	immutagoLocal
+	immutagoProjection im.Projection[*Levels]
+}
+
+// Len returns the array length.
+func (v LevelsValuesProjection) Len() int { return 2 }
+
+// At reads the element at index.
+func (v LevelsValuesProjection) At(index0 int) Level {
+	return v.immutagoProjection.Unsafe().Values[index0]
+}
