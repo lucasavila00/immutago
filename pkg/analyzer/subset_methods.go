@@ -7,8 +7,8 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// markedMethodReceiver proves the receiver type, independent of the method's own type parameters.
-func (c *subsetChecks) markedMethodReceiver(signature *types.Signature) bool {
+// provedMethodReceiver checks the shared type rules without restricting method type parameters.
+func (c *subsetChecks) provedMethodReceiver(signature *types.Signature) bool {
 	if signature.Recv() == nil {
 		return false
 	}
@@ -17,8 +17,8 @@ func (c *subsetChecks) markedMethodReceiver(signature *types.Signature) bool {
 		receiver = types.Unalias(pointer.Elem())
 	}
 	named, ok := receiver.(*types.Named)
-	return ok && named.TypeParams().Len() == 0 && (checker.Marked(named) || checker.Copied(named)) &&
-		c.proofs.Reason(named) == ""
+	return ok && named.TypeParams().Len() == 0 &&
+		(c.proofs.CopiedReason(named) == "" || checker.Marked(named) && c.proofs.Reason(named) == "")
 }
 
 // matchMethod checks receiver shapes and restricted calls.
@@ -53,8 +53,8 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	}
 	if runtimeObject(selection.Obj()) {
 		signature = selection.Obj().Type().(*types.Signature)
-	} else if !c.markedMethodReceiver(signature) {
-		return "immutable methods require a concrete non-generic marked receiver"
+	} else if !c.provedMethodReceiver(signature) {
+		return "immutable methods require a proved marked or Copied receiver"
 	}
 	if !types.Identical(c.pass.TypesInfo.TypeOf(selector.X), signature.Recv().Type()) {
 		return "immutable method receivers must match their declared type exactly"

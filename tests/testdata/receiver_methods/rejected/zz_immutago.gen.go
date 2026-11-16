@@ -104,3 +104,37 @@ func (c *ProductCell) Store(value Product) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *ProductCell) Load() ProductProjection { return NewProductProjection(c.value.LoadPointer()) }
+
+// TextOwnerProjection provides local read access to *TextOwner.
+type TextOwnerProjection struct {
+	immutagoLocal
+	immutagoProjection im.Projection[*TextOwner]
+}
+
+// NewTextOwnerProjection wraps a checked local projection without copying backing storage.
+func NewTextOwnerProjection(value im.Projection[*TextOwner]) TextOwnerProjection {
+	return TextOwnerProjection{immutagoProjection: value}
+}
+
+// IsNil reports whether the selected pointer is nil.
+func (v TextOwnerProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
+
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v TextOwnerProjection) Unsafe() *TextOwner { return v.immutagoProjection.Unsafe() }
+
+// Text reads the Text field.
+func (v TextOwnerProjection) Text() im.StringProjection {
+	return im.ProjectString(v.immutagoProjection.Unsafe().Text)
+}
+
+// TextOwnerCell publishes frozen TextOwner values. Do not copy it.
+type TextOwnerCell struct{ value im.Cell[TextOwner] }
+
+// Store publishes value.
+func (c *TextOwnerCell) Store(value TextOwner) { c.value.Store(value) }
+
+// Load reads the current value through a local projection.
+func (c *TextOwnerCell) Load() TextOwnerProjection {
+	return NewTextOwnerProjection(c.value.LoadPointer())
+}

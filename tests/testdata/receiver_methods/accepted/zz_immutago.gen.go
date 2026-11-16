@@ -4,6 +4,7 @@ package accepted
 
 import (
 	im "github.com/lucasavila00/immutago/pkg/im"
+	time "time"
 )
 
 // immutagoLocal keeps the Local marker private.
@@ -112,6 +113,68 @@ func (c *ProductCell) Store(value Product) { c.value.Store(value) }
 // Load reads the current value through a local projection.
 func (c *ProductCell) Load() ProductProjection { return NewProductProjection(c.value.LoadPointer()) }
 
+// ScalarSnapshotProjection provides local read access to *ScalarSnapshot.
+type ScalarSnapshotProjection struct {
+	immutagoLocal
+	immutagoProjection im.Projection[*ScalarSnapshot]
+}
+
+// NewScalarSnapshotProjection wraps a checked local projection without copying backing storage.
+func NewScalarSnapshotProjection(value im.Projection[*ScalarSnapshot]) ScalarSnapshotProjection {
+	return ScalarSnapshotProjection{immutagoProjection: value}
+}
+
+// IsNil reports whether the selected pointer is nil.
+func (v ScalarSnapshotProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
+
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v ScalarSnapshotProjection) Unsafe() *ScalarSnapshot { return v.immutagoProjection.Unsafe() }
+
+// Count reads the Count field.
+func (v ScalarSnapshotProjection) Count() Count {
+	return v.immutagoProjection.Unsafe().Count
+}
+
+// Alias reads the Alias field.
+func (v ScalarSnapshotProjection) Alias() CountAlias {
+	return v.immutagoProjection.Unsafe().Alias
+}
+
+// Counts reads the Counts field.
+func (v ScalarSnapshotProjection) Counts() ScalarSnapshotCountsProjection {
+	if im.IsNil(v.immutagoProjection) {
+		panic("nil frozen record")
+	}
+	return ScalarSnapshotCountsProjection{immutagoProjection: v.immutagoProjection}
+}
+
+// Score reads the Score field.
+func (v ScalarSnapshotProjection) Score() Score {
+	return v.immutagoProjection.Unsafe().Score
+}
+
+// Flag reads the Flag field.
+func (v ScalarSnapshotProjection) Flag() Flag {
+	return v.immutagoProjection.Unsafe().Flag
+}
+
+// Timeout reads the Timeout field.
+func (v ScalarSnapshotProjection) Timeout() time.Duration {
+	return v.immutagoProjection.Unsafe().Timeout
+}
+
+// ScalarSnapshotCell publishes frozen ScalarSnapshot values. Do not copy it.
+type ScalarSnapshotCell struct{ value im.Cell[ScalarSnapshot] }
+
+// Store publishes value.
+func (c *ScalarSnapshotCell) Store(value ScalarSnapshot) { c.value.Store(value) }
+
+// Load reads the current value through a local projection.
+func (c *ScalarSnapshotCell) Load() ScalarSnapshotProjection {
+	return NewScalarSnapshotProjection(c.value.LoadPointer())
+}
+
 // SnapshotPointProjection provides local read access to *SnapshotPoint.
 type SnapshotPointProjection struct {
 	immutagoLocal
@@ -144,4 +207,40 @@ func (c *SnapshotPointCell) Store(value SnapshotPoint) { c.value.Store(value) }
 // Load reads the current value through a local projection.
 func (c *SnapshotPointCell) Load() SnapshotPointProjection {
 	return NewSnapshotPointProjection(c.value.LoadPointer())
+}
+
+// ScalarSnapshotCountsProjection reads a fixed array locally.
+type ScalarSnapshotCountsProjection struct {
+	immutagoLocal
+	immutagoProjection im.Projection[*ScalarSnapshot]
+}
+
+// Len returns the array length.
+func (v ScalarSnapshotCountsProjection) Len() int { return 2 }
+
+// At reads the element at index.
+func (v ScalarSnapshotCountsProjection) At(index0 int) ScalarSnapshotCountsElementProjection {
+	if im.IsNil(v.immutagoProjection) {
+		panic("nil frozen record")
+	}
+	if index0 < 0 || index0 >= 2 {
+		panic("array index out of range")
+	}
+	return ScalarSnapshotCountsElementProjection{immutagoProjection: v.immutagoProjection, index0: index0}
+}
+
+// ScalarSnapshotCountsElementProjection reads a fixed array locally.
+type ScalarSnapshotCountsElementProjection struct {
+	immutagoLocal
+	immutagoProjection im.Projection[*ScalarSnapshot]
+	index0             int
+}
+
+// Len returns the array length.
+func (v ScalarSnapshotCountsElementProjection) Len() int { return 2 }
+
+// At reads the element at index.
+func (v ScalarSnapshotCountsElementProjection) At(index1 int) Count {
+	index0 := v.index0
+	return v.immutagoProjection.Unsafe().Counts[index0][index1]
 }

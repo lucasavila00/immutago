@@ -61,6 +61,7 @@ An exclusive [Local builder](local.md) uses these operations but cannot be froze
 | Declare from make, literal, zero, or Clone | `values := make([]int, 2)`, `values := []int{1}`, `var values []int`, `values := frozen.Clone()` |
 | Initialize with bare `nil` | `var values []int = nil`, `var scores map[string]int = nil` |
 | Read or replace an element | `x := values[i]`, `values[i] = x`, `scores[key] = x` |
+| Call an exact value method on a Copied element, or save its copied receiver | `values[i].Read()`, `read := values[i].Read`; use the [common method forms](common-forms.md#methods). |
 | Change a scalar element or a field inside a Copied slice element | `counts[i]++`, `values[i].Score.Value++`, `values[i].Flags[0] = true` |
 | Read length or slice capacity | `len(values)`, `cap(values)` |
 | Append individual elements to the same variable | `values = append(values, 1, 2)` |
