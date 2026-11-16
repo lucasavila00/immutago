@@ -68,7 +68,7 @@ copied_fields.go:81:5: Copied record: Value: array element: immutable markers ar
   fix: embed the marker in a named struct; use data fields for values
 copied_fields.go:86:5: Copied record: Value: named array must be wrapped in a struct with an immutable marker
   type: fields.BadNamedArray
-  fix: use an unnamed array type; to keep a named type, put the unnamed array in a marked struct
+  fix: use an unnamed array type; to keep a named type, put the unnamed array in a Frozen, Local, or Copied record
 copied_fields.go:90:5: Copied record: Value: T is not a Copied value
   type: fields.BadGeneric[T any]
   fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection

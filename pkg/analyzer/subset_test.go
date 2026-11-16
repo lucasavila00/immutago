@@ -91,7 +91,7 @@ func TestReferenceOperationDefaultDenial(t *testing.T) {
 	for _, source := range cases {
 		t.Run(source, func(t *testing.T) {
 			got := checkSource(t, `type V struct{im.Frozen;X int};`+source)
-			if !strings.Contains(got, "immutable references require a concrete marked struct target") {
+			if !strings.Contains(got, "immutable references require a concrete Frozen or Local record target") {
 				t.Fatalf("unlisted reference operation was accepted: %s", got)
 			}
 		})

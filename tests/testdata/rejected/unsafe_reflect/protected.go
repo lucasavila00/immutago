@@ -39,7 +39,7 @@ func GenericType() { _ = r.TypeFor[Local]() }
 // Slice cannot expose a native container of protected elements.
 func Slice(values []Record) { _ = r.ValueOf(values) }
 
-// Frozen can pass a persistent wrapper to an ordinary reflection call.
+// Frozen can pass a Frozen wrapper to an ordinary reflection call.
 func Frozen(values im.FrozenSlice[int]) { _ = r.ValueOf(values) }
 
 //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

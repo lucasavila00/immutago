@@ -30,7 +30,7 @@ local_reference_escape.go:16:2: Frozen collection: type argument 1: Local pointe
 local_reference_escape.go:17:6: Frozen collection: type argument 1: Local pointers cannot be stored
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: keep the Local pointer in a local binding; store a Frozen pointer for shared data
-local_reference_escape.go:21:34: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+local_reference_escape.go:21:34: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: *local_reference_escape.Local
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

@@ -61,8 +61,8 @@ repairs.go:10:16: immutable type argument: stored pointers require a concrete Fr
   fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 repairs.go:14:2: immutable field Totals requires a read result: named array must be wrapped in a struct with an immutable marker
   owner: proofdiagnostics.Summary; field type: proofdiagnostics.Counts
-  fix: use an unnamed array type; to keep a named type, put the unnamed array in a marked struct
-repairs.go:17:16: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  fix: use an unnamed array type; to keep a named type, put the unnamed array in a Frozen, Local, or Copied record
+repairs.go:17:16: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: interface { Join(parts ...im.StringProjection) int }
   type: interface{Join(parts ...im.StringProjection) int}
   fix: call a named, non-generic function directly with a concrete immutable parameter
@@ -70,7 +70,7 @@ repairs.go:18:13: unsupported immutable operation: native slices of immutable st
   source: ...im.StringProjection
   type: []im.StringProjection
   fix: pass Local values directly, or use named fields in an im.Local record; keep Local builders in their declaring function
-repairs.go:18:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+repairs.go:18:6: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: func(parts ...im.StringProjection) int
   type: func(parts ...im.StringProjection) int
   fix: call a named, non-generic function directly with a concrete immutable parameter

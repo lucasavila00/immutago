@@ -75,7 +75,7 @@ func TestProtectedResultCalls(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := checkSource(t, `type V struct{im.Local;X int};`+tc.source)
-			if !strings.Contains(got, "dynamic calls require ordinary or persistent Frozen parameters and results") {
+			if !strings.Contains(got, "dynamic calls require ordinary or Frozen parameters and results") {
 				t.Fatalf("unknown protected producer accepted: %s", got)
 			}
 		})

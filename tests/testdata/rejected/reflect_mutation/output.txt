@@ -1,4 +1,4 @@
-reflect_mutation.go:15:17: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+reflect_mutation.go:15:17: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: reflect.ValueOf([]Value{{N: 1}})
   type: reflect.Value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

@@ -31,7 +31,7 @@ import (
 // Analyzer checks immutable type obligations and reports unsupported aliasing and mutations.
 var Analyzer = &analysis.Analyzer{
 	Name:      "immutago",
-	Doc:       "prove immutability of marked structs and immutable collection elements",
+	Doc:       "check Frozen, Local, and Copied records and immutable collection elements",
 	Run:       run,
 	FactTypes: []analysis.Fact{new(invalidPackage)},
 }

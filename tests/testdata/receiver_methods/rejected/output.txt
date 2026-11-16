@@ -27,7 +27,7 @@ copied_methods.go:33:2: unsupported immutable operation: protected storage requi
 copied_methods.go:34:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer reply.Counter.Read()
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
-copied_methods.go:35:26: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+copied_methods.go:35:26: unsupported immutable operation: closures require ordinary or Frozen captures
   source: reply
   type: rejected.ScalarReply
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
@@ -37,10 +37,10 @@ copied_methods.go:37:7: unsupported immutable operation: protected storage is un
 copied_methods.go:39:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: first, second := reply.Counter.Read(), 1
   fix: use one protected destination, or local names for all results of one direct typed call
-copied_methods.go:45:6: unsupported immutable operation: immutable methods require a proved marked or Copied receiver
+copied_methods.go:45:6: unsupported immutable operation: immutable methods require a proved Frozen, Local, or Copied receiver
   source: owner.Text.Read()
   type: string
-  fix: use a proved marked or Copied receiver type without type parameters; for other field or element types, copy to an ordinary local before calling the method
+  fix: use a proved Frozen, Local, or Copied receiver type without type parameters; for other field or element types, copy to an ordinary local before calling the method
 copied_methods.go:50:2: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 copied_methods.go:50:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: values[0].Inc()
@@ -54,11 +54,11 @@ copied_methods.go:69:2: unsupported immutable operation: protected storage requi
 copied_methods.go:70:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer values[0].Read()
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
-generic_methods.go:10:18: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+generic_methods.go:10:18: unsupported immutable operation: user generic declarations require ordinary or Frozen contracts
   source: KeepLocal
   type: func[T rejected.Settings](value T) T
   fix: use a non-generic declaration with concrete field and parameter types
-generic_methods.go:10:53: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+generic_methods.go:10:53: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: return value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 generic_methods.go:11:53: unsupported immutable operation: writes to immutable objects are unsupported
@@ -71,15 +71,15 @@ generic_methods.go:14:9: unsupported immutable operation: immutable references r
   source: &p
   type: *rejected.Product
   fix: use &T{...}, new(T), or new(value); do not take the address of an existing variable, field, or element
-generic_methods.go:21:12: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+generic_methods.go:21:12: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: Map
   type: func[T any](read func(int) T) T
   fix: use a direct non-generic function with concrete parameter types
-generic_methods.go:21:26: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+generic_methods.go:21:26: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: local
   type: func(n int) rejected.Settings
   fix: call a named, non-generic function directly with a concrete immutable parameter
-generic_methods.go:21:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+generic_methods.go:21:6: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: value.Map[Settings](local)
   type: rejected.Settings
   fix: call a named, non-generic function directly with a concrete immutable parameter
@@ -87,23 +87,23 @@ generic_methods.go:25:6: unsupported immutable operation: immutable method recei
   source: value.MapPointer[int](number)
   type: int
   fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
-generic_methods.go:5:19: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+generic_methods.go:5:19: unsupported immutable operation: user generic declarations require ordinary or Frozen contracts
   source: Map
   type: func[T any](read func(int) T) T
   fix: use a non-generic declaration with concrete field and parameter types
-generic_methods.go:6:20: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+generic_methods.go:6:20: unsupported immutable operation: user generic declarations require ordinary or Frozen contracts
   source: MapPointer
   type: func[T any](read func(int) T) T
   fix: use a non-generic declaration with concrete field and parameter types
-generic_methods.go:7:18: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+generic_methods.go:7:18: unsupported immutable operation: user generic declarations require ordinary or Frozen contracts
   source: ReadLocal
   type: func[T any](read func(rejected.Settings) T) T
   fix: use a non-generic declaration with concrete field and parameter types
-generic_methods.go:7:40: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+generic_methods.go:7:40: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: func(Settings) T
   type: func(rejected.Settings) T
   fix: call a named, non-generic function directly with a concrete immutable parameter
-generic_methods.go:8:9: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
+generic_methods.go:8:9: unsupported immutable operation: dynamic calls require ordinary or Frozen parameters and results
   source: read(Settings{Limit: p.Price})
   type: T
   fix: call a named, non-generic function directly with a concrete immutable parameter
@@ -133,7 +133,7 @@ receiver_bodies.go:16:20: unsupported immutable operation: returning Local point
 receiver_bodies.go:16:41: unsupported immutable operation: returning Local pointers is unsupported
   source: return nil
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
-receiver_bodies.go:17:65: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+receiver_bodies.go:17:65: unsupported immutable operation: closures require ordinary or Frozen captures
   source: s
   type: *rejected.Settings
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

@@ -56,7 +56,7 @@ func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 		c.genericStorage(declaration.Name)
 	}
 	if signature.Recv() != nil && c.queries.Owns(signature.Recv().Type()) && !c.provedMethodReceiver(signature) {
-		c.report(declaration.Name, "immutable methods require a proved marked or Copied receiver")
+		c.report(declaration.Name, "immutable methods require a proved Frozen, Local, or Copied receiver")
 	}
 }
 
@@ -334,7 +334,7 @@ func (c *subsetChecks) matchClosure(literal *ast.FuncLit) {
 				return true
 			}
 		}
-		c.report(name, "closures require ordinary or persistent Frozen captures")
+		c.report(name, "closures require ordinary or Frozen captures")
 		return true
 	})
 }

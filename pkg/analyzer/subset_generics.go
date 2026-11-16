@@ -20,7 +20,7 @@ func (c *subsetChecks) genericInstance(name *ast.Ident) {
 	for i := 0; i < instance.TypeArgs.Len(); i++ {
 		arg := instance.TypeArgs.At(i)
 		if c.queries.Transport(arg) || c.hasSlotValue(arg) || c.queries.Callable(arg) {
-			c.report(name, "user generic instantiations require ordinary or persistent Frozen type arguments")
+			c.report(name, "user generic instantiations require ordinary or Frozen type arguments")
 		}
 	}
 }
@@ -53,7 +53,7 @@ func (c *subsetChecks) genericStorage(name *ast.Ident) {
 	}
 	for _, typ := range declared {
 		if c.queries.Transport(typ) || c.hasSlotValue(typ) || c.queries.Callable(typ) {
-			c.report(name, "user generic declarations require ordinary or persistent Frozen contracts")
+			c.report(name, "user generic declarations require ordinary or Frozen contracts")
 			return
 		}
 	}

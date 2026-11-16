@@ -19,7 +19,7 @@ follow ordinary Go rules. Callers can save errors, and custom errors can hold
 ordinary mutable state. The checker does not inspect error origins or payloads.
 General im checks still reject boxing protected storage in an error.
 
-`error` is not a read result or an allowed field in a marked record. A
+`error` is not a read result or an allowed field in a Frozen, Local, or Copied record. A
 [read result](types.md) uses this complete list:
 
 | Read-result types — exhaustive | Example |

@@ -8,7 +8,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// markedTypeGraph creates linked marked types with ten operations per function.
+// markedTypeGraph creates linked Frozen or Local types with ten operations per function.
 func markedTypeGraph(count int, invalid bool) string {
 	var source strings.Builder
 	for i := range count {

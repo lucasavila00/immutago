@@ -15,7 +15,7 @@ func TestServiceHandles(t *testing.T) {
 		{"parentheses", `func use(r Handle) int{return ((r.Borrow)()).Count()}`},
 		{"ref result", `func(*Counter) Worker() Handle {return Handle{}}`},
 		{"marked result", `func(*Counter) Route() Route {return Route{}}`},
-		{"marked field", `func use(r Route) int{return r.Worker.Borrow().Count()}`},
+		{"Frozen or Local record", `func use(r Route) int{return r.Worker.Borrow().Count()}`},
 		{"anonymous target", `type Reader struct{};func(Reader) Count()int{return 1}
 func use(r supervise.Ref[struct{supervise.Service[supervise.NoArgs];Reader}])int{return r.Borrow().Count()}`},
 		{"shared field", `type SnapshotRoute struct{im.Frozen;Worker Handle}
