@@ -28,6 +28,7 @@ const imPath = "github.com/lucasavila00/immutago/pkg/im"
 
 // Generate reads one package and generates its Frozen record and interface readers.
 // Existing generated declarations are excluded, so changed fields can regenerate.
+// A package without Frozen declarations gets an empty generated package file.
 func Generate(dir string) ([]byte, error) {
 	config := &packages.Config{
 		Dir: dir,
@@ -94,7 +95,7 @@ func GenerateTypes(pkg *types.Package, fset *token.FileSet) ([]byte, error) {
 // generateTypes first supplies projection names, then proves the resolved method results.
 func generateTypes(pkg *types.Package, fset *token.FileSet, bootstrap bool) ([]byte, error) {
 	g := generator{
-		pkg: pkg, fset: fset, imports: make(map[string]string), names: make(map[string]bool), bootstrap: bootstrap,
+		pkg: pkg, fset: fset, imports: make(map[string]string), names: make(map[string]string), bootstrap: bootstrap,
 	}
 	for _, name := range pkg.Scope().Names() {
 		object, ok := pkg.Scope().Lookup(name).(*types.TypeName)
@@ -116,9 +117,6 @@ func generateTypes(pkg *types.Package, fset *token.FileSet, bootstrap bool) ([]b
 		} else if err := g.addRecord(types.NewPointer(typ), name+"Projection"); err != nil {
 			return nil, err
 		}
-	}
-	if len(g.records) == 0 && len(g.interfaces) == 0 {
-		return nil, fmt.Errorf("package %s has no structs with im.Frozen or interfaces with im.FrozenInterface", pkg.Name())
 	}
 	return g.render()
 }
@@ -143,7 +141,7 @@ type generator struct {
 	fset       *token.FileSet
 	proofs     checker.Prover
 	imports    map[string]string
-	names      map[string]bool
+	names      map[string]string
 	records    []record
 	arrays     []array
 	interfaces []record
@@ -166,24 +164,29 @@ type array struct {
 }
 
 // reserve rejects generated identifiers that overlap source declarations or each other.
-func (g *generator) reserve(name string) error {
-	object := g.pkg.Scope().Lookup(name)
-	if g.names[name] || (object != nil && !g.generated(object)) {
-		return fmt.Errorf("generated name %s conflicts with another declaration", name)
+func (g *generator) reserve(name, source string) error {
+	previous := g.names[name]
+	if object := g.pkg.Scope().Lookup(name); previous == "" && object != nil && !g.generated(object) {
+		previous = "source declaration " + object.Name()
 	}
-	g.names[name] = true
+	if previous != "" {
+		return fmt.Errorf("generated name %s conflicts between %s and %s; rename one source declaration",
+			name, source, previous)
+	}
+	g.names[name] = source
 	return nil
 }
 
 // addRecord queues a typed reader and its constructor.
 func (g *generator) addRecord(typ types.Type, name string) error {
-	if err := g.reserve(name); err != nil {
+	source := "record " + g.typeName(types.Unalias(typ).(*types.Pointer).Elem())
+	if err := g.reserve(name, source); err != nil {
 		return err
 	}
-	if err := g.reserve(constructorName(name)); err != nil {
+	if err := g.reserve(constructorName(name), source); err != nil {
 		return err
 	}
-	if err := g.reserve(strings.TrimSuffix(name, "Projection") + "Cell"); err != nil {
+	if err := g.reserve(strings.TrimSuffix(name, "Projection")+"Cell", source); err != nil {
 		return err
 	}
 	g.records = append(g.records, record{typ: typ, name: name})

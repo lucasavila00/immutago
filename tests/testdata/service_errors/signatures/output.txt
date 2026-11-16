@@ -1,9 +1,3 @@
-signatures.go:15:14: service method Pair must return no value, one read result, error, or (read result, error)
-signatures.go:16:14: service method Reverse must return no value, one read result, error, or (read result, error)
-signatures.go:17:14: service method Three must return no value, one read result, error, or (read result, error)
-signatures.go:18:14: service method Errors must return a read result: error is not a Copied value
-  result type: error
-  fix: copy scalar fields, or use a local projection
 signatures.go:19:14: service method Text must return a read result: string is not a Copied value
   result type: string
   fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)

@@ -12,7 +12,6 @@ copied_fields.go:106:16: service method Unmarked must return a read result: stru
 copied_fields.go:107:16: service method Marker must return a read result: github.com/lucasavila00/immutago/pkg/im.Copied is not a Copied value
   result type: im.Copied
   fix: copy scalar fields, or use a local projection
-copied_fields.go:109:16: service method Pair must return no value, one read result, error, or (read result, error)
 copied_fields.go:13:5: Copied record: Value: string is not a Copied value
   type: fields.BadString
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field

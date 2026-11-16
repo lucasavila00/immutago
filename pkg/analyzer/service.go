@@ -33,35 +33,15 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 			at = method.Pos()
 		}
 		signature := methods.At(i).Type().(*types.Signature)
-		result, valid := resultValue(signature.Results())
-		if !valid {
-			c.report(at, "service method "+method.Name()+
-				" must return no value, one read result, error, or (read result, error)")
-			continue
+		for result := range signature.Results().Variables() {
+			if types.Identical(result.Type(), types.Universe.Lookup("error").Type()) {
+				continue
+			}
+			if reason := c.proofs.ReadResultReason(result.Type()); reason != "" {
+				c.report(at, "service method "+method.Name()+" must return a read result: "+reason+
+					"\n  result type: "+diagnosticType(result.Type())+"\n  fix: "+structuralFix(result.Type(), reason))
+			}
 		}
-		if result == nil {
-			continue
-		}
-		if reason := c.proofs.ReadResultReason(result); reason != "" {
-			c.report(at, "service method "+method.Name()+" must return a read result: "+reason+
-				"\n  result type: "+diagnosticType(result)+"\n  fix: "+structuralFix(result, reason))
-		}
-	}
-}
-
-// resultValue separates an optional error from zero or one data result.
-func resultValue(results *types.Tuple) (types.Type, bool) {
-	count := results.Len()
-	if count > 0 && types.Identical(types.Unalias(results.At(count-1).Type()), types.Universe.Lookup("error").Type()) {
-		count--
-	}
-	switch count {
-	case 0:
-		return nil, true
-	case 1:
-		return results.At(0).Type(), true
-	default:
-		return nil, false
 	}
 }
 
