@@ -119,10 +119,12 @@ func TestReadResultFailurePaths(t *testing.T) {
 	}{
 		{pointer, "*Worker is not a read result", "an opaque handle"},
 		{alias, "*Worker is not a read result", "an opaque handle"},
-		{types.NewArray(types.NewArray(alias, 2), 0), "array element: array element: *Worker is not a read result", "an opaque handle"},
+		{types.NewArray(types.NewArray(alias, 2), 0),
+			"array element: array element: *Worker is not a read result", "an opaque handle"},
 		{markedType("Reply", local, types.NewField(token.NoPos, nil, "Worker", pointer, false)),
 			"Worker: *Worker is not a read result", "an opaque handle"},
-		{markedType("Score", copied, text), "Text: string is not a Copied value", "replace its im.Copied marker with im.Local"},
+		{markedType("Score", copied, text),
+			"Text: string is not a Copied value", "replace its im.Copied marker with im.Local"},
 		{types.NewNamed(types.NewTypeName(token.NoPos, nil, "Counts", nil), types.NewArray(types.Typ[types.Int], 2), nil),
 			"named array must be wrapped", "use an unnamed array type"},
 	}
