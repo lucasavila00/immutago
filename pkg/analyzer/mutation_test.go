@@ -131,7 +131,7 @@ func TestUnknownFactoryCannotReturnLocal(t *testing.T) {
  func f(factory func() Value) { value:=factory(); _=value.X }
  `
 	reports := checkSource(t, source)
-	if !strings.Contains(reports, "dynamic calls require ordinary or persistent Frozen parameters and results") {
+	if !strings.Contains(reports, "dynamic calls require ordinary or Frozen parameters and results") {
 		t.Fatalf("diagnostics = %q; want dynamic result rejection", reports)
 	}
 }

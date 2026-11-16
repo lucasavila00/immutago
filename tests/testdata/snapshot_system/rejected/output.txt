@@ -1,29 +1,29 @@
 projection_adapters.go:10:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer im.StringOfFrozen(frozen)
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
-projection_adapters.go:11:37: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+projection_adapters.go:11:37: unsupported immutable operation: closures require ordinary or Frozen captures
   source: sequence
   type: im.Projection[im.FrozenSlice[int]]
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-projection_adapters.go:12:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+projection_adapters.go:12:6: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: boxed any = im.MapOf(mapping)
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-projection_adapters.go:15:12: unsupported immutable operation: method values require ordinary or persistent Frozen receivers and contracts
+projection_adapters.go:15:12: unsupported immutable operation: method values require ordinary or Frozen receivers and contracts
   source: projection.Is
   type: func(other string) bool
   fix: call the method directly (value.Method(...)); do not save or pass its method value
-projection_adapters.go:17:6: unsupported immutable operation: method expressions require ordinary or persistent Frozen receivers and contracts
+projection_adapters.go:17:6: unsupported immutable operation: method expressions require ordinary or Frozen receivers and contracts
   source: im.StringProjection.Is(projection, "text")
   type: bool
   fix: call the receiver method directly (value.Method(...)); do not call it through the type
-projection_adapters.go:7:14: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+projection_adapters.go:7:14: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: im.StringOf[string]
   type: func(value im.Projection[string]) im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-projection_adapters.go:7:2: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+projection_adapters.go:7:2: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: stringOf := im.StringOf[string]
   fix: call a named, non-generic function directly with a concrete immutable parameter
-projection_adapters.go:8:6: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
+projection_adapters.go:8:6: unsupported immutable operation: dynamic calls require ordinary or Frozen parameters and results
   source: stringOf(text)
   type: im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
@@ -158,7 +158,7 @@ snapshot_categories.go:54:15: unsupported immutable operation: immutable referen
   type: *rejected.Local
   fix: use &T{...}, new(T), or new(value); do not take the address of an existing variable, field, or element
 snapshot_categories.go:54:9: unchecked storage cannot contain Local values
-snapshot_categories.go:55:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+snapshot_categories.go:55:6: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: any(text)
   type: any
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
@@ -168,21 +168,21 @@ snapshot_categories.go:56:2: unsupported immutable operation: protected storage 
 snapshot_categories.go:57:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer consume(text)
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
-snapshot_categories.go:58:26: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+snapshot_categories.go:58:26: unsupported immutable operation: closures require ordinary or Frozen captures
   source: text
   type: im.StringProjection
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
 snapshot_categories.go:63:61: unsupported immutable operation: writes to immutable objects are unsupported
   source: value.Text = im.StringProjection{}
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-snapshot_categories.go:64:61: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+snapshot_categories.go:64:61: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: all := projection.All()
   fix: call a named, non-generic function directly with a concrete immutable parameter
 snapshot_categories.go:64:68: unsupported immutable operation: immutable iterators must be consumed by direct range
   source: projection.All()
   type: iter.Seq2[int, im.Projection[int]]
   fix: write for key, value := range collection.All() { ... }; do not retain or pass the iterator
-snapshot_categories.go:64:90: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+snapshot_categories.go:64:90: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: all
   type: iter.Seq2[int, im.Projection[int]]
   fix: call a named, non-generic function directly with a concrete immutable parameter
@@ -232,7 +232,7 @@ snapshot_holders.go:11:12: Cell slots and holders require direct named fields
 snapshot_holders.go:11:26: containers of Cell slots or holders are unsupported
 snapshot_holders.go:16:1: Cell slots and their holders cannot be passed or returned by value
 snapshot_holders.go:16:54: Cell slots and their holders cannot be copied or transported by value
-snapshot_holders.go:16:6: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+snapshot_holders.go:16:6: unsupported immutable operation: user generic declarations require ordinary or Frozen contracts
   source: copySlot
   type: func[T rejected.ConstraintAlias](value T) T
   fix: use a non-generic declaration with concrete field and parameter types
@@ -240,18 +240,18 @@ snapshot_holders.go:21:10: Cell slots and their holders cannot be copied or tran
 snapshot_holders.go:22:6: Cell slots and their holders cannot be copied or transported by value
 snapshot_holders.go:23:14: Cell slots and their holders cannot be copied or transported by value
 snapshot_holders.go:23:2: Cell slots and their holders cannot be copied or transported by value
-snapshot_holders.go:26:10: unsupported immutable operation: method values require ordinary or persistent Frozen receivers and contracts
+snapshot_holders.go:26:10: unsupported immutable operation: method values require ordinary or Frozen receivers and contracts
   source: h.Current.Load
   type: func() api.ModelProjection
   fix: call the method directly (value.Method(...)); do not save or pass its method value
-snapshot_holders.go:26:2: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+snapshot_holders.go:26:2: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: read := h.Current.Load
   fix: call a named, non-generic function directly with a concrete immutable parameter
-snapshot_holders.go:27:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+snapshot_holders.go:27:6: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: read
   type: func() api.ModelProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-snapshot_holders.go:28:6: unsupported immutable operation: method expressions require ordinary or persistent Frozen receivers and contracts
+snapshot_holders.go:28:6: unsupported immutable operation: method expressions require ordinary or Frozen receivers and contracts
   source: (*api.ModelCell).Load(pointer)
   type: api.ModelProjection
   fix: call the receiver method directly (value.Method(...)); do not call it through the type
@@ -278,11 +278,11 @@ snapshot_projection.go:18:6: unsupported immutable operation: interior addresses
 snapshot_projection.go:19:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: projection.Unsafe().Name = "changed"
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-snapshot_projection.go:20:9: unsupported immutable operation: method values require ordinary or persistent Frozen receivers and contracts
+snapshot_projection.go:20:9: unsupported immutable operation: method values require ordinary or Frozen receivers and contracts
   source: projection.Unsafe
   type: func() *rejected.Data
   fix: call the method directly (value.Method(...)); do not save or pass its method value
-snapshot_projection.go:22:6: unsupported immutable operation: method expressions require ordinary or persistent Frozen receivers and contracts
+snapshot_projection.go:22:6: unsupported immutable operation: method expressions require ordinary or Frozen receivers and contracts
   source: im.Projection[*Data].Unsafe(projection)
   type: *rejected.Data
   fix: call the receiver method directly (value.Method(...)); do not call it through the type

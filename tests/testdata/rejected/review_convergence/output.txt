@@ -21,10 +21,10 @@ convergence_rejected.go:68:2: unsupported immutable operation: writes to immutab
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 marker_count.go:10:21: struct must embed exactly one immutable marker; each embedded alias counts as a marker
 marker_count.go:10:6: struct must embed exactly one immutable marker; each embedded alias counts as a marker
-pointer_contracts.go:10:35: unsupported immutable operation: immutable references require a concrete marked struct target
+pointer_contracts.go:10:35: unsupported immutable operation: immutable references require a concrete Frozen or Local record target
   source: *[1]PointerValue
   type: *[1]review_convergence.PointerValue
-  fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs
+  fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in Frozen or Local records
 projection_walk.go:11:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: (*p).Values[0][0] = 2
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

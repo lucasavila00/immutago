@@ -49,7 +49,7 @@ func TestFreezeOwnership(t *testing.T) {
 		{"reference map key and value", `p:=&V{X:1};m:=map[*V]*V{p:p};q:=m[p];m[p]=&V{X:2};_=im.FreezeMap(m);_=q.X`, false},
 		{"reference clone", `p:=&V{X:1};f:=im.FreezeSlice([]*V{p});s:=f.Clone();s[0]=&V{X:2};_=im.FreezeSlice(s)`, false},
 		{"reference slot address", `s:=[]*V{&V{X:1}};p:=&s[0];_=p;_=im.FreezeSlice(s)`, true},
-		{"marked field address", `s:=[]V{{X:1}};p:=&s[0].X;_=p;_=im.FreezeSlice(s)`, true},
+		{"Frozen or Local record address", `s:=[]V{{X:1}};p:=&s[0].X;_=p;_=im.FreezeSlice(s)`, true},
 		{"reference handle alias without freeze", `s:=[]*V{&V{X:1}};a:=s;_=a`, false},
 		{"reference map alias without freeze", `p:=&V{X:1};m:=map[*V]*V{p:p};a:=m;_=a`, false},
 		{"reference slot address without freeze", `s:=[]*V{&V{X:1}};p:=&s[0];_=p`, false},

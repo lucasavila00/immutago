@@ -1,4 +1,4 @@
-uses.go:14:38: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+uses.go:14:38: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: return LocalError{}
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 uses.go:18:2: immutable field Err requires a read result: error is not a Copied value
@@ -13,25 +13,25 @@ uses.go:25:2: unsupported immutable operation: Local values and pointers cannot 
 uses.go:28:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: values[0], err = api.Read()
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-uses.go:35:29: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+uses.go:35:29: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: api.Reply
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-uses.go:39:14: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+uses.go:39:14: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: api.Read
   type: func() (api.Reply, error)
   fix: call a named, non-generic function directly with a concrete immutable parameter
-uses.go:39:2: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+uses.go:39:2: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: callback := api.Read
   fix: call a named, non-generic function directly with a concrete immutable parameter
-uses.go:40:16: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
+uses.go:40:16: unsupported immutable operation: dynamic calls require ordinary or Frozen parameters and results
   source: callback()
   type: (api.Reply, error)
   fix: call a named, non-generic function directly with a concrete immutable parameter
 uses.go:40:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: value, err := callback()
   fix: use one protected destination, or local names for all results of one direct typed call
-uses.go:46:54: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+uses.go:46:54: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: pair(api.Reply{})
   type: (api.Reply, error)
   fix: use a direct non-generic function with concrete parameter types

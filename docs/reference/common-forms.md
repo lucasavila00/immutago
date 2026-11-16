@@ -12,7 +12,7 @@ Ordinary [Frozen handle slots](#ordinary-frozen-handle-slots--exhaustive) and
 [Frozen pointer handles](frozen-records.md#stored-pointers--exhaustive) use Go storage
 and transport rules. Their selected Frozen objects keep the rules below.
 Copied data inside protected storage keeps the owner's rules on this page.
-The [glossary](glossary.md) defines marked structs, protected storage, and builders.
+The [glossary](glossary.md) defines the category names, protected storage, and builders.
 
 ## Markers and stored types
 
@@ -38,7 +38,7 @@ A Local value cannot be hidden in persistent storage.
 | --- | --- |
 | Fixed im types and functions | `im.FrozenSlice[FrozenPoint]`, `im.FreezeSlice([]FrozenPoint{})` |
 | Fixed supervise APIs with protected values | `supervise.Service[FrozenPoint]`, `supervise.Start[Worker](root, args)`; saved protected arguments must be Frozen values, never Local values. |
-| User generics with ordinary or persistent Frozen parameters, results, constraints, receivers, and type arguments | `identity(text)`, `identity[im.FrozenString](text)`, `func keep[T FrozenPoint](value T) T { return value }` |
+| User generics with ordinary or Frozen parameters, results, constraints, receivers, and type arguments | `identity(text)`, `identity[im.FrozenString](text)`, `func keep[T FrozenPoint](value T) T { return value }` |
 | Method type parameters on a concrete Frozen value or pointer receiver | `func (p FrozenPoint) Map[T any](read func(int) T) T { return read(p.X) }` |
 | Call or select these methods with inferred or explicit type arguments | `point.Map(read)`, `point.Map[string](read)`, `mapValue := point.Map[string]`, `mapValue := FrozenPoint.Map[string]` |
 | Generic function and method bodies | `func read[T any](value T) int { text := im.FreezeString("x"); return text.Len() }`; each operation keeps its normal source rules. |
@@ -66,13 +66,13 @@ projections do not use this table.
 | Put a value in an ordinary interface by assignment, argument, result, comparison, or explicit conversion | `var boxed any = text`, `useAny(text)`, `return text`, `boxed == text`, `any(text)` |
 | Use ordinary interface fields and collection entries | `struct{ Value any }{text}`, `[]any{text}`, `map[any]any{point: text}` |
 | Recover a concrete Frozen value with an assertion or type switch | `text := boxed.(im.FrozenString)`, `text, ok := boxed.(im.FrozenString)`, `switch value := boxed.(type) { case FrozenPoint: use(value) }` |
-| Use an ordinary function or interface method with persistent inputs and results | `callback(text)`, `factory.Read()`, `value, ok := callback()` |
+| Use an ordinary function or interface method with ordinary or Frozen inputs and results | `callback(text)`, `factory.Read()`, `value, ok := callback()` |
 | Use a user generic function, with inferred or explicit type arguments | `identity(text)`, `identity[im.FrozenString](text)` |
 | Capture local or package values in closures | `read := func() int { return text.Len() }` |
-| Select a method value or method expression with ordinary or persistent inputs and results | `read := text.Len`, `read := FrozenPoint.XValue`, `read := Scorer.Score` |
+| Select a method value or method expression with ordinary or Frozen inputs and results | `read := text.Len`, `read := FrozenPoint.XValue`, `read := Scorer.Score` |
 | Bind or replace several values, including callback results | `a, b := point, other`, `a, b = b, a`, `var a, b = callback()` |
-| Call with go or defer when operands use these persistent forms | `go use(text)`, `defer text.Len()` |
-| Save or call an iterator that yields persistent values | `items := frozen.All()`, `for value := range items { use(value) }` |
+| Call with go or defer when operands use these Frozen forms | `go use(text)`, `defer text.Len()` |
+| Save or call an iterator that yields Frozen values | `items := frozen.All()`, `for value := range items { use(value) }` |
 
 Each field and collection argument still needs its type proof. Fields inside a
 Frozen record stay read-only, including inside a closure or generic body. A
@@ -190,7 +190,7 @@ Local pointers use only the direct-call forms below and cannot escape.
 | `p := &point` | `p := new(point)` |
 | `&point.X` | Read or copy the scalar. |
 | `new(im.SliceProjection[int])` | Keep the local projection by value. |
-| `&[2]FrozenPoint{}` | Put the array in a marked struct. |
+| `&[2]FrozenPoint{}` | Put the array in a Frozen record. |
 | `(*LocalPoint)(nil)` | `var p *LocalPoint = nil` |
 
 ## Methods
@@ -221,12 +221,12 @@ forms on this page.
 
 | Allowed forms — exhaustive | Example |
 | --- | --- |
-| Value receiver on a marked struct | `func (p FrozenPoint) XValue() int { return p.X }` |
-| Pointer receiver on a marked struct | `func (p *LocalPoint) ReadX() int { return p.X }` |
+| Value receiver on a Frozen or Local record | `func (p FrozenPoint) XValue() int { return p.X }` |
+| Pointer receiver on a Frozen or Local record | `func (p *LocalPoint) ReadX() int { return p.X }` |
 | Direct call on a value or pointer of the declared receiver type | `point.XValue()`, `p.ReadX()`, `(*p).XValue()` |
 | Explicit field or element as receiver | `group.FrozenPoint.XValue()`, `points[i].XValue()` |
 | Exact value receiver on a Copied field or array element | `snapshot.Count.Read()`, `snapshot.Counts[i].Read()`, `settings.Timeout.Seconds()` with a time.Duration field. |
-| Method value or expression that copies a Copied field, with ordinary or persistent inputs and results | `read := reply.Count.Read`, `Count.Read(reply.Count)`; Count is a defined integer type. |
+| Method value or expression that copies a Copied field, with ordinary or Frozen inputs and results | `read := reply.Count.Read`, `Count.Read(reply.Count)`; Count is a defined integer type. |
 | Exact value receiver on an opaque handle field or array element | `route.Worker.Borrow()`, `route.Workers[i].IsZero()`, `reply.Counter.Add(1)`; the field read keeps its owner's rules. |
 | Constructed value, new pointer, or direct call result as receiver | `FrozenPoint{X: 3}.XValue()`, `(&FrozenPoint{X: 3}).ReadX()`, `makePoint().XValue()` |
 | Direct method on an ordinary concrete receiver with protected inputs or results | `reader.Read(p)` with `func (r *Reader) Read(p *LocalPoint) int`; `r` can have an ordinary mutable type. |
@@ -250,7 +250,7 @@ local first. A closure that reads `reply.Count` retains reply and is rejected.
 | Struct with `im.Local` | Its value stays Local. Its pointer can only be used in local direct calls. |
 | Frozen or Local record | Cannot change protected fields. The receiver record cannot declare type parameters, except for an [opaque handle](unchecked-values.md). Method type parameters use the [generic rules](#generics) above. |
 | Copied field inside a protected owner | Exact value-receiver calls copy the field. Pointer-receiver calls that address the field are rejected. |
-| Ordinary concrete receiver with Local inputs or results | Direct, non-generic calls. Local inputs and results keep their im rules. Persistent values use the forms above. |
+| Ordinary concrete receiver with Local inputs or results | Direct, non-generic calls. Local inputs and results keep their im rules. Frozen values use the forms above. |
 | Fixed library type | Listed API forms. |
 
 | Rejected examples — non-exhaustive | Replacement |
@@ -302,11 +302,11 @@ Use the operations above inside these statement forms:
   can bind a Local record, and `local, state.Found = makeLocalPair()` can store the bool.
   `var _, found = makeLocalPair()` can discard the Local result at package scope.
   An assignment cannot store a Local value in persistent storage or change a protected
-  field. Persistent Frozen results can be boxed in `any`.
+  field. Frozen results can be boxed in `any`.
 - Each [service result](service-results.md) must be a read result or the predeclared
   error type. There is no result count or order limit. Calls with only ordinary
   values keep Go rules. Tuple callbacks and generics keep each component's normal
-  rules: persistent Frozen values are allowed, while Local values need direct typed calls.
+  rules: Frozen values are allowed, while Local values need direct typed calls.
 - Blocks, `break`, and `continue` follow ordinary Go rules.
 - Local values and pointers need the exact parameter type, such as
   `func read(p *LocalPoint) int`. Call directly, without `go` or `defer`.

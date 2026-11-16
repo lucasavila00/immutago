@@ -45,7 +45,7 @@ generic_copied.go:19:2: unsupported immutable operation: protected storage requi
 generic_copied.go:20:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer reply.Window.Width()
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
-generic_copied.go:21:26: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+generic_copied.go:21:26: unsupported immutable operation: closures require ordinary or Frozen captures
   source: reply
   type: api.LevelReply
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
@@ -66,15 +66,15 @@ generic_methods.go:10:6: unsupported immutable operation: immutable method recei
   source: value.MapPointer[int](number)
   type: int
   fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
-generic_methods.go:9:12: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+generic_methods.go:9:12: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: Map
   type: func[T any](read func(int) T) T
   fix: use a direct non-generic function with concrete parameter types
-generic_methods.go:9:30: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+generic_methods.go:9:30: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: local
   type: func(n int) api.Settings
   fix: call a named, non-generic function directly with a concrete immutable parameter
-generic_methods.go:9:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+generic_methods.go:9:6: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: value.Map[api.Settings](local)
   type: api.Settings
   fix: call a named, non-generic function directly with a concrete immutable parameter

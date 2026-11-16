@@ -1,4 +1,4 @@
-tuple.go:9:34: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+tuple.go:9:34: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: logx.Values(pair())
   type: ()
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

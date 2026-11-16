@@ -25,7 +25,8 @@ func (p *proof) copiedValue(result *obligation, t types.Type) {
 			p.dependCategory(result, value.Elem(), "array element: ", copiedCategory)
 		} else {
 			result.reason = "named array must be wrapped in a struct with an immutable marker"
-			result.repair = "use an unnamed array type; to keep a named type, put the unnamed array in a marked struct"
+			result.repair = "use an unnamed array type; to keep a named type, " +
+				"put the unnamed array in a Frozen, Local, or Copied record"
 		}
 		return
 	case *types.Struct:

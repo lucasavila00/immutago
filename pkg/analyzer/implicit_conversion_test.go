@@ -20,7 +20,7 @@ func TestImplicitInterfaceConversions(t *testing.T) {
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			got := checkSource(t, `type V struct{im.Local;X int};`+test.source)
-			if !strings.Contains(got, "ordinary interfaces require ordinary or persistent Frozen values") &&
+			if !strings.Contains(got, "ordinary interfaces require ordinary or Frozen values") &&
 				!(test.name == "variadic callback" && strings.Contains(got, "callbacks require")) {
 				t.Fatalf("implicit interface conversion accepted: %s", got)
 			}

@@ -1,16 +1,16 @@
-forms.go:31:14: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+forms.go:31:14: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: interface { Read() (im.StringProjection, bool) }
   type: interface{Read() (im.StringProjection, bool)}
   fix: call a named, non-generic function directly with a concrete immutable parameter
-forms.go:32:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+forms.go:32:6: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: func() (im.StringProjection, bool)
   type: func() (im.StringProjection, bool)
   fix: call a named, non-generic function directly with a concrete immutable parameter
-forms.go:35:16: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+forms.go:35:16: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: Dynamic
   type: result_rejected.Dynamic
   fix: call a named, non-generic function directly with a concrete immutable parameter
-forms.go:35:34: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
+forms.go:35:34: unsupported immutable operation: dynamic calls require ordinary or Frozen parameters and results
   source: r.Read()
   type: (im.StringProjection, bool)
   fix: call a named, non-generic function directly with a concrete immutable parameter

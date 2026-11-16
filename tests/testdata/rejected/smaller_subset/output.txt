@@ -25,23 +25,23 @@ smaller_subset.go:17:2: Frozen collection: type argument 1: type parameters are 
 smaller_subset.go:18:9: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:20:35: unsupported immutable operation: immutable references require a concrete marked struct target
+smaller_subset.go:20:35: unsupported immutable operation: immutable references require a concrete Frozen or Local record target
   source: &[2]Node{}
   type: *[2]smaller_subset.Node
-  fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs
-smaller_subset.go:20:53: unsupported immutable operation: immutable references require a concrete marked struct target
+  fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in Frozen or Local records
+smaller_subset.go:20:53: unsupported immutable operation: immutable references require a concrete Frozen or Local record target
   source: p
   type: *[2]smaller_subset.Node
-  fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs
-smaller_subset.go:21:35: unsupported immutable operation: immutable references require a concrete marked struct target
+  fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in Frozen or Local records
+smaller_subset.go:21:35: unsupported immutable operation: immutable references require a concrete Frozen or Local record target
   source: new(im.SliceProjection[int])
   type: *im.SliceProjection[int]
-  fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs
-smaller_subset.go:21:69: unsupported immutable operation: immutable references require a concrete marked struct target
+  fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in Frozen or Local records
+smaller_subset.go:21:69: unsupported immutable operation: immutable references require a concrete Frozen or Local record target
   source: p
   type: *im.SliceProjection[int]
-  fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs
-smaller_subset.go:32:29: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+  fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in Frozen or Local records
+smaller_subset.go:32:29: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: smaller_subset.Local
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

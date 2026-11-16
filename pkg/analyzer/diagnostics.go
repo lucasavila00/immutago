@@ -46,24 +46,25 @@ var subsetFixes = map[string]string{
 	"Local pointers cannot enter aggregate storage": "keep a Local value in a local binding, or store a Frozen pointer",
 	"Local values and pointers cannot be stored in package variables": "keep Local values in local bindings; " +
 		"copy the required data into Frozen values before saving it",
-	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
-		"im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs",
+	"immutable references require a concrete Frozen or Local record target": "allocate a concrete struct that embeds " +
+		"im.Frozen or im.Local; keep Local projections by value and put protected arrays in Frozen or Local records",
 	"returning Local pointers is unsupported": "return a Local value copy, or use im.Frozen " +
 		"for objects whose pointers must be shared",
 	"global Local pointers are unsupported":        "keep the Local pointer local, or store a Frozen value",
 	"containers of Local pointers are unsupported": "keep Local values in local bindings, or store im.Frozen pointers",
 	"user generic declarations cannot define Frozen or Local types": "declare a concrete Frozen or Local type " +
 		"without type parameters",
-	"user generic declarations require ordinary or persistent Frozen contracts": "use a non-generic declaration " +
+	"user generic declarations require ordinary or Frozen contracts": "use a non-generic declaration " +
 		"with concrete field and parameter types",
-	"user generic instantiations require ordinary or persistent Frozen type arguments": "use a direct non-generic " +
+	"user generic instantiations require ordinary or Frozen type arguments": "use a direct non-generic " +
 		"function with concrete parameter types",
 	"writes to immutable objects are unsupported": "construct a new value and replace the whole variable " +
 		"or mutable holder slot; do not write inside immutable records",
 	"immutable references require fresh allocation": "use &T{...}, new(T), or new(value); " +
 		"do not take the address of an existing variable, field, or element",
 	"protected composite literals require a concrete storage type": "use a concrete " +
-		"marked field, value array, or checked builder; copy scalar data before storing it in a generic literal",
+		"Frozen or Local record, value array, or checked builder; " +
+		"copy scalar data before storing it in a generic literal",
 	"protected operation is outside the supported statement forms": "use a separate " +
 		"assignment, direct synchronous call, value return, or documented conditional/loop form",
 	"protected iteration requires a direct frozen All call": "use range frozen.All() " +
@@ -72,8 +73,9 @@ var subsetFixes = map[string]string{
 		"continuing; keep Local values, Local pointers, and native builders out of go and defer",
 	"protected storage is unsupported in type switches": "keep concrete protected " +
 		"types in named function parameters instead of recovering values or references from interfaces",
-	"immutable methods require a proved marked or Copied receiver": "use a proved marked or Copied receiver " +
-		"type; for other field or element types, copy to an ordinary local before calling the method",
+	"immutable methods require a proved Frozen, Local, or Copied receiver": "use a proved " +
+		"Frozen, Local, or Copied receiver type; " +
+		"for other field or element types, copy to an ordinary local before calling the method",
 	"promoted immutable methods are unsupported": "name the embedded field explicitly and call a method " +
 		"allowed on that field; copy scalar fields to ordinary locals before calling their methods",
 	"immutable method receivers must match their declared type exactly": "use an exact pointer or new(value) for a " +
@@ -96,7 +98,7 @@ var subsetFixes = map[string]string{
 		"owned local map or fresh literal to im.FreezeMap",
 	"channels of immutable storage are unsupported": "send a Frozen pointer or Frozen handle; " +
 		"keep Local data local and do not send Frozen records by value",
-	"pointer indirection is unsupported": "use a direct pointer to a concrete marked struct",
+	"pointer indirection is unsupported": "use a direct pointer to a concrete Frozen or Local record",
 	"interior addresses of protected storage are unsupported": "copy the field into a local; " +
 		"do not take a pointer into immutable storage",
 	"slice projections of immutable storage are unsupported": "copy the array into local " +
@@ -109,21 +111,21 @@ var subsetFixes = map[string]string{
 		"or a fresh pointer for pointer methods; do not rely on implicit dereferences",
 	"Frozen interfaces require concrete Frozen record implementations": "use a proved record that embeds im.Frozen " +
 		"or a pointer to that record",
-	"ordinary interfaces require ordinary or persistent Frozen values": "keep the concrete immutable " +
+	"ordinary interfaces require ordinary or Frozen values": "keep the concrete immutable " +
 		"type in parameters, results, and variables instead of using an interface",
-	"interface assertions require ordinary or persistent Frozen values": "keep the concrete immutable " +
+	"interface assertions require ordinary or Frozen values": "keep the concrete immutable " +
 		"type in parameters, results, and variables instead of using an interface",
-	"dynamic calls require ordinary or persistent Frozen parameters and results": "call a named, non-generic " +
+	"dynamic calls require ordinary or Frozen parameters and results": "call a named, non-generic " +
 		"function directly with a concrete immutable parameter",
-	"callbacks require ordinary or persistent Frozen parameters and results": "call a named, non-generic " +
+	"callbacks require ordinary or Frozen parameters and results": "call a named, non-generic " +
 		"function directly with a concrete immutable parameter",
 	"collection and projection calls require a supported receiver": "call value.Method(...); for an embedded " +
 		"collection or projection, use holder.Field.Method(...); do not call through the type",
-	"method expressions require ordinary or persistent Frozen receivers and contracts": "call the receiver method " +
+	"method expressions require ordinary or Frozen receivers and contracts": "call the receiver method " +
 		"directly (value.Method(...)); do not call it through the type",
-	"method values require ordinary or persistent Frozen receivers and contracts": "call the method directly " +
+	"method values require ordinary or Frozen receivers and contracts": "call the method directly " +
 		"(value.Method(...)); do not save or pass its method value",
-	"closures require ordinary or persistent Frozen captures": "copy scalar data before the closure, or use a named " +
+	"closures require ordinary or Frozen captures": "copy scalar data before the closure, or use a named " +
 		"function with a concrete immutable parameter",
 	"immutable iterators must be consumed by direct range": "write for key, value := range " +
 		"collection.All() { ... }; do not retain or pass the iterator",

@@ -1,8 +1,8 @@
-generic.go:7:2: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+generic.go:7:2: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: logx.Identity(current)
   type: im.Projection[model.Model]
   fix: use a direct non-generic function with concrete parameter types
-generic.go:7:7: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+generic.go:7:7: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: Identity
   type: func[T any](value T) T
   fix: use a direct non-generic function with concrete parameter types

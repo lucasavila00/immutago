@@ -283,7 +283,8 @@ Keep source restrictions and examples there. Keep analysis details in the
 - Check each exported service method result with ReadResult or predeclared error,
   with no result count or order limit. Init, Run, and runtime methods are exempt. Identify the
   predeclared error type by compiler identity; aliases work. Error values use Go
-  contracts without origin checks. Error is not a ReadResult or a marked field type.
+  contracts without origin checks. Error is not a ReadResult or an allowed field
+  in a Frozen, Local, or Copied record.
   Direct typed calls can bind results with :=, =, or var. Check each result and
   destination with the normal im type, write, builder, and transport rules.
   Frozen interface methods use ordinary method result rules; they have no separate
@@ -291,7 +292,7 @@ Keep source restrictions and examples there. Keep analysis details in the
 - Express service references through the general opaque handle rules. Ref.Borrow returns one stable service pointer; its calls,
   method values, method expressions, and returned pointers use ordinary Go rules.
   Keep service result checks and im checks for protected fields. Ref is an opaque
-  handle that marked records can store; the service itself remains mutable.
+  handle that Frozen or Local records can store; the service itself remains mutable.
   Keep this distinction in [service architecture](docs/arch/services.md).
 - Trust ordinary Go API contracts. Use the documented package selection rules;
   do not add string taint analysis or whole-program service effect analysis.

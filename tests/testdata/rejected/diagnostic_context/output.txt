@@ -35,7 +35,7 @@ clone_records.go:25:2: unsupported immutable operation: native builders require 
   source: assigned = records.Clone()
   fix: declare one fresh local builder; use values = append(values, element) to extend it
 clone_records.go:39:10: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-clone_records.go:43:30: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+clone_records.go:43:30: unsupported immutable operation: closures require ordinary or Frozen captures
   source: records
   type: im.SliceProjection[diagnosticcontext.Score]
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
@@ -43,7 +43,7 @@ clone_records.go:52:6: unsupported immutable operation: promoted immutable metho
   source: values.Clone()
   type: []int
   fix: name the embedded field explicitly and call a method allowed on that field; copy scalar fields to ordinary locals before calling their methods
-clone_records.go:56:6: unsupported immutable operation: method expressions require ordinary or persistent Frozen receivers and contracts
+clone_records.go:56:6: unsupported immutable operation: method expressions require ordinary or Frozen receivers and contracts
   source: im.SliceProjection[int].Clone(values)
   type: []int
   fix: call the receiver method directly (value.Method(...)); do not call it through the type
@@ -77,7 +77,7 @@ fields.go:33:9: unsupported immutable operation: array element: Label: github.co
   fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 fields.go:39:5: Copied record: Values: named array must be wrapped in a struct with an immutable marker
   type: diagnosticcontext.NamedArray
-  fix: use an unnamed array type; to keep a named type, put the unnamed array in a marked struct
+  fix: use an unnamed array type; to keep a named type, put the unnamed array in a Frozen, Local, or Copied record
 fields.go:46:5: Copied record: Markers: array element: immutable markers are annotations, not data
   type: diagnosticcontext.MarkerData
   fix: embed the marker in a named struct; use data fields for values

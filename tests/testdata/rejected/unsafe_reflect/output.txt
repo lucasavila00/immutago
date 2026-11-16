@@ -1,12 +1,12 @@
-protected.go:31:31: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+protected.go:31:31: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: r.ValueOf(record)
   type: reflect.Value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-protected.go:34:31: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+protected.go:34:31: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: r.TypeOf(record)
   type: reflect.Type
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-protected.go:37:28: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+protected.go:37:28: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: TypeFor
   type: func[T any]() reflect.Type
   fix: use a direct non-generic function with concrete parameter types
@@ -14,7 +14,7 @@ protected.go:40:19: unsupported immutable operation: native slices of immutable 
   source: []Record
   type: []protected.Record
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-protected.go:40:35: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+protected.go:40:35: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: r.ValueOf(values)
   type: reflect.Value
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface

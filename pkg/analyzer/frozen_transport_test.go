@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// TestFrozenValueTransport checks ordinary uses of persistent Frozen values.
+// TestFrozenValueTransport checks ordinary uses of Frozen values.
 func TestFrozenValueTransport(t *testing.T) {
 	const prefix = `type Data struct { im.Frozen; Text im.FrozenString; Values [2]im.FrozenString }
 type Alias = Data

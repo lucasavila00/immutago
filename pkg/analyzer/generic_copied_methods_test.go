@@ -69,7 +69,7 @@ func TestGenericCopiedMethodBoundaries(t *testing.T) {
 			"copying, rebinding, slicing, addressing"},
 		{"non-Copied scalar", `type Text[U any]string;func(t Text[U])Read()string{return string(t)};
 type TextOwner struct{im.Frozen;Text Text[Unit]};func f(v TextOwner){_=v.Text.Read()}`,
-			"proved marked or Copied receiver"},
+			"proved Frozen, Local, or Copied receiver"},
 		{"generic Frozen declaration", `type Bad[U any]struct{im.Frozen;N int};func(b Bad[U])Read()int{return b.N}`,
 			"user generic declarations cannot define"},
 		{"generic Local declaration", `type Bad[U any]struct{im.Local;N int};func(b Bad[U])Read()int{return b.N}`,

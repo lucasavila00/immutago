@@ -1,16 +1,16 @@
 forms.go:10:48: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: Saved, Found = api.Pair()
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-forms.go:11:79: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+forms.go:11:79: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: value, found = api.Pair()
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-forms.go:12:79: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+forms.go:12:79: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: found, value = api.Reverse()
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-forms.go:13:48: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+forms.go:13:48: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: return api.Reverse()
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
-forms.go:15:48: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+forms.go:15:48: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: take(api.Reverse())
   type: ()
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
@@ -18,15 +18,15 @@ forms.go:16:6: unsupported immutable operation: returning Local pointers is unsu
   source: Pointer
   type: func() (found bool, value *api.View)
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
-forms.go:17:20: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+forms.go:17:20: unsupported immutable operation: callbacks require ordinary or Frozen parameters and results
   source: func() (api.View, bool)
   type: func() (api.View, bool)
   fix: call a named, non-generic function directly with a concrete immutable parameter
-forms.go:17:55: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
+forms.go:17:55: unsupported immutable operation: dynamic calls require ordinary or Frozen parameters and results
   source: read()
   type: (api.View, bool)
   fix: call a named, non-generic function directly with a concrete immutable parameter
-forms.go:20:29: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+forms.go:20:29: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: api.View
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter

@@ -9,7 +9,7 @@ atomic.go:32:11: unmarked struct field _ contains protected storage
   owner: atomic.Pointer[serviceatomic.LocalSlot]; field type: [0]*serviceatomic.LocalSlot
   rule: unmarked structs cannot own Frozen records by value or Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
-atomic.go:32:18: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+atomic.go:32:18: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: Pointer
   type: atomic.Pointer[T any]
   fix: use a direct non-generic function with concrete parameter types
@@ -24,7 +24,7 @@ atomic.go:33:11: unmarked struct field _ contains protected storage
   owner: atomic.Pointer[serviceatomic.MixedSlot]; field type: [0]*serviceatomic.MixedSlot
   rule: unmarked structs cannot own Frozen records by value or Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
-atomic.go:33:18: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+atomic.go:33:18: unsupported immutable operation: user generic instantiations require ordinary or Frozen type arguments
   source: Pointer
   type: atomic.Pointer[T any]
   fix: use a direct non-generic function with concrete parameter types
