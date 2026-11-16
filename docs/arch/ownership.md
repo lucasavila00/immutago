@@ -82,6 +82,13 @@ implicit value copies. Projections need no registration or runtime ownership fla
 
 ## Generated projections
 
+Record, array, and interface projections embed a private alias of `im.Local`.
+The alias keeps the same compiler type identity and zero-sized marker. Normal
+type and source checks still apply. The generator selects private marker and
+payload names that do not conflict with source members or package declarations.
+It also selects import names that do not conflict with package declarations.
+Public projection method and type names remain fixed.
+
 For a Frozen Rates record with a frozen integer slice, the getter reads directly:
 
 ```go

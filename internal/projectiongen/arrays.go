@@ -17,7 +17,7 @@ func (g *generator) arrayReader(
 		return "", "", err
 	}
 	g.arrays = append(g.arrays, array{typ: typ, name: name, root: root, path: path, indices: indices})
-	fields := []string{"immutagoProjection:v.immutagoProjection"}
+	fields := []string{g.projectionField + ":v." + g.projectionField}
 	for _, index := range indices {
 		fields = append(fields, index+":"+index)
 	}
@@ -34,8 +34,8 @@ func (g *generator) writeArray(out *bytes.Buffer, item array) error {
 		return err
 	}
 	fmt.Fprintf(out, "// %s reads a fixed array locally.\n"+
-		"type %s struct { im.Local; immutagoProjection im.Projection[%s]\n",
-		item.name, item.name, g.typeName(item.root))
+		"type %s struct { %s; %s %s.Projection[%s]\n",
+		item.name, item.name, g.localMarker, g.projectionField, g.imName, g.typeName(item.root))
 	for _, saved := range item.indices {
 		fmt.Fprintf(out, "%s int\n", saved)
 	}
@@ -46,7 +46,7 @@ func (g *generator) writeArray(out *bytes.Buffer, item array) error {
 		fmt.Fprintf(out, "%s := v.%s\n", saved, saved)
 	}
 	if _, nested := item.typ.Elem().Underlying().(*types.Array); nested {
-		out.WriteString("if im.IsNil(v.immutagoProjection) { panic(\"nil frozen record\") }\n")
+		fmt.Fprintf(out, "if %s.IsNil(v.%s) { panic(\"nil frozen record\") }\n", g.imName, g.projectionField)
 		fmt.Fprintf(out, "if %s < 0 || %s >= %d { panic(\"array index out of range\") }\n", index, index, item.typ.Len())
 	}
 	fmt.Fprintf(out, "return %s\n}\n", expression)

@@ -31,8 +31,13 @@ Use the complete [Local transport forms](local.md#value-forms--exhaustive) and
 ## Field results — exhaustive
 
 Each direct field gets a method with the same name, except marker and blank
-fields. An unexported field has an unexported method. Field names Local, IsNil, Unsafe,
-and immutagoProjection conflict with generated members and are rejected.
+fields. An unexported field has an unexported method. Field names IsNil and Unsafe
+conflict with the public projection methods and are rejected. Local and private
+implementation names are allowed: a field `Local int` has the getter `p.Local()`.
+
+A foreign Frozen record field needs an exported original record declaration.
+An exported alias of a private record does not expose its projection or constructor.
+See the [record field forms](frozen-records.md).
 
 | Field type | Generated result |
 | --- | --- |
@@ -80,7 +85,8 @@ this map-value copy automatically. See [operation costs](performance.md).
 | Change `p.Unsafe().Limit` | Construct another Settings value. |
 | Declare SettingsProjection, SettingsCell, or SettingsLimitsProjection before generation | Use another source name. |
 | A Frozen Plan with array field Steps and a Frozen record named PlanSteps | Rename the record to StepSummary or rename the field; both need PlanStepsProjection. |
-| A source field named Local | Rename the field. |
+| A source field named IsNil or Unsafe | Rename the field; the projection supplies those public methods. |
+| A foreign record field uses `type Public = privateRecord` | Export the original record declaration. |
 
 Only verified generated code can form interior Frozen-record addresses.
 The public Unsafe operation returns the selected value without another Cell load.
