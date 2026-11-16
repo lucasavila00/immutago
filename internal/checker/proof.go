@@ -79,8 +79,15 @@ func (p *proof) categoryNode(t types.Type, category proofCategory) *obligation {
 		result.reason = "immutable markers are annotations, not data"
 		result.repair = "embed the marker in a named struct; use data fields for values"
 	} else if IsLibraryType(t, "FrozenInterface") {
+		switch category {
+		case frozenCategory:
+			result.repair = "embed im.FrozenInterface in a named interface; use that interface as the payload"
+		case copiedCategory:
+			rejectCopied(result, t)
+		case readCategory:
+			result.repair = "embed im.FrozenInterface in a named interface; use its generated projection as the read result"
+		}
 		result.reason = "immutable markers are annotations, not data"
-		result.repair = "embed im.FrozenInterface in a named interface; use that interface as the payload"
 	} else {
 		switch category {
 		case frozenCategory:

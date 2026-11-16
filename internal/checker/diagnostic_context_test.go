@@ -17,7 +17,7 @@ func TestMarkerPayloadFailures(t *testing.T) {
 			marker.SetUnderlying(frozenContract("Marker").Underlying())
 		}
 		alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), marker)
-		for _, payload := range []types.Type{marker, alias, types.NewArray(alias, 0)} {
+		for _, payload := range []types.Type{marker, alias, types.NewArray(alias, 0), types.NewArray(types.NewArray(alias, 2), 3)} {
 			checkMarkerPayload(t, name, payload)
 		}
 	}
@@ -26,20 +26,27 @@ func TestMarkerPayloadFailures(t *testing.T) {
 // checkMarkerPayload checks one annotation through every proof category.
 func checkMarkerPayload(t *testing.T, name string, payload types.Type) {
 	t.Helper()
-	var prover Prover
-	for _, prove := range []func(types.Type) Failure{
-		prover.FrozenFailure, prover.CopiedFailure, prover.ReadResultFailure,
-	} {
-		failure := prove(payload)
-		if !strings.Contains(failure.Reason, "immutable markers are annotations, not data") {
-			t.Errorf("%s: %v", payload, failure)
-		}
-		want := "embed the marker in a named struct"
-		if name == "FrozenInterface" {
-			want = "embed im.FrozenInterface in a named interface"
-		}
-		if !strings.Contains(failure.Repair, want) {
-			t.Errorf("%s: %v", payload, failure)
+	for _, order := range [][3]int{{0, 1, 2}, {2, 1, 0}, {1, 0, 2}} {
+		var prover Prover
+		checks := []func(types.Type) Failure{prover.FrozenFailure, prover.CopiedFailure, prover.ReadResultFailure}
+		for range 2 {
+			for _, category := range order {
+				failure := checks[category](payload)
+				want := "embed the marker in a named struct; use data fields for values"
+				if name == "FrozenInterface" {
+					want = []string{
+						"embed im.FrozenInterface in a named interface; use that interface as the payload",
+						"use bool, numbers, unnamed arrays, or Copied records; " +
+							"for Local fields or results, use matching projections; " +
+							"if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local " +
+							"and use read-result fields such as im.StringProjection",
+						"embed im.FrozenInterface in a named interface; use its generated projection as the read result",
+					}[category]
+				}
+				if !strings.Contains(failure.Reason, "immutable markers are annotations, not data") || failure.Repair != want {
+					t.Errorf("%s, category %d, order %v: %v; want repair %q", payload, category, order, failure, want)
+				}
+			}
 		}
 	}
 }
