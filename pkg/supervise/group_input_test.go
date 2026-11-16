@@ -19,6 +19,30 @@ func TestInvalidGroup(t *testing.T) {
 	}
 }
 
+// TestChildrenRequiresStart rejects unbound services before child Init can acquire resources.
+func TestChildrenRequiresStart(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		children func() *Group
+	}{
+		{"Service", new(Service[NoArgs]).Children},
+		{"embedded", new(serviceBase).Children},
+		{"nested", new(struct{ serviceBase }).Children},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			expectPanic(t, "supervise: nil or zero Group", func() { test.children() })
+			inits := 0
+			hooks := &initHooks{init: func(*initializing) error { inits++; return nil }}
+			expectPanic(t, "supervise: nil or zero Group", func() {
+				_, _ = Start[initializing](test.children(), hooks)
+			})
+			if inits != 0 {
+				t.Fatal("Init ran under an unstarted service")
+			}
+		})
+	}
+}
+
 // pointerService has the unsupported direct pointer embedding.
 type pointerService struct{ *Service[NoArgs] }
 

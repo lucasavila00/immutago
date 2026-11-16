@@ -7,9 +7,9 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// markedMethodReceiver proves the complete concrete receiver type of a user method.
+// markedMethodReceiver proves the receiver type, independent of the method's own type parameters.
 func (c *subsetChecks) markedMethodReceiver(signature *types.Signature) bool {
-	if signature.Recv() == nil || genericSignature(signature) {
+	if signature.Recv() == nil {
 		return false
 	}
 	receiver := types.Unalias(signature.Recv().Type())
