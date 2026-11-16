@@ -1,7 +1,8 @@
 # Service results
 
 Each result of an exported service method must be a read result or Go's
-predeclared `error` type. There is no limit on the number or order of results.
+predeclared `error` type. The same rules apply to `Service[A]` and
+`TerminalService[A]`. There is no limit on the number or order of results.
 Init, Run, and runtime methods are exempt. The rule also covers promoted methods.
 
 | Result signatures — exhaustive | Example |

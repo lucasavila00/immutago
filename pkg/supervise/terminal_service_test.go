@@ -92,25 +92,7 @@ func checkTerminalServiceFailure(t *testing.T, mode string, reporting bool) {
 	close(trigger)
 	value := <-terminal
 	<-top.Stop()
-	failure, ok := value.(*Failure)
-	if !ok {
-		t.Fatalf("terminal value = %T; want *Failure", value)
-	}
-	if failure.Service != "supervise.terminalWorker" || failure.Value != cause {
-		t.Errorf("failure = %#v", failure)
-	}
-	if !bytes.Contains(failure.Stack, []byte("checkTerminalServiceFailure.func")) {
-		t.Errorf("original Run stack was lost:\n%s", failure.Stack)
-	}
-	if err, ok := cause.(error); ok && !errors.Is(failure, err) {
-		t.Errorf("original error was lost: %v", failure)
-	}
-	if mode == "error" {
-		var originalError *terminalCause
-		if !errors.As(failure, &originalError) || originalError != cause {
-			t.Errorf("original error type was lost: %v", failure)
-		}
-	}
+	failure := checkTerminalFailureDetails(t, value, cause)
 	if elapsed := time.Since(at); elapsed != 0 || inits != 1 || runs != 1 {
 		t.Errorf("elapsed=%s Init=%d Run=%d; want 0s, 1, 1", elapsed, inits, runs)
 	}
@@ -125,4 +107,29 @@ func checkTerminalServiceFailure(t *testing.T, mode string, reporting bool) {
 			t.Error("terminal Failure changed the attempt stack")
 		}
 	}
+}
+
+// checkTerminalFailureDetails checks the original value, error type, and Run stack.
+func checkTerminalFailureDetails(t *testing.T, value, cause any) *Failure {
+	t.Helper()
+	failure, ok := value.(*Failure)
+	if !ok {
+		t.Fatalf("terminal value = %T; want *Failure", value)
+	}
+	if failure.Service != "supervise.terminalWorker" || failure.Value != cause {
+		t.Errorf("failure = %#v", failure)
+	}
+	if !bytes.Contains(failure.Stack, []byte("checkTerminalServiceFailure.func")) {
+		t.Errorf("original Run stack was lost:\n%s", failure.Stack)
+	}
+	if err, ok := cause.(error); ok && !errors.Is(failure, err) {
+		t.Errorf("original error was lost: %v", failure)
+	}
+	if _, typed := cause.(*terminalCause); typed {
+		var originalError *terminalCause
+		if !errors.As(failure, &originalError) || originalError != cause {
+			t.Errorf("original error type was lost: %v", failure)
+		}
+	}
+	return failure
 }

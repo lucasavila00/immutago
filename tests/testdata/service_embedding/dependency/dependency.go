@@ -7,3 +7,5 @@ import (
 )
 
 var ref supervise.Ref[pointer.Worker]
+
+var terminalRef supervise.Ref[pointer.TerminalWorker]

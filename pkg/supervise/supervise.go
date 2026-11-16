@@ -288,9 +288,12 @@ func Start[T, A any, P interface {
 	ready = true
 	ref := Ref[T]{value: new(atomic.Pointer[T])}
 	ref.value.Store(first)
-	current := first
+	current := struct {
+		value *T
+		state *service[A]
+	}{first, state}
 	run := func(ctx context.Context) {
-		value := current
+		value := current.value
 		if value == nil {
 			parent.mu.Lock()
 			stopped := parent.policy.Err() != nil || ctx.Err() != nil
@@ -298,28 +301,28 @@ func Start[T, A any, P interface {
 			if stopped {
 				return
 			}
-			value, state, _ = create()
-			current = value
+			current.value, current.state, _ = create()
+			value = current.value
 			if err := P(value).Init(); err != nil {
 				panic(err)
 			}
 		}
 		parent.mu.Lock()
-		run, admitted := state.begin(ctx)
+		run, admitted := current.state.begin(ctx)
 		if admitted {
 			ref.value.Store(value)
 		}
 		parent.mu.Unlock()
 		if !admitted {
 			<-ctx.Done()
-			state.halt()
+			current.state.halt()
 		}
 		P(value).Run(run)
 	}
 	cleanup := func() {
-		if current != nil {
-			state.end()
-			current = nil
+		if current.value != nil {
+			current.state.end()
+			current.value, current.state = nil, nil
 		}
 	}
 	parent.add(func(ctx context.Context) {

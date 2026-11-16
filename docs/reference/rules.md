@@ -95,8 +95,8 @@ it. The checker does not prove the promise.
 Run `immutago ./...` or `go vet -vettool=/absolute/path/to/immutago ./...`.
 `go build` alone does not enforce these rules.
 
-For services, also run standard `go vet ./...` to check common copies of Service
-and Group owners. Immutago does not enforce their
+For services, also run standard `go vet ./...` to check common copies of Service,
+TerminalService, and Group owners. Immutago does not enforce their
 [Go copy contract](services.md#copy-contract), and a custom vettool does not run
 the standard vet checks.
 

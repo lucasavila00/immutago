@@ -1,0 +1,18 @@
+storage.go:16:12: stored im argument: Frozen storage cannot contain Local values
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+storage.go:19:12: stored im argument: Frozen storage cannot contain Local values
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+storage.go:22:12: stored im argument: Local pointers cannot be stored
+  fix: keep the Local pointer in a local binding; store a Frozen pointer for shared data
+storage.go:25:12: stored im argument: func(example.com/consumer/storage.Local) is not provably immutable
+  fix: keep channels and callbacks outside immutable data; store their Frozen results
+storage.go:25:28: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: func(Local)
+  type: func(storage.Local)
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+storage.go:28:12: stored im argument: struct does not embed im.Frozen
+  fix: embed im.Frozen and use Frozen fields, or im.Copied for value-only fields
+storage.go:28:36: unmarked struct field Value contains protected storage
+  owner: struct{Value [2]storage.Local}; field type: [2]storage.Local
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store Frozen pointers or handles; keep Local data in local bindings

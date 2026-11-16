@@ -67,12 +67,14 @@ run the standard vet checks.
 | Alias to a service struct | `type Alias = Worker` | `type Alias = Ledger` |
 | Defined struct with the same value fields | `type Another Worker`; declare its own Run method. | `type Another Ledger`; declare its own Run method. |
 | Anonymous struct with value embedding | `type Anonymous = struct { Worker }` | `type Anonymous = struct { Ledger }` |
+| One selected base with another base at a deeper path | `type Worker struct { supervise.Service[Args]; Ledger }` | `type Ledger struct { supervise.TerminalService[Args]; Worker }` |
 | Value embedding through another struct | `type Base struct { supervise.Service[Args] }`; `type Worker struct { Base }` | `type Base struct { supervise.TerminalService[Args] }`; `type Ledger struct { Base }` |
 
 Every field on the selected path to the runtime methods must be a value field.
 Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
 The selected base sets the retry behavior; aliases and outer value fields do not
-change it. Go rejects ambiguous runtime methods, including direct embedding of
+change it. The selected path is the shallowest unambiguous path under Go method
+promotion. Ambiguous runtime methods are rejected, including direct embedding of
 both service bases.
 
 | Rejected examples — non-exhaustive | Allowed replacement |

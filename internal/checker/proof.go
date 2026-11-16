@@ -173,7 +173,8 @@ func (p *proof) value(result *obligation, t types.Type) {
 	}
 	if IsRuntimeType(t, "Ref") {
 		result.reason = refTargetReason(t.(*types.Named).TypeArgs().At(0))
-		result.repair = "use a concrete service struct that embeds supervise.Service by value"
+		result.repair = "use a concrete service struct that embeds " +
+			"supervise.Service or supervise.TerminalService by value"
 		return
 	}
 	if IsCollection(t) {

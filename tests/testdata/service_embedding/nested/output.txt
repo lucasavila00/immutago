@@ -2,4 +2,9 @@ nested.go:14:13: service must embed supervise.Service or supervise.TerminalServi
 nested.go:18:19: unsupported immutable operation: service must embed supervise.Service or supervise.TerminalService by value through each embedded field
   source: Ref
   type: supervise.Ref[T any]
-  fix: use a concrete service struct that embeds supervise.Service by value
+  fix: use a concrete service struct that embeds supervise.Service or supervise.TerminalService by value
+terminal.go:14:21: service must embed supervise.Service or supervise.TerminalService by value through each embedded field
+terminal.go:18:27: unsupported immutable operation: service must embed supervise.Service or supervise.TerminalService by value through each embedded field
+  source: Ref
+  type: supervise.Ref[T any]
+  fix: use a concrete service struct that embeds supervise.Service or supervise.TerminalService by value

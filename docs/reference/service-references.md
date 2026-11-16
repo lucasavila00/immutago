@@ -44,7 +44,7 @@ apply to the record that holds it:
 
 | Operation | Rule |
 | --- | --- |
-| Declare or use `supervise.Ref[T]` | T is a concrete struct with a [value embedding path](services.md#service-embedding--exhaustive) to `supervise.Service[A]`. |
+| Declare or use `supervise.Ref[T]` | T is a concrete struct with a [value embedding path](services.md#service-embedding--exhaustive) to `supervise.Service[A]` or `supervise.TerminalService[A]`. |
 | Call the concrete Ref's Borrow method | Use `ref.Borrow().Method(args)`; see the call forms below. |
 | Return data from an exported service method | Use the [service result signatures](service-results.md). |
 | Use a reference inside protected im storage | Apply the [im rules](common-forms.md) to that storage. |

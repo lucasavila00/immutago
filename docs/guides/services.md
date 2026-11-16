@@ -52,8 +52,8 @@ type Ledger struct {
 
 Supply Run and optionally Init, then call `supervise.Start[Ledger](root, supervise.NoArgs{})`.
 The first Run panic stops the root with the original panic value and stack in
-`*supervise.Failure`. There is no restart or backoff. Initial Init errors and
-panics still return to the Start caller. The
+`*supervise.Failure`. There is no restart or backoff. An initial Init error returns to the Start caller; an initial Init panic reaches
+that caller. The
 [runtime reference](../reference/services.md) defines failure reporting and Stop order.
 
 ## Keep a reference and call a method
