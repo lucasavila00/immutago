@@ -67,10 +67,12 @@ type Worker struct{supervise.Service[supervise.NoArgs]};type Count struct{im.Cop
 	for _, declaration := range []string{
 		`type Failure error`,
 		`type Failure interface{error;Code()int}`,
+		`type error interface{Error()string};type Failure=error`,
 	} {
 		got := checkSource(t, prefix+declaration+`;func(w *Worker)Retry()Failure{return nil}`)
 		if !strings.Contains(got, "must return a read result or error") ||
-			!strings.Contains(got, "declare the result as error or a type alias such as type Failure = error") {
+			!strings.Contains(got, "declare the result as Go's predeclared error") ||
+			!strings.Contains(got, "rename any declaration that shadows error") {
 			t.Fatal(got)
 		}
 	}

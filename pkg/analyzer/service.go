@@ -45,7 +45,8 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 			fix := structuralFix(result.Type(), reason)
 			if contract, ok := result.Type().Underlying().(*types.Interface); ok &&
 				types.Implements(contract, errorType.Underlying().(*types.Interface)) {
-				fix = "declare the result as error or a type alias such as type Failure = error"
+				fix = "declare the result as Go's predeclared error or an alias such as type Failure = error; " +
+					"rename any declaration that shadows error"
 			}
 			c.report(at, "service method "+method.Name()+" must return a read result or error: "+reason+
 				"\n  result type: "+diagnosticType(result.Type())+"\n  fix: "+fix)

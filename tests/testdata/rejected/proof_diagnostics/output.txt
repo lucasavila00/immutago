@@ -62,10 +62,10 @@ diagnostics.go:84:6: Frozen collection: Frozen storage cannot contain Local valu
   fix: store Frozen data; keep its Projection or Local result in local bindings
 storage.go:12:18: service method Retry must return a read result or error: example.com/consumer/proof_diagnostics.Failure is not a Copied value
   result type: proofdiagnostics.Failure
-  fix: declare the result as error or a type alias such as type Failure = error
+  fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
 storage.go:13:18: service method RetryCode must return a read result or error: example.com/consumer/proof_diagnostics.CodedFailure is not a Copied value
   result type: proofdiagnostics.CodedFailure
-  fix: declare the result as error or a type alias such as type Failure = error
+  fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
 storage.go:16:2: unmarked struct field Point contains protected storage
   owner: proofdiagnostics.Saved; field type: proofdiagnostics.Point
   rule: unmarked structs cannot own Frozen records by value or Local data

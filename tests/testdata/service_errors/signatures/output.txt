@@ -13,7 +13,7 @@ signatures.go:20:56: unsupported immutable operation: returning Local pointers i
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 signatures.go:21:14: service method Defined must return a read result or error: example.com/consumer/signatures.OtherError is not a Copied value
   result type: signatures.OtherError
-  fix: declare the result as error or a type alias such as type Failure = error
+  fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
 signatures.go:22:14: service method Interface must return a read result or error: interface{Error() string} is not a Copied value
   result type: interface{Error() string}
-  fix: declare the result as error or a type alias such as type Failure = error
+  fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
