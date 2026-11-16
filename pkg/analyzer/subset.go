@@ -155,7 +155,7 @@ func (c *subsetChecks) protectedRoot(e ast.Expr) bool {
 	if c.pass.TypesInfo.Types[e].IsType() {
 		return false
 	}
-	if c.queries.Owns(c.pass.TypesInfo.TypeOf(e)) {
+	if c.queries.Owns(c.pass.TypesInfo.TypeOf(e)) || checker.Frozen(c.pass.TypesInfo.TypeOf(e)) {
 		return true
 	}
 	switch x := e.(type) {

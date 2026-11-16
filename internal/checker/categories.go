@@ -15,10 +15,6 @@ const (
 
 // copiedValue excludes retained data through the same recursive rule for every use.
 func (p *proof) copiedValue(result *obligation, t types.Type) {
-	if IsRuntimeType(t, "Ref") {
-		p.depend(result, t, "")
-		return
-	}
 	switch value := t.Underlying().(type) {
 	case *types.Basic:
 		if value.Info()&(types.IsBoolean|types.IsInteger|types.IsFloat|types.IsComplex) != 0 {
@@ -56,12 +52,6 @@ func (p *proof) copiedRecord(result *obligation, structure *types.Struct) {
 		if field.Embedded() && IsLibraryType(field.Type(), "Copied") {
 			continue
 		}
-		if p.queries.Handles(field.Type()) {
-			result.reason = field.Name() + ": Copied records cannot contain service references"
-			result.repair = "keep service references outside Copied records; store only bool, numbers, " +
-				"unnamed arrays, and Copied records"
-			return
-		}
 		p.dependCategory(result, field.Type(), field.Name()+": ", copiedCategory)
 	}
 }
@@ -69,8 +59,8 @@ func (p *proof) copiedRecord(result *obligation, structure *types.Struct) {
 // readValue proves the general result category used by Local fields and readers.
 func (p *proof) readValue(result *obligation, t types.Type) {
 	switch {
-	case IsUncheckedValue(t):
-		p.depend(result, t, "")
+	case IsUncheckedValue(t), IsHandle(t):
+		p.dependCategory(result, t, "", frozenCategory)
 		return
 	case IsProjection(t):
 		args := t.(*types.Named).TypeArgs()

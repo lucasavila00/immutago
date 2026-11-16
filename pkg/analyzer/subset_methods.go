@@ -17,7 +17,7 @@ func (c *subsetChecks) provedMethodReceiver(signature *types.Signature) bool {
 		receiver = types.Unalias(pointer.Elem())
 	}
 	named, ok := receiver.(*types.Named)
-	return ok && named.TypeParams().Len() == 0 &&
+	return ok && (named.TypeParams().Len() == 0 || checker.IsHandle(named)) &&
 		(c.proofs.CopiedReason(named) == "" || checker.Marked(named) && c.proofs.Reason(named) == "")
 }
 
@@ -51,11 +51,10 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) checker.Failure {
 	if len(selection.Index()) != 1 {
 		return shapeFailure("promoted immutable methods are unsupported")
 	}
-	if runtimeObject(selection.Obj()) {
-		signature = selection.Obj().Type().(*types.Signature)
-	} else if !c.provedMethodReceiver(signature) {
+	if !runtimeObject(selection.Obj()) && !c.provedMethodReceiver(signature) {
 		return shapeFailure("immutable methods require a proved marked or Copied receiver")
 	}
+	signature = selection.Obj().Type().(*types.Signature)
 	if !types.Identical(c.pass.TypesInfo.TypeOf(selector.X), signature.Recv().Type()) {
 		return shapeFailure("immutable method receivers must match their declared type exactly")
 	}

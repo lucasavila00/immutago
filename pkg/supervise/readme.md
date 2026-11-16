@@ -86,6 +86,7 @@ Ref holds an initialized service value. Copies select the same value. Stop does 
 
 ```go
 type Ref[T any] struct {
+    im.Frozen
     // contains filtered or unexported fields
 }
 ```

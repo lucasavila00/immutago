@@ -2,7 +2,7 @@
 
 The [required generation step](rules.md#required-generation) creates typed
 projections for Frozen records and Frozen interfaces. Record getters return
-Copied values, unchecked handles, or further Local projections. Local and Copied records need no
+Copied values, unchecked handles, or further Local projections. Opaque handles, Local records, and Copied records need no
 generation. See [Get started](../guides/getting-started.md) for a first program.
 
 ## Generated names and operations — exhaustive
@@ -41,14 +41,14 @@ See the [record field forms](frozen-records.md).
 
 | Field type | Generated result |
 | --- | --- |
-| Copied scalar, Copied record, or service reference | The field's own type: `int`, `Score`, or `supervise.Ref[Worker]`. |
+| Copied scalar or Copied record | The field's own type: `int` or `Score`. |
 | Native string or FrozenString | `im.StringProjection`. |
 | FrozenSlice[E] | `im.SliceProjection[E]`. |
 | FrozenMap[K,V] | `im.MapProjection[K,V]`. |
 | Frozen record or pointer to one | The record's generated typed projection. |
 | Frozen interface | The interface's generated local method projection. |
 | Unnamed array | A typed projection with Len and At; At uses this result table. |
-| UncheckedValue[T] | The handle itself: `im.UncheckedValue[T]`. |
+| Opaque handle | The handle itself, including a Frozen wrapper such as `supervise.Ref[Worker]`. |
 
 Arrays return projections, including arrays of Copied values. A Copied record
 field returns a complete value copy. A field read does not copy its containing

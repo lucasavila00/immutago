@@ -1,7 +1,15 @@
 # Service references
 
-`supervise.Ref[T]` holds one stable service pointer. It is a copyable handle that
-Frozen and Local records can store. The service itself has mutable state.
+`supervise.Ref[T]` holds one stable service pointer. It uses the general [opaque handle](unchecked-values.md) shape:
+
+```go
+type Ref[T any] struct {
+    im.Frozen
+    value im.UncheckedValue[T]
+}
+```
+
+Frozen and Local records can store the handle. The service itself has mutable state.
 
 ```go
 worker := ref.Borrow()
@@ -22,7 +30,7 @@ second := worker.Count()
 
 | Operation | Rule |
 | --- | --- |
-| Declare or use `supervise.Ref[T]` | T is a concrete struct with a [value embedding path](services.md#service-embedding--exhaustive) to `supervise.Service[A]`. |
+| Create a service with Start | Go requires the service methods; the analyzer checks the [value embedding path](services.md#service-embedding--exhaustive). |
 | Declare an exported service method | Its results follow the [service result signatures](service-results.md). |
 | Store a Ref in protected im storage | Apply the [im rules](common-forms.md) to that storage. The handle does not make the service immutable. |
 | Use Ref or the pointer returned by Borrow | Ordinary Go rules. Protected im fields keep their own rules. |
@@ -58,7 +66,6 @@ Select embedded Ref fields explicitly inside marked records. The ordinary
 
 | Rejected | Use instead |
 | --- | --- |
-| `supervise.Ref[int]` | Use a concrete service struct as T. |
 | `record.Worker = other` on a Frozen or Local record | Construct another record. |
 | `func() int { return local.Worker.Borrow().Count() }` captures a Local record | Save `worker := local.Worker.Borrow()` first; capture worker. |
 | Store `*Worker` as a Frozen field | Store `supervise.Ref[Worker]`; the service pointer is mutable. |

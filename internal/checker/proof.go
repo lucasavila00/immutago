@@ -171,11 +171,6 @@ func (p *proof) value(result *obligation, t types.Type) {
 	if IsUncheckedValue(t) {
 		return
 	}
-	if IsRuntimeType(t, "Ref") {
-		result.reason = refTargetReason(t.(*types.Named).TypeArgs().At(0))
-		result.repair = "use a concrete service struct that embeds supervise.Service by value"
-		return
-	}
 	if IsCollection(t) {
 		args := t.(*types.Named).TypeArgs()
 		for index := 0; index < args.Len(); index++ {
@@ -252,14 +247,6 @@ func (p *proof) frozenPointer(result *obligation, pointer *types.Pointer) {
 		return
 	}
 	p.depend(result, pointer.Elem(), "")
-}
-
-// refTargetReason requires the concrete service value selected by Borrow's *T result.
-func refTargetReason(target types.Type) string {
-	if _, concrete := target.Underlying().(*types.Struct); !concrete || !Service(target) {
-		return "Ref requires a concrete struct that embeds supervise.Service"
-	}
-	return ServiceEmbeddingReason(target)
 }
 
 // structure requires one marker and checks every stored field.

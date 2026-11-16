@@ -7,7 +7,7 @@ use.go:18:17: im.Unwrap requires a type that this package declares
   rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
   fix: call a function of the package that declares the type
 use.go:4:2: unsupported dependency example.com/consumer/uncheckedvalue: immutability proof failed
-  representative failure: example.com/consumer/uncheckedvalue/trusted.go:17:64: im.Trust requires a type that this package declares
+  representative failure: example.com/consumer/uncheckedvalue/trusted.go:15:64: im.Trust requires a type that this package declares
     type: T
     rule: only the package that declares T can wrap or read an im.UncheckedValue[T]
     fix: call a function of the package that declares the type

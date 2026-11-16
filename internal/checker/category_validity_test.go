@@ -92,23 +92,12 @@ func categoryCases(t *testing.T) []categoryCase {
 	return append(cases, categoryReferenceCases(t, reply)...)
 }
 
-// categoryReferenceCases covers valid and invalid opaque handles and a Local method contract.
+// categoryReferenceCases covers a Local method contract.
 func categoryReferenceCases(t *testing.T, reply types.Type) []categoryCase {
 	t.Helper()
-	pkg := types.NewPackage(RuntimePath, "supervise")
-	service := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Service", nil), types.NewStruct(nil, nil), nil)
-	service.AddMethod(types.NewFunc(token.NoPos, pkg, "bind", types.NewSignatureType(
-		types.NewVar(token.NoPos, pkg, "", types.NewPointer(service)), nil, nil, nil, nil, false)))
-	worker := markedType("Worker", service)
-	parameter := types.NewTypeParam(types.NewTypeName(token.NoPos, nil, "T", nil),
-		types.NewInterfaceType(nil, nil).Complete())
-	ref := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Ref", nil), types.NewStruct(nil, nil), nil)
-	ref.SetTypeParams([]*types.TypeParam{parameter})
 	method := types.NewFunc(token.NoPos, nil, "Read", types.NewSignatureType(nil, nil, nil, nil,
 		types.NewTuple(types.NewParam(token.NoPos, nil, "", reply)), false))
 	return []categoryCase{
-		{sliceType(t, ref, worker), [3]bool{true, true, true}},
-		{sliceType(t, ref, types.Typ[types.Int]), [3]bool{}},
 		{frozenContract("Reader", method), [3]bool{true, false, false}},
 	}
 }

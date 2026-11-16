@@ -32,6 +32,27 @@ func IsRuntimeType(t types.Type, name string) bool {
 // IsUncheckedValue reports whether t is the library's unchecked immutable value wrapper.
 func IsUncheckedValue(t types.Type) bool { return IsLibraryType(t, "UncheckedValue") }
 
+// IsHandle matches a named Frozen record with one named UncheckedValue payload.
+func IsHandle(t types.Type) bool {
+	named, ok := types.Unalias(t).(*types.Named)
+	if !ok || !Frozen(named) {
+		return false
+	}
+	structure, ok := named.Underlying().(*types.Struct)
+	if !ok || structure.NumFields() != 2 {
+		return false
+	}
+	marker, payload := false, false
+	for field := range structure.Fields() {
+		if field.Embedded() && IsLibraryType(field.Type(), "Frozen") {
+			marker = true
+		} else if !field.Embedded() && IsUncheckedValue(field.Type()) {
+			payload = true
+		}
+	}
+	return marker && payload
+}
+
 // IsCollection reports whether t is one of the library's sealed collection types.
 func IsCollection(t types.Type) bool {
 	return IsLibraryType(t, "FrozenSlice") || IsLibraryType(t, "FrozenMap") || IsLibraryType(t, "FrozenString")

@@ -25,7 +25,7 @@ func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 		if c.pass.TypesInfo.Types[expression].IsType() {
 			return false
 		}
-		if c.queries.Owns(c.pass.TypesInfo.TypeOf(expression)) {
+		if c.queries.Owns(c.pass.TypesInfo.TypeOf(expression)) || checker.Frozen(c.pass.TypesInfo.TypeOf(expression)) {
 			return true
 		}
 		switch node := expression.(type) {
@@ -60,7 +60,7 @@ func (c *subsetChecks) protectedSelection(selector *ast.SelectorExpr) bool {
 		if pointer, ok := owner.Underlying().(*types.Pointer); ok {
 			owner = pointer.Elem()
 		}
-		if c.queries.Owns(owner) {
+		if c.queries.Owns(owner) || checker.Frozen(owner) {
 			return true
 		}
 		owner = owner.Underlying().(*types.Struct).Field(index).Type()

@@ -17,7 +17,7 @@ Use this reference to check which Go forms Immutago accepts. The
 | [Typed projections](projections.md) | Generate field projections and choose explicit storage operations. |
 | [Projection primitives](projection-primitives.md) | Check the fixed projection APIs. |
 | [Frozen values](frozen.md) | Store strings, slices, and maps; read or explicitly clone them. |
-| [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
+| [Opaque handles](unchecked-values.md) | Keep a trusted pointer behind a package API. |
 
 ## Service forms (`supervise`)
 
@@ -73,7 +73,7 @@ The checker rejects a missing directive, missing output, or stale output before
 source checks. Only verified generated code can form interior Frozen-record addresses.
 Projection.Unsafe explicitly returns a Frozen payload for shared use. All normal
 type, write, capture, generic, receiver, and transport checks still apply.
-Local and Copied records need no generation.
+Opaque handles, Local records, and Copied records need no generation.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
@@ -84,11 +84,11 @@ Local and Copied records need no generation.
 | A manually changed or stale generated file | Regenerate from the source declarations with the same build configuration. |
 | Output made with `GOFLAGS=-tags=audit`, checked with different schema types and no tag | Regenerate without the tag, or keep the schema and its type dependencies the same in both configurations. |
 
-### Trusted immutable values
+### Opaque handles
 
-[`im.UncheckedValue[T]`](unchecked-values.md) records the declaring package's
-promise that the wrapped value never changes. Only that package can wrap or read
-it. The checker does not prove the promise.
+[UncheckedValue and its Frozen wrappers](unchecked-values.md) keep trusted pointers.
+Their target can be mutable. The declaring package controls access and synchronization.
+The checker proves the wrapper fields and rejects Local payloads.
 
 ### Check the program
 

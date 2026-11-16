@@ -120,6 +120,10 @@ func (c *subsetChecks) generationDeclaration(node ast.Node) (token.Pos, bool) {
 		if !checker.Frozen(c.pass.TypesInfo.TypeOf(declaration)) {
 			return token.NoPos, true
 		}
+		if owner, ok := c.parents[declaration].(*ast.TypeSpec); ok &&
+			c.pass.TypesInfo.Defs[owner.Name] != nil && checker.IsHandle(c.pass.TypesInfo.Defs[owner.Name].Type()) {
+			return token.NoPos, true
+		}
 		owner, named := c.parents[declaration].(*ast.TypeSpec)
 		if !named || owner.Assign.IsValid() {
 			c.pass.Reportf(declaration.Pos(),
@@ -133,7 +137,7 @@ func (c *subsetChecks) generationDeclaration(node ast.Node) (token.Pos, bool) {
 // generationNamed requires a non-test package declaration for each generated source type.
 func (c *subsetChecks) generationNamed(declaration *ast.TypeSpec) (token.Pos, bool) {
 	object := c.pass.TypesInfo.Defs[declaration.Name]
-	if declaration.Assign.IsValid() || object == nil ||
+	if declaration.Assign.IsValid() || object == nil || checker.IsHandle(object.Type()) ||
 		(!checker.Frozen(object.Type()) && !checker.FrozenInterface(object.Type())) {
 		return token.NoPos, true
 	}

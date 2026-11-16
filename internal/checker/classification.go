@@ -2,7 +2,7 @@ package checker
 
 import "go/types"
 
-// Classifier caches protected storage, callback, and service reference queries for one analysis pass.
+// Classifier caches protected storage, callback, and local storage queries for one analysis pass.
 // Its zero value is ready for use. Types must not change after their first query.
 // A Classifier must not be used by concurrent passes.
 type Classifier struct {
@@ -18,7 +18,6 @@ const (
 	ownershipMode
 	transportMode
 	callableMode
-	handleMode
 	localMode
 )
 
@@ -49,9 +48,6 @@ func (c *Classifier) Transport(t types.Type) bool { return c.query(t, transportM
 
 // Callable reports whether t contains a callback contract that carries protected storage.
 func (c *Classifier) Callable(t types.Type) bool { return c.query(t, callableMode) }
-
-// Handles reports whether storage or a callable contract contains a service reference.
-func (c *Classifier) Handles(t types.Type) bool { return c.query(t, handleMode) }
 
 // Locals reports local projections or records in storage, including through arrays and pointers.
 func (c *Classifier) Locals(t types.Type) bool { return c.query(t, localMode) }
@@ -116,12 +112,6 @@ func (c *Classifier) mark(node *classificationNode) {
 
 // expand matches the outgoing edges for one classification mode.
 func (c *Classifier) expand(node *classificationNode) {
-	if IsRuntimeType(node.key.typ, "Ref") {
-		if node.key.mode == handleMode {
-			c.mark(node)
-		}
-		return
-	}
 	if node.key.mode == localMode {
 		if IsProjection(node.key.typ) || Local(node.key.typ) || IsLibraryType(node.key.typ, "Local") {
 			c.mark(node)
@@ -130,8 +120,10 @@ func (c *Classifier) expand(node *classificationNode) {
 		}
 		return
 	}
-	if node.key.mode == handleMode {
-		c.callableEdges(node)
+	if IsHandle(node.key.typ) {
+		if node.key.mode == sourceMode {
+			c.mark(node)
+		}
 		return
 	}
 	if IsLibraryType(node.key.typ, "Cell") || IsRuntimeType(node.key.typ, ServiceMarker) ||

@@ -103,7 +103,7 @@ func generateTypes(pkg *types.Package, fset *token.FileSet, bootstrap bool) ([]b
 			continue
 		}
 		typ := object.Type()
-		if !checker.Frozen(typ) && !checker.FrozenInterface(typ) {
+		if checker.IsHandle(typ) || !checker.Frozen(typ) && !checker.FrozenInterface(typ) {
 			continue
 		}
 		if typ.(*types.Named).TypeParams().Len() != 0 {

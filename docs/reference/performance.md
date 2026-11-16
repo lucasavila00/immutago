@@ -19,7 +19,7 @@
 | Direct range over All | O(n); projection iterators copy keys/elements as Go values. |
 | FrozenString.Clone, StringProjection.Clone | O(n) byte copy; a nonempty escaping result uses one allocation. |
 | Shared FrozenSlice/FrozenMap.Clone | O(n) shallow copy into independent native storage. |
-| Local slice/map Clone | O(n); arguments must be Copied. Service references remain opaque shared handles. |
+| Local slice/map Clone | O(n); arguments must be Copied. Opaque handles are not Copied. |
 | Cell.Store | Copy one T root and publish with an atomic store; one allocation for T with nonzero size. |
 | Generated Cell.Load, raw Cell.LoadPointer | One atomic pointer load; no record copy or allocation. |
 | Raw Cell.Load | One atomic load and a T value copy; no backing-storage copy. |

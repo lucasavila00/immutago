@@ -56,8 +56,8 @@ func usesLibraryType(t types.Type, seen map[types.Type]bool, includeRuntime, inc
 		return libraryTypeMetadata(value.Obj(), value.TypeParams(), value.TypeArgs(), seen, includeRuntime, includeCopied) ||
 			usesLibraryType(value.Rhs(), seen, includeRuntime, includeCopied)
 	case *types.Named:
-		if checker.IsRuntimeType(value, "Ref") {
-			return includeRuntime
+		if !includeCopied && (checker.IsHandle(value) || checker.IsUncheckedValue(value)) {
+			return false
 		}
 		return libraryTypeMetadata(value.Obj(), value.TypeParams(), value.TypeArgs(), seen, includeRuntime, includeCopied) ||
 			usesLibraryType(value.Underlying(), seen, includeRuntime, includeCopied)

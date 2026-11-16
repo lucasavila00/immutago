@@ -7,11 +7,11 @@ import (
 	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
-type handler struct{ indexer supervise.Ref[Indexer] }
+type handler struct{ indexer *Indexer }
 
 // HTTPHandler serves document queries and index status.
 func HTTPHandler(indexer supervise.Ref[Indexer]) http.Handler {
-	h := handler{indexer: indexer}
+	h := handler{indexer: indexer.Borrow()}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /search", h.search)
 	mux.HandleFunc("GET /status", h.status)
@@ -25,14 +25,14 @@ func (h handler) search(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	index := h.indexer.Borrow().Read()
+	index := h.indexer.Read()
 	response := searchIndex(index, request)
 	writeJSON(w, http.StatusOK, response)
 }
 
 // status gives the JSON encoder temporary read access to the error text.
 func (h handler) status(w http.ResponseWriter, _ *http.Request) {
-	status := h.indexer.Borrow().Status()
+	status := h.indexer.Status()
 	response := struct {
 		Version   int    `json:"version"`
 		Documents int    `json:"documents"`

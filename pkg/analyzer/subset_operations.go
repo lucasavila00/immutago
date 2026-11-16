@@ -262,7 +262,7 @@ func (c *subsetChecks) matchAddress(expression *ast.UnaryExpr) checker.Failure {
 	if c.generatedSource(expression) && checker.Frozen(pointer.Elem()) {
 		return checker.Failure{}
 	}
-	if !c.queries.Owns(c.pass.TypesInfo.TypeOf(expression.X)) {
+	if !c.queries.Owns(c.pass.TypesInfo.TypeOf(expression.X)) && !checker.Marked(c.pass.TypesInfo.TypeOf(expression.X)) {
 		return shapeFailure("interior addresses of protected storage are unsupported")
 	}
 	if _, fresh := ast.Unparen(expression.X).(*ast.CompositeLit); !fresh {
