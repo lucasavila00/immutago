@@ -92,14 +92,12 @@ func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) string {
 		}
 	}
 	source := statement.Rhs[0]
-	if len(statement.Lhs) == 1 {
-		if rule := c.matchBuilderBinding(statement.Lhs[0], source, statement.Tok == token.DEFINE); rule != "" {
-			return rule
-		}
-	}
 	for index, destination := range statement.Lhs {
 		if len(statement.Rhs) > 1 {
 			source = statement.Rhs[index]
+		}
+		if rule := c.matchBuilderBinding(destination, source, statement.Tok == token.DEFINE); rule != "" {
+			return rule
 		}
 		if rule := c.matchBinding(c.bindingSource(source, index), destination); rule != "" {
 			return rule
@@ -155,14 +153,12 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 		return ""
 	}
 	source := declaration.Values[0]
-	if len(declaration.Names) == 1 {
-		if rule := c.matchBuilderBinding(declaration.Names[0], source, true); rule != "" {
-			return rule
-		}
-	}
 	for index, destination := range declaration.Names {
 		if len(declaration.Values) > 1 {
 			source = declaration.Values[index]
+		}
+		if rule := c.matchBuilderBinding(destination, source, true); rule != "" {
+			return rule
 		}
 		if rule := c.matchBinding(c.bindingSource(source, index), destination); rule != "" {
 			return rule
@@ -375,35 +371,13 @@ func (c *subsetChecks) resultCall(values []ast.Expr, count int) bool {
 	return ok && count > 1 && signature.Results().Len() == count
 }
 
-// resultAssignment permits local names or blanks for every direct call result.
+// resultAssignment matches a direct result call before each destination is checked.
 func (c *subsetChecks) resultAssignment(statement *ast.AssignStmt) bool {
-	if !c.resultCall(statement.Rhs, len(statement.Lhs)) {
-		return false
-	}
-	if statement.Tok != token.DEFINE && statement.Tok != token.ASSIGN {
-		return false
-	}
-	for _, left := range statement.Lhs {
-		name, ok := ast.Unparen(left).(*ast.Ident)
-		if !ok {
-			return false
-		}
-		if name.Name == "_" {
-			continue
-		}
-		variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var)
-		if !ok || variable.Parent() == c.pass.Pkg.Scope() {
-			return false
-		}
-	}
-	return true
+	return (statement.Tok == token.DEFINE || statement.Tok == token.ASSIGN) &&
+		c.resultCall(statement.Rhs, len(statement.Lhs))
 }
 
-// resultDeclaration accepts new local variables for a documented result call.
+// resultDeclaration matches a direct result call before each declared variable is checked.
 func (c *subsetChecks) resultDeclaration(statement *ast.ValueSpec) bool {
-	if !c.resultCall(statement.Values, len(statement.Names)) {
-		return false
-	}
-	_, local := c.parents[c.parents[statement]].(*ast.DeclStmt)
-	return local
+	return c.resultCall(statement.Values, len(statement.Names))
 }

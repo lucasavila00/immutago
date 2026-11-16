@@ -1,16 +1,20 @@
 # Service results
 
-Each exported service method uses one of these signatures. Init, Run, and
-runtime methods are exempt. The rule also covers promoted methods.
+Each result of an exported service method must be a read result or Go's
+predeclared `error` type. There is no limit on the number or order of results.
+Init, Run, and runtime methods are exempt. The rule also covers promoted methods.
 
 | Result signatures — exhaustive | Example |
 | --- | --- |
 | No result | `func (p *Pool) Refresh()` |
-| One read result | `func (p *Pool) Count() int` |
-| `error` | `func (p *Pool) Restart() error` |
-| One read result, then `error` | `func (p *Pool) Read() (Reply, error)` |
+| One or more read results or errors, in any order | `func (p *Pool) Count() int`, `func (p *Pool) Lookup() (Reply, bool)`, `func (p *Pool) Read() (error, Reply, int, error)` |
+| Named results with the same type rule | `func (p *Pool) Lookup() (value Reply, found bool, err error)` |
 
-The error slot uses Go's predeclared `error` type; aliases work. Error values
+Each result is checked separately. A tuple has no record type and needs no
+marker. A record used as one result still needs its normal marker and field proofs.
+Unlisted result types are rejected.
+
+An error result uses Go's predeclared `error` type; aliases work. Error values
 follow ordinary Go rules. Callers can save errors, and custom errors can hold
 ordinary mutable state. The checker does not inspect error origins or payloads.
 General im checks still reject boxing protected storage in an error.
@@ -51,9 +55,25 @@ if err != nil { return err }
 use(reply)
 ```
 
-Protected result pairs use two local names or blanks with `:=`, `=`, or local
-`var`. Direct typed helpers use the same [binding forms](common-forms.md#statements-and-calls).
-Ordinary results such as `(int, error)` keep ordinary Go binding rules.
+Each result keeps its normal type, write, and storage rules. Direct typed helpers
+use the same [binding forms](common-forms.md#statements-and-calls).
+For example, a Local result needs a local name or blank, while an ordinary bool
+result can be assigned to an ordinary field:
+
+```go
+var reply Reply
+reply, state.Found = pool.Borrow().Lookup()
+```
+
+Named results, explicit returns, and forwarded returns use the same checks:
+
+```go
+func (p *Pool) Named() (reply Reply, found bool) {
+    reply, found = p.Lookup()
+    return
+}
+func (p *Pool) Forward() (Reply, bool) { return p.Lookup() }
+```
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
@@ -61,10 +81,10 @@ Ordinary results such as `(int, error)` keep ordinary Go binding rules.
 | `Usage` with `im.Frozen`, even when it has only numeric fields | Use im.Local for the result, or return its generated projection. |
 | `im.Frozen`, `im.Local`, or `im.Copied` marker | Return no result when no data is needed; embed im.Local in a result record when data is needed. |
 | `im.FrozenString`, `im.FrozenSlice[E]`, or `im.FrozenMap[K,V]` | The corresponding StringProjection, SliceProjection, or MapProjection. |
-| Pointer, native container, interface other than the error slot, or Cell | A read-result value with the required data. |
-| `(Reply, error, error)` or `(error, Reply)` | Return `(Reply, error)`. |
-| A distinct `type Failure error` as the error slot | Declare the result as `error` or an alias such as `type Failure = error`. |
-| `(int, bool)` | `type Result struct { im.Copied; Count int; OK bool }`. |
+| Pointer, native container, interface other than `error`, or Cell in any result position | A read-result value with the required data. |
+| `(Reply, string, bool)` | Return `(Reply, im.StringProjection, bool)`. |
+| A distinct `type Failure error` in any result position | Declare the result as `error` or an alias such as `type Failure = error`. |
+| `savedReply, found = pool.Borrow().Lookup()` with a package-level Local `savedReply` | Bind the Local result to a local name; save only ordinary results. |
 
 Ordinary function results still use their general type rules. Service inputs,
 locks, and implementation code keep ordinary Go rules except for protected im

@@ -1,0 +1,42 @@
+api.go:19:14: service method First must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: string
+api.go:20:14: service method Middle must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: []int
+api.go:21:14: service method Last must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: map[int]int
+api.go:22:14: service method Pointer must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: *api.View
+api.go:22:14: unsupported immutable operation: returning Local pointers is unsupported
+  source: Pointer
+  type: func() (bool, *api.View)
+  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+api.go:23:14: service method Record must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: badapi.Unmarked
+api.go:24:14: service method ErrorType must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: badapi.DefinedError
+api.go:25:14: service method Marker must return a service result: immutable markers are annotations, not data
+  result type: im.Local
+api.go:26:14: service method Array must return a service result: array element: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: [2]badapi.Names
+api.go:27:14: service method Frozen must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: im.FrozenString
+api.go:28:14: service method Nested must return a service result: array element: array element: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: [2][1]*api.View
+api.go:28:30: unsupported immutable operation: containers of Local pointers are unsupported
+  source: [2][1]*api.View
+  type: [2][1]*api.View
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+api.go:28:33: unsupported immutable operation: containers of Local pointers are unsupported
+  source: [1]*api.View
+  type: [1]*api.View
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+api.go:28:68: unsupported immutable operation: containers of Local pointers are unsupported
+  source: [2][1]*api.View{}
+  type: [2][1]*api.View
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+api.go:28:71: unsupported immutable operation: containers of Local pointers are unsupported
+  source: [1]*api.View
+  type: [1]*api.View
+  fix: keep Local values in local bindings, or store im.Frozen pointers
+api.go:29:14: service method FrozenRecord must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
+  result type: api.Frozen

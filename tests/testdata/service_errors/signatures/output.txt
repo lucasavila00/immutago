@@ -1,8 +1,3 @@
-signatures.go:15:14: service method Pair must return no value, one read result, error, or (read result, error)
-signatures.go:16:14: service method Reverse must return no value, one read result, error, or (read result, error)
-signatures.go:17:14: service method Three must return no value, one read result, error, or (read result, error)
-signatures.go:18:14: service method Errors must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
-  result type: error
 signatures.go:19:14: service method Text must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: string
 signatures.go:20:14: service method Pointer must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
