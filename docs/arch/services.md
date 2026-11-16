@@ -14,7 +14,8 @@ for example, it does not inspect channel sends.
 
 ## Initialization, publication, and calls
 
-[Ref[T]](../../pkg/supervise/supervise.go) contains `*T`. Start initializes T once
+[Ref[T]](../../pkg/supervise/supervise.go) embeds Frozen and stores its pointer
+in UncheckedValue[T]. Start initializes T once
 before it creates the reference. Borrow returns that pointer; Stop does not change
 it or wait for direct method calls.
 

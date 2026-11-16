@@ -17,7 +17,7 @@ The [glossary](glossary.md) defines marked structs, protected storage, and build
 ## Markers and stored types
 
 The [type rules](types.md) define Frozen, Copied, Local, and read results.
-Every package that declares Frozen records uses the
+Every package that declares Frozen records other than [opaque handles](unchecked-values.md) uses the
 [required generation step](rules.md#required-generation).
 Embed exactly one marker by value:
 

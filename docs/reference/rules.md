@@ -125,8 +125,8 @@ The checker checks a package in any of these cases, including its test files:
 - Other packages are trusted to obey Go contracts, including immutable strings.
 - The `im`, `supervise`, and standard-library implementations are trusted.
 - The generated Go test runner is skipped; user tests are checked.
-- User code has no suppression comments. `im.UncheckedValue` is the explicit
-  immutability trust marker.
+- User code has no suppression comments. `im.UncheckedValue` delegates
+  payload access and synchronization to its declaring package.
 - Importing `unsafe` or `reflect` is allowed; ordinary values use ordinary Go rules.
 - Protected object values need a listed form: `reflect.ValueOf(1)` is allowed,
   but `reflect.ValueOf(local)` with a Local record value fails the interface-boxing rule.
