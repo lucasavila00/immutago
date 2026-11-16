@@ -1,1 +1,1 @@
-schema.go:9:6: cannot generate typed projections: Mutable: Values: []int is not provably immutable
+schema.go:13:6: cannot generate typed projections: Mutable: Values: []int is not provably immutable; other generation failures may remain

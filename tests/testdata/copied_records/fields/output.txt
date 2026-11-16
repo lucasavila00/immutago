@@ -1,6 +1,6 @@
 copied_fields.go:100:21: struct must embed exactly one immutable marker; each embedded alias counts as a marker
 copied_fields.go:100:6: struct must embed exactly one immutable marker; each embedded alias counts as a marker
-copied_fields.go:101:5: Copied record: Frozen storage cannot contain Local values
+copied_fields.go:101:5: Copied record: struct must embed exactly one immutable marker; each embedded alias counts as a marker
   type: fields.BadLocalMarker
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
 copied_fields.go:105:16: service method Bad must return a read result or error: *example.com/consumer/api.Point is not a Copied value
@@ -80,6 +80,6 @@ copied_fields.go:94:35: immutable markers must be embedded by value
   fix: embed im.Frozen, im.Local, or im.Copied; remove the marker field name or pointer
 copied_fields.go:96:22: struct must embed exactly one immutable marker; each embedded alias counts as a marker
 copied_fields.go:96:6: struct must embed exactly one immutable marker; each embedded alias counts as a marker
-copied_fields.go:98:2: Copied record: Copied record must embed exactly one marker
+copied_fields.go:98:2: Copied record: struct must embed exactly one immutable marker; each embedded alias counts as a marker
   type: fields.BadDoubleMarker
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field

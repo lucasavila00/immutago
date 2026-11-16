@@ -1,1 +1,1 @@
-schema.go:9:6: cannot generate typed projections: MixedAliases: Frozen storage cannot contain Local values
+schema.go:9:6: cannot generate typed projections: MixedAliases: struct cannot embed both im.Frozen and im.Local; other generation failures may remain

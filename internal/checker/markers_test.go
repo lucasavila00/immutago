@@ -41,7 +41,7 @@ func TestMarkerReferenceProofs(t *testing.T) {
 	}
 	mixed := markedType("Mixed", sharedMarker,
 		types.NewField(token.NoPos, nil, "Local", localMarker, true))
-	if reason := Reason(mixed); !strings.Contains(reason, "marker") {
+	if reason := Reason(mixed); reason != "struct cannot embed both im.Frozen and im.Local" {
 		t.Fatalf("mixed markers accepted: %s", reason)
 	}
 }

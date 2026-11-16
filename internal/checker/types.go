@@ -105,6 +105,17 @@ func MarkerCount(t types.Type) int {
 	return count
 }
 
+// MarkerReason reports conflicting embedded marker identities, including aliases.
+func MarkerReason(t types.Type) string {
+	if Frozen(t) && Local(t) {
+		return "struct cannot embed both im.Frozen and im.Local"
+	}
+	if MarkerCount(t) > 1 {
+		return "struct must embed exactly one immutable marker; each embedded alias counts as a marker"
+	}
+	return ""
+}
+
 // embedsMarker resolves one marker through the compiler's embedded-field identities.
 func embedsMarker(t types.Type, name string) bool {
 	if t == nil {

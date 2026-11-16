@@ -222,10 +222,8 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if checker.Local(t) {
 		fieldRule, proveField = "read result", c.proofs.ReadResultReason
 	}
-	if checker.Frozen(t) && checker.Local(t) {
-		c.report(pos, "struct cannot embed both im.Frozen and im.Local")
-	} else if checker.MarkerCount(t) > 1 {
-		c.report(pos, "struct must embed exactly one immutable marker; each embedded alias counts as a marker")
+	if reason := checker.MarkerReason(t); reason != "" {
+		c.report(pos, reason)
 	}
 	if checker.Copied(t) {
 		c.checkCopiedRecord(pos, t, s)

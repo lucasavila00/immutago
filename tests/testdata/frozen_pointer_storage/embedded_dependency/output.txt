@@ -16,7 +16,7 @@ use.go:10:40: unsupported immutable operation: Count: Frozen data fields must be
   type: *embedded.Numeric
   fix: use the documented immutable value and reference forms
 use.go:4:2: unsupported dependency example.com/consumer/embedded: immutability proof failed
-  representative failure: example.com/consumer/embedded/embedded.go:19:6: cannot generate typed projections: Numeric: Count: Frozen data fields must be named
+  representative failure: example.com/consumer/embedded/embedded.go:19:6: cannot generate typed projections: Numeric: Count: Frozen data fields must be named; other generation failures may remain
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/embedded, correct its errors, then rerun immutago on this package
 use.go:8:13: immutable type argument: Count: Frozen data fields must be named
