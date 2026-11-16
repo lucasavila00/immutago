@@ -1,0 +1,1 @@
+schema.go:11:6: cannot generate typed projections: Counted: Counter: Frozen data fields must be named

@@ -7,17 +7,29 @@ import (
 	"strings"
 )
 
+// reserveArrays fixes array projection names before imports receive their names.
+func (g *generator) reserveArrays(typ types.Type, stem, source string) error {
+	for index := 0; ; index++ {
+		array, ok := typ.Underlying().(*types.Array)
+		if !ok {
+			return nil
+		}
+		if err := g.reserve(stem+"Projection", "field "+source); err != nil {
+			return err
+		}
+		typ = array.Elem()
+		stem += "Element"
+		source += fmt.Sprintf("[index%d]", index)
+	}
+}
+
 // arrayReader retains only the immutable root pointer and existing indices.
 func (g *generator) arrayReader(
 	typ *types.Array, root types.Type, path, stem string, indices []string,
 ) (string, string, error) {
 	name := stem + "Projection"
-	source := "field " + g.typeName(types.Unalias(root).(*types.Pointer).Elem()) + strings.TrimPrefix(path, "value")
-	if err := g.reserve(name, source); err != nil {
-		return "", "", err
-	}
 	g.arrays = append(g.arrays, array{typ: typ, name: name, root: root, path: path, indices: indices})
-	fields := []string{"immutagoProjection:v.immutagoProjection"}
+	fields := []string{g.projectionField + ":v." + g.projectionField}
 	for _, index := range indices {
 		fields = append(fields, index+":"+index)
 	}
@@ -34,8 +46,8 @@ func (g *generator) writeArray(out *bytes.Buffer, item array) error {
 		return err
 	}
 	fmt.Fprintf(out, "// %s reads a fixed array locally.\n"+
-		"type %s struct { im.Local; immutagoProjection im.Projection[%s]\n",
-		item.name, item.name, g.typeName(item.root))
+		"type %s struct { %s; %s %s.Projection[%s]\n",
+		item.name, item.name, g.localMarker, g.projectionField, g.imName, g.typeName(item.root))
 	for _, saved := range item.indices {
 		fmt.Fprintf(out, "%s int\n", saved)
 	}
@@ -46,7 +58,7 @@ func (g *generator) writeArray(out *bytes.Buffer, item array) error {
 		fmt.Fprintf(out, "%s := v.%s\n", saved, saved)
 	}
 	if _, nested := item.typ.Elem().Underlying().(*types.Array); nested {
-		out.WriteString("if im.IsNil(v.immutagoProjection) { panic(\"nil frozen record\") }\n")
+		fmt.Fprintf(out, "if %s.IsNil(v.%s) { panic(\"nil frozen record\") }\n", g.imName, g.projectionField)
 		fmt.Fprintf(out, "if %s < 0 || %s >= %d { panic(\"array index out of range\") }\n", index, index, item.typ.Len())
 	}
 	fmt.Fprintf(out, "return %s\n}\n", expression)

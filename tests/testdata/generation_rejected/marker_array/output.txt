@@ -1,0 +1,1 @@
+schema.go:9:6: cannot generate typed projections: BadMarkers: Values: immutable markers are annotations, not data

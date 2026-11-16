@@ -6,20 +6,10 @@ type Local struct {
 	im.Local
 	Value int
 }
-type Stored struct {
-	im.Frozen
-	Pointer *Local
-}
-
 var global *Local
 
 func returned() *Local      { return &Local{Value: 1} }
 func retained(value *Local) { global = value }
-func stored() {
-	value := &Local{Value: 1}
-	holder := Stored{Pointer: value}
-	_ = holder
-}
 func collected() {
 	value := &Local{Value: 1}
 	builder := []*Local{value}
@@ -45,12 +35,6 @@ func delayed() {
 	defer readLocal(value)
 }
 
-type Both struct {
-	im.Frozen
-	im.Local
-	Value int
-}
-
 type LocalStored struct {
 	im.Local
 	Pointer *Local
@@ -61,9 +45,4 @@ func frozenValues() im.FrozenSlice[Local] {
 	builder := []Local{{Value: 1}}
 	frozen := im.FreezeSlice(builder)
 	return frozen
-}
-
-type SavedValue struct {
-	im.Frozen
-	Value Local
 }

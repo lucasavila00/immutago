@@ -12,3 +12,5 @@ type Bad[T any] struct {
 	im.Frozen
 	Value T
 }
+
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

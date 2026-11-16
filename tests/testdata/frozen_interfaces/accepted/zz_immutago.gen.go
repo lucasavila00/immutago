@@ -7,9 +7,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // ModelProjection provides local read access to *Model.
 type ModelProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Model]
 }
 
@@ -59,7 +62,7 @@ func (c *ModelCell) Load() ModelProjection { return NewModelProjection(c.value.L
 
 // ModelReadersProjection reads a fixed array locally.
 type ModelReadersProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Model]
 }
 

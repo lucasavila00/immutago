@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // PointProjection provides local read access to *Point.
 type PointProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Point]
 }
 
@@ -40,7 +43,7 @@ func (c *PointCell) Load() PointProjection { return NewPointProjection(c.value.L
 
 // PointArrayProjection provides local read access to *PointArray.
 type PointArrayProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*PointArray]
 }
 
@@ -77,7 +80,7 @@ func (c *PointArrayCell) Load() PointArrayProjection {
 
 // nilSnapshotProjection provides local read access to *nilSnapshot.
 type nilSnapshotProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*nilSnapshot]
 }
 
@@ -106,7 +109,7 @@ func (c *nilSnapshotCell) Load() nilSnapshotProjection {
 
 // PointArrayValuesProjection reads a fixed array locally.
 type PointArrayValuesProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*PointArray]
 }
 

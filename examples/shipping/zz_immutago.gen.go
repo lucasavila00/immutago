@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // CarrierServiceProjection provides local read access to *CarrierService.
 type CarrierServiceProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*CarrierService]
 }
 
@@ -62,7 +65,7 @@ func (c *CarrierServiceCell) Load() CarrierServiceProjection {
 
 // CatalogProjection provides local read access to *Catalog.
 type CatalogProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Catalog]
 }
 

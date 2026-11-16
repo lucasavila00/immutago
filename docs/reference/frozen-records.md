@@ -27,6 +27,10 @@ Other field declarations are rejected. Data fields cannot be embedded. A named
 field prevents Go from promoting its methods to the Frozen record. Such a
 promoted method can take an implicit field address, including through an interface.
 
+A Frozen record used as a field in another package needs an exported original
+declaration. This also applies to pointers and array elements. An exported alias
+of a private record does not expose its generated projection or constructor.
+
 | Allowed forms — exhaustive | Example |
 | --- | --- |
 | Construct, copy, and read | `Settings{Limit: 100}`, `saved := settings`, `n := settings.Limit` |
@@ -95,4 +99,5 @@ Use `type Selected = *Settings` for those [Frozen type requirements](types.md).
 | `s.Settings.Limit = 200` or `*s.Settings = Settings{}` | Replace the slot: `s.Settings = &Settings{Limit: 200}`. |
 | `p := &s.Settings.Limit` | Copy the scalar: `n := s.Settings.Limit`. |
 | `type State struct { Settings Settings }` | Store `*Settings`, or make State a Frozen record. |
+| A foreign field uses `type Public = privateRecord` | Export the original declaration: `type Record struct { im.Frozen; N int }; type Public = Record`. |
 | Return Settings from a service, including a record with only numeric fields | Return SettingsProjection or an im.Local result. |

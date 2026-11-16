@@ -24,3 +24,5 @@ func genericCalls(value Product, settings *Settings) {
 	_ = local.Map[int](number)
 	_ = value.MapPointer[int](number)
 }
+
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

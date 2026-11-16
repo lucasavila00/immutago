@@ -8,7 +8,7 @@ type Product struct {
 }
 type Order struct {
 	im.Frozen
-	Product
+	Product Product
 }
 type Counter int
 
@@ -16,7 +16,7 @@ func (c *Counter) Inc() { *c++ }
 
 type Counted struct {
 	im.Frozen
-	Counter
+	Counter Counter
 }
 
 func (p Product) Cost() int      { return p.Price }
@@ -29,9 +29,7 @@ func calls() {
 	counted := &Counted{}
 	_ = value.ReadCost()
 	_ = pointer.Cost()
-	_ = order.Cost()
 	_ = order.Product.ReadCost()
-	counted.Inc()
 	counted.Counter.Inc()
 	bound := pointer.ReadCost
 	_ = bound

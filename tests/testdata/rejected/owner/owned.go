@@ -8,11 +8,6 @@ type Model struct {
 }
 type Local struct{ im.Local }
 type Loader struct{ Current im.Cell[Model] }
-type BadCell struct {
-	im.Frozen
-	Current im.Cell[Model]
-}
-
 var bad im.Cell[Local]
 var saved im.Projection[Model]
 
@@ -25,3 +20,5 @@ func badUses(l *Loader) {
 	m := l.Current.Load().Unsafe()
 	m.X = 2
 }
+
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

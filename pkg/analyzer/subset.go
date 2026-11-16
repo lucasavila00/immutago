@@ -26,8 +26,9 @@ type subsetChecks struct {
 // checkSubset checks the supported immutable forms with compiler-resolved types.
 func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checker.Prover) {
 	c := newSubsetChecks(pass, proofs)
-	c.checkGeneration()
-	c.checkImmutable(owners)
+	if c.checkGeneration() {
+		c.checkImmutable(owners)
+	}
 }
 
 // newSubsetChecks records parents once for service references and immutable source forms.

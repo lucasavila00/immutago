@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // ChildProjection provides local read access to *Child.
 type ChildProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Child]
 }
 
@@ -45,7 +48,7 @@ func (c *ChildCell) Load() ChildProjection { return NewChildProjection(c.value.L
 
 // SelectionProjection provides local read access to *Selection.
 type SelectionProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Selection]
 }
 
@@ -102,7 +105,7 @@ func (c *SelectionCell) Load() SelectionProjection {
 
 // SettingsProjection provides local read access to *Settings.
 type SettingsProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Settings]
 }
 
@@ -152,7 +155,7 @@ func (c *SettingsCell) Load() SettingsProjection { return NewSettingsProjection(
 
 // SelectionArrayProjection reads a fixed array locally.
 type SelectionArrayProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Selection]
 }
 
@@ -166,7 +169,7 @@ func (v SelectionArrayProjection) At(index0 int) ChildProjection {
 
 // SettingsArrayProjection reads a fixed array locally.
 type SettingsArrayProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Settings]
 }
 

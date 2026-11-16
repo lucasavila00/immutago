@@ -258,7 +258,7 @@ func TestRejectedTypes(t *testing.T) {
 		{"repeated failed bound", `type Bad struct{ X int }
          type V[T interface{ Bad; Bad }] struct { im.Frozen; X T }`, "type parameters are unsupported"},
 		{"failed recursive alternatives", `type Bad struct { im.Frozen; Next im.FrozenSlice[Bad]; X []int }
-         type V[T interface{ Bad; Bad }] struct { im.Frozen; X T }`, "type parameters are unsupported"},
+         type V[T interface{ Bad; Bad }] struct { im.Frozen; X T }`, "Bad: X: []int is not provably immutable"},
 		{"bad argument", `var _ im.FrozenSlice[*int]`, "concrete Frozen record target"},
 		{"bad inference", `var _ = im.FreezeSlice([]*int{new(int)})`, "concrete Frozen record target"},
 		{"bad key", `var _ im.FrozenMap[*int,int]`, "concrete Frozen record target"},

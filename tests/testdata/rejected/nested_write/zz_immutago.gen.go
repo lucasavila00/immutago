@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // GoodProjection provides local read access to *Good.
 type GoodProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Good]
 }
 
@@ -48,7 +51,7 @@ func (c *GoodCell) Load() GoodProjection { return NewGoodProjection(c.value.Load
 
 // OuterProjection provides local read access to *Outer.
 type OuterProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Outer]
 }
 
@@ -80,7 +83,7 @@ func (c *OuterCell) Load() OuterProjection { return NewOuterProjection(c.value.L
 
 // GoodArrayProjection reads a fixed array locally.
 type GoodArrayProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Good]
 }
 

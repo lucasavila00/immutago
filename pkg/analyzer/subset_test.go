@@ -23,8 +23,6 @@ func TestSubsetBoundaries(t *testing.T) {
 		{"closure", `func f(){var v L; _=func(){_=v.X}}`},
 		{"box", `func f(){var v L; var x any=v; _=x}`},
 		{"box return", `func f()any{return L{}}`},
-		{"generic receiver", `type Box[T ~int]struct{im.Frozen;X T};
- func(b *Box[T])Read()T{return b.X};func f(){var b Box[int];_=b.Read()}`},
 		{"generic", `func read[T any](v *T){};func f(){var v L; read(new(v))}`},
 		{"dynamic", `func f(read func(*L)){var v L;read(new(v))}`},
 		{"defer", `func read(v *L){};func f(){var v L;defer read(new(v))}`},

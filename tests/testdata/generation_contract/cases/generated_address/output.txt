@@ -1,5 +1,1 @@
 zz_immutago.gen.go:3:1: zz_immutago.gen.go is stale; run go generate in this package
-zz_immutago.gen.go:73:50: unsupported immutable operation: interior addresses of protected storage are unsupported
-  source: &value.immutagoProjection.Unsafe().Number
-  type: *int
-  fix: copy the field into a local; do not take a pointer into immutable storage

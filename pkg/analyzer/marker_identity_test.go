@@ -40,7 +40,7 @@ func TestMarkerCardinality(t *testing.T) {
 		}
 	}
 	mixed := `type First=im.Frozen;type Second=im.Local;type Value struct{First;Second}`
-	if got := checkSource(t, mixed); !strings.Contains(got, "cannot embed both") {
+	if got := checkTypeSource(t, mixed); !strings.Contains(got, "cannot embed both") {
 		t.Fatalf("mixed marker aliases accepted: %s", got)
 	}
 	if got := checkSource(t, `type Alias=im.Frozen;type Child struct{Alias;X int};

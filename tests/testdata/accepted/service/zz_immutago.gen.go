@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // FrozenRouteProjection provides local read access to *FrozenRoute.
 type FrozenRouteProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*FrozenRoute]
 }
 
@@ -50,7 +53,7 @@ func (c *FrozenRouteCell) Load() FrozenRouteProjection {
 
 // SnapshotReplyProjection provides local read access to *SnapshotReply.
 type SnapshotReplyProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*SnapshotReply]
 }
 
@@ -84,7 +87,7 @@ func (c *SnapshotReplyCell) Load() SnapshotReplyProjection {
 
 // FrozenRouteWorkersProjection reads a fixed array locally.
 type FrozenRouteWorkersProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*FrozenRoute]
 }
 
@@ -104,7 +107,7 @@ func (v FrozenRouteWorkersProjection) At(index0 int) FrozenRouteWorkersElementPr
 
 // FrozenRouteWorkersElementProjection reads a fixed array locally.
 type FrozenRouteWorkersElementProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*FrozenRoute]
 	index0             int
 }

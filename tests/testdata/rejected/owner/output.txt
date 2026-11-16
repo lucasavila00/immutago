@@ -1,20 +1,16 @@
-owned.go:13:2: immutable field Current requires a Frozen type: Cell slots are mutable
-  owner: owner.BadCell; field type: im.Cell[owner.Model]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-owned.go:16:12: immutable type argument: Frozen storage cannot contain Local values
+owned.go:11:12: immutable type argument: Frozen storage cannot contain Local values
   type: owner.Local
   fix: store Frozen data; keep its Projection or Local result in local bindings
-owned.go:17:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+owned.go:12:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved im.Projection[Model]
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-owned.go:20:11: Cell slots and their holders cannot be copied or transported by value
-owned.go:21:6: Cell slots and their holders cannot be copied or transported by value
-owned.go:22:10: Cell slots and their holders cannot be copied or transported by value
-owned.go:23:6: Cell slots and their holders cannot be copied or transported by value
-owned.go:24:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+owned.go:15:11: Cell slots and their holders cannot be copied or transported by value
+owned.go:16:6: Cell slots and their holders cannot be copied or transported by value
+owned.go:17:10: Cell slots and their holders cannot be copied or transported by value
+owned.go:18:6: Cell slots and their holders cannot be copied or transported by value
+owned.go:19:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = l.Current.Load()
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-owned.go:26:2: unsupported immutable operation: writes to immutable objects are unsupported
+owned.go:21:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: m.X = 2
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-owned.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

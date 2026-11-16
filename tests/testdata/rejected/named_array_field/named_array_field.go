@@ -7,3 +7,5 @@ type Value struct {
 	im.Frozen
 	N Count
 }
+
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

@@ -22,11 +22,6 @@ type Dynamic interface {
 	im.FrozenInterface
 	Use(interface{ Read() im.StringProjection })
 }
-type Private interface {
-	im.FrozenInterface
-	read() int
-}
-
 type Local struct {
 	im.Local
 	N int
@@ -41,3 +36,5 @@ type CallbackVariadic interface {
 	im.FrozenInterface
 	Use(...func() im.StringProjection)
 }
+
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

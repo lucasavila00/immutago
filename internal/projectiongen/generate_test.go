@@ -83,9 +83,12 @@ type Reply struct { im.Local; Text im.StringProjection }
 func TestGenerateRejects(t *testing.T) {
 	for _, source := range []string{
 		`type Bad struct { im.Frozen; Data []int }`,
+		`type Bad[T any] struct { im.Frozen; N int }`,
+		`type Bad[T any] interface { im.FrozenInterface; Read() int }`,
 		`type Good struct { im.Frozen; N int }; type GoodProjection struct{}`,
-		`type Bad struct { im.Frozen; Local int }`,
+		`type Bad struct { im.Frozen; IsNil int }`,
 		`type Bad struct { im.Frozen; Unsafe int }`,
+		`type Bad interface { im.FrozenInterface; IsNil() bool }`,
 	} {
 		dir := module(t, "package example\nimport \"github.com/lucasavila00/immutago/pkg/im\"\n"+source)
 		if _, err := Generate(dir); err == nil {

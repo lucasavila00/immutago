@@ -52,8 +52,14 @@ non-test Go files. Every package with these declarations needs one exact directi
 | Frozen interfaces | Generate local method projections and Projection constructors. |
 
 Run `go generate ./...` after a record or interface changes. If no Frozen declarations
-remain, generation writes an empty package file; the directive can stay. The checker rejects a missing
-directive, missing output, or stale output. Only verified generated code can form interior Frozen-record addresses.
+remain, either keep the directive and generate once more to write an empty package
+file, or remove both the directive and `zz_immutago.gen.go`. You can remove the
+directive after generation writes the empty file. If the directive is already gone,
+remove the stale output or run `go run github.com/lucasavila00/immutago/cmd/immutago-gen`
+in that package.
+
+The checker rejects a missing directive, missing output, or stale output before
+source checks. Only verified generated code can form interior Frozen-record addresses.
 Projection.Unsafe explicitly returns a Frozen payload for shared use. All normal
 type, write, capture, generic, receiver, and transport checks still apply.
 Local and Copied records need no generation.

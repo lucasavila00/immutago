@@ -18,10 +18,6 @@ type BadLocal struct {
 	Text   string
 	Frozen im.FrozenString
 }
-type BadSnapshot struct {
-	im.Frozen
-	Result Local
-}
 type BadNative struct{ Saved im.Projection[string] }
 type Alias = Local
 
@@ -94,9 +90,4 @@ func copyNumeric(value im.Projection[Numeric], values im.SliceProjection[Numeric
 	_ = im.Value(value)
 	_ = values.Clone()
 	_ = entries.Clone()
-}
-
-type BadMarkers struct {
-	im.Frozen
-	Values [2]im.Frozen
 }

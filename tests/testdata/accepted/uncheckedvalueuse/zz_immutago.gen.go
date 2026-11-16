@@ -7,9 +7,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // CurrentProjection provides local read access to *Current.
 type CurrentProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Current]
 }
 

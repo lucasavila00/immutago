@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // InputReaderProjection provides local method access to InputReader.
 type InputReaderProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[InputReader]
 }
 
@@ -47,7 +50,7 @@ func (v InputReaderProjection) WithScorer(arg0 Scorer) int {
 
 // ReaderProjection provides local method access to Reader.
 type ReaderProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[Reader]
 }
 
@@ -101,7 +104,7 @@ func (v ReaderProjection) Visit() { v.immutagoProjection.Unsafe().Visit() }
 
 // ScorerProjection provides local method access to Scorer.
 type ScorerProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[Scorer]
 }
 
@@ -120,7 +123,7 @@ func (v ScorerProjection) Score(arg0 []float32) float64 {
 
 // VariadicReaderProjection provides local method access to VariadicReader.
 type VariadicReaderProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[VariadicReader]
 }
 

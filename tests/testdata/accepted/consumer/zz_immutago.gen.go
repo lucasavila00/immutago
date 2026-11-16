@@ -7,9 +7,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // NamedIntsProjection provides local read access to *NamedInts.
 type NamedIntsProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*NamedInts]
 }
 
@@ -46,7 +49,7 @@ func (c *NamedIntsCell) Load() NamedIntsProjection {
 
 // RecordProjection provides local read access to *Record.
 type RecordProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Record]
 }
 
@@ -93,7 +96,7 @@ func (c *RecordCell) Load() RecordProjection { return NewRecordProjection(c.valu
 
 // ScalarProjection provides local read access to *Scalar.
 type ScalarProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Scalar]
 }
 
@@ -125,7 +128,7 @@ func (c *ScalarCell) Load() ScalarProjection { return NewScalarProjection(c.valu
 
 // NamedIntsValuesProjection reads a fixed array locally.
 type NamedIntsValuesProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*NamedInts]
 }
 

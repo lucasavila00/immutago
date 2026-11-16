@@ -54,7 +54,9 @@ The program prints `alice 10`.
 - Score returns a copied integer. FreezeString copies no bytes.
 
 Run generation again after a record changes. Keep the generated file with the
-source. Missing or stale output fails the checker.
+source. Missing or stale output fails the checker. After the last Frozen declaration
+is removed, remove the directive and generated file together, or keep the directive
+and generate once more. See [required generation](../reference/rules.md#required-generation).
 
 Continue with [Publish immutable data](immutable-data.md) to follow construction,
 publication, and reads in the shipping application.

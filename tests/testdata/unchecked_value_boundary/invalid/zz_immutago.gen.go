@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // ScorerProjection provides local method access to Scorer.
 type ScorerProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[Scorer]
 }
 
@@ -25,7 +28,7 @@ func (v ScorerProjection) Score() int { return v.immutagoProjection.Unsafe().Sco
 
 // SnapshotProjection provides local read access to *Snapshot.
 type SnapshotProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Snapshot]
 }
 

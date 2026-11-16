@@ -9,7 +9,7 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// addInterface queues a local method reader and its constructor.
+// addInterface queues a local method projection and its constructor.
 func (g *generator) addInterface(typ types.Type, name string) error {
 	source := "interface " + g.typeName(typ)
 	if err := g.reserve(name, source); err != nil {
@@ -41,13 +41,13 @@ func (g *generator) interfaceReader(typ types.Type) (string, string, error) {
 func (g *generator) writeInterface(out *bytes.Buffer, item record) error {
 	source := g.typeName(item.typ)
 	fmt.Fprintf(out, "// %s provides local method access to %s.\n"+
-		"type %s struct { im.Local; immutagoProjection im.Projection[%s] }\n",
-		item.name, source, item.name, source)
+		"type %s struct { %s; %s %s.Projection[%s] }\n",
+		item.name, source, item.name, g.localMarker, g.projectionField, g.imName, source)
 	fmt.Fprintf(out, "// %s wraps a checked local interface projection.\n"+
-		"func %s(value im.Projection[%s]) %s { return %s{immutagoProjection:value} }\n",
-		constructorName(item.name), constructorName(item.name), source, item.name, item.name)
+		"func %s(value %s.Projection[%s]) %s { return %s{%s:value} }\n",
+		constructorName(item.name), constructorName(item.name), g.imName, source, item.name, item.name, g.projectionField)
 	fmt.Fprintf(out, "// IsNil reports whether the interface is nil; a stored nil pointer is not nil.\n"+
-		"func (v %s) IsNil() bool { return v.immutagoProjection.Unsafe() == nil }\n", item.name)
+		"func (v %s) IsNil() bool { return v.%s.Unsafe() == nil }\n", item.name, g.projectionField)
 	if g.bootstrap {
 		return nil
 	}
@@ -55,7 +55,7 @@ func (g *generator) writeInterface(out *bytes.Buffer, item record) error {
 		if checker.FrozenInterfaceSeal(method) {
 			continue
 		}
-		if method.Name() == "Local" || method.Name() == "immutagoProjection" || method.Name() == "IsNil" {
+		if method.Name() == "IsNil" {
 			return fmt.Errorf("%s.%s conflicts with a generated projection member", source, method.Name())
 		}
 		g.writeInterfaceMethod(out, item.name, method)
@@ -93,7 +93,7 @@ func (g *generator) writeInterfaceMethod(out *bytes.Buffer, receiver string, met
 		prefix = "return "
 	}
 	fmt.Fprintf(out, "// %s calls the checked interface method with its ordinary Go contract.\n"+
-		"func (v %s) %s(%s)%s { %sv.immutagoProjection.Unsafe().%s(%s) }\n",
+		"func (v %s) %s(%s)%s { %sv.%s.Unsafe().%s(%s) }\n",
 		method.Name(), receiver, method.Name(), strings.Join(parameters, ", "), result, prefix,
-		method.Name(), strings.Join(arguments, ", "))
+		g.projectionField, method.Name(), strings.Join(arguments, ", "))
 }

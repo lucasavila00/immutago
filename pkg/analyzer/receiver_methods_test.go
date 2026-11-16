@@ -112,7 +112,7 @@ type Outer struct{im.Frozen;Count Count};func f(p *Outer){_=p.Count.Read()}`, "c
 
 		{"variadic boxing", `func(v Value)Use(...any){};func f(v Value){v.Use(v)}`, ""},
 		{"unproved receiver", `type Bad struct{im.Frozen;X []int};func(b Bad)ReadBad()int{return len(b.X)}`,
-			"concrete non-generic marked receiver"},
+			"Bad: X: []int is not provably immutable"},
 		{"generic receiver", `type Box[T any]struct{im.Frozen;X int};func(b Box[T])Read()int{return b.X}`,
 			"user generic declarations"},
 		{"named array", `type Counts [2]int;func(c *Counts)Inc(){c[0]++};type Outer struct{im.Frozen;Counts Counts}`,

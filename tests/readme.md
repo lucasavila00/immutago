@@ -9,6 +9,11 @@ cover nearby unsupported forms. Each fixture package has one `output.txt` snapsh
 stderr; accepted snapshots are empty. The harness removes machine paths and
 driver headings, then sorts complete messages without separating context lines.
 
+[Generation tests](generation_names_test.go) check private names, foreign type
+visibility, stale output, and dependency failures. Invalid schemas have separate
+[fixture packages](testdata/generation_rejected). Operation fixtures have valid
+generation inputs and current output, so a schema error cannot hide their checks.
+
 Consumer-only dependency tests require failures to propagate through imports,
 including wrappers. Runtime tests check storage transfer, Clone independence,
 and unchanged shared objects after pointer rebinding.

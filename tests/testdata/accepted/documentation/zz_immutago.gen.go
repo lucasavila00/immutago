@@ -6,9 +6,12 @@ import (
 	im "github.com/lucasavila00/immutago/pkg/im"
 )
 
+// immutagoLocal keeps the Local marker private.
+type immutagoLocal = im.Local
+
 // ArrayLengthHolderProjection provides local read access to *ArrayLengthHolder.
 type ArrayLengthHolderProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*ArrayLengthHolder]
 }
 
@@ -47,7 +50,7 @@ func (c *ArrayLengthHolderCell) Load() ArrayLengthHolderProjection {
 
 // ArrayLengthValueProjection provides local read access to *ArrayLengthValue.
 type ArrayLengthValueProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*ArrayLengthValue]
 }
 
@@ -76,7 +79,7 @@ func (c *ArrayLengthValueCell) Load() ArrayLengthValueProjection {
 
 // IndexedValueProjection provides local read access to *IndexedValue.
 type IndexedValueProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*IndexedValue]
 }
 
@@ -110,7 +113,7 @@ func (c *IndexedValueCell) Load() IndexedValueProjection {
 
 // PointProjection provides local read access to *Point.
 type PointProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Point]
 }
 
@@ -147,7 +150,7 @@ func (c *PointCell) Load() PointProjection { return NewPointProjection(c.value.L
 
 // PointArrayProjection provides local read access to *PointArray.
 type PointArrayProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*PointArray]
 }
 
@@ -184,7 +187,7 @@ func (c *PointArrayCell) Load() PointArrayProjection {
 
 // ShapeProjection provides local read access to *Shape.
 type ShapeProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*Shape]
 }
 
@@ -221,7 +224,7 @@ func (c *ShapeCell) Load() ShapeProjection { return NewShapeProjection(c.value.L
 
 // UserProjection provides local read access to *User.
 type UserProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*User]
 }
 
@@ -258,7 +261,7 @@ func (c *UserCell) Load() UserProjection { return NewUserProjection(c.value.Load
 
 // nilSnapshotProjection provides local read access to *nilSnapshot.
 type nilSnapshotProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*nilSnapshot]
 }
 
@@ -292,7 +295,7 @@ func (c *nilSnapshotCell) Load() nilSnapshotProjection {
 
 // ArrayLengthHolderValuesProjection reads a fixed array locally.
 type ArrayLengthHolderValuesProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*ArrayLengthHolder]
 }
 
@@ -306,7 +309,7 @@ func (v ArrayLengthHolderValuesProjection) At(index0 int) int {
 
 // PointArrayValuesProjection reads a fixed array locally.
 type PointArrayValuesProjection struct {
-	im.Local
+	immutagoLocal
 	immutagoProjection im.Projection[*PointArray]
 }
 

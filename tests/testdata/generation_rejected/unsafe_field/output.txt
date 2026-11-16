@@ -1,0 +1,1 @@
+schema.go:10:6: cannot generate typed projections: UnsafeField: Pointer: unsafe.Pointer is not provably immutable
