@@ -12,10 +12,16 @@ type Levels struct {
 	im.Frozen
 	Current LevelAlias
 	Values  [2]Level
+	Meter   Meter[Seconds]
+	Meters  [2]Meter[Seconds]
+	Window  Range[Seconds]
 }
 
 type LevelReply struct {
 	im.Local
 	Current Level
 	Values  [2]Level
+	Meter   Meter[Seconds]
+	Meters  [2]Meter[Seconds]
+	Window  Range[Seconds]
 }
