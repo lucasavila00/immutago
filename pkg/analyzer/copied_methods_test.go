@@ -46,7 +46,8 @@ func TestCopiedMethodForms(t *testing.T) {
 		{"zero and literal", `func f(){var v Snapshot;_=v.Count.Read();_=Snapshot{}.Count.Read()}`},
 		{"mutate receiver copy", `func f(v Snapshot,p Reply)Count{_=v.Count.Next();return p.Count.Next()}`},
 		{"bound copies", `func f(v Snapshot,p Reply)func()int{read:=p.Count.Read;_=read();return v.Count.Read}`},
-		{"Copied record bound copies", `func f(v Snapshot,p Reply)func()int{read:=p.Score.Read;_=read();return v.Score.Read}`},
+		{"Copied record bound copies", `func f(v Snapshot,p Reply)func()int{
+read:=p.Score.Read;_=read();return v.Score.Read}`},
 		{"method expressions", `func f(v Snapshot,p Reply){_=Count.Read(v.Count);_=Count.Read(p.Count)}`},
 		{"tuple results", `func f(v Snapshot,p Reply)(Count,bool){var n,ok=v.Count.Pair();_=n;_=ok;return p.Count.Pair()}`},
 		{"variadic arguments", `func f(v Snapshot)Count{return v.Count.Add(v.Alias,v.Counts[0][0])}`},
