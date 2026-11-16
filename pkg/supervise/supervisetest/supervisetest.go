@@ -12,11 +12,11 @@ import (
 )
 
 // NewRoot reports supervised failures and their stacks with t.Errorf and registers
-// cleanup with t. The first failure requests root shutdown; failed attempts are not
-// retried. Cleanup waits up to 5 seconds for the group to stop, then reports a test
+// cleanup with t. The first failure requests Stop before it can select a terminal
+// root failure. Cleanup waits up to 5 seconds for the group to stop, then reports a test
 // failure if work remains. Reports after cleanup are ignored.
-// Run methods must observe cancellation. Use supervise.NewRoot to test expected
-// failures and retries.
+// Run methods must observe cancellation. Use a subprocess with supervise.NewRoot
+// to test a terminal root panic.
 func NewRoot(t testing.TB) *supervise.Group {
 	var mu sync.Mutex
 	closed := false

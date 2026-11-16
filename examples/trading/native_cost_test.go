@@ -17,11 +17,11 @@ type nativePolicy struct {
 // nativePolicyService publishes a complete native policy with the same atomic semantics.
 type nativePolicyService struct{ current atomic.Pointer[nativePolicy] }
 
-// nativeMaker uses one atomic service selection and one atomic snapshot selection per price.
+// nativeMaker uses one fixed service pointer and one atomic snapshot read per price.
 // The account engine, locks, order IDs, adapter calls, and stream are shared with the real bot.
 type nativeMaker struct {
 	args   MakerArgs
-	policy atomic.Pointer[nativePolicyService]
+	policy *nativePolicyService
 }
 
 // onEvent mirrors Maker.onEvent, changing only the policy read to native atomic pointers.
@@ -31,7 +31,7 @@ func (m *nativeMaker) onEvent(ctx context.Context, event Event) (Quote, error) {
 		args.Account.apply(args.Index, event.Order)
 		return args.Account.readQuote(args.Index), nil
 	}
-	policy := m.policy.Load().current.Load()
+	policy := m.policy.current.Load()
 	limits := policy.Limits
 	desired, fresh := args.Account.plan(args.Index, event.Tick, args.Parameters, limits, policy.Version)
 	if !fresh {

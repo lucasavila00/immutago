@@ -6,7 +6,6 @@ import (
 	"sync/atomic"
 	"testing"
 	"testing/synctest"
-	"time"
 )
 
 // heldCall is a service with a direct call that can outlive its Run.
@@ -23,16 +22,14 @@ var (
 	callRuns    atomic.Int32
 )
 
-// Run waits for a panic on the first attempt and cancellation after the restart.
-func (*heldCall) Run(ctx context.Context) {
-	if callRuns.Add(1) == 1 {
-		<-panicRun
-		panic("restart")
-	}
-	<-ctx.Done()
+// Run waits for the test to release its failure.
+func (*heldCall) Run(context.Context) {
+	callRuns.Add(1)
+	<-panicRun
+	panic("failure")
 }
 
-// Add waits across a restart, then changes the instance on which it was called.
+// Add waits across a failure, then changes the instance on which it was called.
 func (p *heldCall) Add() int {
 	close(callEntered)
 	<-callRelease
@@ -49,12 +46,12 @@ func (p *heldCall) Count() int {
 	return p.count
 }
 
-// TestCallAcrossRestart checks that an old call can finish without changing the new instance.
-func TestCallAcrossRestart(t *testing.T) {
+// TestCallAfterFailure checks that shutdown does not wait for direct method calls.
+func TestCallAfterFailure(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		callEntered, callRelease, panicRun = make(chan struct{}), make(chan struct{}), make(chan struct{})
 		callRuns.Store(0)
-		root := NewRoot(nil)
+		root := root(func(any) {}, nil)
 		ref, _ := Start[heldCall](root, NoArgs{})
 		before := ref.Borrow()
 		result := make(chan int, 1)
@@ -62,13 +59,12 @@ func TestCallAcrossRestart(t *testing.T) {
 		<-callEntered
 		close(panicRun)
 		synctest.Wait()
-		time.Sleep(time.Second)
-		synctest.Wait()
-		if ref.Borrow() == before {
-			t.Fatal("restart did not publish a fresh instance")
+		<-root.Stop()
+		if ref.Borrow() != before || callRuns.Load() != 1 {
+			t.Fatal("failure changed the service value or ran it again")
 		}
 		close(callRelease)
-		if <-result != 1 || before.Count() != 1 || ref.Borrow().Count() != 0 {
+		if <-result != 1 || before.Count() != 1 || ref.Borrow().Count() != 1 {
 			t.Fatal("old call did not stay on its original instance")
 		}
 		<-root.Stop()

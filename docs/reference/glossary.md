@@ -18,7 +18,7 @@
 | Checked package | A package selected by the [package boundary](rules.md#package-boundary). |
 | Service | A struct that embeds `supervise.Service[A]`. Init sets it up; Run does background work. |
 | Service method | A declared or promoted method on a service. Exported methods have the [result signature rule](service-results.md). |
-| Service reference | `supervise.Ref[T]`; each Borrow call selects the current service after any restart. |
+| Service reference | `supervise.Ref[T]`; a copyable reference to the service created by Start. |
 | Service run | One service value's background execution and child group. |
-| Group; child | A `supervise.Group` owns services and nested groups and stops them in reverse start order. Each is a child of its parent group. Groups do not restart. |
+| Group; child | A `supervise.Group` owns services and nested groups and stops them in reverse start order. Each is a child of its parent group. |
 | Allowed form; matcher | A documented source shape; the checker code that validates its syntax, resolved types, and context. |

@@ -3,12 +3,10 @@ package supervise
 import (
 	"bytes"
 	"context"
-	"errors"
 	"runtime"
 	"sync/atomic"
 	"testing"
 	"testing/synctest"
-	"time"
 )
 
 // TestCompletedRunDuringFailureCleanup keeps normal completion terminal through cleanup.
@@ -49,7 +47,6 @@ func TestCompletedRunDuringFailureCleanup(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(31 * time.Second)
 		synctest.Wait()
 		close(release)
 		<-terminal
@@ -60,7 +57,7 @@ func TestCompletedRunDuringFailureCleanup(t *testing.T) {
 	})
 }
 
-// TestGoexitIsTerminal checks that Goexit reports once without an extra retry.
+// TestGoexitIsTerminal checks that Goexit reports once with the original stack.
 func TestGoexitIsTerminal(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		terminal := make(chan any, 1)
@@ -177,8 +174,8 @@ func TestPendingSubtreeCleanup(t *testing.T) {
 	})
 }
 
-// TestAncestorStopEndsRestartPolicy checks propagation without early Run cancellation.
-func TestAncestorStopEndsRestartPolicy(t *testing.T) {
+// TestAncestorStopRejectsFailure checks propagation without early Run cancellation.
+func TestAncestorStopRejectsFailure(t *testing.T) {
 	for _, where := range []string{"group", "Init", "Run"} {
 		t.Run(where, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) { checkAncestorStop(t, where) })
@@ -186,14 +183,15 @@ func TestAncestorStopEndsRestartPolicy(t *testing.T) {
 	}
 }
 
-// checkAncestorStop holds a newer child open while the older subtree stops retrying.
+// checkAncestorStop holds a newer child open while the older subtree reports a failure.
 func checkAncestorStop(t *testing.T, where string) {
 	t.Helper()
 	parent := root(func(value any) { t.Errorf("root escalated: %v", value) }, nil)
 	var inits atomic.Int32
+	fail := make(chan struct{})
 	child := &initHooks{
 		init: func(*initializing) error { inits.Add(1); return nil },
-		run:  func(*initializing, context.Context) { panic("child failure") },
+		run:  func(*initializing, context.Context) { <-fail; panic("child failure") },
 	}
 	ended := make(chan struct{})
 	if where == "group" {
@@ -229,11 +227,11 @@ func checkAncestorStop(t *testing.T, where string) {
 			<-release
 		},
 	})
-	time.Sleep(2 * time.Second)
+	synctest.Wait()
 	before := inits.Load()
 	done := parent.Stop()
 	<-cleanup
-	time.Sleep(time.Minute)
+	close(fail)
 	synctest.Wait()
 	if got := inits.Load(); got != before {
 		t.Errorf("Init count = %d, want %d", got, before)
@@ -245,85 +243,4 @@ func checkAncestorStop(t *testing.T, where string) {
 	}
 	close(release)
 	<-done
-}
-
-// TestStopDuringAdmittedRestartInit keeps successful setup in shutdown order without publication.
-func TestStopDuringAdmittedRestartInit(t *testing.T) {
-	for _, fail := range []bool{false, true} {
-		t.Run(map[bool]string{false: "success", true: "error"}[fail], func(t *testing.T) {
-			synctest.Test(t, func(t *testing.T) { checkStopDuringAdmittedRestartInit(t, fail) })
-		})
-	}
-}
-
-// checkStopDuringAdmittedRestartInit holds restart setup open during ordered shutdown.
-func checkStopDuringAdmittedRestartInit(t *testing.T, fail bool) {
-	t.Helper()
-	parent := NewRoot(nil)
-	entered := make(chan *initializing, 1)
-	initRelease, slowRelease, cleanup := make(chan struct{}), make(chan struct{}), make(chan struct{})
-	var inits, runs, childRuns atomic.Int32
-	ref, _ := Start[initializing](parent, &initHooks{
-		init: func(p *initializing) error {
-			if inits.Add(1) == 1 {
-				return nil
-			}
-			_, err := Start[initializing](p.Children(), &initHooks{
-				init: func(*initializing) error { return nil },
-				run: func(_ *initializing, ctx context.Context) {
-					if ctx.Err() == nil {
-						t.Error("pending child ran with an active context")
-					}
-					childRuns.Add(1)
-				},
-			})
-			if err != nil {
-				return err
-			}
-			entered <- p
-			<-initRelease
-			if fail {
-				return errors.New("setup failure")
-			}
-			return nil
-		},
-		run: func(_ *initializing, ctx context.Context) {
-			if runs.Add(1) > 1 && (ctx.Err() == nil || childRuns.Load() != 1) {
-				t.Error("stopped replacement ran before its child cleanup or without cancellation")
-			}
-			panic("retry")
-		},
-	})
-	original := ref.Borrow()
-	candidate := <-entered
-	_, _ = Start[initializing](parent, &initHooks{
-		init: func(*initializing) error { return nil },
-		run: func(_ *initializing, ctx context.Context) {
-			<-ctx.Done()
-			close(cleanup)
-			<-slowRelease
-		},
-	})
-	synctest.Wait()
-	done := parent.Stop()
-	<-cleanup
-	close(initRelease)
-	synctest.Wait()
-	if runs.Load() != 1 || (!fail && childRuns.Load() != 0) {
-		t.Error("successful replacement ran cleanup before the newer service stopped")
-	}
-	if ref.Borrow() != original {
-		t.Error("stopped replacement was published")
-	}
-	close(slowRelease)
-	<-done
-	expectInitEnded(t, candidate)
-	wantRuns := int32(2)
-	if fail {
-		wantRuns = 1
-	}
-	if ref.Borrow() != original || runs.Load() != wantRuns || inits.Load() != 2 || childRuns.Load() != 1 {
-		t.Errorf("restart after stop: changed=%t, runs=%d, Init calls=%d, child runs=%d",
-			ref.Borrow() != original, runs.Load(), inits.Load(), childRuns.Load())
-	}
 }

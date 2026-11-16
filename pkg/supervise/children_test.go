@@ -53,22 +53,20 @@ var (
 	poolRelease chan struct{}
 )
 
-// restartedPool is a service that starts two children and panics on its first run.
-type restartedPool struct{ Service[NoArgs] }
+// failingPool is a service that starts two children and panics when released.
+type failingPool struct{ Service[NoArgs] }
 
-// Run starts the children, panics on the first run when released, and otherwise waits until ctx ends.
-func (p *restartedPool) Run(ctx context.Context) {
+// Run starts the children and panics when released.
+func (p *failingPool) Run(context.Context) {
 	if _, err := Start[first](p.Children(), NoArgs{}); err != nil {
 		panic(err)
 	}
 	if _, err := Start[second](p.Children(), NoArgs{}); err != nil {
 		panic(err)
 	}
-	if poolRuns.Add(1) == 1 {
-		<-poolRelease
-		panic("pool")
-	}
-	<-ctx.Done()
+	poolRuns.Add(1)
+	<-poolRelease
+	panic("pool")
 }
 
 // failingParent is a service with a child that panics on each run.
@@ -204,29 +202,31 @@ func TestChildCallsParentDuringStop(t *testing.T) {
 	})
 }
 
-// TestChildrenRestartWithRun verifies that a restart stops the children of the old run and the new run starts them.
-func TestChildrenRestartWithRun(t *testing.T) {
+// TestChildrenStopAfterFailure checks reverse child cleanup after the first failure.
+func TestChildrenStopAfterFailure(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		poolRuns.Store(0)
 		poolRelease = make(chan struct{})
-		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		if _, err := Start[restartedPool](root, NoArgs{}); err != nil {
+		terminal := make(chan any, 1)
+		root := root(func(value any) { terminal <- value }, nil)
+		if _, err := Start[failingPool](root, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
 		synctest.Wait()
 		expectStarted(t, "start first", "start second")
 		close(poolRelease)
-		synctest.Wait()
-		expectEvents(t, "stop second", "stop first")
-		time.Sleep(time.Second)
-		synctest.Wait()
-		expectStarted(t, "start first", "start second")
+		if failure := (<-terminal).(*Failure); failure.Value != "pool" {
+			t.Fatalf("failure = %v", failure)
+		}
 		<-root.Stop()
 		expectEvents(t, "stop second", "stop first")
+		if poolRuns.Load() != 1 {
+			t.Fatal("failed parent ran more than once")
+		}
 	})
 }
 
-// TestChildEscalationFailsRun checks that exhaustion stops the parent without retrying it.
+// TestChildEscalationFailsRun checks that the first child failure stops the parent.
 func TestChildEscalationFailsRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
@@ -234,9 +234,8 @@ func TestChildEscalationFailsRun(t *testing.T) {
 		if _, err := Start[failingParent](root, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(31 * time.Second)
 		synctest.Wait()
-		expectEvents(t, "start parent", "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31",
+		expectEvents(t, "start parent", "00:00:00",
 			"stop parent")
 		<-root.Stop()
 		expectEvents(t)
@@ -413,11 +412,14 @@ func (*slowStop) Run(ctx context.Context) {
 }
 
 // stoppingParent is a service with a failing child and a slow child.
-type stoppingParent struct{ Service[NoArgs] }
+type stoppingParent struct{ Service[chan struct{}] }
 
 // Run starts the failing child, then the slow child, and waits until ctx ends.
 func (p *stoppingParent) Run(ctx context.Context) {
-	if _, err := Start[failing](p.Children(), NoArgs{}); err != nil {
+	if _, err := Start[initializing](p.Children(), &initHooks{
+		init: func(*initializing) error { return nil },
+		run:  func(*initializing, context.Context) { <-p.Args(); panic("during Stop") },
+	}); err != nil {
 		panic(err)
 	}
 	if _, err := Start[slowStop](p.Children(), NoArgs{}); err != nil {
@@ -427,18 +429,20 @@ func (p *stoppingParent) Run(ctx context.Context) {
 	record("stop parent")
 }
 
-// TestChildEscalatesDuringStop verifies that an escalation during Stop does not block or restart the parent.
-func TestChildEscalatesDuringStop(t *testing.T) {
+// TestChildFailsDuringStop checks that Stop suppresses a later child failure.
+func TestChildFailsDuringStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
 		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		if _, err := Start[stoppingParent](root, NoArgs{}); err != nil {
+		release := make(chan struct{})
+		if _, err := Start[stoppingParent](root, release); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(30 * time.Second)
 		synctest.Wait()
 		takeEvents()
-		<-root.Stop()
+		done := root.Stop()
+		close(release)
+		<-done
 		expectEvents(t, "stop slow", "stop parent")
 	})
 }
@@ -466,9 +470,8 @@ func TestStartAfterEscalation(t *testing.T) {
 		if _, err := Start[lateParent](root, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(31 * time.Second)
 		synctest.Wait()
-		expectEvents(t, "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31",
+		expectEvents(t, "00:00:00",
 			"start first", "stop first", "late start")
 		<-root.Stop()
 		takeEvents()

@@ -27,9 +27,6 @@ type MakerArgs struct {
 // Maker owns one market subscription; Run alone processes its events and order slots.
 type Maker struct{ supervise.Service[MakerArgs] }
 
-// Init reconciles uncertain orders from the previous attempt before resubscribing.
-func (m *Maker) Init() error { return m.cleanup() }
-
 // onEvent handles normalized fills or the full price-to-quote hot path for Run.
 func (m *Maker) onEvent(ctx context.Context, event Event) (Quote, error) {
 	args := m.Args()
@@ -69,12 +66,12 @@ func (m *Maker) onEvent(ctx context.Context, event Event) (Quote, error) {
 	return args.Account.readQuote(args.Index), nil
 }
 
-// Run consumes venue events; its subscription and orders end with this attempt.
+// Run consumes venue events and closes its subscription and orders when it ends.
 func (m *Maker) Run(ctx context.Context) {
 	args := m.Args()
 	defer func() {
-		if err := m.cleanup(); err != nil && ctx.Err() != nil {
-			args.StopBot(err)
+		if err := m.cleanup(); err != nil {
+			m.reportCleanupFailure(ctx, err)
 		}
 	}()
 	stream, err := args.API.Subscribe(ctx, args.AccountName, args.Symbol)
@@ -89,7 +86,7 @@ func (m *Maker) Run(ctx context.Context) {
 		defer cancel()
 		if err := stream.Close(closeContext); err != nil {
 			args.Account.setProblem(args.Index, err)
-			args.StopBot(err)
+			m.reportCleanupFailure(ctx, err)
 		}
 	}()
 	args.Log.Printf("maker started: %s/%s", args.StrategyID, args.Symbol)
@@ -105,6 +102,15 @@ func (m *Maker) Run(ctx context.Context) {
 		if _, err := m.onEvent(ctx, event); err != nil {
 			panic(err)
 		}
+	}
+}
+
+// reportCleanupFailure logs the error and stops the bot when shutdown has started.
+func (m *Maker) reportCleanupFailure(ctx context.Context, err error) {
+	args := m.Args()
+	args.Log.Printf("cleanup failed: %v", err)
+	if ctx.Err() != nil {
+		args.StopBot(err)
 	}
 }
 

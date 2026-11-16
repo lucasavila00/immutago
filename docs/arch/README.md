@@ -35,7 +35,7 @@ native slice ──FreezeSlice──> FrozenSlice ──Store Rates──> Cell
 | --- | --- |
 | Select a package, prove types, match operations, report failures | [Analysis pipeline](pipeline.md) |
 | Consume a builder, publish a root, generate field projections | [Storage and ownership](ownership.md) |
-| Publish a service, retry it, stop its children | [Services](services.md) |
+| Start a service, handle failure, stop its children | [Services](services.md) |
 | Check runtime assumptions and analyzer decisions | [Validation](validation.md) |
 | Measure runtime operations and analyzer data structures | [Performance](performance.md) |
 

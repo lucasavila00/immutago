@@ -109,9 +109,9 @@ contract; `Unsafe` itself does not enforce a lifetime.
 
 An initial scan or parse error prevents startup. A later error leaves the last
 valid index available and sets `problem`. The next successful scan clears the
-error, including when the files did not change. Expected file errors do not
-cause a supervisor restart. The service's mutable fields and publication lock
-still require ordinary Go review.
+error, including when the files did not change. Expected file errors keep the
+service running. A Run panic stops the root and ends the process after cleanup.
+The service's mutable fields and publication lock still require ordinary Go review.
 
 ## Checks
 

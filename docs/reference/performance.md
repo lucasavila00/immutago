@@ -23,8 +23,8 @@
 | Cell.Store | Copy one T root and publish with an atomic store; one allocation for T with nonzero size. |
 | Generated Cell.Load, raw Cell.LoadPointer | One atomic pointer load; no record copy or allocation. |
 | Raw Cell.Load | One atomic load and a T value copy; no backing-storage copy. |
-| Ref.Borrow | One atomic load; no allocation. |
-| Ref.IsZero | Compare the stored pointer with nil; no atomic load or allocation. |
+| Ref.Borrow | Return the stored pointer; no allocation. |
+| Ref.IsZero | Compare the stored pointer with nil; no allocation. |
 
 Copied record fields contain no strings or reference handles. A complete copy
 includes all their data. The zero-sized im.Copied marker adds no runtime copy
@@ -63,7 +63,7 @@ complete single-instrument event loop with a fixed-storage test adapter. They
 check zero steady-state allocations and verify fresh price updates, order
 cancellation and placement, and cumulative fills. The direct Go comparison uses
 the same calculation, account locks, order counter, stream, and adapter work,
-with native atomic policy pointers in place of Ref and Cell reads.
+with a fixed service pointer and an atomic snapshot read in place of Ref and Cell reads.
 
 Setup, periodic reports, network latency, and contention are outside that
 comparison. Run the manual [Core performance workflow](../../.github/workflows/core-performance.yml)

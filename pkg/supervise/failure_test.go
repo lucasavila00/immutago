@@ -9,7 +9,6 @@ import (
 	"sync"
 	"testing"
 	"testing/synctest"
-	"time"
 )
 
 // failureLeaf fails with the error supplied at startup.
@@ -91,13 +90,7 @@ func checkFailureOrigin(t *testing.T, shape string, reporting bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var value any
-	select {
-	case value = <-terminal:
-	case <-time.After(time.Minute):
-		<-top.Stop()
-		t.Fatal("terminal failure did not reach root within the leaf retry budget")
-	}
+	value := <-terminal
 	<-top.Stop()
 	failure, ok := value.(*Failure)
 	if !ok {
@@ -113,7 +106,7 @@ func checkFailureOrigin(t *testing.T, shape string, reporting bool) {
 	defer mu.Unlock()
 	var want []any
 	if reporting {
-		want = []any{cause, cause, cause, cause, cause, cause, failure}
+		want = []any{cause, failure}
 	}
 	if !slices.Equal(reports, want) {
 		t.Errorf("reports = %v, want %v", reports, want)

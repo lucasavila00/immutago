@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 	"testing/synctest"
-	"time"
 )
 
 // TestStopWaitsForParentEntry keeps a nested entry until its child cleanup ends.
@@ -41,33 +40,6 @@ func TestStopWaitsForParentEntry(t *testing.T) {
 		if nested.parent != nil || nested.entry != nil {
 			t.Error("stopped group keeps parent links")
 		}
-	})
-}
-
-// TestStopDuringRestartDelay releases a nested group without waiting for the next restart.
-func TestStopDuringRestartDelay(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		parent := root(func(value any) { t.Errorf("root escalated: %v", value) }, nil)
-		nested := StartGroup(parent)
-		failures.Store(0)
-		if _, err := Start[failing](nested, NoArgs{}); err != nil {
-			t.Fatal(err)
-		}
-		time.Sleep(time.Second / 2)
-		synctest.Wait()
-		before := time.Now()
-		<-nested.Stop()
-		if delay := time.Since(before); delay != 0 {
-			t.Errorf("Stop waited for a restart timer: %v", delay)
-		}
-		parent.mu.Lock()
-		remaining := parent.children.count
-		parent.mu.Unlock()
-		if remaining != 0 {
-			t.Errorf("parent retains %d children after nested Stop", remaining)
-		}
-		<-parent.Stop()
-		takeEvents()
 	})
 }
 

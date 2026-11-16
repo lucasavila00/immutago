@@ -8,7 +8,6 @@ import (
 	"sync/atomic"
 	"testing"
 	"testing/synctest"
-	"time"
 
 	"github.com/lucasavila00/immutago/pkg/supervise"
 )
@@ -65,23 +64,21 @@ func TestNewRoot(t *testing.T) {
 	})
 }
 
-// failing records setup attempts and fails in Run, then in restart Init.
+// failing records setup and fails in Run.
 type failing struct {
 	supervise.Service[*atomic.Int32]
 }
 
-// Init fails only after the first Run has failed.
+// Init records the one setup call.
 func (s *failing) Init() error {
-	if s.Args().Add(1) > 1 {
-		panic("restart Init failed")
-	}
+	s.Args().Add(1)
 	return nil
 }
 
 // Run supplies a failure that must fail the owning test.
 func (*failing) Run(context.Context) { panic("Run failed") }
 
-// TestReportsFailTest stops the root after the first failure, before a retry.
+// TestReportsFailTest uses Stop to prevent the terminal root panic.
 func TestReportsFailTest(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		var inits atomic.Int32
@@ -90,8 +87,6 @@ func TestReportsFailTest(t *testing.T) {
 		if _, err := supervise.Start[failing](root, &inits); err != nil {
 			t.Fatal(err)
 		}
-		synctest.Wait()
-		time.Sleep(time.Minute)
 		synctest.Wait()
 		select {
 		case <-root.Stop():

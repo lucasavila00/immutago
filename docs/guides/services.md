@@ -2,7 +2,7 @@
 
 The [shipping loader](../../examples/shipping/loader.go) reads a catalog before
 HTTP requests begin, then checks for edits in the background. `supervise` manages
-that background work and its restarts. This guide follows the loader's lifecycle;
+that background work and its shutdown. This guide follows the loader's lifecycle;
 the [application README](../../examples/shipping/README.md) gives the run commands.
 
 ## Set up and run
@@ -19,7 +19,7 @@ type Loader struct {
 `Init` reads and validates the first catalog. An error prevents startup. `Run`
 uses a ticker to try later reloads and returns when its context ends. Expected
 file errors are logged; the last valid catalog stays available. A panic in Run
-causes a restart with a new Loader value and the same arguments.
+stops the root, waits for cleanup, and terminates the process with the original failure.
 
 The [command](../../examples/shipping/cmd/shipping/main.go) starts the loader
 under a root group and waits for shutdown when it returns:
@@ -46,11 +46,11 @@ The handler keeps `supervise.Ref[Loader]`. Each request calls:
 catalog := loader.Borrow().Catalog()
 ```
 
-Borrow selects the current service after any restart. Catalog runs in the
+Borrow returns the loader created by Start. Catalog runs in the
 request's goroutine and loads a projection from the Cell. That projection fixes
-the catalog version for the quote. Keep the reference for later requests and
-select again. The [reference rules](../reference/service-references.md) cover
-optional references and direct Borrow calls.
+the catalog version for the quote. Call Catalog again for the next request. The
+[reference rules](../reference/service-references.md) cover optional references
+and direct Borrow calls.
 
 ## Review shared state and inputs
 
@@ -76,15 +76,14 @@ calls. See [service results](../reference/service-results.md) for the full list.
 
 The example has one service under the root. Use `supervise.StartGroup(parent)`
 when several services must stop together. Inside a service, use `s.Children()`
-for work that must end with that run. A restart creates a new service value and
-child group, so create those children again. Other services keep running.
-Groups control shutdown only; they do not restart.
+for work that must end with that service. Stopping a nested group leaves other
+groups running. A Run failure stops the entire root.
 
 The [runtime reference](../reference/services.md) defines child shutdown order,
-restart limits and failure reports. In tests,
+completion and failure reports. In tests,
 [`supervisetest.NewRoot(t)`](../../pkg/supervise/supervisetest/readme.md) stops the
 tree during cleanup. It fails the test and prints the original stack when a
-supervised attempt fails, then requests root shutdown without a retry.
+Run fails, then requests root shutdown.
 The failed test completes cleanup, and later tests can run. The helper also fails
 if shutdown takes more than five seconds.
-Tests that expect supervised failures can use `supervise.NewRoot` with their own reporter.
+Use a subprocess to test termination from a Run failure.

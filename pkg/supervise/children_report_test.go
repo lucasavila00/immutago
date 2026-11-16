@@ -37,28 +37,38 @@ func TestServiceChildrenInheritReporter(t *testing.T) {
 	for _, before := range []bool{true, false} {
 		for _, nested := range []bool{true, false} {
 			synctest.Test(t, func(t *testing.T) {
-				reports := make(chan bool, 1)
-				parent := newGroup(nil, false)
-				parent.root = parent
-				parent.report = func(value any, stack []byte) {
-					reports <- value == "child report" && bytes.Contains(stack, []byte("reportingChild"))
-				}
-				ref, _ := Start[reportingParent](parent, NoArgs{})
-				if before {
-					ref.Borrow().StartChild(nested)
-				}
-				parent.mu.Lock()
-				parent.activate()
-				parent.mu.Unlock()
-				if !before {
-					synctest.Wait()
-					ref.Borrow().StartChild(nested)
-				}
-				if !<-reports {
-					t.Errorf("wrong child report: before=%t, nested=%t", before, nested)
-				}
-				<-parent.Stop()
+				checkServiceChildrenReporter(t, before, nested)
 			})
 		}
 	}
+}
+
+// checkServiceChildrenReporter checks one activation and ownership combination.
+func checkServiceChildrenReporter(t *testing.T, before, nested bool) {
+	t.Helper()
+	reports := make(chan bool, 1)
+	parent := newGroup(nil, false)
+	parent.root = parent
+	parent.exit = func(any) {}
+	parent.report = func(value any, stack []byte) {
+		if _, terminal := value.(*Failure); terminal {
+			return
+		}
+		reports <- value == "child report" && bytes.Contains(stack, []byte("reportingChild"))
+	}
+	ref, _ := Start[reportingParent](parent, NoArgs{})
+	if before {
+		ref.Borrow().StartChild(nested)
+	}
+	parent.mu.Lock()
+	parent.activate()
+	parent.mu.Unlock()
+	if !before {
+		synctest.Wait()
+		ref.Borrow().StartChild(nested)
+	}
+	if !<-reports {
+		t.Errorf("wrong child report: before=%t, nested=%t", before, nested)
+	}
+	<-parent.Stop()
 }

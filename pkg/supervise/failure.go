@@ -6,9 +6,9 @@ import (
 )
 
 // Failure identifies the service whose terminal failure stopped the root.
-// Value is its last panic value, restart Init error, or a runtime.Goexit error.
+// Value is its original Run panic value or a runtime.Goexit error.
 // Stack is captured in that service's goroutine. Groups pass the same failure
-// to the root without wrapping it or applying another retry limit.
+// to the root without wrapping it.
 type Failure struct {
 	Service string
 	Value   any

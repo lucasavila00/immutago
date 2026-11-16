@@ -6,7 +6,6 @@ import (
 	"sync/atomic"
 	"testing"
 	"testing/synctest"
-	"time"
 )
 
 // consumerLifetime exposes the start and cleanup of one background run.
@@ -75,32 +74,28 @@ func (s *consumerParent) Init() error {
 	return nil
 }
 
-// Run starts its worker and fails only on the first parent instance.
-func (s *consumerParent) Run(ctx context.Context) {
+// Run starts its worker and waits for the test to release its failure.
+func (s *consumerParent) Run(context.Context) {
 	args := s.Args()
 	worker := newConsumerLifetime()
-	if s.generation == 1 {
-		worker.finish = args.finish
-	}
+	worker.finish = args.finish
 	if _, err := Start[consumerModel](s.Children(), consumerModelArgs{life: worker}); err != nil {
 		panic(err)
 	}
 	args.workers <- worker
 	args.runs <- s.generation
-	if s.generation == 1 {
-		<-args.fail
-		panic("model worker failed")
-	}
-	<-ctx.Done()
+	<-args.fail
+	panic("model worker failed")
 }
 
 // Generation reads the initialized parent instance number.
 func (s *consumerParent) Generation() int32 { return s.generation }
 
-// TestConsumerParentReplacement waits for old children without stopping a peer.
-func TestConsumerParentReplacement(t *testing.T) {
+// TestConsumerParentFailure waits for owned children before stopping an older peer.
+func TestConsumerParentFailure(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		group := NewRoot(nil)
+		terminal := make(chan any, 1)
+		group := root(func(value any) { terminal <- value }, nil)
 		peer := newConsumerLifetime()
 		if _, err := Start[consumerModel](group, consumerModelArgs{version: 99, life: peer}); err != nil {
 			t.Fatal(err)
@@ -122,23 +117,20 @@ func TestConsumerParentReplacement(t *testing.T) {
 		}
 		close(fail)
 		<-oldWorker.stopping
-		time.Sleep(2 * time.Second)
 		synctest.Wait()
 		if ref.Borrow().Generation() != 1 || args.starts.Load() != 1 {
-			t.Fatal("parent replacement began before old child cleanup finished")
+			t.Fatal("failure initialized another parent")
 		}
 		peer.checkRunning(t)
 		close(finish)
 		<-oldWorker.stopped
-		newWorker := <-args.workers
-		<-newWorker.started
-		if run := <-args.runs; run != 2 || ref.Borrow().Generation() != 2 {
-			t.Fatal("parent replacement did not publish and run")
+		if failure := (<-terminal).(*Failure); failure.Value != "model worker failed" {
+			t.Fatalf("terminal failure = %v", failure)
 		}
-		synctest.Wait()
-		peer.checkRunning(t)
 		<-group.Stop()
-		<-newWorker.stopped
+		if args.starts.Load() != 1 || len(args.workers) != 0 || len(args.runs) != 0 {
+			t.Error("failed parent started another instance or worker")
+		}
 		<-peer.stopped
 	})
 }

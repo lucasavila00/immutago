@@ -9,37 +9,6 @@ import (
 	"time"
 )
 
-// TestUnknownPlacementKeepsCashUntilFinalCancel handles a lost acknowledgment and a cancel-time fill.
-func TestUnknownPlacementKeepsCashUntilFinalCancel(t *testing.T) {
-	files := sampleFiles(t)
-	synctest.Test(t, func(t *testing.T) {
-		venue := newFakeVenue()
-		venue.unknownPlace, venue.cancelFailures, venue.fillOnCancel = true, 1, 97
-		bot := startBot(t, files, venue, new(eventLog))
-		defer func() { _ = bot.Stop() }()
-		price(venue, "desk-a", "AAA", 1)
-		advance()
-		held := bot.Read()
-		quote := NewMarketReportProjection(held.Active().Markets().AtPointer(0)).Totals().Quote
-		if got := held.Active().Totals(); got.Cash != 1000 || got.Reserved != 97 || !quote.BidPending {
-			t.Fatal("unknown placement released cash", got, quote)
-		}
-		time.Sleep(2 * time.Second)
-		synctest.Wait()
-		if got := bot.Read().Active().Totals(); got.Cash != 903 || got.Reserved != 0 || got.Inventory != 1 || got.Buys != 1 {
-			t.Fatal("final cancellation fill was not applied once", got)
-		}
-		for _, order := range venue.accounts["desk-a"].orders {
-			venue.emit("desk-a", "AAA", Event{Kind: OrderEvent, Order: order.state})
-		}
-		price(venue, "desk-a", "AAA", 1)
-		advance()
-		if got := bot.Read().Active().Totals(); got.Cash != 903 || got.Buys != 1 {
-			t.Fatal("old price or fill changed the reconciled account", got)
-		}
-	})
-}
-
 // TestCancelFillRepricesFromCurrentInventory includes final fills before the new quote pair.
 func TestCancelFillRepricesFromCurrentInventory(t *testing.T) {
 	files := sampleFiles(t)

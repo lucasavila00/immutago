@@ -142,7 +142,7 @@ func newCostFixture(tb testing.TB, fills, native bool) costFixture {
 		worker := &nativeMaker{args: args}
 		source := new(nativePolicyService)
 		source.current.Store(&nativePolicy{Version: 1, Limits: Limits{MaxInventory: 5, MaxSpread: 10}})
-		worker.policy.Store(source)
+		worker.policy = source
 		ctx, cancel := context.WithCancel(context.Background())
 		done := make(chan struct{})
 		go func() { defer close(done); worker.run(ctx) }()
