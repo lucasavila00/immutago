@@ -75,4 +75,14 @@ Or use `go vet`:
 go vet -vettool=/absolute/path/to/immutago ./...
 ```
 
+For build tags, set `GOFLAGS` for the CLI or pass `-tags` to `go vet`:
+
+```sh
+GOFLAGS=-tags=integration immutago ./...
+go vet -vettool=/absolute/path/to/immutago -tags=integration ./...
+```
+
+`immutago -tags integration ./...` does not select tagged files. Use one of the
+commands above to check them, including packages whose files all require a tag.
+
 Do not use `-json` as a CI pass/fail check: it can return exit code 0 with errors.
