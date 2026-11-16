@@ -61,11 +61,11 @@ Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
 
 | Operation or event | Behavior |
 | --- | --- |
-| `ref, err := supervise.Start[Worker](parent, args)` | Create a fresh Worker, call Init, then make it available through Ref and schedule Run. |
+| `ref, err := supervise.Start[Worker](parent, args)` | Check admission, create a fresh Worker, call Init, then register it and return Ref. Run is asynchronous. |
 | Init returns an error | Start returns a zero Ref and the error. |
 | Init panics | The panic reaches the caller. |
-| Start under a stopped group | Init still runs. If it succeeds, Run receives an already-cancelled context. Start waits for cleanup, then returns the initialized Ref. |
-| Stop while Init runs | Stop waits only for registered services. If Init succeeds after Stop, Start waits for its cancelled Run and child cleanup. A failure in that Run remains terminal. |
+| Start after the group or an ancestor closes admission | Return a zero Ref and `context.Canceled`. Do not call Init or Run. |
+| Stop after Start is accepted | Wait for Init before stopping registered services. Successful Init still registers and returns Ref; Run can receive a cancelled context. |
 | Nil or zero Group passed to Start or StartGroup | Panic with `supervise: nil or zero Group` before Init. |
 | Pointer on the selected Service embedding path | Panic before Init with `supervise: embed Service by value through each embedded field`. |
 
@@ -83,9 +83,13 @@ is requested; its context still ends at its turn in shutdown.
 
 Init must not wait for an unstarted peer or child Run. For readiness that depends
 on Run, expose a method such as `Ready() bool`. Init has no cancellation context.
-It must return and must release application resources that it opened if setup fails.
+It must return without waiting for its owning group or an ancestor to stop, or
+for cancellation that needs that shutdown. Init can stop and wait for its own
+child group to undo setup. It must release application resources that it opened
+if setup fails.
 Every successful Init gets exactly one Run call. Run can use defer to release those
 resources. Check its context before starting work: it can already be cancelled.
+Successful Start means that Init completed; it does not mean that Run is still active.
 
 ## Completion and failure
 
@@ -101,7 +105,7 @@ resources. Check its context before starting work: it can already be cancelled.
 | Several Run failures occur | Keep the first failure recorded by the runtime. Report each failure once. |
 | Terminal panic | It runs in a runtime goroutine after reporting and cleanup. A caller cannot recover it. |
 
-Each Start creates one service value and calls Run once after successful Init.
+Each accepted Start creates one service value and calls Run once after successful Init.
 Borrow returns that same value, including after it stops.
 
 ## Child groups
@@ -121,13 +125,12 @@ A stopped parent supplies a stopped nested group.
 
 | Event | Effect |
 | --- | --- |
-| Parent Init returns an error or panics | Stop children from that setup. Application resources remain Init's responsibility. |
-| A method starts a child before parent Run is admitted | Child Init runs immediately. Child Run waits for normal activation or receives a cancelled context during cleanup. |
+| Parent Init returns an error, panics, or calls Goexit | Stop children from that setup. Application resources remain Init's responsibility. |
+| An accepted child Start before parent Run is admitted | Child Init runs immediately. Child Run waits for normal activation or receives a cancelled context during cleanup. |
 | Stop races with staged child activation | Activation completes before Stop or leaves the children pending. In both cases, children wait for their reverse-order shutdown turns. |
-| Parent is stopped | Stop children last started first and wait for them before cancelling the parent's Run context. |
+| Parent is stopped | Stop children in reverse registration order and wait for them before cancelling the parent's Run context. |
 | Parent Run returns or panics | Stop and wait for children before the service ends. |
 | A child Run panics or calls Goexit | Stop the whole root tree. |
-| A method starts a child after the parent run ends | Init can succeed. The call waits for the child's cancelled Run, then returns its reference. A saved group from that run uses the same rule. |
 
 Services and groups can be started after application startup. Put a dynamic
 service under `StartGroup(parent)` to stop that subtree separately later.
@@ -140,15 +143,17 @@ Stop does not wait for requests already using the old reference.
 | --- | --- |
 | `done := root.Stop()` | Request shutdown without waiting. Repeated calls return the same channel. |
 | Stop on a nil or zero Group | Panic with `supervise: nil or zero Group`. |
-| `<-root.Stop()` | Wait until all registered children stop. A terminal failure prevents normal completion. |
+| `<-root.Stop()` | Wait for accepted Init calls and all children to stop. A terminal failure prevents normal completion. |
 | `<-group.Stop()` on a nested group | Wait for this group's children and removal from its parent. This means the subtree has ended; a child failure still stops the root. |
-| Stop is requested | Close admission immediately; cancel services in reverse start order. |
+| Stop is requested | Close admission immediately. Each group waits for its accepted Init calls, then cancels children in reverse registration order. |
 | A registered service has not been admitted to Run when Stop is requested | Wait for its turn, stop its children, then call Run with an already-cancelled context. |
 
 Shutdown gives pending initialized services a cancelled Run through the same
-watcher used for active services. It waits for children in reverse start order
+watcher used for active services. It waits for children in reverse registration order
 before it enters a parent's cancelled Run. It does not activate staged children
 with live contexts. Cleanup panics and Goexit are terminal failures.
+Services register after Init; concurrent Start calls can register in a different
+order from their invocation order. Nested groups register when StartGroup is called.
 
 Stop does not interrupt work already admitted. Registered work must finish
 before the completion channel closes. Run must return when its context ends.

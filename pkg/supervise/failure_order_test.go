@@ -7,6 +7,56 @@ import (
 	"testing/synctest"
 )
 
+// TestNestedFailureCompletesSubtree separates nested completion from terminal root shutdown.
+func TestNestedFailureCompletesSubtree(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		reported, exited := make(chan *Failure, 1), make(chan any, 1)
+		top := root(func(value any) { exited <- value }, func(value any, _ []byte) {
+			reported <- value.(*Failure)
+		})
+		nested := StartGroup(top)
+		_, err := Start[initializing](nested, &initHooks{
+			init: func(*initializing) error { return nil },
+			run: func(_ *initializing, ctx context.Context) {
+				<-ctx.Done()
+				panic("nested cleanup failed")
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		cleanup, release := make(chan struct{}), make(chan struct{})
+		_, err = Start[initializing](top, &initHooks{
+			init: func(*initializing) error { return nil },
+			run: func(_ *initializing, ctx context.Context) {
+				<-ctx.Done()
+				close(cleanup)
+				<-release
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		synctest.Wait()
+		<-nested.Stop()
+		failure := <-reported
+		<-cleanup
+		select {
+		case <-top.Stop():
+			t.Error("root completed while sibling cleanup was blocked")
+		default:
+		}
+		if len(exited) != 0 {
+			t.Error("root failed before sibling cleanup ended")
+		}
+		close(release)
+		<-top.Stop()
+		if value := <-exited; value != failure {
+			t.Fatalf("terminal failure = %v; report = %v", value, failure)
+		}
+	})
+}
+
 // TestReporterStopKeepsFailure permits Stop from the reporter without losing failure.
 func TestReporterStopKeepsFailure(t *testing.T) {
 	for _, where := range []string{"root", "subtree", "unrelated"} {

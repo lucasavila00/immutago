@@ -2,6 +2,7 @@ package supervise
 
 import (
 	"context"
+	"errors"
 	"runtime"
 	"slices"
 	"sync/atomic"
@@ -11,7 +12,7 @@ import (
 
 // TestInitializedServiceCleanup gives each successful Init exactly one Run for cleanup.
 func TestInitializedServiceCleanup(t *testing.T) {
-	for _, state := range []string{"stopped", "admitted", "pending", "terminal"} {
+	for _, state := range []string{"admitted", "pending", "terminal"} {
 		t.Run(state, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) { checkInitializedServiceCleanup(t, state) })
 		})
@@ -26,16 +27,13 @@ func checkInitializedServiceCleanup(t *testing.T, state string) {
 	if state == "pending" {
 		parent = newGroup(top, false)
 	}
-	if state == "stopped" {
-		<-parent.Stop()
-	}
 	var open, runs atomic.Int32
 	_, err := Start[initializing](parent, &initHooks{
 		init: func(*initializing) error { open.Add(1); return nil },
 		run: func(_ *initializing, ctx context.Context) {
 			defer open.Add(-1)
 			runs.Add(1)
-			if (state == "stopped" || state == "pending") && ctx.Err() == nil {
+			if state == "pending" && ctx.Err() == nil {
 				t.Error("cleanup Run started with an active context")
 			}
 			<-ctx.Done()
@@ -45,7 +43,7 @@ func checkInitializedServiceCleanup(t *testing.T, state string) {
 		t.Fatal(err)
 	}
 	if state == "terminal" {
-		top.fail(&Failure{Service: "peer", Value: "failed"}, completedRun())
+		top.fail(&Failure{Service: "peer", Value: "failed"})
 	}
 	<-parent.Stop()
 	<-top.Stop()
@@ -109,9 +107,8 @@ func checkPendingCleanupFailure(t *testing.T, mode string) {
 	terminal := make(chan any, 1)
 	top := root(func(value any) { terminal <- value },
 		func(any, []byte) { reports.Add(1) })
-	parent := newGroup(top, false)
 	var open atomic.Int32
-	_, err := Start[initializing](parent, &initHooks{
+	child := &initHooks{
 		init: func(*initializing) error { open.Add(1); return nil },
 		run: func(_ *initializing, ctx context.Context) {
 			defer open.Add(-1)
@@ -123,11 +120,19 @@ func checkPendingCleanupFailure(t *testing.T, mode string) {
 			}
 			panic("cleanup")
 		},
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
-	<-parent.Stop()
+	setupError := errors.New("parent setup failed")
+	_, err := Start[initializing](top, &initHooks{
+		init: func(p *initializing) error {
+			if _, err := Start[initializing](p.UncheckedChildren(), child); err != nil {
+				return err
+			}
+			return setupError
+		},
+	})
+	if err != setupError {
+		t.Fatalf("parent Init error = %v", err)
+	}
 	<-top.Stop()
 	if failure := (<-terminal).(*Failure); failure.Value == nil {
 		t.Fatal("cleanup lost its failure")

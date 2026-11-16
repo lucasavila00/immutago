@@ -76,12 +76,12 @@ func checkRunAdmissionOrdersStop(t *testing.T) {
 	entry := parent.children.first
 	run := entry.run
 	release := make(chan struct{})
-	entry.run = func(ctx context.Context, done <-chan struct{}) {
+	entry.run = func(ctx context.Context) {
 		<-release
-		run(&stopOnRead{Context: ctx, group: parent, when: func() bool { return inits.Load() == 1 }}, done)
+		run(&stopOnRead{Context: ctx, group: parent, when: func() bool { return inits.Load() == 1 }})
 	}
 	cleanup, slowRelease := make(chan struct{}), make(chan struct{})
-	parent.add(func(ctx context.Context, _ <-chan struct{}) { <-ctx.Done(); close(cleanup); <-slowRelease }, nil)
+	parent.add(func(ctx context.Context) { <-ctx.Done(); close(cleanup); <-slowRelease }, nil)
 	parent.mu.Lock()
 	parent.activate()
 	parent.mu.Unlock()
@@ -138,7 +138,7 @@ func TestStagedActivationOrdersStop(t *testing.T) {
 		entry := parent.children.first
 		run := entry.run
 		release := make(chan struct{})
-		entry.run = func(ctx context.Context, done <-chan struct{}) { <-release; run(ctx, done) }
+		entry.run = func(ctx context.Context) { <-release; run(ctx) }
 		parent.mu.Lock()
 		parent.activate()
 		parent.mu.Unlock()

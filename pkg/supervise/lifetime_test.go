@@ -101,7 +101,7 @@ func TestTerminalExitPrecedesStopCompletion(t *testing.T) {
 			t.Fatal(err)
 		}
 		synctest.Wait()
-		parent.fail(&Failure{Service: "worker", Value: "terminal"}, completedRun())
+		parent.fail(&Failure{Service: "worker", Value: "terminal"})
 		<-exiting
 		select {
 		case <-cleaned:
