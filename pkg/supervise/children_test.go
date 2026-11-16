@@ -117,12 +117,18 @@ func TestChildrenDuringHalt(t *testing.T) {
 		<-entered
 		s := p.Children()
 		ran := make(chan struct{})
-		s.add(func(ctx context.Context) {
-			if ctx.Err() == nil {
-				t.Error("late child started with an active context")
-			}
-			close(ran)
-		}, nil)
+		_, err := Start[initializing](s, &initHooks{
+			init: func(*initializing) error { return nil },
+			run: func(_ *initializing, ctx context.Context) {
+				defer close(ran)
+				if ctx.Err() == nil {
+					t.Error("late child started with an active context")
+				}
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
 		synctest.Wait()
 		close(resume)
 		<-halted
