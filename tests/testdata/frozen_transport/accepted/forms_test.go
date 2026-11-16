@@ -13,3 +13,9 @@ func TestHandleSlots(t *testing.T) {
 		t.Fatalf("HandleSlots() = %d; want 20", got)
 	}
 }
+
+func TestFreezeSlots(t *testing.T) {
+	if got := FreezeSlots(); got != 21 {
+		t.Fatalf("FreezeSlots() = %d; want 21", got)
+	}
+}
