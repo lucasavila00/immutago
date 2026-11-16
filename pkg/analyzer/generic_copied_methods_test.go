@@ -24,13 +24,15 @@ type Reply struct { im.Local; Count Count[Unit]; Values [2]Count[Unit]; Score Sc
 // TestGenericCopiedMethodForms checks the instantiated receiver through the shared type proof.
 func TestGenericCopiedMethodForms(t *testing.T) {
 	cases := []struct{ name, source string }{
-		{"scalar and record", `func f(v Snapshot,p Reply)int{_=p.Count.Read();_=p.Score.Read();return v.Count.Read()+v.Score.Read()}`},
+		{"scalar and record", `func f(v Snapshot,p Reply)int{_=p.Count.Read();_=p.Score.Read();
+return v.Count.Read()+v.Score.Read()}`},
 		{"pointer owners and arrays", `func f(v *Snapshot,p *Reply)int{_=p.Values[0].Read();return v.Values[1].Read()}`},
 		{"alias and parentheses", `func f(v Snapshot)int{return ((v.Alias).Read)()}`},
 		{"zero and literal", `func f()int{var v Snapshot;_=Snapshot{}.Count.Read();return v.Count.Read()}`},
 		{"bound copies", `func f(p Reply)func()int{read:=p.Score.Read;_=read();return p.Count.Read}`},
 		{"method expressions", `func f(p Reply)int{return Count[Unit].Read(p.Count)+Score[Unit].Read(p.Score)}`},
-		{"tuple and variadic", `func f(v Snapshot)(Count[Unit],bool){_=v.Count.Add(v.Alias,v.Values[0]);return v.Count.Pair()}`},
+		{"tuple and variadic", `func f(v Snapshot)(Count[Unit],bool){_=v.Count.Add(v.Alias,v.Values[0]);
+return v.Count.Pair()}`},
 		{"method type parameters", `func(c Count[U])Map[T any](read func(int)T)T{return read(int(c))};
 func read(n int)int{return n};func f(v Snapshot){_=v.Count.Map(read);_=v.Count.Map[int](read)}`},
 		{"ordinary copy", `func f(p Reply){count:=p.Count;count.Inc();go count.Inc();defer count.Inc()}`},
@@ -59,13 +61,19 @@ func TestGenericCopiedMethodBoundaries(t *testing.T) {
 		{"Local defer", `func f(p Reply){defer p.Score.Read()}`, "synchronous"},
 		{"Local capture", `func f(p Reply)func()int{return func()int{return p.Count.Read()}}`, "closures require"},
 		{"Local multiple RHS", `func f(p Reply){a,b:=p.Count.Read(),1;_=a;_=b}`, "multiple assignments"},
-		{"builder pointer", `func f(){values:=[]Count[Unit]{1};values[0].Inc();_=im.FreezeSlice(values)}`, "copying, rebinding, slicing, addressing"},
-		{"builder after Freeze", `func f(){values:=[]Count[Unit]{1};_=im.FreezeSlice(values);_=values[0].Read()}`, "consumed"},
-		{"builder alias", `func f(){values:=[]Count[Unit]{1};alias:=values;_=alias[0].Read();_=im.FreezeSlice(values)}`, "copying, rebinding, slicing, addressing"},
+		{"builder pointer", `func f(){values:=[]Count[Unit]{1};values[0].Inc();_=im.FreezeSlice(values)}`,
+			"copying, rebinding, slicing, addressing"},
+		{"builder after Freeze", `func f(){values:=[]Count[Unit]{1};_=im.FreezeSlice(values);_=values[0].Read()}`,
+			"consumed"},
+		{"builder alias", `func f(){values:=[]Count[Unit]{1};alias:=values;_=alias[0].Read();_=im.FreezeSlice(values)}`,
+			"copying, rebinding, slicing, addressing"},
 		{"non-Copied scalar", `type Text[U any]string;func(t Text[U])Read()string{return string(t)};
-type TextOwner struct{im.Frozen;Text Text[Unit]};func f(v TextOwner){_=v.Text.Read()}`, "proved marked or Copied receiver"},
-		{"generic Frozen declaration", `type Bad[U any]struct{im.Frozen;N int};func(b Bad[U])Read()int{return b.N}`, "user generic declarations cannot define"},
-		{"generic Local declaration", `type Bad[U any]struct{im.Local;N int};func(b Bad[U])Read()int{return b.N}`, "user generic declarations cannot define"},
+type TextOwner struct{im.Frozen;Text Text[Unit]};func f(v TextOwner){_=v.Text.Read()}`,
+			"proved marked or Copied receiver"},
+		{"generic Frozen declaration", `type Bad[U any]struct{im.Frozen;N int};func(b Bad[U])Read()int{return b.N}`,
+			"user generic declarations cannot define"},
+		{"generic Local declaration", `type Bad[U any]struct{im.Local;N int};func(b Bad[U])Read()int{return b.N}`,
+			"user generic declarations cannot define"},
 		{"Local type argument", `func f(){var count Count[Reply];_=count.Read()}`, "generic instantiations require"},
 	}
 	for _, test := range cases {
