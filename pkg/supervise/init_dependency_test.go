@@ -58,19 +58,8 @@ func checkInitRequestTimeout(t *testing.T, wait string) {
 				}
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 				defer cancel()
-				reply := make(chan string, 1)
 				close(ready)
-				select {
-				case requests <- reply:
-				case <-ctx.Done():
-					return ctx.Err()
-				}
-				select {
-				case <-reply:
-					return nil
-				case <-ctx.Done():
-					return ctx.Err()
-				}
+				return sendInitRequest(ctx, requests)
 			},
 			run: func(*initializing, context.Context) { t.Error("failed Init reached Run") },
 		})
@@ -96,5 +85,21 @@ func checkInitRequestTimeout(t *testing.T, wait string) {
 	<-top.Stop()
 	if value := <-exited; value != failure || failure.Value != "store failed" {
 		t.Fatalf("terminal failure = %v; report = %v", value, failure)
+	}
+}
+
+// sendInitRequest bounds the send and reply waits with the caller's context.
+func sendInitRequest(ctx context.Context, requests chan<- chan string) error {
+	reply := make(chan string, 1)
+	select {
+	case requests <- reply:
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+	select {
+	case <-reply:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 }
