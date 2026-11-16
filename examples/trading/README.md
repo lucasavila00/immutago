@@ -155,10 +155,10 @@ reports, not direct access to the worker's mutable state.
 | Event | Result |
 | --- | --- |
 | One market connection fails | That Maker closes its subscription and cancels its orders. The root stops the whole bot, then the process panics. |
-| A Strategy, Trading, or Policy Run panics | The root stops the whole bot, then the process panics with the original failure. |
+| A Strategy, Trading, or Policy Run panics | The root stops the whole bot, then the process panics with `*supervise.Failure`, which keeps the original panic value and stack. |
 | Candidate is selected | Existing candidate workers continue. Old active workers and subscriptions stop. |
 | A trial ends normally | Its orders are canceled and its account state is released. Venue holdings remain. |
-| The bot stops | Children stop in reverse start order. Policy stops after its consumers. |
+| The bot stops | Children stop in reverse registration order. Policy stops after its consumers. |
 
 Cash is reserved before placement. A lost placement response keeps the
 reservation and client ID until cleanup cancels and reconciles that ID. The

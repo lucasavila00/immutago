@@ -122,6 +122,8 @@ A diagnostic can include these context fields:
 | `field type:` | The compiler-resolved field type, on the same line as its owner. |
 | `result type:` | The compiler-resolved service method result type. |
 | `rule:` | The rule that failed. |
+| `representative failure:` | One original diagnostic from a failed dependency, with its location and indented context lines. |
+| `note:` | Other errors can exist in that dependency. |
 | `fix:` | A supported replacement for the failed rule. |
 
 If `Ptr` returns `int64`, `source: r.C.Ptr()` has `type: int64`, even when the
