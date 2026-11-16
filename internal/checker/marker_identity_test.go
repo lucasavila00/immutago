@@ -61,9 +61,12 @@ func TestMarkerFailures(t *testing.T) {
 		t.Run(pair[0]+"_"+pair[1], func(t *testing.T) {
 			alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "Alias", nil), markers[pair[1]])
 			value := markedType("Mixed", markers[pair[0]], types.NewField(token.NoPos, nil, "Alias", alias, true))
-			want := "struct must embed exactly one immutable marker; each embedded alias counts as a marker"
+			want := Failure{
+				Reason: "struct must embed exactly one immutable marker; each embedded alias counts as a marker",
+				Repair: "embed exactly one of im.Frozen, im.Local, or im.Copied by value",
+			}
 			if pair == [2]string{"Frozen", "Local"} || pair == [2]string{"Local", "Frozen"} {
-				want = "struct cannot embed both im.Frozen and im.Local"
+				want.Reason = "struct cannot embed both im.Frozen and im.Local"
 			}
 			var prover Prover
 			checks := []func(types.Type) Failure{
@@ -71,12 +74,8 @@ func TestMarkerFailures(t *testing.T) {
 			}
 			for range 2 {
 				for _, check := range checks {
-					got := check(value)
-					if got.Reason != want {
-						t.Errorf("marker reason = %q; want %q", got.Reason, want)
-					}
-					if got.Repair != "embed exactly one of im.Frozen, im.Local, or im.Copied by value" {
-						t.Errorf("marker repair = %q", got.Repair)
+					if got := check(value); got != want {
+						t.Errorf("marker failure = %#v; want %#v", got, want)
 					}
 				}
 			}
