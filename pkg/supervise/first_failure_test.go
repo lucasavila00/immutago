@@ -10,23 +10,6 @@ import (
 	"time"
 )
 
-// failureHooks controls the single attempt of a service.
-type failureHooks struct {
-	init func(*failureWorker) error
-	run  func(*failureWorker, context.Context)
-}
-
-// failureWorker exposes setup and background work to the runtime tests.
-type failureWorker struct {
-	Service[*failureHooks]
-}
-
-// Init calls the test's setup function.
-func (p *failureWorker) Init() error { return p.Args().init(p) }
-
-// Run calls the test's background function.
-func (p *failureWorker) Run(ctx context.Context) { p.Args().run(p, ctx) }
-
 // runCause supplies a typed original error for errors.As.
 type runCause struct{ message string }
 
@@ -73,9 +56,9 @@ func checkFirstRunFailure(t *testing.T, mode string, reporting bool) {
 	parent := StartGroup(StartGroup(top))
 	trigger := make(chan struct{})
 	inits, runs := 0, 0
-	ref, err := Start[failureWorker](parent, &failureHooks{
-		init: func(*failureWorker) error { inits++; return nil },
-		run: func(*failureWorker, context.Context) {
+	ref, err := Start[initializing](parent, &initHooks{
+		init: func(*initializing) error { inits++; return nil },
+		run: func(*initializing, context.Context) {
 			runs++
 			<-trigger
 			if mode == "Goexit" {
@@ -96,7 +79,7 @@ func checkFirstRunFailure(t *testing.T, mode string, reporting bool) {
 	if !ok {
 		t.Fatalf("terminal value = %T; want *Failure", value)
 	}
-	if failure.Service != "supervise.failureWorker" || failure.Value != cause {
+	if failure.Service != "supervise.initializing" || failure.Value != cause {
 		t.Errorf("failure = %#v", failure)
 	}
 	if !bytes.Contains(failure.Stack, []byte("checkFirstRunFailure.func")) {
@@ -125,4 +108,61 @@ func checkFirstRunFailure(t *testing.T, mode string, reporting bool) {
 			t.Error("terminal Failure changed the attempt stack")
 		}
 	}
+}
+
+// TestFailureStopOrder orders the attempt report, Stop, and terminal selection.
+func TestFailureStopOrder(t *testing.T) {
+	for _, mode := range []string{"root first", "subtree first", "unrelated first", "failure first"} {
+		t.Run(mode, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) { checkFailureStopOrder(t, mode) })
+		})
+	}
+}
+
+// checkFailureStopOrder holds the attempt report before the terminal decision.
+func checkFailureStopOrder(t *testing.T, mode string) {
+	t.Helper()
+	attempt, release := make(chan struct{}), make(chan struct{})
+	terminal, exited := make(chan any, 1), make(chan any, 1)
+	top := root(func(value any) { exited <- value }, func(value any, _ []byte) {
+		if _, failed := value.(*Failure); failed {
+			terminal <- value
+			return
+		}
+		close(attempt)
+		<-release
+	})
+	parent := StartGroup(top)
+	_, err := Start[initializing](parent, &initHooks{
+		init: func(*initializing) error { return nil },
+		run:  func(*initializing, context.Context) { panic("first failure") },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	<-attempt
+	var stopped <-chan struct{}
+	switch mode {
+	case "root first":
+		stopped = top.Stop()
+	case "subtree first":
+		stopped = parent.Stop()
+	case "unrelated first":
+		<-StartGroup(top).Stop()
+	}
+	close(release)
+	if stopped != nil {
+		<-stopped
+		synctest.Wait()
+		if len(terminal) != 0 || len(exited) != 0 {
+			t.Error("an earlier Stop did not suppress the terminal failure")
+		}
+	} else {
+		failure := (<-terminal).(*Failure)
+		<-top.Stop()
+		if value := <-exited; value != failure || failure.Value != "first failure" {
+			t.Errorf("terminal failure = %v, exit = %v", failure, value)
+		}
+	}
+	<-top.Stop()
 }
