@@ -8,15 +8,6 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
-// localReference identifies a pointer to a concrete im.Local struct.
-func localReference(t types.Type) bool {
-	if t == nil {
-		return false
-	}
-	pointer, ok := t.Underlying().(*types.Pointer)
-	return ok && checker.Local(pointer.Elem())
-}
-
 // operationExpression separates runtime operands from compiler type and field metadata.
 func (c *subsetChecks) operationExpression(expression ast.Expr) bool {
 	if selector, ok := c.parents[expression].(*ast.SelectorExpr); ok && selector.Sel == expression {
@@ -67,7 +58,7 @@ func (c *subsetChecks) matchOperation(expression ast.Expr) (ast.Node, string) {
 // matchSource lists the complete producers of protected values and pointers.
 func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	if pointer, ok := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Pointer); ok &&
-		c.protectedReference(pointer) && !checker.Marked(pointer.Elem()) {
+		c.protectedReference(pointer) && !checker.Marked(pointer.Elem()) && !c.queries.ServicePointer(pointer) {
 		return "immutable references require a concrete marked struct target"
 	}
 	switch source := expression.(type) {
@@ -179,7 +170,8 @@ func (c *subsetChecks) matchUse(expression ast.Expr) string {
 
 // readablePointer permits checked protected pointers and ordinary holder pointers.
 func (c *subsetChecks) readablePointer(expression ast.Expr) bool {
-	return c.protectedReference(c.pass.TypesInfo.TypeOf(expression)) || !c.protectedRoot(expression)
+	typ := c.pass.TypesInfo.TypeOf(expression)
+	return !c.queries.ServicePointer(typ) && (c.protectedReference(typ) || !c.protectedRoot(expression))
 }
 
 // matchFunctionValue permits protected functions only as direct callees.
@@ -207,6 +199,9 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 		return c.matchFunctionValue(selector)
 	}
 	if selection.Kind() == types.FieldVal {
+		if c.queries.ServicePointer(selection.Recv()) {
+			return "Local service pointers permit only direct exported service method calls"
+		}
 		if c.queries.Callable(c.pass.TypesInfo.TypeOf(selector)) {
 			return c.matchFunctionValue(selector)
 		}
@@ -215,9 +210,6 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) string {
 	if selection.Kind() == types.MethodExpr && libraryObject(selection.Obj()) &&
 		c.queries.Callable(c.pass.TypesInfo.TypeOf(selector)) {
 		return "method expressions require ordinary or persistent Frozen receivers and contracts"
-	}
-	if refAccessor(selection.Obj()) {
-		return c.matchBorrow(selector)
 	}
 	if c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
 		return ""

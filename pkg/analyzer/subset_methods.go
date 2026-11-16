@@ -32,6 +32,13 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	if c.directCall(selector) == nil && restricted {
 		return "method values require ordinary or persistent Frozen receivers and contracts"
 	}
+	if c.queries.ServicePointer(selection.Recv()) {
+		method := selection.Obj()
+		if !method.Exported() || runtimeObject(method) || method.Name() == "Init" || method.Name() == "Run" {
+			return "Local service pointers permit only direct exported service method calls"
+		}
+		return ""
+	}
 	if _, parameter := types.Unalias(selection.Recv()).(*types.TypeParam); parameter && !restricted {
 		return ""
 	}

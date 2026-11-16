@@ -6,6 +6,10 @@ import "go/types"
 // Its zero value is ready for use. Types must not change after their first query.
 // A Classifier must not be used by concurrent passes.
 type Classifier struct {
+	// Package supplies the source package for service pointer checks.
+	// Set it before the first query. Nil checks only im types.
+	Package *types.Package
+
 	nodes   map[classificationKey]*classificationNode
 	pending []*classificationNode
 	ready   []*classificationNode
@@ -55,6 +59,32 @@ func (c *Classifier) Handles(t types.Type) bool { return c.query(t, handleMode) 
 
 // Locals reports local projections or records in storage, including through arrays and pointers.
 func (c *Classifier) Locals(t types.Type) bool { return c.query(t, localMode) }
+
+// LocalPointer identifies a Local record pointer or a service pointer restricted in this package.
+func (c *Classifier) LocalPointer(t types.Type) bool {
+	if t == nil {
+		return false
+	}
+	pointer, ok := t.Underlying().(*types.Pointer)
+	return ok && (Local(pointer.Elem()) || c.ServicePointer(t))
+}
+
+// ServicePointer identifies service pointers outside their declaring package.
+// Anonymous service types have no declaring package, so their pointers are Local everywhere.
+func (c *Classifier) ServicePointer(t types.Type) bool {
+	if c.Package == nil || t == nil {
+		return false
+	}
+	pointer, ok := t.Underlying().(*types.Pointer)
+	if !ok {
+		return false
+	}
+	target := types.Unalias(pointer.Elem())
+	if named, ok := target.(*types.Named); ok && named.Obj().Pkg() == c.Package {
+		return false
+	}
+	return Service(target)
+}
 
 // query completes all reachable edges before propagating positive results through cycles.
 func (c *Classifier) query(t types.Type, mode classificationMode) bool {
@@ -118,6 +148,12 @@ func (c *Classifier) mark(node *classificationNode) {
 func (c *Classifier) expand(node *classificationNode) {
 	if IsRuntimeType(node.key.typ, "Ref") {
 		if node.key.mode == handleMode {
+			c.mark(node)
+		}
+		return
+	}
+	if c.ServicePointer(node.key.typ) {
+		if node.key.mode != callableMode && node.key.mode != handleMode {
 			c.mark(node)
 		}
 		return
@@ -230,14 +266,7 @@ func (c *Classifier) referenceEdge(node *classificationNode, element types.Type)
 func (c *Classifier) callableEdges(node *classificationNode) {
 	switch storage := node.key.typ.Underlying().(type) {
 	case *types.Signature:
-		for _, tuple := range []*types.Tuple{storage.Params(), storage.Results()} {
-			for item := range tuple.Variables() {
-				if node.key.mode == callableMode {
-					c.connect(node, item.Type(), transportMode)
-				}
-				c.connect(node, item.Type(), node.key.mode)
-			}
-		}
+		c.signatureEdges(node, storage)
 	case *types.Interface:
 		if node.key.mode == callableMode && FrozenInterface(node.key.typ) {
 			return
@@ -259,6 +288,21 @@ func (c *Classifier) callableEdges(node *classificationNode) {
 	case *types.Struct:
 		for field := range storage.Fields() {
 			c.connect(node, field.Type(), node.key.mode)
+		}
+	}
+}
+
+// signatureEdges follows contracts while keeping service-pointer producers ordinary.
+func (c *Classifier) signatureEdges(node *classificationNode, signature *types.Signature) {
+	for index, tuple := range []*types.Tuple{signature.Params(), signature.Results()} {
+		for item := range tuple.Variables() {
+			if index == 1 && node.key.mode == callableMode && c.ServicePointer(item.Type()) {
+				continue
+			}
+			if node.key.mode == callableMode {
+				c.connect(node, item.Type(), transportMode)
+			}
+			c.connect(node, item.Type(), node.key.mode)
 		}
 	}
 }

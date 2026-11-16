@@ -66,30 +66,29 @@ func run(pass *analysis.Pass) (any, error) {
 			pass.ExportPackageFact(packageFailureFact(pass.Pkg.Path(), relevant, imports, failures))
 		}
 	}()
-	c := &checks{pass: pass, reported: make(map[token.Pos]bool)}
+	c := &checks{pass: pass, queries: checker.Classifier{Package: pass.Pkg}, reported: make(map[token.Pos]bool)}
 	for _, file := range pass.Files {
-		if immutable {
-			ast.Inspect(file, c.visit)
-		} else {
-			ast.Inspect(file, c.visitService)
-		}
+		ast.Inspect(file, c.visit)
 	}
 	forms := newSubsetChecks(pass, &c.proofs)
 	if immutable {
 		forms.checkGeneration()
 	}
 	forms.checkHandles()
-	if immutable {
-		forms.checkImmutable(freeze.Check(pass))
-	}
+	forms.checkImmutable(freeze.Check(pass))
 	return nil, nil
 }
 
 // checkLibraryArguments proves im type arguments and protected runtime storage.
 func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance) {
 	obj := c.pass.TypesInfo.Uses[ident]
-	if runtimeObject(obj) && obj.Name() == "Service" {
-		c.checkServiceStorage(ident, instance.TypeArgs.At(0))
+	if runtimeObject(obj) {
+		switch obj.Name() {
+		case "Service":
+			c.checkServiceStorage(ident, instance.TypeArgs.At(0))
+		case "Start":
+			c.checkServiceStorage(ident, instance.TypeArgs.At(1))
+		}
 		return
 	}
 	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != checker.LibraryPath {
@@ -122,6 +121,7 @@ func (c *checks) checkLibraryArguments(ident *ast.Ident, instance types.Instance
 type checks struct {
 	proofs   checker.Prover
 	queries  checker.Classifier
+	fields   checker.Classifier
 	pass     *analysis.Pass
 	reported map[token.Pos]bool
 }
@@ -237,6 +237,13 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 		if !data {
 			continue
 		}
+		owned := c.fields.Owns(ft)
+		if !owned && c.localField(t, field) && c.queries.Owns(ft) {
+			c.report(fieldPos, "Local service pointers cannot be stored in fields"+
+				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
+				"\n  fix: store a supervise.Ref and borrow the service pointer in a local variable")
+			continue
+		}
 		if marked {
 			if reason := proveField(ft); reason != "" {
 				c.report(fieldPos, "immutable field "+field.Name()+" requires a "+fieldRule+": "+reason+
@@ -244,7 +251,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 					"\n  fix: "+structuralFix(ft, reason))
 				continue
 			}
-		} else if c.queries.Owns(ft) {
+		} else if owned {
 			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+
@@ -252,6 +259,14 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			continue
 		}
 	}
+}
+
+// localField identifies the declaration owner, including defined and anonymous structs.
+func (c *checks) localField(owner types.Type, field *types.Var) bool {
+	if named, ok := types.Unalias(owner).(*types.Named); ok {
+		return named.Obj().Pkg() == c.pass.Pkg
+	}
+	return field.Pkg() == c.pass.Pkg
 }
 
 // checkCopiedRecord checks marker placement and uses the same proof as all copied results.

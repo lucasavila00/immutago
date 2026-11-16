@@ -30,6 +30,10 @@ func (c *subsetChecks) declarationNode(node ast.Node) {
 	case *ast.TypeSwitchStmt:
 		c.typeSwitchDeclaration(declaration)
 	case *ast.FuncLit:
+		signature := c.pass.TypesInfo.TypeOf(declaration).(*types.Signature)
+		if rule := c.subsetResults(signature.Results()); rule != "" {
+			c.report(declaration, rule)
+		}
 		c.matchClosure(declaration)
 	}
 }
@@ -49,7 +53,7 @@ func (c *subsetChecks) assignmentBinding(statement *ast.AssignStmt) {
 // functionDeclaration checks the exact contract for named functions and methods.
 func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 	signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)
-	if rule := subsetResults(signature.Results()); rule != "" {
+	if rule := c.subsetResults(signature.Results()); rule != "" {
 		c.report(declaration.Name, rule)
 	}
 	if genericSignature(signature) {
@@ -117,12 +121,12 @@ func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) str
 	if rule := c.matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
 		return rule
 	}
-	if !localReference(source) && !c.queries.Locals(source) {
+	if !c.queries.LocalPointer(source) && !c.queries.Locals(source) {
 		return ""
 	}
 	name, ok := ast.Unparen(destination).(*ast.Ident)
 	if !ok {
-		if localReference(source) {
+		if c.queries.LocalPointer(source) {
 			return "Local pointers cannot enter aggregate storage"
 		}
 		return ""
@@ -151,7 +155,7 @@ func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
 			variable.Parent() == c.pass.Pkg.Scope() {
 			return "Local values and pointers cannot be stored in package variables"
 		}
-		if variable != nil && localReference(variable.Type()) && variable.Parent() == c.pass.Pkg.Scope() {
+		if variable != nil && c.queries.LocalPointer(variable.Type()) && variable.Parent() == c.pass.Pkg.Scope() {
 			return "global Local pointers are unsupported"
 		}
 	}
@@ -227,7 +231,7 @@ func (c *subsetChecks) matchReturn(statement *ast.ReturnStmt) string {
 
 // matchReturnValue permits concrete values and Frozen pointers at a return boundary.
 func (c *subsetChecks) matchReturnValue(source, destination types.Type) string {
-	if localReference(source) || localReference(destination) {
+	if c.queries.LocalPointer(source) || c.queries.LocalPointer(destination) {
 		return "returning Local pointers is unsupported"
 	}
 	return c.matchTransport(source, destination)

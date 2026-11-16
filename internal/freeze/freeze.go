@@ -33,7 +33,8 @@ type proof struct {
 // The returned set lets the analyzer admit these native containers without exempting their operations.
 func Check(pass *analysis.Pass) map[*types.Var]bool {
 	p := &proof{pass: pass, parents: make(map[ast.Node]ast.Node), declarations: make(map[*types.Var]owner),
-		owners: make(map[*types.Var]owner), reported: make(map[token.Pos]bool)}
+		queries: checker.Classifier{Package: pass.Pkg},
+		owners:  make(map[*types.Var]owner), reported: make(map[token.Pos]bool)}
 	p.discover()
 	result := make(map[*types.Var]bool)
 	variables := make([]*types.Var, 0, len(p.owners))

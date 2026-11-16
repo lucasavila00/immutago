@@ -33,7 +33,8 @@ func checkSubset(pass *analysis.Pass, owners map[*types.Var]bool, proofs *checke
 // newSubsetChecks records parents once for service references and immutable source forms.
 func newSubsetChecks(pass *analysis.Pass, proofs *checker.Prover) *subsetChecks {
 	c := &subsetChecks{pass: pass, proofs: proofs, parents: make(map[ast.Node]ast.Node),
-		exempt: make(map[ast.Node]bool), reported: make(map[token.Pos]bool),
+		queries: checker.Classifier{Package: pass.Pkg},
+		exempt:  make(map[ast.Node]bool), reported: make(map[token.Pos]bool),
 		literals: make(map[*ast.CompositeLit]string)}
 	for _, file := range pass.Files {
 		var stack []ast.Node
@@ -107,8 +108,6 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 			}
 		}
 		return c.subsetType(u.Elem(), seen)
-	case *types.Signature:
-		return subsetResults(u.Results())
 	case *types.Tuple:
 		return c.subsetTuple(u, seen)
 	default:
@@ -123,6 +122,9 @@ func (c *subsetChecks) subsetPointer(t types.Type, pointer *types.Pointer, seen 
 	}
 	if _, nested := pointer.Elem().Underlying().(*types.Pointer); nested && c.queries.Owns(t) {
 		return "pointer indirection is unsupported"
+	}
+	if c.queries.ServicePointer(t) {
+		return ""
 	}
 	if c.queries.Owns(t) && !checker.Marked(pointer.Elem()) {
 		return "immutable references require a concrete marked struct target"
@@ -196,9 +198,9 @@ func (c *subsetChecks) subsetContainer(t types.Type) string {
 }
 
 // subsetResults rejects local-only references in function results.
-func subsetResults(results *types.Tuple) string {
+func (c *subsetChecks) subsetResults(results *types.Tuple) string {
 	for i := 0; i < results.Len(); i++ {
-		if localReference(results.At(i).Type()) {
+		if c.queries.LocalPointer(results.At(i).Type()) {
 			return "returning Local pointers is unsupported"
 		}
 	}
@@ -235,7 +237,7 @@ func (c *subsetChecks) expressionType(expression ast.Expr) {
 			c.report(expression, "callbacks require ordinary or persistent Frozen parameters and results")
 		}
 	}
-	if storedLocalReference(t, make(map[types.Type]bool)) {
+	if c.storedLocalReference(t, make(map[types.Type]bool)) {
 		c.report(expression, "containers of Local pointers are unsupported")
 	}
 	if t == nil || c.exempt[expression] || c.ownedExpression(expression) {
@@ -263,7 +265,7 @@ func (c *subsetChecks) directSlotMethodExpression(expression ast.Expr) bool {
 }
 
 // storedLocalReference checks native container elements even when the handle has an ownership proof.
-func storedLocalReference(t types.Type, seen map[types.Type]bool) bool {
+func (c *subsetChecks) storedLocalReference(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] {
 		return false
 	}
@@ -280,7 +282,7 @@ func storedLocalReference(t types.Type, seen map[types.Type]bool) bool {
 		elements = []types.Type{storage.Elem()}
 	}
 	for _, element := range elements {
-		if localReference(element) || storedLocalReference(element, seen) {
+		if c.queries.LocalPointer(element) || c.storedLocalReference(element, seen) {
 			return true
 		}
 	}
