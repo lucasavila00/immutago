@@ -2,7 +2,6 @@ package supervise
 
 import (
 	"context"
-	"sync/atomic"
 	"testing"
 )
 
@@ -39,13 +38,13 @@ func (s *attemptWorker) Init() error { s.state = 1; return nil }
 func (*attemptWorker) Run(context.Context) {}
 
 // BenchmarkServiceAttempt measures fresh value setup, publication, Run, and cleanup.
-// It excludes watcher creation, registry work, failure reports, and retry backoff.
+// It excludes watcher creation, registry work, failure reports.
 func BenchmarkServiceAttempt(b *testing.B) {
 	parent := NewRoot(nil)
 	defer func() { <-parent.Stop() }()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ref := Ref[attemptWorker]{value: new(atomic.Pointer[attemptWorker])}
+	var ref Ref[attemptWorker]
 	var value *attemptWorker
 	run := func(ctx context.Context) {
 		value = new(attemptWorker)
@@ -55,7 +54,7 @@ func BenchmarkServiceAttempt(b *testing.B) {
 		}
 		parent.mu.Lock()
 		run, admitted := value.begin(ctx)
-		ref.value.Store(value)
+		ref = Ref[attemptWorker]{value: value}
 		parent.mu.Unlock()
 		if !admitted {
 			b.Fatal("service attempt was not admitted")
@@ -64,8 +63,9 @@ func BenchmarkServiceAttempt(b *testing.B) {
 	}
 	b.ReportAllocs()
 	for b.Loop() {
-		if attempt(ctx, run, func() { value.end() }, false, func(value any, _ []byte, _ bool) { b.Fatal(value) }) {
-			b.Fatal("service attempt failed")
+		watch(parent, ctx, "attemptWorker", run, func() { value.end() })
+		if ref.IsZero() {
+			b.Fatal("service attempt did not publish its value")
 		}
 	}
 }

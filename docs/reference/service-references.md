@@ -2,7 +2,7 @@
 
 `supervise.Ref[T]` identifies one service. Copy, store, or return the reference.
 Call an exported service method with `ref.Borrow().Method(args)`.
-Copies select the same service, including after a restart.
+Copies refer to the same service.
 
 ## Optional references
 
@@ -74,8 +74,8 @@ pass the reference independently.
 For direct Ref calls, the checker rejects every other use of `Borrow`, despite
 its Go return type of `*T`. Borrow panics with `supervise: zero Ref` for a zero
 reference.
-Each call selects the last successfully initialized service; a call in progress
-finishes on that instance.
+Each call returns the service created by Start. Stop does not invalidate the
+reference or wait for these method calls.
 Borrow is shared and is not exclusive. No release call is needed.
 
 Interfaces and generic methods can expose the service pointer outside this
@@ -87,7 +87,7 @@ pointer := selected.Borrow()
 ```
 
 The direct Ref call rule does not apply to interface or type-parameter method
-calls. Callers must account for restarts when they save a service pointer.
+calls. The pointer still refers to that service after Stop.
 
 ## Rejected examples — non-exhaustive
 

@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 	"testing"
 	"testing/synctest"
-	"time"
 )
 
 // initHooks controls one service's initialization and run in the runtime tests.
@@ -90,8 +89,8 @@ func TestInitBeforePublication(t *testing.T) {
 	})
 }
 
-// TestInitErrorAndRetry checks first errors and a later independent Start.
-func TestInitErrorAndRetry(t *testing.T) {
+// TestInitErrorAndNewStart checks first errors and a later independent Start.
+func TestInitErrorAndNewStart(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
 		failure := errors.New("initial setup")
@@ -192,123 +191,6 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	<-root.Stop()
 }
 
-// TestInitRestartFailures keeps the previous value until a later initialization succeeds.
-func TestInitRestartFailures(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		reports := make(chan any, 3)
-		root := NewRoot(func(value any, _ []byte) { reports <- value })
-		failure := errors.New("restart setup")
-		panicValue := errors.New("restart panic")
-		var attempts atomic.Int32
-		hooks := &initHooks{
-			init: func(p *initializing) error {
-				p.state = int(attempts.Add(1))
-				switch p.state {
-				case 2:
-					return failure
-				case 3:
-					panic(panicValue)
-				}
-				return nil
-			},
-			run: func(p *initializing, ctx context.Context) {
-				if p.state == 1 {
-					panic("first run")
-				}
-				<-ctx.Done()
-			},
-		}
-		ref, err := Start[initializing](root, hooks)
-		if err != nil {
-			t.Fatal(err)
-		}
-		before := ref.Borrow()
-		if value := <-reports; value != "first run" {
-			t.Fatalf("first failure = %v", value)
-		}
-		time.Sleep(time.Second)
-		if value := <-reports; value != failure || ref.Borrow() != before {
-			t.Fatalf("Init error = %v; Ref changed = %t", value, ref.Borrow() != before)
-		}
-		time.Sleep(2 * time.Second)
-		if value := <-reports; value != panicValue || ref.Borrow() != before {
-			t.Fatalf("Init panic = %v; Ref changed = %t", value, ref.Borrow() != before)
-		}
-		time.Sleep(4 * time.Second)
-		synctest.Wait()
-		if ref.Borrow() == before || ref.Borrow().state != 4 || attempts.Load() != 4 {
-			t.Fatal("successful restart did not publish its initialized value")
-		}
-		<-root.Stop()
-	})
-}
-
-// TestInitRestartErrorsEscalate counts initialization errors in the existing restart limit.
-func TestInitRestartErrorsEscalate(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		escalated := make(chan any, 1)
-		parent := root(func(value any) { escalated <- value }, nil)
-		failure := errors.New("restart setup")
-		var attempts atomic.Int32
-		hooks := &initHooks{
-			init: func(*initializing) error {
-				if attempts.Add(1) > 1 {
-					return failure
-				}
-				return nil
-			},
-			run: func(*initializing, context.Context) { panic("first run") },
-		}
-		ref, err := Start[initializing](parent, hooks)
-		if err != nil {
-			t.Fatal(err)
-		}
-		before := ref.Borrow()
-		time.Sleep(31 * time.Second)
-		if value := <-escalated; value.(*Failure).Value != failure || attempts.Load() != 6 || ref.Borrow() != before {
-			t.Fatalf("escalation = %v, attempts = %d", value, attempts.Load())
-		}
-		<-parent.Stop()
-	})
-}
-
-// TestInitRestartGoexit cleans the unpublished candidate and lets the watcher finish.
-func TestInitRestartGoexit(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		terminal := make(chan any, 1)
-		root := root(func(value any) { terminal <- value }, nil)
-		candidates := make(chan *initializing, 1)
-		var attempts atomic.Int32
-		hooks := &initHooks{
-			init: func(p *initializing) error {
-				if attempts.Add(1) > 1 {
-					p.Children()
-					candidates <- p
-					runtime.Goexit()
-				}
-				return nil
-			},
-			run: func(*initializing, context.Context) { panic("restart") },
-		}
-		ref, err := Start[initializing](root, hooks)
-		if err != nil {
-			t.Fatal(err)
-		}
-		before := ref.Borrow()
-		time.Sleep(time.Second)
-		candidate := <-candidates
-		synctest.Wait()
-		expectInitEnded(t, candidate)
-		if ref.Borrow() != before {
-			t.Fatal("Goexit published its candidate")
-		}
-		if failure := (<-terminal).(*Failure); failure.Value != errGoexit {
-			t.Fatalf("Goexit failure = %v", failure)
-		}
-		<-root.Stop()
-	})
-}
-
 // TestInitStopBeforePublication cleans a candidate that finishes Init after its parent stopped.
 func TestInitStopBeforePublication(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
@@ -348,55 +230,6 @@ func TestInitStopBeforePublication(t *testing.T) {
 		}
 		if ref.Borrow() != candidate || runs.Load() != 1 {
 			t.Fatal("first Init did not keep the stopped-parent start contract")
-		}
-		expectInitEnded(t, candidate)
-	})
-}
-
-// TestInitStopDuringRestart gives an unpublished replacement one cancelled Run for cleanup.
-func TestInitStopDuringRestart(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		root := NewRoot(nil)
-		entered := make(chan *initializing, 1)
-		release := make(chan struct{})
-		var attempts, runs, open atomic.Int32
-		hooks := &initHooks{
-			init: func(p *initializing) error {
-				open.Add(1)
-				if attempts.Add(1) == 1 {
-					return nil
-				}
-				p.Children()
-				entered <- p
-				<-release
-				return nil
-			},
-			run: func(_ *initializing, ctx context.Context) {
-				defer open.Add(-1)
-				if runs.Add(1) > 1 && ctx.Err() == nil {
-					t.Error("stopped restart ran with an active context")
-				}
-				panic("restart")
-			},
-		}
-		ref, err := Start[initializing](root, hooks)
-		if err != nil {
-			t.Fatal(err)
-		}
-		before := ref.Borrow()
-		time.Sleep(time.Second)
-		candidate := <-entered
-		stopped := root.Stop()
-		synctest.Wait()
-		select {
-		case <-stopped:
-			t.Error("Stop returned before restart Init finished")
-		default:
-		}
-		close(release)
-		<-stopped
-		if ref.Borrow() != before || runs.Load() != 2 || open.Load() != 0 {
-			t.Fatal("stopped restart published its candidate or missed cleanup")
 		}
 		expectInitEnded(t, candidate)
 	})

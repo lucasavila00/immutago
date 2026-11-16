@@ -22,8 +22,8 @@ Use this reference to check which Go forms Immutago accepts. The
 ## Service forms (`supervise`)
 
 - [Service results](service-results.md): result types for exported service methods.
-- [Service references](service-references.md): stored references and direct calls to the current service.
-- [Supervised services](services.md): execution and restart behavior.
+- [Service references](service-references.md): stored references and direct service calls.
+- [Supervised services](services.md): execution, failure, and shutdown.
 
 ## Rules for im and supervise
 

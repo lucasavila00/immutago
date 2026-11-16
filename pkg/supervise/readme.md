@@ -6,13 +6,13 @@
 import "github.com/lucasavila00/immutago/pkg/supervise"
 ```
 
-Package supervise runs services with independent retries and owned child lifetimes.
+Package supervise runs services with owned child lifetimes and terminal failures.
 
-Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\) error. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. Groups control lifetime and stop order. They do not restart services together.
+Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\) error. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. A Run failure stops the root. Groups control lifetime and stop order.
 
 ## type Failure
 
-Failure identifies the service whose terminal failure stopped the root. Value is its last panic value, restart Init error, or a runtime.Goexit error. Stack is captured in that service's goroutine. Groups pass the same failure to the root without wrapping it or applying another retry limit.
+Failure identifies the service whose terminal failure stopped the root. Value is its original Run panic value or a runtime.Goexit error. Stack is captured in that service's goroutine. Groups pass the same failure to the root without wrapping it.
 
 ```go
 type Failure struct {
@@ -54,7 +54,7 @@ type Group struct {
 func NewRoot(report func(any, []byte)) *Group
 ```
 
-NewRoot creates an active lifetime group. An exhausted service or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered panic, restart Init error, or Goexit with its original stack, then the selected terminal \*Failure before cleanup waits. A nil report disables attempt reports; terminal failures still go to standard error. Reports can overlap, must return, and must not wait for their group to stop.
+NewRoot creates an active lifetime group. A Run panic or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered Run panic or Goexit with its original stack, then the selected terminal \*Failure before cleanup waits. A nil report disables attempt reports; terminal failures still go to standard error. Reports can overlap, must return, and must not wait for their group to stop.
 
 ### func StartGroup
 
@@ -62,7 +62,7 @@ NewRoot creates an active lifetime group. An exhausted service or Goexit stops t
 func StartGroup(parent *Group) *Group
 ```
 
-StartGroup creates a lifetime group for selective shutdown. It does not add a restart budget. An exhausted failure goes directly to the root. A stopped parent returns a stopped group.
+StartGroup creates a lifetime group for selective shutdown. A Run failure in any child stops the root. A stopped parent returns a stopped group.
 
 ### func \(\*Group\) Stop
 
@@ -70,7 +70,7 @@ StartGroup creates a lifetime group for selective shutdown. It does not add a re
 func (s *Group) Stop() <-chan struct{}
 ```
 
-Stop prevents new retries in the subtree and requests ordered shutdown. It returns the same completion channel on every call. Shutdown waits for children in reverse start order, then removes a nested group from its parent. It does not wait for ordinary direct method calls. A service can request its group's stop, but must not wait for that group from its own Run.
+Stop closes admission in the subtree and requests ordered shutdown. It returns the same completion channel on every call. Shutdown waits for children in reverse start order, then removes a nested group from its parent. It does not wait for ordinary direct method calls. A service can request its group's stop, but must not wait for that group from its own Run.
 
 ## type NoArgs
 
@@ -82,7 +82,7 @@ type NoArgs struct{}
 
 ## type Ref
 
-Ref selects the latest initialized service value. Copies share one atomic slot. Stop does not invalidate a reference or wait for direct service method calls.
+Ref holds an initialized service value. Copies select the same value. Stop does not invalidate a reference or wait for direct service method calls.
 
 ```go
 type Ref[T any] struct {
@@ -112,7 +112,7 @@ Start creates T, calls Init in the caller, and publishes the initialized value. 
 func (p Ref[T]) Borrow() *T
 ```
 
-Borrow selects the latest initialized value with one atomic load. Calls can finish on an older value after a retry. Borrow is shared, not exclusive. A zero reference panics with "supervise: zero Ref".
+Borrow returns the initialized service value, including after Stop. Borrow is shared, not exclusive. A zero reference panics with "supervise: zero Ref".
 
 ### func \(Ref\[T\]\) IsZero
 
@@ -124,7 +124,7 @@ IsZero reports whether this reference is unset.
 
 ## type Service
 
-Service supplies start arguments and the children owned by one service attempt. Embed it by value. Start creates and initializes each fresh service value. Do not copy an initialized Service or a struct that contains it. Declare service methods with pointer receivers. Run go vet to check for copies.
+Service supplies start arguments and the children owned by one service attempt. Embed it by value. Start creates and initializes the service value. Do not copy an initialized Service or a struct that contains it. Declare service methods with pointer receivers. Run go vet to check for copies.
 
 ```go
 type Service[A any] struct {
@@ -138,7 +138,7 @@ type Service[A any] struct {
 func (p *Service[A]) Args() A
 ```
 
-Args returns the arguments supplied to Start. Every retry receives the same arguments.
+Args returns the arguments supplied to Start.
 
 ### func \(\*Service\[A\]\) Children
 
@@ -146,7 +146,7 @@ Args returns the arguments supplied to Start. Every retry receives the same argu
 func (p *Service[A]) Children() *Group
 ```
 
-Children returns the group owned by this service attempt. Its services wait until the parent is admitted to Run, or run with cancelled contexts during cleanup. The runtime stops and waits for these children before it replaces the parent. A later attempt owns a new group. After this attempt ends, Children returns a stopped group. Children panics if Start did not create the service.
+Children returns the group owned by this service attempt. Its services wait until the parent is admitted to Run, or run with cancelled contexts during cleanup. The runtime stops and waits for these children before the parent ends. After this attempt ends, Children returns a stopped group. Children panics if Start did not create the service.
 
 ### func \(\*Service\[A\]\) Init
 

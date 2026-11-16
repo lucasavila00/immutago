@@ -23,8 +23,8 @@
 | Cell.Store | Copy one T root and publish with an atomic store; one allocation for T with nonzero size. |
 | Generated Cell.Load, raw Cell.LoadPointer | One atomic pointer load; no record copy or allocation. |
 | Raw Cell.Load | One atomic load and a T value copy; no backing-storage copy. |
-| Ref.Borrow | One atomic load; no allocation. |
-| Ref.IsZero | Compare the stored pointer with nil; no atomic load or allocation. |
+| Ref.Borrow | Return the stored pointer; no allocation. |
+| Ref.IsZero | Compare the stored pointer with nil; no allocation. |
 
 Copied record fields contain no strings or reference handles. A complete copy
 includes all their data. The zero-sized im.Copied marker adds no runtime copy

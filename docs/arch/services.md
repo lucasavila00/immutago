@@ -1,10 +1,11 @@
 # Service runtime and checks
 
-`supervise` uses one watcher per service and one shared atomic slot per Ref.
+`supervise` uses one watcher and one initialized value per service.
+Ref copies hold the same service pointer.
 Method calls run in the caller's goroutine.
 
-Service, TerminalService, and Group keep mutable ownership state in their values. They must not be
-copied after initialization. Each contains a zero-size `noCopy` field for standard
+Service and Group keep mutable ownership state in their values. They must not be
+copied after initialization. Both contain a zero-size `noCopy` field for standard
 vet's copylocks check. It adds no lock or runtime check. Immutago does not run that
 check; callers must also use standard `go vet`. See the
 [copy contract](../reference/services.md#copy-contract).
@@ -13,72 +14,52 @@ for example, it does not inspect channel sends.
 
 ## Initialization, publication, and calls
 
-[Ref[T]](../../pkg/supervise/supervise.go) contains `*atomic.Pointer[T]`:
-
-```text
-Ref copy ─┐
-Ref copy ─┴──> shared slot ──> latest initialized *T
-                    ▲
-             successful retry publishes here
-```
+[Ref[T]](../../pkg/supervise/supervise.go) contains `*T`. Start initializes T once
+before it creates the reference. Borrow returns that pointer; Stop does not change
+it or wait for direct method calls.
 
 | Stage | Execution owner | Action |
 | --- | --- | --- |
 | Initial setup | Start caller | Allocate T; bind arguments and parent group; call Init. |
 | Initial Init failure | Start caller | Stop staged children. Return a zero Ref and error, or propagate the panic. |
-| Initial publication | Start caller | Store initialized T; register a watcher with the group. |
-| Run admission | Watcher, under the tree mutex | Check policy, activate staged child groups, and publish a replacement as one decision ordered against Stop. |
+| Initial publication | Start caller | Create Ref for initialized T; register a watcher with the group. |
+| Run admission | Watcher, under the tree mutex | Check admission and activate staged child groups as one decision ordered against Stop. |
 | Background work | Watcher, outside the mutex | Call Run once after successful Init. |
-| Stopped or pending initialized attempt | Watcher | Wait for its entry's shutdown turn; stop children, then call Run with an already-cancelled context for cleanup. |
-| `ref.Borrow().Method(args)` | Method caller | Load the slot; call the method directly on that T. |
-| Replacement setup | Same watcher | Check policy under the tree mutex; allocate a fresh T and call Init outside the mutex. Successful Init still needs Run admission. |
+| Stopped or pending initialized service | Watcher | Wait for its entry's shutdown turn; stop children, then call Run with an already-cancelled context for cleanup. |
+| `ref.Borrow().Method(args)` | Method caller | Read the pointer; call the method directly on T. |
 
-| Slot change | Effect on callers |
+## One watcher owns the service run
+
+The watcher recovers a Run panic or observes Goexit and captures the original
+stack. It reports the attempt, then submits a terminal Failure before child
+cleanup can wait. The existing tree mutex selects a failure or an earlier Stop.
+There is no replacement setup, retry budget, or backoff timer.
+
+| Run outcome | Action |
 | --- | --- |
-| Retry Init fails | The previous T remains selected. |
-| Retry publishes a new T | Later Borrow calls select it; existing calls can finish on the old T. |
-| Group stops | The slot keeps its last value. Stop does not wait for direct method calls. |
-
-## One watcher owns retries
-
-Service and TerminalService embed the same private service state. Their sealed
-bind methods return that state and a fixed retry limit: five for Service, zero for
-TerminalService. Start uses the returned state for the complete attempt lifetime.
-The same watcher applies either limit. It retains restart timestamps within five
-minutes; the delay is `1s << recentRestartCount`.
-It records and reports the failure before child cleanup can wait. The retry
-window uses the failure time, so cleanup does not move an old failure forward.
-
-| Attempt outcome | Cleanup | Next action |
-| --- | --- | --- |
-| Run returns | Stop and wait for its children. | Remove the service entry. |
-| Service Run panics within its budget | Stop and wait for its children. | Delay, then initialize a replacement. |
-| Retry Init fails | Stop children created by that setup. | Retry within the same budget. |
-| TerminalService Run panics, budget exhausted, or `runtime.Goexit` | Select and report one terminal Failure before waiting for root shutdown. | After tree cleanup, panic with that Failure. |
-| Shutdown begins | Cancel retry policy and pending delays. | Start no further attempt. |
+| Returns | Stop and wait for its children, then remove the service entry. |
+| Panics or calls `runtime.Goexit` | Report the original failure. If Stop did not win, select and report one terminal Failure. Stop the root tree, then panic with that Failure. |
+| Fails after Stop is accepted for its subtree | Report the attempt and complete cleanup without a terminal root failure. |
 
 Initial Init precedes watcher registration, so group shutdown cannot wait for
-that setup. Retry Init belongs to the registered watcher and is included in its lifetime.
-Successful setup always reaches Run. If a stopped group cannot register the first
-attempt, Start waits for its cleanup watcher. A successful replacement after Stop
-runs cleanup without replacing the published reference.
+that setup. Successful setup always reaches Run. If a stopped group cannot
+register the service, Start waits for its cleanup watcher.
 
 ## Groups and shutdown order
 
-Each service attempt owns a separate child group:
+Each initialized service owns a child group:
 
 ```text
 Init: children pending ──> Run admission: activate ──> attempt ends: stop and wait
                      └──> shutdown: cancelled Run for cleanup
-next attempt: new child group
 ```
 
 | Group state | Purpose |
 | --- | --- |
-| Shared tree mutex | Protect admission, publication, child links, activation, service attempt state, and Stop across all descendant groups. |
+| Shared tree mutex | Protect admission, child links, activation, service state, and Stop across all descendant groups. |
 | Doubly linked child list | Preserve start order; unlink a completed child without searching. |
-| Policy context | Disable retries throughout the subtree immediately. |
-| Separate entry contexts | Keep reverse shutdown order, including attempts that finish Init after policy stops. Each service stops its children before it cancels its Run context. |
+| Policy context | Close admission and reject later terminal failures throughout the subtree immediately. |
+| Separate entry contexts | Keep reverse shutdown order for admitted and pending services. Each service stops its children before it cancels its Run context. |
 
 Shutdown follows this order:
 
@@ -92,7 +73,7 @@ Only ordered shutdown cancels registered entries. A rejected, unregistered start
 is cancelled by the add path. Launch does not read policy or cancel an entry.
 No user code, reporting, or cleanup waits run under the tree mutex. Run can enter
 its function after Stop if its admission decision came first. Root Stop and
-terminal failure use the same mutex; groups do not add retry budgets.
+terminal failure use the same mutex.
 The shutdown worker reports a selected Failure before its first cleanup wait.
 It uses the existing callback, or standard error when the callback is nil.
 
@@ -100,7 +81,7 @@ It uses the existing callback, or standard error when the callback is nil.
 
 | Source | Compiler-resolved check |
 | --- | --- |
-| `Service[A]` or `TerminalService[A]` embedding | The selected runtime embedding path uses value fields. |
+| `Service[A]` embedding | The selected runtime embedding path uses value fields. |
 | `Ref[T]` | T is a concrete service struct; application fields use Go rules. |
 | Direct `Borrow` use | Match the immediate exported method call; exclude lifecycle and runtime methods. |
 | Exported service methods | Check each result with the shared ReadResult proof, or compiler identity with predeclared error. Apply no result count or order limit. |

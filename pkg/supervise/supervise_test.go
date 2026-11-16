@@ -9,8 +9,6 @@ import (
 	"testing"
 	"testing/synctest"
 	"time"
-
-	"github.com/lucasavila00/immutago/pkg/im"
 )
 
 var (
@@ -86,50 +84,6 @@ type failing struct{ Service[NoArgs] }
 func (*failing) Run(context.Context) {
 	record(time.Now().UTC().Format(time.TimeOnly))
 	panic(failures.Add(1))
-}
-
-// label is the argument of a restarted service.
-type label struct {
-	im.Frozen
-	Name string
-}
-
-// snapshot is a value that a restarted service publishes.
-type snapshot struct{ im.Frozen }
-
-// restarted is a service that panics on its first run.
-type restarted struct {
-	Service[label]
-	runs   int
-	latest im.Cell[*snapshot]
-}
-
-// Run records the arguments and the state of the value, and panics on the first failure.
-func (r *restarted) Run(ctx context.Context) {
-	r.runs++
-	record(r.Args().Name)
-	if r.runs != 1 || r.latest.Load().Unsafe() != nil {
-		record("old state")
-	}
-	r.latest.Store(&snapshot{})
-	if failures.Add(1) == 1 {
-		panic("first run")
-	}
-	<-ctx.Done()
-}
-
-// slowFailing is a service that panics after 6 minutes on each run.
-type slowFailing struct{ Service[NoArgs] }
-
-// Run waits 6 minutes, records the time, and panics.
-func (*slowFailing) Run(ctx context.Context) {
-	select {
-	case <-time.After(6 * time.Minute):
-	case <-ctx.Done():
-		return
-	}
-	record(time.Now().UTC().Format(time.TimeOnly))
-	panic("slow failure")
 }
 
 var selfRoot *Group
@@ -281,21 +235,6 @@ func TestSelfStop(t *testing.T) {
 	})
 }
 
-// TestRestartAndEscalate verifies backoff and the root escalation with the last panic value.
-func TestRestartAndEscalate(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		failures.Store(0)
-		escalated := make(chan any, 1)
-		if _, err := Start[failing](root(func(value any) { escalated <- value }, nil), NoArgs{}); err != nil {
-			t.Fatal(err)
-		}
-		if value := <-escalated; value.(*Failure).Value != int64(6) {
-			t.Fatalf("escalated %v, want 6", value)
-		}
-		expectEvents(t, "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31")
-	})
-}
-
 // TestPanicReport verifies that every recovered panic reaches the report with its stack before the escalation.
 func TestPanicReport(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
@@ -318,36 +257,19 @@ func TestPanicReport(t *testing.T) {
 		takeEvents()
 		mu.Lock()
 		defer mu.Unlock()
-		want := []any{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6), failure}
+		want := []any{int64(1), failure}
 		if !slices.Equal(reported, want) {
 			t.Fatalf("reported %v, want %v", reported, want)
 		}
 	})
 }
 
-// TestPanicStackCapture checks stack capture only when a reporter needs it.
-func TestPanicStackCapture(t *testing.T) {
-	run := func(context.Context) { panic("failure") }
-	for _, capture := range []bool{false, true} {
-		reported := false
-		failed := attempt(context.Background(), run, func() {}, capture, func(value any, stack []byte, goexit bool) {
-			reported = true
-			if value != "failure" || (len(stack) != 0) != capture || goexit {
-				t.Errorf("capture %t: value %v, stack length %d, Goexit %t", capture, value, len(stack), goexit)
-			}
-		})
-		if !failed || !reported {
-			t.Fatal("panic was not reported")
-		}
-	}
-}
-
 // TestNestedPanicReport checks that a nested group inherits its reporter.
 func TestNestedPanicReport(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
-		reported := make(chan any, 1)
-		root := NewRoot(func(value any, _ []byte) { reported <- value })
+		reported := make(chan any, 2)
+		root := root(func(any) {}, func(value any, _ []byte) { reported <- value })
 		nested := StartGroup(root)
 		if _, err := Start[failing](nested, NoArgs{}); err != nil {
 			t.Fatal(err)
@@ -357,41 +279,6 @@ func TestNestedPanicReport(t *testing.T) {
 		}
 		<-root.Stop()
 		takeEvents()
-	})
-}
-
-// TestRestartWindow verifies that restarts older than 5 minutes do not count.
-func TestRestartWindow(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		root := root(func(value any) { t.Errorf("escalated %v", value) }, nil)
-		if _, err := Start[slowFailing](root, NoArgs{}); err != nil {
-			t.Fatal(err)
-		}
-		time.Sleep(time.Hour)
-		<-root.Stop()
-		expectEvents(t, "00:06:00", "00:12:01", "00:18:02", "00:24:03", "00:30:04", "00:36:05",
-			"00:42:06", "00:48:07", "00:54:08")
-	})
-}
-
-// TestRestartCreatesNewValue verifies a new value with the same arguments and an empty Owner after a restart.
-func TestRestartCreatesNewValue(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		failures.Store(0)
-		root := NewRoot(nil)
-		ref, _ := Start[restarted](root, label{Name: "cache"})
-		before := ref.Borrow()
-		synctest.Wait()
-		if ref.Borrow() != before || before.runs != 1 {
-			t.Fatal("Ref changed before the restart delay ended")
-		}
-		time.Sleep(time.Second)
-		synctest.Wait()
-		if ref.Borrow() == before || before.runs != 1 || ref.Borrow().runs != 1 {
-			t.Fatal("restart did not store a new value in the same Ref")
-		}
-		expectEvents(t, "cache", "cache")
-		<-root.Stop()
 	})
 }
 

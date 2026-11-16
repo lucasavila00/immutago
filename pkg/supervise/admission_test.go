@@ -33,17 +33,13 @@ func (c *stopOnRead) Err() error {
 	return err
 }
 
-// TestRunAdmissionOrdersStop keeps publication and child activation in one decision.
+// TestRunAdmissionOrdersStop keeps child activation ordered against Stop.
 func TestRunAdmissionOrdersStop(t *testing.T) {
-	for _, attempt := range []int32{1, 2} {
-		t.Run(map[int32]string{1: "first", 2: "retry"}[attempt], func(t *testing.T) {
-			synctest.Test(t, func(t *testing.T) { checkRunAdmissionOrdersStop(t, attempt) })
-		})
-	}
+	synctest.Test(t, func(t *testing.T) { checkRunAdmissionOrdersStop(t) })
 }
 
 // checkRunAdmissionOrdersStop holds a later sibling while Stop races with Run admission.
-func checkRunAdmissionOrdersStop(t *testing.T, attempt int32) {
+func checkRunAdmissionOrdersStop(t *testing.T) {
 	t.Helper()
 	top := NewRoot(nil)
 	parent := newGroup(top, false)
@@ -62,9 +58,7 @@ func checkRunAdmissionOrdersStop(t *testing.T, attempt int32) {
 			return err
 		},
 		run: func(p *initializing, ctx context.Context) {
-			if runs.Add(1) < attempt {
-				panic("retry")
-			}
+			runs.Add(1)
 			children := p.Children()
 			children.mu.Lock()
 			active := children.active
@@ -84,7 +78,7 @@ func checkRunAdmissionOrdersStop(t *testing.T, attempt int32) {
 	release := make(chan struct{})
 	entry.run = func(ctx context.Context) {
 		<-release
-		run(&stopOnRead{Context: ctx, group: parent, when: func() bool { return inits.Load() == attempt }})
+		run(&stopOnRead{Context: ctx, group: parent, when: func() bool { return inits.Load() == 1 }})
 	}
 	cleanup, slowRelease := make(chan struct{}), make(chan struct{})
 	parent.add(func(ctx context.Context) { <-ctx.Done(); close(cleanup); <-slowRelease }, nil)
@@ -100,8 +94,8 @@ func checkRunAdmissionOrdersStop(t *testing.T, attempt int32) {
 	close(slowRelease)
 	<-parent.Stop()
 	<-top.Stop()
-	if inits.Load() != attempt || runs.Load() != attempt || childRuns.Load() != attempt {
-		t.Errorf("Init=%d Run=%d child Run=%d; want %d each", inits.Load(), runs.Load(), childRuns.Load(), attempt)
+	if inits.Load() != 1 || runs.Load() != 1 || childRuns.Load() != 1 {
+		t.Errorf("Init=%d Run=%d child Run=%d; want 1 each", inits.Load(), runs.Load(), childRuns.Load())
 	}
 }
 

@@ -10,15 +10,20 @@ import (
 	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
+type shutdownArgs struct {
+	inits *atomic.Int32
+	fail  <-chan struct{}
+}
+
 type alwaysFails struct {
-	supervise.Service[*atomic.Int32]
+	supervise.Service[shutdownArgs]
 }
 
 // Init counts each setup attempt.
-func (s *alwaysFails) Init() error { s.Args().Add(1); return nil }
+func (s *alwaysFails) Init() error { s.Args().inits.Add(1); return nil }
 
 // Run fails each attempt.
-func (*alwaysFails) Run(context.Context) { panic("fail") }
+func (s *alwaysFails) Run(context.Context) { <-s.Args().fail; panic("fail") }
 
 type slowToStop struct {
 	supervise.Service[supervise.NoArgs]
@@ -30,25 +35,26 @@ func (*slowToStop) Run(ctx context.Context) {
 	time.Sleep(time.Minute)
 }
 
-// TestStopDisablesRestartsAndEscalation holds shutdown open past the restart limit.
-func TestStopDisablesRestartsAndEscalation(t *testing.T) {
+// TestStopSuppressesFailure holds shutdown open while an older service fails.
+func TestStopSuppressesFailure(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		var inits atomic.Int32
+		fail := make(chan struct{})
 		root := supervise.NewRoot(func(value any, _ []byte) {
 			t.Logf("report %v at %s", value, time.Now().UTC().Format(time.TimeOnly))
 		})
-		if _, err := supervise.Start[alwaysFails](root, &inits); err != nil {
+		if _, err := supervise.Start[alwaysFails](root, shutdownArgs{inits: &inits, fail: fail}); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := supervise.Start[slowToStop](root, supervise.NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(2 * time.Second)
 		synctest.Wait()
-		before := inits.Load()
-		<-root.Stop()
-		if n := inits.Load() - before; n != 0 {
-			t.Errorf("Init ran %d more times after Stop", n)
+		done := root.Stop()
+		close(fail)
+		<-done
+		if n := inits.Load(); n != 1 {
+			t.Errorf("Init ran %d times; want 1", n)
 		}
 	})
 }
