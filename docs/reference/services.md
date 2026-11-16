@@ -27,16 +27,14 @@ returning when a context ends, require implementation review.
 
 ### Copy contract
 
-`Service[A]` and `Group` own mutable runtime state. Do not copy either value after
-initialization, including through a containing struct or array. Start initializes
-the embedded Service before Init. NewRoot, StartGroup, and Children return initialized
-groups. This obligation still applies after the service or group stops.
+Do not copy initialized Service or Group values, including containing structs or arrays.
 
-Declare service methods with pointer receivers, including Init and Run. Pass service
-and group pointers to other functions. Ref values can be copied; each copy selects
-the same current service. A zero service or Group has no runtime ownership. Copying
-it does not initialize it. Start always creates a fresh service; it does not initialize
-an existing value or its copies.
+| Owner | Contract |
+| --- | --- |
+| Service | Start initializes it before Init. Declare methods with pointer receivers, including Init and Run. Pass service pointers. |
+| Group | NewRoot, StartGroup, and Children return initialized groups. Pass group pointers. |
+| Ref | Copies are allowed; they share the slot that selects the current service. |
+| Stopped service or group | The no-copy contract still applies. |
 
 | Invalid copy examples — non-exhaustive | Allowed replacement |
 | --- | --- |
@@ -46,14 +44,9 @@ an existing value or its copies.
 | `copy := *group` | `same := group`, where group is `*supervise.Group`. |
 | `Owner{Group: *group}` | Give Owner a `*supervise.Group` field and use `Owner{Group: group}`. |
 
-Run standard `go vet ./...` in addition to immutago. The runtime types contain a
-zero-size marker for vet's `copylocks` check. Vet reports common copy forms, including
-value receivers, assignments, arguments, returns, and copies of containing values.
-It does not prove that every possible copy is absent. For example, its copy check
-does not inspect channel sends. The runtime does not detect copies or make them safe.
-Immutago checks service signatures and protected operations; it does not enforce
-this Go copy contract. `go vet -vettool=/path/to/immutago ./...` runs immutago and does
-not replace standard `go vet ./...`.
+Run standard `go vet ./...` as well as immutago. Vet reports common copies; neither
+the runtime nor immutago enforces the no-copy contract. A custom vettool does not
+run the standard vet checks.
 
 | Rejected examples — non-exhaustive | Allowed replacement |
 | --- | --- |

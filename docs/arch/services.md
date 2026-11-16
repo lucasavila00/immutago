@@ -8,6 +8,8 @@ copied after initialization. Both contain a zero-size `noCopy` field for standar
 vet's copylocks check. It adds no lock or runtime check. Immutago does not run that
 check; callers must also use standard `go vet`. See the
 [copy contract](../reference/services.md#copy-contract).
+Copylocks is a diagnostic check, not a complete proof that no value was copied;
+for example, it does not inspect channel sends.
 
 ## Initialization, publication, and calls
 
