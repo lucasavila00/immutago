@@ -57,14 +57,14 @@ func TestCopiedFieldDiagnosticContext(t *testing.T) {
 		got := checkSource(t, `type Reply struct{im.Local;Name im.StringProjection};
 type Score struct{im.Copied;Label `+field+`};type Outer struct{im.Copied;Scores [2]Score}`)
 		if !strings.Contains(got, "Label: ") || !strings.Contains(got, "is not a Copied value") ||
-			!strings.Contains(got, "replace its im.Copied marker with im.Local") ||
+			!strings.Contains(got, "replace im.Copied with im.Local") ||
 			strings.Contains(got, "Frozen storage cannot contain Local values") {
 			t.Fatal(got)
 		}
 	}
 	got := checkSource(t, `type Counts [2]int;type Score struct{im.Copied;Counts Counts};
 type Outer struct{im.Copied;Scores [2]Score}`)
-	if !strings.Contains(got, "use an unnamed array type") || strings.Contains(got, "if a Copied record") {
+	if !strings.Contains(got, "use an unnamed array type") || strings.Contains(got, "for other read-result fields") {
 		t.Fatal(got)
 	}
 }
@@ -84,7 +84,7 @@ func TestMarkerFieldDiagnosticContext(t *testing.T) {
 					repair := map[string]string{
 						"im.Frozen": "use that interface as the payload",
 						"im.Local":  "use its generated projection as the read result",
-						"im.Copied": "replace its im.Copied marker with im.Local",
+						"im.Copied": "replace im.Copied with im.Local",
 					}[owner]
 					if !strings.Contains(got, repair) {
 						t.Fatal(got)
