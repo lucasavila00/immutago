@@ -77,6 +77,22 @@ forms.go:59:25: unmarked struct contains immutable field Value; embed an immutab
   owner: rejected.Box[api.Count]; field type: api.Count
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+freeze_slots.go:11:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: root.List = im.FreezeSlice([]int{1})
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+freeze_slots.go:12:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: root.Map = im.FreezeMap(map[string]int{"n": 1})
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+freeze_slots.go:17:11: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+freeze_slots.go:25:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+freeze_slots.go:29:31: unsupported immutable operation: Freeze requires a standalone single binding
+  source: im.FreezeSlice([]int{1})
+  type: im.FrozenSlice[int]
+  fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
+freeze_slots.go:29:57: unsupported immutable operation: Freeze requires a standalone single binding
+  source: im.FreezeSlice([]int{2})
+  type: im.FrozenSlice[int]
+  fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
 handles.go:14:27: unmarked struct contains immutable field Value; embed an immutable marker
   owner: rejected.RecordHolder; field type: api.Count
   rule: a struct that owns immutable storage must itself have an immutable field proof
