@@ -19,8 +19,9 @@ type Loader struct {
 `Init` reads and validates the first catalog. An error prevents startup. `Run`
 uses a ticker to try later reloads and returns when its context ends. Expected
 file errors are logged; the last valid catalog stays available. A panic in Run
-stops the root and waits for cleanup before it terminates the process. The
-[failure report](../reference/services.md#failure-reports) keeps the panic value and stack.
+stops the root and waits for accepted Init calls and cleanup before it terminates
+the process. The [failure report](../reference/services.md#failure-reports) keeps
+the panic value and stack.
 
 The [command](../../examples/shipping/cmd/shipping/main.go) starts the loader
 under a root group and waits for shutdown when it returns:
@@ -34,9 +35,12 @@ if err != nil {
 }
 ```
 
-Start calls Init before it returns the reference. The command creates the HTTP
-server only after Start succeeds. On shutdown, it closes the HTTP server before
-it stops the root group. `<-root.Stop()` waits for background work; it does not
+Start calls Init before it returns the reference. Init must return if a dependency
+stops answering; use application timeouts or independent cancellation for blocking
+work. See the [Init contract](../reference/services.md#startup).
+The command creates the HTTP server only after Start succeeds. On shutdown, it
+closes the HTTP server before it stops the root group. `<-root.Stop()` waits for
+background work; it does not
 wait for HTTP handlers or other direct method calls.
 
 ## Keep a reference and call a method
@@ -86,5 +90,5 @@ completion and failure reports. In tests,
 [`supervisetest.NewRoot(t)`](../../pkg/supervise/supervisetest/readme.md) stops the
 tree during cleanup and fails the test if shutdown takes more than five seconds.
 It uses the same terminal failure rule: a Run panic or Goexit prints the original
-stack, completes ordered cleanup, and terminates the test process.
+stack, waits for accepted Init calls and ordered cleanup, and terminates the test process.
 Use a subprocess to test these failures.

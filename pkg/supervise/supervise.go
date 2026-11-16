@@ -45,8 +45,10 @@ type Service[A any] struct {
 func (p *Service[A]) Args() A { return p.args }
 
 // Init supplies empty setup when the service does not declare Init.
-// A declared Init must release application resources if it fails. The runtime
-// stops children created by that setup.
+// A declared Init must return if a dependency stops answering. Bound blocking
+// operations with an application timeout or an independently cancelled context.
+// Init must release application resources if it fails. The runtime stops children
+// created by that setup.
 func (*Service[A]) Init() error { return nil }
 
 // UncheckedChildren returns the child group owned by this service.

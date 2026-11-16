@@ -62,7 +62,7 @@ Init: children pending ──> Run admission: activate ──> Run ends: stop an
 | Doubly linked child list | Preserve registration order after Init; unlink a completed child without searching. |
 | Admission context | Close admission throughout the subtree immediately. Failure selection does not use this context. |
 | Separate entry contexts | Keep reverse shutdown order for admitted and pending services. Each service stops its children before it cancels its Run context. |
-| Root failure | Keep the first failure. Every Run belongs to the owned tree, so ordered shutdown waits for all reports and cleanup. |
+| Root failure | Keep the first failure. Every Run belongs to the owned tree, so ordered shutdown waits for accepted Init calls, all reports, and cleanup. |
 
 Shutdown follows this order:
 
@@ -88,6 +88,9 @@ The Init barrier applies to each group before cancellation of its registered
 entries. Init must not wait for that shutdown or for cancellation that depends
 on it. It can stop its own child group to undo setup; the child group does not
 wait for its parent Init.
+Init must also return if a dependency stops answering. Blocking work needs an
+application timeout or independent cancellation. Reporting does not wait for
+accepted Init calls, but the terminal panic does.
 
 ## Analyzer boundary
 

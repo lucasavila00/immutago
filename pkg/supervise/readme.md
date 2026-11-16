@@ -12,7 +12,7 @@ Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(
 
 ## type Failure
 
-Failure describes one service Run panic or runtime.Goexit call. The root panics with the first recorded \*Failure after reporting and cleanup. Value is the original panic value, or an error with the text "supervise: service called runtime.Goexit" for Goexit. Stack is captured in that service's goroutine. Groups pass the same failure to the root without wrapping it.
+Failure describes one service Run panic or runtime.Goexit call. The root panics with the first recorded \*Failure after accepted Init calls, reporting, and cleanup. Value is the original panic value, or an error with the text "supervise: service called runtime.Goexit" for Goexit. Stack is captured in that service's goroutine. Groups pass the same failure to the root without wrapping it.
 
 ```go
 type Failure struct {
@@ -147,7 +147,7 @@ Args returns the arguments supplied to Start.
 func (*Service[A]) Init() error
 ```
 
-Init supplies empty setup when the service does not declare Init. A declared Init must release application resources if it fails. The runtime stops children created by that setup.
+Init supplies empty setup when the service does not declare Init. A declared Init must return if a dependency stops answering. Bound blocking operations with an application timeout or an independently cancelled context. Init must release application resources if it fails. The runtime stops children created by that setup.
 
 ### func \(\*Service\[A\]\) UncheckedChildren
 
