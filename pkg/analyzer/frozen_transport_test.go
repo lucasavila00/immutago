@@ -56,7 +56,7 @@ func (value *Data) Read() int { return value.N }
 func identity[T any](value T) T { return value }
 `
 	for name, test := range map[string]struct{ source, want string }{
-		"unmarked generic": {`type Box[T any]struct{ Value T };var _ Box[im.FrozenString]`, "unmarked struct"},
+		"unmarked generic": {`type Box[T any]struct{ Value T };var _ Box[Data]`, "unmarked struct"},
 		"local boxing":     {`func use(value Alias) { var boxed any = value; _ = boxed }`, "ordinary interfaces require"},
 		"local generic":    {`func use(value View) { _ = identity(value) }`, "user generic instantiations"},
 		"local capture": {`func use(value View) { _ = func() int { return value.Text.Len() } }`,
@@ -75,7 +75,7 @@ func identity[T any](value T) T { return value }
 		"tuple assertion": {`func use(value any) { result, ok := value.(Contract); _ = result;
    _ = ok }`, "Frozen interface implementation"},
 		"pointer boxing": {`func use(value *View) { var boxed any = value; _ = boxed }`, "ordinary interfaces require"},
-		"builder alias":  {`func use() { values := []im.FrozenString{}; alias := values; _ = alias }`, "alias"},
+		"builder alias":  {`func use() { values := []Data{}; alias := values; _ = alias }`, "alias"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			if got := checkSource(t, prefix+test.source); !strings.Contains(got, test.want) {

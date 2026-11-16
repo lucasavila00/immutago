@@ -39,13 +39,13 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 		if checker.FrozenInterface(selection.Recv()) {
 			return c.matchFrozenInterfaceMethod(selector)
 		}
+		if !restricted {
+			return ""
+		}
 		return "dynamic calls require ordinary or persistent Frozen parameters and results"
 	}
 	signature := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
-	if !c.protectedStorage(selector.X) && !c.queries.Contains(signature.Recv().Type()) {
-		if genericSignature(signature) && !runtimeObject(selection.Obj()) {
-			return "user generic instantiations require ordinary or persistent Frozen type arguments"
-		}
+	if !c.protectedStorage(selector.X) && !c.queries.Owns(signature.Recv().Type()) {
 		return ""
 	}
 	if len(selection.Index()) != 1 {

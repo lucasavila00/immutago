@@ -14,7 +14,8 @@ type Classifier struct {
 type classificationMode uint8
 
 const (
-	storageMode classificationMode = iota
+	sourceMode classificationMode = iota
+	ownershipMode
 	transportMode
 	callableMode
 	handleMode
@@ -34,9 +35,13 @@ type classificationNode struct {
 	value bool
 }
 
-// Contains reports protected object storage, including its holders and containers.
+// Contains reports values that need im source checks, including their holders and containers.
 // Frozen pointer handles and Copied records use ordinary Go storage rules.
-func (c *Classifier) Contains(t types.Type) bool { return c.query(t, storageMode) }
+func (c *Classifier) Contains(t types.Type) bool { return c.query(t, sourceMode) }
+
+// Owns reports protected object storage, including its holders and containers.
+// Frozen handles can occupy ordinary mutable slots without changing their targets.
+func (c *Classifier) Owns(t types.Type) bool { return c.query(t, ownershipMode) }
 
 // Transport reports values that need restricted calls, bindings, and captures.
 // Frozen values and pointers can persist. Local values and protected native container uses stay restricted.
@@ -134,7 +139,7 @@ func (c *Classifier) expand(node *classificationNode) {
 		return
 	}
 	switch node.key.mode {
-	case storageMode, transportMode:
+	case sourceMode, ownershipMode, transportMode:
 		c.storedValue(node)
 	case callableMode:
 		c.callableEdges(node)
@@ -150,8 +155,12 @@ func (c *Classifier) storedValue(node *classificationNode) {
 		c.connect(node, parameter.Constraint(), node.key.mode)
 	} else if IsProjection(node.key.typ) || IsLibraryType(node.key.typ, "Local") || Local(node.key.typ) {
 		c.mark(node)
-	} else if IsCollection(node.key.typ) || Frozen(node.key.typ) || FrozenInterface(node.key.typ) {
-		if node.key.mode == storageMode {
+	} else if Frozen(node.key.typ) {
+		if node.key.mode != transportMode {
+			c.mark(node)
+		}
+	} else if IsCollection(node.key.typ) || FrozenInterface(node.key.typ) {
+		if node.key.mode == sourceMode {
 			c.mark(node)
 		}
 	} else {
@@ -162,6 +171,10 @@ func (c *Classifier) storedValue(node *classificationNode) {
 // storageEdges follows stored components and recognizes sealed interfaces as protected storage.
 func (c *Classifier) storageEdges(node *classificationNode) {
 	switch storage := node.key.typ.Underlying().(type) {
+	case *types.Signature:
+		if node.key.mode == sourceMode {
+			c.callableEdges(node)
+		}
 	case *types.Interface:
 		if node.key.mode == localMode {
 			return
@@ -208,7 +221,7 @@ func FrozenPointer(t types.Type) bool {
 func (c *Classifier) referenceEdge(node *classificationNode, element types.Type) {
 	mode := node.key.mode
 	if mode == transportMode {
-		mode = storageMode
+		mode = ownershipMode
 	}
 	c.connect(node, element, mode)
 }

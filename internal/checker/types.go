@@ -122,7 +122,7 @@ func embedsMarker(t types.Type, name string) bool {
 	return false
 }
 
-// Contains reports protected storage, including its holders and containers.
+// Contains reports values that need im source checks, including their holders and containers.
 // It runs one query; use Classifier to reuse results across queries.
 func Contains(t types.Type) bool {
 	var classifier Classifier

@@ -21,6 +21,12 @@ func (c *subsetChecks) declarationNode(node ast.Node) {
 		c.valueDeclaration(declaration)
 	case *ast.AssignStmt:
 		c.assignmentBinding(declaration)
+	case *ast.ReturnStmt:
+		if c.queries.Contains(c.functionSignature(declaration).Results()) {
+			if rule := c.matchReturn(declaration); rule != "" {
+				c.report(declaration, rule)
+			}
+		}
 	case *ast.TypeSwitchStmt:
 		c.typeSwitchDeclaration(declaration)
 	case *ast.FuncLit:
@@ -49,7 +55,7 @@ func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 	if genericSignature(signature) {
 		c.genericStorage(declaration.Name)
 	}
-	if signature.Recv() != nil && c.queries.Contains(signature.Recv().Type()) && !c.markedMethodReceiver(signature) {
+	if signature.Recv() != nil && c.queries.Owns(signature.Recv().Type()) && !c.markedMethodReceiver(signature) {
 		c.report(declaration.Name, "immutable methods require a concrete non-generic marked receiver")
 	}
 }
@@ -296,6 +302,8 @@ func rangeTypes(t types.Type) [2]types.Type {
 		return [2]types.Type{types.Typ[types.Int], source.Elem()}
 	case *types.Map:
 		return [2]types.Type{source.Key(), source.Elem()}
+	case *types.Chan:
+		return [2]types.Type{source.Elem(), nil}
 	case *types.Signature:
 		yield := source.Params().At(0).Type().Underlying().(*types.Signature)
 		var result [2]types.Type

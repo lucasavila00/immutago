@@ -99,6 +99,9 @@ func (c *subsetChecks) matchSource(expression ast.Expr) string {
 	case *ast.TypeAssertExpr:
 		return c.matchAssertion(source)
 	case *ast.FuncLit:
+		if !c.queries.Callable(c.pass.TypesInfo.TypeOf(source)) {
+			return ""
+		}
 		return "callbacks require ordinary or persistent Frozen parameters and results"
 	}
 	return "protected operation is outside the supported expression forms"
@@ -241,7 +244,7 @@ func (c *subsetChecks) matchUnary(expression *ast.UnaryExpr) string {
 				return ""
 			}
 		}
-		if !c.queries.Contains(c.pass.TypesInfo.TypeOf(expression.X)) {
+		if !c.queries.Owns(c.pass.TypesInfo.TypeOf(expression.X)) {
 			return "interior addresses of protected storage are unsupported"
 		}
 		if _, fresh := ast.Unparen(expression.X).(*ast.CompositeLit); !fresh {
@@ -254,6 +257,10 @@ func (c *subsetChecks) matchUnary(expression *ast.UnaryExpr) string {
 		return "immutable references require a concrete marked struct target"
 	}
 	switch expression.Op {
+	case token.ARROW:
+		if !c.protectedStorage(expression.X) {
+			return ""
+		}
 	case token.ADD, token.SUB, token.NOT, token.XOR:
 		if _, scalar := c.pass.TypesInfo.TypeOf(expression.X).Underlying().(*types.Basic); scalar {
 			return ""
@@ -271,7 +278,7 @@ func (c *subsetChecks) matchBinary(expression *ast.BinaryExpr) string {
 	if rule := c.matchTransport(right, left); rule != "" {
 		return rule
 	}
-	if c.queries.Contains(left) || c.queries.Contains(right) {
+	if c.queries.Owns(left) || c.queries.Owns(right) {
 		if expression.Op != token.EQL && expression.Op != token.NEQ {
 			return "protected operation is outside the supported expression forms"
 		}
@@ -292,7 +299,7 @@ func (c *subsetChecks) matchIndex(expression *ast.IndexExpr) string {
 	case *types.Slice, *types.Basic:
 		return ""
 	case *types.Pointer:
-		if _, array := source.Elem().Underlying().(*types.Array); array && !c.queries.Contains(source) {
+		if _, array := source.Elem().Underlying().(*types.Array); array && !c.queries.Owns(source) {
 			return ""
 		}
 	}

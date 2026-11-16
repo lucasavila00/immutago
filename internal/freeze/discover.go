@@ -24,7 +24,7 @@ func (p *proof) discover() {
 		})
 	}
 	for variable, item := range p.declarations {
-		if item.fresh && p.queries.Contains(variable.Type()) {
+		if item.fresh && p.queries.Owns(variable.Type()) {
 			p.owners[variable] = item
 		}
 	}

@@ -79,6 +79,51 @@ supply that proof; recover a proved concrete record first.
 Generic helpers use ordinary Go contracts. Do not pass a Frozen pointer to a
 helper that changes its target.
 
+## Ordinary Frozen handle slots — exhaustive
+
+FrozenString, FrozenSlice, FrozenMap, and Frozen interfaces are immutable handles.
+An ordinary struct or service can store them beside mutable fields. Replacing a
+handle changes the slot and keeps the selected frozen data unchanged.
+
+```go
+type Cache struct {
+    Title im.FrozenString
+    Values im.FrozenSlice[*FrozenPoint]
+    Calls int
+}
+
+func (c *Cache) Rename(title im.FrozenString) {
+    c.Title = title
+    c.Calls++
+}
+```
+
+| Storage or use | Complete rule |
+| --- | --- |
+| Frozen handle or ordinary holder | All Go storage and transport forms are allowed, including aliases, arrays, native containers, pointers, methods, interfaces, generics, callbacks, go, defer, and channels. |
+| Field or element inside a Frozen or Local owner | The owner's write and address rules still apply. |
+| Conversion to a Frozen interface | Prove the concrete Frozen implementation, including conversions in field assignments, literals, calls, returns, and sends. |
+| Native slice or map passed to Freeze | Keep one exclusive builder; Freeze consumes it. |
+| Exported service method result | Use the [service result signatures](service-results.md). A Frozen handle is not a read result. |
+
+| Ordinary Go examples | Source |
+| --- | --- |
+| Store handles and nested holders | `type State struct { Cache Cache; Names [2]im.FrozenString }` |
+| Store in native containers | `[]im.FrozenString{text}`, `map[string]Scorer{"main": scorer}`, `make(chan im.FrozenString)` |
+| Replace or address a slot | `cache.Title = text`, `values[i] = text`, `slot := &cache.Title; *slot = text`, `new(text)` |
+| Copy, bind, or return several values | `copy := cache`, `cache, ok := lookup()`, `return cache, text` |
+| Use methods and generic holders | `cache.Rename(text)`, `rename := cache.Rename`, `Box[im.FrozenString]{Value: text}` |
+| Use callbacks, interfaces, or concurrent calls | `callback(cache)`, `var boxed any = cache`, `go cache.Rename(text)`, `defer use(cache)` |
+| Send, receive, select, or range | `ready <- text`, `text, ok := <-ready`, `select { case ready <- text: default: }`, `for text := range ready { use(text) }` |
+
+| Rejected examples — non-exhaustive | Replacement |
+| --- | --- |
+| `root.Title = text` or `&root.Title` where root is Frozen | Replace the complete root, or copy its Title into an ordinary slot. |
+| `cache.Values.At(0).X = 2` | Store a new FrozenPoint pointer in a new frozen collection. |
+| `type State struct { Point FrozenPoint }` | Store `*FrozenPoint`, or make State a Frozen record. |
+| `type State struct { Text im.StringProjection }` | Store FrozenString; create its projection at the read site. |
+| Freeze a slice after copying its native handle | Build an exclusive slice and freeze it before sharing. |
+
 ## Construction and scalar reads
 
 ```go
@@ -137,7 +182,7 @@ Local pointers use only the direct-call forms below and cannot escape.
 | `point.X = 2`, `p.X = 2`, `*p = FrozenPoint{}` | `point = FrozenPoint{X: 2}` or `p = &FrozenPoint{X: 2}` |
 | `p := &point` | `p := new(point)` |
 | `&point.X` | Read or copy the scalar. |
-| `new(im.FrozenSlice[int])` | Pass the frozen wrapper by value. |
+| `new(im.SliceProjection[int])` | Keep the local projection by value. |
 | `&[2]FrozenPoint{}` | Put the array in a marked struct. |
 | `(*LocalPoint)(nil)` | `var p *LocalPoint = nil` |
 

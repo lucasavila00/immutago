@@ -13,7 +13,7 @@ func opaqueStorage(t types.Type) bool {
 	return IsLibraryType(t, "Cell") || IsRuntimeType(t, ServiceMarker)
 }
 
-// classificationStorageOracle retains the original storage walk without shared query state.
+// classificationStorageOracle checks source relevance without shared query state.
 func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 	if t == nil || seen[t] || FrozenPointer(t) {
 		return false
@@ -29,6 +29,8 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 		return true
 	}
 	switch u := t.Underlying().(type) {
+	case *types.Signature:
+		return classificationSourceSignatureOracle(u, seen)
 	case *types.Pointer:
 		return classificationStorageOracle(u.Elem(), seen)
 	case *types.Array:
@@ -44,6 +46,47 @@ func classificationStorageOracle(t types.Type, seen map[types.Type]bool) bool {
 	}
 	return slices.ContainsFunc(classificationComponents(t), func(component types.Type) bool {
 		return classificationStorageOracle(component, seen)
+	})
+}
+
+// classificationSourceSignatureOracle includes conversions into declared parameter and result types.
+func classificationSourceSignatureOracle(signature *types.Signature, seen map[types.Type]bool) bool {
+	for _, tuple := range []*types.Tuple{signature.Params(), signature.Results()} {
+		for item := range tuple.Variables() {
+			if classificationStorageOracle(item.Type(), seen) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// classificationOwnershipOracle checks protected storage without using cached answers.
+func classificationOwnershipOracle(t types.Type, seen map[types.Type]bool) bool {
+	if t == nil || seen[t] || FrozenPointer(t) || opaqueStorage(t) || IsCollection(t) || FrozenInterface(t) {
+		return false
+	}
+	seen[t] = true
+	if IsProjection(t) || Marked(t) || IsLibraryType(t, "Local") {
+		return true
+	}
+	if parameter, ok := types.Unalias(t).(*types.TypeParam); ok {
+		return classificationOwnershipOracle(parameter.Constraint(), seen)
+	}
+	switch storage := t.Underlying().(type) {
+	case *types.Pointer:
+		return classificationOwnershipOracle(storage.Elem(), seen)
+	case *types.Array:
+		return classificationOwnershipOracle(storage.Elem(), seen)
+	case *types.Slice:
+		return classificationOwnershipOracle(storage.Elem(), seen)
+	case *types.Map:
+		return classificationOwnershipOracle(storage.Key(), seen) || classificationOwnershipOracle(storage.Elem(), seen)
+	case *types.Chan:
+		return classificationOwnershipOracle(storage.Elem(), seen)
+	}
+	return slices.ContainsFunc(classificationComponents(t), func(component types.Type) bool {
+		return classificationOwnershipOracle(component, seen)
 	})
 }
 
@@ -136,14 +179,14 @@ func classificationTransportOracle(t types.Type, seen map[types.Type]bool) bool 
 	}
 	switch storage := t.Underlying().(type) {
 	case *types.Pointer:
-		return classificationStorageOracle(storage.Elem(), make(map[types.Type]bool))
+		return classificationOwnershipOracle(storage.Elem(), make(map[types.Type]bool))
 	case *types.Slice:
-		return classificationStorageOracle(storage.Elem(), make(map[types.Type]bool))
+		return classificationOwnershipOracle(storage.Elem(), make(map[types.Type]bool))
 	case *types.Map:
-		return classificationStorageOracle(storage.Key(), make(map[types.Type]bool)) ||
-			classificationStorageOracle(storage.Elem(), make(map[types.Type]bool))
+		return classificationOwnershipOracle(storage.Key(), make(map[types.Type]bool)) ||
+			classificationOwnershipOracle(storage.Elem(), make(map[types.Type]bool))
 	case *types.Chan:
-		return classificationStorageOracle(storage.Elem(), make(map[types.Type]bool))
+		return classificationOwnershipOracle(storage.Elem(), make(map[types.Type]bool))
 	case *types.Array:
 		return classificationTransportOracle(storage.Elem(), seen)
 	}
@@ -233,7 +276,11 @@ func checkClassificationGraph(t *testing.T, edges [][]int, leaf int, callback bo
 				root = len(nodes) - 1 - index
 			}
 			reachable := stressReaches(edges, root, leaf)
-			if got, want := classifier.Contains(nodes[root]), reachable && !callback; got != want {
+			if got, want := classifier.Owns(nodes[root]), reachable && !callback; got != want {
+				t.Fatalf("edges=%v leaf=%d root=%d callback=%t reverse=%t: Owns=%t, want %t",
+					edges, leaf, root, callback, reverse, got, want)
+			}
+			if got, want := classifier.Contains(nodes[root]), reachable; got != want {
 				t.Fatalf("edges=%v leaf=%d root=%d callback=%t reverse=%t: Contains=%t, want %t",
 					edges, leaf, root, callback, reverse, got, want)
 			}
@@ -298,6 +345,7 @@ func TestClassificationMatchesWalkers(t *testing.T) {
 			}
 			typ := shapes[query]
 			wantStored := classificationStorageOracle(typ, make(map[types.Type]bool))
+			wantOwned := classificationOwnershipOracle(typ, make(map[types.Type]bool))
 			wantCallable := classificationCallableOracle(typ, make(map[types.Type]bool))
 			want := classificationTransportOracle(typ, make(map[types.Type]bool))
 			if got := classifier.Transport(typ); got != want {
@@ -309,6 +357,9 @@ func TestClassificationMatchesWalkers(t *testing.T) {
 			}
 			if got := classifier.Contains(typ); got != wantStored {
 				t.Fatalf("shape=%d reverse=%t: Contains=%t, want %t", query, reverse, got, wantStored)
+			}
+			if got := classifier.Owns(typ); got != wantOwned {
+				t.Fatalf("shape=%d reverse=%t: Owns=%t, want %t", query, reverse, got, wantOwned)
 			}
 		}
 	}

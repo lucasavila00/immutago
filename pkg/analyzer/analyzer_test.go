@@ -266,7 +266,6 @@ func TestRejectedTypes(t *testing.T) {
 		{"unmarked slice", `type V struct { im.Frozen }; type W struct { V []V }`, "unmarked struct"},
 		{"unmarked map", `type V struct { im.Frozen }; type W struct { V map[int]V }`, "unmarked struct"},
 		{"unmarked array", `type V struct { im.Frozen }; type W struct { V [2]V }`, "unmarked struct"},
-		{"unmarked collection", `type W struct { V im.FrozenSlice[int] }`, "unmarked struct"},
 		{"constrained owner", `type V struct { im.Frozen }; type W[T V] struct { X T }`, "unmarked struct"},
 	}
 	for _, tc := range cases {
