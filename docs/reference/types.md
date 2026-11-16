@@ -27,7 +27,7 @@ Frozen, Copied, or read-result payload types.
 | Marker | Required fields | Record use |
 | --- | --- | --- |
 | `im.Frozen` | Frozen fields | Can be copied, stored, and returned from ordinary functions. |
-| `im.Local` | Read-result fields | Can be copied locally, passed directly, and returned; cannot enter persistent storage. |
+| `im.Local` | Read-result fields | Can be copied locally, passed directly, and returned; use local variables, Local records, or Local builders. |
 | `im.Copied` | Boolean/numeric fields, unnamed arrays, and other Copied records; no strings or reference handles | Can be stored by value in ordinary holders and returned by services; ordinary copies can change independently. |
 
 - Embed exactly one marker by value; aliases work.

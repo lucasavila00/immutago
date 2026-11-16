@@ -19,9 +19,9 @@ it or wait for direct method calls.
 
 | Stage | Execution owner | Action |
 | --- | --- | --- |
-| Initial setup | Start caller | Allocate T; bind arguments and parent group; call Init. |
-| Initial Init failure | Start caller | Stop staged children. Return a zero Ref and error, or propagate the panic. |
-| Initial publication | Start caller | Create Ref for initialized T; register a watcher with the group. |
+| Setup | Start caller | Allocate T; bind arguments and parent group; call Init once. |
+| Init failure | Start caller | Stop staged children. Return a zero Ref and error, or propagate the panic. |
+| Publication | Start caller | Create Ref for initialized T; register a watcher with the group. |
 | Run admission | Watcher, under the tree mutex | Check admission and activate staged child groups as one decision ordered against Stop. |
 | Background work | Watcher, outside the mutex | Call Run once after successful Init. |
 | Stopped or pending initialized service | Watcher | Wait for its entry's shutdown turn; stop children, then call Run with an already-cancelled context for cleanup. |
@@ -30,16 +30,16 @@ it or wait for direct method calls.
 ## One watcher owns the service run
 
 The watcher recovers a Run panic or observes Goexit and captures the original
-stack. It reports the attempt, then submits a terminal Failure before child
+stack. It reports the Run failure, then submits a terminal Failure before child
 cleanup can wait. The existing tree mutex selects a failure or an earlier Stop.
 
 | Run outcome | Action |
 | --- | --- |
 | Returns | Stop and wait for its children, then remove the service entry. |
 | Panics or calls `runtime.Goexit` | Report the original failure. If Stop did not win, select and report one terminal Failure. Stop the root tree, then panic with that Failure. |
-| Fails after Stop is accepted for its subtree | Report the attempt and complete cleanup without a terminal root failure. |
+| Fails after Stop is accepted for its subtree | Report the Run failure and complete cleanup without a terminal root failure. |
 
-Initial Init precedes watcher registration, so group shutdown cannot wait for
+Init precedes watcher registration, so group shutdown cannot wait for
 that setup. Successful setup always reaches Run. If a stopped group cannot
 register the service, Start waits for its cleanup watcher.
 
@@ -48,7 +48,7 @@ register the service, Start waits for its cleanup watcher.
 Each initialized service owns a child group:
 
 ```text
-Init: children pending ──> Run admission: activate ──> attempt ends: stop and wait
+Init: children pending ──> Run admission: activate ──> run ends: stop and wait
                      └──> shutdown: cancelled Run for cleanup
 ```
 

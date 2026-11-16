@@ -59,7 +59,8 @@ owns Init and Run. Do not copy an initialized service or Group; see the
 | Capture the record in a closure | Allowed. | Copy the Ref or save its Borrow result before the closure. |
 | Replace the Ref field | Rejected. | Rejected. |
 
-Select embedded Ref fields explicitly inside Frozen or Local records. The ordinary
+Select embedded Ref fields explicitly inside Local records. Frozen records cannot
+embed data fields. The ordinary
 [immutable method rules](common-forms.md) still apply to those records.
 
 ## Rejected examples — non-exhaustive
