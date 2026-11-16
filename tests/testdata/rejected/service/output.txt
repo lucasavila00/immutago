@@ -79,6 +79,9 @@ results.go:27:17: unsupported immutable operation: returning Local pointers is u
   source: LocalPointer
   type: func() *service.Reply
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+results.go:27:50: unsupported immutable operation: returning Local pointers is unsupported
+  source: return nil
+  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 results.go:28:50: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Count++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records

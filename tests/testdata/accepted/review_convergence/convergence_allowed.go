@@ -64,3 +64,13 @@ func singleBindings() {
 }
 
 func scalarCallback(factory func() int) int { return factory() }
+
+func nestedRangeTarget() {
+	var value Value
+	var a [1]int
+	var n int
+	for a[value.X], n = range []int{2} {
+	}
+	_ = a
+	_ = n
+}

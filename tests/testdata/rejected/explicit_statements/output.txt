@@ -15,10 +15,10 @@ explicit_statements.go:23:7: unsupported immutable operation: channels of immuta
 explicit_statements.go:30:10: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 explicit_statements.go:30:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: _, values[0] = <-ready
-  fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
+  fix: keep Local values and native builders out of channel expressions and receive targets; use them in the selected case body
 explicit_statements.go:37:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: _, values[0] = <-ready
-  fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
+  fix: keep Local values and native builders out of channel expressions and receive targets; use them in the selected case body
 explicit_statements.go:41:79: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeSlice(values)
   type: im.FrozenSlice[int]
@@ -31,17 +31,11 @@ explicit_statements.go:48:15: unsupported immutable operation: Freeze requires a
   source: im.FreezeSlice(values)
   type: im.FrozenSlice[int]
   fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
-explicit_statements.go:56:7: unsupported immutable operation: protected operation is outside the supported statement forms
-  source: ready <- value.X
-  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form
-explicit_statements.go:65:10: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-explicit_statements.go:65:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
+explicit_statements.go:59:10: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+explicit_statements.go:59:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: _, values["first"] = <-ready
-  fix: keep protected values and native builders out of channel expressions and receive targets; use them in the selected case body
-explicit_statements.go:71:9: unsupported immutable operation: Freeze requires a standalone single binding
+  fix: keep Local values and native builders out of channel expressions and receive targets; use them in the selected case body
+explicit_statements.go:65:9: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeMap(values)
   type: im.FrozenMap[string, int]
   fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
-explicit_statements.go:83:58: unsupported immutable operation: protected operation is outside the supported statement forms
-  source: ready <- value.X
-  fix: use a separate assignment, direct synchronous call, value return, or documented conditional/loop form

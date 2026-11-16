@@ -37,7 +37,8 @@ Frozen, Copied, or read-result payload types.
 - Copied records and their ordinary holders use normal Go operations. Pointers
   to ordinary Copied storage are allowed; pointers do not satisfy the Copied proof.
 - Each record in a proved field needs its own marker. Unmarked structs can
-  hold Copied values and [Frozen pointers](frozen-records.md#stored-pointers--exhaustive),
+  hold Copied values, [Frozen handles](common-forms.md#ordinary-frozen-handle-slots--exhaustive),
+  and [Frozen pointers](frozen-records.md#stored-pointers--exhaustive),
   including their ordinary containers. They cannot own Frozen records by value
   or Local data. See the complete [Copied forms](copied.md).
 - Native containers, unmarked interfaces, functions, and Local values are not Frozen fields.

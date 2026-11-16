@@ -12,12 +12,12 @@ func (c *subsetChecks) matchWrite(destination ast.Expr) string {
 			return ""
 		}
 		if !c.protectedSelection(target) && !c.protectedRoot(target.X) &&
-			!c.queries.Contains(c.pass.TypesInfo.TypeOf(target)) {
+			!c.queries.Owns(c.pass.TypesInfo.TypeOf(target)) {
 			return ""
 		}
 	case *ast.IndexExpr:
 		if c.ownedExpression(target.X) || (!c.protectedRoot(target.X) &&
-			!c.queries.Contains(c.pass.TypesInfo.TypeOf(target))) {
+			!c.queries.Owns(c.pass.TypesInfo.TypeOf(target))) {
 			return ""
 		}
 	}

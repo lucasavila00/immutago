@@ -101,7 +101,7 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 	case *types.Pointer:
 		return c.subsetPointer(t, u, seen)
 	case *types.Array:
-		if c.queries.Contains(t) {
+		if c.queries.Owns(t) {
 			if reason := c.proofs.Reason(t); reason != "" {
 				return reason
 			}
@@ -118,13 +118,13 @@ func (c *subsetChecks) subsetType(t types.Type, seen map[types.Type]bool) string
 
 // subsetPointer proves the concrete target and rejects hidden pointer forms.
 func (c *subsetChecks) subsetPointer(t types.Type, pointer *types.Pointer, seen map[types.Type]bool) string {
-	if _, named := types.Unalias(t).(*types.Named); named && c.queries.Contains(t) {
+	if _, named := types.Unalias(t).(*types.Named); named && c.queries.Owns(t) {
 		return "defined pointer types are unsupported in protected storage; use a pointer alias"
 	}
-	if _, nested := pointer.Elem().Underlying().(*types.Pointer); nested && c.queries.Contains(t) {
+	if _, nested := pointer.Elem().Underlying().(*types.Pointer); nested && c.queries.Owns(t) {
 		return "pointer indirection is unsupported"
 	}
-	if c.queries.Contains(t) && !checker.Marked(pointer.Elem()) {
+	if c.queries.Owns(t) && !checker.Marked(pointer.Elem()) {
 		return "immutable references require a concrete marked struct target"
 	}
 	if checker.Marked(pointer.Elem()) {
@@ -141,7 +141,7 @@ func (c *subsetChecks) protectedReference(t types.Type) bool {
 		return false
 	}
 	_, ok := t.Underlying().(*types.Pointer)
-	return ok && c.queries.Contains(t)
+	return ok && c.queries.Owns(t)
 }
 
 // protectedRoot follows selectors and indices to detect protected owners.
@@ -149,7 +149,7 @@ func (c *subsetChecks) protectedRoot(e ast.Expr) bool {
 	if c.pass.TypesInfo.Types[e].IsType() {
 		return false
 	}
-	if c.queries.Contains(c.pass.TypesInfo.TypeOf(e)) {
+	if c.queries.Owns(c.pass.TypesInfo.TypeOf(e)) {
 		return true
 	}
 	switch x := e.(type) {
@@ -180,15 +180,15 @@ func stringType(t types.Type) bool {
 func (c *subsetChecks) subsetContainer(t types.Type) string {
 	switch u := t.(type) {
 	case *types.Slice:
-		if c.queries.Contains(u.Elem()) {
+		if c.queries.Owns(u.Elem()) {
 			return "native slices of immutable storage are unsupported"
 		}
 	case *types.Map:
-		if c.queries.Contains(u.Key()) || c.queries.Contains(u.Elem()) {
+		if c.queries.Owns(u.Key()) || c.queries.Owns(u.Elem()) {
 			return "native maps of immutable storage are unsupported"
 		}
 	case *types.Chan:
-		if c.queries.Contains(u.Elem()) {
+		if c.queries.Owns(u.Elem()) {
 			return "channels of immutable storage are unsupported"
 		}
 	}

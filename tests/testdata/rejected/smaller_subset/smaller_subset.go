@@ -23,7 +23,7 @@ func genericBuild[T ~int](value T) im.FrozenSlice[T] {
 	return frozen
 }
 func arrayReference()      { p := &[2]Node{}; _ = (*p)[0].Value }
-func collectionReference() { p := new(im.FrozenSlice[int]); _ = p.Len() }
+func projectionReference() { p := new(im.SliceProjection[int]); _ = p.Len() }
 func capturedReference() func() int {
 	shared := &Node{Value: 1}
 	return func() int { return shared.Value }

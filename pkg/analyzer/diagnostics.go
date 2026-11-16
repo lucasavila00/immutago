@@ -40,15 +40,14 @@ func diagnosticType(t types.Type) string {
 var subsetFixes = map[string]string{
 	"protected operation is outside the supported expression forms": "use a documented concrete value, pointer, " +
 		"projection, or builder operation",
-	"protected value conversions are unsupported": "construct the destination marked value from copied fields; " +
-		"keep frozen collections in their original im type",
+	"protected value conversions are unsupported": "construct the destination marked value from copied fields",
 	"native builders require fresh local bindings or append to the same handle": "declare one fresh local builder; " +
 		"use values = append(values, element) to extend it",
 	"Local pointers cannot enter aggregate storage": "keep a Local value in a local binding, or store a Frozen pointer",
 	"Local values and pointers cannot be stored in package variables": "keep Local values in local bindings; " +
 		"copy the required data into Frozen values before saving it",
 	"immutable references require a concrete marked struct target": "allocate a concrete struct that embeds " +
-		"im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses",
+		"im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs",
 	"returning Local pointers is unsupported": "return a Local value copy, or use im.Frozen " +
 		"for objects whose pointers must be shared",
 	"global Local pointers are unsupported":        "keep the Local pointer local, or store a Frozen value",
@@ -81,8 +80,8 @@ var subsetFixes = map[string]string{
 		"receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage",
 	"multiple assignments involving protected storage are unsupported": "use one protected destination, " +
 		"or local names for all results of one direct typed call",
-	"protected storage is unsupported in select communication clauses": "keep protected " +
-		"values and native builders out of channel expressions and receive targets; use them in the selected case body",
+	"protected storage is unsupported in select communication clauses": "keep Local values and native builders " +
+		"out of channel expressions and receive targets; use them in the selected case body",
 	"Freeze requires a standalone single binding": "assign frozen := im.FreezeSlice(builder) " +
 		"or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value",
 	"freeze functions must be called directly": "call im.FreezeMap(builder) or im.FreezeSlice(builder) " +

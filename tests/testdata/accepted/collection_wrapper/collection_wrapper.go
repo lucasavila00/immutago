@@ -1,6 +1,6 @@
 //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 
-package rejected
+package accepted
 
 import "github.com/lucasavila00/immutago/pkg/im"
 
@@ -10,4 +10,4 @@ type Good struct {
 	Array [2]int
 }
 
-type Bad struct{ Value im.FrozenSlice[int] }
+type Holder struct{ Value im.FrozenSlice[int] }

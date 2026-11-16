@@ -17,6 +17,10 @@ func (c Count) Score(features []float32) float64 { return float64(c.N) }
 func TestFrozenInterfaceForms(t *testing.T) {
 	cases := []struct{ name, source string }{
 		{"zero and nil", `func f(){var s Scorer; s=nil; var other Scorer=nil; _=s; _=other}`},
+		{"unmarked nested zero", `type Holder struct{Values [0]Scorer}`},
+		{"pointer interface", `func f(){var s *Scorer;_=s}`},
+		{"typed nil", `func f(){_=Scorer(nil)}`},
+		{"variadic interface input", `func take(...Scorer){};func f(){take(&Tree{})}`},
 		{"value", `func f(){var s Scorer=Count{N:2};_=s.Score(nil)}`},
 		{"pointer", `func f(){s:=Scorer(&Tree{Weight:2});_=s.Score([]float32{1})}`},
 		{"nil pointer", `func f(){var p *Tree; var s Scorer=p; _=s!=nil}`},
@@ -64,7 +68,6 @@ func(b *Bad)Score([]float32)float64{return 0};func f(){var s Scorer=&Bad{};_=s}`
 		{"implicit dereference", `func f(){var s Scorer=&Count{};_=s}`, "receivers must match"},
 		{"promoted interface call", `type Outer struct{im.Frozen;Scorer};
 func f(o Outer){_=o.Score(nil)}`, "Frozen data fields must be named"},
-		{"unmarked nested zero", `type Holder struct{Values [0]Scorer}`, "unmarked struct"},
 		{"anonymous", `func f(){var s interface{im.FrozenInterface;Score([]float32)float64}=&Tree{};
 _=s}`, "anonymous interfaces"},
 		{"local declaration", `func f(){type LocalScorer interface{Scorer};var s LocalScorer;
@@ -73,8 +76,6 @@ _=s}`, "package-level declarations"},
 func f(){var s Scorer=Outer{};_=s}`, "Frozen data fields must be named"},
 		{"unmarked wrapper", `type Outer struct{Scorer};
 func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.Frozen"},
-		{"pointer interface", `func f(){var s *Scorer;_=s}`, "concrete marked struct target"},
-		{"typed nil", `func f(){_=Scorer(nil)}`, "protected value conversions"},
 		{"ordinary interface", `func f(s Scorer){var other any=s;_=other}`, ""},
 		{"assertion", `func f(s Scorer){_=s.(*Tree)}`, ""},
 		{"type switch", `func f(s Scorer){switch s.(type){case *Tree:}}`, ""},
@@ -86,7 +87,6 @@ func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.
 		{"callback", `func f(s Scorer,call func(Scorer)){call(s)}`, ""},
 		{"generic", `func identity[T any](v T)T{return v};func f(s Scorer){_=identity(s)}`, ""},
 
-		{"variadic interface input", `func take(...Scorer){};func f(){take(&Tree{})}`, "native slices"},
 		{"variadic boxing", `func take(...any){};func f(s Scorer){take(s)}`, ""},
 		{"Copied interface field", `type Bad struct{im.Copied;Scorer Scorer}`, "is not a Copied value"},
 

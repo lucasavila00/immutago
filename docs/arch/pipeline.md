@@ -82,7 +82,8 @@ Cause links cannot form a cycle. Query order can select a different real cause.
 | Graph | Cache key | Answer propagated to owners |
 | --- | --- | --- |
 | Type proof | Type + Frozen, Copied, or ReadResult | A component failed the requested category. |
-| [Storage classification](../../internal/checker/classification.go) | Type + storage | A component is protected storage or a native builder entry. |
+| [Source classification](../../internal/checker/classification.go) | Type + source | A stored component or callable contract needs im source checks. |
+| Ownership classification | Type + ownership | A component owns Frozen records or Local storage; Frozen handle slots stay ordinary. |
 | Transport classification | Type + transport | A component needs restricted movement; persistent Frozen values stop this walk. |
 | Callback classification | Type + callback | A parameter or result needs restricted transport. |
 | Local and service-reference classification | Type + query | A component contains Local values or service references. |

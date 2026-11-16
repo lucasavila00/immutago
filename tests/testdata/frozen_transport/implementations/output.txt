@@ -1,3 +1,9 @@
+forms.go:11:46: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
+  source: return api.Identity(value)
+  fix: use the documented immutable value and reference forms
+forms.go:13:29: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
+  source: return value
+  fix: use the documented immutable value and reference forms
 forms.go:16:6: unsupported immutable operation: Frozen interface implementation: interface{} is not provably immutable
   source: value.(api.Reader)
   type: api.Reader
@@ -15,4 +21,8 @@ forms.go:26:50: unsupported immutable operation: Frozen interface implementation
   fix: use the documented immutable value and reference forms
 forms.go:7:6: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
   source: reader api.Reader = value
+  fix: use the documented immutable value and reference forms
+forms.go:9:2: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
+  source: take(api.Identity(value))
+  type: ()
   fix: use the documented immutable value and reference forms

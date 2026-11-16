@@ -41,7 +41,7 @@ func writes(value api.Data) {
 	_ = value.Counts[0].Read()
 }
 func builders() {
-	values := []im.FrozenString{im.FreezeString("x")}
+	values := []api.Count{{N: 1}}
 	alias := values
 	_ = alias
 }
@@ -58,4 +58,4 @@ func pointer(value *View) {
 
 type Box[T any] struct{ Value T }
 
-var _ Box[im.FrozenString]
+var _ Box[api.Count]

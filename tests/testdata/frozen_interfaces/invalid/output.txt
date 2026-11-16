@@ -13,10 +13,6 @@ invalid.go:16:53: unsupported immutable operation: Values: []int is not provably
   source: &Mutable{}
   type: *invalid.Mutable
   fix: use the documented immutable value and reference forms
-invalid.go:18:25: unmarked struct contains immutable field Scorer; embed an immutable marker
-  owner: invalid.Hidden; field type: api.Scorer
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
 invalid.go:20:45: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
   source: return Hidden{Scorer: s}
   fix: use the documented immutable value and reference forms

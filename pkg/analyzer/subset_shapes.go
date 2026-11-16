@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"go/ast"
+	"go/token"
 	"go/types"
 )
 
@@ -22,7 +23,7 @@ func (c *subsetChecks) protectedStorage(expression ast.Expr) bool {
 		if c.pass.TypesInfo.Types[expression].IsType() {
 			return false
 		}
-		if c.queries.Contains(c.pass.TypesInfo.TypeOf(expression)) {
+		if c.queries.Owns(c.pass.TypesInfo.TypeOf(expression)) {
 			return true
 		}
 		switch node := expression.(type) {
@@ -57,7 +58,7 @@ func (c *subsetChecks) protectedSelection(selector *ast.SelectorExpr) bool {
 		if pointer, ok := owner.Underlying().(*types.Pointer); ok {
 			owner = pointer.Elem()
 		}
-		if c.queries.Contains(owner) {
+		if c.queries.Owns(owner) {
 			return true
 		}
 		owner = owner.Underlying().(*types.Struct).Field(index).Type()
@@ -113,8 +114,14 @@ func (c *subsetChecks) matchRestrictedStatement(statement ast.Stmt) string {
 		if (len(statement.Lhs) != 1 || len(statement.Rhs) != 1) && !c.resultAssignment(statement) {
 			return "multiple assignments involving protected storage are unsupported"
 		}
+	case *ast.RangeStmt:
+		if statement.Tok == token.ASSIGN && statement.Key != nil && statement.Value != nil {
+			return "multiple assignments involving protected storage are unsupported"
+		}
 	case *ast.GoStmt, *ast.DeferStmt:
 		return "protected storage requires synchronous calls"
+	case *ast.SendStmt:
+		return "protected operation is outside the supported statement forms"
 	}
 	return ""
 }
@@ -135,24 +142,38 @@ func (c *subsetChecks) matchStatementNode(statement ast.Stmt) string {
 	case *ast.IfStmt, *ast.ForStmt:
 		return ""
 	case *ast.ExprStmt:
-		if call, ok := ast.Unparen(statement.X).(*ast.CallExpr); ok {
-			return c.matchCall(call)
-		}
-		if switched, ok := c.parents[statement].(*ast.TypeSwitchStmt); ok && switched.Assign == statement {
-			if assertion, ok := ast.Unparen(statement.X).(*ast.TypeAssertExpr); ok && assertion.Type == nil &&
-				!c.restrictedOperand(assertion.X) {
-				return ""
-			}
-		}
+		return c.matchExpressionStatement(statement)
 	case *ast.GoStmt:
 		return c.matchCall(statement.Call)
 	case *ast.DeferStmt:
 		return c.matchCall(statement.Call)
+	case *ast.SendStmt:
+		if !c.protectedStorage(statement.Chan) {
+			channel := c.pass.TypesInfo.TypeOf(statement.Chan).Underlying().(*types.Chan)
+			return c.matchTransport(c.pass.TypesInfo.TypeOf(statement.Value), channel.Elem())
+		}
 	case *ast.CaseClause:
 		if block, ok := c.parents[statement].(*ast.BlockStmt); ok {
 			if parent, ok := c.parents[block].(*ast.SwitchStmt); ok {
 				return c.matchSwitch(parent)
 			}
+		}
+	}
+	return "protected operation is outside the supported statement forms"
+}
+
+// matchExpressionStatement permits calls, ordinary channel receives, and no-binding type switches.
+func (c *subsetChecks) matchExpressionStatement(statement *ast.ExprStmt) string {
+	if receive, ok := ast.Unparen(statement.X).(*ast.UnaryExpr); ok && receive.Op == token.ARROW {
+		return c.matchUnary(receive)
+	}
+	if call, ok := ast.Unparen(statement.X).(*ast.CallExpr); ok {
+		return c.matchCall(call)
+	}
+	if switched, ok := c.parents[statement].(*ast.TypeSwitchStmt); ok && switched.Assign == statement {
+		if assertion, ok := ast.Unparen(statement.X).(*ast.TypeAssertExpr); ok && assertion.Type == nil &&
+			!c.restrictedOperand(assertion.X) {
+			return ""
 		}
 	}
 	return "protected operation is outside the supported statement forms"

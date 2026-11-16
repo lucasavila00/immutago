@@ -20,6 +20,9 @@ projection_adapters.go:7:14: unsupported immutable operation: callbacks require 
   source: im.StringOf[string]
   type: func(value im.Projection[string]) im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
+projection_adapters.go:7:2: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: stringOf := im.StringOf[string]
+  fix: call a named, non-generic function directly with a concrete immutable parameter
 projection_adapters.go:8:6: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
   source: stringOf(text)
   type: im.StringProjection
@@ -248,6 +251,9 @@ snapshot_holders.go:26:10: unsupported immutable operation: method values requir
   source: h.Current.Load
   type: func() api.ModelProjection
   fix: call the method directly (value.Method(...)); do not save or pass its method value
+snapshot_holders.go:26:2: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: read := h.Current.Load
+  fix: call a named, non-generic function directly with a concrete immutable parameter
 snapshot_holders.go:27:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: read
   type: func() api.ModelProjection

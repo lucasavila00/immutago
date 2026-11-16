@@ -1,7 +1,7 @@
 subset_generic_read.go:20:28: unsupported immutable operation: immutable references require a concrete marked struct target
   source: *T
   type: *T
-  fix: allocate a concrete struct that embeds im.Frozen or im.Local; copy arrays and frozen collection values without taking their addresses
+  fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs
 subset_generic_read.go:20:6: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
   source: readGeneric
   type: func[T rejected.Good](p *T)

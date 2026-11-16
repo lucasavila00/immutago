@@ -34,7 +34,7 @@ const ServiceMarker = "Service"
 func Contains(t types.Type) bool
 ```
 
-Contains reports protected storage, including its holders and containers. It runs one query; use Classifier to reuse results across queries.
+Contains reports values that need im source checks, including their holders and containers. It runs one query; use Classifier to reuse results across queries.
 
 ## func Copied
 
@@ -188,7 +188,7 @@ Callable reports whether t contains a callback contract that carries protected s
 func (c *Classifier) Contains(t types.Type) bool
 ```
 
-Contains reports protected object storage, including its holders and containers. Frozen pointer handles and Copied records use ordinary Go storage rules.
+Contains reports values that need im source checks, including their holders and containers. Frozen pointer handles and Copied records use ordinary Go storage rules.
 
 ### func \(\*Classifier\) Handles
 
@@ -205,6 +205,14 @@ func (c *Classifier) Locals(t types.Type) bool
 ```
 
 Locals reports local projections or records in storage, including through arrays and pointers.
+
+### func \(\*Classifier\) Owns
+
+```go
+func (c *Classifier) Owns(t types.Type) bool
+```
+
+Owns reports protected object storage, including its holders and containers. Frozen handles can occupy ordinary mutable slots without changing their targets.
 
 ### func \(\*Classifier\) Transport
 

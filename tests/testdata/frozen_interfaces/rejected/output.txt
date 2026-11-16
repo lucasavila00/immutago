@@ -1,54 +1,38 @@
 forms.go:10:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved api.ScorerProjection
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-forms.go:11:13: unsupported immutable operation: channels of immutable storage are unsupported
-  source: chan api.Scorer
-  type: chan api.Scorer
-  fix: keep immutable values in owned locals or im collections; channels of these values are outside this subset
-forms.go:13:21: unmarked struct contains immutable field Value; embed an immutable marker
-  owner: rejected.Holder; field type: api.Scorer
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-forms.go:16:18: service method Raw must return a read result: example.com/consumer/api.Scorer is not a Copied value
+forms.go:14:18: service method Raw must return a read result: example.com/consumer/api.Scorer is not a Copied value
   result type: api.Scorer
   fix: copy scalar fields, or use a local projection
-forms.go:28:30: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+forms.go:26:30: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: local
   type: api.ScorerProjection
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-forms.go:29:6: unsupported immutable operation: protected value conversions are unsupported
-  source: api.Scorer(nil)
-  type: api.Scorer
-  fix: construct the destination marked value from copied fields; keep frozen collections in their original im type
-forms.go:30:6: unsupported immutable operation: Frozen interface method receivers must match the converted type exactly
+forms.go:27:6: unsupported immutable operation: Frozen interface method receivers must match the converted type exactly
   source: implicit api.Scorer = &implementation.Count{}
   fix: convert a value for value methods or a fresh pointer for pointer methods; do not rely on implicit dereferences
-forms.go:32:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+forms.go:29:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = local
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-forms.go:33:6: unsupported immutable operation: example.com/consumer/api.Scorer is not a Copied value
+forms.go:30:6: unsupported immutable operation: example.com/consumer/api.Scorer is not a Copied value
   source: im.Value(im.ProjectionOf(s))
   type: api.Scorer
   fix: copy scalar fields, or use a local projection
-forms.go:33:9: immutable type argument: example.com/consumer/api.Scorer is not a Copied value
+forms.go:30:9: immutable type argument: example.com/consumer/api.Scorer is not a Copied value
   type: api.Scorer
   fix: copy scalar fields, or use a local projection
-forms.go:44:11: unsupported immutable operation: native slices of immutable storage are unsupported
-  source: ...api.Scorer
-  type: []api.Scorer
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-forms.go:49:2: unsupported immutable operation: writes to immutable objects are unsupported
+forms.go:45:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: tree.Weight = 4
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-forms.go:53:6: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-forms.go:57:6: Cell slots and their holders cannot be copied or transported by value
-forms.go:57:9: immutable type argument: Frozen storage cannot contain Local values
+forms.go:49:6: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+forms.go:53:6: Cell slots and their holders cannot be copied or transported by value
+forms.go:53:9: immutable type argument: Frozen storage cannot contain Local values
   type: api.ScorerProjection
   fix: store Frozen data; keep its Projection or Local result in local bindings
-forms.go:59:6: Frozen collection: Frozen storage cannot contain Local values
+forms.go:55:6: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenSlice[api.ScorerProjection]
   fix: store Frozen data; keep its Projection or Local result in local bindings
-forms.go:59:9: immutable type argument: Frozen storage cannot contain Local values
+forms.go:55:9: immutable type argument: Frozen storage cannot contain Local values
   type: api.ScorerProjection
   fix: store Frozen data; keep its Projection or Local result in local bindings
 parameters.go:11:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
@@ -83,10 +67,6 @@ parameters.go:30:19: unsupported immutable operation: callbacks require ordinary
   source: protectedInput
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-parameters.go:30:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
-  source: reader.Apply(protectedInput, nil)
-  type: int
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 parameters.go:31:18: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: protectedInput
   type: func() im.StringProjection
@@ -99,10 +79,6 @@ parameters.go:32:19: unsupported immutable operation: user generic instantiation
   source: identity(text)
   type: im.StringProjection
   fix: use a direct non-generic function with concrete parameter types
-parameters.go:32:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
-  source: reader.Apply(identity(text), nil)
-  type: int
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 variadic.go:11:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
   source: reader.Box(text)
   type: int
@@ -131,10 +107,6 @@ variadic.go:17:17: unsupported immutable operation: callbacks require ordinary o
   source: protectedInput
   type: func() im.StringProjection
   fix: call a named, non-generic function directly with a concrete immutable parameter
-variadic.go:17:6: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
-  source: reader.Box(protectedInput)
-  type: int
-  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 variadic.go:18:16: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
   source: protectedInput
   type: func() im.StringProjection

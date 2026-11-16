@@ -51,8 +51,8 @@ func benchmarkClassificationQueries(b *testing.B, nodes []*types.Named, mode str
 		var classifier Classifier
 		for repeat := 0; repeat < 10; repeat++ {
 			for _, node := range nodes {
-				if got := classifier.Contains(node); got != (mode == "storage") {
-					b.Fatal("wrong storage classification")
+				if got := classifier.Contains(node); got != (mode != "ordinary") {
+					b.Fatal("wrong source classification")
 				}
 				if got := classifier.Callable(node); got != (mode != "ordinary") {
 					b.Fatal("wrong callback classification")

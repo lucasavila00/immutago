@@ -8,7 +8,7 @@ import (
 // TestDeclaredStorageForms checks the contract when no protected runtime source exists.
 func TestDeclaredStorageForms(t *testing.T) {
 	cases := []struct{ source, want string }{
-		{`var p *im.FrozenSlice[int]`, "concrete marked struct target"},
+		{`var p *im.SliceProjection[int]`, "concrete marked struct target"},
 		{`func read(*[1]Value){};func f(){read(nil)}`, "concrete marked struct target"},
 		{`func f()(p *[1]Value){return}`, "concrete marked struct target"},
 		{`var callback func(Value)`, "callbacks require"},
@@ -23,8 +23,6 @@ func TestDeclaredStorageForms(t *testing.T) {
 		{`type Callback=func(Value);var values map[CallbackKey][]Callback;type CallbackKey int`, "callbacks require"},
 		{`var callback interface{Read(Value)}`, "callbacks require"},
 		{`type Other Value;func f(value Value)Other{return Other(value)}`, "protected value conversions"},
-		{`type Other im.FrozenSlice[int];func f(value im.FrozenSlice[int])Other{return Other(value)}`,
-			"protected value conversions"},
 	}
 	for _, test := range cases {
 		t.Run(test.source, func(t *testing.T) {

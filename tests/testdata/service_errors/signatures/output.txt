@@ -8,6 +8,9 @@ signatures.go:20:14: unsupported immutable operation: returning Local pointers i
   source: Pointer
   type: func() (*api.Reply, error)
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+signatures.go:20:56: unsupported immutable operation: returning Local pointers is unsupported
+  source: return nil, nil
+  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 signatures.go:21:14: service method Defined must return a read result: example.com/consumer/signatures.OtherError is not a Copied value
   result type: signatures.OtherError
   fix: copy scalar fields, or use a local projection

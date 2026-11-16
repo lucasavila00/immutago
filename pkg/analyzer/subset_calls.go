@@ -83,7 +83,7 @@ func (c *subsetChecks) matchConversion(call *ast.CallExpr) string {
 			!checker.FrozenInterface(destination) && !c.queries.Transport(source) {
 			return ""
 		}
-		if c.queries.Contains(source) || c.queries.Contains(destination) {
+		if c.queries.Owns(source) || c.queries.Owns(destination) {
 			return "protected value conversions are unsupported"
 		}
 		return ""
@@ -96,11 +96,11 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 	switch builtin.Name() {
 	case "new":
 		if pointer, ok := c.pass.TypesInfo.TypeOf(call).Underlying().(*types.Pointer); ok &&
-			(checker.Marked(pointer.Elem()) || !c.queries.Contains(pointer.Elem())) {
+			(checker.Marked(pointer.Elem()) || !c.queries.Owns(pointer.Elem())) {
 			return ""
 		}
 	case "make":
-		if c.exempt[call] || !c.queries.Contains(c.pass.TypesInfo.TypeOf(call)) {
+		if c.exempt[call] || !c.queries.Owns(c.pass.TypesInfo.TypeOf(call)) {
 			return ""
 		}
 	case "len", "cap":
@@ -110,7 +110,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 		if _, array := c.pass.TypesInfo.TypeOf(call.Args[0]).Underlying().(*types.Array); array {
 			return ""
 		}
-		if !c.queries.Contains(c.pass.TypesInfo.TypeOf(call.Args[0])) {
+		if !c.queries.Owns(c.pass.TypesInfo.TypeOf(call.Args[0])) {
 			return ""
 		}
 	case "append", "delete", "clear", "copy":
@@ -119,7 +119,7 @@ func (c *subsetChecks) matchBuiltin(call *ast.CallExpr, builtin *types.Builtin) 
 			return c.matchCallArguments(call, signature)
 		}
 	}
-	if !c.protectedCallArguments(call) && !c.queries.Contains(c.pass.TypesInfo.TypeOf(call)) {
+	if !c.protectedCallArguments(call) && !c.queries.Owns(c.pass.TypesInfo.TypeOf(call)) {
 		return ""
 	}
 	return "protected operation is outside the supported expression forms"
@@ -277,7 +277,16 @@ func (c *subsetChecks) directCall(node ast.Node) *ast.CallExpr {
 
 // returnType finds the declared result type for implicit boxing checks.
 func (c *subsetChecks) returnType(statement *ast.ReturnStmt, index int) types.Type {
-	for parent := c.parents[statement]; parent != nil; parent = c.parents[parent] {
+	results := c.functionSignature(statement).Results()
+	if index < results.Len() {
+		return results.At(index).Type()
+	}
+	return nil
+}
+
+// functionSignature resolves the compiler contract of the enclosing function.
+func (c *subsetChecks) functionSignature(node ast.Node) *types.Signature {
+	for parent := c.parents[node]; parent != nil; parent = c.parents[parent] {
 		var t types.Type
 		switch fn := parent.(type) {
 		case *ast.FuncDecl:
@@ -288,11 +297,7 @@ func (c *subsetChecks) returnType(statement *ast.ReturnStmt, index int) types.Ty
 		if t == nil {
 			continue
 		}
-		signature := t.Underlying().(*types.Signature)
-		if index < signature.Results().Len() {
-			return signature.Results().At(index).Type()
-		}
-		return nil
+		return t.Underlying().(*types.Signature)
 	}
 	return nil
 }
