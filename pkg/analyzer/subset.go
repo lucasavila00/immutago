@@ -88,12 +88,12 @@ func (c *subsetChecks) visit(node ast.Node) bool {
 	if !ok {
 		return true
 	}
-	c.expressionType(expression)
 	if c.operationExpression(expression) {
 		if operation, rule := c.matchOperation(expression); rule.Reason != "" {
 			c.reportFailure(operation, rule)
 		}
 	}
+	c.expressionType(expression)
 	return true
 }
 

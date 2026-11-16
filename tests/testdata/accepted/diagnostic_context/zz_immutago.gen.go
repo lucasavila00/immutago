@@ -57,3 +57,37 @@ func (c *SettingsCell) Store(value Settings) { c.value.Store(value) }
 
 // Load reads the current value through a local projection.
 func (c *SettingsCell) Load() SettingsProjection { return NewSettingsProjection(c.value.LoadPointer()) }
+
+// StoredScorerProjection provides local read access to *StoredScorer.
+type StoredScorerProjection struct {
+	immutagoLocal
+	immutagoProjection im.Projection[*StoredScorer]
+}
+
+// NewStoredScorerProjection wraps a checked local projection without copying backing storage.
+func NewStoredScorerProjection(value im.Projection[*StoredScorer]) StoredScorerProjection {
+	return StoredScorerProjection{immutagoProjection: value}
+}
+
+// IsNil reports whether the selected pointer is nil.
+func (v StoredScorerProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
+
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v StoredScorerProjection) Unsafe() *StoredScorer { return v.immutagoProjection.Unsafe() }
+
+// Model reads the Model field.
+func (v StoredScorerProjection) Model() ScorerProjection {
+	return NewScorerProjection(im.ProjectionOf(v.immutagoProjection.Unsafe().Model))
+}
+
+// StoredScorerCell publishes frozen StoredScorer values. Do not copy it.
+type StoredScorerCell struct{ value im.Cell[StoredScorer] }
+
+// Store publishes value.
+func (c *StoredScorerCell) Store(value StoredScorer) { c.value.Store(value) }
+
+// Load reads the current value through a local projection.
+func (c *StoredScorerCell) Load() StoredScorerProjection {
+	return NewStoredScorerProjection(c.value.LoadPointer())
+}

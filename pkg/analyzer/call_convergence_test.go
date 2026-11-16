@@ -38,12 +38,12 @@ func TestDirectCollectionCallBoundaries(t *testing.T) {
 		},
 		{
 			`func f(){frozen:=im.FreezeMap(map[int]V{});m:=frozen.Projection();v,ok:=im.MapProjection[int,V].Get(m,1);_=v;_=ok}`,
-			"method expressions require ordinary or persistent Frozen receivers and contracts",
+			"collection and projection calls require a supported receiver",
 		},
 		{
 			`func f(){frozen:=im.FreezeMap(map[int]V{});m:=frozen.Projection();
    v,ok:=(im.MapProjection[int,V].Get)(m,1);_=v;_=ok}`,
-			"method expressions require ordinary or persistent Frozen receivers and contracts",
+			"collection and projection calls require a supported receiver",
 		},
 	}
 	for _, test := range cases {

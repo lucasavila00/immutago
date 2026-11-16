@@ -71,16 +71,61 @@ type Outer struct{im.Copied;Scores [2]Score}`)
 
 // TestMarkerFieldDiagnosticContext retains annotation repairs through marked owners and arrays.
 func TestMarkerFieldDiagnosticContext(t *testing.T) {
-	for _, owner := range []string{"im.Copied", "im.Local"} {
+	for _, owner := range []string{"im.Frozen", "im.Copied", "im.Local"} {
 		for _, marker := range []string{"im.Frozen", "im.Local", "im.Copied", "im.FrozenInterface"} {
-			for _, field := range []string{"Marker", "[0]Marker"} {
-				got := checkSource(t, "type Marker="+marker+";type Record struct{"+owner+";Data "+field+"}")
+			for _, field := range []string{"Marker", "[0]Marker", "[2][1]Marker"} {
+				got := checkTypeSource(t, "type Marker="+marker+";type Record struct{"+owner+";Data "+field+"};"+
+					"type Outer struct{"+owner+";Records [2]Record}")
 				if !(strings.Contains(got, "immutable markers are annotations, not data") ||
-					strings.Contains(got, "immutable markers must be embedded by value")) ||
-					strings.Contains(got, "if a Copied record") {
+					strings.Contains(got, "immutable markers must be embedded by value")) {
 					t.Fatal(got)
 				}
+				if marker == "im.FrozenInterface" {
+					repair := map[string]string{
+						"im.Frozen": "use that interface as the payload",
+						"im.Local":  "use its generated projection as the read result",
+						"im.Copied": "replace its im.Copied marker with im.Local",
+					}[owner]
+					if !strings.Contains(got, repair) {
+						t.Fatal(got)
+					}
+				}
 			}
+		}
+	}
+}
+
+// TestCloneDiagnosticContext reports the Copied rule for each projection argument.
+func TestCloneDiagnosticContext(t *testing.T) {
+	for _, payload := range []string{"Settings", "Alias", "[2]Settings", "[0][2]Alias", "*Settings", "Scorer"} {
+		for _, projection := range []string{
+			"im.SliceProjection[%s]", "im.MapProjection[int,%s]", "im.MapProjection[%s,int]",
+		} {
+			source := `type Settings struct{im.Frozen;Limit int};type Alias=Settings;
+type Scorer interface{im.FrozenInterface;Score()int};func f(p ` + fmt.Sprintf(projection, payload) + `){_=p.Clone()}`
+			got := checkSource(t, source)
+			if !strings.Contains(got, "is not a Copied value\n  source: p.Clone()") ||
+				!strings.Contains(got, "fix: iterate the projection with All; "+
+					"read or clone each element into a new native collection") ||
+				strings.Contains(got, "native slices of immutable storage") ||
+				strings.Contains(got, "native maps of immutable storage") {
+				t.Fatalf("%s: %s", source, got)
+			}
+		}
+	}
+}
+
+// TestCloneReceiverDiagnosticContext checks the receiver before the result payload.
+func TestCloneReceiverDiagnosticContext(t *testing.T) {
+	for _, source := range []string{
+		`type Holder struct{im.Local;im.SliceProjection[Settings]};func f(p Holder){_=p.Clone()}`,
+		`func f(p im.SliceProjection[Settings]){_=im.SliceProjection[Settings].Clone(p)}`,
+	} {
+		got := checkSource(t, `type Settings struct{im.Frozen;Limit int};`+source)
+		if !strings.Contains(got, "collection and projection calls require a supported receiver") ||
+			!strings.Contains(got, "for an embedded collection or projection, use holder.Field.Method(...)") ||
+			strings.Contains(got, "is not a Copied value") {
+			t.Fatal(got)
 		}
 	}
 }

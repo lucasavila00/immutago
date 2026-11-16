@@ -87,8 +87,9 @@ var subsetFixes = map[string]string{
 		"use (*pointer).Method() for a value receiver",
 	"multiple assignments involving protected storage are unsupported": "use one protected destination, " +
 		"or local names for all results of one direct typed call",
-	"protected storage is unsupported in select communication clauses": "keep Local values and native builders " +
-		"out of channel expressions and receive targets; use them in the selected case body",
+	"protected storage is unsupported in select communication clauses": "use ordinary values or Frozen pointers " +
+		"or handles in select communication; do Local reads, builder edits, and Cell calls before select " +
+		"or in the selected case body",
 	"Freeze requires a standalone single binding": "assign frozen := im.FreezeSlice(builder) " +
 		"or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value",
 	"freeze functions must be called directly": "call im.FreezeMap(builder) or im.FreezeSlice(builder) " +
@@ -122,6 +123,8 @@ var subsetFixes = map[string]string{
 		"function directly with a concrete immutable parameter",
 	"callbacks require ordinary or persistent Frozen parameters and results": "call a named, non-generic " +
 		"function directly with a concrete immutable parameter",
+	"collection and projection calls require a supported receiver": "call value.Method(...); for an embedded " +
+		"collection or projection, use holder.Field.Method(...); do not call through the type",
 	"method expressions require ordinary or persistent Frozen receivers and contracts": "call the receiver method " +
 		"directly (value.Method(...)); do not call it through the type",
 	"method values require ordinary or persistent Frozen receivers and contracts": "call the method directly " +

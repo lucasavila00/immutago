@@ -1,3 +1,64 @@
+clone_records.go:10:6: unsupported immutable operation: array element: example.com/consumer/diagnostic_context.Settings is not a Copied value
+  source: keys.Clone()
+  type: map[[0]diagnosticcontext.Record]int
+  fix: iterate the projection with All; read or clone each element into a new native collection
+clone_records.go:15:6: unsupported immutable operation: *example.com/consumer/diagnostic_context.Settings is not a Copied value
+  source: pointers.Clone()
+  type: []*diagnosticcontext.Settings
+  fix: iterate the projection with All; read or clone each element into a new native collection
+clone_records.go:16:6: unsupported immutable operation: example.com/consumer/diagnostic_context.Scorer is not a Copied value
+  source: interfaces.Clone()
+  type: []diagnosticcontext.Scorer
+  fix: iterate the projection with All; read or clone each element into a new native collection
+clone_records.go:17:6: unsupported immutable operation: *example.com/consumer/diagnostic_context.Settings is not a Copied value
+  source: mapPointers.Clone()
+  type: map[int]*diagnosticcontext.Settings
+  fix: iterate the projection with All; read or clone each element into a new native collection
+clone_records.go:18:6: unsupported immutable operation: example.com/consumer/diagnostic_context.Scorer is not a Copied value
+  source: mapInterfaces.Clone()
+  type: map[int]diagnosticcontext.Scorer
+  fix: iterate the projection with All; read or clone each element into a new native collection
+clone_records.go:22:11: unsupported immutable operation: example.com/consumer/diagnostic_context.Settings is not a Copied value
+  source: records.Clone()
+  type: []diagnosticcontext.Record
+  fix: iterate the projection with All; read or clone each element into a new native collection
+clone_records.go:23:17: unsupported immutable operation: example.com/consumer/diagnostic_context.Settings is not a Copied value
+  source: (records.Clone)()
+  type: []diagnosticcontext.Record
+  fix: iterate the projection with All; read or clone each element into a new native collection
+clone_records.go:25:13: unsupported immutable operation: example.com/consumer/diagnostic_context.Settings is not a Copied value
+  source: records.Clone()
+  type: []diagnosticcontext.Record
+  fix: iterate the projection with All; read or clone each element into a new native collection
+clone_records.go:25:2: unsupported builder assigned: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+clone_records.go:25:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
+  source: assigned = records.Clone()
+  fix: declare one fresh local builder; use values = append(values, element) to extend it
+clone_records.go:39:10: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+clone_records.go:43:30: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+  source: records
+  type: im.SliceProjection[diagnosticcontext.Score]
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+clone_records.go:52:6: unsupported immutable operation: promoted immutable methods are unsupported
+  source: values.Clone()
+  type: []int
+  fix: name the embedded field explicitly and call a method allowed on that field; copy scalar fields to ordinary locals before calling their methods
+clone_records.go:56:6: unsupported immutable operation: method expressions require ordinary or persistent Frozen receivers and contracts
+  source: im.SliceProjection[int].Clone(values)
+  type: []int
+  fix: call the receiver method directly (value.Method(...)); do not call it through the type
+clone_records.go:7:6: unsupported immutable operation: example.com/consumer/diagnostic_context.Settings is not a Copied value
+  source: records.Clone()
+  type: map[int]diagnosticcontext.Record
+  fix: iterate the projection with All; read or clone each element into a new native collection
+clone_records.go:8:6: unsupported immutable operation: array element: example.com/consumer/diagnostic_context.Settings is not a Copied value
+  source: pairs.Clone()
+  type: [][2]diagnosticcontext.Settings
+  fix: iterate the projection with All; read or clone each element into a new native collection
+clone_records.go:9:6: unsupported immutable operation: array element: example.com/consumer/diagnostic_context.Settings is not a Copied value
+  source: mapPairs.Clone()
+  type: map[int][2]diagnosticcontext.Settings
+  fix: iterate the projection with All; read or clone each element into a new native collection
 fields.go:11:5: Copied record: Label: github.com/lucasavila00/immutago/pkg/im.StringProjection is not a Copied value
   type: diagnosticcontext.ProjectionScore
   fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
@@ -22,9 +83,25 @@ fields.go:46:5: Copied record: Markers: array element: immutable markers are ann
   fix: embed the marker in a named struct; use data fields for values
 fields.go:52:2: immutable field Markers requires a read result: array element: immutable markers are annotations, not data
   owner: diagnosticcontext.InterfaceMarkerData; field type: [0]im.FrozenInterface
-  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+  fix: embed im.FrozenInterface in a named interface; use its generated projection as the read result
+fields.go:59:2: immutable field Model requires a read result: immutable markers are annotations, not data
+  owner: diagnosticcontext.InterfaceReply; field type: diagnosticcontext.InterfaceMarker
+  fix: embed im.FrozenInterface in a named interface; use its generated projection as the read result
+fields.go:63:5: Copied record: Models: array element: immutable markers are annotations, not data
+  type: diagnosticcontext.InterfaceSummary
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 fields.go:6:5: Copied record: Label: string is not a Copied value
   type: diagnosticcontext.TextScore
+  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+fields.go:70:10: unsupported immutable operation: array element: Model: immutable markers are annotations, not data
+  source: [2]InterfaceReply
+  type: [2]diagnosticcontext.InterfaceReply
+  fix: embed im.FrozenInterface in a named interface; use its generated projection as the read result
+fields.go:70:2: immutable field Replies requires a read result: array element: Model: immutable markers are annotations, not data
+  owner: diagnosticcontext.NestedInterfaceReply; field type: [2]diagnosticcontext.InterfaceReply
+  fix: embed im.FrozenInterface in a named interface; use its generated projection as the read result
+fields.go:74:5: Copied record: Summaries: array element: Models: array element: immutable markers are annotations, not data
+  type: diagnosticcontext.NestedInterfaceSummary
   fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
 operations.go:24:6: unsupported immutable operation: string is not a Copied value
   source: im.Value(title)
@@ -109,10 +186,10 @@ operations.go:50:6: unsupported immutable operation: github.com/lucasavila00/imm
   source: frozen.Clone()
   type: []im.FrozenString
   fix: iterate the projection with All; read or clone each element into a new native collection
-operations.go:51:6: unsupported immutable operation: native slices of immutable storage are unsupported
+operations.go:51:6: unsupported immutable operation: example.com/consumer/diagnostic_context.Settings is not a Copied value
   source: records.Clone()
   type: []diagnosticcontext.Settings
-  fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
+  fix: iterate the projection with All; read or clone each element into a new native collection
 operations.go:55:6: unsupported immutable operation: string is not a Copied value
   source: values.Clone()
   type: map[string]string
