@@ -11,7 +11,7 @@ those decisions useful.
 | Fixed im and supervise packages | Their reviewed implementations obey API contracts; their source is excluded from analysis. |
 | Generated projections | Verify exact bytes for interior Frozen-record addresses; retain all other source checks. |
 | Ordinary Go APIs | Obey their contracts, including string immutability and callback behavior. A Frozen pointer must not enter an API that changes its target; reflection and unsafe mutation effects are not proved. |
-| `UncheckedValue[T]` | The declaring package promises that the opaque payload never changes. |
+| `UncheckedValue[T]` | The declaring package controls payload access and synchronization. |
 
 The [package boundary](../reference/rules.md#package-boundary) defines selected source.
 A normal Go build adds no Freeze enforcement. Each relevant build configuration

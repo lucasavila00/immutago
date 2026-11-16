@@ -7,12 +7,11 @@
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
 //   - Each exported service method result is a read result or error, with no count or order limit.
 //     Promoted methods use the same rule. Init, Run, and runtime methods are exempt.
-//   - Concrete service references and direct method calls through Ref.Borrow.
 //
 // Direct im or supervise imports, used types, and failed checked dependencies
 // select packages for analysis. Ordinary Go API contracts are trusted.
-// im.UncheckedValue records the declaring package's promise that a value never
-// changes. The checker does not prove this promise.
+// im.UncheckedValue leaves payload access and synchronization to its declaring
+// package. The checker does not inspect the payload's mutable operations.
 //
 // The complete source forms and package rules are in
 // https://github.com/lucasavila00/immutago/blob/main/docs/reference/rules.md.
@@ -67,9 +66,12 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 	}()
 	c := &checks{pass: pass, reported: make(map[token.Pos]bool)}
-	forms := newSubsetChecks(pass, &c.proofs)
-	if immutable && !forms.checkGeneration() {
-		return nil, nil
+	var forms *subsetChecks
+	if immutable {
+		forms = newSubsetChecks(pass, &c.proofs)
+		if !forms.checkGeneration() {
+			return nil, nil
+		}
 	}
 	for _, file := range pass.Files {
 		if immutable {
@@ -78,7 +80,6 @@ func run(pass *analysis.Pass) (any, error) {
 			ast.Inspect(file, c.visitService)
 		}
 	}
-	forms.checkHandles()
 	if immutable {
 		forms.checkImmutable(freeze.Check(pass))
 	}
@@ -212,7 +213,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if t == nil || checker.IsCollection(t) || checker.IsProjection(t) ||
 		checker.IsLibraryType(t, "Cell") || checker.IsUncheckedValue(t) ||
-		checker.IsRuntimeType(t, checker.ServiceMarker) || checker.IsRuntimeType(t, "Ref") {
+		checker.IsRuntimeType(t, checker.ServiceMarker) {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)

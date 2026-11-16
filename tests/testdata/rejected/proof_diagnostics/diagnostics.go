@@ -50,11 +50,6 @@ func names(name im.StringProjection) {
 // The native builder rule applies here without a Freeze call.
 var points []Point
 
-func keep(ref supervise.Ref[Worker]) {
-	worker := ref.Borrow()
-	_ = worker
-}
-
 type View struct {
 	im.Local
 	Text im.StringProjection

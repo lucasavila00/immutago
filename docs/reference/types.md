@@ -6,15 +6,15 @@ that error does not belong to these categories.
 
 | Category — exhaustive | Types |
 | --- | --- |
-| Frozen | Booleans, numbers, native strings, FrozenString, unnamed arrays of Frozen values, Frozen and Copied records, unnamed pointers to Frozen records (and aliases of those pointers), [Frozen interfaces](frozen-interfaces.md), FrozenSlice/FrozenMap with Frozen arguments, UncheckedValue handles, and service references. |
-| Copied | Booleans, numbers, Copied records, service references, and unnamed arrays of Copied values. |
+| Frozen | Booleans, numbers, native strings, FrozenString, unnamed arrays of Frozen values, Frozen and Copied records, unnamed pointers to Frozen records (and aliases of those pointers), [Frozen interfaces](frozen-interfaces.md), FrozenSlice/FrozenMap with Frozen arguments, opaque handles. |
+| Copied | Booleans, numbers, Copied records, and unnamed arrays of Copied values. |
 | Local | Projection, StringProjection, SliceProjection, MapProjection, Local records, and unnamed arrays whose elements are Local. |
-| Read result | Copied, Local, UncheckedValue handles, and unnamed arrays of read results. |
+| Read result | Copied, Local, opaque handles, pointers to Frozen handle wrappers, and unnamed arrays of read results. |
 
 Defined scalar types and aliases keep their category. Named arrays need a
 Frozen, Local, or Copied record wrapper. Copied excludes native strings and
-pointers. Its structs require `im.Copied`, except opaque service references.
-Frozen records are not Copied.
+pointers. Its structs require `im.Copied`.
+Frozen records and opaque handles are not Copied.
 Defined pointer types such as `type Selected *Settings` can be stored under the
 [ordinary pointer rules](frozen-records.md#stored-pointers--exhaustive), but are
 not Frozen payload types. Use `type Selected = *Settings` for a pointer alias.
@@ -33,8 +33,9 @@ Frozen, Copied, or read-result payload types.
 - Embed exactly one marker by value; aliases work.
 - Frozen records embed only their marker. Give every data field a name:
   `Count Count`, not an embedded `Count`. Local and Copied field rules do not change.
-- Declare Frozen records as named package-scope types in non-test Go files.
-  Local and Copied records need no generation.
+- Declare Frozen records other than opaque handles as named package-scope types in non-test Go files.
+  Named opaque handles can be declared locally or in test files.
+  Opaque handles, Local records, and Copied records need no generation.
 - Set Frozen and Local fields at construction. Later field, element, or
   dereference writes into these owners fail, including writes into Copied fields.
 - Copied records and their ordinary holders use normal Go operations. Pointers
@@ -42,7 +43,7 @@ Frozen, Copied, or read-result payload types.
 - Each record in a proved field needs its own marker. Unmarked structs can
   hold Copied values, [Frozen handles](common-forms.md#ordinary-frozen-handle-slots--exhaustive),
   and [Frozen pointers](frozen-records.md#stored-pointers--exhaustive),
-  including their ordinary containers. They cannot own Frozen records by value
+  including their ordinary containers. They cannot own other Frozen records by value
   or Local data. See the complete [Copied forms](copied.md).
 - Native containers, unmarked interfaces, functions, and Local values are not Frozen fields.
 - A Cell is mutable storage, not a Frozen value or read result.
@@ -62,7 +63,7 @@ projection when reading through a Local value. See the complete
 | `frozen.Projection()` | FrozenString, FrozenSlice[E], or FrozenMap[K,V]. |
 | [Generic projection adapters](projection-primitives.md#projection-operations--exhaustive) | A Projection of the matching string, FrozenString, FrozenSlice, or FrozenMap type. |
 | `IsNil(Projection[*T])` | T is a Frozen record. |
-| `Value(Projection[T])` | T is both Frozen and a read result: Copied, UncheckedValue, or an unnamed array of these values. |
+| `Value(Projection[T])` | T is both Frozen and a read result: Copied, opaque handles, pointers to Frozen handle wrappers, or an unnamed array of these values. |
 | `CopyRecord(Projection[T])` | T is a concrete Frozen record; returns a projection of a new copied root. |
 | `Cell[T].LoadPointer()`, `SliceProjection[T].AtPointer(i)` | T is a concrete Frozen record; the result is Projection[*T]. |
 | `Projection[T].Unsafe()` | T uses the same Frozen proof; the result is T with its shared storage. |
@@ -72,7 +73,7 @@ projection when reading through a Local value. See the complete
 
 The service rule does not change a struct's field rules. A Frozen record can be
 stored in a Cell or read through Projection. For data, a service returns its generated
-projection, an im.Local result, an unchecked handle, or a separate im.Copied value. A Frozen record
+projection, an im.Local result, an opaque handle, a pointer to its Frozen wrapper, or a separate im.Copied value. A Frozen record
 with only numeric fields still keeps the Frozen rule.
 
 ## Rejected examples — non-exhaustive

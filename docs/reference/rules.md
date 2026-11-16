@@ -17,12 +17,12 @@ Use this reference to check which Go forms Immutago accepts. The
 | [Typed projections](projections.md) | Generate field projections and choose explicit storage operations. |
 | [Projection primitives](projection-primitives.md) | Check the fixed projection APIs. |
 | [Frozen values](frozen.md) | Store strings, slices, and maps; read or explicitly clone them. |
-| [Unchecked immutable values](unchecked-values.md) | Hold a value that the analyzer trusts and does not prove. |
+| [Opaque handles](unchecked-values.md) | Keep a trusted pointer behind a package API. |
 
 ## Service forms (`supervise`)
 
 - [Service results](service-results.md): result types for exported service methods.
-- [Service references](service-references.md): stored references and direct service calls.
+- [Service references](service-references.md): stored handles and stable service pointers.
 - [Supervised services](services.md): execution, failure, and shutdown.
 
 ## Rules for im and supervise
@@ -31,13 +31,14 @@ Use im type rules to check immutable data. Review service state changes and
 synchronization in the service code.
 
 Use the common forms with each type's forms. **Exhaustive** means all allowed
-forms are listed. Unlisted operations on protected storage and unlisted direct Borrow call forms
-are rejected. Ordinary service-reference storage and transport use Go rules.
+forms are listed. Unlisted operations on protected storage are rejected.
+Service references and Borrow results use ordinary Go rules.
 
 ### Required generation
 
-Declare Frozen records and Frozen interfaces as named types at package scope in
-non-test Go files. Every package with these declarations needs one exact directive:
+Declare Frozen records other than opaque handles, and Frozen interfaces, as named
+types at package scope in non-test Go files. Every package with these declarations
+needs one exact directive:
 
 ```go
 //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
@@ -45,13 +46,13 @@ non-test Go files. Every package with these declarations needs one exact directi
 
 | Package setup — exhaustive | Requirement |
 | --- | --- |
-| Frozen record or interface declaration | Named package-scope type in a `.go` file that does not end in `_test.go`. |
+| Frozen record other than an opaque handle, or Frozen interface declaration | Named package-scope type in a `.go` file that does not end in `_test.go`. |
 | Directive | Use exactly one copy of the command above, at column 1 in a non-test package source file. |
 | Output | Keep `zz_immutago.gen.go` from the current declarations and build configuration. |
-| Frozen records | Generate typed field projections, Projection constructors, and Cells. |
+| Frozen records other than opaque handles | Generate typed field projections, Projection constructors, and Cells. |
 | Frozen interfaces | Generate local method projections and Projection constructors. |
 
-Run `go generate ./...` after a record or interface changes. If no Frozen declarations
+Run `go generate ./...` after a record or interface changes. If no declarations that require generation
 remain, either keep the directive and generate once more to write an empty package
 file, or remove both the directive and `zz_immutago.gen.go`. You can remove the
 directive after generation writes the empty file. If the directive is already gone,
@@ -66,29 +67,30 @@ configuration for generation, the checker, and the build.
 | --- | --- |
 | Same generated declarations, field types, array lengths, and interface methods | Keep one output file if all configurations generate the same bytes. Constrained files can use its projections and Cells. |
 | Different generated output | Regenerate before each configuration's check and build. Use separate checkouts or build directories for concurrent configurations. |
-| A configuration excludes all Frozen declarations | Keep the directive in an unconstrained file, or use the direct generator command above to replace stale output with an empty package file. |
+| A configuration excludes all declarations that require generation | Keep the directive in an unconstrained file, or use the direct generator command above to replace stale output with an empty package file. |
 | Imported Frozen types | Generate their owning packages for the same configuration. `go generate ./...` does not generate dependencies outside the selected packages. |
 
 The checker rejects a missing directive, missing output, or stale output before
 source checks. Only verified generated code can form interior Frozen-record addresses.
 Projection.Unsafe explicitly returns a Frozen payload for shared use. All normal
 type, write, capture, generic, receiver, and transport checks still apply.
-Local and Copied records need no generation.
+Opaque handles, Local records, and Copied records need no generation.
+Named opaque handles can be declared locally or in test files.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
-| A Frozen record with no generation directive | Add the exact directive and run generation. |
-| A Frozen type inside a function or `_test.go` file | Move its declaration to a non-test Go file at package scope. |
+| A Frozen record other than an opaque handle with no generation directive | Add the exact directive and run generation. |
+| A Frozen record other than a named opaque handle inside a function or `_test.go` file | Move its declaration to a non-test Go file at package scope. |
 | An anonymous Frozen record, including a field type | Declare a named package-scope record and use that type. |
 | An alternate generation command in the directive | Use the canonical command above. |
 | A manually changed or stale generated file | Regenerate from the source declarations with the same build configuration. |
 | Output made with `GOFLAGS=-tags=audit`, checked with different schema types and no tag | Regenerate without the tag, or keep the schema and its type dependencies the same in both configurations. |
 
-### Trusted immutable values
+### Opaque handles
 
-[`im.UncheckedValue[T]`](unchecked-values.md) records the declaring package's
-promise that the wrapped value never changes. Only that package can wrap or read
-it. The checker does not prove the promise.
+[UncheckedValue and its Frozen wrappers](unchecked-values.md) keep trusted pointers.
+Their target can be mutable. The declaring package controls access and synchronization.
+The checker proves the wrapper fields and rejects Local payloads.
 
 ### Check the program
 
@@ -117,14 +119,14 @@ The checker checks a package in any of these cases, including its test files:
 | Imports a package that failed its checks, directly or through another package | Import a package with an invalid immutable field. |
 
 - Aliases, type arguments, and generic constraints also count.
-- A package that uses only supervise receives service result and reference checks.
-  Importing or using im also selects the immutable-source checks.
+- A package that uses only supervise receives service type and result checks.
+  Using im types, including the Frozen fields of Ref, also selects the im source checks.
 - The CLI and `go vet` use the same rules.
 - Other packages are trusted to obey Go contracts, including immutable strings.
 - The `im`, `supervise`, and standard-library implementations are trusted.
 - The generated Go test runner is skipped; user tests are checked.
-- User code has no suppression comments. `im.UncheckedValue` is the explicit
-  immutability trust marker.
+- User code has no suppression comments. `im.UncheckedValue` delegates
+  payload access and synchronization to its declaring package.
 - Importing `unsafe` or `reflect` is allowed; ordinary values use ordinary Go rules.
 - Protected object values need a listed form: `reflect.ValueOf(1)` is allowed,
   but `reflect.ValueOf(local)` with a Local record value fails the interface-boxing rule.
@@ -135,14 +137,14 @@ The checker checks a package in any of these cases, including its test files:
 | Rejected examples — non-exhaustive | Use instead |
 | --- | --- |
 | Cgo in a package that imports or uses im | Ordinary typed Go code. Cgo produces one error at the source package line. |
-| A function without a body whose signature contains an im type other than Copied | Supply a Go body to check its protected operations. |
+| A function without a body whose signature contains an im type other than Copied or an opaque handle | Supply a Go body to check its protected operations. |
 
 An imported package's error includes one cause and a command to see its other errors.
 
 Functions without a body use ordinary Go rules when their compiler-resolved
 receiver, parameters, results, and generic constraints contain no im type other
-than Copied. Copied records and their ordinary holders can use functions without
-a Go body. For example, `func cpuID() uint64` and
+than Copied or an opaque handle. Their ordinary holders can also use functions
+without a Go body. For example, `func cpuID() uint64` and
 `func checksum(data []byte) uint64` can use assembly implementations in a checked
 package. A declaration such as `func read(value *Config) int`, where Config embeds
 im.Frozen, needs a Go body.

@@ -12,6 +12,8 @@ import (
 	"reflect"
 	"runtime/debug"
 	"sync"
+
+	"github.com/lucasavila00/immutago/pkg/im"
 )
 
 var errGoexit = errors.New("supervise: service called runtime.Goexit")
@@ -47,13 +49,11 @@ func (p *Service[A]) Args() A { return p.args }
 // stops children created by that setup attempt.
 func (*Service[A]) Init() error { return nil }
 
-// Children returns the group owned by this service attempt. Its services wait
-// until the parent is admitted to Run, or run with cancelled contexts during cleanup.
-// The runtime stops and waits for these children
-// before the parent ends.
-// After this attempt ends, Children returns a stopped group.
-// Children panics if Start did not create the service.
-func (p *Service[A]) Children() *Group {
+// UnsafeChildren returns the child group owned by this service.
+// Call it on the original service pointer created by Start, never a value copy.
+// Parent shutdown stops and waits for the children.
+// After the parent ends, UnsafeChildren returns a stopped group.
+func (p *Service[A]) UnsafeChildren() *Group {
 	checkGroup(p.owner)
 	p.owner.mu.Lock()
 	defer p.owner.mu.Unlock()
@@ -158,19 +158,22 @@ type child struct {
 
 // Ref holds an initialized service value. Copies select the same value.
 // Stop does not invalidate a reference or wait for direct service method calls.
-type Ref[T any] struct{ value *T }
+type Ref[T any] struct {
+	im.Frozen
+	value im.UncheckedValue[T]
+}
 
 // IsZero reports whether this reference is unset.
-func (p Ref[T]) IsZero() bool { return p.value == nil }
+func (p Ref[T]) IsZero() bool { return im.Unwrap(p.value) == nil }
 
 // Borrow returns the initialized service value, including after Stop.
-// Borrow is shared, not exclusive.
+// The pointer can be stored and reused. Calls use ordinary Go synchronization.
 // A zero reference panics with "supervise: zero Ref".
 func (p Ref[T]) Borrow() *T {
-	if p.value == nil {
+	if im.Unwrap(p.value) == nil {
 		panic("supervise: zero Ref")
 	}
-	return p.value
+	return im.Unwrap(p.value)
 }
 
 // NewRoot creates an active lifetime group. A Run panic or Goexit stops the root,
@@ -243,7 +246,7 @@ func Start[T, A any, P interface {
 		return Ref[T]{}, err
 	}
 	ready = true
-	ref := Ref[T]{value: first}
+	ref := Ref[T]{value: im.Trust(first)}
 	run := func(ctx context.Context) {
 		service := P(first)
 		parent.mu.Lock()

@@ -6,7 +6,6 @@ type Local struct {
 	im.Local
 	Value int
 }
-
 var global *Local
 
 func returned() *Local      { return &Local{Value: 1} }
@@ -41,7 +40,7 @@ type LocalStored struct {
 	Pointer *Local
 }
 
-// frozenValues cannot put local records into Frozen storage.
+// frozenValues cannot put local records into persistent frozen storage.
 func frozenValues() im.FrozenSlice[Local] {
 	builder := []Local{{Value: 1}}
 	frozen := im.FreezeSlice(builder)

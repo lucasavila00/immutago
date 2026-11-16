@@ -10,6 +10,45 @@ import (
 // immutagoLocal keeps the Local marker private.
 type immutagoLocal = im.Local
 
+// CounterSnapshotProjection provides local read access to *CounterSnapshot.
+type CounterSnapshotProjection struct {
+	immutagoLocal
+	immutagoProjection im.Projection[*CounterSnapshot]
+}
+
+// NewCounterSnapshotProjection wraps a checked local projection without copying backing storage.
+func NewCounterSnapshotProjection(value im.Projection[*CounterSnapshot]) CounterSnapshotProjection {
+	return CounterSnapshotProjection{immutagoProjection: value}
+}
+
+// IsNil reports whether the selected pointer is nil.
+func (v CounterSnapshotProjection) IsNil() bool { return im.IsNil(v.immutagoProjection) }
+
+// Unsafe returns the selected pointer without a record copy or allocation.
+// The caller controls retention and must not change the target.
+func (v CounterSnapshotProjection) Unsafe() *CounterSnapshot { return v.immutagoProjection.Unsafe() }
+
+// Counter reads the Counter field.
+func (v CounterSnapshotProjection) Counter() api.Counter {
+	return v.immutagoProjection.Unsafe().Counter
+}
+
+// Pointer reads the Pointer field.
+func (v CounterSnapshotProjection) Pointer() *api.Counter {
+	return v.immutagoProjection.Unsafe().Pointer
+}
+
+// CounterSnapshotCell publishes frozen CounterSnapshot values. Do not copy it.
+type CounterSnapshotCell struct{ value im.Cell[CounterSnapshot] }
+
+// Store publishes value.
+func (c *CounterSnapshotCell) Store(value CounterSnapshot) { c.value.Store(value) }
+
+// Load reads the current value through a local projection.
+func (c *CounterSnapshotCell) Load() CounterSnapshotProjection {
+	return NewCounterSnapshotProjection(c.value.LoadPointer())
+}
+
 // ModelProjection provides local read access to *Model.
 type ModelProjection struct {
 	immutagoLocal

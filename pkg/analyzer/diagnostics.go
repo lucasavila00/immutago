@@ -38,12 +38,6 @@ func diagnosticType(t types.Type) string {
 
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
-	"use a service reference only as ref.Borrow().Method(args); " +
-		"do not extract the accessor or service pointer": "keep a concrete supervise.Ref[Service] " +
-		"and call ref.Borrow().Method(args); " +
-		"see docs/reference/service-references.md",
-	"Ref requires a service target that embeds supervise.Service": "use a concrete service struct " +
-		"that embeds supervise.Service by value",
 	"protected operation is outside the supported expression forms": "use a documented concrete value, pointer, " +
 		"projection, or builder operation",
 	"protected value conversions are unsupported": "construct the destination marked value from copied fields",

@@ -20,44 +20,40 @@ diagnostics.go:47:6: Frozen collection: type argument 1: Frozen storage cannot c
   type: im.FrozenSlice[im.StringProjection]
   fix: store Frozen data; keep its Projection or Local result in local bindings
 diagnostics.go:51:5: native builder points requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
-diagnostics.go:54:12: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *proofdiagnostics.Worker
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-diagnostics.go:63:25: unsupported immutable operation: protected storage requires synchronous calls
+diagnostics.go:58:25: unsupported immutable operation: protected storage requires synchronous calls
   source: go use(view)
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
-diagnostics.go:70:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+diagnostics.go:65:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
   fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
-diagnostics.go:71:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+diagnostics.go:66:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
   fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
-diagnostics.go:72:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+diagnostics.go:67:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
   fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
-diagnostics.go:76:14: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+diagnostics.go:71:14: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
   fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
-diagnostics.go:76:20: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+diagnostics.go:71:20: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
   fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
-diagnostics.go:76:23: immutable type argument: stored pointers require a concrete Frozen record target
+diagnostics.go:71:23: immutable type argument: stored pointers require a concrete Frozen record target
   type: *proofdiagnostics.Score
   fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
-diagnostics.go:76:49: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+diagnostics.go:71:49: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*proofdiagnostics.Score]
   fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
-diagnostics.go:83:12: Frozen collection: type argument 2: Frozen storage cannot contain Local values
+diagnostics.go:78:12: Frozen collection: type argument 2: Frozen storage cannot contain Local values
   type: im.FrozenMap[string, [1]proofdiagnostics.Name]
   fix: store Frozen data; keep its Projection or Local result in local bindings
-diagnostics.go:83:15: immutable type argument: Frozen storage cannot contain Local values
+diagnostics.go:78:15: immutable type argument: Frozen storage cannot contain Local values
   type: [1]proofdiagnostics.Name
   fix: store Frozen data; keep its Projection or Local result in local bindings
-diagnostics.go:83:2: Frozen collection: type argument 2: Frozen storage cannot contain Local values
+diagnostics.go:78:2: Frozen collection: type argument 2: Frozen storage cannot contain Local values
   type: im.FrozenMap[string, [1]proofdiagnostics.Name]
   fix: store Frozen data; keep its Projection or Local result in local bindings
-diagnostics.go:84:6: Frozen collection: type argument 2: Frozen storage cannot contain Local values
+diagnostics.go:79:6: Frozen collection: type argument 2: Frozen storage cannot contain Local values
   type: im.FrozenMap[string, [1]proofdiagnostics.Name]
   fix: store Frozen data; keep its Projection or Local result in local bindings
 repairs.go:10:16: immutable type argument: stored pointers require a concrete Frozen record target

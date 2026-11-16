@@ -4,11 +4,11 @@
 | --- | --- |
 | Frozen | Immutable stored data with the recursive [Frozen field rule](types.md). Copies can share backing storage. |
 | Frozen record | A struct with `im.Frozen`. |
-| Copied | Boolean/numeric data, records with `im.Copied`, opaque service references, and unnamed arrays of Copied values. Frozen records are not Copied. |
+| Copied | Boolean/numeric data, records with `im.Copied`, and unnamed arrays of Copied values. Frozen records are not Copied. |
 | Copied record | A struct with `im.Copied`. All data fields copy by value. Ordinary copies can change independently. It has no string or reference fields. |
 | Local value | A read projection, a record with `im.Local`, or an unnamed array of Local values. Local variables, Local records, and Local builders can hold it; package variables, ordinary records, and closures cannot. |
-| Read result | Copied, Local, UncheckedValue handles, or unnamed arrays of read results. This is a type category, not a service-specific field rule. |
-| Projection | Local access to a Frozen value. Generated types such as SettingsProjection return Copied fields, unchecked handles, or more projections. |
+| Read result | Copied, Local, opaque handles, pointers to Frozen handle wrappers, or unnamed arrays of read results. This is a type category, not a service-specific field rule. |
+| Projection | Local access to a Frozen value. Generated types such as SettingsProjection return Copied fields, opaque handles, pointers to Frozen handle wrappers, or more projections. |
 | Cell; cell holder | An `im.Cell[T]` slot; an unmarked struct containing a named slot or holder field. Generated types such as SettingsCell are holders. Holder pointers can be shared; holder values cannot be copied. |
 | Builder | A native slice or map checked for exclusive use before Freeze. |
 | FrozenString; FrozenSlice; FrozenMap | Stored string, slice, and map types. Copies share immutable backing storage. |
@@ -18,6 +18,7 @@
 | Checked package | A package selected by the [package boundary](rules.md#package-boundary). |
 | Service | A struct that embeds `supervise.Service[A]`. Init sets it up; Run does background work. |
 | Service method | A declared or promoted method on a service. Exported methods have the [result signature rule](service-results.md). |
+| Opaque handle | UncheckedValue, or a named Frozen struct with one UncheckedValue field. Copies share a target whose access rules belong to its package. |
 | Service reference | `supervise.Ref[T]`; a copyable reference to the service created by Start. |
 | Service run | One service value's background execution and child group. |
 | Group; child | A `supervise.Group` owns services and nested groups and stops them in reverse start order. Each is a child of its parent group. |

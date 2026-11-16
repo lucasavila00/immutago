@@ -13,7 +13,7 @@ package's AST and compiler type information.
 | Read failures | Report failures saved by direct dependencies. | Retain their original causes for this package's fact. |
 | Check declarations | Prove im types; check service embedding and method results. | Shared type proof cache and local diagnostics. |
 | Verify generation | Compare the generated file with current compiler types. | Exact file identity for generated interior record addresses. |
-| Check references and builders | Match direct Borrow calls; check native builder aliases and consumption. | Builder variable identities for source checks. |
+| Check references and builders | Prove handle fields; check native builder aliases and consumption. | Builder variable identities for source checks. |
 | Match source | Check complete operations on protected storage. | Diagnostics for every unmatched form. |
 | Export failure | Select one local or imported cause if the package failed. | A package fact for importers. |
 
@@ -89,7 +89,7 @@ Cause links cannot form a cycle. Query order can select a different real cause.
 | Ownership classification | Type + ownership | A component owns Frozen records or Local storage; Frozen handle slots stay ordinary. |
 | Transport classification | Type + transport | A component needs restricted movement; Frozen values stop this walk. |
 | Callback classification | Type + callback | A parameter or result needs restricted transport. |
-| Local and service-reference classification | Type + query | A component contains Local values or service references. |
+| Local classification | Type + query | A component contains Local values. |
 
 Classification uses compiler types, including constraint terms and result tuples.
 

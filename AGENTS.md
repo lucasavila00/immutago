@@ -131,8 +131,7 @@ Frozen fields, Cell[T], and Projection[T] use one Frozen proof. Local fields and
 service data outputs use one ReadResult proof. Value requires Frozen and ReadResult;
 local Clone uses Copied.
 Do not add a service-only field proof or a context-dependent marker meaning.
-Copied permits booleans, numbers, Copied records, unnamed arrays of Copied values,
-and opaque service references. Copied records contain only bool/numeric fields,
+Copied permits booleans, numbers, Copied records, and unnamed arrays of Copied values. Copied records contain only bool/numeric fields,
 unnamed arrays, and other Copied records; no strings or reference handles. Ordinary
 Copied storage and ordinary holders use normal Go mutation, pointer, method,
 interface, callback, generic, tuple, go, and defer operations. A Copied value inside
@@ -141,7 +140,7 @@ pointer-receiver calls. Copy it into ordinary storage to change it. Pointer fiel
 remain outside the Copied proof.
 Frozen records are not Copied,
 even when their fields contain only numbers. Struct results require Copied, Local, an UncheckedValue handle,
-or a generated projection.
+a Frozen handle wrapper, or a generated projection.
 Embed Frozen, Local, and Copied markers to declare record categories. The markers
 themselves do not satisfy Frozen, Copied, or ReadResult payload proofs.
 
@@ -165,22 +164,25 @@ do not copy parent values during field reads.
 CopyRecord is the explicit root copy for a record value, including a map result.
 Use ProjectString for native strings and Projection methods for frozen strings,
 slices, and maps. Keep generic projection adapters in the low-level reference.
-Normal projection reads return Copied values, UncheckedValue handles, or further projections. StringProjection.Unsafe and
+Normal projection reads return Copied values, opaque handles, pointers to Frozen handle wrappers, or further projections. StringProjection.Unsafe and
 FrozenString.Unsafe explicitly return a shared native string; trust the caller
 and add no string provenance or lifetime analysis. Native collection builders keep
 exclusive-use and consume-on-Freeze checks. Freeze copies no backing storage;
 Clone makes explicit independent storage under its type constraints.
 
 The fixed im and supervise implementations obey reviewed API contracts.
-UncheckedValue is the explicit package-level immutability promise. Do not expose
-its payload through a local projection or add another trust annotation.
+UncheckedValue delegates payload access and synchronization to its declaring package.
+A named Frozen struct with one named UncheckedValue field is an opaque handle.
+Its fields are fixed; its target can be mutable. Handles are Frozen and read results,
+not Copied. They need no generated projection; getters return the handle itself.
+Do not add runtime-specific handle proofs or another trust annotation.
 
-Every package with user-declared Frozen records must have this directive:
+Every package with user-declared Frozen records other than opaque handles must have this directive:
 `//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen`.
-Declare Frozen records as named package-scope types in non-test Go files.
-Reject function-local, anonymous, and test-only Frozen declarations.
+Declare Frozen records other than opaque handles as named package-scope types in non-test Go files.
+Reject anonymous Frozen declarations. Named opaque handles can be declared locally or in test files; other Frozen records cannot.
 Keep the exact current `zz_immutago.gen.go` output. Frozen records get typed
-projections and Cells. Local and Copied records need no generation. Keep the
+projections and Cells. Opaque handles, Local records, and Copied records need no generation. Keep the
 generated-only address operation above separate from the normal checks; do not skip
 analysis of a generated file.
 
@@ -287,12 +289,11 @@ Keep source restrictions and examples there. Keep analysis details in the
   destination with the normal im type, write, builder, and transport rules.
   Frozen interface methods use ordinary method result rules; they have no separate
   result category or count limit.
-- Permit service references as stored values and results. Match every direct Ref Borrow
-  call as `ref.Borrow().Method(args)` with an exported service method other
-  than Init, Run, or a runtime method. Reject all other direct uses of the returned
-  pointer. Ordinary reference storage, conversions, interfaces, generics, and bodyless
-  functions use Go rules. Indirect calls may expose the service pointer. Do not
-  add a service-reference transport matcher. Keep the reference proof in [service architecture](docs/arch/services.md).
+- Express service references through the general opaque handle rules. Ref.Borrow returns one stable service pointer; its calls,
+  method values, method expressions, and returned pointers use ordinary Go rules.
+  Keep service result checks and im checks for protected fields. Ref is an opaque
+  handle that Frozen or Local records can store; the service itself remains mutable.
+  Keep this distinction in [service architecture](docs/arch/services.md).
 - Trust ordinary Go API contracts. Use the documented package selection rules;
   do not add string taint analysis or whole-program service effect analysis.
 

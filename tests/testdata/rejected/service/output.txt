@@ -1,15 +1,10 @@
-handles.go:10:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-handles.go:14:47: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-handles.go:8:13: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
+handles.go:10:34: unsupported immutable operation: closures require ordinary or Frozen captures
+  source: route
+  type: service.ZeroRoute
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+handles.go:7:68: unsupported immutable operation: writes to immutable objects are unsupported
+  source: route.Worker = next
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 interfaces.go:14:34: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: return route
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
@@ -27,22 +22,14 @@ iszero.go:20:2: unsupported immutable operation: protected storage requires sync
 iszero.go:21:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer route.Worker.IsZero()
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
-iszero.go:26:14: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: ref.Borrow
-  type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-iszero.go:36:58: unsupported immutable operation: promoted immutable methods are unsupported
+iszero.go:29:58: unsupported immutable operation: promoted immutable methods are unsupported
   source: route.IsZero()
   type: bool
   fix: name the embedded field explicitly and call a method allowed on that field; copy scalar fields to ordinary locals before calling their methods
-iszero.go:38:57: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
-  source: route.Worker.Borrow
-  type: func() *service.Counter
-  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
-iszero.go:40:53: unsupported immutable operation: interior addresses of protected storage are unsupported
+iszero.go:31:53: unsupported immutable operation: immutable references require fresh allocation
   source: &route.Worker
   type: *supervise.Ref[service.Counter]
-  fix: copy the field into a local; do not take a pointer into immutable storage
+  fix: use &T{...}, new(T), or new(value); do not take the address of an existing variable, field, or element
 result_uses.go:12:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = pointer
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it

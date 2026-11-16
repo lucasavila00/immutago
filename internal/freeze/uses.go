@@ -187,7 +187,6 @@ func (p *proof) pointerMethod(node ast.Node) bool {
 	if signature == nil || signature.Recv() == nil {
 		return false
 	}
-	signature = selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
 	pointer, ok := signature.Recv().Type().Underlying().(*types.Pointer)
 	if !ok {
 		return false
@@ -195,6 +194,6 @@ func (p *proof) pointerMethod(node ast.Node) bool {
 	expression, parent := p.unparenParent(selector)
 	call, direct := parent.(*ast.CallExpr)
 	return !direct || call.Fun != expression || selection.Kind() != types.MethodVal || len(selection.Index()) != 1 ||
-		signature.RecvTypeParams().Len() != 0 || !checker.Marked(pointer.Elem()) ||
+		!checker.Marked(pointer.Elem()) ||
 		!types.Identical(p.pass.TypesInfo.TypeOf(selector.X), signature.Recv().Type())
 }

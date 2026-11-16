@@ -1,7 +1,7 @@
 # Frozen records
 
-Embed `im.Frozen` in immutable stored data. Its package must use the
-[required generation step](rules.md#required-generation):
+Embed `im.Frozen` in immutable stored data. Except for [opaque handles](unchecked-values.md),
+its package must use the [required generation step](rules.md#required-generation):
 
 ```go
 type Settings struct {
@@ -27,7 +27,7 @@ Other field declarations are rejected. Data fields cannot be embedded. A named
 field prevents Go from promoting its methods to the Frozen record. Such a
 promoted method can take an implicit field address, including through an interface.
 
-A Frozen record used as a field in another package needs an exported original
+A Frozen record other than an opaque handle used as a field in another package needs an exported original
 declaration. This also applies to pointers and array elements. An exported alias
 of a private record does not expose its generated projection or constructor.
 

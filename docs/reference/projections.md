@@ -2,7 +2,7 @@
 
 The [required generation step](rules.md#required-generation) creates typed
 projections for Frozen records and Frozen interfaces. Record getters return
-Copied values, unchecked handles, or further Local projections. Local and Copied records need no
+Copied values, opaque handles, pointers to Frozen handle wrappers, or further Local projections. Opaque handles, Local records, and Copied records need no
 generation. See [Get started](../guides/getting-started.md) for a first program.
 
 ## Generated names and operations — exhaustive
@@ -35,20 +35,20 @@ fields. An unexported field has an unexported method. Field names IsNil and Unsa
 conflict with the public projection methods and are rejected. Local and private
 implementation names are allowed: a field `Local int` has the getter `p.Local()`.
 
-A foreign Frozen record field needs an exported original record declaration.
+A foreign Frozen record field other than an opaque handle needs an exported original record declaration.
 An exported alias of a private record does not expose its projection or constructor.
 See the [record field forms](frozen-records.md).
 
 | Field type | Generated result |
 | --- | --- |
-| Copied scalar, Copied record, or service reference | The field's own type: `int`, `Score`, or `supervise.Ref[Worker]`. |
+| Copied scalar or Copied record | The field's own type: `int` or `Score`. |
 | Native string or FrozenString | `im.StringProjection`. |
 | FrozenSlice[E] | `im.SliceProjection[E]`. |
 | FrozenMap[K,V] | `im.MapProjection[K,V]`. |
-| Frozen record or pointer to one | The record's generated typed projection. |
+| Frozen record other than an opaque handle, or pointer to one | The record's generated typed projection. |
 | Frozen interface | The interface's generated local method projection. |
 | Unnamed array | A typed projection with Len and At; At uses this result table. |
-| UncheckedValue[T] | The handle itself: `im.UncheckedValue[T]`. |
+| Opaque handle or pointer to its Frozen wrapper | The field's own type, such as `supervise.Ref[Worker]` or `*supervise.Ref[Worker]`. |
 
 Arrays return projections, including arrays of Copied values. A Copied record
 field returns a complete value copy. A field read does not copy its containing
