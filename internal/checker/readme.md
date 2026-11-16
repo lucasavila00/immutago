@@ -22,12 +22,6 @@ RuntimePath is the package whose supervised service runtime is trusted.
 const RuntimePath = "github.com/lucasavila00/immutago/pkg/supervise"
 ```
 
-ServiceMarker identifies supervise.Service, the generic type embedded by services.
-
-```go
-const ServiceMarker = "Service"
-```
-
 ## func Contains
 
 ```go
@@ -108,6 +102,14 @@ func IsRuntimeType(t types.Type, name string) bool
 
 IsRuntimeType identifies a service runtime type by package identity and name, not spelling at its use site.
 
+## func IsServiceBase
+
+```go
+func IsServiceBase(t types.Type) bool
+```
+
+IsServiceBase identifies either runtime type that supplies service state and retries.
+
 ## func IsUncheckedValue
 
 ```go
@@ -162,7 +164,7 @@ Reason proves concrete immutable storage or returns a failed component.
 func Service(t types.Type) bool
 ```
 
-Service reports whether a struct embeds supervise.Service, directly or indirectly.
+Service reports whether a struct embeds a runtime service base, directly or indirectly.
 
 ## func ServiceEmbeddingReason
 

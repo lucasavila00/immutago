@@ -4,7 +4,7 @@ import "go/types"
 
 // ServiceEmbeddingReason requires a value path to the selected runtime bind method.
 func ServiceEmbeddingReason(t types.Type) string {
-	const rejected = "service must embed supervise.Service by value through each embedded field"
+	const rejected = "service must embed supervise.Service or supervise.TerminalService by value through each embedded field"
 	if pointer, ok := types.Unalias(t).(*types.Pointer); ok {
 		t = pointer.Elem()
 	}
@@ -23,7 +23,7 @@ func ServiceEmbeddingReason(t types.Type) string {
 				return rejected
 			}
 		}
-		if len(indices) > 1 && IsRuntimeType(current, ServiceMarker) {
+		if len(indices) > 1 && IsServiceBase(current) {
 			return ""
 		}
 		return rejected

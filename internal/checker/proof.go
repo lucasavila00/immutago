@@ -257,7 +257,7 @@ func (p *proof) frozenPointer(result *obligation, pointer *types.Pointer) {
 // refTargetReason requires the concrete service value selected by Borrow's *T result.
 func refTargetReason(target types.Type) string {
 	if _, concrete := target.Underlying().(*types.Struct); !concrete || !Service(target) {
-		return "Ref requires a concrete struct that embeds supervise.Service"
+		return "Ref requires a concrete struct that embeds supervise.Service or supervise.TerminalService"
 	}
 	return ServiceEmbeddingReason(target)
 }

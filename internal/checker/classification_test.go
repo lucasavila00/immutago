@@ -10,7 +10,7 @@ import (
 
 // opaqueStorage identifies the library and runtime types whose fields are not walked.
 func opaqueStorage(t types.Type) bool {
-	return IsLibraryType(t, "Cell") || IsRuntimeType(t, ServiceMarker)
+	return IsLibraryType(t, "Cell") || IsServiceBase(t)
 }
 
 // classificationStorageOracle checks source relevance without shared query state.
@@ -390,7 +390,7 @@ func TestClassifierServiceIsOpaque(t *testing.T) {
 	value := markedType("Arguments", marker)
 	runtime := types.NewPackage(RuntimePath, "supervise")
 	field := types.NewField(token.NoPos, runtime, "args", value, false)
-	service := types.NewNamed(types.NewTypeName(token.NoPos, runtime, ServiceMarker, nil),
+	service := types.NewNamed(types.NewTypeName(token.NoPos, runtime, "Service", nil),
 		types.NewStruct([]*types.Var{field}, nil), nil)
 	var queries Classifier
 	for _, typ := range []types.Type{service, types.NewPointer(service), types.NewArray(service, 1)} {

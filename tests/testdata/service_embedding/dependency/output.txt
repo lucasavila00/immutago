@@ -1,8 +1,8 @@
 dependency.go:4:2: unsupported dependency example.com/consumer/pointer: immutability proof failed
-  representative failure: example.com/consumer/pointer/pointer.go:10:13: service must embed supervise.Service by value through each embedded field
+  representative failure: example.com/consumer/pointer/pointer.go:10:13: service must embed supervise.Service or supervise.TerminalService by value through each embedded field
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/pointer, correct its errors, then rerun immutago on this package
-dependency.go:9:19: unsupported immutable operation: service must embed supervise.Service by value through each embedded field
+dependency.go:9:19: unsupported immutable operation: service must embed supervise.Service or supervise.TerminalService by value through each embedded field
   source: Ref
   type: supervise.Ref[T any]
   fix: use a concrete service struct that embeds supervise.Service by value

@@ -1,6 +1,7 @@
 # Service runtime
 
-A service embeds `supervise.Service[A]`. The runtime calls Init and Run.
+A service embeds `supervise.Service[A]` or `supervise.TerminalService[A]`.
+The runtime calls Init and Run.
 Other method calls run in the caller's goroutine and can overlap with Run and
 other calls. Use the [service guide](../guides/services.md) for a walkthrough.
 
@@ -8,8 +9,8 @@ other calls. Use the [service guide](../guides/services.md) for a walkthrough.
 
 | Item | Requirement and example |
 | --- | --- |
-| Service type | A concrete struct embeds `supervise.Service[A]` through value fields; see the embedding forms below. |
-| Setup | `*Worker` supplies `Init() error`, or uses the default Init from Service[A]. |
+| Service type | A concrete struct embeds `supervise.Service[A]` or `supervise.TerminalService[A]` through value fields; see the embedding forms below. |
+| Setup | `*Worker` supplies `Init() error`, or uses the default Init from its service base. |
 | Background work | `*Worker` supplies `Run(context.Context)`. |
 | Runtime ownership | Do not copy an initialized service or Group. Declare service methods with pointer receivers and pass service and group pointers; see the copy contract below. |
 | Start arguments | `s.Args()` reads A. The runtime saves the same arguments for each restart. Ordinary Go types are allowed; protected arguments require [Frozen types](types.md). |
@@ -27,11 +28,11 @@ returning when a context ends, require implementation review.
 
 ### Copy contract
 
-Do not copy initialized Service or Group values, including containing structs or arrays.
+Do not copy initialized Service, TerminalService, or Group values, including containing structs or arrays.
 
 | Owner | Contract |
 | --- | --- |
-| Service | Start initializes it before Init. Declare methods with pointer receivers, including Init and Run. Pass service pointers. |
+| Service or TerminalService | Start initializes it before Init. Declare methods with pointer receivers, including Init and Run. Pass service pointers. |
 | Group | NewRoot, StartGroup, and Children return initialized groups. Pass group pointers. |
 | Ref | Copies are allowed; they share the slot that selects the current service. |
 | Stopped service or group | The no-copy contract still applies. |
@@ -59,17 +60,29 @@ run the standard vet checks.
 
 ## Service embedding — exhaustive
 
-| Form | Example |
-| --- | --- |
-| Direct value embedding | `type Worker struct { supervise.Service[Args] }` |
-| Alias to a value type | `type Base = supervise.Service[Args]`; `type Worker struct { Base }` |
-| Alias to a service struct | `type Alias = Worker` |
-| Defined struct with the same value fields | `type Another Worker`; declare its own Run method. |
-| Anonymous struct with value embedding | `type Anonymous = struct { Worker }` |
-| Value embedding through another struct | `type Base struct { supervise.Service[Args] }`; `type Worker struct { Base }` |
+| Form | With retries | Without retries |
+| --- | --- | --- |
+| Direct value embedding | `type Worker struct { supervise.Service[Args] }` | `type Ledger struct { supervise.TerminalService[Args] }` |
+| Alias to a value type | `type Base = supervise.Service[Args]`; `type Worker struct { Base }` | `type Base = supervise.TerminalService[Args]`; `type Ledger struct { Base }` |
+| Alias to a service struct | `type Alias = Worker` | `type Alias = Ledger` |
+| Defined struct with the same value fields | `type Another Worker`; declare its own Run method. | `type Another Ledger`; declare its own Run method. |
+| Anonymous struct with value embedding | `type Anonymous = struct { Worker }` | `type Anonymous = struct { Ledger }` |
+| Value embedding through another struct | `type Base struct { supervise.Service[Args] }`; `type Worker struct { Base }` | `type Base struct { supervise.TerminalService[Args] }`; `type Ledger struct { Base }` |
 
 Every field on the selected path to the runtime methods must be a value field.
 Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
+The selected base sets the retry behavior; aliases and outer value fields do not
+change it. Go rejects ambiguous runtime methods, including direct embedding of
+both service bases.
+
+| Rejected examples — non-exhaustive | Allowed replacement |
+| --- | --- |
+| `type Ledger struct { *supervise.TerminalService[Args] }` | Embed `supervise.TerminalService[Args]` as a value. |
+| `type Base = *supervise.TerminalService[Args]`; `type Ledger struct { Base }` | Remove `*` from the alias. |
+| `type Ledger struct { *Base }`, where Base embeds TerminalService | Embed `Base` as a value. |
+| `type Ledger struct { supervise.Service[Args]; supervise.TerminalService[Args] }` | Embed one service base. |
+| `type Ledger struct { Base supervise.TerminalService[Args] }` passed to Start | Use an embedded value field to supply runtime methods. |
+| `type Ledger supervise.TerminalService[Args]` passed to Start | Embed the runtime base in a struct. A new defined type does not keep its methods. |
 
 ## Startup
 
@@ -81,7 +94,7 @@ Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
 | Start under a stopped group | Init still runs. If it succeeds, Run receives an already-cancelled context. Start waits for cleanup, then returns the initialized Ref. |
 | Stop while initial Init runs | Stop waits only for registered services. If Init succeeds after Stop, Start waits for its cancelled Run and child cleanup. |
 | Nil or zero Group passed to Start or StartGroup | Panic with `supervise: nil or zero Group` before Init. |
-| Pointer on the selected Service embedding path | Panic before Init with `supervise: embed Service by value through each embedded field`. |
+| Pointer on the selected service embedding path | Panic before Init with `supervise: embed Service or TerminalService by value through each embedded field`. |
 
 After setup, the runtime admits Run and activates its staged child groups in one
 decision. That decision also permits publication of a replacement. Stop is ordered
@@ -99,14 +112,15 @@ resources. Check its context before starting work: it can already be cancelled.
 | Event | Behavior |
 | --- | --- |
 | Run returns normally | The service ends and its group removes it. |
-| Run panics | Wait, create a new struct with the same arguments, call Init, and start Run after setup succeeds. |
+| Service Run panics | Wait, create a new struct with the same arguments, call Init, and start Run after setup succeeds. |
+| TerminalService Run panics | Report the attempt once, then stop the root with a terminal Failure. Keep the original panic value and stack. Do not wait for backoff or call Init again. |
 | Restart Init fails | Count a failed attempt. The reference still selects the previous successfully initialized value. |
 | A direct service method panics | The panic stays in its caller's goroutine. A call from Run or restart Init can fail that attempt. |
-| One service fails six times within five minutes | Report the selected terminal `*supervise.Failure`, stop its entire root tree, then panic with that Failure. |
+| One Service fails six times within five minutes | Report the selected terminal `*supervise.Failure`, stop its entire root tree, then panic with that Failure. |
 | Run or restart Init calls `runtime.Goexit()` | Report a terminal failure and stop the root tree. Do not retry. |
-| A child fails under nested groups or services | Only that service retries. Exhaustion goes directly to the root; parent services and groups add no retries. |
+| A child fails under nested groups or services | Only the failing Service retries. Its exhaustion, or the first TerminalService failure, goes directly to the root; parent services and groups add no retries. |
 
-The delay is one second after the first failure. It doubles for each restart in
+Service retries have a delay of one second after the first failure. It doubles for each restart in
 the last five minutes. Borrow continues to select the last published value during
 a delay and after stop. A call in progress keeps its selected value. Each service
 has its own retry count. Groups do not restart.
@@ -133,7 +147,7 @@ A stopped parent supplies a stopped nested group.
 | Stop races with staged child activation | Activation completes before Stop or leaves the children pending. In both cases, children wait for their reverse-order shutdown turns. |
 | Parent is stopped | Stop children last started first and wait for them before cancelling the parent's Run context. |
 | Parent Run returns or panics | Stop and wait for children before the attempt ends or a replacement starts. |
-| A child exceeds its restart limit | Stop the whole root tree. No parent retries that failure. |
+| A child has a terminal failure | Stop the whole root tree. No parent retries that failure. |
 | A method starts a child after the parent run ends | Init can succeed. The call waits for the child's cancelled Run, then returns its reference. A saved group from that run uses the same rule. |
 
 Create children again in each parent run. An old child Ref

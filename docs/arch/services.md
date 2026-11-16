@@ -3,8 +3,8 @@
 `supervise` uses one watcher per service and one shared atomic slot per Ref.
 Method calls run in the caller's goroutine.
 
-Service and Group keep mutable ownership state in their values. They must not be
-copied after initialization. Both contain a zero-size `noCopy` field for standard
+Service, TerminalService, and Group keep mutable ownership state in their values. They must not be
+copied after initialization. Each contains a zero-size `noCopy` field for standard
 vet's copylocks check. It adds no lock or runtime check. Immutago does not run that
 check; callers must also use standard `go vet`. See the
 [copy contract](../reference/services.md#copy-contract).
@@ -41,17 +41,20 @@ Ref copy ─┴──> shared slot ──> latest initialized *T
 
 ## One watcher owns retries
 
-The watcher retains restart timestamps within five minutes. It permits five
-restarts; the delay is `1s << recentRestartCount`.
+Service and TerminalService embed the same private service state. Their sealed
+bind methods return that state and a fixed retry limit: five for Service, zero for
+TerminalService. Start uses the returned state for the complete attempt lifetime.
+The same watcher applies either limit. It retains restart timestamps within five
+minutes; the delay is `1s << recentRestartCount`.
 It records and reports the failure before child cleanup can wait. The retry
 window uses the failure time, so cleanup does not move an old failure forward.
 
 | Attempt outcome | Cleanup | Next action |
 | --- | --- | --- |
 | Run returns | Stop and wait for its children. | Remove the service entry. |
-| Run panics | Stop and wait for its children. | Delay, then initialize a replacement. |
+| Service Run panics within its budget | Stop and wait for its children. | Delay, then initialize a replacement. |
 | Retry Init fails | Stop children created by that setup. | Retry within the same budget. |
-| Budget exhausted or `runtime.Goexit` | Select and report one terminal Failure before waiting for root shutdown. | After tree cleanup, panic with that Failure. |
+| TerminalService Run panics, budget exhausted, or `runtime.Goexit` | Select and report one terminal Failure before waiting for root shutdown. | After tree cleanup, panic with that Failure. |
 | Shutdown begins | Cancel retry policy and pending delays. | Start no further attempt. |
 
 Initial Init precedes watcher registration, so group shutdown cannot wait for
@@ -97,7 +100,7 @@ It uses the existing callback, or standard error when the callback is nil.
 
 | Source | Compiler-resolved check |
 | --- | --- |
-| `Service[A]` embedding | The selected runtime embedding path uses value fields. |
+| `Service[A]` or `TerminalService[A]` embedding | The selected runtime embedding path uses value fields. |
 | `Ref[T]` | T is a concrete service struct; application fields use Go rules. |
 | Direct `Borrow` use | Match the immediate exported method call; exclude lifecycle and runtime methods. |
 | Exported service methods | Check each result with the shared ReadResult proof, or compiler identity with predeclared error. Apply no result count or order limit. |

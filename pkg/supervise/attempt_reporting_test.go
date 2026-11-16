@@ -87,7 +87,7 @@ func TestCleanupTimeDoesNotExtendRetryWindow(t *testing.T) {
 		}
 		go func() {
 			defer close(done)
-			watch(parent, ctx, "worker", run, cleanup)
+			watch(parent, ctx, "worker", restartLimit, run, cleanup)
 		}()
 		time.Sleep(restartWindow + 2*time.Second)
 		synctest.Wait()
