@@ -12,6 +12,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/lucasavila00/immutago/pkg/supervise"
@@ -20,6 +21,11 @@ import (
 
 // TestRefreshFiles checks edits, additions, deletions, and unchanged scans.
 func TestRefreshFiles(t *testing.T) {
+	synctest.Test(t, testRefreshFiles)
+}
+
+// testRefreshFiles edits files between scans while fake time controls the poller.
+func testRefreshFiles(t *testing.T) {
 	directory := t.TempDir()
 	writeDocument(t, directory, "guide.md", "# Recovery\nold procedure")
 	root := supervisetest.NewRoot(t)
@@ -29,16 +35,19 @@ func TestRefreshFiles(t *testing.T) {
 	if initial.Version != 1 || initial.Total != 1 {
 		t.Fatalf("initial response = %+v", initial)
 	}
+	synctest.Wait()
 	writeDocument(t, directory, "guide.md", "# Recovery\nnew procedure")
 	awaitStatus(t, indexer, 2, false)
 	if old := readResponse(t, handler, "/search?q=old"); old.Total != 0 {
 		t.Fatalf("old content remains: %+v", old)
 	}
+	synctest.Wait()
 	writeDocument(t, directory, "extra.md", "# Recovery\nnew checklist")
 	awaitStatus(t, indexer, 3, false)
 	if added := readResponse(t, handler, "/search?q=new"); added.Total != 2 {
 		t.Fatalf("added document missing: %+v", added)
 	}
+	synctest.Wait()
 	if err := os.Remove(filepath.Join(directory, "guide.md")); err != nil {
 		t.Fatal(err)
 	}
@@ -51,6 +60,7 @@ func TestRefreshFiles(t *testing.T) {
 	if unchanged := indexer.Borrow().Status(); unchanged.Version != 4 {
 		t.Fatalf("unchanged files published version %d", unchanged.Version)
 	}
+	synctest.Wait()
 	if err := os.Remove(filepath.Join(directory, "extra.md")); err != nil {
 		t.Fatal(err)
 	}
@@ -62,6 +72,11 @@ func TestRefreshFiles(t *testing.T) {
 
 // TestScanFailureRecovery keeps the last index through read and parse errors.
 func TestScanFailureRecovery(t *testing.T) {
+	synctest.Test(t, testScanFailureRecovery)
+}
+
+// testScanFailureRecovery changes files only after the poller has finished its scan.
+func testScanFailureRecovery(t *testing.T) {
 	directory := filepath.Join(t.TempDir(), "documents")
 	if err := os.Mkdir(directory, 0700); err != nil {
 		t.Fatal(err)
@@ -70,6 +85,7 @@ func TestScanFailureRecovery(t *testing.T) {
 	root := supervisetest.NewRoot(t)
 	indexer := startIndexer(t, root, os.DirFS(directory))
 	handler := HTTPHandler(indexer)
+	synctest.Wait()
 	if err := os.Rename(directory, directory+"-away"); err != nil {
 		t.Fatal(err)
 	}
@@ -77,15 +93,18 @@ func TestScanFailureRecovery(t *testing.T) {
 	if response := readResponse(t, handler, "/search?q=valid"); response.Total != 1 || response.Version != 1 {
 		t.Fatalf("scan error lost the index: %+v", response)
 	}
+	synctest.Wait()
 	if err := os.Rename(directory+"-away", directory); err != nil {
 		t.Fatal(err)
 	}
 	awaitStatus(t, indexer, 1, false)
+	synctest.Wait()
 	writeDocument(t, directory, "guide.md", "\xff")
 	awaitStatus(t, indexer, 1, true)
 	if response := readResponse(t, handler, "/search?q=valid"); response.Total != 1 {
 		t.Fatalf("parse error lost the index: %+v", response)
 	}
+	synctest.Wait()
 	writeDocument(t, directory, "guide.md", "# Recovery\nrepaired procedure")
 	awaitStatus(t, indexer, 2, false)
 	if response := readResponse(t, handler, "/search?q=repaired"); response.Total != 1 {

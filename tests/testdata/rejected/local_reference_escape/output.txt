@@ -12,8 +12,8 @@ local_reference_escape.go:15:13: unsupported immutable operation: Local pointers
   source: []*Local{value}
   type: []*local_reference_escape.Local
   fix: keep a Local value in a local binding, or store a Frozen pointer
-local_reference_escape.go:15:2: unsupported native builder: *example.com/consumer/local_reference_escape.Local is not a Copied value
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+local_reference_escape.go:15:2: unsupported native builder: *example.com/consumer/local_reference_escape.Local is not a read result
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 local_reference_escape.go:16:12: Frozen collection: type argument 1: Local pointers cannot be stored
   type: im.FrozenSlice[*local_reference_escape.Local]
   fix: keep the Local pointer in a local binding; store a Frozen pointer for shared data
@@ -46,9 +46,9 @@ local_reference_escape.go:34:2: unsupported immutable operation: protected stora
 local_reference_escape.go:35:2: unsupported immutable operation: protected storage requires synchronous calls
   source: defer readLocal(value)
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
-local_reference_escape.go:40:2: immutable field Pointer requires a read result: *example.com/consumer/local_reference_escape.Local is not a Copied value
+local_reference_escape.go:40:2: immutable field Pointer requires a read result: *example.com/consumer/local_reference_escape.Local is not a read result
   owner: local_reference_escape.LocalStored; field type: *local_reference_escape.Local
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 local_reference_escape.go:44:21: Frozen collection: type argument 1: Frozen storage cannot contain Local values
   type: im.FrozenSlice[local_reference_escape.Local]
   fix: store Frozen data; keep its Projection or Local result in local bindings

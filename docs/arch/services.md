@@ -19,7 +19,7 @@ it or wait for direct method calls.
 
 | Stage | Execution owner | Action |
 | --- | --- | --- |
-| Setup | Start caller | Allocate T; bind arguments and parent group; call Init. |
+| Setup | Start caller | Allocate T; bind arguments and parent group; call Init once. |
 | Init failure | Start caller | Stop staged children. Return a zero Ref and error, or propagate the panic. |
 | Publication | Start caller | Create Ref for initialized T; register a watcher with the group. |
 | Run admission | Watcher, under the tree mutex | Check admission and activate staged child groups as one decision ordered against Stop. |

@@ -9,7 +9,8 @@ type Ref[T any] struct {
 }
 ```
 
-Frozen and Local records can store the handle. The service itself has mutable state.
+Frozen and Local records can store the handle. Ref is a Frozen record;
+the service itself has mutable state.
 
 ```go
 worker := ref.Borrow()
@@ -33,7 +34,10 @@ second := worker.Count()
 | Create a service with Start | Go requires the service methods; the analyzer checks the [value embedding path](services.md#service-embedding--exhaustive). |
 | Declare an exported service method | Its results follow the [service result signatures](service-results.md). |
 | Store a Ref in protected im storage | Apply the [im rules](common-forms.md) to that storage. The handle does not make the service immutable. |
-| Use Ref or the pointer returned by Borrow | Ordinary Go rules. Protected im fields keep their own rules. |
+| Copy, store, pass, return, or capture a Ref | Ordinary Go value storage and transport. Its fields keep the Frozen record rules. |
+| Allocate a Ref pointer | Use fresh storage: `&supervise.Ref[Worker]{}`, `new(supervise.Ref[Worker])`, or `new(ref)`. Do not take the address of an existing Ref variable, field, or element. |
+| Use an existing Ref pointer | Apply the [Frozen pointer rules](frozen-records.md#stored-pointers--exhaustive). The Ref wrapper's fields cannot change. |
+| Use the pointer returned by Borrow | Ordinary Go rules. Protected im fields keep their own rules. |
 
 These examples use ordinary Go operations:
 
@@ -59,7 +63,8 @@ owns Init and Run. Do not copy an initialized service or Group; see the
 | Capture the record in a closure | Allowed. | Copy the Ref or save its Borrow result before the closure. |
 | Replace the Ref field | Rejected. | Rejected. |
 
-Select embedded Ref fields explicitly inside Frozen or Local records. The ordinary
+Select embedded Ref fields explicitly inside Local records. Frozen records cannot
+embed data fields. The ordinary
 [immutable method rules](common-forms.md) still apply to those records.
 
 ## Rejected examples — non-exhaustive
@@ -67,5 +72,7 @@ Select embedded Ref fields explicitly inside Frozen or Local records. The ordina
 | Rejected | Use instead |
 | --- | --- |
 | `record.Worker = other` on a Frozen or Local record | Construct another record. |
+| `p := &ref`, `p := &holder.Ref`, or `p := &refs[i]` | Use `p := new(ref)`, `new(holder.Ref)`, or `new(refs[i])`. Each copies the handle; both copies select the same service. |
+| `slot.Store(&ref)` with `slot atomic.Pointer[supervise.Ref[Worker]]` | Use `slot.Store(new(ref))`. To store the mutable service pointer itself, use `atomic.Pointer[Worker]` and `slot.Store(ref.Borrow())`. |
 | `func() int { return local.Worker.Borrow().Count() }` captures a Local record | Save `worker := local.Worker.Borrow()` first; capture worker. |
 | Store `*Worker` as a Frozen field | Store `supervise.Ref[Worker]`; the service pointer is mutable. |

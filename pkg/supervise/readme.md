@@ -105,7 +105,7 @@ func Start[T, A any, P interface {
 }](parent *Group, args A) (Ref[T], error)
 ```
 
-Start creates T, calls Init in the caller, and publishes the initialized value. An Init error returns a zero Ref and the error; an Init panic reaches the caller. The runtime stops staged children in both cases. Each successful Init gets one Run call, with a cancelled context if the service cannot activate. Start under a stopped parent waits for that cleanup Run. Stop waits for registered children, not an Init that has not registered yet.
+Start creates T, calls Init once in the caller, and publishes the initialized value. An Init error returns a zero Ref and the error; an Init panic reaches the caller. The runtime stops staged children in both cases. Each successful Init gets one Run call, with a cancelled context if the service cannot activate. Start under a stopped parent waits for that cleanup Run. Stop waits for registered children, not an Init that has not registered yet.
 
 ### func \(Ref\[T\]\) Borrow
 
@@ -125,7 +125,7 @@ IsZero reports whether this reference is unset.
 
 ## type Service
 
-Service supplies start arguments and the children owned by one service run. Embed it by value. Start creates and initializes the service value. Do not copy an initialized Service or a struct that contains it. Declare service methods with pointer receivers. Run go vet to check for copies.
+Service supplies start arguments and the children owned by this service. Embed it by value. Start creates and initializes the service value. Do not copy an initialized Service or a struct that contains it. Declare service methods with pointer receivers. Run go vet to check for copies.
 
 ```go
 type Service[A any] struct {
@@ -147,7 +147,7 @@ Args returns the arguments supplied to Start.
 func (*Service[A]) Init() error
 ```
 
-Init supplies empty setup when the service does not declare Init. A declared Init must release application resources if it fails. The runtime stops children created during setup.
+Init supplies empty setup when the service does not declare Init. A declared Init must release application resources if it fails. The runtime stops children created by that setup.
 
 ### func \(\*Service\[A\]\) UnsafeChildren
 

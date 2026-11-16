@@ -68,9 +68,9 @@ invalid.go:64:2: unsupported immutable operation: writes to immutable objects ar
 invalid.go:69:32: unsupported immutable operation: writes to immutable objects are unsupported
   source: p.Limit++
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-invalid.go:75:18: service method Read must return a read result or error: *example.com/consumer/api.Settings is not a Copied value
+invalid.go:75:18: service method Read must return a read result or error: *example.com/consumer/api.Settings is not a read result
   result type: *api.Settings
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 invalid.go:9:25: unmarked struct field Value contains protected storage
   owner: invalid.ValueOwner; field type: api.Settings
   rule: unmarked structs cannot own Frozen records by value or Local data

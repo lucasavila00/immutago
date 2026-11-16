@@ -58,11 +58,11 @@ value:=cell.Load().Unsafe();_=im.Unwrap(value.Raw).values[0]}`,
 // TestSnapshotCategories rejects the same invalid payload in each consuming API.
 func TestSnapshotCategories(t *testing.T) {
 	cases := []struct{ source, want string }{
-		{`type Result struct{im.Local; Name string}`, "is not a Copied value"},
-		{`type Result struct{im.Local; Values im.FrozenSlice[int]}`, "is not a Copied value"},
-		{`type Result struct{im.Local; Text im.FrozenString}`, "is not a Copied value"},
+		{`type Result struct{im.Local; Name string}`, "is not a read result"},
+		{`type Result struct{im.Local; Values im.FrozenSlice[int]}`, "is not a read result"},
+		{`type Result struct{im.Local; Text im.FrozenString}`, "is not a read result"},
 		{`func f(){_=im.Value(im.ProjectionOf(im.FreezeString("text")))}`,
-			"is not a Copied value"},
+			"is not a read result"},
 		{`type Result struct{im.Local; Text im.StringProjection};var cell im.Cell[Result]`,
 			"Frozen storage cannot contain Local values"},
 		{`type Result struct{im.Local; Text im.StringProjection};func f(){_=im.ProjectionOf(Result{})}`,
@@ -75,7 +75,7 @@ func TestSnapshotCategories(t *testing.T) {
 		{`var values [0]im.Projection[string]`, "package variables"},
 		{`var marker im.Local`, "package variables"},
 		{`type Data struct{im.Local};type Pointer *Data`, "defined pointer types"},
-		{`func f(){_=im.Value(im.ProjectionOf("text"))}`, "is not a Copied value"},
+		{`func f(){_=im.Value(im.ProjectionOf("text"))}`, "is not a read result"},
 		{`func f(){frozen:=im.FreezeMap(map[string]int{});projection:=frozen.Projection()
 copy:=projection.Clone();_=copy}`,
 			"is not a Copied value"},
@@ -197,19 +197,19 @@ func f(value im.Projection[*Route]){`
 	}
 }
 
-// TestCopiedRecordBoundary applies one value rule to every consumer of copied data.
+// TestCopiedRecordBoundary excludes Frozen records from read results and Copied data.
 func TestCopiedRecordBoundary(t *testing.T) {
 	const record = `type Count struct{im.Frozen;N int};type Alias=Count;`
-	for _, source := range []string{
-		`func f(){_=im.Value(im.ProjectionOf(Count{N:1}))}`,
-		`func f(){_=im.Value(im.ProjectionOf([0]Alias{}))}`,
-		`type Reply struct{im.Local;Count Count}`,
-		`type Reply struct{im.Local;Counts [0]Alias}`,
-		`func f(v im.SliceProjection[Count]){copy:=v.Clone();_=copy}`,
-		`func f(v im.MapProjection[int,Count]){copy:=v.Clone();_=copy}`,
-		`func f(v im.MapProjection[Count,int]){copy:=v.Clone();_=copy}`,
+	for _, test := range []struct{ source, want string }{
+		{`func f(){_=im.Value(im.ProjectionOf(Count{N:1}))}`, "is not a read result"},
+		{`func f(){_=im.Value(im.ProjectionOf([0]Alias{}))}`, "is not a read result"},
+		{`type Reply struct{im.Local;Count Count}`, "is not a read result"},
+		{`type Reply struct{im.Local;Counts [0]Alias}`, "is not a read result"},
+		{`func f(v im.SliceProjection[Count]){copy:=v.Clone();_=copy}`, "is not a Copied value"},
+		{`func f(v im.MapProjection[int,Count]){copy:=v.Clone();_=copy}`, "is not a Copied value"},
+		{`func f(v im.MapProjection[Count,int]){copy:=v.Clone();_=copy}`, "is not a Copied value"},
 	} {
-		if got := checkSource(t, record+source); !strings.Contains(got, "is not a Copied value") {
+		if got := checkSource(t, record+test.source); !strings.Contains(got, test.want) {
 			t.Fatal(got)
 		}
 	}

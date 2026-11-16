@@ -32,7 +32,9 @@ synchronization in the service code.
 
 Use the common forms with each type's forms. **Exhaustive** means all allowed
 forms are listed. Unlisted operations on protected storage are rejected.
-Service references and Borrow results use ordinary Go rules.
+Service-reference values use ordinary Go storage and transport. Their fields and
+pointer construction keep the [Frozen record rules](service-references.md#checker-rules--exhaustive).
+Borrow results use ordinary Go rules.
 
 ### Required generation
 
@@ -106,6 +108,21 @@ For build tags, use `GOFLAGS=-tags=integration immutago ./...` or
 `go vet -vettool=/absolute/path/to/immutago -tags=integration ./...`.
 The CLI's own `-tags` flag does not select tagged files. See
 [Check in CI](../guides/getting-started.md#check-in-ci).
+
+### Read diagnostics
+
+An operation error can include these context lines:
+
+| Line | Meaning |
+| --- | --- |
+| `source:` | The source expression or statement for the rejected operation. |
+| `type:` | The compiler-resolved type of that expression, when available. |
+| `fix:` | A supported replacement for the failed rule. |
+
+If `Ptr` returns `int64`, `source: r.C.Ptr()` has `type: int64`, even when the
+rule rejects the receiver operation. A method value such as `h.Ptr` has type
+`func() int64`. Field and service-result errors can name their field or result
+type instead.
 
 ### Package boundary
 

@@ -26,7 +26,7 @@ Go type identity, then apply its proof checks. Unknown forms must fail. Do not
 accept a broad syntax class and add exceptions after defects are found.
 
 For example, fresh protected construction requires `&T{...}` or a supported
-`new` form, a concrete marked target, and an allowed statement context.
+`new` form, a concrete Frozen or Local record target, and an allowed statement context.
 `&variable` and `&value.Field` must fail. Whole-variable replacement must not
 admit field, element, or pointer-target writes.
 

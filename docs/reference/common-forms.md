@@ -30,7 +30,8 @@ type FrozenLink struct { im.Frozen; P *FrozenPoint }
 
 Frozen fields and shared frozen entries require Frozen types. Local fields
 require read results. Copied fields use the complete [value-only field list](copied.md#fields--exhaustive).
-A Local value cannot be hidden in persistent storage.
+Local variables, Local records, and Local builders can hold Local values;
+package variables, ordinary records, and closures cannot.
 
 ### Generics
 
@@ -301,8 +302,8 @@ Use the operations above inside these statement forms:
   Aliases and parentheses keep these forms. For example, `local, found := makeLocalPair()`
   can bind a Local record, and `local, state.Found = makeLocalPair()` can store the bool.
   `var _, found = makeLocalPair()` can discard the Local result at package scope.
-  An assignment cannot store a Local value in persistent storage or change a protected
-  field. Frozen results can be boxed in `any`.
+  Local results cannot be assigned to package variables or ordinary fields.
+  Assignments cannot change protected fields. Frozen results can be boxed in `any`.
 - Each [service result](service-results.md) must be a read result or the predeclared
   error type. There is no result count or order limit. Calls with only ordinary
   values keep Go rules. Tuple callbacks and generics keep each component's normal

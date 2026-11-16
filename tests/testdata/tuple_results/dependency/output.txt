@@ -1,5 +1,5 @@
 dependency.go:3:8: unsupported dependency example.com/consumer/badapi: immutability proof failed
-  representative failure: example.com/consumer/badapi/api.go:19:14: service method First must return a read result or error: string is not a Copied value
+  representative failure: example.com/consumer/badapi/api.go:19:14: service method First must return a read result or error: string is not a read result
     result type: string
     fix: for Local text, use im.ProjectString(text)
   note: other dependency errors may exist

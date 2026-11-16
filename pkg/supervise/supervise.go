@@ -27,7 +27,7 @@ func (*noCopy) Lock() {}
 // Unlock completes the lock method set for the copylocks check.
 func (*noCopy) Unlock() {}
 
-// Service supplies start arguments and the children owned by one service run.
+// Service supplies start arguments and the children owned by this service.
 // Embed it by value. Start creates and initializes the service value.
 // Do not copy an initialized Service or a struct that contains it.
 // Declare service methods with pointer receivers. Run go vet to check for copies.
@@ -46,7 +46,7 @@ func (p *Service[A]) Args() A { return p.args }
 
 // Init supplies empty setup when the service does not declare Init.
 // A declared Init must release application resources if it fails. The runtime
-// stops children created during setup.
+// stops children created by that setup.
 func (*Service[A]) Init() error { return nil }
 
 // UnsafeChildren returns the child group owned by this service.
@@ -220,7 +220,7 @@ func StartGroup(parent *Group) *Group {
 	return nested
 }
 
-// Start creates T, calls Init in the caller, and publishes the initialized value.
+// Start creates T, calls Init once in the caller, and publishes the initialized value.
 // An Init error returns a zero Ref and the error; an Init panic reaches
 // the caller. The runtime stops staged children in both cases.
 // Each successful Init gets one Run call, with a cancelled context if the service

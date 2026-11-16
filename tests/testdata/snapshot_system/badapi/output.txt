@@ -1,3 +1,3 @@
-snapshot_badapi.go:7:2: immutable field Name requires a read result: string is not a Copied value
+snapshot_badapi.go:7:2: immutable field Name requires a read result: string is not a read result
   owner: badapi.Result; field type: string
   fix: for Local text, use im.ProjectString(text)

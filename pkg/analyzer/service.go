@@ -81,6 +81,6 @@ func (c *checks) checkServiceStorage(name *ast.Ident, argument types.Type) {
 		return
 	}
 	if failure := c.proofs.FrozenFailure(argument); failure.Reason != "" {
-		c.report(name.Pos(), "stored im argument: "+failure.Reason+"\n  fix: "+failure.Repair)
+		c.report(name.Pos(), "start argument: "+failure.Reason+"\n  fix: "+failure.Repair)
 	}
 }

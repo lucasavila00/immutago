@@ -63,7 +63,7 @@ typed_nil_boundaries.go:17:2: unsupported immutable operation: native builders r
 typed_nil_boundaries.go:19:13: unsupported immutable operation: protected value conversions are unsupported
   source: []nilSnapshot(nil)
   type: []docrejected.nilSnapshot
-  fix: construct the destination marked value from copied fields
+  fix: construct the destination Frozen or Local record from copied fields; initialize arrays and builders directly
 typed_nil_boundaries.go:19:2: native builder objects requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 typed_nil_boundaries.go:19:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: objects := []nilSnapshot(nil)
@@ -76,7 +76,7 @@ typed_nil_boundaries.go:29:21: cannot freeze this expression: pass an exclusivel
 typed_nil_boundaries.go:29:21: unsupported immutable operation: protected value conversions are unsupported
   source: []nilSnapshot(nil)
   type: []docrejected.nilSnapshot
-  fix: construct the destination marked value from copied fields
+  fix: construct the destination Frozen or Local record from copied fields; initialize arrays and builders directly
 typed_nil_boundaries.go:35:6: native builder values requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 typed_nil_boundaries.go:35:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: values []int = nil

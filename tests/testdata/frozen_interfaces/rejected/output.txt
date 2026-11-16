@@ -1,9 +1,9 @@
 forms.go:10:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved api.ScorerProjection
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-forms.go:14:18: service method Raw must return a read result or error: example.com/consumer/api.Scorer is not a Copied value
+forms.go:14:18: service method Raw must return a read result or error: example.com/consumer/api.Scorer is not a read result
   result type: api.Scorer
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
 forms.go:26:30: unsupported immutable operation: closures require ordinary or Frozen captures
   source: local
   type: api.ScorerProjection
@@ -14,11 +14,11 @@ forms.go:27:6: unsupported immutable operation: Frozen interface method receiver
 forms.go:29:2: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = local
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-forms.go:30:6: unsupported immutable operation: example.com/consumer/api.Scorer is not a Copied value
+forms.go:30:6: unsupported immutable operation: example.com/consumer/api.Scorer is not a read result
   source: im.Value(im.ProjectionOf(s))
   type: api.Scorer
   fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
-forms.go:30:9: immutable type argument: example.com/consumer/api.Scorer is not a Copied value
+forms.go:30:9: immutable type argument: example.com/consumer/api.Scorer is not a read result
   type: api.Scorer
   fix: use projection.Unsafe() for shared access; use the matching generated projection for Local reads when available
 forms.go:45:2: unsupported immutable operation: writes to immutable objects are unsupported
