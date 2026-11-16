@@ -9,25 +9,26 @@ import (
 
 // matchFrozenInterface proves every value placed in a sealed interface.
 // Exact method receivers exclude promoted calls and implicit dereferences.
-func (c *subsetChecks) matchFrozenInterface(source, destination types.Type) string {
-	if reason := c.proofs.FrozenReason(destination); reason != "" {
+func (c *subsetChecks) matchFrozenInterface(source, destination types.Type) checker.Failure {
+	if reason := c.proofs.FrozenFailure(destination); reason.Reason != "" {
 		return reason
 	}
 	if source == types.Typ[types.UntypedNil] {
-		return ""
+		return checker.Failure{}
 	}
-	if reason := c.proofs.FrozenReason(source); reason != "" {
-		return "Frozen interface implementation: " + reason
+	if reason := c.proofs.FrozenFailure(source); reason.Reason != "" {
+		reason.Reason = "Frozen interface implementation: " + reason.Reason
+		return reason
 	}
 	if checker.FrozenInterface(source) {
-		return ""
+		return checker.Failure{}
 	}
 	target := types.Unalias(source)
 	if pointer, ok := target.(*types.Pointer); ok {
 		target = types.Unalias(pointer.Elem())
 	}
 	if _, named := target.(*types.Named); !named || !checker.Frozen(target) {
-		return "Frozen interfaces require concrete Frozen record implementations"
+		return shapeFailure("Frozen interfaces require concrete Frozen record implementations")
 	}
 	methods := types.NewMethodSet(source)
 	for method := range destination.Underlying().(*types.Interface).Methods() {
@@ -36,14 +37,14 @@ func (c *subsetChecks) matchFrozenInterface(source, destination types.Type) stri
 		}
 		selection := methods.Lookup(method.Pkg(), method.Name())
 		if selection == nil || len(selection.Index()) != 1 {
-			return "Frozen interface implementations cannot use promoted methods"
+			return shapeFailure("Frozen interface implementations cannot use promoted methods")
 		}
 		signature := selection.Obj().Type().(*types.Signature)
 		if !types.Identical(source, signature.Recv().Type()) {
-			return "Frozen interface method receivers must match the converted type exactly"
+			return shapeFailure("Frozen interface method receivers must match the converted type exactly")
 		}
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // frozenInterfaceMethodType identifies declared signatures inside a sealed contract.
@@ -61,14 +62,14 @@ func (c *subsetChecks) frozenInterfaceMethodType(expression ast.Expr) bool {
 }
 
 // matchFrozenInterfaceMethod requires a direct call through a proved named contract.
-func (c *subsetChecks) matchFrozenInterfaceMethod(selector *ast.SelectorExpr) string {
+func (c *subsetChecks) matchFrozenInterfaceMethod(selector *ast.SelectorExpr) checker.Failure {
 	typ := c.pass.TypesInfo.TypeOf(selector.X)
-	if reason := c.proofs.FrozenReason(typ); reason != "" {
+	if reason := c.proofs.FrozenFailure(typ); reason.Reason != "" {
 		return reason
 	}
 	selection := c.pass.TypesInfo.Selections[selector]
 	if len(selection.Index()) != 1 || !types.Identical(typ, selection.Recv()) {
-		return "Frozen interface methods require a direct interface receiver"
+		return shapeFailure("Frozen interface methods require a direct interface receiver")
 	}
-	return ""
+	return checker.Failure{}
 }

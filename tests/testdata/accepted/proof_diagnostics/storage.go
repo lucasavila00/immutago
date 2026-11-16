@@ -85,3 +85,11 @@ func goodCalls(value LocalScores, p *LocalScores, queue chan *Point) {
 }
 
 func readLocal(p *LocalScores) float64 { return p.Score.Value }
+
+func markerProjection(value Record) {
+	_ = im.ProjectionOf(value)
+}
+
+func (p *Point) ReadPointer() int { return p.X }
+
+func pointerReceiver(value Point) int { return new(value).ReadPointer() }

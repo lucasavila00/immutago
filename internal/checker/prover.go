@@ -10,12 +10,15 @@ import (
 // A Prover must not be used by concurrent passes.
 type Prover struct {
 	graph    proof
-	failures map[*obligation]TypeFailure
+	failures map[*obligation]Failure
 }
 
 // Reason proves t or returns a component path to a failure.
 // The selected cause can depend on earlier queries; each root message is cached.
-func (p *Prover) Reason(t types.Type) string { return p.render(p.graph.node(t)).Reason }
+func (p *Prover) Reason(t types.Type) string { return p.Failure(t).Reason }
+
+// Failure returns the failed storage rule and its repair from the same proof.
+func (p *Prover) Failure(t types.Type) Failure { return p.render(p.graph.node(t)) }
 
 // FrozenReason proves the shared payload contract used by Cell and Projection.
 func (p *Prover) FrozenReason(t types.Type) string {
@@ -32,18 +35,18 @@ func (p *Prover) ReadResultReason(t types.Type) string {
 	return p.ReadResultFailure(t).Reason
 }
 
-// TypeFailure contains one component path and the repair supplied by its failing rule.
+// Failure contains a rejected rule and the repair supplied by that rule.
 // An empty Reason means that the proof passed.
-type TypeFailure struct {
+type Failure struct {
 	Reason string
 	Repair string
 }
 
 // render completes pending obligations and reuses the selected failure path.
-func (p *Prover) render(root *obligation) TypeFailure {
+func (p *Prover) render(root *obligation) Failure {
 	p.graph.propagate()
 	if !root.failed() {
-		return TypeFailure{}
+		return Failure{}
 	}
 	if failure, found := p.failures[root]; found {
 		return failure
@@ -54,25 +57,25 @@ func (p *Prover) render(root *obligation) TypeFailure {
 		message.WriteString(current.reason)
 		repair = current.repair
 	}
-	failure := TypeFailure{Reason: message.String(), Repair: repair}
+	failure := Failure{Reason: message.String(), Repair: repair}
 	if p.failures == nil {
-		p.failures = make(map[*obligation]TypeFailure)
+		p.failures = make(map[*obligation]Failure)
 	}
 	p.failures[root] = failure
 	return failure
 }
 
 // FrozenFailure returns the failed type rule and its repair from the same proof.
-func (p *Prover) FrozenFailure(t types.Type) TypeFailure {
+func (p *Prover) FrozenFailure(t types.Type) Failure {
 	return p.render(p.graph.categoryNode(t, frozenCategory))
 }
 
 // CopiedFailure returns the failed type rule and its repair from the same proof.
-func (p *Prover) CopiedFailure(t types.Type) TypeFailure {
+func (p *Prover) CopiedFailure(t types.Type) Failure {
 	return p.render(p.graph.categoryNode(t, copiedCategory))
 }
 
 // ReadResultFailure returns the failed type rule and its repair from the same proof.
-func (p *Prover) ReadResultFailure(t types.Type) TypeFailure {
+func (p *Prover) ReadResultFailure(t types.Type) Failure {
 	return p.render(p.graph.categoryNode(t, readCategory))
 }

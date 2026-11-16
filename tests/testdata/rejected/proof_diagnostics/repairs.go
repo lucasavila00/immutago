@@ -44,3 +44,13 @@ func badCalls(value LocalScores, p *LocalScores, queue chan Point) {
 }
 
 func readLocal(p *LocalScores) float64 { return p.Score.Value }
+
+var interfaceMarker im.Cell[im.FrozenInterface]
+
+func markerProjection(value im.FrozenInterface) {
+	_ = im.ProjectionOf(value)
+}
+
+func (p *Point) ReadPointer() int { return p.X }
+
+func pointerReceiver(value Point) int { return value.ReadPointer() }

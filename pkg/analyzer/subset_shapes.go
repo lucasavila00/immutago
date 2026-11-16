@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"github.com/lucasavila00/immutago/internal/checker"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -67,16 +68,16 @@ func (c *subsetChecks) protectedSelection(selector *ast.SelectorExpr) bool {
 }
 
 // matchStatement finds the complete statement that owns a protected operand.
-func (c *subsetChecks) matchStatement(expression ast.Expr) string {
+func (c *subsetChecks) matchStatement(expression ast.Expr) checker.Failure {
 	restricted := c.restrictedOperand(expression)
 	for parent := c.parents[expression]; parent != nil; parent = c.parents[parent] {
 		if typ, ok := parent.(ast.Expr); ok && c.pass.TypesInfo.Types[typ].IsType() {
-			return "protected operation is outside the supported statement forms"
+			return shapeFailure("protected operation is outside the supported statement forms")
 		}
 		if declaration, ok := parent.(*ast.ValueSpec); ok {
 			if restricted && (len(declaration.Names) != 1 || len(declaration.Values) > 1) &&
 				!c.resultDeclaration(declaration) {
-				return "multiple assignments involving protected storage are unsupported"
+				return shapeFailure("multiple assignments involving protected storage are unsupported")
 			}
 			return c.matchDeclaration(declaration)
 		}
@@ -85,13 +86,13 @@ func (c *subsetChecks) matchStatement(expression ast.Expr) string {
 			continue
 		}
 		if restricted {
-			if rule := c.matchRestrictedStatement(statement); rule != "" {
+			if rule := c.matchRestrictedStatement(statement); rule.Reason != "" {
 				return rule
 			}
 		}
 		return c.matchStatementNode(statement)
 	}
-	return "protected operation is outside the supported statement forms"
+	return shapeFailure("protected operation is outside the supported statement forms")
 }
 
 // restrictedOperand includes Local transport, builders, and fixed Cell operations.
@@ -105,29 +106,29 @@ func (c *subsetChecks) restrictedOperand(expression ast.Expr) bool {
 }
 
 // matchRestrictedStatement keeps the statement boundary for Local, builder, and Cell operations.
-func (c *subsetChecks) matchRestrictedStatement(statement ast.Stmt) string {
+func (c *subsetChecks) matchRestrictedStatement(statement ast.Stmt) checker.Failure {
 	if clause, ok := c.parents[statement].(*ast.CommClause); ok && clause.Comm == statement {
-		return "protected storage is unsupported in select communication clauses"
+		return shapeFailure("protected storage is unsupported in select communication clauses")
 	}
 	switch statement := statement.(type) {
 	case *ast.AssignStmt:
 		if (len(statement.Lhs) != 1 || len(statement.Rhs) != 1) && !c.resultAssignment(statement) {
-			return "multiple assignments involving protected storage are unsupported"
+			return shapeFailure("multiple assignments involving protected storage are unsupported")
 		}
 	case *ast.RangeStmt:
 		if statement.Tok == token.ASSIGN && statement.Key != nil && statement.Value != nil {
-			return "multiple assignments involving protected storage are unsupported"
+			return shapeFailure("multiple assignments involving protected storage are unsupported")
 		}
 	case *ast.GoStmt, *ast.DeferStmt:
-		return "protected storage requires synchronous calls"
+		return shapeFailure("protected storage requires synchronous calls")
 	case *ast.SendStmt:
-		return "protected operation is outside the supported statement forms"
+		return shapeFailure("protected operation is outside the supported statement forms")
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // matchStatementNode lists each complete supported statement and rejects the remaining Go statements.
-func (c *subsetChecks) matchStatementNode(statement ast.Stmt) string {
+func (c *subsetChecks) matchStatementNode(statement ast.Stmt) checker.Failure {
 	switch statement := statement.(type) {
 	case *ast.AssignStmt:
 		return c.matchAssignment(statement)
@@ -140,7 +141,7 @@ func (c *subsetChecks) matchStatementNode(statement ast.Stmt) string {
 	case *ast.SwitchStmt:
 		return c.matchSwitch(statement)
 	case *ast.IfStmt, *ast.ForStmt:
-		return ""
+		return checker.Failure{}
 	case *ast.ExprStmt:
 		return c.matchExpressionStatement(statement)
 	case *ast.GoStmt:
@@ -159,11 +160,11 @@ func (c *subsetChecks) matchStatementNode(statement ast.Stmt) string {
 			}
 		}
 	}
-	return "protected operation is outside the supported statement forms"
+	return shapeFailure("protected operation is outside the supported statement forms")
 }
 
 // matchExpressionStatement permits calls, ordinary channel receives, and no-binding type switches.
-func (c *subsetChecks) matchExpressionStatement(statement *ast.ExprStmt) string {
+func (c *subsetChecks) matchExpressionStatement(statement *ast.ExprStmt) checker.Failure {
 	if receive, ok := ast.Unparen(statement.X).(*ast.UnaryExpr); ok && receive.Op == token.ARROW {
 		return c.matchUnary(receive)
 	}
@@ -173,8 +174,8 @@ func (c *subsetChecks) matchExpressionStatement(statement *ast.ExprStmt) string 
 	if switched, ok := c.parents[statement].(*ast.TypeSwitchStmt); ok && switched.Assign == statement {
 		if assertion, ok := ast.Unparen(statement.X).(*ast.TypeAssertExpr); ok && assertion.Type == nil &&
 			!c.restrictedOperand(assertion.X) {
-			return ""
+			return checker.Failure{}
 		}
 	}
-	return "protected operation is outside the supported statement forms"
+	return shapeFailure("protected operation is outside the supported statement forms")
 }

@@ -95,7 +95,7 @@ repairs.go:40:56: unsupported immutable operation: channels of immutable storage
 repairs.go:41:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.Score.Set(2)
   type: ()
-  fix: copy a Copied field or element into a local before calling a pointer method; for a value method on *T, write (*pointer).Method()
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 repairs.go:42:6: unsupported immutable operation: shared pointer conversions are unsupported
   source: (*LocalScores)(nil)
   type: *proofdiagnostics.LocalScores
@@ -103,6 +103,13 @@ repairs.go:42:6: unsupported immutable operation: shared pointer conversions are
 repairs.go:43:2: unsupported immutable operation: protected storage requires synchronous calls
   source: go readLocal(p)
   fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
+repairs.go:48:24: immutable type argument: immutable markers are annotations, not data
+  type: im.FrozenInterface
+  fix: embed im.FrozenInterface in a named interface; use that interface as the payload
+repairs.go:52:48: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: value.ReadPointer()
+  type: int
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 repairs.go:8:16: immutable type argument: interface{} is not provably immutable
   type: any
   fix: embed im.FrozenInterface in a named interface, or use a concrete Frozen type

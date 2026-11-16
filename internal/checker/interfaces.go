@@ -43,7 +43,7 @@ func (p *proof) frozenInterface(result *obligation, t types.Type) {
 	}
 	if IsLibraryType(t, "FrozenInterface") {
 		result.reason = "immutable markers are annotations, not data"
-		result.repair = "embed the marker in a named struct; use data fields for values"
+		result.repair = "embed im.FrozenInterface in a named interface; use that interface as the payload"
 		return
 	}
 	contract := named.Underlying().(*types.Interface)

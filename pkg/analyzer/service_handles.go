@@ -23,8 +23,8 @@ func (c *subsetChecks) visitHandle(node ast.Node) bool {
 		}
 	case *ast.SelectorExpr:
 		if selection := c.pass.TypesInfo.Selections[node]; selection != nil && refAccessor(selection.Obj()) {
-			if rule := c.matchBorrow(node); rule != "" {
-				c.report(node, rule)
+			if rule := c.matchBorrow(node); rule.Reason != "" {
+				c.reportFailure(node, rule)
 			}
 		}
 	}
@@ -39,8 +39,8 @@ func (c *subsetChecks) visitHandle(node ast.Node) bool {
 // checkReference proves the concrete service target without restricting value transport.
 func (c *subsetChecks) checkReference(node ast.Node, typ types.Type) {
 	if checker.IsRuntimeType(typ, "Ref") {
-		if reason := c.proofs.Reason(typ); reason != "" {
-			c.report(node, reason)
+		if reason := c.proofs.Failure(typ); reason.Reason != "" {
+			c.reportFailure(node, reason)
 		}
 	}
 }
@@ -55,29 +55,29 @@ func refAccessor(object types.Object) bool {
 }
 
 // matchBorrow accepts only a direct exported method call on the selected service.
-func (c *subsetChecks) matchBorrow(selector *ast.SelectorExpr) string {
+func (c *subsetChecks) matchBorrow(selector *ast.SelectorExpr) checker.Failure {
 	const rejected = "use a service reference only as ref.Borrow().Method(args); " +
 		"do not extract the accessor or service pointer"
 	selection := c.pass.TypesInfo.Selections[selector]
 	if selection == nil || selection.Kind() != types.MethodVal || len(selection.Index()) != 1 {
-		return rejected
+		return shapeFailure(rejected)
 	}
 	current := c.directCall(selector)
 	if current == nil {
-		return rejected
+		return shapeFailure(rejected)
 	}
 	message, ok := c.unparenthesizedParent(current).(*ast.SelectorExpr)
 	if !ok || ast.Unparen(message.X) != current {
-		return rejected
+		return shapeFailure(rejected)
 	}
 	method := c.pass.TypesInfo.Selections[message]
 	if method == nil || method.Kind() != types.MethodVal || c.directCall(message) == nil ||
 		!method.Obj().Exported() || runtimeObject(method.Obj()) ||
 		method.Obj().Name() == "Init" || method.Obj().Name() == "Run" {
-		return rejected
+		return shapeFailure(rejected)
 	}
 	if !checker.Service(method.Recv()) {
-		return "Ref requires a service target that embeds supervise.Service"
+		return shapeFailure("Ref requires a service target that embeds supervise.Service")
 	}
-	return ""
+	return checker.Failure{}
 }

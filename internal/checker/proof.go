@@ -205,6 +205,11 @@ func (p *proof) value(result *obligation, t types.Type) {
 		p.frozenInterface(result, t)
 		return
 	}
+	unsupportedFrozen(result, t)
+}
+
+// unsupportedFrozen rejects native storage without a Frozen representation.
+func unsupportedFrozen(result *obligation, t types.Type) {
 	result.reason = fmt.Sprintf("%s is not provably immutable", types.TypeString(t, nil))
 	switch t.Underlying().(type) {
 	case *types.Slice:
@@ -227,8 +232,8 @@ func (p *proof) frozenPointer(result *obligation, pointer *types.Pointer) {
 	}
 	if !Marked(pointer.Elem()) {
 		result.reason = "stored pointers require a concrete Frozen record target"
-		result.repair = "point to a Frozen record, or store the value without a pointer; read Copied " +
-			"projection payloads with im.Value"
+		result.repair = "point to a Frozen record, or store the value without a pointer; " +
+			"for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))"
 		return
 	}
 	p.depend(result, pointer.Elem(), "")

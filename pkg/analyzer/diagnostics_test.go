@@ -210,6 +210,7 @@ func TestRepairMatchesTypeCategory(t *testing.T) {
 		{`type L struct{im.Local};func read(*L){};func f(p *L){go read(p)}`,
 			"keep Local values, Local pointers, and native builders out of go and defer"},
 		{`type L struct{im.Local};func f(chan L){}`, "send a Frozen pointer or Frozen handle"},
+		{`var value im.Cell[im.FrozenInterface]`, "embed im.FrozenInterface in a named interface; use that interface"},
 		{`var value im.Cell[any]`, "embed im.FrozenInterface in a named interface, or use a concrete Frozen type"},
 		{`type Plain struct{ N int }; var value im.Cell[Plain]`,
 			"embed im.Frozen and use Frozen fields, or im.Copied for value-only fields"},

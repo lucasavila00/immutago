@@ -80,8 +80,7 @@ func (c *checks) checkServiceStorage(name *ast.Ident, argument types.Type) {
 	if !c.queries.Owns(argument) && !c.queries.Callable(argument) {
 		return
 	}
-	if reason := c.proofs.FrozenReason(argument); reason != "" {
-		c.report(name.Pos(), "stored im argument: "+reason+
-			"\n  fix: pass an immutable value or a Frozen pointer; Local pointers cannot be stored")
+	if failure := c.proofs.FrozenFailure(argument); failure.Reason != "" {
+		c.report(name.Pos(), "stored im argument: "+failure.Reason+"\n  fix: "+failure.Repair)
 	}
 }

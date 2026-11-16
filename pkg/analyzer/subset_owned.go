@@ -5,6 +5,7 @@ import (
 	"go/token"
 	"go/types"
 
+	"github.com/lucasavila00/immutago/internal/checker"
 	"github.com/lucasavila00/immutago/internal/freeze"
 )
 
@@ -18,30 +19,29 @@ func (c *subsetChecks) ownedExpression(expression ast.Expr) bool {
 }
 
 // matchBuilderBinding accepts fresh local construction or append into the same existing handle.
-func (c *subsetChecks) matchBuilderBinding(destination, source ast.Expr, declaration bool) string {
+func (c *subsetChecks) matchBuilderBinding(destination, source ast.Expr, declaration bool) checker.Failure {
 	if !c.ownedExpression(destination) {
-		return ""
+		return checker.Failure{}
 	}
 	if declaration && freeze.Fresh(c.pass, source) {
-		return ""
+		return checker.Failure{}
 	}
 	if !declaration {
 		if call, ok := ast.Unparen(source).(*ast.CallExpr); ok {
 			if builtin, ok := c.calledObject(call.Fun).(*types.Builtin); ok && builtin.Name() == "append" &&
 				c.matchBuilderBuiltin(call, "append") {
-				return ""
+				return checker.Failure{}
 			}
 		}
 	}
-	return "native builders require fresh local bindings or append to the same handle"
+	return shapeFailure("native builders require fresh local bindings or append to the same handle")
 }
 
 // checkBuilderTypes proves protected keys and elements once for each tracked owner.
 func (c *subsetChecks) checkBuilderTypes() {
 	for variable := range c.owners {
-		if reason := c.builderTypeReason(variable.Type()); reason != "" {
-			c.pass.Reportf(variable.Pos(), "unsupported native builder: %s\n  fix: "+
-				"use allowed stored types for builder keys and elements", reason)
+		if failure := c.builderTypeFailure(variable.Type()); failure.Reason != "" {
+			c.pass.Reportf(variable.Pos(), "unsupported native builder: %s\n  fix: %s", failure.Reason, failure.Repair)
 		}
 	}
 }
@@ -69,21 +69,21 @@ func (c *subsetChecks) ownedInputs() {
 	}
 }
 
-// builderTypeReason proves keys and elements before the owned native handle is exempted.
-func (c *subsetChecks) builderTypeReason(t types.Type) string {
+// builderTypeFailure proves keys and elements before the owned native handle is exempted.
+func (c *subsetChecks) builderTypeFailure(t types.Type) checker.Failure {
 	if !c.queries.Contains(t) {
-		return ""
+		return checker.Failure{}
 	}
 	switch storage := t.Underlying().(type) {
 	case *types.Slice:
-		return c.proofs.Reason(storage.Elem())
+		return c.proofs.Failure(storage.Elem())
 	case *types.Map:
-		if reason := c.proofs.Reason(storage.Key()); reason != "" {
+		if reason := c.proofs.Failure(storage.Key()); reason.Reason != "" {
 			return reason
 		}
-		return c.proofs.Reason(storage.Elem())
+		return c.proofs.Failure(storage.Elem())
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // ownedDeclaration admits the native type syntax and initializer of checked local builders.

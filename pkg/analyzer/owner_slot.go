@@ -315,8 +315,8 @@ func (c *subsetChecks) checkCellCall(call *ast.CallExpr) {
 			return
 		}
 	}
-	if rule := c.matchStatement(call); rule != "" {
-		c.report(c.statementOperation(call), rule)
+	if rule := c.matchStatement(call); rule.Reason != "" {
+		c.reportFailure(c.statementOperation(call), rule)
 	}
 }
 

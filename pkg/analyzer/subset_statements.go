@@ -23,8 +23,8 @@ func (c *subsetChecks) declarationNode(node ast.Node) {
 		c.assignmentBinding(declaration)
 	case *ast.ReturnStmt:
 		if c.queries.Contains(c.functionSignature(declaration).Results()) {
-			if rule := c.matchReturn(declaration); rule != "" {
-				c.report(declaration, rule)
+			if rule := c.matchReturn(declaration); rule.Reason != "" {
+				c.reportFailure(declaration, rule)
 			}
 		}
 	case *ast.TypeSwitchStmt:
@@ -38,8 +38,8 @@ func (c *subsetChecks) declarationNode(node ast.Node) {
 func (c *subsetChecks) assignmentBinding(statement *ast.AssignStmt) {
 	for _, destination := range statement.Lhs {
 		if c.protectedStorage(destination) || c.queries.Contains(c.pass.TypesInfo.TypeOf(destination)) {
-			if rule := c.matchAssignment(statement); rule != "" {
-				c.report(statement, rule)
+			if rule := c.matchAssignment(statement); rule.Reason != "" {
+				c.reportFailure(statement, rule)
 			}
 			return
 		}
@@ -49,8 +49,8 @@ func (c *subsetChecks) assignmentBinding(statement *ast.AssignStmt) {
 // functionDeclaration checks the exact contract for named functions and methods.
 func (c *subsetChecks) functionDeclaration(declaration *ast.FuncDecl) {
 	signature := c.pass.TypesInfo.Defs[declaration.Name].Type().(*types.Signature)
-	if rule := subsetResults(signature.Results()); rule != "" {
-		c.report(declaration.Name, rule)
+	if rule := subsetResults(signature.Results()); rule.Reason != "" {
+		c.reportFailure(declaration.Name, rule)
 	}
 	if genericSignature(signature) {
 		c.genericStorage(declaration.Name)
@@ -65,8 +65,8 @@ func (c *subsetChecks) valueDeclaration(declaration *ast.ValueSpec) {
 	for _, name := range declaration.Names {
 		variable := c.pass.TypesInfo.Defs[name]
 		if variable != nil && (c.queries.Contains(variable.Type()) || c.ownedExpression(name)) {
-			if rule := c.matchDeclaration(declaration); rule != "" {
-				c.report(declaration, rule)
+			if rule := c.matchDeclaration(declaration); rule.Reason != "" {
+				c.reportFailure(declaration, rule)
 			}
 			break
 		}
@@ -86,14 +86,14 @@ func (c *subsetChecks) typeSwitchDeclaration(declaration *ast.TypeSwitchStmt) {
 }
 
 // matchAssignment resolves the whole binding form before checking each write and conversion.
-func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) string {
+func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) checker.Failure {
 	if len(statement.Lhs) != 1 || len(statement.Rhs) != 1 {
 		if !c.resultAssignment(statement) && (c.restrictedBindings(statement.Lhs) || c.restrictedBindings(statement.Rhs)) {
-			return "multiple assignments involving protected storage are unsupported"
+			return shapeFailure("multiple assignments involving protected storage are unsupported")
 		}
 	}
 	for _, destination := range statement.Lhs {
-		if rule := c.matchWrite(destination); rule != "" {
+		if rule := c.matchWrite(destination); rule.Reason != "" {
 			return rule
 		}
 	}
@@ -102,75 +102,75 @@ func (c *subsetChecks) matchAssignment(statement *ast.AssignStmt) string {
 		if len(statement.Rhs) > 1 {
 			source = statement.Rhs[index]
 		}
-		if rule := c.matchBuilderBinding(destination, source, statement.Tok == token.DEFINE); rule != "" {
+		if rule := c.matchBuilderBinding(destination, source, statement.Tok == token.DEFINE); rule.Reason != "" {
 			return rule
 		}
-		if rule := c.matchBinding(c.bindingSource(source, index), destination); rule != "" {
+		if rule := c.matchBinding(c.bindingSource(source, index), destination); rule.Reason != "" {
 			return rule
 		}
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // matchBinding permits Local pointers only in local variable bindings.
-func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) string {
-	if rule := c.matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule != "" {
+func (c *subsetChecks) matchBinding(source types.Type, destination ast.Expr) checker.Failure {
+	if rule := c.matchTransport(source, c.pass.TypesInfo.TypeOf(destination)); rule.Reason != "" {
 		return rule
 	}
 	if !localReference(source) && !c.queries.Locals(source) {
-		return ""
+		return checker.Failure{}
 	}
 	name, ok := ast.Unparen(destination).(*ast.Ident)
 	if !ok {
 		if localReference(source) {
-			return "Local pointers cannot enter aggregate storage"
+			return shapeFailure("Local pointers cannot enter aggregate storage")
 		}
-		return ""
+		return checker.Failure{}
 	}
 	if name.Name == "_" {
-		return ""
+		return checker.Failure{}
 	}
 	variable, ok := c.pass.TypesInfo.ObjectOf(name).(*types.Var)
 	if ok && variable.Parent() != c.pass.Pkg.Scope() {
-		return ""
+		return checker.Failure{}
 	}
-	return "Local values and pointers cannot be stored in package variables"
+	return shapeFailure("Local values and pointers cannot be stored in package variables")
 }
 
 // matchDeclaration accepts one binding or a documented multiple-result call.
-func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) string {
+func (c *subsetChecks) matchDeclaration(declaration *ast.ValueSpec) checker.Failure {
 	if group, ok := c.parents[declaration].(*ast.GenDecl); ok && group.Tok != token.VAR {
-		return "protected operation is outside the supported statement forms"
+		return shapeFailure("protected operation is outside the supported statement forms")
 	}
 	if !c.declarationShape(declaration) {
-		return "multiple assignments involving protected storage are unsupported"
+		return shapeFailure("multiple assignments involving protected storage are unsupported")
 	}
 	for _, name := range declaration.Names {
 		variable := c.pass.TypesInfo.Defs[name]
 		if variable != nil && name.Name != "_" && c.queries.Locals(variable.Type()) &&
 			variable.Parent() == c.pass.Pkg.Scope() {
-			return "Local values and pointers cannot be stored in package variables"
+			return shapeFailure("Local values and pointers cannot be stored in package variables")
 		}
 		if variable != nil && localReference(variable.Type()) && variable.Parent() == c.pass.Pkg.Scope() {
-			return "global Local pointers are unsupported"
+			return shapeFailure("global Local pointers are unsupported")
 		}
 	}
 	if len(declaration.Values) == 0 {
-		return ""
+		return checker.Failure{}
 	}
 	source := declaration.Values[0]
 	for index, destination := range declaration.Names {
 		if len(declaration.Values) > 1 {
 			source = declaration.Values[index]
 		}
-		if rule := c.matchBuilderBinding(destination, source, true); rule != "" {
+		if rule := c.matchBuilderBinding(destination, source, true); rule.Reason != "" {
 			return rule
 		}
-		if rule := c.matchBinding(c.bindingSource(source, index), destination); rule != "" {
+		if rule := c.matchBinding(c.bindingSource(source, index), destination); rule.Reason != "" {
 			return rule
 		}
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // declarationShape permits ordinary bindings or the listed restricted result forms.
@@ -209,69 +209,69 @@ func (c *subsetChecks) bindingSource(source ast.Expr, index int) types.Type {
 }
 
 // matchReturn maps each explicit result to its declared result type.
-func (c *subsetChecks) matchReturn(statement *ast.ReturnStmt) string {
+func (c *subsetChecks) matchReturn(statement *ast.ReturnStmt) checker.Failure {
 	for index, expression := range statement.Results {
 		source := c.pass.TypesInfo.TypeOf(expression)
 		if tuple, ok := source.(*types.Tuple); ok {
 			for item := 0; item < tuple.Len(); item++ {
-				if rule := c.matchReturnValue(tuple.At(item).Type(), c.returnType(statement, item)); rule != "" {
+				if rule := c.matchReturnValue(tuple.At(item).Type(), c.returnType(statement, item)); rule.Reason != "" {
 					return rule
 				}
 			}
-		} else if rule := c.matchReturnValue(source, c.returnType(statement, index)); rule != "" {
+		} else if rule := c.matchReturnValue(source, c.returnType(statement, index)); rule.Reason != "" {
 			return rule
 		}
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // matchReturnValue permits concrete values and Frozen pointers at a return boundary.
-func (c *subsetChecks) matchReturnValue(source, destination types.Type) string {
+func (c *subsetChecks) matchReturnValue(source, destination types.Type) checker.Failure {
 	if localReference(source) || localReference(destination) {
-		return "returning Local pointers is unsupported"
+		return shapeFailure("returning Local pointers is unsupported")
 	}
 	return c.matchTransport(source, destination)
 }
 
 // matchSwitch checks every case conversion and excludes undocumented pointer switch operands.
-func (c *subsetChecks) matchSwitch(statement *ast.SwitchStmt) string {
+func (c *subsetChecks) matchSwitch(statement *ast.SwitchStmt) checker.Failure {
 	if statement.Tag == nil {
-		return ""
+		return checker.Failure{}
 	}
 	destination := c.pass.TypesInfo.TypeOf(statement.Tag)
 	if c.protectedReference(destination) {
-		return "reference operation is outside the supported allowlist"
+		return shapeFailure("reference operation is outside the supported allowlist")
 	}
 	for _, node := range statement.Body.List {
 		for _, value := range node.(*ast.CaseClause).List {
 			source := c.pass.TypesInfo.TypeOf(value)
-			if rule := c.matchTransport(source, destination); rule != "" {
+			if rule := c.matchTransport(source, destination); rule.Reason != "" {
 				return rule
 			}
 			if c.protectedReference(source) {
-				return "reference operation is outside the supported allowlist"
+				return shapeFailure("reference operation is outside the supported allowlist")
 			}
 		}
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // matchRange resolves yielded types and keeps restricted bindings to fresh targets or one existing target.
-func (c *subsetChecks) matchRange(statement *ast.RangeStmt) string {
+func (c *subsetChecks) matchRange(statement *ast.RangeStmt) checker.Failure {
 	source := c.pass.TypesInfo.TypeOf(statement.X)
 	yielded := rangeTypes(source)
 	if statement.Tok == token.ASSIGN && statement.Key != nil && statement.Value != nil &&
 		(c.restrictedOperand(statement.X) || c.queries.Owns(yielded[0]) || c.queries.Owns(yielded[1])) {
-		return "multiple assignments involving protected storage are unsupported"
+		return shapeFailure("multiple assignments involving protected storage are unsupported")
 	}
 	if c.queries.Callable(source) {
 		call, ok := ast.Unparen(statement.X).(*ast.CallExpr)
 		if !ok {
-			return "protected iteration requires a direct frozen All call"
+			return shapeFailure("protected iteration requires a direct frozen All call")
 		}
 		selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 		if !ok || selector.Sel.Name != "All" || !c.exactCollectionMethod(selector) {
-			return "protected iteration requires a direct frozen All call"
+			return shapeFailure("protected iteration requires a direct frozen All call")
 		}
 	}
 	for index, target := range []ast.Expr{statement.Key, statement.Value} {
@@ -279,15 +279,15 @@ func (c *subsetChecks) matchRange(statement *ast.RangeStmt) string {
 			continue
 		}
 		if statement.Tok == token.ASSIGN {
-			if rule := c.matchWrite(target); rule != "" {
+			if rule := c.matchWrite(target); rule.Reason != "" {
 				return rule
 			}
 		}
-		if rule := c.matchBinding(yielded[index], target); rule != "" {
+		if rule := c.matchBinding(yielded[index], target); rule.Reason != "" {
 			return rule
 		}
 	}
-	return ""
+	return checker.Failure{}
 }
 
 // rangeTypes reads the compiler-checked native or iterator element types.

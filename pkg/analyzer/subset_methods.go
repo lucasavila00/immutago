@@ -23,41 +23,41 @@ func (c *subsetChecks) markedMethodReceiver(signature *types.Signature) bool {
 
 // matchMethod checks receiver shapes and restricted calls.
 // Persistent receivers also permit method values and expressions with the same shape.
-func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
+func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) checker.Failure {
 	selection := c.pass.TypesInfo.Selections[selector]
 	restricted := c.queries.Transport(selection.Recv()) || c.queries.Callable(c.pass.TypesInfo.TypeOf(selector))
 	if selection.Kind() != types.MethodVal && restricted {
-		return "method expressions require ordinary or persistent Frozen receivers and contracts"
+		return shapeFailure("method expressions require ordinary or persistent Frozen receivers and contracts")
 	}
 	if c.directCall(selector) == nil && restricted {
-		return "method values require ordinary or persistent Frozen receivers and contracts"
+		return shapeFailure("method values require ordinary or persistent Frozen receivers and contracts")
 	}
 	if _, parameter := types.Unalias(selection.Recv()).(*types.TypeParam); parameter && !restricted {
-		return ""
+		return checker.Failure{}
 	}
 	if _, dynamic := selection.Recv().Underlying().(*types.Interface); dynamic {
 		if checker.FrozenInterface(selection.Recv()) {
 			return c.matchFrozenInterfaceMethod(selector)
 		}
 		if !restricted {
-			return ""
+			return checker.Failure{}
 		}
-		return "dynamic calls require ordinary or persistent Frozen parameters and results"
+		return shapeFailure("dynamic calls require ordinary or persistent Frozen parameters and results")
 	}
 	signature := selection.Obj().(*types.Func).Origin().Type().(*types.Signature)
 	if !c.protectedStorage(selector.X) && !c.queries.Owns(signature.Recv().Type()) {
-		return ""
+		return checker.Failure{}
 	}
 	if len(selection.Index()) != 1 {
-		return "promoted immutable methods are unsupported"
+		return shapeFailure("promoted immutable methods are unsupported")
 	}
 	if runtimeObject(selection.Obj()) {
 		signature = selection.Obj().Type().(*types.Signature)
 	} else if !c.markedMethodReceiver(signature) {
-		return "immutable methods require a concrete non-generic marked receiver"
+		return shapeFailure("immutable methods require a concrete non-generic marked receiver")
 	}
 	if !types.Identical(c.pass.TypesInfo.TypeOf(selector.X), signature.Recv().Type()) {
-		return "immutable method receivers must match their declared type exactly"
+		return shapeFailure("immutable method receivers must match their declared type exactly")
 	}
-	return ""
+	return checker.Failure{}
 }

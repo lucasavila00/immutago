@@ -38,6 +38,12 @@ func diagnosticType(t types.Type) string {
 
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
+	"use a service reference only as ref.Borrow().Method(args); " +
+		"do not extract the accessor or service pointer": "keep a concrete supervise.Ref[Service] " +
+		"and call ref.Borrow().Method(args); " +
+		"see docs/reference/service-references.md",
+	"Ref requires a service target that embeds supervise.Service": "use a concrete service struct " +
+		"that embeds supervise.Service by value",
 	"protected operation is outside the supported expression forms": "use a documented concrete value, pointer, " +
 		"projection, or builder operation",
 	"protected value conversions are unsupported": "construct the destination marked value from copied fields",
@@ -76,8 +82,9 @@ var subsetFixes = map[string]string{
 		"marked struct or its pointer, or use a named function with concrete parameters",
 	"promoted immutable methods are unsupported": "name the embedded field explicitly and call a method " +
 		"allowed on that field; copy scalar fields to ordinary locals before calling their methods",
-	"immutable method receivers must match their declared type exactly": "copy a Copied field or element into a local " +
-		"before calling a pointer method; for a value method on *T, write (*pointer).Method()",
+	"immutable method receivers must match their declared type exactly": "use an exact pointer or new(value) for a " +
+		"pointer receiver; copy a Copied field or element into a local first; " +
+		"use (*pointer).Method() for a value receiver",
 	"multiple assignments involving protected storage are unsupported": "use one protected destination, " +
 		"or local names for all results of one direct typed call",
 	"protected storage is unsupported in select communication clauses": "keep Local values and native builders " +
@@ -125,25 +132,13 @@ var subsetFixes = map[string]string{
 		"collection.All() { ... }; do not retain or pass the iterator",
 }
 
-// subsetFix gives a supported replacement for each rejected operation.
-func subsetFix(rule string) string {
-	if strings.Contains(rule, "named array") {
-		return "use an unnamed array type; to keep a named type, put the unnamed array in a marked struct"
+// shapeFailure pairs a fixed source rule with its supported replacement.
+func shapeFailure(rule string) checker.Failure {
+	fix, ok := subsetFixes[rule]
+	if !ok {
+		fix = "use the documented immutable value and reference forms"
 	}
-	if strings.Contains(rule, "is not a Copied value") {
-		return "copy scalar fields, or use a local projection"
-	}
-	if strings.Contains(rule, "markers are annotations") {
-		return "embed the marker in a named struct; use data fields for values"
-	}
-	if fix, ok := subsetFixes[rule]; ok {
-		return fix
-	}
-	if strings.Contains(rule, "service reference") || strings.Contains(rule, "Ref requires") {
-		return "keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); " +
-			"see docs/reference/service-references.md"
-	}
-	return "use the documented immutable value and reference forms"
+	return checker.Failure{Reason: rule, Repair: fix}
 }
 
 // unmarkedFieldFix gives storage replacements without changing the containing type's rules.
