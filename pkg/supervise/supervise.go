@@ -461,9 +461,7 @@ func (s *Group) halt() {
 			continue
 		}
 		stop()
-		if done != nil {
-			<-done
-		}
+		<-done
 		s.forget(c)
 	}
 }
@@ -473,7 +471,6 @@ func watch(parent *Group, ctx context.Context, name string, run func(context.Con
 	report := parent.root.report
 	var restarts []time.Time
 	var failureAt time.Time
-	terminal := false
 	failed := func(value any, stack []byte, goexit bool) {
 		failureAt = time.Now()
 		if goexit {
@@ -487,13 +484,12 @@ func watch(parent *Group, ctx context.Context, name string, run func(context.Con
 		}
 		restarts = slices.DeleteFunc(restarts, func(at time.Time) bool { return failureAt.Sub(at) >= restartWindow })
 		if goexit || len(restarts) == restartLimit {
-			terminal = true
 			parent.fail(&Failure{Service: name, Value: value, Stack: stack})
 		}
 	}
 	for {
 		panicked := attempt(ctx, run, cleanup, report != nil || len(restarts) == restartLimit, failed)
-		if !panicked || terminal || parent.policy.Err() != nil || ctx.Err() != nil {
+		if !panicked || parent.policy.Err() != nil || ctx.Err() != nil {
 			return
 		}
 		delay := time.NewTimer(time.Second << len(restarts))
