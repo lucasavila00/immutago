@@ -20,7 +20,7 @@ type Loader struct {
 uses a ticker to try later reloads and returns when its context ends. Expected
 file errors are logged; the last valid catalog stays available. A panic in Run
 stops the root and waits for accepted Init calls and cleanup before it terminates
-the process. The [failure report](../reference/services.md#failure-reports) keeps
+the process. The [failure report](../../pkg/supervise/contract.md#failure-reports) keeps
 the panic value and stack.
 
 The [command](../../examples/shipping/cmd/shipping/main.go) starts the loader
@@ -37,7 +37,7 @@ if err != nil {
 
 Start calls Init before it returns the reference. Init must return if a dependency
 stops answering; use application timeouts or independent cancellation for blocking
-work. See the [Init contract](../reference/services.md#startup).
+work. See the [Init contract](../../pkg/supervise/contract.md#startup).
 The command creates the HTTP server only after Start succeeds. On shutdown, it
 closes the HTTP server before it stops the root group. `<-root.Stop()` waits for
 background work; it does not
@@ -55,8 +55,8 @@ catalog := worker.Catalog()
 Borrow returns the loader created by Start. Catalog runs in the
 request's goroutine and loads a projection from the Cell. That projection fixes
 the catalog version for the quote. Call Catalog again for the next request. The
-[reference rules](../reference/service-references.md) cover optional references
-and stored service pointers.
+[package contract](../../pkg/supervise/contract.md#references) covers optional
+references and stored service pointers.
 
 ## Review shared state and inputs
 
@@ -67,7 +67,7 @@ saved inputs, and dependency calls in the service implementation.
 Declare service methods with pointer receivers. Do not copy an initialized service
 or Group; pass pointers or copy Ref values. Run standard `go vet ./...` as well as
 immutago to check common copy mistakes. See the
-[copy contract](../reference/services.md#copy-contract).
+[copy contract](../../pkg/supervise/contract.md#copy-contract).
 
 The [search indexer](../../examples/search/indexer.go) shows this distinction.
 Its Cell publishes an immutable index. A mutex also protects the error text and
@@ -85,7 +85,7 @@ when several services must stop together. Inside a service, use `s.UncheckedChil
 on the original service pointer for work that must end with that service.
 Stopping a nested group leaves other groups running. A Run failure stops the entire root.
 
-The [runtime reference](../reference/services.md) defines child shutdown order,
+The [runtime contract](../../pkg/supervise/contract.md) defines child shutdown order,
 completion and failure reports. In tests,
 [`supervisetest.NewRoot(t)`](../../pkg/supervise/supervisetest/readme.md) stops the
 tree during cleanup and fails the test if shutdown takes more than five seconds.

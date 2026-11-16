@@ -8,8 +8,8 @@ These forms apply to:
 
 Combine them with each type's forms. [Cell](cell.md) has its own forms.
 Ordinary [Copied values](copied.md) and their ordinary holders use all Go forms.
-Ordinary [Frozen handle slots](#ordinary-frozen-handle-slots--exhaustive) and
-[Frozen pointer handles](frozen-records.md#stored-pointers--exhaustive) use Go storage
+Ordinary [frozen collection and interface slots](#ordinary-collection-and-interface-slots--exhaustive) and
+[Frozen pointers](frozen-records.md#stored-pointers--exhaustive) use Go storage
 and transport rules. Their selected Frozen objects keep the rules below.
 Copied data inside protected storage keeps the owner's rules on this page.
 The [glossary](glossary.md) defines the category names, protected storage, and builders.
@@ -17,8 +17,7 @@ The [glossary](glossary.md) defines the category names, protected storage, and b
 ## Markers and stored types
 
 The [type rules](types.md) define Frozen, Copied, Local, and read results.
-Every package that declares Frozen records other than [opaque handles](unchecked-values.md) uses the
-[required generation step](rules.md#required-generation).
+Frozen declarations follow the [generation requirements](rules.md#required-generation).
 Embed exactly one marker by value:
 
 ```go
@@ -43,7 +42,7 @@ package variables, ordinary records, and closures cannot.
 | Method type parameters on a concrete Frozen value or pointer receiver | `func (p FrozenPoint) Map[T any](read func(int) T) T { return read(p.X) }` |
 | Call or select these methods with inferred or explicit type arguments | `point.Map(read)`, `point.Map[string](read)`, `mapValue := point.Map[string]`, `mapValue := FrozenPoint.Map[string]` |
 | Generic function and method bodies | `func read[T any](value T) int { text := im.FreezeString("x"); return text.Len() }`; each operation keeps its normal source rules. |
-| Ordinary generic types | `type Plain[T any] struct { Value T }`, used as `Plain[int]`, `Plain[im.FrozenString]`, `Plain[*FrozenPoint]`, or `Plain[*Cache]` for a Cell holder; instantiated fields still need their normal field proofs. |
+| Ordinary generic types | `type Plain[T any] struct { Value T }`, used as `Plain[int]`, `Plain[im.FrozenString]`, `Plain[*FrozenPoint]`, or `Plain[*Cache]` for a Cell holder; instantiated fields still need their normal field types. |
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
@@ -75,7 +74,7 @@ projections do not use this table.
 | Call with go or defer when operands use these Frozen forms | `go use(text)`, `defer text.Len()` |
 | Save or call an iterator that yields Frozen values | `items := frozen.All()`, `for value := range items { use(value) }` |
 
-Each field and collection argument still needs its type proof. Fields inside a
+Each field and collection argument still needs an allowed type. Fields inside a
 Frozen record stay read-only, including inside a closure or generic body. A
 conversion to a Frozen interface still proves the concrete implementation and
 its exact method receivers. An assertion from `any` to a Frozen interface cannot
@@ -84,11 +83,11 @@ supply that proof; recover a proved concrete record first.
 Generic helpers use ordinary Go contracts. Do not pass a Frozen pointer to a
 helper that changes its target.
 
-## Ordinary Frozen handle slots — exhaustive
+## Ordinary collection and interface slots — exhaustive
 
-FrozenString, FrozenSlice, FrozenMap, and Frozen interfaces are immutable handles.
-An ordinary struct or service can store them beside mutable fields. Replacing a
-handle changes the slot and keeps the selected frozen data unchanged.
+An ordinary struct can store FrozenString, FrozenSlice, FrozenMap, and Frozen
+interfaces beside mutable fields. Replacing a value in that slot keeps its
+selected frozen data unchanged.
 
 ```go
 type Cache struct {
@@ -105,21 +104,21 @@ func (c *Cache) Rename(title im.FrozenString) {
 
 | Storage or use | Complete rule |
 | --- | --- |
-| Frozen handle or ordinary holder | All ordinary Go forms are allowed, including aliases, defined wrappers, conversions, arrays, native containers, pointers, methods, interfaces, generics, callbacks, go, defer, and channels. |
+| FrozenString, FrozenSlice, FrozenMap, Frozen interface, or ordinary holder | All ordinary Go forms are allowed, including aliases, defined wrappers, conversions, arrays, native containers, pointers, methods, interfaces, generics, callbacks, go, defer, and channels. |
 | Method or callback with Local parameters or results | Keep the [Local call and binding rules](#statements-and-calls), including for ordinary holders. Call `text.Projection()` directly; do not save `text.Projection` as a method value. |
 | Field or element inside a Frozen or Local owner | The owner's write and address rules still apply. |
 | Conversion to a Frozen interface | Prove the concrete Frozen implementation, including conversions in field assignments, literals, calls, returns, and sends. |
 | Native slice or map passed to Freeze | Keep one exclusive builder; Freeze consumes it. |
-| Exported service method result | Use the [service result signatures](service-results.md). A Frozen handle is not a read result. |
+| Exported service method result | Use the [service result signatures](service-results.md). |
 
 | Ordinary Go examples | Source |
 | --- | --- |
-| Store handles and nested holders | `type State struct { Cache Cache; Names [2]im.FrozenString }` |
+| Store values and nested holders | `type State struct { Cache Cache; Names [2]im.FrozenString }` |
 | Store in native containers | `[]im.FrozenString{text}`, `map[string]Scorer{"main": scorer}`, `make(chan im.FrozenString)` |
 | Share native containers that are not builders | `alias := values`, `values = append(values, alias...)` |
 | Replace or address a slot | `cache.Title = text`, `values[i] = text`, `slot := &cache.Title; *slot = text`, `new(text)` |
 | Copy, bind, or return several values | `copy := cache`, `cache, ok := lookup()`, `return cache, text`, `for i, text = range values { use(text) }` |
-| Use methods, embedded handles, and generic holders | `cache.Rename(text)`, `rename := cache.Rename`, `type Label struct { im.FrozenString }`, `Box[im.FrozenString]{Value: text}` |
+| Use methods, embedded fields, and generic holders | `cache.Rename(text)`, `rename := cache.Rename`, `type Label struct { im.FrozenString }`, `Box[im.FrozenString]{Value: text}` |
 | Use callbacks, interfaces, or concurrent calls | `callback(cache)`, `var boxed any = cache`, `go cache.Rename(text)`, `defer use(cache)` |
 | Send, receive, select, or range | `ready <- text`, `text, ok := <-ready`, `select { case ready <- text: case <-ready: }`, `for text := range ready { use(text) }` |
 
@@ -165,7 +164,7 @@ p = &FrozenPoint{X: 2} // q still observes X == 1.
 ## Common pointer forms
 
 The construction and target-read forms apply to both `*FrozenPoint` and
-`*LocalPoint`. Frozen pointer handles use ordinary Go storage and transport.
+`*LocalPoint`. Frozen pointers use ordinary Go storage and transport.
 Local pointers use only the direct-call forms below and cannot escape.
 
 | Allowed forms — exhaustive | Example |
@@ -197,7 +196,7 @@ Local pointers use only the direct-call forms below and cannot escape.
 ## Methods
 
 Methods on protected value receivers and Local pointers use these forms.
-Methods on Frozen pointer handles use ordinary Go calls; their bodies still
+Methods on Frozen pointers use ordinary Go calls; their bodies still
 cannot change Frozen objects.
 
 ```go
@@ -228,7 +227,7 @@ forms on this page.
 | Explicit field or element as receiver | `group.FrozenPoint.XValue()`, `points[i].XValue()` |
 | Exact value receiver on a Copied field or array element | `snapshot.Count.Read()`, `snapshot.Counts[i].Read()`, `settings.Timeout.Seconds()` with a time.Duration field. |
 | Method value or expression that copies a Copied field, with ordinary or Frozen inputs and results | `read := reply.Count.Read`, `Count.Read(reply.Count)`; Count is a defined integer type. |
-| Exact value receiver on an opaque handle field or array element | `route.Worker.Borrow()`, `route.Workers[i].IsZero()`, `reply.Counter.Add(1)`; the field read keeps its owner's rules. |
+| Exact value receiver on a Frozen field or array element from the [read-result list](types.md#read-results--exhaustive) | `reply.Counter.Add(1)`, `reply.Counters[i].Add(1)` with the [Counter declaration](unchecked-values.md); the field read keeps its owner's rules. |
 | Constructed value, new pointer, or direct call result as receiver | `FrozenPoint{X: 3}.XValue()`, `(&FrozenPoint{X: 3}).ReadX()`, `makePoint().XValue()` |
 | Direct method on an ordinary concrete receiver with protected inputs or results | `reader.Read(p)` with `func (r *Reader) Read(p *LocalPoint) int`; `r` can have an ordinary mutable type. |
 | Direct call through a proved Frozen interface | `scorer.Score(features)`; use the [complete interface rules](frozen-interfaces.md). |
@@ -237,7 +236,7 @@ forms on this page.
 The Copied receiver rule includes defined boolean and numeric types, their aliases,
 and Copied records, including instantiated generic types. For example,
 `settings.Timeout.Read()` works with `type Meter[Unit any] int` and a field of type
-`Meter[Seconds]`. The receiver uses the same Copied proof as the field.
+`Meter[Seconds]`. The receiver must be Copied, as must the field.
 The method can come from another package. A value receiver or
 bound method copies the field; it does not retain the Frozen or Local owner.
 The field read still follows the owner's statement rules. For example,
@@ -247,9 +246,8 @@ local first. A closure that reads `reply.Count` retains reply and is rejected.
 | Method receiver | Body rules |
 | --- | --- |
 | Struct with `im.Frozen` | Same checks as named functions; can return its pointer. |
-| Generic opaque handle | Methods use the concrete instantiated receiver type, such as `Counter[int]`; fields stay fixed. |
 | Struct with `im.Local` | Its value stays Local. Its pointer can only be used in local direct calls. |
-| Frozen or Local record | Cannot change protected fields. The receiver record cannot declare type parameters, except for an [opaque handle](unchecked-values.md). Method type parameters use the [generic rules](#generics) above. |
+| Frozen or Local record | Cannot change protected fields. The receiver record cannot declare type parameters, except for the [UncheckedValue declaration form](unchecked-values.md#forms--exhaustive). That form uses the instantiated receiver type, such as `Counter[int]`. Method type parameters use the [generic rules](#generics) above. |
 | Copied field inside a protected owner | Exact value-receiver calls copy the field. Pointer-receiver calls that address the field are rejected. |
 | Ordinary concrete receiver with Local inputs or results | Direct, non-generic calls. Local inputs and results keep their im rules. Frozen values use the forms above. |
 | Fixed library type | Listed API forms. |
@@ -288,10 +286,8 @@ Use the operations above inside these statement forms:
   result-call forms above. Local-pointer and builder-handle bindings have one
   destination. Local pointers cannot be returned. Frozen values also use the forms above.
   Returns can have several results.
-- Fixed calls such as FrozenMap.Get, MapProjection.Get, and supervise.Start use
-  the same result binding forms. For example, `value, found = frozen.Get(key)`
-  can reuse local names, and `var ref, err = supervise.Start[Worker](root, args)`
-  can declare the results.
+- Fixed calls such as FrozenMap.Get and MapProjection.Get use the same result
+  binding forms: `value, found = frozen.Get(key)` or `var value, found = frozen.Get(key)`.
 - Multiple-result bindings with Local values or builder-slot operations require
   one direct typed call that supplies all results.
   Each result keeps its type, write, and storage checks.
@@ -304,10 +300,9 @@ Use the operations above inside these statement forms:
   `var _, found = makeLocalPair()` can discard the Local result at package scope.
   Local results cannot be assigned to package variables or ordinary fields.
   Assignments cannot change protected fields. Frozen results can be boxed in `any`.
-- Each [service result](service-results.md) must be a read result or the predeclared
-  error type. There is no result count or order limit. Calls with only ordinary
-  values keep Go rules. Tuple callbacks and generics keep each component's normal
-  rules: Frozen values are allowed, while Local values need direct typed calls.
+- Calls with only ordinary values keep Go rules. Tuple callbacks and generics
+  keep each component's normal rules: Frozen values are allowed, while Local
+  values need direct typed calls.
 - Blocks, `break`, and `continue` follow ordinary Go rules.
 - Local values and pointers need the exact parameter type, such as
   `func read(p *LocalPoint) int`. Call directly, without `go` or `defer`.

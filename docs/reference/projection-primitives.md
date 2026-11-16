@@ -12,7 +12,7 @@ These fixed APIs build the [generated typed projections](projections.md). They u
 | `im.ProjectionOf(value)` | Frozen input; returns Projection[T]. |
 | `projection.Unchecked()` | Requires Projection[T] with Frozen T; returns T by value with its shared storage. A pointer result is the same pointer. |
 | `im.CopyRecord(value)` | Requires Projection[T] for a concrete Frozen record T; copies it into a new root and returns Projection[*T]. |
-| `im.Value(projection)` | T must be Frozen and a read result: Copied, opaque handles, pointers to Frozen handle wrappers, or an unnamed array of these values; returns T. |
+| `im.Value(projection)` | T must be Frozen and a [read result](types.md#read-results--exhaustive); returns T. |
 | `im.StringOf(projection)` | Requires Projection[S] with underlying string S; returns StringProjection. |
 | `im.StringOfFrozen(projection)` | Requires Projection[FrozenString]; returns StringProjection. |
 | `im.SliceOf(projection)` | Requires Projection[FrozenSlice[E]]; returns SliceProjection[E]. |
@@ -21,8 +21,7 @@ These fixed APIs build the [generated typed projections](projections.md). They u
 
 Application code uses the listed Value, Unchecked, and adapter forms. Unchecked permits
 retention; it does not change the payload's type rules or permit target writes.
-Only verified generated code can form interior Frozen-record addresses. Value can return an
-opaque handle or a pointer to its Frozen wrapper. Only the payload's declaring package can Unwrap it. Raw slot reads use the [Cell methods](cell.md#raw-cell-methods--exhaustive).
+Raw slot reads use the [Cell methods](cell.md#raw-cell-methods--exhaustive).
 
 ## Collection projections — exhaustive
 
@@ -70,12 +69,7 @@ contexts. Unlisted operations on protected storage are rejected.
 | Clone a projection of a string-key map | Iterate; Clone each key and copy each value into a new map. |
 | Clone a slice or map projection with Frozen record elements | Read record projections and copy the required fields into new data. |
 
-Projection creation copies T, not its backing storage. Large records therefore have
-ordinary Go value-copy costs. Native strings and FrozenString can share source
-bytes. StringProjection.Unchecked returns those bytes as a native string; Clone copies them.
-
-Unchecked does not copy backing storage or allocate. The caller controls retention
-and must not give a returned pointer to an API that changes its target. A
-FrozenSlice or FrozenMap result is still a frozen handle, with no mutable native
-storage getter. An UncheckedValue result is still a handle; only its declaring
-package can Unwrap it.
+The caller controls retention of an Unchecked result and must not give a
+returned pointer to an API that changes its target. UncheckedValue keeps its
+[package access rules](unchecked-values.md). See [operation costs](../../pkg/im/costs.md)
+for allocation and copy costs.

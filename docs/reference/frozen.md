@@ -2,7 +2,7 @@
 
 FrozenString, FrozenSlice, and FrozenMap satisfy the [Frozen type rule](types.md).
 They can be copied, stored, and returned.
-They can also occupy [ordinary struct and service fields](common-forms.md#ordinary-frozen-handle-slots--exhaustive).
+They can also occupy [ordinary struct and service fields](common-forms.md#ordinary-collection-and-interface-slots--exhaustive).
 Their local projections follow the [projection rules](projections.md).
 
 | Data | Stored value | Local projection | Constructor | Read locally |
@@ -41,10 +41,8 @@ println(text, projection.Len(), projection.Is("standard"))
 | Copy into independent native string storage | `saved := text.Clone()` |
 | Create a local StringProjection | `projection := text.Projection()` |
 
-Equal and EqualString use native string equality without allocating. Clone is
-not needed to compare text. The zero value is empty. At has Go's normal bounds
-panic. Unchecked lets the caller keep the shared bytes; the checker does not track
-the returned native string. There is no substring operation or implicit string
+The zero value is empty. At has Go's normal bounds
+panic. Unchecked lets the caller keep the shared native string under Go contracts. There is no substring operation or implicit string
 conversion. For a native string projection, use `im.ProjectString(source)`.
 
 ## Build before freezing

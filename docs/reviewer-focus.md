@@ -56,7 +56,7 @@ path and test both allowed and rejected forms. A test for one failing example
 alone is not sufficient.
 
 Check changed links and generated package references. Use hosted CI for full
-validation. For collection changes, also check the [cost contract](reference/performance.md).
+validation. For collection changes, also check the [cost contract](../pkg/im/costs.md).
 
 ## Public guide review
 

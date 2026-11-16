@@ -109,3 +109,24 @@ GOOS=windows GOARCH=amd64 ./bin/immutago .
 Do not use the `go run` generation directive to execute a cross-built tool.
 
 Do not use `-json` as a CI pass/fail check: it can return exit code 0 with errors.
+
+## Read diagnostics
+
+A diagnostic can include these context fields:
+
+| Line | Meaning |
+| --- | --- |
+| `source:` | The source expression or statement for the rejected operation. |
+| `type:` | The compiler-resolved expression type, or the type checked by a type or package rule. |
+| `owner:` | The record that declares the field. |
+| `field:` | The record and field name for a declaration error. |
+| `field type:` | The compiler-resolved field type, on the same line as its owner. |
+| `result type:` | The compiler-resolved service method result type. |
+| `rule:` | The rule that failed. |
+| `representative failure:` | One original diagnostic from a failed dependency, with its location and indented context lines. |
+| `note:` | Other errors can exist in that dependency. |
+| `fix:` | A supported replacement for the failed rule. |
+
+If `Ptr` returns `int64`, `source: r.C.Ptr()` has `type: int64`, even when the
+rule rejects the receiver operation. A method value such as `h.Ptr` has type
+`func() int64`.

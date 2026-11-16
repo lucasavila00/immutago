@@ -173,7 +173,7 @@ and IDs. A Run panic still ends the process; cleanup errors are logged without
 replacing that panic. Failed staged selection uses the same cleanup rule. The
 bot retains at most two unresolved retired accounts while it stops.
 
-The [runtime](../../docs/reference/services.md) stops the root on its first Run
+The [runtime](../../pkg/supervise/contract.md) stops the root on its first Run
 panic or `runtime.Goexit`. It records the original failure and stack, waits for
 cleanup, then ends the process. Services do not restart automatically. The
 operator must reconcile venue orders and balances before starting a new bot.

@@ -1,9 +1,7 @@
 # Generated projections
 
 The [required generation step](rules.md#required-generation) creates typed
-projections for Frozen records and Frozen interfaces. Record getters return
-Copied values, opaque handles, pointers to Frozen handle wrappers, or further Local projections. Opaque handles, Local records, and Copied records need no
-generation. See [Get started](../guides/getting-started.md) for a first program.
+projections for Frozen records and Frozen interfaces that require generation.
 
 ## Generated names and operations — exhaustive
 
@@ -35,7 +33,7 @@ fields. An unexported field has an unexported method. Field names IsNil and Unch
 conflict with the public projection methods and are rejected. Local and private
 implementation names are allowed: a field `Local int` has the getter `p.Local()`.
 
-A foreign Frozen record field other than an opaque handle needs an exported original record declaration.
+A foreign Frozen record that requires generation needs an exported original declaration.
 An exported alias of a private record does not expose its projection or constructor.
 See the [record field forms](frozen-records.md).
 
@@ -45,10 +43,10 @@ See the [record field forms](frozen-records.md).
 | Native string or FrozenString | `im.StringProjection`. |
 | FrozenSlice[E] | `im.SliceProjection[E]`. |
 | FrozenMap[K,V] | `im.MapProjection[K,V]`. |
-| Frozen record other than an opaque handle, or pointer to one | The record's generated typed projection. |
+| Frozen record that requires generation, or pointer to one | The record's generated typed projection. |
 | Frozen interface | The interface's generated local method projection. |
 | Unnamed array | A typed projection with Len and At; At uses this result table. |
-| Opaque handle or pointer to its Frozen wrapper | The field's own type, such as `supervise.Ref[Worker]` or `*supervise.Ref[Worker]`. |
+| UncheckedValue, or a Frozen record or pointer in the [read-result list](types.md#read-results--exhaustive) | The field's own type. |
 
 Arrays return projections, including arrays of Copied values. A Copied record
 field returns a complete value copy. A field read does not copy its containing
@@ -74,7 +72,7 @@ Use the [stored pointer forms](frozen-records.md#stored-pointers--exhaustive).
 
 CopyRecord copies one record into a new root. It shares the immutable strings
 and collections referenced by that record. Generated projections never make
-this map-value copy automatically. See [operation costs](performance.md).
+this map-value copy automatically. See [operation costs](../../pkg/im/costs.md).
 
 ## Rejected examples — non-exhaustive
 
@@ -87,9 +85,3 @@ this map-value copy automatically. See [operation costs](performance.md).
 | A Frozen Plan with array field Steps and a Frozen record named PlanSteps | Rename the record to StepSummary or rename the field; both need PlanStepsProjection. |
 | A source field named IsNil or Unchecked | Rename the field; the projection supplies those public methods. |
 | A foreign record field uses `type Public = privateRecord` | Export the original record declaration. |
-
-Only verified generated code can form interior Frozen-record addresses.
-The public Unchecked operation returns the selected value without another Cell load.
-Generated code still receives all normal type, write,
-capture, call, and transport checks. The [architecture](../arch/ownership.md#generated-projections)
-describes those checks.

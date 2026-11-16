@@ -17,25 +17,12 @@ versions. Store does not change an earlier selected version.
 
 ## Keep a selected version
 
-Use the projection's Unchecked method to keep its exact pointer in an ordinary
-request struct or pooled object:
-
-```go
-type requestState struct { settings *Settings }
-
-func (s *requestState) begin(cell *SettingsCell) {
-    s.settings = cell.Load().Unchecked()
-}
-
-func (s *requestState) end() { s.settings = nil }
-```
-
-Unchecked does not load the Cell again. It returns nil for an empty projection.
+The projection's Unchecked method returns its selected pointer without another
+Cell load. It returns nil for an empty projection.
 The [stored pointer forms](frozen-records.md#stored-pointers--exhaustive) permit
 pointer replacement and reject statically typed writes to the Frozen target.
 The caller controls retention and must not give the pointer to an API that
-changes its target. The checker does not prove mutation effects through reflection,
-unsafe code, or ordinary API calls.
+changes its target.
 
 | Read or copy — exhaustive | Result |
 | --- | --- |
@@ -44,16 +31,14 @@ unsafe code, or ordinary API calls.
 | `value := *p.Unchecked()` | A Settings value copy; strings, collections, and child pointers keep their shared storage. Dereferencing nil panics. |
 | `saved := new(*p.Unchecked())` | A separate root copy with the same shared fields; one allocation when the nonzero root escapes. |
 
-Use generated field getters for local reads. A service returns the projection;
-a caller can use Unchecked when it needs to keep the selected record. See
-[generated projections](projections.md) for child and collection reads.
+Use [generated field getters](projections.md) for child and collection reads.
 
 ## Cell storage
 
 An `im.Cell[T]` is a raw slot. A holder is an unmarked struct with a named slot
 or another named holder field. Generated Cell types are holders. A holder is
 not an `im.Local` record. The slot stores Frozen data; Load returns a Local
-projection. Service receivers keep their [service rules](services.md).
+projection.
 
 | Operation | Holder pointer `*Cache` | Holder value `Cache` | Raw `im.Cell[T]` | Local load result |
 | --- | --- | --- | --- | --- |
@@ -152,7 +137,4 @@ through that form; it does not use LoadPointer.
 | Return `settings.Load().Unchecked()` from a service | Return `settings.Load()`. |
 | `raw.LoadPointer()` with `raw im.Cell[int]` | Use `im.Value(raw.Load())`. |
 
-Store allocates one root for T with nonzero size. Generated Load performs one
-atomic load without a record copy or allocation. Raw Load copies T after one
-atomic load; it does not copy string, collection, or child-pointer storage.
-Unchecked does not add an allocation. See the [operation costs](performance.md).
+See [operation costs](../../pkg/im/costs.md) for allocation and copy costs.
