@@ -1,13 +1,13 @@
-api.go:19:14: service method First must return a read result: string is not a Copied value
+api.go:19:14: service method First must return a read result or error: string is not a Copied value
   result type: string
   fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
-api.go:20:14: service method Middle must return a read result: []int is not a Copied value
+api.go:20:14: service method Middle must return a read result or error: []int is not a Copied value
   result type: []int
   fix: copy scalar fields, or use a local projection
-api.go:21:14: service method Last must return a read result: map[int]int is not a Copied value
+api.go:21:14: service method Last must return a read result or error: map[int]int is not a Copied value
   result type: map[int]int
   fix: copy scalar fields, or use a local projection
-api.go:22:14: service method Pointer must return a read result: *example.com/consumer/api.View is not a Copied value
+api.go:22:14: service method Pointer must return a read result or error: *example.com/consumer/api.View is not a Copied value
   result type: *api.View
   fix: copy scalar fields, or use a local projection
 api.go:22:14: unsupported immutable operation: returning Local pointers is unsupported
@@ -17,22 +17,22 @@ api.go:22:14: unsupported immutable operation: returning Local pointers is unsup
 api.go:22:54: unsupported immutable operation: returning Local pointers is unsupported
   source: return false, nil
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
-api.go:23:14: service method Record must return a read result: example.com/consumer/badapi.Unmarked is not a Copied value
+api.go:23:14: service method Record must return a read result or error: example.com/consumer/badapi.Unmarked is not a Copied value
   result type: badapi.Unmarked
   fix: copy scalar fields, or use a local projection
-api.go:24:14: service method ErrorType must return a read result: example.com/consumer/badapi.DefinedError is not a Copied value
+api.go:24:14: service method ErrorType must return a read result or error: example.com/consumer/badapi.DefinedError is not a Copied value
   result type: badapi.DefinedError
-  fix: copy scalar fields, or use a local projection
-api.go:25:14: service method Marker must return a read result: immutable markers are annotations, not data
+  fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
+api.go:25:14: service method Marker must return a read result or error: immutable markers are annotations, not data
   result type: im.Local
   fix: embed the marker in a named struct; use data fields for values
-api.go:26:14: service method Array must return a read result: array element: example.com/consumer/badapi.Names is not a Copied value
+api.go:26:14: service method Array must return a read result or error: array element: example.com/consumer/badapi.Names is not a Copied value
   result type: [2]badapi.Names
   fix: copy scalar fields, or use a local projection
-api.go:27:14: service method Frozen must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
+api.go:27:14: service method Frozen must return a read result or error: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   result type: im.FrozenString
   fix: use im.StringProjection for a local string result; construct it with text.Projection()
-api.go:28:14: service method Nested must return a read result: array element: array element: *example.com/consumer/api.View is not a Copied value
+api.go:28:14: service method Nested must return a read result or error: array element: array element: *example.com/consumer/api.View is not a Copied value
   result type: [2][1]*api.View
   fix: copy scalar fields, or use a local projection
 api.go:28:30: unsupported immutable operation: containers of Local pointers are unsupported
@@ -51,6 +51,6 @@ api.go:28:71: unsupported immutable operation: containers of Local pointers are 
   source: [1]*api.View
   type: [1]*api.View
   fix: keep Local values in local bindings, or store im.Frozen pointers
-api.go:29:14: service method FrozenRecord must return a read result: example.com/consumer/api.Frozen is not a Copied value
+api.go:29:14: service method FrozenRecord must return a read result or error: example.com/consumer/api.Frozen is not a Copied value
   result type: api.Frozen
   fix: copy scalar fields, or use a local projection

@@ -1,5 +1,5 @@
 use.go:3:8: unsupported dependency example.com/consumer/invalidapi: immutability proof failed
-  representative failure: example.com/consumer/invalidapi/api.go:7:17: service method Values must return a read result: []int is not a Copied value
+  representative failure: example.com/consumer/invalidapi/api.go:7:17: service method Values must return a read result or error: []int is not a Copied value
     result type: []int
     fix: copy scalar fields, or use a local projection
   note: other dependency errors may exist

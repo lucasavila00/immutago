@@ -2,10 +2,10 @@ holder.go:12:18: Cell slots and holders require direct named fields
 holder.go:13:15: Cell slots and holders require direct named fields
 holder.go:13:30: containers of Cell slots or holders are unsupported
 holder.go:14:33: pointers to Cell slots are unsupported
-holder.go:15:23: unmarked struct contains immutable field View; embed an immutable marker
+holder.go:15:23: unmarked struct field View contains protected storage
   owner: cell_holder.BadLocal; field type: im.Projection[int]
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store Frozen pointers or handles; keep Local data in local bindings
 holder.go:16:6: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
   source: Generic
   type: cell_holder.Generic[T any]

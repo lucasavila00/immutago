@@ -82,7 +82,9 @@ after a type assertion, a generic call, or a promoted field selection. Ordinary 
 API contracts still apply: do not pass the pointer to an API that changes its
 target, such as `json.Unmarshal(data, p)`. The checker does not prove mutation
 effects through ordinary interfaces, reflection, unsafe code, or dependencies.
-Use the [type rules](types.md) for Frozen values and Local data placement.
+A defined pointer such as `type Selected *Settings` can use the forms above,
+but cannot be a Frozen field, Cell payload, or frozen collection argument.
+Use `type Selected = *Settings` for those [Frozen type requirements](types.md).
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |

@@ -6,7 +6,7 @@ that error does not belong to these categories.
 
 | Category — exhaustive | Types |
 | --- | --- |
-| Frozen | Booleans, numbers, native strings, FrozenString, unnamed arrays of Frozen values, Frozen and Copied records, pointers to Frozen records, [Frozen interfaces](frozen-interfaces.md), FrozenSlice/FrozenMap with Frozen arguments, UncheckedValue handles, and service references. |
+| Frozen | Booleans, numbers, native strings, FrozenString, unnamed arrays of Frozen values, Frozen and Copied records, unnamed pointers to Frozen records (and aliases of those pointers), [Frozen interfaces](frozen-interfaces.md), FrozenSlice/FrozenMap with Frozen arguments, UncheckedValue handles, and service references. |
 | Copied | Booleans, numbers, Copied records, service references, and unnamed arrays of Copied values. |
 | Local | Projection, StringProjection, SliceProjection, MapProjection, Local records, and unnamed arrays whose elements are Local. |
 | Read result | Copied, Local, UncheckedValue handles, and unnamed arrays of read results. |
@@ -15,6 +15,9 @@ Defined scalar types and aliases keep their category. Named arrays need a
 marked struct wrapper in these categories. Copied excludes native strings and
 pointers. Its structs require `im.Copied`, except opaque service references.
 Frozen records are not Copied.
+Defined pointer types such as `type Selected *Settings` can be stored under the
+[ordinary pointer rules](frozen-records.md#stored-pointers--exhaustive), but are
+not Frozen payload types. Use `type Selected = *Settings` for a pointer alias.
 Copying a service reference does not copy its service.
 Embed a marker to declare a record category. The markers themselves are not
 Frozen, Copied, or read-result payload types.
@@ -78,6 +81,7 @@ with only numeric fields still keeps the Frozen rule.
 | --- | --- |
 | `struct { Mark im.Frozen }` or `struct { *im.Frozen }` | Embed `im.Frozen` by value. |
 | `struct { im.Frozen; Count }` | Use a named data field: `struct { im.Frozen; Count Count }`. |
+| `im.Cell[Selected]` or a Frozen field of type Selected, with `type Selected *Settings` | Use `type Selected = *Settings`, where Settings is a Frozen record. |
 | `im.Projection[im.Frozen]` | Embed the marker in a record and use that record. |
 | `struct { im.Frozen; Text im.StringProjection }` | Use `im.Local` for a local result. |
 | `struct { im.Local; Text string }` | Use `im.StringProjection`. |

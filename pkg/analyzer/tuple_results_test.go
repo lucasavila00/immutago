@@ -73,10 +73,10 @@ func numbers()(bool,int){return true,1}`, "writes to immutable"},
 func numbers()(bool,int){return true,1};func f(p *Parent){var ok bool;ok,p.Count.N=numbers();_=ok}`,
 			"writes to immutable"},
 		{"consumed scalar slot", `func f(){values:=[]bool{false};_=im.FreezeSlice(values);
-var value Local;value,values[0]=pair();_=value}`, "consumed owned container"},
+var value Local;value,values[0]=pair();_=value}`, "consumed builder"},
 		{"consumed protected slot", `func values()(Frozen,Local){return Frozen{},Local{}};
 func f(){items:=[]Frozen{{}};_=im.FreezeSlice(items);var value Local;items[0],value=values();_=value}`,
-			"consumed owned container"},
+			"consumed builder"},
 		{"independent expressions", `func f(){value,ok:=Local{},true;_=value;_=ok}`, "multiple assignments"},
 	}
 	for _, test := range cases {

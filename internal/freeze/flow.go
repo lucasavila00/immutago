@@ -86,7 +86,7 @@ func (p *proof) consumption(graph flow.Graph, events []event) {
 	incoming := consumedFlow(graph, effects, len(ids))
 	for point, e := range events {
 		if e.variable != nil && !e.consume && !e.reset && incoming.has(point, ids[e.variable]) {
-			p.report(e.pos, "use of consumed owned container "+e.variable.Name()+
+			p.report(e.pos, "use of consumed builder "+e.variable.Name()+
 				": Freeze transferred its storage; use the frozen value, or call Clone to create a new builder")
 		}
 	}

@@ -46,7 +46,7 @@ fields in a Copied record.
 | Copied field or array element inside a Frozen or Local owner | Use the [common forms](common-forms.md). Read a value copy; do not write or take an address inside the owner. Unlisted protected operations are rejected. |
 | Cell payload or frozen collection element | Use the fixed [Cell](cell.md), [frozen collection](frozen.md), and [projection](projections.md) APIs. Their reads can return independent Copied values. |
 | Native slice or map passed to Freeze | Use an exclusive [builder](frozen.md#build-before-freezing). Freeze consumes it. |
-| Exported service method result | Use the [service result signatures](service-results.md). Ordinary Copied methods can return several results. |
+| Exported service method result | Each result follows the [service result rules](service-results.md). There is no result count or order limit. |
 
 An ordinary pointer can share its target under normal Go rules. The pointer is
 not a Copied field type or a service result. The Copied proof applies to value
@@ -100,7 +100,6 @@ exclusive builder. The checker adds no runtime ownership state.
 | `im.CopyRecord(projection)` for `Projection[Score]` | `im.Value(projection)` |
 | `alias := scores; frozen := im.FreezeSlice(scores)` | Construct a fresh exclusive builder, then Freeze it. |
 | Use `scores` after `im.FreezeSlice(scores)` | Read the frozen result or Clone it into independent native storage. |
-| An exported service method returning `(Score, bool)` | Return one Copied record that contains the Score and bool fields. |
 
 Copies have the normal Go struct and array copy cost. The marker adds no runtime
 copy operation or allocation. See [operation costs](performance.md).
