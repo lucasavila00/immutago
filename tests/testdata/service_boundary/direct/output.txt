@@ -1,4 +1,4 @@
-anonymous.go:7:24: service method Values must return a read result: []int is not a Copied value
+anonymous.go:7:24: service method Values must return a read result or error: []int is not a Copied value
   result type: []int
   fix: copy scalar fields, or use a local projection
 borrow_calls.go:11:35: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer

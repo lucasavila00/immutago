@@ -245,10 +245,10 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 				continue
 			}
 		} else if c.queries.Owns(ft) {
-			c.report(fieldPos, "unmarked struct contains immutable field "+field.Name()+"; embed an immutable marker"+
+			c.report(fieldPos, "unmarked struct field "+field.Name()+" contains protected storage"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
-				"\n  rule: a struct that owns immutable storage must itself have an immutable field proof"+
-				"\n  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field")
+				"\n  rule: unmarked structs cannot own Frozen records by value or Local data"+
+				"\n  fix: "+unmarkedFieldFix(ft))
 			continue
 		}
 	}

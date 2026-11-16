@@ -97,7 +97,7 @@ func f(r Reader){_,_=r.Read()}`, "dynamic calls"},
 		{"implicit receiver", `func(d *Data)Pair()(int,bool){return 1,true};func f(d Data){_,_=d.Pair()}`,
 			"declared type exactly"},
 		{"retained builder", `func(d *Data)Clone()[]byte{buf:=[]byte{1};_=im.FreezeSlice(buf);return buf}`,
-			"unsupported owned container"},
+			"unsupported builder"},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {

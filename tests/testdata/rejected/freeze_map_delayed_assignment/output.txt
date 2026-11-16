@@ -5,4 +5,4 @@ freeze_map_delayed_assignment.go:8:27: unsupported immutable operation: Freeze r
 freeze_map_delayed_assignment.go:8:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: values["x"], frozen = 2, im.FreezeMap(values)
   fix: use one protected destination, or local names for all results of one direct typed call
-freeze_map_delayed_assignment.go:8:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+freeze_map_delayed_assignment.go:8:2: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder

@@ -1,4 +1,4 @@
-blank_wrapper.go:13:18: unmarked struct contains immutable field _; embed an immutable marker
+blank_wrapper.go:13:18: unmarked struct field _ contains protected storage
   owner: rejected.Bad; field type: rejected.Good
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store *rejected.Good; or make the containing struct a Frozen record with Frozen fields

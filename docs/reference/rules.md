@@ -83,6 +83,11 @@ it. The checker does not prove the promise.
 Run `immutago ./...` or `go vet -vettool=/absolute/path/to/immutago ./...`.
 `go build` alone does not enforce these rules.
 
+For build tags, use `GOFLAGS=-tags=integration immutago ./...` or
+`go vet -vettool=/absolute/path/to/immutago -tags=integration ./...`.
+The CLI's own `-tags` flag does not select tagged files. See
+[Check in CI](../guides/getting-started.md#check-in-ci).
+
 ### Package boundary
 
 The checker checks a package in any of these cases, including its test files:

@@ -36,10 +36,10 @@ snapshot_categories.go:18:2: immutable field Text requires a read result: string
 snapshot_categories.go:19:2: immutable field Frozen requires a read result: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   owner: rejected.BadLocal; field type: im.FrozenString
   fix: use im.StringProjection for a local string result; construct it with text.Projection()
-snapshot_categories.go:21:24: unmarked struct contains immutable field Saved; embed an immutable marker
+snapshot_categories.go:21:24: unmarked struct field Saved contains protected storage
   owner: rejected.BadNative; field type: im.Projection[string]
-  rule: a struct that owns immutable storage must itself have an immutable field proof
-  fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store Frozen pointers or handles; keep Local data in local bindings
 snapshot_categories.go:24:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved Local
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
@@ -88,23 +88,23 @@ snapshot_categories.go:30:5: Frozen collection: Frozen storage cannot contain Lo
 snapshot_categories.go:30:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: badMap im.FrozenMap[im.StringProjection, int]
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
-snapshot_categories.go:36:17: service method Raw must return a read result: string is not a Copied value
+snapshot_categories.go:36:17: service method Raw must return a read result or error: string is not a Copied value
   result type: string
   fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
-snapshot_categories.go:37:17: service method Frozen must return a read result: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
+snapshot_categories.go:37:17: service method Frozen must return a read result or error: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   result type: im.FrozenString
   fix: use im.StringProjection for a local string result; construct it with text.Projection()
-snapshot_categories.go:38:17: service method Retained must return a read result: example.com/consumer/rejected.Retained is not a Copied value
+snapshot_categories.go:38:17: service method Retained must return a read result or error: example.com/consumer/rejected.Retained is not a Copied value
   result type: rejected.Retained
   fix: copy scalar fields, or use a local projection
-snapshot_categories.go:39:17: service method Container must return a read result: []github.com/lucasavila00/immutago/pkg/im.Projection[int] is not a Copied value
+snapshot_categories.go:39:17: service method Container must return a read result or error: []github.com/lucasavila00/immutago/pkg/im.Projection[int] is not a Copied value
   result type: []im.Projection[int]
   fix: copy scalar fields, or use a local projection
 snapshot_categories.go:39:29: unsupported immutable operation: native slices of immutable storage are unsupported
   source: []im.Projection[int]
   type: []im.Projection[int]
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-snapshot_categories.go:40:17: service method LocalPointer must return a read result: *example.com/consumer/rejected.Local is not a Copied value
+snapshot_categories.go:40:17: service method LocalPointer must return a read result or error: *example.com/consumer/rejected.Local is not a Copied value
   result type: *rejected.Local
   fix: copy scalar fields, or use a local projection
 snapshot_categories.go:40:17: unsupported immutable operation: returning Local pointers is unsupported
@@ -202,14 +202,14 @@ snapshot_categories.go:72:52: unsupported immutable operation: native slices of 
   source: []im.StringProjection
   type: []im.StringProjection
   fix: use im.FrozenSlice[T] and All() for iteration, or build a fresh local slice and consume it with im.FreezeSlice
-snapshot_categories.go:74:9: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+snapshot_categories.go:74:9: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 snapshot_categories.go:84:2: immutable field Value requires a read result: example.com/consumer/rejected.Numeric is not a Copied value
   owner: rejected.BadNumericResult; field type: rejected.Numeric
   fix: copy scalar fields, or use a local projection
-snapshot_categories.go:87:17: service method Numeric must return a read result: example.com/consumer/rejected.Numeric is not a Copied value
+snapshot_categories.go:87:17: service method Numeric must return a read result or error: example.com/consumer/rejected.Numeric is not a Copied value
   result type: rejected.Numeric
   fix: copy scalar fields, or use a local projection
-snapshot_categories.go:88:17: service method NumericArray must return a read result: array element: example.com/consumer/rejected.Numeric is not a Copied value
+snapshot_categories.go:88:17: service method NumericArray must return a read result or error: array element: example.com/consumer/rejected.Numeric is not a Copied value
   result type: [0]rejected.Numeric
   fix: copy scalar fields, or use a local projection
 snapshot_categories.go:90:6: unsupported immutable operation: example.com/consumer/rejected.Numeric is not a Copied value

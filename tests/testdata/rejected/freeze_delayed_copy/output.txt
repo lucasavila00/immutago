@@ -1,4 +1,4 @@
-freeze_delayed_copy.go:5:39: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+freeze_delayed_copy.go:5:39: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
 freeze_delayed_copy.go:5:47: unsupported immutable operation: Freeze requires a standalone single binding
   source: im.FreezeSlice(values)
   type: im.FrozenSlice[int]

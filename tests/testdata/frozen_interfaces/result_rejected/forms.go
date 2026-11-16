@@ -47,3 +47,12 @@ func frozenWrite() {
 	pointer := local.TreePointer()
 	pointer.Weight = 2
 }
+
+var savedText im.StringProjection
+var found bool
+
+// A Local result cannot enter package storage when an ordinary result can.
+func savedProjectionResult(r api.Reader) {
+	local := api.NewReaderProjection(im.ProjectionOf(r))
+	savedText, found = local.Read()
+}

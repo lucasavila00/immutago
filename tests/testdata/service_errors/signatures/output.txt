@@ -1,7 +1,7 @@
-signatures.go:19:14: service method Text must return a read result: string is not a Copied value
+signatures.go:19:14: service method Text must return a read result or error: string is not a Copied value
   result type: string
   fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
-signatures.go:20:14: service method Pointer must return a read result: *example.com/consumer/api.Reply is not a Copied value
+signatures.go:20:14: service method Pointer must return a read result or error: *example.com/consumer/api.Reply is not a Copied value
   result type: *api.Reply
   fix: copy scalar fields, or use a local projection
 signatures.go:20:14: unsupported immutable operation: returning Local pointers is unsupported
@@ -11,9 +11,9 @@ signatures.go:20:14: unsupported immutable operation: returning Local pointers i
 signatures.go:20:56: unsupported immutable operation: returning Local pointers is unsupported
   source: return nil, nil
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
-signatures.go:21:14: service method Defined must return a read result: example.com/consumer/signatures.OtherError is not a Copied value
+signatures.go:21:14: service method Defined must return a read result or error: example.com/consumer/signatures.OtherError is not a Copied value
   result type: signatures.OtherError
-  fix: copy scalar fields, or use a local projection
-signatures.go:22:14: service method Interface must return a read result: interface{Error() string} is not a Copied value
+  fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
+signatures.go:22:14: service method Interface must return a read result or error: interface{Error() string} is not a Copied value
   result type: interface{Error() string}
-  fix: copy scalar fields, or use a local projection
+  fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error

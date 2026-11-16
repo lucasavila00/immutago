@@ -94,7 +94,7 @@ func TestFrozenPointerTargets(t *testing.T) {
 		{`func f[T ~*Data](p T){_= &(*p).N}`, "interior addresses"},
 		{`func f[T ~*Data](p T){(*p).Count.Inc()}`, "immutable methods require"},
 		{`func f(v Data){_= &v}`, "fresh allocation"},
-		{`type Bad struct { Value Data }`, "unmarked struct contains immutable field"},
+		{`type Bad struct { Value Data }`, "unmarked struct field"},
 		{`type Result struct{im.Local;N int};type Bad struct { Value *Result }`, "unmarked struct"},
 		{`func f(){var s struct{ Value im.Projection[*Data] };_=s}`, "unmarked struct"},
 		{`func f(){a:=[]*Data{&Data{}};b:=a;_=im.FreezeSlice(a);_=b}`, "builder"},

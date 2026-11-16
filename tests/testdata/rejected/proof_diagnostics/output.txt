@@ -4,7 +4,7 @@ diagnostics.go:24:5: Copied record: Text: string is not a Copied value
 diagnostics.go:31:2: immutable field Text requires a read result: string is not a Copied value
   owner: proofdiagnostics.Reply; field type: string
   fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
-diagnostics.go:41:18: service method Name must return a read result: string is not a Copied value
+diagnostics.go:41:18: service method Name must return a read result or error: string is not a Copied value
   result type: string
   fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
 diagnostics.go:46:12: Frozen collection: Frozen storage cannot contain Local values
@@ -60,3 +60,49 @@ diagnostics.go:83:2: Frozen collection: Frozen storage cannot contain Local valu
 diagnostics.go:84:6: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenMap[string, [1]proofdiagnostics.Name]
   fix: store Frozen data; keep its Projection or Local result in local bindings
+storage.go:12:18: service method Retry must return a read result or error: example.com/consumer/proof_diagnostics.Failure is not a Copied value
+  result type: proofdiagnostics.Failure
+  fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
+storage.go:13:18: service method RetryCode must return a read result or error: example.com/consumer/proof_diagnostics.CodedFailure is not a Copied value
+  result type: proofdiagnostics.CodedFailure
+  fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
+storage.go:16:2: unmarked struct field Point contains protected storage
+  owner: proofdiagnostics.Saved; field type: proofdiagnostics.Point
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store *proofdiagnostics.Point; or make the containing struct a Frozen record with Frozen fields
+storage.go:17:2: unmarked struct field Text contains protected storage
+  owner: proofdiagnostics.Saved; field type: im.StringProjection
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store the matching im.FrozenString value; create its projection at the read site
+storage.go:18:2: unmarked struct field Values contains protected storage
+  owner: proofdiagnostics.Saved; field type: im.SliceProjection[int]
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store the matching im.FrozenSlice value; create its projection at the read site
+storage.go:19:2: unmarked struct field Index contains protected storage
+  owner: proofdiagnostics.Saved; field type: im.MapProjection[int, int]
+  rule: unmarked structs cannot own Frozen records by value or Local data
+  fix: store the matching im.FrozenMap value; create its projection at the read site
+storage.go:25:18: immutable type argument: defined pointer types are unsupported in Frozen data; use a pointer alias
+  type: proofdiagnostics.Selected
+  fix: replace the pointer field or argument with an owned immutable value
+storage.go:28:6: local projection: projection payload 1: defined pointer types are unsupported in Frozen data; use a pointer alias
+  type: im.Projection[proofdiagnostics.Selected]
+  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+storage.go:28:9: immutable type argument: defined pointer types are unsupported in Frozen data; use a pointer alias
+  type: proofdiagnostics.Selected
+  fix: replace the pointer field or argument with an owned immutable value
+storage.go:29:6: Frozen collection: type argument 1: defined pointer types are unsupported in Frozen data; use a pointer alias
+  type: im.FrozenSlice[proofdiagnostics.Selected]
+  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+storage.go:29:9: immutable type argument: defined pointer types are unsupported in Frozen data; use a pointer alias
+  type: proofdiagnostics.Selected
+  fix: replace the pointer field or argument with an owned immutable value
+storage.go:34:11: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+storage.go:37:6: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+storage.go:43:20: use of consumed builder values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+storage.go:49:6: Frozen collection: type argument 1: stored pointers require a concrete Frozen record target
+  type: im.FrozenSlice[*int]
+  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+storage.go:49:9: immutable type argument: stored pointers require a concrete Frozen record target
+  type: *int
+  fix: replace the pointer field or argument with an owned immutable value

@@ -97,11 +97,13 @@ returned. Local values and projections cannot be boxed or captured. See the comp
 | Compare with `==` or `!=` | `scorer == nil`, `scorer == other` |
 | Wrap a local projection | `local := NewScorerProjection(im.ProjectionOf(scorer))` |
 | Call through the local projection | `score := local.Score(features)`, `empty := local.IsNil()` |
-| Bind several results to local names or blanks with `:=`, `=`, or `var` | `value, found, out := local.Lookup(key, buf)`, `value, found, out = local.Lookup(key, buf)`, `var value, found, out = local.Lookup(key, buf)` |
+| Bind several results with `:=`, `=`, or `var`; check each destination separately | `value, found, out := local.Lookup(key, buf)`, `value, found, out = local.Lookup(key, buf)`, `var value, found, out = local.Lookup(key, buf)` |
 | Forward all results to a direct typed call or return | `use(local.Lookup(key, buf))`, `return local.Lookup(key, buf)` |
 
 Local projections use one binding per declaration or assignment, except for the
-result-call forms above. Their multiple-result bindings require local names or blanks.
+result-call forms above. Each Local result needs a local name or blank. Ordinary
+results can use the [common result destinations](common-forms.md#statements-and-calls),
+including ordinary fields, elements, package names, and pointer targets.
 Frozen interface values also use the common value forms.
 Use the common forms for
 statements, builders, fields, return values, and direct named calls. Each
@@ -155,7 +157,7 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | Capture ScorerProjection in a closure | Capture a Scorer value, or compute an ordinary result before the closure. |
 | `Self() *LocalRecord` | Return the Local record value. |
 | `Values() []Tree` | Return `[]*Tree`, a FrozenSlice, or a projection. |
-| `value, outputs[0] = local.Read()` | Bind local names first, then assign the ordinary output separately. |
+| `savedReply, found = local.Read()` where savedReply is a package variable of a Local type | Bind the Local result to a local name; ordinary results can use the common destinations. |
 | Save ScorerProjection in a package variable or Frozen field | Save a Scorer value from an allowed construction. |
 
 A generic `im.Projection[Scorer]` can return its Frozen interface with

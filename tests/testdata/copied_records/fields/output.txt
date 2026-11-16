@@ -3,13 +3,13 @@ copied_fields.go:100:6: struct must embed exactly one immutable marker; each emb
 copied_fields.go:101:5: Copied record: Frozen storage cannot contain Local values
   type: fields.BadLocalMarker
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_fields.go:105:16: service method Bad must return a read result: *example.com/consumer/api.Point is not a Copied value
+copied_fields.go:105:16: service method Bad must return a read result or error: *example.com/consumer/api.Point is not a Copied value
   result type: *api.Point
   fix: copy scalar fields, or use a local projection
-copied_fields.go:106:16: service method Unmarked must return a read result: struct{N int} is not a Copied value
+copied_fields.go:106:16: service method Unmarked must return a read result or error: struct{N int} is not a Copied value
   result type: struct{N int}
   fix: copy scalar fields, or use a local projection
-copied_fields.go:107:16: service method Marker must return a read result: github.com/lucasavila00/immutago/pkg/im.Copied is not a Copied value
+copied_fields.go:107:16: service method Marker must return a read result or error: github.com/lucasavila00/immutago/pkg/im.Copied is not a Copied value
   result type: im.Copied
   fix: copy scalar fields, or use a local projection
 copied_fields.go:13:5: Copied record: Value: string is not a Copied value

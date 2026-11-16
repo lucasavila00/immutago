@@ -34,7 +34,19 @@ func TestStructuralDiagnosticContext(t *testing.T) {
 		}},
 		{`type Child struct{im.Frozen}; type Parent struct{Child Child}`, []string{
 			"unmarked struct", "owner: sample.Parent; field type: sample.Child",
-			"fix: embed im.Frozen",
+			"fix: store *sample.Child",
+		}},
+		{`type Parent struct{Text im.StringProjection}`, []string{
+			"unmarked struct field Text contains protected storage", "store the matching im.FrozenString value",
+		}},
+		{`type Parent struct{Values im.SliceProjection[int]}`, []string{
+			"store the matching im.FrozenSlice value",
+		}},
+		{`type Parent struct{Values im.MapProjection[int,int]}`, []string{
+			"store the matching im.FrozenMap value",
+		}},
+		{`type Reply struct{im.Local;N int};type Parent struct{Reply Reply}`, []string{
+			"store Frozen pointers or handles; keep Local data in local bindings",
 		}},
 		{`var _ = im.FreezeSlice([]*int{new(int)})`, []string{
 			"immutable type argument", "type: *int", "fix: replace the pointer field or argument with an owned immutable value",
@@ -49,6 +61,28 @@ func TestStructuralDiagnosticContext(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestErrorInterfaceDiagnosticRepair distinguishes aliases from new error interface types.
+func TestErrorInterfaceDiagnosticRepair(t *testing.T) {
+	prefix := `import "github.com/lucasavila00/immutago/pkg/supervise"
+type Worker struct{supervise.Service[supervise.NoArgs]};type Count struct{im.Copied;N int};`
+	for _, declaration := range []string{
+		`type Failure error`,
+		`type Failure interface{error;Code()int}`,
+		`type error interface{Error()string};type Failure=error`,
+	} {
+		got := checkSource(t, prefix+declaration+`;func(w *Worker)Retry()Failure{return nil}`)
+		if !strings.Contains(got, "must return a read result or error") ||
+			!strings.Contains(got, "declare the result as Go's predeclared error") ||
+			!strings.Contains(got, "rename any declaration that shadows error") {
+			t.Fatal(got)
+		}
+	}
+	got := checkSource(t, prefix+`type Failure = error;func(w *Worker)Retry()(int,Failure){return 1,nil}`)
+	if got != "" {
+		t.Fatal(got)
 	}
 }
 
@@ -106,7 +140,7 @@ type Worker struct{supervise.Service[supervise.NoArgs]}
 func(w *Worker)Name()string{return ""}
 func(w *Worker)Text()im.StringProjection{return im.ProjectString("")}`)
 	for _, want := range []string{
-		"service method Name must return a read result: string is not a Copied value",
+		"service method Name must return a read result or error: string is not a Copied value",
 		"fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)",
 	} {
 		if !strings.Contains(got, want) {

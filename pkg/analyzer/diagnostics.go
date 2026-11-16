@@ -143,6 +143,19 @@ func subsetFix(rule string) string {
 	return "use the documented immutable value and reference forms"
 }
 
+// unmarkedFieldFix gives storage replacements without changing the containing type's rules.
+func unmarkedFieldFix(t types.Type) string {
+	if _, named := types.Unalias(t).(*types.Named); named && checker.Frozen(t) {
+		return "store *" + diagnosticType(t) + "; or make the containing struct a Frozen record with Frozen fields"
+	}
+	for _, kind := range []string{"String", "Slice", "Map"} {
+		if checker.IsLibraryType(t, kind+"Projection") {
+			return "store the matching im.Frozen" + kind + " value; create its projection at the read site"
+		}
+	}
+	return "store Frozen pointers or handles; keep Local data in local bindings"
+}
+
 // structuralFix explains how to replace a field or type argument that failed its recursive proof.
 func structuralFix(t types.Type, reason string) string {
 	switch {

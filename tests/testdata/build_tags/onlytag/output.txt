@@ -1,0 +1,3 @@
+integration.go:12:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: saved Reply
+  fix: keep Local values in local bindings; copy the required data into Frozen values before saving it

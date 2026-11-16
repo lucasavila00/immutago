@@ -36,7 +36,7 @@ func (p *proof) checkUses() {
 
 // reject explains the conservative unique-owner boundary rather than silently assuming an alias is dead.
 func (p *proof) reject(node ast.Node, variable *types.Var, reason string) {
-	p.report(node.Pos(), "unsupported owned container "+variable.Name()+": "+reason+
+	p.report(node.Pos(), "unsupported builder "+variable.Name()+": "+reason+
 		"; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder")
 }
 
