@@ -129,7 +129,7 @@ var subsetFixes = map[string]string{
 // subsetFix gives a supported replacement for each rejected operation.
 func subsetFix(rule string) string {
 	if strings.Contains(rule, "is not a Copied value") {
-		return "copy scalar fields, or use a generated local projection"
+		return "copy scalar fields, or use a local projection"
 	}
 	if strings.Contains(rule, "markers are annotations") {
 		return "embed the marker in a named struct; use data fields for values"
@@ -159,7 +159,7 @@ func structuralFix(t types.Type, reason string) string {
 		if checker.IsLibraryType(t, "FrozenString") {
 			return "use im.StringProjection for a local string result; construct it with text.Projection()"
 		}
-		return "copy scalar fields, or use a generated local projection"
+		return "copy scalar fields, or use a local projection"
 	case strings.Contains(reason, "markers are annotations"):
 		return "embed the marker in a named struct; use data fields for values"
 	case strings.Contains(reason, "named array"):

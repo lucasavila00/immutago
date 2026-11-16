@@ -4,7 +4,7 @@ atomic.go:25:2: unmarked struct contains immutable field Local; embed an immutab
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
 atomic.go:29:2: immutable field Current requires a read result: sync/atomic.Pointer[example.com/consumer/serviceatomic.WorkerRef] is not a Copied value
   owner: serviceatomic.ProtectedSlot; field type: atomic.Pointer[serviceatomic.WorkerRef]
-  fix: copy scalar fields, or use a generated local projection
+  fix: copy scalar fields, or use a local projection
 atomic.go:33:2: unmarked struct contains immutable field Values; embed an immutable marker
   owner: serviceatomic.FrozenSlot; field type: im.FrozenSlice[int]
   rule: a struct that owns immutable storage must itself have an immutable field proof

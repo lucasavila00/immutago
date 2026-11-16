@@ -11,7 +11,7 @@ func TestCopiedDiagnosticPaths(t *testing.T) {
 	for _, prefix := range []string{"", "array element: ", "Result: array element: "} {
 		reason := prefix + "string is not a Copied value"
 		for _, fix := range []string{subsetFix(reason), structuralFix(types.Typ[types.Int], reason)} {
-			if fix != "copy scalar fields, or use a generated local projection" {
+			if fix != "copy scalar fields, or use a local projection" {
 				t.Fatal(fix)
 			}
 		}

@@ -1,3 +1,3 @@
 shadow.go:14:16: service method Restart must return a read result: example.com/consumer/shadow.error is not a Copied value
   result type: shadow.error
-  fix: copy scalar fields, or use a generated local projection
+  fix: copy scalar fields, or use a local projection

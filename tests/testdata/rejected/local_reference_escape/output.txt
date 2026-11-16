@@ -60,7 +60,7 @@ local_reference_escape.go:48:11: struct cannot embed both im.Frozen and im.Local
 local_reference_escape.go:48:6: struct cannot embed both im.Frozen and im.Local
 local_reference_escape.go:56:2: immutable field Pointer requires a read result: *example.com/consumer/local_reference_escape.Local is not a Copied value
   owner: local_reference_escape.LocalStored; field type: *local_reference_escape.Local
-  fix: copy scalar fields, or use a generated local projection
+  fix: copy scalar fields, or use a local projection
 local_reference_escape.go:60:21: Frozen collection: Frozen storage cannot contain Local values
   type: im.FrozenSlice[local_reference_escape.Local]
   fix: store Frozen data; keep its Projection or Local result in local bindings
