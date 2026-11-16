@@ -49,7 +49,9 @@ func (*Service[A]) Init() error { return nil }
 // The runtime stops and waits for these children
 // before it replaces the parent. A later attempt owns a new group.
 // After this attempt ends, Children returns a stopped group.
+// Children panics if Start did not create the service.
 func (p *Service[A]) Children() *Group {
+	checkGroup(p.owner)
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.children == nil {
@@ -257,7 +259,8 @@ func Start[T, A any, P interface {
 		}
 		service := P(value)
 		if parent.policy.Err() != nil {
-			ctx = parent.policy
+			// Policy stops retries; the entry context keeps shutdown order.
+			<-ctx.Done()
 		}
 		if parent.policy.Err() == nil && ctx.Err() == nil {
 			ref.value.Store(value)

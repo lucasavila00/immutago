@@ -20,7 +20,7 @@ Ref copy ─┴──> shared slot ──> latest initialized *T
 | Initial Init failure | Start caller | Stop staged children. Return a zero Ref and error, or propagate the panic. |
 | Initial publication | Start caller | Store initialized T; register a watcher with the group. |
 | Background work | Watcher | Activate the service's child group; call Run once after successful Init. |
-| Stopped or pending initialized attempt | Watcher | Stop children, then call Run with an already-cancelled context for cleanup. |
+| Stopped or pending initialized attempt | Watcher | Wait for its entry's shutdown turn; stop children, then call Run with an already-cancelled context for cleanup. |
 | `ref.Borrow().Method(args)` | Method caller | Load the slot; call the method directly on that T. |
 | Replacement setup | Same watcher | Allocate a fresh T with the same arguments; publish only after successful Init. |
 
@@ -66,7 +66,7 @@ next attempt: new child group
 | Mutex | Protect admission, child links, activation, and the stop decision. |
 | Doubly linked child list | Preserve start order; unlink a completed child without searching. |
 | Policy context | Disable retries throughout the subtree immediately. |
-| Separate Run contexts | Cancel services one at a time in reverse start order. |
+| Separate entry contexts | Keep reverse shutdown order, including attempts that finish Init after policy stops. Each service stops its children before it cancels its Run context. |
 
 Shutdown follows this order:
 

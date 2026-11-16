@@ -145,7 +145,7 @@ Args returns the arguments supplied to Start. Every retry receives the same argu
 func (p *Service[A]) Children() *Group
 ```
 
-Children returns the group owned by this service attempt. Its services wait until the parent Run starts, or run with cancelled contexts during cleanup. The runtime stops and waits for these children before it replaces the parent. A later attempt owns a new group. After this attempt ends, Children returns a stopped group.
+Children returns the group owned by this service attempt. Its services wait until the parent Run starts, or run with cancelled contexts during cleanup. The runtime stops and waits for these children before it replaces the parent. A later attempt owns a new group. After this attempt ends, Children returns a stopped group. Children panics if Start did not create the service.
 
 ### func \(\*Service\[A\]\) Init
 

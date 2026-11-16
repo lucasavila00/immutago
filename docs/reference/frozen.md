@@ -74,6 +74,30 @@ An exclusive [Local builder](local.md) uses these operations but cannot be froze
 - Bare `nil` means Go's predeclared `nil`; `(nil)` also works.
 - Freeze needs its own assignment or declaration.
 
+### Freeze destinations
+
+| Allowed destinations — exhaustive | Example |
+| --- | --- |
+| One local or package name | `frozen := im.FreezeSlice(values)`, `var frozen = im.FreezeMap(scores)`, `saved = im.FreezeSlice(values)` |
+| Blank | `_ = im.FreezeSlice(values)` |
+| An ordinary struct field | `cache.Values = im.FreezeSlice(values)` |
+| An ordinary array, slice, or map element | `slots[i] = im.FreezeSlice(values)`, `entries[key] = im.FreezeMap(scores)` |
+| An ordinary pointer target | `*slot = im.FreezeSlice(values)` |
+
+The destination can have the FrozenSlice or FrozenMap type returned by the call,
+or a compatible interface type. For example, both `var saved any = im.FreezeSlice(values)`
+and `saved = im.FreezeSlice(values)` work.
+Aliases and parentheses work. Field, element, and pointer writes keep the normal
+write rules. The builder is consumed at the Freeze call.
+
+| Rejected examples — non-exhaustive | Replacement |
+| --- | --- |
+| `root.Values = im.FreezeSlice(values)` where root is a Frozen record | `frozen := im.FreezeSlice(values); next := Root{Values: frozen}` |
+| `a, b = im.FreezeSlice(values), im.FreezeMap(scores)` | `a = im.FreezeSlice(values); b = im.FreezeMap(scores)` |
+| `use(im.FreezeSlice(values))` | `frozen := im.FreezeSlice(values); use(frozen)` |
+
+### Fresh inputs
+
 Fresh inputs can go directly into Freeze; the same forms work for maps:
 
 | Fresh Freeze inputs — exhaustive | Example |

@@ -29,4 +29,8 @@ func TestReceiverMethods(t *testing.T) {
 			})
 		}
 	}
+	t.Run("runtime", func(t *testing.T) {
+		dir := consumerModule(t, root, "receiver_methods")
+		runCommand(t, dir, true, "go", "test", "./accepted", "./consumer")
+	})
 }

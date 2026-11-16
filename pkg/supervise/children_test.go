@@ -102,6 +102,8 @@ func TestChildrenStopBeforeRun(t *testing.T) {
 // TestChildrenDuringHalt gives a late child a cancelled context for cleanup.
 func TestChildrenDuringHalt(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
+		parent := NewRoot(nil)
+		defer func() { <-parent.Stop() }()
 		entered := make(chan struct{})
 		resume := make(chan struct{})
 		var once sync.Once
@@ -109,6 +111,7 @@ func TestChildrenDuringHalt(t *testing.T) {
 			cancel:  func() { once.Do(func() { close(entered); <-resume }) },
 			unwatch: func() bool { return true },
 		}
+		p.bind(NoArgs{}, parent)
 		halted := make(chan struct{})
 		go func() { p.halt(); close(halted) }()
 		<-entered
