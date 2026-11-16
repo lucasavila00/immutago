@@ -9,6 +9,13 @@ import (
 func TestFreezeAssignment(t *testing.T) {
 	const cache = `type Cache struct{Values im.FrozenSlice[int];Index im.FrozenMap[string,int]};`
 	cases := map[string]string{
+		"interface declaration": `var saved any=im.FreezeSlice([]int{1});
+func f(){var boxed any=im.FreezeSlice([]int{2});_=boxed}`,
+		"interface assignment": `var saved any;func f(){saved=im.FreezeSlice([]int{1})}`,
+		"interface field":      `type Box struct{Value any};func f(b *Box){b.Value=im.FreezeSlice([]int{1})}`,
+		"interface map":        `func f(b map[int]any){b[0]=im.FreezeMap(map[int]int{1:2})}`,
+		"interface pointer":    `func f(b *any){*b=im.FreezeSlice([]int{1})}`,
+
 		"field":                 `func f(c *Cache){values:=[]int{1};c.Values=im.FreezeSlice(values)}`,
 		"map field":             `func f(c *Cache){values:=map[string]int{"a":1};c.Index=im.FreezeMap(values)}`,
 		"literal":               `func f(c *Cache){c.Values=im.FreezeSlice([]int{1})}`,

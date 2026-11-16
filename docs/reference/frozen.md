@@ -83,15 +83,17 @@ An exclusive [Local builder](local.md) uses these operations but cannot be froze
 | An ordinary array, slice, or map element | `slots[i] = im.FreezeSlice(values)`, `entries[key] = im.FreezeMap(scores)` |
 | An ordinary pointer target | `*slot = im.FreezeSlice(values)` |
 
-The destination must have the FrozenSlice or FrozenMap type returned by the call.
+The destination can have the FrozenSlice or FrozenMap type returned by the call,
+or a compatible interface type. For example, both `var saved any = im.FreezeSlice(values)`
+and `saved = im.FreezeSlice(values)` work.
 Aliases and parentheses work. Field, element, and pointer writes keep the normal
 write rules. The builder is consumed at the Freeze call.
 
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
-| `root.Values = im.FreezeSlice(values)` where root is a Frozen record | Freeze into a local, then construct a new root. |
-| `a, b = im.FreezeSlice(values), im.FreezeMap(scores)` | Use a separate assignment for each Freeze call. |
-| `use(im.FreezeSlice(values))` | Freeze into a local, then call `use`. |
+| `root.Values = im.FreezeSlice(values)` where root is a Frozen record | `frozen := im.FreezeSlice(values); next := Root{Values: frozen}` |
+| `a, b = im.FreezeSlice(values), im.FreezeMap(scores)` | `a = im.FreezeSlice(values); b = im.FreezeMap(scores)` |
+| `use(im.FreezeSlice(values))` | `frozen := im.FreezeSlice(values); use(frozen)` |
 
 ### Fresh inputs
 

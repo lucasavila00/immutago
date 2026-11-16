@@ -36,3 +36,16 @@ func FreezeSlots() int {
 	saved, _ := entries["saved"].Get("n")
 	return cache.Values.At(1) + first + array[0].At(0) + slices[0].At(0) + saved + pointer.At(0)
 }
+
+// FreezeInterfaces keeps the same assignment rules for compatible interface slots.
+func FreezeInterfaces() {
+	var boxed any = im.FreezeSlice([]int{1})
+	boxed = im.FreezeSlice([]int{2})
+	holder := struct{ Value any }{}
+	holder.Value = im.FreezeMap(map[int]int{1: 2})
+	values := make([]any, 1)
+	values[0] = im.FreezeSlice([]int{3})
+	slot := &boxed
+	*slot = im.FreezeSlice([]int{4})
+	_ = holder
+}

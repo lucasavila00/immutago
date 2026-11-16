@@ -5,7 +5,6 @@ import (
 	"go/token"
 	"go/types"
 
-	"github.com/lucasavila00/immutago/internal/checker"
 	"github.com/lucasavila00/immutago/internal/freeze"
 )
 
@@ -161,7 +160,7 @@ func (c *subsetChecks) matchBuilderBuiltin(call *ast.CallExpr, name string) bool
 	return false
 }
 
-// standaloneFreeze requires one collection destination; assignment checks enforce write permissions.
+// standaloneFreeze requires one destination; assignment checks enforce types and write permissions.
 func (c *subsetChecks) standaloneFreeze(call *ast.CallExpr) bool {
 	var expression ast.Expr = call
 	for {
@@ -176,16 +175,12 @@ func (c *subsetChecks) standaloneFreeze(call *ast.CallExpr) bool {
 		if len(statement.Lhs) != 1 || len(statement.Rhs) != 1 || statement.Rhs[0] != expression {
 			return false
 		}
-		switch target := ast.Unparen(statement.Lhs[0]).(type) {
-		case *ast.Ident:
-			if target.Name == "_" {
-				return true
-			}
-		case *ast.SelectorExpr, *ast.IndexExpr, *ast.StarExpr:
+		switch ast.Unparen(statement.Lhs[0]).(type) {
+		case *ast.Ident, *ast.SelectorExpr, *ast.IndexExpr, *ast.StarExpr:
+			return true
 		default:
 			return false
 		}
-		return checker.IsCollection(c.pass.TypesInfo.TypeOf(statement.Lhs[0]))
 	case *ast.ValueSpec:
 		return len(statement.Names) == 1 && len(statement.Values) == 1 && statement.Values[0] == expression
 	}
