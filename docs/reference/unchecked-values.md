@@ -43,7 +43,9 @@ the counter itself.
 | `im.Unwrap(value)` | Same package rule. Return the stored pointer. The package may expose it through its API. |
 | Change a handle variable or an ordinary holder's handle field | Replace the whole handle. |
 | Call methods, including promoted methods | Value receivers copy the handle. Pointer receivers need an existing Frozen pointer; calls must not take the address of a replaceable handle field. |
-| Use a pointer to the Frozen handle | Apply the normal [Frozen pointer rules](frozen-records.md#stored-pointers--exhaustive). |
+| Take the address of a raw UncheckedValue in ordinary storage | Use Go address rules: `&raw`, `&holder.Raw`, or `&values[i]`. |
+| Allocate a pointer to a Frozen handle wrapper | Use fresh storage: `&Counter{}`, `new(Counter)`, or `new(handle)`. Do not take the address of an existing wrapper variable, field, or element. |
+| Use an existing pointer to a Frozen handle wrapper | Apply the normal [Frozen pointer rules](frozen-records.md#stored-pointers--exhaustive). |
 
 Handles and pointers to their Frozen wrappers are Frozen and read results. They are not Copied: copying one keeps an
 edge to its target. Their payload cannot contain Local data. An extra field makes
@@ -68,5 +70,6 @@ used as function values in that package. UncheckedValue has no reader methods.
 | `func Wrap[T any](v *T) im.UncheckedValue[T] { return im.Trust(v) }` | Wrap a named payload type declared by this package. |
 | `im.Trust(&rows)` for a native slice variable | Declare a named payload type. |
 | `c.state = im.Trust(&counter{})` | Construct another Counter. |
+| `p := &handle`, `p := &holder.Handle`, or `p := &handles[i]` for a Frozen wrapper | Use `p := new(handle)`, `new(holder.Handle)`, or `new(handles[i])`. Each copies the wrapper and keeps the same target. Raw UncheckedValue addresses in ordinary storage are allowed. |
 | Store a handle inside an im.Copied record | Use a Local result or an ordinary holder. |
 | `holder.Pointer()` when Holder embeds Counter by value and Pointer has a `*Counter` receiver | Embed `*Counter` and construct it with `new(NewCounter())`, or use a value receiver. |

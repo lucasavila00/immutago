@@ -27,7 +27,7 @@ func (*noCopy) Lock() {}
 // Unlock completes the lock method set for the copylocks check.
 func (*noCopy) Unlock() {}
 
-// Service supplies start arguments and the children owned by one service attempt.
+// Service supplies start arguments and the children owned by this service.
 // Embed it by value. Start creates and initializes the service value.
 // Do not copy an initialized Service or a struct that contains it.
 // Declare service methods with pointer receivers. Run go vet to check for copies.
@@ -46,7 +46,7 @@ func (p *Service[A]) Args() A { return p.args }
 
 // Init supplies empty setup when the service does not declare Init.
 // A declared Init must release application resources if it fails. The runtime
-// stops children created by that setup attempt.
+// stops children created by that setup.
 func (*Service[A]) Init() error { return nil }
 
 // UnsafeChildren returns the child group owned by this service.
@@ -180,7 +180,7 @@ func (p Ref[T]) Borrow() *T {
 // waits for ordered cleanup, and panics with *Failure.
 // report receives each recovered Run panic or Goexit with its original
 // stack, then the selected terminal *Failure before cleanup waits. A nil report
-// disables attempt reports; terminal failures still go to standard error.
+// disables individual Run reports; terminal failures still go to standard error.
 // Reports can overlap, must return, and must not wait for their group to stop.
 func NewRoot(report func(any, []byte)) *Group {
 	return root(func(value any) { panic(value) }, report)
@@ -218,12 +218,12 @@ func StartGroup(parent *Group) *Group {
 	return nested
 }
 
-// Start creates T, calls Init in the caller, and publishes the initialized value.
-// A first Init error returns a zero Ref and the error; a first Init panic reaches
+// Start creates T, calls Init once in the caller, and publishes the initialized value.
+// An Init error returns a zero Ref and the error; an Init panic reaches
 // the caller. The runtime stops staged children in both cases.
-// Each successful Init gets one Run call, with a cancelled context if its attempt
+// Each successful Init gets one Run call, with a cancelled context if the service
 // cannot activate. Start under a stopped parent waits for that cleanup Run.
-// Stop waits for registered children, not an initial Init that has not registered yet.
+// Stop waits for registered children, not an Init that has not registered yet.
 func Start[T, A any, P interface {
 	*T
 	Init() error

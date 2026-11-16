@@ -101,3 +101,47 @@ func checkLocalFailureQuery(t *testing.T, first, score, outer, settings types.Ty
 		}
 	}
 }
+
+// TestReadResultFailurePaths keeps result failures separate from Copied field failures in either query order.
+func TestReadResultFailurePaths(t *testing.T) {
+	frozen, _ := testTypes()
+	pkg := frozen.Obj().Pkg()
+	copied := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Copied", nil), types.NewStruct(nil, nil), nil)
+	local := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Local", nil), types.NewStruct(nil, nil), nil)
+	worker := types.NewNamed(types.NewTypeName(token.NoPos, nil, "Worker", nil), types.NewStruct(nil, nil), nil)
+	pointer := types.NewPointer(worker)
+	alias := types.NewAlias(types.NewTypeName(token.NoPos, nil, "WorkerPointer", nil), pointer)
+	text := types.NewField(token.NoPos, nil, "Text", types.Typ[types.String], false)
+	cases := []struct {
+		typ    types.Type
+		reason string
+		repair string
+	}{
+		{pointer, "*Worker is not a read result", "an opaque handle"},
+		{alias, "*Worker is not a read result", "an opaque handle"},
+		{types.NewArray(types.NewArray(alias, 2), 0),
+			"array element: array element: *Worker is not a read result", "an opaque handle"},
+		{markedType("Reply", local, types.NewField(token.NoPos, nil, "Worker", pointer, false)),
+			"Worker: *Worker is not a read result", "an opaque handle"},
+		{markedType("Score", copied, text),
+			"Text: string is not a Copied value", "replace its im.Copied marker with im.Local"},
+		{types.NewNamed(types.NewTypeName(token.NoPos, nil, "Counts", nil), types.NewArray(types.Typ[types.Int], 2), nil),
+			"named array must be wrapped", "use an unnamed array type"},
+	}
+	for _, test := range cases {
+		for _, copiedFirst := range []bool{false, true} {
+			var prover Prover
+			if copiedFirst {
+				_ = prover.CopiedFailure(test.typ)
+			}
+			failure := prover.ReadResultFailure(test.typ)
+			if !strings.Contains(failure.Reason, test.reason) || !strings.Contains(failure.Repair, test.repair) {
+				t.Errorf("%s, Copied first %t: %v", test.typ, copiedFirst, failure)
+			}
+			_ = prover.CopiedFailure(test.typ)
+			if again := prover.ReadResultFailure(test.typ); again != failure {
+				t.Errorf("cached failure changed: %v -> %v", failure, again)
+			}
+		}
+	}
+}

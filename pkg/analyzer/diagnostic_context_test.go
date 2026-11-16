@@ -152,7 +152,7 @@ func TestReadResultProjectionRepair(t *testing.T) {
 type Data struct{im.Frozen;N int};type Reader interface{im.FrozenInterface};
 type Reply struct{im.Local;Value `+payload+`};type Worker struct{supervise.Service[supervise.NoArgs]};
 func(w *Worker)Read()`+payload+`{var result `+payload+`;return result}`)
-		if strings.Count(got, "for Local fields or results, use matching projections") < 2 {
+		if strings.Count(got, "a Local record or matching projection") < 2 {
 			t.Fatal(got)
 		}
 	}

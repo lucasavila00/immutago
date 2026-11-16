@@ -15,6 +15,19 @@ type categoryCase struct {
 // TestCategoryValidity keeps category membership stable while failure paths change.
 func TestCategoryValidity(t *testing.T) {
 	cases := categoryCases(t)
+	for _, kind := range []types.BasicKind{
+		types.Bool, types.Int, types.Int8, types.Int16, types.Int32, types.Int64,
+		types.Uint, types.Uint8, types.Uint16, types.Uint32, types.Uint64, types.Uintptr,
+		types.Float32, types.Float64, types.Complex64, types.Complex128,
+		types.UntypedBool, types.UntypedInt, types.UntypedRune, types.UntypedFloat, types.UntypedComplex,
+	} {
+		basic := types.Typ[kind]
+		cases = append(cases, categoryCase{basic, [3]bool{true, true, true}})
+		if basic.Info()&types.IsUntyped == 0 {
+			named := types.NewNamed(types.NewTypeName(token.NoPos, nil, "Scalar", nil), basic, nil)
+			cases = append(cases, categoryCase{named, [3]bool{true, true, true}})
+		}
+	}
 	for _, bad := range []int{-1, 1} {
 		for _, node := range stressGraph([][]int{{1}, {0}}, bad, true) {
 			cases = append(cases, categoryCase{node, [3]bool{bad < 0, false, false}})
@@ -76,7 +89,6 @@ func categoryCases(t *testing.T) []categoryCase {
 	method := types.NewFunc(token.NoPos, nil, "Read", types.NewSignatureType(nil, nil, nil, nil,
 		types.NewTuple(types.NewParam(token.NoPos, nil, "", reply)), false))
 	return []categoryCase{
-		{types.Typ[types.Bool], [3]bool{true, true, true}}, {types.Typ[types.Int], [3]bool{true, true, true}},
 		{types.Typ[types.String], [3]bool{true, false, false}}, {frozenText, [3]bool{true, false, false}},
 		{score, [3]bool{true, true, true}}, {settings, [3]bool{true, false, false}},
 		{text, [3]bool{false, false, true}}, {reply, [3]bool{false, false, true}},
