@@ -40,6 +40,24 @@ func (v LevelsProjection) Values() LevelsValuesProjection {
 	return LevelsValuesProjection{immutagoProjection: v.immutagoProjection}
 }
 
+// Meter reads the Meter field.
+func (v LevelsProjection) Meter() Meter[Seconds] {
+	return v.immutagoProjection.Unsafe().Meter
+}
+
+// Meters reads the Meters field.
+func (v LevelsProjection) Meters() LevelsMetersProjection {
+	if im.IsNil(v.immutagoProjection) {
+		panic("nil frozen record")
+	}
+	return LevelsMetersProjection{immutagoProjection: v.immutagoProjection}
+}
+
+// Window reads the Window field.
+func (v LevelsProjection) Window() Range[Seconds] {
+	return v.immutagoProjection.Unsafe().Window
+}
+
 // LevelsCell publishes frozen Levels values. Do not copy it.
 type LevelsCell struct{ value im.Cell[Levels] }
 
@@ -93,4 +111,18 @@ func (v LevelsValuesProjection) Len() int { return 2 }
 // At reads the element at index.
 func (v LevelsValuesProjection) At(index0 int) Level {
 	return v.immutagoProjection.Unsafe().Values[index0]
+}
+
+// LevelsMetersProjection reads a fixed array locally.
+type LevelsMetersProjection struct {
+	immutagoLocal
+	immutagoProjection im.Projection[*Levels]
+}
+
+// Len returns the array length.
+func (v LevelsMetersProjection) Len() int { return 2 }
+
+// At reads the element at index.
+func (v LevelsMetersProjection) At(index0 int) Meter[Seconds] {
+	return v.immutagoProjection.Unsafe().Meters[index0]
 }

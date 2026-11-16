@@ -234,7 +234,10 @@ forms on this page.
 | Alias or parentheses in these forms | `type Position = FrozenPoint`, `(p).ReadX()` |
 
 The Copied receiver rule includes defined boolean and numeric types, their aliases,
-and Copied records. The method can come from another package. A value receiver or
+and Copied records, including instantiated generic types. For example,
+`settings.Timeout.Read()` works with `type Meter[Unit any] int` and a field of type
+`Meter[Seconds]`. The receiver uses the same Copied proof as the field.
+The method can come from another package. A value receiver or
 bound method copies the field; it does not retain the Frozen or Local owner.
 The field read still follows the owner's statement rules. For example,
 `go reply.Count.Read()` is rejected when reply is Local; copy Count to an ordinary

@@ -20,6 +20,48 @@ copied_methods.go:9:11: unsupported immutable operation: immutable method receiv
   source: levels.Current.Raise
   type: func()
   fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
+generic_copied.go:10:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: levels.Meters[0].Inc()
+  type: ()
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
+generic_copied.go:11:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: reply.Window.Grow()
+  type: ()
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
+generic_copied.go:12:11: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: reply.Meter.Inc
+  type: func()
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
+generic_copied.go:14:3: unsupported immutable operation: interior addresses of protected storage are unsupported
+  source: &reply.Meter
+  type: *api.Meter[api.Seconds]
+  fix: copy the field into a local; do not take a pointer into immutable storage
+generic_copied.go:15:2: unsupported immutable operation: writes to immutable objects are unsupported
+  source: levels.Meter++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+generic_copied.go:19:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: go reply.Meter.Read()
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
+generic_copied.go:20:2: unsupported immutable operation: protected storage requires synchronous calls
+  source: defer reply.Window.Width()
+  fix: call the function or method directly before continuing; keep Local values, Local pointers, and native builders out of go and defer
+generic_copied.go:21:26: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+  source: reply
+  type: api.LevelReply
+  fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
+generic_copied.go:22:2: unsupported immutable operation: multiple assignments involving protected storage are unsupported
+  source: first, second := reply.Meter.Read(), 1
+  fix: use one protected destination, or local names for all results of one direct typed call
+generic_copied.go:29:2: unsupported builder meters: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
+generic_copied.go:29:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: meters[0].Inc()
+  type: ()
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
+generic_copied.go:36:6: use of consumed builder meters: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
+generic_copied.go:9:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: levels.Meter.Inc()
+  type: ()
+  fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 generic_methods.go:10:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.MapPointer[int](number)
   type: int

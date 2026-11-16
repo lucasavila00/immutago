@@ -40,7 +40,7 @@ copied_methods.go:39:2: unsupported immutable operation: multiple assignments in
 copied_methods.go:45:6: unsupported immutable operation: immutable methods require a proved marked or Copied receiver
   source: owner.Text.Read()
   type: string
-  fix: use a proved marked or Copied receiver type without type parameters; for other field or element types, copy to an ordinary local before calling the method
+  fix: use a proved marked or Copied receiver type; for other field or element types, copy to an ordinary local before calling the method
 copied_methods.go:50:2: unsupported builder values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 copied_methods.go:50:2: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: values[0].Inc()
