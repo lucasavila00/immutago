@@ -10,6 +10,9 @@ api.go:22:14: unsupported immutable operation: returning Local pointers is unsup
   source: Pointer
   type: func() (bool, *api.View)
   fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
+api.go:22:54: unsupported immutable operation: returning Local pointers is unsupported
+  source: return false, nil
+  fix: return a Local value copy, or use im.Frozen for objects whose pointers must be shared
 api.go:23:14: service method Record must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
   result type: badapi.Unmarked
 api.go:24:14: service method ErrorType must return a service result: copied values require bool, numbers, Copied records, arrays, or service references
