@@ -88,7 +88,8 @@ has its own retry count. Groups do not restart.
 | --- | --- |
 | `root := supervise.NewRoot(report)` | Application group, until root.Stop. Pass nil to disable attempt reports; selected terminal failures still go to standard error. |
 | `group := supervise.StartGroup(parent)` | Lifetime group; stop these services and their children together. |
-| `s.Children()` | Children of one service run; a restart creates a new group. |
+| `s.Children()` | Children of one service run; a restart creates a new group. Start must have created s. |
+| `new(Worker).Children()` | Panic with `supervise: nil or zero Group` in the caller. Use Start to create a service that needs child groups. |
 
 Create groups with these APIs. A nil or zero Group cannot run or stop. Groups otherwise follow
 ordinary Go rules. A stopped parent supplies a stopped nested group.
@@ -122,8 +123,9 @@ Stop does not wait for requests already using the old reference.
 | Stop on a nil or zero Group | Panic with `supervise: nil or zero Group`. |
 | `<-root.Stop()` | Wait until all children stop. |
 | `<-group.Stop()` on a nested group | Also wait for removal from the parent. Other groups continue. |
-| Stop is requested | Prevent new retries in that subtree immediately; cancel running services in reverse start order. |
-| Restart Init is already running when Stop is requested | Let Init finish. If it succeeds, stop its children and call Run with an already-cancelled context. Do not publish the replacement. |
+| Stop is requested | Prevent new retries in that subtree immediately; cancel services in reverse start order. |
+| A registered service has not entered its first Run when Stop is requested | Wait for its turn, stop its children, then call Run with an already-cancelled context. |
+| Restart Init is already running when Stop is requested | Let Init finish. If it succeeds, wait for its turn, stop its children, and call Run with an already-cancelled context. Do not publish the replacement. |
 
 Shutdown gives pending initialized services a cancelled Run through the same
 watcher used for active services. It waits for children in reverse start order

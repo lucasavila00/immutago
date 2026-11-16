@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-// TestFirstRunAfterPolicyCancellation checks an entry launched before policy cancellation.
+// TestFirstRunAfterPolicyCancellation keeps a delayed first attempt in shutdown order.
 func TestFirstRunAfterPolicyCancellation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		top := NewRoot(nil)
 		parent := newGroup(top, false)
-		runs := 0
-		_, err := Start[initializing](parent, &initHooks{
-			init: func(*initializing) error { return nil },
+		inits, runs := 0, 0
+		ref, err := Start[initializing](parent, &initHooks{
+			init: func(*initializing) error { inits++; return nil },
 			run: func(_ *initializing, ctx context.Context) {
 				runs++
 				if ctx.Err() == nil {
@@ -27,15 +27,38 @@ func TestFirstRunAfterPolicyCancellation(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		original := ref.Borrow()
 		entry := parent.children.first
 		run := entry.run
-		parent.forget(entry)
-		parent.cancel()
-		run(context.Background())
-		<-parent.Stop()
+		entered, release := make(chan struct{}), make(chan struct{})
+		entry.run = func(ctx context.Context) { close(entered); <-release; run(ctx) }
+		parent.activate()
+		<-entered
+		cleanup, slowRelease := make(chan struct{}), make(chan struct{})
+		_, err = Start[initializing](parent, &initHooks{
+			init: func(*initializing) error { return nil },
+			run: func(_ *initializing, ctx context.Context) {
+				<-ctx.Done()
+				close(cleanup)
+				<-slowRelease
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		synctest.Wait()
+		done := parent.Stop()
+		<-cleanup
+		close(release)
+		synctest.Wait()
+		if runs != 0 {
+			t.Error("first attempt ran cleanup before the newer service stopped")
+		}
+		close(slowRelease)
+		<-done
 		<-top.Stop()
-		if runs != 1 {
-			t.Fatalf("first attempt ran %d times; want 1", runs)
+		if inits != 1 || runs != 1 || ref.Borrow() != original {
+			t.Fatalf("first attempt: Init calls=%d, Run calls=%d, changed=%t", inits, runs, ref.Borrow() != original)
 		}
 	})
 }

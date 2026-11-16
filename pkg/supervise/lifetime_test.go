@@ -243,7 +243,7 @@ func checkAncestorStop(t *testing.T, where string) {
 	<-done
 }
 
-// TestStopDuringAdmittedRestartInit lets Init finish without publishing its candidate.
+// TestStopDuringAdmittedRestartInit keeps successful setup in shutdown order without publication.
 func TestStopDuringAdmittedRestartInit(t *testing.T) {
 	for _, fail := range []bool{false, true} {
 		t.Run(map[bool]string{false: "success", true: "error"}[fail], func(t *testing.T) {
@@ -258,11 +258,22 @@ func checkStopDuringAdmittedRestartInit(t *testing.T, fail bool) {
 	parent := NewRoot(nil)
 	entered := make(chan *initializing, 1)
 	initRelease, slowRelease, cleanup := make(chan struct{}), make(chan struct{}), make(chan struct{})
-	var inits, runs atomic.Int32
+	var inits, runs, childRuns atomic.Int32
 	ref, _ := Start[initializing](parent, &initHooks{
 		init: func(p *initializing) error {
 			if inits.Add(1) > 1 {
-				p.Children()
+				_, err := Start[initializing](p.Children(), &initHooks{
+					init: func(*initializing) error { return nil },
+					run: func(_ *initializing, ctx context.Context) {
+						if ctx.Err() == nil {
+							t.Error("pending child ran with an active context")
+						}
+						childRuns.Add(1)
+					},
+				})
+				if err != nil {
+					return err
+				}
 				entered <- p
 				<-initRelease
 				if fail {
@@ -272,8 +283,8 @@ func checkStopDuringAdmittedRestartInit(t *testing.T, fail bool) {
 			return nil
 		},
 		run: func(_ *initializing, ctx context.Context) {
-			if runs.Add(1) > 1 && ctx.Err() == nil {
-				t.Error("stopped replacement ran with an active context")
+			if runs.Add(1) > 1 && (ctx.Err() == nil || childRuns.Load() != 1) {
+				t.Error("stopped replacement ran before its child cleanup or without cancellation")
 			}
 			panic("retry")
 		},
@@ -293,15 +304,21 @@ func checkStopDuringAdmittedRestartInit(t *testing.T, fail bool) {
 	<-cleanup
 	close(initRelease)
 	synctest.Wait()
+	if runs.Load() != 1 || (!fail && childRuns.Load() != 0) {
+		t.Error("successful replacement ran cleanup before the newer service stopped")
+	}
+	if ref.Borrow() != original {
+		t.Error("stopped replacement was published")
+	}
+	close(slowRelease)
+	<-done
 	expectInitEnded(t, candidate)
 	wantRuns := int32(2)
 	if fail {
 		wantRuns = 1
 	}
-	if ref.Borrow() != original || runs.Load() != wantRuns || inits.Load() != 2 {
-		t.Errorf("restart after stop: changed=%t, runs=%d, Init calls=%d",
-			ref.Borrow() != original, runs.Load(), inits.Load())
+	if ref.Borrow() != original || runs.Load() != wantRuns || inits.Load() != 2 || childRuns.Load() != 1 {
+		t.Errorf("restart after stop: changed=%t, runs=%d, Init calls=%d, child runs=%d",
+			ref.Borrow() != original, runs.Load(), inits.Load(), childRuns.Load())
 	}
-	close(slowRelease)
-	<-done
 }
