@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"go/ast"
 	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,17 +25,17 @@ func (c *subsetChecks) checkGeneration() {
 			generated = file
 		}
 	}
+	sourcePackage := c.pass.Pkg
 	if !position.IsValid() {
-		if generated != nil {
-			c.pass.Reportf(generated.Pos(), "generated projections have no source Frozen records; remove %s",
-				projectiongen.Filename)
+		if generated == nil {
+			return
 		}
+		position = generated.Pos()
+		sourcePackage = types.NewPackage(c.pass.Pkg.Path(), c.pass.Pkg.Name())
+	} else if !c.generationDirective(position) {
 		return
 	}
-	if !c.generationDirective(position) {
-		return
-	}
-	expected, err := projectiongen.GenerateTypes(c.pass.Pkg, c.pass.Fset)
+	expected, err := projectiongen.GenerateTypes(sourcePackage, c.pass.Fset)
 	if err != nil {
 		c.pass.Reportf(position, "cannot generate typed projections: %s", err)
 		return

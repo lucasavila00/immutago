@@ -171,7 +171,7 @@ func sourcePass(t testing.TB, declarations string) *analysis.Pass {
 		t.Fatalf("test source does not compile: %v", err)
 	}
 	generated, generationErr := projectiongen.GenerateTypes(pkg, positions)
-	if generationErr == nil && len(generated) > 0 {
+	if generationErr == nil {
 		output, parseErr := parser.ParseFile(positions, projectiongen.Filename, generated, parser.ParseComments)
 		if parseErr != nil {
 			t.Fatal(parseErr)

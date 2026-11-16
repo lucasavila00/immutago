@@ -28,7 +28,7 @@ const imPath = "github.com/lucasavila00/immutago/pkg/im"
 
 // Generate reads one package and generates its Frozen record and interface readers.
 // Existing generated declarations are excluded, so changed fields can regenerate.
-// A package without Frozen declarations returns no output.
+// A package without Frozen declarations gets an empty generated package file.
 func Generate(dir string) ([]byte, error) {
 	config := &packages.Config{
 		Dir: dir,
@@ -50,9 +50,6 @@ func Generate(dir string) ([]byte, error) {
 	}
 	config.ParseFile = nil
 	config.Overlay = map[string][]byte{path: provisional}
-	if len(provisional) == 0 {
-		config.Overlay[path] = []byte("package " + pkg.Name + "\n")
-	}
 	pkg, err = loadPackage(config, false)
 	if err != nil {
 		return nil, err
@@ -120,9 +117,6 @@ func generateTypes(pkg *types.Package, fset *token.FileSet, bootstrap bool) ([]b
 		} else if err := g.addRecord(types.NewPointer(typ), name+"Projection"); err != nil {
 			return nil, err
 		}
-	}
-	if len(g.records) == 0 && len(g.interfaces) == 0 {
-		return nil, nil
 	}
 	return g.render()
 }

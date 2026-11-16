@@ -28,7 +28,7 @@ const Filename = "zz_immutago.gen.go"
 func Generate(dir string) ([]byte, error)
 ```
 
-Generate reads one package and generates its Frozen record and interface readers. Existing generated declarations are excluded, so changed fields can regenerate. A package without Frozen declarations returns no output.
+Generate reads one package and generates its Frozen record and interface readers. Existing generated declarations are excluded, so changed fields can regenerate. A package without Frozen declarations gets an empty generated package file.
 
 ## func GenerateTypes
 
