@@ -244,8 +244,7 @@ func Start[T, A any, P interface {
 	ref.value.Store(first)
 	current := first
 	run := func(ctx context.Context) {
-		value := first
-		first = nil
+		value := current
 		if value == nil {
 			if parent.policy.Err() != nil || ctx.Err() != nil {
 				return
