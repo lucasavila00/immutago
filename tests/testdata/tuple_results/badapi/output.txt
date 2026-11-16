@@ -22,7 +22,7 @@ api.go:23:14: service method Record must return a read result or error: example.
   fix: copy scalar fields, or use a local projection
 api.go:24:14: service method ErrorType must return a read result or error: example.com/consumer/badapi.DefinedError is not a Copied value
   result type: badapi.DefinedError
-  fix: declare the result as error or a type alias such as type Failure = error
+  fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
 api.go:25:14: service method Marker must return a read result or error: immutable markers are annotations, not data
   result type: im.Local
   fix: embed the marker in a named struct; use data fields for values
