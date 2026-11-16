@@ -145,7 +145,7 @@ func TestStart(t *testing.T) {
 	})
 }
 
-// TestStopOrder verifies reverse start order for services and nested groups.
+// TestStopOrder verifies reverse registration order for services and nested groups.
 func TestStopOrder(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
@@ -182,10 +182,10 @@ func TestStopNested(t *testing.T) {
 		expectStarted(t, "start first", "start second")
 		<-nested.Stop()
 		expectEvents(t, "stop second")
-		if _, err := Start[third](nested, NoArgs{}); err != nil {
-			t.Fatal(err)
+		if ref, err := Start[third](nested, NoArgs{}); err != context.Canceled || !ref.IsZero() {
+			t.Fatalf("stopped child Start = %v, %v", ref, err)
 		}
-		expectEvents(t, "start third", "stop third")
+		expectEvents(t)
 		<-root.Stop()
 		expectEvents(t, "stop first")
 	})
@@ -293,20 +293,17 @@ func expectPanic(t *testing.T, want string, call func()) {
 	call()
 }
 
-// TestStartAfterStop waits for a late initialized service's cleanup Run.
+// TestStartAfterStop rejects a service before setup.
 func TestStartAfterStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
 		<-root.Stop()
 		ref, err := Start[first](root, NoArgs{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if ref.Borrow() == nil {
-			t.Fatal("Start returned an empty Ref")
+		if err != context.Canceled || !ref.IsZero() {
+			t.Fatalf("stopped Start = %v, %v", ref, err)
 		}
 		synctest.Wait()
-		expectEvents(t, "start first", "stop first")
+		expectEvents(t)
 	})
 }
 

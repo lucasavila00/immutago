@@ -29,7 +29,7 @@ func TestRunAfterAdmissionCloses(t *testing.T) {
 		entry := parent.children.first
 		run := entry.run
 		entered, release := make(chan struct{}), make(chan struct{})
-		entry.run = func(ctx context.Context, done <-chan struct{}) { close(entered); <-release; run(ctx, done) }
+		entry.run = func(ctx context.Context) { close(entered); <-release; run(ctx) }
 		parent.mu.Lock()
 		parent.activate()
 		parent.mu.Unlock()
