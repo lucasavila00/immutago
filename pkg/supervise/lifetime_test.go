@@ -162,8 +162,12 @@ func TestPendingSubtreeCleanup(t *testing.T) {
 			t.Fatal(err)
 		}
 		<-pending.Stop()
+		pending.mu.Lock()
 		pending.activate()
+		pending.mu.Unlock()
+		nested.mu.Lock()
 		nested.activate()
+		nested.mu.Unlock()
 		synctest.Wait()
 		expectInitEnded(t, ref.Borrow())
 		if inits.Load() != 1 || runs.Load() != 1 {

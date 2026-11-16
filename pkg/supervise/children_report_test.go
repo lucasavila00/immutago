@@ -47,7 +47,9 @@ func TestServiceChildrenInheritReporter(t *testing.T) {
 				if before {
 					ref.Borrow().StartChild(nested)
 				}
+				parent.mu.Lock()
 				parent.activate()
+				parent.mu.Unlock()
 				if !before {
 					synctest.Wait()
 					ref.Borrow().StartChild(nested)
