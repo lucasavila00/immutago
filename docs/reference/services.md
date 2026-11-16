@@ -19,9 +19,9 @@ other calls. Use the [service guide](../guides/services.md) for a walkthrough.
 | Reference calls | Use the complete [service-reference forms](service-references.md). |
 
 Start requires the Init and Run signatures through Go's type
-checker. The analyzer checks exported results, reference targets, direct Borrow
-calls, and protected im operations. Their linked references give the complete
-allowed forms; unlisted protected operations and direct Borrow forms are rejected.
+checker. The analyzer checks exported results, reference targets, and protected im
+operations. Their linked references give the complete allowed forms; unlisted
+protected operations are rejected.
 Other service code follows ordinary Go rules. Runtime obligations below, including
 returning when a context ends, require implementation review.
 

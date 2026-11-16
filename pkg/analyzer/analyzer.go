@@ -7,7 +7,7 @@
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
 //   - Each exported service method result is a read result or error, with no count or order limit.
 //     Promoted methods use the same rule. Init, Run, and runtime methods are exempt.
-//   - Concrete service references and direct method calls through Ref.Borrow.
+//   - Concrete service reference targets.
 //
 // Direct im or supervise imports, used types, and failed checked dependencies
 // select packages for analysis. Ordinary Go API contracts are trusted.

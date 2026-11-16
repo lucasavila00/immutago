@@ -222,9 +222,6 @@ func (c *subsetChecks) matchSelector(selector *ast.SelectorExpr) checker.Failure
 		c.queries.Callable(c.pass.TypesInfo.TypeOf(selector)) {
 		return shapeFailure("method expressions require ordinary or persistent Frozen receivers and contracts")
 	}
-	if refAccessor(selection.Obj()) {
-		return c.matchBorrow(selector)
-	}
 	if c.ownedSlotSelector(selector) && c.directCall(selector) != nil {
 		return checker.Failure{}
 	}

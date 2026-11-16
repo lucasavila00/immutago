@@ -286,12 +286,12 @@ Keep source restrictions and examples there. Keep analysis details in the
   destination with the normal im type, write, builder, and transport rules.
   Frozen interface methods use ordinary method result rules; they have no separate
   result category or count limit.
-- Permit service references as stored values and results. Match every direct Ref Borrow
-  call as `ref.Borrow().Method(args)` with an exported service method other
-  than Init, Run, or a runtime method. Reject all other direct uses of the returned
-  pointer. Ordinary reference storage, conversions, interfaces, generics, and bodyless
-  functions use Go rules. Indirect calls may expose the service pointer. Do not
-  add a service-reference transport matcher. Keep the reference proof in [service architecture](docs/arch/services.md).
+- Permit service references as stored values and results. Prove their concrete
+  service targets. Ref.Borrow returns one stable service pointer; its calls,
+  method values, method expressions, and returned pointers use ordinary Go rules.
+  Keep service result checks and im checks for protected fields. Ref is an opaque
+  handle that marked records can store; the service itself remains mutable.
+  Keep this distinction in [service architecture](docs/arch/services.md).
 - Trust ordinary Go API contracts. Use the documented package selection rules;
   do not add string taint analysis or whole-program service effect analysis.
 

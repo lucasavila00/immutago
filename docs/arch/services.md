@@ -82,11 +82,11 @@ It uses the existing callback, or standard error when the callback is nil.
 | --- | --- |
 | `Service[A]` embedding | The selected runtime embedding path uses value fields. |
 | `Ref[T]` | T is a concrete service struct; application fields use Go rules. |
-| Direct `Borrow` use | Match the immediate exported method call; exclude lifecycle and runtime methods. |
+| `Borrow` result | Ordinary Go pointer use; retain im checks for protected fields. |
 | Exported service methods | Check each result with the shared ReadResult proof, or compiler identity with predeclared error. Apply no result count or order limit. |
 | Retained start arguments | Protected data or callbacks carrying it must pass Frozen; ordinary arguments use Go contracts. |
 
-[Reference matching](../../pkg/analyzer/service_handles.go) and
+[Reference target checks](../../pkg/analyzer/service_handles.go) and
 [result checks](../../pkg/analyzer/service.go) do not prove that the receiver stays private:
 
 ```go

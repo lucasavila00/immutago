@@ -164,7 +164,7 @@ type Ref[T any] struct{ value *T }
 func (p Ref[T]) IsZero() bool { return p.value == nil }
 
 // Borrow returns the initialized service value, including after Stop.
-// Borrow is shared, not exclusive.
+// The pointer can be stored and reused. Calls use ordinary Go synchronization.
 // A zero reference panics with "supervise: zero Ref".
 func (p Ref[T]) Borrow() *T {
 	if p.value == nil {

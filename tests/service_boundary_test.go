@@ -21,7 +21,7 @@ func TestServiceBoundary(t *testing.T) {
 		for _, target := range []string{"valid", "direct", "capture", "contract", "dependency", "invalidresults"} {
 			t.Run(mode+"/"+target, func(t *testing.T) {
 				dir := consumerModule(t, root, "service_boundary")
-				accepted := target == "valid" || target == "contract" || target == "dependency"
+				accepted := target != "direct" && target != "invalidresults"
 				output := runBoundary(t, dir, binary, mode, accepted, "./"+target)
 				checkFixtureSnapshots(t, root, "service_boundary/"+target, output)
 			})

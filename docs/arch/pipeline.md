@@ -13,7 +13,7 @@ package's AST and compiler type information.
 | Read failures | Report failures saved by direct dependencies. | Retain their original causes for this package's fact. |
 | Check declarations | Prove im types; check service embedding and method results. | Shared type proof cache and local diagnostics. |
 | Verify generation | Compare the generated file with current compiler types. | Exact file identity for generated interior record addresses. |
-| Check references and builders | Match direct Borrow calls; check native builder aliases and consumption. | Builder variable identities for source checks. |
+| Check references and builders | Prove Ref targets; check native builder aliases and consumption. | Builder variable identities for source checks. |
 | Match source | Check complete operations on protected storage. | Diagnostics for every unmatched form. |
 | Export failure | Select one local or imported cause if the package failed. | A package fact for importers. |
 

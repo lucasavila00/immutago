@@ -22,7 +22,7 @@ Use this reference to check which Go forms Immutago accepts. The
 ## Service forms (`supervise`)
 
 - [Service results](service-results.md): result types for exported service methods.
-- [Service references](service-references.md): stored references and direct service calls.
+- [Service references](service-references.md): stored handles and stable service pointers.
 - [Supervised services](services.md): execution, failure, and shutdown.
 
 ## Rules for im and supervise
@@ -31,8 +31,8 @@ Use im type rules to check immutable data. Review service state changes and
 synchronization in the service code.
 
 Use the common forms with each type's forms. **Exhaustive** means all allowed
-forms are listed. Unlisted operations on protected storage and unlisted direct Borrow call forms
-are rejected. Ordinary service-reference storage and transport use Go rules.
+forms are listed. Unlisted operations on protected storage are rejected.
+Service references and Borrow results use ordinary Go rules.
 
 ### Required generation
 
