@@ -187,8 +187,11 @@ func (c *subsetChecks) matchCallArguments(call *ast.CallExpr, signature *types.S
 					return rule
 				}
 			}
-		} else if rule := c.matchArgument(source, callParameter(signature, index, call.Ellipsis.IsValid())); rule.Reason != "" {
-			return rule
+		} else {
+			parameter := callParameter(signature, index, call.Ellipsis.IsValid())
+			if rule := c.matchArgument(source, parameter); rule.Reason != "" {
+				return rule
+			}
 		}
 	}
 	return checker.Failure{}
