@@ -66,36 +66,45 @@ func TestFailureProcessUnrelated(*testing.T) {
 
 // TestFailureKeepsTestProcessRunning checks failures without verbose test output.
 func TestFailureKeepsTestProcessRunning(t *testing.T) {
-	for _, mode := range []string{"panic", "Goexit"} {
+	for mode, value := range map[string]string{
+		"panic":  "original service panic",
+		"Goexit": "supervise: service called runtime.Goexit",
+	} {
 		t.Run(mode, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
-			defer cancel()
-			command := exec.CommandContext(ctx, os.Args[0],
-				"-test.run=^TestFailureProcess(Service|Unrelated)$", "-test.timeout=10s")
-			command.Env = append(os.Environ(), "IMMUTAGO_TEST_ROOT_FAILURE="+mode)
-			output, err := command.CombinedOutput()
-			if ctx.Err() != nil {
-				t.Fatalf("test process did not finish: %v\n%s", ctx.Err(), output)
-			}
-			if exit, ok := err.(*exec.ExitError); !ok || exit.ExitCode() != 1 {
-				t.Fatalf("test process error = %v; want test failure exit code 1:\n%s", err, output)
-			}
-			text := string(output)
-			for _, want := range []string{
-				"--- FAIL: TestFailureProcessService", "processService).Run",
-				"child cleanup complete", "unrelated test ran", mode,
-			} {
-				if !strings.Contains(text, want) {
-					t.Errorf("test output lacks %q:\n%s", want, output)
-				}
-			}
-			if strings.Contains(text, "panic: supervise: terminal failure") {
-				t.Errorf("service failure terminated the test process:\n%s", output)
-			}
-			if strings.Count(text, "child cleanup complete") != 1 ||
-				strings.Index(text, "child cleanup complete") > strings.Index(text, "unrelated test ran") {
-				t.Errorf("child cleanup did not finish once before the next test:\n%s", output)
-			}
+			checkFailureProcess(t, mode, value)
 		})
+	}
+}
+
+// checkFailureProcess checks one failure value and its test process output.
+func checkFailureProcess(t *testing.T, mode, value string) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	defer cancel()
+	command := exec.CommandContext(ctx, os.Args[0],
+		"-test.run=^TestFailureProcess(Service|Unrelated)$", "-test.timeout=10s")
+	command.Env = append(os.Environ(), "IMMUTAGO_TEST_ROOT_FAILURE="+mode)
+	output, err := command.CombinedOutput()
+	if ctx.Err() != nil {
+		t.Fatalf("test process did not finish: %v\n%s", ctx.Err(), output)
+	}
+	if exit, ok := err.(*exec.ExitError); !ok || exit.ExitCode() != 1 {
+		t.Fatalf("test process error = %v; want test failure exit code 1:\n%s", err, output)
+	}
+	text := string(output)
+	for _, want := range []string{
+		"--- FAIL: TestFailureProcessService", "processService).Run",
+		"child cleanup complete", "unrelated test ran", value,
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("test output lacks %q:\n%s", want, output)
+		}
+	}
+	if strings.Contains(text, "panic: supervise: terminal failure") {
+		t.Errorf("service failure terminated the test process:\n%s", output)
+	}
+	if strings.Count(text, "child cleanup complete") != 1 ||
+		strings.Index(text, "child cleanup complete") > strings.Index(text, "unrelated test ran") {
+		t.Errorf("child cleanup did not finish once before the next test:\n%s", output)
 	}
 }
