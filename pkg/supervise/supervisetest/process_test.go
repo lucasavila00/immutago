@@ -19,7 +19,7 @@ type processService struct{ supervise.Service[string] }
 
 // Init starts a child in this attempt's group.
 func (s *processService) Init() error {
-	_, err := supervise.Start[processChild](s.Children(), supervise.NoArgs{})
+	_, err := supervise.Start[processChild](s.UnsafeChildren(), supervise.NoArgs{})
 	return err
 }
 

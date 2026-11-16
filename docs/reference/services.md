@@ -27,26 +27,13 @@ returning when a context ends, require implementation review.
 
 ### Copy contract
 
-Do not copy initialized Service or Group values, including containing structs or arrays.
+Keep initialized services and Groups behind pointers, including after Stop.
+Use pointer receivers. Do not copy their values or containing structs and arrays.
+Ref values can be copied.
 
-| Owner | Contract |
-| --- | --- |
-| Service | Start initializes it before Init. Declare methods with pointer receivers, including Init and Run. Pass service pointers. |
-| Group | NewRoot, StartGroup, and Children return initialized groups. Pass group pointers. |
-| Ref | Copies are allowed; they refer to the same service. |
-| Stopped service or group | The no-copy contract still applies. |
-
-| Invalid copy examples — non-exhaustive | Allowed replacement |
-| --- | --- |
-| `func (s Worker) AddChild() bool` | `func (s *Worker) AddChild() bool` |
-| `copy := *worker` | `same := worker`, where worker is `*Worker`. |
-| `use(*worker)`, where use takes Worker | `use(worker)`, where use takes `*Worker`. |
-| `copy := *group` | `same := group`, where group is `*supervise.Group`. |
-| `Owner{Group: *group}` | Give Owner a `*supervise.Group` field and use `Owner{Group: group}`. |
-
-Run standard `go vet ./...` as well as immutago. Vet reports common copies; neither
-the runtime nor immutago enforces the no-copy contract. A custom vettool does not
-run the standard vet checks.
+UnsafeChildren requires the original service pointer created by Start. The caller
+must obey this Go contract. Standard `go vet ./...` reports common owner copies;
+immutago does not enforce this contract.
 
 | Rejected examples — non-exhaustive | Allowed replacement |
 | --- | --- |
@@ -112,8 +99,8 @@ Borrow returns that same value, including after it stops.
 | --- | --- |
 | `root := supervise.NewRoot(report)` | Application group, until root.Stop. Pass nil to disable individual Run reports; selected terminal failures still go to standard error. |
 | `group := supervise.StartGroup(parent)` | Lifetime group; stop these services and their children together. |
-| `s.Children()` | Children owned by this service. Start must have created s. |
-| `new(Worker).Children()` | Panic with `supervise: nil or zero Group` in the caller. Use Start to create a service that needs child groups. |
+| `s.UnsafeChildren()` | Child group owned by this service. Use the original pointer created by Start. |
+| `new(Worker).UnsafeChildren()` | Panic with `supervise: nil or zero Group` in the caller. Use Start to create a service that needs child groups. |
 
 Create groups with these APIs and keep their pointers. A nil or zero Group cannot
 run or stop. Groups follow the copy contract above and ordinary Go rules.

@@ -126,7 +126,7 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	child := &initHooks{
 		init: func(p *initializing) error {
 			candidates = append(candidates, p)
-			p.Children()
+			p.UnsafeChildren()
 			return nil
 		},
 		run: func(_ *initializing, ctx context.Context) {
@@ -138,10 +138,10 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	}
 	hooks := &initHooks{init: func(p *initializing) error {
 		candidates = append(candidates, p)
-		if _, err := Start[initializing](p.Children(), child); err != nil {
+		if _, err := Start[initializing](p.UnsafeChildren(), child); err != nil {
 			return err
 		}
-		nested = StartGroup(p.Children())
+		nested = StartGroup(p.UnsafeChildren())
 		if _, err := Start[initializing](nested, child); err != nil {
 			return err
 		}
@@ -201,7 +201,7 @@ func TestInitStopBeforePublication(t *testing.T) {
 		var runs atomic.Int32
 		hooks := &initHooks{
 			init: func(p *initializing) error {
-				p.Children()
+				p.UnsafeChildren()
 				entered <- p
 				<-release
 				return nil
@@ -268,10 +268,10 @@ func TestInitStopsStagedGroup(t *testing.T) {
 		root := NewRoot(nil)
 		var child *initializing
 		hooks := &initHooks{init: func(p *initializing) error {
-			nested := StartGroup(p.Children())
+			nested := StartGroup(p.UnsafeChildren())
 			_, err := Start[initializing](nested, &initHooks{init: func(p *initializing) error {
 				child = p
-				p.Children()
+				p.UnsafeChildren()
 				return nil
 			}})
 			<-nested.Stop()
@@ -298,7 +298,7 @@ func TestInitUnderStoppedGroups(t *testing.T) {
 			if after {
 				group = StartGroup(parent)
 			}
-			hooks := &initHooks{init: func(p *initializing) error { p.Children(); return nil }}
+			hooks := &initHooks{init: func(p *initializing) error { p.UnsafeChildren(); return nil }}
 			ref, err := Start[initializing](group, hooks)
 			if err != nil {
 				t.Fatal(err)

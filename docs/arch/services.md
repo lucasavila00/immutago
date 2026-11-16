@@ -4,13 +4,11 @@
 Ref copies hold the same service pointer.
 Method calls run in the caller's goroutine.
 
-Service and Group keep mutable ownership state in their values. They must not be
-copied after initialization. Both contain a zero-size `noCopy` field for standard
-vet's copylocks check. It adds no lock or runtime check. Immutago does not run that
-check; callers must also use standard `go vet`. See the
-[copy contract](../reference/services.md#copy-contract).
-Copylocks is a diagnostic check, not a complete proof that no value was copied;
-for example, it does not inspect channel sends.
+Service and Group keep mutable ownership state in their values. UnsafeChildren
+requires the original service pointer created by Start. The runtime keeps that
+pointer through setup, Run, and cleanup. Its tree mutex protects child state.
+The zero-size `noCopy` fields enable standard vet diagnostics; they add no runtime
+state or check. See the [copy contract](../reference/services.md#copy-contract).
 
 ## Initialization, publication, and calls
 

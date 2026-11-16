@@ -83,7 +83,7 @@ func checkTerminalBeforeOwnChildCleanup(t *testing.T, mode string) {
 	})
 	_, err := Start[initializing](top, &initHooks{
 		init: func(p *initializing) error {
-			_, err := Start[initializing](p.Children(), &initHooks{
+			_, err := Start[initializing](p.UnsafeChildren(), &initHooks{
 				init: func(*initializing) error { return nil },
 				run: func(_ *initializing, ctx context.Context) {
 					<-ctx.Done()
