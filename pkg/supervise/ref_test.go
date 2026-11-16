@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 	"testing/synctest"
+	"unsafe"
 )
 
 // TestRefIsZero checks unset references and copies through start and stop.
@@ -80,5 +81,27 @@ func TestRefIsZeroOmitZero(t *testing.T) {
 		if string(encoded) != test.want {
 			t.Fatalf("JSON = %s, want %s", encoded, test.want)
 		}
+	}
+}
+
+// TestRefRepresentation checks that the marker and payload keep a single-pointer handle.
+func TestRefRepresentation(t *testing.T) {
+	if unsafe.Sizeof(Ref[counter]{}) != unsafe.Sizeof((*counter)(nil)) {
+		t.Fatal("Ref is larger than one pointer")
+	}
+	root := NewRoot(nil)
+	defer func() { <-root.Stop() }()
+	ref, err := Start[counter](root, NoArgs{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	original := ref.Borrow()
+	var got *counter
+	if allocations := testing.AllocsPerRun(100, func() { got = ref.Borrow() }); allocations != 0 || got != original {
+		t.Fatalf("Borrow allocations=%v, stable=%v", allocations, got == original)
+	}
+	<-root.Stop()
+	if ref.Borrow() != original {
+		t.Fatal("Stop changed the pointer")
 	}
 }

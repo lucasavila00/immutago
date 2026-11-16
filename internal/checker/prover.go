@@ -25,12 +25,12 @@ func (p *Prover) FrozenReason(t types.Type) string {
 	return p.FrozenFailure(t).Reason
 }
 
-// CopiedReason proves bool, numbers, Copied records, unnamed arrays, or opaque service references.
+// CopiedReason proves bool, numbers, Copied records, or unnamed arrays.
 func (p *Prover) CopiedReason(t types.Type) string {
 	return p.CopiedFailure(t).Reason
 }
 
-// ReadResultReason proves Copied values, local values, and unchecked handles through one type rule.
+// ReadResultReason proves Copied values, local values, and opaque handles through one type rule.
 func (p *Prover) ReadResultReason(t types.Type) string {
 	return p.ReadResultFailure(t).Reason
 }

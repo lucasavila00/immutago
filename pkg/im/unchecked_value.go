@@ -1,22 +1,19 @@
 package im
 
-// UncheckedValue holds a pointer to data whose immutability the analyzer does not prove.
-// The package that declares T promises never to change the data after Trust.
-//
+// UncheckedValue holds an opaque pointer whose access rules belong to its declaring package.
+// The target can be mutable. The checker does not prove its state or synchronization.
 // UncheckedValue is Frozen and a read result, but not Copied.
 // Any package can store, copy, pass, and return the handle.
-// Only the package that declares T can use Trust and Unwrap, so other packages
-// reach the value only through the API of that package.
+// Only the package that declares T can use Trust and Unwrap.
 // See https://github.com/lucasavila00/immutago/blob/main/docs/reference/unchecked-values.md for the complete forms.
 type UncheckedValue[T any] struct {
 	value *T
 }
 
-// Trust wraps value with an unchecked promise that it is immutable.
-// It does not copy or freeze the data. Only the package that declares T can
-// use Trust, and that package must not change the value after this call.
+// Trust stores value without copying its target or adding synchronization.
+// Only the package that declares T can use Trust.
 func Trust[T any](value *T) UncheckedValue[T] { return UncheckedValue[T]{value: value} }
 
 // Unwrap returns the wrapped pointer, or nil for the zero UncheckedValue.
-// Only the package that declares T can use Unwrap.
+// Only the package that declares T can use Unwrap. Its API controls access to T.
 func Unwrap[T any](value UncheckedValue[T]) *T { return value.value }

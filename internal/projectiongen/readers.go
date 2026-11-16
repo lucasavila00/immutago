@@ -16,6 +16,9 @@ func (g *generator) readPath(typ, root types.Type, path, stem string, indices []
 		return g.arrayReader(fixed, root, path, stem, indices)
 	}
 	expression := "v." + g.projectionField + ".Unsafe()" + strings.TrimPrefix(path, "value")
+	if g.proofs.ReadResultReason(typ) == "" {
+		return g.typeName(typ), expression, nil
+	}
 	selected := typ
 	if checker.Frozen(typ) {
 		selected = types.NewPointer(typ)
@@ -28,9 +31,6 @@ func (g *generator) readPath(typ, root types.Type, path, stem string, indices []
 	if checker.FrozenInterface(typ) {
 		name, constructor, err := g.interfaceReader(typ)
 		return name, constructor + "(" + g.imName + ".ProjectionOf(" + expression + "))", err
-	}
-	if g.proofs.ReadResultReason(typ) == "" {
-		return g.typeName(typ), expression, nil
 	}
 	if result, expression, ok := g.collectionReader(typ, expression); ok {
 		return result, expression, nil

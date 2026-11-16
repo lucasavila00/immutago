@@ -40,17 +40,18 @@ wait for HTTP handlers or other direct method calls.
 
 ## Keep a reference and call a method
 
-The handler keeps `supervise.Ref[Loader]`. Each request calls:
+The handler can keep the loader pointer. Each request calls its Catalog method:
 
 ```go
-catalog := loader.Borrow().Catalog()
+worker := loader.Borrow()
+catalog := worker.Catalog()
 ```
 
 Borrow returns the loader created by Start. Catalog runs in the
 request's goroutine and loads a projection from the Cell. That projection fixes
 the catalog version for the quote. Call Catalog again for the next request. The
 [reference rules](../reference/service-references.md) cover optional references
-and direct Borrow calls.
+and stored service pointers.
 
 ## Review shared state and inputs
 
@@ -75,9 +76,9 @@ calls. See [service results](../reference/service-results.md) for the full list.
 ## Choose a group lifetime
 
 The example has one service under the root. Use `supervise.StartGroup(parent)`
-when several services must stop together. Inside a service, use `s.Children()`
-for work that must end with that service. Stopping a nested group leaves other
-groups running. A Run failure stops the entire root.
+when several services must stop together. Inside a service, use `s.UnsafeChildren()`
+on the original service pointer for work that must end with that service.
+Stopping a nested group leaves other groups running. A Run failure stops the entire root.
 
 The [runtime reference](../reference/services.md) defines child shutdown order,
 completion and failure reports. In tests,

@@ -28,10 +28,10 @@ type Dispatcher struct {
 }
 
 func Replace(d *Dispatcher, ref WorkerRef) int {
-	d.Direct.Store(&ref)
+	d.Direct.Store(new(ref))
 	loaded := d.Direct.Load()
 	previous := d.Direct.Swap(loaded)
-	d.Direct.CompareAndSwap(previous, &ref)
+	d.Direct.CompareAndSwap(previous, new(ref))
 	d.Wrapped.Store(&Slot{Ref: ref})
 	slot := d.Wrapped.Load()
 	d.Wrapped.Swap(slot)
@@ -60,7 +60,7 @@ func Interfaces(ref WorkerRef) any {
 	var value atom.Value
 	value.Store(ref)
 	var pointer atom.Pointer[WorkerRef]
-	pointer.Store(&ref)
+	pointer.Store(new(ref))
 	var hidden any = pointer.Load()
 	return hidden
 }

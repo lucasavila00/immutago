@@ -21,6 +21,18 @@ func (c *subsetChecks) provedMethodReceiver(signature *types.Signature) bool {
 		(c.proofs.CopiedReason(named) == "" || checker.Marked(named) && c.proofs.Reason(named) == "")
 }
 
+// selectedMethodReceiver follows the compiler's embedded fields to the receiver storage.
+func selectedMethodReceiver(selection *types.Selection) types.Type {
+	receiver := selection.Recv()
+	for _, index := range selection.Index()[:len(selection.Index())-1] {
+		if pointer, ok := receiver.Underlying().(*types.Pointer); ok {
+			receiver = pointer.Elem()
+		}
+		receiver = receiver.Underlying().(*types.Struct).Field(index).Type()
+	}
+	return receiver
+}
+
 // matchMethod checks receiver shapes and restricted calls.
 // Persistent receivers also permit method values and expressions with the same shape.
 func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) checker.Failure {
@@ -45,13 +57,17 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) checker.Failure {
 		return shapeFailure("dynamic calls require ordinary or persistent Frozen parameters and results")
 	}
 	signature := selection.Obj().Type().(*types.Signature)
+	// Promoted methods must not take the address of an embedded Frozen value.
+	if checker.FrozenPointer(signature.Recv().Type()) && !checker.FrozenPointer(selectedMethodReceiver(selection)) {
+		return shapeFailure("immutable method receivers must match their declared type exactly")
+	}
 	if !c.protectedStorage(selector.X) && !c.queries.Owns(signature.Recv().Type()) {
 		return checker.Failure{}
 	}
 	if len(selection.Index()) != 1 {
 		return shapeFailure("promoted immutable methods are unsupported")
 	}
-	if !runtimeObject(selection.Obj()) && !c.provedMethodReceiver(signature) {
+	if !c.provedMethodReceiver(signature) {
 		return shapeFailure("immutable methods require a proved marked or Copied receiver")
 	}
 	if !types.Identical(c.pass.TypesInfo.TypeOf(selector.X), signature.Recv().Type()) {

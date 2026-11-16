@@ -25,7 +25,8 @@ func CopyRecord[T any](value Projection[T]) Projection[*T] { return ProjectionOf
 func (p Projection[T]) Unsafe() T { return p.value }
 
 // Value returns the value from a projection. The checker requires a Frozen read result:
-// a Copied value, an UncheckedValue handle, or an unnamed array of these values.
+// a Copied value, an opaque handle, a pointer to a Frozen handle wrapper,
+// or an unnamed array of these values.
 // Value does not allocate.
 func Value[T any](value Projection[T]) T { return value.value }
 

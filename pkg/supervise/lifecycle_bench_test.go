@@ -2,6 +2,7 @@ package supervise
 
 import (
 	"context"
+	"github.com/lucasavila00/immutago/pkg/im"
 	"testing"
 )
 
@@ -54,7 +55,7 @@ func BenchmarkServiceAttempt(b *testing.B) {
 		}
 		parent.mu.Lock()
 		run, admitted := value.begin(ctx)
-		ref = Ref[attemptWorker]{value: value}
+		ref = Ref[attemptWorker]{value: im.Trust(value)}
 		parent.mu.Unlock()
 		if !admitted {
 			b.Fatal("service attempt was not admitted")

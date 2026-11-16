@@ -111,7 +111,12 @@ func TestFreezePointerMethodReceivers(t *testing.T) {
 		{"promoted pointer", `s:=[]Ref{{V:&V{}}};_=s[0].ReadPointer();_=im.FreezeSlice(s)`, true},
 		{"scalar address", `s:=[]Scalar{1};s[0].Inc();_=im.FreezeSlice(s)`, true},
 		{"ordinary pointer", `s:=[]*Scalar{new(Scalar)};s[0].Inc();_=im.FreezeSlice(s)`, true},
-		{"generic pointer", `s:=[]*Box[int]{&Box[int]{}};_=s[0].Read();_=im.FreezeSlice(s)`, true},
+		{"generic pointer", `s:=[]*Box[int]{&Box[int]{}};_=s[0].Read();_=im.FreezeSlice(s)`, false},
+		{"generic map pointer", `m:=map[int]*Box[int]{0:&Box[int]{}};_=m[0].Read();_=im.FreezeMap(m)`, false},
+		{"generic pointer alias", `type Alias=Box[int];s:=[]*Alias{&Alias{}};_=s[0].Read();_=im.FreezeSlice(s)`, false},
+		{"generic implicit address", `s:=[]Box[int]{{}};_=s[0].Read();_=im.FreezeSlice(s)`, true},
+		{"generic bound pointer", `s:=[]*Box[int]{&Box[int]{}};read:=s[0].Read;_=read;_=im.FreezeSlice(s)`, true},
+		{"generic read after freeze", `s:=[]*Box[int]{&Box[int]{}};_=im.FreezeSlice(s);_=s[0].Read()`, true},
 		{"bound pointer", `s:=[]*V{&V{}};read:=s[0].ReadPointer;_=read;_=im.FreezeSlice(s)`, true},
 		{"read after freeze", `s:=[]*V{&V{}};_=im.FreezeSlice(s);_=s[0].ReadPointer()`, true},
 	}

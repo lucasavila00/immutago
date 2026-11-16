@@ -40,7 +40,7 @@ func (c *subsetChecks) genericStorage(name *ast.Ident) {
 			declared = append(declared, definition.RecvTypeParams().At(parameter))
 		}
 	case *types.Named:
-		if checker.Marked(definition) || checker.FrozenInterface(definition) {
+		if checker.Marked(definition) && !checker.IsHandle(definition) || checker.FrozenInterface(definition) {
 			c.report(name, "user generic declarations cannot define Frozen or Local types")
 			return
 		}

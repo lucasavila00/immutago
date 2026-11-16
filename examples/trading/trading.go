@@ -162,7 +162,7 @@ func (t *Trading) selectAccount(spec strategySpec) (savedAccount, error) {
 // startStrategy stages one owned group; failed setup closes any staged children.
 func (t *Trading) startStrategy(saved savedAccount) (runningStrategy, error) {
 	args := t.Args()
-	group := supervise.StartGroup(t.Children())
+	group := supervise.StartGroup(t.UnsafeChildren())
 	ref, err := supervise.Start[Strategy](group, StrategyArgs{
 		API: args.API, Spec: saved.spec, Account: saved.account, Policy: args.Policy,
 		Every: args.Every, Updates: t.updates, Log: args.Log, StopBot: args.StopBot,

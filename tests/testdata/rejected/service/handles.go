@@ -4,11 +4,8 @@ package service
 
 import "github.com/lucasavila00/immutago/pkg/supervise"
 
-func extract(ref supervise.Ref[Counter]) {
-	current := ref.Borrow
-	_ = current()
-	pointer := ref.Borrow()
-	*pointer = Counter{}
-}
+func replaceHandle(route ZeroRoute, next supervise.Ref[Counter]) { route.Worker = next }
 
-func overwrite(ref supervise.Ref[Counter]) { *ref.Borrow() = Counter{} }
+func captureRoute(route ZeroRoute) func() *Counter {
+	return func() *Counter { return route.Worker.Borrow() }
+}

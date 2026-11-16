@@ -12,6 +12,7 @@ import (
 
 // NewHandler serves POST /quotes with ordinary JSON request and response data.
 func NewHandler(loader supervise.Ref[Loader]) http.Handler {
+	worker := loader.Borrow()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/quotes" {
 			http.NotFound(w, r)
@@ -27,7 +28,7 @@ func NewHandler(loader supervise.Ref[Loader]) http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 			return
 		}
-		catalog := loader.Borrow().Catalog()
+		catalog := worker.Catalog()
 		response := Quote(catalog, request)
 		if response.Error != "" {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": response.Error})

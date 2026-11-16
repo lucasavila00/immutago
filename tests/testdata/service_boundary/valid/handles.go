@@ -1,4 +1,4 @@
-package direct
+package valid
 
 import "example.com/consumer/api"
 

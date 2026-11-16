@@ -1,5 +1,3 @@
-//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
-
 package uncheckedvalue
 
 import "github.com/lucasavila00/immutago/pkg/im"
