@@ -39,6 +39,8 @@ A Local value cannot be hidden in persistent storage.
 | Fixed im types and functions | `im.FrozenSlice[FrozenPoint]`, `im.FreezeSlice([]FrozenPoint{})` |
 | Fixed supervise APIs with protected values | `supervise.Service[FrozenPoint]`, `supervise.Start[Worker](root, args)`; saved protected arguments must be Frozen values, never Local values. |
 | User generics with ordinary or persistent Frozen parameters, results, constraints, receivers, and type arguments | `identity(text)`, `identity[im.FrozenString](text)`, `func keep[T FrozenPoint](value T) T { return value }` |
+| Method type parameters on a concrete Frozen value or pointer receiver | `func (p FrozenPoint) Map[T any](read func(int) T) T { return read(p.X) }` |
+| Call or select these methods with inferred or explicit type arguments | `point.Map(read)`, `point.Map[string](read)`, `mapValue := point.Map[string]`, `mapValue := FrozenPoint.Map[string]` |
 | Generic function and method bodies | `func read[T any](value T) int { text := im.FreezeString("x"); return text.Len() }`; each operation keeps its normal source rules. |
 | Ordinary generic types | `type Plain[T any] struct { Value T }`, used as `Plain[int]`, `Plain[im.FrozenString]`, `Plain[*FrozenPoint]`, or `Plain[*Cache]` for a Cell holder; instantiated fields still need their normal field proofs. |
 
@@ -48,6 +50,7 @@ A Local value cannot be hidden in persistent storage.
 | `Plain[FrozenPoint]` stores a Frozen field in an unmarked record | Use a concrete Frozen record for this stored field. |
 | `identity(local)` with a Local record or projection | Copy it directly, or use a direct function with a concrete parameter. |
 | `func use[T LocalPoint](value T)` | Use `func use(value LocalPoint)`. |
+| `func (p LocalPoint) Map[T any](value T) T { return value }` | `func (p LocalPoint) Map(value int) int { return value }`; the same restriction applies to a Local pointer receiver. |
 | `T{point}` with `T ~[]any` | Construct `[]any{point}` first, then convert it to T. |
 | Convert a type parameter to a Frozen interface inside a generic body | Convert the concrete implementation to that Frozen interface before the generic call. |
 
@@ -232,7 +235,7 @@ forms on this page.
 | --- | --- |
 | Struct with `im.Frozen` | Same checks as named functions; can return its pointer. |
 | Struct with `im.Local` | Its value stays Local. Its pointer can only be used in local direct calls. |
-| Frozen or Local record | Cannot change protected fields or have generic receivers. |
+| Frozen or Local record | Cannot change protected fields. The receiver record cannot declare type parameters. Method type parameters use the [generic rules](#generics) above. |
 | Copied field inside a protected owner | Exact value-receiver calls copy the field. Pointer-receiver calls that address the field are rejected. |
 | Ordinary concrete receiver with Local inputs or results | Direct, non-generic calls. Local inputs and results keep their im rules. Persistent values use the forms above. |
 | Fixed library type | Listed API forms. |

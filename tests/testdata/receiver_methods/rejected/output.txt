@@ -1,3 +1,56 @@
+generic_methods.go:10:18: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+  source: KeepLocal
+  type: func[T rejected.Settings](value T) T
+  fix: use a non-generic declaration with concrete field and parameter types
+generic_methods.go:10:53: unsupported immutable operation: ordinary interfaces require ordinary or persistent Frozen values
+  source: return value
+  fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
+generic_methods.go:11:53: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.Price++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+generic_methods.go:12:53: unsupported immutable operation: writes to immutable objects are unsupported
+  source: p.Price++
+  fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
+generic_methods.go:14:9: unsupported immutable operation: immutable references require fresh allocation
+  source: &p
+  type: *rejected.Product
+  fix: use &T{...}, new(T), or new(value); do not take the address of an existing variable, field, or element
+generic_methods.go:21:12: unsupported immutable operation: user generic instantiations require ordinary or persistent Frozen type arguments
+  source: Map
+  type: func[T any](read func(int) T) T
+  fix: use a direct non-generic function with concrete parameter types
+generic_methods.go:21:26: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: local
+  type: func(n int) rejected.Settings
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+generic_methods.go:21:6: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: value.Map[Settings](local)
+  type: rejected.Settings
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+generic_methods.go:25:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
+  source: value.MapPointer[int](number)
+  type: int
+  fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
+generic_methods.go:5:19: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+  source: Map
+  type: func[T any](read func(int) T) T
+  fix: use a non-generic declaration with concrete field and parameter types
+generic_methods.go:6:20: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+  source: MapPointer
+  type: func[T any](read func(int) T) T
+  fix: use a non-generic declaration with concrete field and parameter types
+generic_methods.go:7:18: unsupported immutable operation: user generic declarations require ordinary or persistent Frozen contracts
+  source: ReadLocal
+  type: func[T any](read func(rejected.Settings) T) T
+  fix: use a non-generic declaration with concrete field and parameter types
+generic_methods.go:7:40: unsupported immutable operation: callbacks require ordinary or persistent Frozen parameters and results
+  source: func(Settings) T
+  type: func(rejected.Settings) T
+  fix: call a named, non-generic function directly with a concrete immutable parameter
+generic_methods.go:8:9: unsupported immutable operation: dynamic calls require ordinary or persistent Frozen parameters and results
+  source: read(Settings{Limit: p.Price})
+  type: T
+  fix: call a named, non-generic function directly with a concrete immutable parameter
 receiver_bodies.go:10:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved *Settings
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
