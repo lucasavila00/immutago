@@ -231,6 +231,7 @@ func TestStopNested(t *testing.T) {
 		if _, err := Start[third](nested, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
+		expectEvents(t, "start third", "stop third")
 		<-root.Stop()
 		expectEvents(t, "stop first")
 	})
@@ -313,11 +314,11 @@ func TestPanicReport(t *testing.T) {
 		if _, err := Start[failing](root(func(value any) { escalated <- value }, report), NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
-		<-escalated
+		failure := <-escalated
 		takeEvents()
 		mu.Lock()
 		defer mu.Unlock()
-		want := []any{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}
+		want := []any{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6), failure}
 		if !slices.Equal(reported, want) {
 			t.Fatalf("reported %v, want %v", reported, want)
 		}
@@ -399,7 +400,7 @@ func expectPanic(t *testing.T, want string, call func()) {
 	call()
 }
 
-// TestStartAfterStop verifies that a stopped group does not run new services.
+// TestStartAfterStop waits for a late initialized service's cleanup Run.
 func TestStartAfterStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
@@ -412,7 +413,7 @@ func TestStartAfterStop(t *testing.T) {
 			t.Fatal("Start returned an empty Ref")
 		}
 		synctest.Wait()
-		expectEvents(t)
+		expectEvents(t, "start first", "stop first")
 	})
 }
 

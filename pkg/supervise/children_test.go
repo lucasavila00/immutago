@@ -16,7 +16,7 @@ import (
 func TestGoexitStopsWatcher(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		root.add(func(context.Context) { runtime.Goexit() }, func() {}, nil)
+		root.add(func(context.Context) { runtime.Goexit() }, nil)
 		synctest.Wait()
 		done := root.Stop()
 		synctest.Wait()
@@ -99,7 +99,7 @@ func TestChildrenStopBeforeRun(t *testing.T) {
 	})
 }
 
-// TestChildrenDuringHalt checks that a late child cannot start while the run stops.
+// TestChildrenDuringHalt gives a late child a cancelled context for cleanup.
 func TestChildrenDuringHalt(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		entered := make(chan struct{})
@@ -114,15 +114,20 @@ func TestChildrenDuringHalt(t *testing.T) {
 		<-entered
 		s := p.Children()
 		ran := make(chan struct{})
-		s.add(func(context.Context) { close(ran) }, func() {}, nil)
+		s.add(func(ctx context.Context) {
+			if ctx.Err() == nil {
+				t.Error("late child started with an active context")
+			}
+			close(ran)
+		}, nil)
 		synctest.Wait()
 		close(resume)
 		<-halted
 		p.end()
 		select {
 		case <-ran:
-			t.Fatal("child started after halt began")
 		default:
+			t.Fatal("late child did not run cleanup")
 		}
 	})
 }
@@ -310,19 +315,19 @@ func TestChildrenChangeDuringRun(t *testing.T) {
 		expectEvents(t, "stop c", "stop a")
 		ref.Borrow().Add("late")
 		synctest.Wait()
-		expectEvents(t)
+		expectEvents(t, "start late", "stop late")
 	})
 }
 
-// TestChildrenOfServiceThatDoesNotRun verifies that children of a service that never runs do not run.
-func TestChildrenOfServiceThatDoesNotRun(t *testing.T) {
+// TestChildrenAfterParentStop checks cleanup of children created after their parent stopped.
+func TestChildrenAfterParentStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
 		<-root.Stop()
 		ref, _ := Start[router](root, NoArgs{})
 		ref.Borrow().Add("a")
 		synctest.Wait()
-		expectEvents(t)
+		expectEvents(t, "start a", "stop a")
 	})
 }
 
@@ -444,7 +449,7 @@ func (p *lateParent) Run(ctx context.Context) {
 	record("late start")
 }
 
-// TestStartAfterEscalation verifies that a child started after an escalation in the same run does not run.
+// TestStartAfterEscalation waits for a late child's cancelled Run to finish.
 func TestStartAfterEscalation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
@@ -454,13 +459,14 @@ func TestStartAfterEscalation(t *testing.T) {
 		}
 		time.Sleep(31 * time.Second)
 		synctest.Wait()
-		expectEvents(t, "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31", "late start")
+		expectEvents(t, "00:00:00", "00:00:01", "00:00:03", "00:00:07", "00:00:15", "00:00:31",
+			"start first", "stop first", "late start")
 		<-root.Stop()
 		takeEvents()
 	})
 }
 
-// TestMethodsRaceStop verifies that children started by methods during Stop either stop or never run.
+// TestMethodsRaceStop gives each initialized child exactly one completed Run.
 func TestMethodsRaceStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
@@ -484,8 +490,8 @@ func TestMethodsRaceStop(t *testing.T) {
 				stops++
 			}
 		}
-		if starts != stops {
-			t.Fatalf("%d starts and %d stops, want the same count", starts, stops)
+		if starts != 200 || stops != 200 {
+			t.Fatalf("%d starts and %d stops, want 200 of each", starts, stops)
 		}
 	})
 }

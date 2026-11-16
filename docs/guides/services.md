@@ -78,4 +78,6 @@ Groups control shutdown only; they do not restart.
 The [runtime reference](../reference/services.md) defines child shutdown order,
 restart limits and failure reports. In tests,
 [`supervisetest.NewRoot(t)`](../../pkg/supervise/supervisetest/readme.md) stops the
-tree during cleanup and fails if shutdown takes more than five seconds.
+tree during cleanup. It fails the test and prints the original stack when a
+supervised attempt fails. It also fails if shutdown takes more than five seconds.
+Tests that expect supervised failures can use `supervise.NewRoot` with their own reporter.

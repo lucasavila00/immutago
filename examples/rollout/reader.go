@@ -29,7 +29,6 @@ type Reader struct {
 }
 
 // Init reads the initial totals and closes its temporary file before returning.
-// A staged child can stop without Run, so Init does not retain an open file.
 func (r *Reader) Init() error {
 	args := r.Args()
 	file, err := args.Files.Open(args.Path)

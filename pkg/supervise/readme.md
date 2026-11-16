@@ -54,7 +54,7 @@ type Group struct {
 func NewRoot(report func(any, []byte)) *Group
 ```
 
-NewRoot creates an active lifetime group. An exhausted service or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered panic, restart Init error, or Goexit with its original stack. Reports can overlap, must return, and must not wait for their group to stop.
+NewRoot creates an active lifetime group. An exhausted service or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered panic, restart Init error, or Goexit with its original stack, then the selected terminal \*Failure before cleanup waits. A nil report disables attempt reports; terminal failures still go to standard error. Reports can overlap, must return, and must not wait for their group to stop.
 
 ### func StartGroup
 
@@ -103,7 +103,7 @@ func Start[T, A any, P interface {
 }](parent *Group, args A) (Ref[T], error)
 ```
 
-Start creates T, calls Init in the caller, and publishes the initialized value. A first Init error returns a zero Ref and the error; a first Init panic reaches the caller. The runtime stops staged children in both cases. If parent is stopped, Init can still finish, but Run cannot start. Stop waits for registered children, not an initial Init that has not registered yet.
+Start creates T, calls Init in the caller, and publishes the initialized value. A first Init error returns a zero Ref and the error; a first Init panic reaches the caller. The runtime stops staged children in both cases. Each successful Init gets one Run call, with a cancelled context if its attempt cannot activate. Start under a stopped parent waits for that cleanup Run. Stop waits for registered children, not an initial Init that has not registered yet.
 
 ### func \(Ref\[T\]\) Borrow
 
@@ -145,7 +145,7 @@ Args returns the arguments supplied to Start. Every retry receives the same argu
 func (p *Service[A]) Children() *Group
 ```
 
-Children returns the group owned by this service attempt. Its services wait until the parent Run starts. The runtime stops and waits for these children before it replaces the parent. A later attempt owns a new group. After this attempt ends, Children returns a stopped group.
+Children returns the group owned by this service attempt. Its services wait until the parent Run starts, or run with cancelled contexts during cleanup. The runtime stops and waits for these children before it replaces the parent. A later attempt owns a new group. After this attempt ends, Children returns a stopped group.
 
 ### func \(\*Service\[A\]\) Init
 

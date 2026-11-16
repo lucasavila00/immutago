@@ -126,5 +126,6 @@ func TestStartAfterStopDoesNotRetainChildren(t *testing.T) {
 		if nested.parent != nil || nested.entry != nil {
 			t.Error("late nested Stop keeps its parent links")
 		}
+		takeEvents()
 	})
 }

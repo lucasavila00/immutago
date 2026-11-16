@@ -19,7 +19,8 @@ Ref copy ─┴──> shared slot ──> latest initialized *T
 | Initial setup | Start caller | Allocate T; bind arguments and parent group; call Init. |
 | Initial Init failure | Start caller | Stop staged children. Return a zero Ref and error, or propagate the panic. |
 | Initial publication | Start caller | Store initialized T; register a watcher with the group. |
-| Background work | Watcher | Activate the service's child group; call Run. |
+| Background work | Watcher | Activate the service's child group; call Run once after successful Init. |
+| Stopped or pending initialized attempt | Watcher | Stop children, then call Run with an already-cancelled context for cleanup. |
 | `ref.Borrow().Method(args)` | Method caller | Load the slot; call the method directly on that T. |
 | Replacement setup | Same watcher | Allocate a fresh T with the same arguments; publish only after successful Init. |
 
@@ -39,11 +40,14 @@ restarts; the delay is `1s << recentRestartCount`.
 | Run returns | Stop and wait for its children. | Remove the service entry. |
 | Run panics | Stop and wait for its children. | Delay, then initialize a replacement. |
 | Retry Init fails | Stop children created by that setup. | Retry within the same budget. |
-| Budget exhausted or `runtime.Goexit` | Request root shutdown. | After tree cleanup, panic with `*Failure`. |
+| Budget exhausted or `runtime.Goexit` | Select and report one terminal Failure before waiting for root shutdown. | After tree cleanup, panic with that Failure. |
 | Shutdown begins | Cancel retry policy and pending delays. | Start no further attempt. |
 
 Initial Init precedes watcher registration, so group shutdown cannot wait for
 that setup. Retry Init belongs to the registered watcher and is included in its lifetime.
+Successful setup always reaches Run. If a stopped group cannot register the first
+attempt, Start waits for its cleanup watcher. A successful replacement after Stop
+runs cleanup without replacing the published reference.
 
 ## Groups and shutdown order
 
@@ -51,6 +55,7 @@ Each service attempt owns a separate child group:
 
 ```text
 Init: children pending ──> parent Run: activate ──> attempt ends: stop and wait
+                     └──> shutdown: cancelled Run for cleanup
 next attempt: new child group
 ```
 
@@ -65,11 +70,14 @@ Shutdown follows this order:
 
 1. Close admission and cancel policy under the group mutex. Start one shutdown worker.
 2. Select the last child under the mutex, then release the mutex.
-3. Stop that child and wait. A service's children stop before its Run context is cancelled.
+3. Stop that child and wait. Start a pending child's watcher with a cancelled context.
+   A service's children stop before its Run context is cancelled or its cleanup Run begins.
 4. Remove the completed child and repeat until the list is empty.
 
 Waiting outside the mutex lets watchers remove their entries. Root Stop and
 terminal failure share one decision lock; groups do not add retry budgets.
+The shutdown worker reports a selected Failure before its first cleanup wait.
+It uses the existing callback, or standard error when the callback is nil.
 
 ## Analyzer boundary
 

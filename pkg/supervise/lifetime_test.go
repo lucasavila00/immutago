@@ -66,6 +66,9 @@ func TestGoexitIsTerminal(t *testing.T) {
 		terminal := make(chan any, 1)
 		reported := make(chan []byte, 1)
 		parent := root(func(value any) { terminal <- value }, func(value any, stack []byte) {
+			if _, terminal := value.(*Failure); terminal {
+				return
+			}
 			if value != errGoexit {
 				t.Errorf("Goexit report = %v", value)
 			}
@@ -139,8 +142,8 @@ func TestTerminalExitPrecedesStopCompletion(t *testing.T) {
 	})
 }
 
-// TestPendingSubtreeStopsWithoutRun checks initial setup at each ownership depth.
-func TestPendingSubtreeStopsWithoutRun(t *testing.T) {
+// TestPendingSubtreeCleanup checks one cancelled Run at each ownership depth.
+func TestPendingSubtreeCleanup(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		top := NewRoot(nil)
 		pending := newGroup(top, false)
@@ -148,7 +151,12 @@ func TestPendingSubtreeStopsWithoutRun(t *testing.T) {
 		var inits, runs atomic.Int32
 		ref, err := Start[initializing](nested, &initHooks{
 			init: func(p *initializing) error { inits.Add(1); p.Children(); return nil },
-			run:  func(*initializing, context.Context) { runs.Add(1) },
+			run: func(_ *initializing, ctx context.Context) {
+				if ctx.Err() == nil {
+					t.Error("pending subtree activated during shutdown")
+				}
+				runs.Add(1)
+			},
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -158,8 +166,8 @@ func TestPendingSubtreeStopsWithoutRun(t *testing.T) {
 		nested.activate()
 		synctest.Wait()
 		expectInitEnded(t, ref.Borrow())
-		if inits.Load() != 1 || runs.Load() != 0 {
-			t.Fatal("stopped pending setup ran or was initialized again")
+		if inits.Load() != 1 || runs.Load() != 1 {
+			t.Fatal("stopped pending setup did not run cleanup exactly once")
 		}
 		<-top.Stop()
 	})
@@ -256,7 +264,12 @@ func TestStopDuringAdmittedRestartInit(t *testing.T) {
 						}
 						return nil
 					},
-					run: func(*initializing, context.Context) { runs.Add(1); panic("retry") },
+					run: func(_ *initializing, ctx context.Context) {
+						if runs.Add(1) > 1 && ctx.Err() == nil {
+							t.Error("stopped replacement ran with an active context")
+						}
+						panic("retry")
+					},
 				})
 				original := ref.Borrow()
 				candidate := <-entered
@@ -274,7 +287,11 @@ func TestStopDuringAdmittedRestartInit(t *testing.T) {
 				close(initRelease)
 				synctest.Wait()
 				expectInitEnded(t, candidate)
-				if ref.Borrow() != original || runs.Load() != 1 || inits.Load() != 2 {
+				wantRuns := int32(2)
+				if fail {
+					wantRuns = 1
+				}
+				if ref.Borrow() != original || runs.Load() != wantRuns || inits.Load() != 2 {
 					t.Errorf("restart after stop: changed=%t, runs=%d, Init calls=%d",
 						ref.Borrow() != original, runs.Load(), inits.Load())
 				}

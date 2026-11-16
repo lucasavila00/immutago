@@ -14,7 +14,7 @@ func TestForgetUnlinksChild(t *testing.T) {
 		children := make([]*child, 4)
 		for i := range children {
 			nested := &Group{}
-			parent.add(func(context.Context) {}, func() {}, nested)
+			parent.add(func(context.Context) {}, nested)
 			children[i] = nested.entry
 		}
 		remaining := slices.Clone(children)
@@ -63,7 +63,7 @@ func TestForgetDoesNotAllocate(t *testing.T) {
 		parents[i] = newGroup(nil, false)
 		for j := range children[i] {
 			nested := &Group{}
-			parents[i].add(func(context.Context) {}, func() {}, nested)
+			parents[i].add(func(context.Context) {}, nested)
 			children[i][j] = nested.entry
 		}
 	}
@@ -90,7 +90,7 @@ func BenchmarkGroupForget(b *testing.B) {
 				children := make([]*child, size)
 				for i := range children {
 					nested := &Group{}
-					parent.add(func(context.Context) {}, func() {}, nested)
+					parent.add(func(context.Context) {}, nested)
 					children[i] = nested.entry
 				}
 				b.StartTimer()

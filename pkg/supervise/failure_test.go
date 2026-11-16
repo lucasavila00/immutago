@@ -110,10 +110,13 @@ func checkFailureOrigin(t *testing.T, shape string, reporting bool) {
 	}
 	mu.Lock()
 	defer mu.Unlock()
-	if reporting && len(reports) != 6 {
-		t.Errorf("reports = %d, want six leaf failures with no parent reports", len(reports))
+	if reporting && (len(reports) != 7 || reports[6] != failure) {
+		t.Errorf("reports = %v, want six attempts and the selected terminal Failure", reports)
 	}
-	for _, reported := range reports {
+	for index, reported := range reports {
+		if index == 6 {
+			continue
+		}
 		if reported != cause {
 			t.Errorf("attempt report changed the original panic: %v", reported)
 		}

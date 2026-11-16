@@ -4,23 +4,36 @@
 package supervisetest
 
 import (
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
-// NewRoot creates a root group with reporting disabled and registers its cleanup
-// with t. Cleanup waits up to 5 seconds for the group to stop, then reports a test
-// failure if any supervised work remains. Run methods must observe cancellation.
+// NewRoot reports supervised failures and their stacks with t.Errorf and registers
+// cleanup with t. Cleanup waits up to 5 seconds for the group to stop, then reports
+// a test failure if work remains. Reports after cleanup are ignored.
+// Run methods must observe cancellation.
 func NewRoot(t testing.TB) *supervise.Group {
-	root := supervise.NewRoot(nil)
+	var mu sync.Mutex
+	closed := false
+	root := supervise.NewRoot(func(value any, stack []byte) {
+		mu.Lock()
+		defer mu.Unlock()
+		if !closed {
+			t.Errorf("supervised service failed: %v\n%s", value, stack)
+		}
+	})
 	t.Cleanup(func() {
 		select {
 		case <-root.Stop():
 		case <-time.After(5 * time.Second):
 			t.Errorf("service tree did not stop in 5 s")
 		}
+		mu.Lock()
+		closed = true
+		mu.Unlock()
 	})
 	return root
 }
