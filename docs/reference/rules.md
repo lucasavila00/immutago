@@ -80,7 +80,7 @@ Named opaque handles can be declared locally or in test files.
 | Rejected examples — non-exhaustive | Replacement |
 | --- | --- |
 | A Frozen record other than an opaque handle with no generation directive | Add the exact directive and run generation. |
-| A Frozen type inside a function or `_test.go` file | Move its declaration to a non-test Go file at package scope. |
+| A Frozen record other than a named opaque handle inside a function or `_test.go` file | Move its declaration to a non-test Go file at package scope. |
 | An anonymous Frozen record, including a field type | Declare a named package-scope record and use that type. |
 | An alternate generation command in the directive | Use the canonical command above. |
 | A manually changed or stale generated file | Regenerate from the source declarations with the same build configuration. |

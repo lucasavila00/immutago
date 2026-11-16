@@ -69,4 +69,4 @@ used as function values in that package. UncheckedValue has no reader methods.
 | `im.Trust(&rows)` for a native slice variable | Declare a named payload type. |
 | `c.state = im.Trust(&counter{})` | Construct another Counter. |
 | Store a handle inside an im.Copied record | Use a Local result or an ordinary holder. |
-| `holder.Pointer()` when Holder embeds Counter by value and Pointer has a `*Counter` receiver | Embed `*Counter` and construct it with `new(counter)`, or use a value receiver. |
+| `holder.Pointer()` when Holder embeds Counter by value and Pointer has a `*Counter` receiver | Embed `*Counter` and construct it with `new(NewCounter())`, or use a value receiver. |

@@ -81,7 +81,7 @@ func (p *Pool) Forward() (Reply, bool) { return p.Lookup() }
 | `Usage` with `im.Frozen`, even when it has only numeric fields | Use im.Local for the result, or return its generated projection. |
 | `im.Frozen`, `im.Local`, or `im.Copied` marker | Return no result when no data is needed; embed im.Local in a result record when data is needed. |
 | `im.FrozenString`, `im.FrozenSlice[E]`, or `im.FrozenMap[K,V]` | The corresponding StringProjection, SliceProjection, or MapProjection. |
-| Pointer, native container, interface other than `error`, or Cell in any result position | A read-result value with the required data. |
+| `*Usage` with `im.Local`, `[]int`, `any`, or `im.Cell[int]` in any result position | A read-result value with the required data. |
 | `(Reply, string, bool)` | Return `(Reply, im.StringProjection, bool)`. |
 | A distinct `type Failure error` in any result position | Declare the result as `error` or an alias such as `type Failure = error`. |
 | `savedReply, found = pool.Borrow().Lookup()` with a package-level Local `savedReply` | Bind the Local result to a local name; save only ordinary results. |
