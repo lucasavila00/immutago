@@ -1,9 +1,9 @@
 mutable_map_key.go:13:12: immutable type argument: stored pointers require a concrete Frozen record target
   type: *int
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 mutable_map_key.go:13:5: Frozen collection: type argument 1: stored pointers require a concrete Frozen record target
   type: im.FrozenMap[*int, int]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))
 mutable_map_key.go:13:9: Frozen collection: type argument 1: stored pointers require a concrete Frozen record target
   type: im.FrozenMap[*int, int]
-  fix: point to a Frozen record, or store the value without a pointer; read Copied projection payloads with im.Value
+  fix: point to a Frozen record, or store the value without a pointer; for Copied payloads, use im.Value(projection), im.Value(cell.Load()), or im.Value(slice.At(index))

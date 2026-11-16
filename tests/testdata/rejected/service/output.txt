@@ -116,7 +116,7 @@ results.go:46:23: service method Mutable must return a read result or error: []i
   result type: []int
   fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
 results.go:49:38: stored im argument: Frozen storage cannot contain Local values
-  fix: pass an immutable value or a Frozen pointer; Local pointers cannot be stored
+  fix: store Frozen data; keep its Projection or Local result in local bindings
 results.go:51:17: service method PointerArray must return a read result or error: array element: *example.com/consumer/service.SnapshotReply is not a Copied value
   result type: [1]*service.SnapshotReply
   fix: use bool, numbers, unnamed arrays, or Copied records for copied data; use projections for Local results
