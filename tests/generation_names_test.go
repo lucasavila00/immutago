@@ -61,9 +61,18 @@ func TestGenerationRemoval(t *testing.T) {
 			changed = strings.Replace(changed, projectiongen.Directive, "", 1)
 			writeFile(t, path, changed)
 			runCommand(t, dir, true, "go", "build", "./...")
-			for _, name := range []string{"schema", "consumer"} {
-				output := runBoundary(t, dir, binary, mode, false, "./"+name)
-				checkFixtureSnapshots(t, root, "generation_removal/"+name, output)
+			output := runBoundary(t, dir, binary, mode, false, "./schema")
+			checkFixtureSnapshots(t, root, "generation_removal/schema", output)
+			output = runBoundary(t, dir, binary, mode, false, "./consumer")
+			fixture := filepath.Join(root, "tests/testdata/generation_removal")
+			packages, err := packageOutputs(fixture, fixture, output)
+			if err != nil {
+				t.Fatal(err)
+			}
+			checkSnapshot(t, filepath.Join(fixture, "consumer/output.txt"), packages[filepath.Join(fixture, "consumer")])
+			// Vet can also print the dependency's diagnostic when it runs that analysis again.
+			if source := packages[filepath.Join(fixture, "schema")]; source != "" {
+				checkSnapshot(t, filepath.Join(fixture, "schema/output.txt"), source)
 			}
 			runCommand(t, filepath.Dir(path), true, "go", "run",
 				"github.com/lucasavila00/immutago/cmd/immutago-gen")

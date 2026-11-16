@@ -1,4 +1,6 @@
 use.go:3:8: unsupported dependency example.com/consumer/invalid: immutability proof failed
-  representative failure: example.com/consumer/invalid/invalid.go:10:6: cannot generate typed projections: Mutable: Values: []int is not provably immutable
+  representative failure: example.com/consumer/invalid/invalid.go:9:45: unsupported immutable operation: Frozen interface implementation: struct does not embed im.Frozen
+    source: return Hidden{Scorer: s}
+    fix: use the documented immutable value and reference forms
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/invalid, correct its errors, then rerun immutago on this package
