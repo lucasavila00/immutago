@@ -50,7 +50,7 @@ Borrow selects the current service after any restart. Catalog runs in the
 request's goroutine and loads a projection from the Cell. That projection fixes
 the catalog version for the quote. Keep the reference for later requests and
 select again. The [reference rules](../reference/service-references.md) cover
-optional references and direct Borrow calls.
+optional references and borrowing once for several calls.
 
 ## Review shared state and inputs
 

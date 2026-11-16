@@ -9,16 +9,16 @@ package's AST and compiler type information.
 
 | Stage | Work | Result used by the next stage |
 | --- | --- | --- |
-| Select | Inspect direct imports, used types, and dependency facts. | Skip unrelated packages; select service checks or full im checks. |
+| Select | Inspect direct imports, used types, and dependency facts. | Skip unrelated packages; select im and service source checks. |
 | Read failures | Report failures saved by direct dependencies. | Retain their original causes for this package's fact. |
 | Check declarations | Prove im types; check service embedding and method results. | Shared type proof cache and local diagnostics. |
 | Verify generation | Compare the generated file with current compiler types. | Exact file identity for generated interior record addresses. |
-| Check references and builders | Match direct Borrow calls; check native builder aliases and consumption. | Builder variable identities for source checks. |
+| Check references and builders | Prove Ref targets; check native builder aliases and consumption. | Builder variable identities for source checks. |
 | Match source | Check complete operations on protected storage. | Diagnostics for every unmatched form. |
 | Export failure | Select one local or imported cause if the package failed. | A package fact for importers. |
 
-Generation, builder analysis, and protected source checks run only for im
-packages. [Package selection](../../pkg/analyzer/package_scope.go) shares one
+Generation runs for im packages. Builder and protected source checks run for all
+selected packages, including service-only consumers. [Package selection](../../pkg/analyzer/package_scope.go) shares one
 visited-type set across local roots; it follows used contracts, not dependency
 implementations. See the complete [package boundary](../reference/rules.md#package-boundary).
 
@@ -91,7 +91,10 @@ Cause links cannot form a cycle. Query order can select a different real cause.
 Classification uses compiler types, including constraint terms and result tuples.
 
 Both graphs finish expansion before propagation. Completed answers belong to
-one package pass; compiler types must remain unchanged.
+one package pass; compiler types and the classifier's package context must remain
+unchanged. Outside a service type's declaring package, its pointer is Local.
+The same pointer is ordinary inside that package. Im field proofs have no package
+context.
 
 ## Failures across imports
 

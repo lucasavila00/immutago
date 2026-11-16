@@ -6,7 +6,9 @@ These forms apply to:
 - Named interfaces that embed [im.FrozenInterface](frozen-interfaces.md).
 - `im.FrozenString`, `im.FrozenSlice`, `im.FrozenMap`, and local read projections.
 
-Combine them with each type's forms. [Cell](cell.md) has its own forms.
+Combine them with each type's forms. [Cell](cell.md) and
+[Local service pointers](service-references.md#local-service-pointers--exhaustive)
+have their own forms.
 Ordinary [Copied values](copied.md) and their ordinary holders use all Go forms.
 Ordinary [Frozen handle slots](#ordinary-frozen-handle-slots--exhaustive) and
 [Frozen pointer handles](frozen-records.md#stored-pointers--exhaustive) use Go storage

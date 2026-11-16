@@ -47,6 +47,10 @@ Use the complete [common pointer forms](common-forms.md#common-pointer-forms)
 for a Local record: for example, `p := &Prediction{}` followed by a direct typed
 call. The pointer must stay local. It cannot be stored, returned, or captured.
 
+Pointers to services use the [service pointer forms](service-references.md#local-service-pointers--exhaustive).
+They have the same retention limits outside the declaring package; service state
+is mutable and accessed through methods. A Local pointer is not a read-result type.
+
 ## Local builders
 
 Local builders use the complete [builder operations](frozen.md#build-before-freezing).

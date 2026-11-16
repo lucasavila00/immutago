@@ -7,6 +7,7 @@
 | Copied | Boolean/numeric data, records with `im.Copied`, opaque service references, and unnamed arrays of Copied values. Frozen records are not Copied. |
 | Copied record | A struct with `im.Copied`. All data fields copy by value. Ordinary copies can change independently. It has no string or reference fields. |
 | Local value | A read projection, a record with `im.Local`, or an unnamed array of Local values. It cannot enter persistent storage. |
+| Local pointer | A pointer to a Local record, or a service pointer outside its declaring package. It can stay local or pass to direct typed calls; it cannot be stored, returned, or captured. |
 | Read result | Copied, Local, UncheckedValue handles, or unnamed arrays of read results. This is a type category, not a service-specific field rule. |
 | Projection | Local access to a Frozen value. Generated types such as SettingsProjection return Copied fields, unchecked handles, or more projections. |
 | Cell; cell holder | An `im.Cell[T]` slot; an unmarked struct containing a named slot or holder field. Generated types such as SettingsCell are holders. Holder pointers can be shared; holder values cannot be copied. |

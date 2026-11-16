@@ -286,12 +286,19 @@ Keep source restrictions and examples there. Keep analysis details in the
   destination with the normal im type, write, builder, and transport rules.
   Frozen interface methods use ordinary method result rules; they have no separate
   result category or count limit.
-- Permit service references as stored values and results. Match every direct Ref Borrow
-  call as `ref.Borrow().Method(args)` with an exported service method other
-  than Init, Run, or a runtime method. Reject all other direct uses of the returned
-  pointer. Ordinary reference storage, conversions, interfaces, generics, and bodyless
-  functions use Go rules. Indirect calls may expose the service pointer. Do not
-  add a service-reference transport matcher. Keep the reference proof in [service architecture](docs/arch/services.md).
+- Permit service references as ordinary stored values and results. Outside the
+  package that declares a service T, classify every *T as a Local pointer. Aliases
+  keep T's owner; anonymous service pointers are Local everywhere. Reuse Local
+  binding, transport, capture, generic, and return checks. Permit direct exported
+  service method calls, excluding Init, Run, and runtime methods; reject fields
+  and dereference copies. Pointer producers use resolved types, not Borrow syntax.
+  Inside T's package, service pointers keep ordinary Go rules. Service values and
+  Ref values stay ordinary; im field and Cell copy rules still apply. Keep im field
+  proofs context-free and check service-pointer field placement at its declaration.
+  Producer contracts can return service pointers without restricting the producer;
+  their actual pointer results are Local. Local-pointer inputs and im.Local outputs
+  keep the existing restricted call forms. See the complete
+  [service pointer forms](docs/reference/service-references.md).
 - Trust ordinary Go API contracts. Use the documented package selection rules;
   do not add string taint analysis or whole-program service effect analysis.
 

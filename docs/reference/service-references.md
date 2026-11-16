@@ -1,112 +1,99 @@
-# Service references
+# Service references and pointers
 
-`supervise.Ref[T]` identifies one service. Copy, store, or return the reference.
-Call an exported service method with `ref.Borrow().Method(args)`.
-Copies select the same service, including after a restart.
-
-## Optional references
-
-The zero `Ref` is the unset value. Use `IsZero` to test an optional reference:
+| Type | Use |
+| --- | --- |
+| `supervise.Ref[T]` | Store the service reference. Borrow selects its latest initialized instance. |
+| `*T` outside the package that declares T | Keep one instance in a local variable; call its exported service methods. |
+| `*T` inside the package that declares T | Ordinary Go rules for service implementation code. |
 
 ```go
-type optionalRoute struct{ cache supervise.Ref[Counter] }
-
-func optionalCount(r optionalRoute) int {
-    if !r.cache.IsZero() {
-        return r.cache.Borrow().Count()
-    }
-    return 0
-}
+worker := ref.Borrow()
+limit := worker.Limit(id)
+used := worker.Used(id)
 ```
 
-`IsZero` tests whether Start supplied a reference. A successful Start returns
-a nonzero reference, which stays nonzero after stop. Copies give the same result.
+Both calls use the same instance, even if the service restarts between them.
+The methods still need to synchronize mutable state.
 
-`IsZero` uses ordinary reference call forms. Direct calls also work on a Ref
-field or array element in a Frozen or Local record:
+## Reference forms — exhaustive
 
-```go
-if !route.Worker.IsZero() {
-    route.Worker.Borrow().Count()
-}
-```
+T must be a concrete struct with a [value embedding path](services.md#service-embedding--exhaustive)
+to `supervise.Service[A]`. Ref values use ordinary Go storage and call forms:
 
-Select an embedded Ref field explicitly. The [common forms](common-forms.md)
-apply to the record that holds it:
-
-| Use a Ref field | Frozen record | Local record |
-| --- | --- | --- |
-| `check := route.Worker.IsZero` | Allowed; copies the Ref. | Allowed; copies the Ref. |
-| `go route.Worker.IsZero()` or `defer route.Worker.IsZero()` | Allowed. | Copy the Ref first. |
-| `func() bool { return route.Worker.IsZero() }` | Allowed. | Copy the Ref first; do not capture route. |
-
-## Checked operations — exhaustive
-
-| Operation | Rule |
+| Form | Example |
 | --- | --- |
-| Declare or use `supervise.Ref[T]` | T is a concrete struct with a [value embedding path](services.md#service-embedding--exhaustive) to `supervise.Service[A]`. |
-| Call the concrete Ref's Borrow method | Use `ref.Borrow().Method(args)`; see the call forms below. |
-| Return data from an exported service method | Use the [service result signatures](service-results.md). |
-| Use a reference inside protected im storage | Apply the [im rules](common-forms.md) to that storage. |
+| Copy, store, or return | `other := ref`, `type Server struct { Worker supervise.Ref[Worker] }`, `return ref` |
+| Use pointers, containers, or atomic storage | `p := &ref`, `[]supervise.Ref[Worker]{ref}`, `slot.Store(&ref)` |
+| Convert a reference type | `type Handle supervise.Ref[api.Worker]`, `ref = supervise.Ref[api.Worker](handle)` |
+| Use interfaces, generics, callbacks, go, or defer | `var value any = ref`, `identity(ref)`, `func() { use(ref) }`, `go use(ref)` |
+| Call or select Borrow | `ref.Borrow()`, `next := ref.Borrow`, `supervise.Ref[Worker].Borrow(ref)` |
+| Call through an interface, type parameter, or embedded Ref | `selected.Borrow()`, `wrapper.Borrow()` |
+| Test an optional reference | `ref.IsZero()` |
 
-Reference storage and transport use ordinary Go rules. This includes copies,
-containers, pointers, conversions, interfaces, generic helpers, callbacks,
-`go`, `defer`, and functions implemented outside Go. A field containing a Ref
-does not make its holder protected storage.
+A Ref field inside a Frozen or Local record keeps that record's
+[common forms](common-forms.md). For example, copy a Ref field out of a Local
+record before capturing it in a closure. A Frozen record's Ref field cannot be
+replaced. Select an embedded Ref field explicitly in a marked record.
 
-| Ordinary Go examples | Form |
+## Local service pointers — exhaustive
+
+These rules depend on the service type's declaring package, not the spelling of
+Borrow. Aliases keep the original package. Pointers to anonymous service structs
+are Local in every package. Ordinary service values keep Go rules.
+
+The examples use `api.Worker`, declared in another package.
+
+| Pointer source | Example |
 | --- | --- |
-| Store or copy a reference | `type Server struct { Worker supervise.Ref[Worker] }`, `other := ref` |
-| Use a pointer, generic helper, or interface | `p := &ref`, `other := identity(ref)`, `var value any = ref` |
-| Use atomic storage | `var selected atomic.Pointer[supervise.Ref[Worker]]`; `selected.Store(&ref)` |
+| A Ref call, including indirect calls | `worker := ref.Borrow()`, `worker := selected.Borrow()`, `worker := next()` |
+| A factory or variable from the declaring package | `worker := api.NewWorker()`, `worker := api.Current` |
+| A direct typed parameter | `func read(worker *api.Worker) int { return worker.Count() }` |
+| Ordinary construction or a local address | `worker := new(api.Worker)`, `worker := &api.Worker{}`, `worker := &value` |
+| A zero declaration or nil | `var worker *api.Worker`, `worker = nil` |
 
-Protected storage still has its own rules. For example, a Ref field in a Frozen
-record cannot be replaced. Copy the field into an ordinary variable to store or
-pass the reference independently.
+A function or interface that produces service pointers can use ordinary Go call
+forms. The resulting pointers use this table. Contracts with Local-pointer
+inputs or im.Local outputs still use the [common call rules](common-forms.md).
 
-## Borrow calls — exhaustive
-
-| Form | Rule |
+| Pointer use | Example |
 | --- | --- |
-| `ref.Borrow().Method(args)` with a concrete Ref receiver | Method is an exported service method, including a promoted method, other than Init, Run, or a method supplied by the runtime. Its results follow the [service result signatures](service-results.md). |
-| `selected.Borrow()` through an interface or type parameter, including method values and expressions | Ordinary Go rules apply: `pointer := selected.Borrow()`, `accessor := selected.Borrow`, `Borrower.Borrow(selected)` where Borrower is the interface type. The result can be stored and used outside the checked call form. |
+| Bind, copy, replace, or discard locally | `other := worker`, `worker = ref.Borrow()`, `_ = worker` |
+| Compare with a pointer or nil | `worker == other`, `worker != nil` |
+| Pass to a direct call with an exact pointer parameter | `read(worker)`, `read(ref.Borrow())` |
+| Call an exported service method, including a promoted method | `worker.Count()`, `ref.Borrow().Count()`; exclude Init, Run, and runtime methods. |
+| Use pointer aliases | `type Pointer = *api.Worker` |
 
-For direct Ref calls, the checker rejects every other use of `Borrow`, despite
-its Go return type of `*T`. Borrow panics with `supervise: zero Ref` for a zero
-reference.
-Each call selects the last successfully initialized service; a call in progress
-finishes on that instance.
-Borrow is shared and is not exclusive. No release call is needed.
-
-Interfaces and generic methods can expose the service pointer outside this
-checked call form. This is accepted, including when an embedded Ref promotes Borrow:
-
-```go
-var selected interface{ Borrow() *Worker } = ref
-pointer := selected.Borrow()
-```
-
-The direct Ref call rule does not apply to interface or type-parameter method
-calls. Callers must account for restarts when they save a service pointer.
+Combine these with the [common statement forms](common-forms.md#statements-and-calls).
+Method results use the [service result rules](service-results.md).
+Unlisted Local pointer operations are rejected.
 
 ## Rejected examples — non-exhaustive
 
+These examples apply outside the service's declaring package.
+
 | Rejected | Use instead |
 | --- | --- |
-| `worker := ref.Borrow()` | Keep `ref`; call `ref.Borrow().Method()` each time. |
-| `ref.Borrow().Count`, `*ref.Borrow() = Worker{}` | Add an exported service method for the operation. |
-| `current := ref.Borrow`, `method := ref.Borrow().Method` | Use a closure that captures the reference and makes the direct method call. |
-| `supervise.Ref[Worker].Borrow(ref)` | `ref.Borrow().Method()` |
-| `ref.Borrow().Init()`, `ref.Borrow().Run(ctx)`, `ref.Borrow().Args()` | Initialize through Start; expose needed data through an exported service method. |
-| `go route.Worker.IsZero()` or `defer route.Worker.IsZero()` where route is Local | Copy the field first: `ref := route.Worker`, then `go ref.IsZero()` or `defer ref.IsZero()`. |
-| `route.IsZero()` through an embedded Ref in a marked object | Select the field: `route.Ref.IsZero()`. |
-| `wrapper.Borrow()` through an embedded Ref | Select the reference field: `wrapper.Ref.Borrow().Method()`. |
+| `var saved *api.Worker` or `type State struct { Worker *api.Worker }` | Store `supervise.Ref[api.Worker]`; borrow inside the function that needs it. |
+| `return worker` | Return the Ref, or return the data read from a method. |
+| `worker.CountField`, `*worker`, `worker.CountField = 1` | Call an exported service method. |
+| `method := worker.Count` | Call `worker.Count()` directly. |
+| `worker.Init()`, `worker.Run(ctx)`, `worker.Args()`, `worker.Children()` | Use Start and the exported service methods. |
+| `func() int { return worker.Count() }` | Capture the Ref; borrow inside the closure. |
+| `go read(worker)`, `defer read(worker)` | Call `read(worker)` directly. |
+| `any(worker)`, `identity(worker)`, `[]*api.Worker{worker}` | Pass or store the Ref. |
+| `&worker` or a protected pointer conversion | Use the existing local pointer with its declared type. |
+| Pass worker as a service start argument | Pass its Ref. |
 
-## What the reference rule does not check
+## Runtime behavior
 
-- Service fields can change. A Ref field in an immutable object cannot change,
-  but the selected service can.
-- Calls run in the caller's goroutine. They can run at the same time as Run and
-  other calls. The service must protect shared mutable fields.
-- A service method can give a callback or global access to its mutable state.
-  The reference rule does not prevent this.
+| Operation | Behavior |
+| --- | --- |
+| Borrow | One atomic load. Shared access; no release call. |
+| Retry publishes a new instance | Later Borrow calls select it. Existing pointers still select their original instance. |
+| Method call | Runs in the caller's goroutine; can overlap Run and other calls. |
+| Stop | Does not wait for method calls or invalidate the last instance. |
+| Zero Ref | IsZero returns true. Borrow panics with `supervise: zero Ref`. |
+| Successful Start | Returns a nonzero Ref. It stays nonzero after Stop; copies give the same IsZero result. |
+
+Review mutable state, locks, and input use in the service package. The checker
+does not prove service isolation or synchronization.

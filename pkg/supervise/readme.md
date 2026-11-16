@@ -111,7 +111,7 @@ Start creates T, calls Init in the caller, and publishes the initialized value. 
 func (p Ref[T]) Borrow() *T
 ```
 
-Borrow selects the latest initialized value with one atomic load. Calls can finish on an older value after a retry. Borrow is shared, not exclusive. A zero reference panics with "supervise: zero Ref".
+Borrow selects the latest initialized value with one atomic load. Keep the result in a local variable to make several calls on the same instance. Outside the service type's package, the checker treats it as a Local pointer. A retry does not change that pointer. Borrow is shared, not exclusive. A zero reference panics with "supervise: zero Ref".
 
 ### func \(Ref\[T\]\) IsZero
 

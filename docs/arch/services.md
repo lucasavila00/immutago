@@ -21,13 +21,13 @@ Ref copy ─┴──> shared slot ──> latest initialized *T
 | Initial publication | Start caller | Store initialized T; register a watcher with the group. |
 | Background work | Watcher | Activate the service's child group; call Run once after successful Init. |
 | Stopped or pending initialized attempt | Watcher | Wait for its entry's shutdown turn; stop children, then call Run with an already-cancelled context for cleanup. |
-| `ref.Borrow().Method(args)` | Method caller | Load the slot; call the method directly on that T. |
+| `worker := ref.Borrow()` | Method caller | Load the slot once. Calls through worker use that instance. |
 | Replacement setup | Same watcher | Allocate a fresh T with the same arguments; publish only after successful Init. |
 
 | Slot change | Effect on callers |
 | --- | --- |
 | Retry Init fails | The previous T remains selected. |
-| Retry publishes a new T | Later Borrow calls select it; existing calls can finish on the old T. |
+| Retry publishes a new T | Later Borrow calls select it; existing local pointers still select the old T. |
 | Group stops | The slot keeps its last value. Stop does not wait for direct method calls. |
 
 ## One watcher owns retries
@@ -87,17 +87,18 @@ It uses the existing callback, or standard error when the callback is nil.
 | --- | --- |
 | `Service[A]` embedding | The selected runtime embedding path uses value fields. |
 | `Ref[T]` | T is a concrete service struct; application fields use Go rules. |
-| Direct `Borrow` use | Match the immediate exported method call; exclude lifecycle and runtime methods. |
+| `*T` outside T's declaring package | Classify it as Local. Reuse binding, transport, capture, and return checks. Permit only direct exported service methods; exclude lifecycle/runtime methods and field reads. |
+| `*T` inside T's package; service values and Ref values | Ordinary Go forms. Im fields keep their field and write rules. |
 | Exported service methods | Check each result with the shared ReadResult proof, or compiler identity with predeclared error. Apply no result count or order limit. |
 | Retained start arguments | Protected data or callbacks carrying it must pass Frozen; ordinary arguments use Go contracts. |
 
-[Reference matching](../../pkg/analyzer/service_handles.go) and
-[result checks](../../pkg/analyzer/service.go) do not prove that the receiver stays private:
+| Implementation | Responsibility |
+| --- | --- |
+| [Reference checks](../../pkg/analyzer/service_handles.go) | Validate Ref targets. |
+| [Source classifier](../../internal/checker/classification.go) | Keep one fixed package context; classify external service pointers as Local. |
+| Context-free field classifier | Keep im field proofs unchanged. Check owner-package service fields at their declaration. |
+| Source matcher | Check actual pointer values by resolved type, including factory, interface, and generic call results. |
+| Producer contracts | Keep service-pointer producers ordinary. Restrict Local-pointer inputs and im.Local outputs with the common call rules. |
+| Service implementation | Synchronize mutable state and review input use. The checker does not prove isolation or synchronization. |
 
-```go
-func (c *Counter) Visit(f func(*Counter)) { f(c) }
-```
-
-This method passes result checks; its callback can retain `c`. Review locks,
-state changes, and input use in service code. The
-[service reference](../reference/services.md) defines the complete public forms.
+See the complete [service reference forms](../reference/service-references.md).

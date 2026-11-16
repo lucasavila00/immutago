@@ -14,13 +14,13 @@ other calls. Use the [service guide](../guides/services.md) for a walkthrough.
 | Start arguments | `s.Args()` reads A. The runtime saves the same arguments for each restart. Ordinary Go types are allowed; protected arguments require [Frozen types](types.md). |
 | No arguments | Embed `supervise.Service[supervise.NoArgs]` and pass `supervise.NoArgs{}` to Start. |
 | Exported methods | Use the [service result signatures](service-results.md), including promoted methods. Init, Run, and runtime methods are exempt. |
-| Fields, inputs, closures, goroutines, and construction | Ordinary Go rules; uses of protected data keep the [im source rules](common-forms.md). |
+| Fields, inputs, closures, and goroutines in the declaring package | Ordinary Go rules; uses of protected data keep the [im source rules](common-forms.md). |
 | Reference calls | Use the complete [service-reference forms](service-references.md). |
 
 Start requires the Init and Run signatures through Go's type
-checker. The analyzer checks exported results, reference targets, direct Borrow
-calls, and protected im operations. Their linked references give the complete
-allowed forms; unlisted protected operations and direct Borrow forms are rejected.
+checker. The analyzer checks exported results, reference targets, Local service
+pointers, and protected im operations. Their linked references give the complete
+allowed forms; unlisted protected operations and Local service pointer forms are rejected.
 Other service code follows ordinary Go rules. Runtime obligations below, including
 returning when a context ends, require implementation review.
 

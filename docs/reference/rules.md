@@ -22,7 +22,7 @@ Use this reference to check which Go forms Immutago accepts. The
 ## Service forms (`supervise`)
 
 - [Service results](service-results.md): result types for exported service methods.
-- [Service references](service-references.md): stored references and direct calls to the current service.
+- [Service references](service-references.md): stored references and Local pointers to a selected service.
 - [Supervised services](services.md): execution and restart behavior.
 
 ## Rules for im and supervise
@@ -31,8 +31,8 @@ Use im type rules to check immutable data. Review service state changes and
 synchronization in the service code.
 
 Use the common forms with each type's forms. **Exhaustive** means all allowed
-forms are listed. Unlisted operations on protected storage and unlisted direct Borrow call forms
-are rejected. Ordinary service-reference storage and transport use Go rules.
+forms are listed. Unlisted operations on protected storage and Local service
+pointers are rejected. Service-reference storage and transport use Go rules.
 
 ### Required generation
 
@@ -89,8 +89,8 @@ The checker checks a package in any of these cases, including its test files:
 | Imports a package that failed its checks, directly or through another package | Import a package with an invalid immutable field. |
 
 - Aliases, type arguments, and generic constraints also count.
-- A package that uses only supervise receives service result and reference checks.
-  Importing or using im also selects the immutable-source checks.
+- Selected packages use the same source checks for im data and Local service
+  pointers. Service declarations also receive embedding and result checks.
 - The CLI and `go vet` use the same rules.
 - Other packages are trusted to obey Go contracts, including immutable strings.
 - The `im`, `supervise`, and standard-library implementations are trusted.
