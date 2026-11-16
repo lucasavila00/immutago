@@ -255,7 +255,7 @@ Use the operations above inside these statement forms:
 | Declare one variable or assign one destination | `var value FrozenPoint`, `value := FrozenPoint{X: 1}`, `value = FrozenPoint{X: 2}` |
 | Change a native builder slot or its Copied fields | `values[0] = value`, `counts[0]++`, `counts[0] += 2`, `scores[0].Value++` |
 | Bind several results from one direct named function, concrete method, or proved Frozen interface method; check each destination separately | `value, found, out := reader.Lookup(key, buf)`, `value, state.Found, out = read()`, `var value, found, out = read()` |
-| Freeze a slice or map in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `_ = im.FreezeSlice(values)` |
+| Freeze a slice or map in its own assignment or declaration | `frozen := im.FreezeSlice(values)`, `cache.Values = im.FreezeSlice(values)`; see [Freeze destinations](frozen.md#freeze-destinations). |
 | Call a direct named function | `read(p)`, `n := read(p)` |
 | Call a method in the list above | `n := p.ReadX()` |
 | Return values or Frozen pointers, including multiple results | `return point`, `return p, true` |
