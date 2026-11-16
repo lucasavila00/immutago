@@ -107,7 +107,8 @@ type Scorer interface{im.FrozenInterface;Score()int};func f(p ` + fmt.Sprintf(pr
 			if !strings.Contains(got, "is not a Copied value\n  source: p.Clone()") ||
 				!strings.Contains(got, "fix: iterate the projection with All; "+
 					"read or clone each element into a new native collection") ||
-				strings.Contains(got, "native slices of immutable storage") || strings.Contains(got, "native maps of immutable storage") {
+				strings.Contains(got, "native slices of immutable storage") ||
+				strings.Contains(got, "native maps of immutable storage") {
 				t.Fatalf("%s: %s", source, got)
 			}
 		}
