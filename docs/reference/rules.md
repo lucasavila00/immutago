@@ -95,6 +95,11 @@ it. The checker does not prove the promise.
 Run `immutago ./...` or `go vet -vettool=/absolute/path/to/immutago ./...`.
 `go build` alone does not enforce these rules.
 
+For services, also run standard `go vet ./...` to check common copies of Service
+and Group owners. Immutago does not enforce their
+[Go copy contract](services.md#copy-contract), and a custom vettool does not run
+the standard vet checks.
+
 For build tags, use `GOFLAGS=-tags=integration immutago ./...` or
 `go vet -vettool=/absolute/path/to/immutago -tags=integration ./...`.
 The CLI's own `-tags` flag does not select tagged files. See

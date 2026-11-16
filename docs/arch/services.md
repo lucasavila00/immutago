@@ -3,6 +3,14 @@
 `supervise` uses one watcher per service and one shared atomic slot per Ref.
 Method calls run in the caller's goroutine.
 
+Service and Group keep mutable ownership state in their values. They must not be
+copied after initialization. Both contain a zero-size `noCopy` field for standard
+vet's copylocks check. It adds no lock or runtime check. Immutago does not run that
+check; callers must also use standard `go vet`. See the
+[copy contract](../reference/services.md#copy-contract).
+Copylocks is a diagnostic check, not a complete proof that no value was copied;
+for example, it does not inspect channel sends.
+
 ## Initialization, publication, and calls
 
 [Ref[T]](../../pkg/supervise/supervise.go) contains `*atomic.Pointer[T]`:

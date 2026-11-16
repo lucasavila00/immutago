@@ -40,7 +40,7 @@ Unwrap returns the original failure when it is an error.
 
 ## type Group
 
-Group owns an ordered set of service lifetimes and nested groups. It activates at most once and stops at most once. The zero value is not usable.
+Group owns an ordered set of service lifetimes and nested groups. It activates at most once and stops at most once. The zero value is not usable. Do not copy an initialized Group. Pass its pointer. Run go vet to check for copies.
 
 ```go
 type Group struct {
@@ -124,7 +124,7 @@ IsZero reports whether this reference is unset.
 
 ## type Service
 
-Service supplies start arguments and the children owned by one service attempt. Embed it by value. Start creates and initializes each fresh service value.
+Service supplies start arguments and the children owned by one service attempt. Embed it by value. Start creates and initializes each fresh service value. Do not copy an initialized Service or a struct that contains it. Declare service methods with pointer receivers. Run go vet to check for copies.
 
 ```go
 type Service[A any] struct {

@@ -58,6 +58,11 @@ Service methods can run at the same time as Run and other callers. Immutable
 results do not make mutable service fields safe. Review field access, locks,
 saved inputs, and dependency calls in the service implementation.
 
+Declare service methods with pointer receivers. Do not copy an initialized service
+or Group; pass pointers or copy Ref values. Run standard `go vet ./...` as well as
+immutago to check common copy mistakes. See the
+[copy contract](../reference/services.md#copy-contract).
+
 The [search indexer](../../examples/search/indexer.go) shows this distinction.
 Its Cell publishes an immutable index. A mutex also protects the error text and
 keeps Status consistent with publication. Its `fs.FS` start argument follows the
