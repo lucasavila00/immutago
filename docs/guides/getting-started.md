@@ -82,7 +82,6 @@ GOFLAGS=-tags=integration immutago ./...
 go vet -vettool=/absolute/path/to/immutago -tags=integration ./...
 ```
 
-The CLI's own `-tags` flag is a deprecated no-op in the Go analysis driver.
 `immutago -tags integration ./...` does not select tagged files. Use one of the
 commands above to check them, including packages whose files all require a tag.
 
