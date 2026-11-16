@@ -8,7 +8,6 @@ type Model struct {
 }
 type Local struct{ im.Local }
 type Loader struct{ Current im.Cell[Model] }
-
 var bad im.Cell[Local]
 var saved im.Projection[Model]
 
