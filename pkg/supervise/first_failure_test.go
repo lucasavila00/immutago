@@ -75,25 +75,7 @@ func checkFirstRunFailure(t *testing.T, mode string, reporting bool) {
 	close(trigger)
 	value := <-terminal
 	<-top.Stop()
-	failure, ok := value.(*Failure)
-	if !ok {
-		t.Fatalf("terminal value = %T; want *Failure", value)
-	}
-	if failure.Service != "supervise.initializing" || failure.Value != cause {
-		t.Errorf("failure = %#v", failure)
-	}
-	if !bytes.Contains(failure.Stack, []byte("checkFirstRunFailure.func")) {
-		t.Errorf("original Run stack was lost:\n%s", failure.Stack)
-	}
-	if err, ok := cause.(error); ok && !errors.Is(failure, err) {
-		t.Errorf("original error was lost: %v", failure)
-	}
-	if mode == "error" {
-		var originalError *runCause
-		if !errors.As(failure, &originalError) || originalError != cause {
-			t.Errorf("original error type was lost: %v", failure)
-		}
-	}
+	failure := checkFirstFailureDetails(t, value, cause)
 	if elapsed := time.Since(at); elapsed != 0 || inits != 1 || runs != 1 {
 		t.Errorf("elapsed=%s Init=%d Run=%d; want 0s, 1, 1", elapsed, inits, runs)
 	}
@@ -165,4 +147,29 @@ func checkFailureStopOrder(t *testing.T, mode string) {
 		}
 	}
 	<-top.Stop()
+}
+
+// checkFirstFailureDetails checks the original value, error type, and Run stack.
+func checkFirstFailureDetails(t *testing.T, value, cause any) *Failure {
+	t.Helper()
+	failure, ok := value.(*Failure)
+	if !ok {
+		t.Fatalf("terminal value = %T; want *Failure", value)
+	}
+	if failure.Service != "supervise.initializing" || failure.Value != cause {
+		t.Errorf("failure = %#v", failure)
+	}
+	if !bytes.Contains(failure.Stack, []byte("checkFirstRunFailure.func")) {
+		t.Errorf("original Run stack was lost:\n%s", failure.Stack)
+	}
+	if err, ok := cause.(error); ok && !errors.Is(failure, err) {
+		t.Errorf("original error was lost: %v", failure)
+	}
+	if _, typed := cause.(*runCause); typed {
+		var originalError *runCause
+		if !errors.As(failure, &originalError) || originalError != cause {
+			t.Errorf("original error type was lost: %v", failure)
+		}
+	}
+	return failure
 }

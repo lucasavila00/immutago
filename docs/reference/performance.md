@@ -63,7 +63,7 @@ complete single-instrument event loop with a fixed-storage test adapter. They
 check zero steady-state allocations and verify fresh price updates, order
 cancellation and placement, and cumulative fills. The direct Go comparison uses
 the same calculation, account locks, order counter, stream, and adapter work,
-with native atomic policy pointers in place of Ref and Cell reads.
+with a fixed service pointer and an atomic snapshot read in place of Ref and Cell reads.
 
 Setup, periodic reports, network latency, and contention are outside that
 comparison. Run the manual [Core performance workflow](../../.github/workflows/core-performance.yml)

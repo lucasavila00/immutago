@@ -38,7 +38,7 @@ func (s *attemptWorker) Init() error { s.state = 1; return nil }
 func (*attemptWorker) Run(context.Context) {}
 
 // BenchmarkServiceAttempt measures fresh value setup, publication, Run, and cleanup.
-// It excludes watcher creation, registry work, failure reports.
+// It excludes watcher creation, registry work, and failure reports.
 func BenchmarkServiceAttempt(b *testing.B) {
 	parent := NewRoot(nil)
 	defer func() { <-parent.Stop() }()

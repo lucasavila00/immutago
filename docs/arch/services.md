@@ -33,7 +33,6 @@ it or wait for direct method calls.
 The watcher recovers a Run panic or observes Goexit and captures the original
 stack. It reports the attempt, then submits a terminal Failure before child
 cleanup can wait. The existing tree mutex selects a failure or an earlier Stop.
-There is no replacement setup, retry budget, or backoff timer.
 
 | Run outcome | Action |
 | --- | --- |

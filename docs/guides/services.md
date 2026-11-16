@@ -48,8 +48,9 @@ catalog := loader.Borrow().Catalog()
 
 Borrow returns the loader created by Start. Catalog runs in the
 request's goroutine and loads a projection from the Cell. That projection fixes
-the catalog version for the quote. Call Catalog again for the next request. The [reference rules](../reference/service-references.md) cover
-optional references and direct Borrow calls.
+the catalog version for the quote. Call Catalog again for the next request. The
+[reference rules](../reference/service-references.md) cover optional references
+and direct Borrow calls.
 
 ## Review shared state and inputs
 
