@@ -142,7 +142,7 @@ type Group struct {
 	failure   *Failure
 }
 
-// childList preserves start order and permits constant-time removal under Group.mu.
+// childList preserves registration order and permits constant-time removal under Group.mu.
 type childList struct {
 	first, last *child
 	count       int
@@ -226,7 +226,7 @@ func StartGroup(parent *Group) *Group {
 // A stopped parent returns a zero Ref and context.Canceled before Init.
 // Each accepted, successful Init gets one Run call. Start returns after Init and
 // registration; Run can receive a cancelled context if Stop closes admission.
-// Stop waits for accepted Init calls and their staged children before shutdown.
+// Stop waits for accepted Init calls before stopping registered services.
 func Start[T, A any, P interface {
 	*T
 	Init() error

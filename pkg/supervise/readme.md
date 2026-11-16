@@ -70,7 +70,7 @@ StartGroup creates a lifetime group for selective shutdown. A Run failure in any
 func (s *Group) Stop() <-chan struct{}
 ```
 
-Stop closes admission in the subtree and requests ordered shutdown. It returns the same completion channel on every call. Shutdown waits for children in reverse start order, then removes a nested group from its parent. It does not wait for ordinary direct method calls. A service can request its group's stop, but must not wait for that group from its own Run.
+Stop closes admission in the subtree and requests ordered shutdown. It returns the same completion channel on every call. Shutdown waits for accepted Init calls, then stops children in reverse registration order and removes a nested group from its parent. Init must return without waiting for shutdown of its owning group or an ancestor. It does not wait for ordinary direct method calls. A service can request its group's stop, but must not wait for that group from its own Run.
 
 ## type NoArgs
 
@@ -105,7 +105,7 @@ func Start[T, A any, P interface {
 }](parent *Group, args A) (Ref[T], error)
 ```
 
-Start creates T, calls Init once in the caller, and publishes the initialized value. An Init error returns a zero Ref and the error; an Init panic reaches the caller. The runtime stops staged children in both cases. Each successful Init gets one Run call, with a cancelled context if the service cannot activate. Start under a stopped parent waits for that cleanup Run. Stop waits for registered children, not an Init that has not registered yet.
+Start creates T, calls Init once in the caller, and publishes the initialized value. An Init error returns a zero Ref and the error; an Init panic reaches the caller. The runtime stops staged children in both cases. A stopped parent returns a zero Ref and context.Canceled before Init. Each accepted, successful Init gets one Run call. Start returns after Init and registration; Run can receive a cancelled context if Stop closes admission. Stop waits for accepted Init calls before stopping registered services.
 
 ### func \(Ref\[T\]\) Borrow
 

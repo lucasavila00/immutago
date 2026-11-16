@@ -180,10 +180,9 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	}
 	retained := nested.children.count
 	late, lateErr := Start[initializing](nested, child)
-	if lateErr != nil {
-		t.Fatal(lateErr)
+	if lateErr != context.Canceled || !late.IsZero() {
+		t.Fatalf("stopped child Start = %v, %v", late, lateErr)
 	}
-	expectInitEnded(t, late.Borrow())
 	if nested.children.count != retained {
 		t.Error("failed Init left a nested group that retains late children")
 	}
@@ -191,7 +190,7 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	<-root.Stop()
 }
 
-// TestInitStopBeforePublication cleans a candidate that finishes Init after its parent stopped.
+// TestInitStopBeforePublication keeps Stop pending until accepted Init and cleanup finish.
 func TestInitStopBeforePublication(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
@@ -220,7 +219,13 @@ func TestInitStopBeforePublication(t *testing.T) {
 			result <- err
 		}()
 		candidate := <-entered
-		<-root.Stop()
+		stopped := root.Stop()
+		synctest.Wait()
+		select {
+		case <-stopped:
+			t.Error("Stop completed while accepted Init was running")
+		default:
+		}
 		if !ref.IsZero() {
 			t.Fatal("failed or pending Init published a Ref")
 		}
@@ -228,8 +233,9 @@ func TestInitStopBeforePublication(t *testing.T) {
 		if err := <-result; err != nil {
 			t.Fatal(err)
 		}
+		<-stopped
 		if ref.Borrow() != candidate || runs.Load() != 1 {
-			t.Fatal("first Init did not keep the stopped-parent start contract")
+			t.Fatal("accepted Init did not keep its value and one cleanup Run")
 		}
 		expectInitEnded(t, candidate)
 	})
@@ -285,7 +291,7 @@ func TestInitStopsStagedGroup(t *testing.T) {
 	})
 }
 
-// TestInitUnderStoppedGroups cleans late candidates in groups created before or after parent Stop.
+// TestInitUnderStoppedGroups rejects setup in groups created before or after parent Stop.
 func TestInitUnderStoppedGroups(t *testing.T) {
 	for _, after := range []bool{false, true} {
 		synctest.Test(t, func(t *testing.T) {
@@ -298,12 +304,12 @@ func TestInitUnderStoppedGroups(t *testing.T) {
 			if after {
 				group = StartGroup(parent)
 			}
-			hooks := &initHooks{init: func(p *initializing) error { p.UnsafeChildren(); return nil }}
+			inits := 0
+			hooks := &initHooks{init: func(*initializing) error { inits++; return nil }}
 			ref, err := Start[initializing](group, hooks)
-			if err != nil {
-				t.Fatal(err)
+			if err != context.Canceled || !ref.IsZero() || inits != 0 {
+				t.Fatalf("stopped Start: error=%v, zero=%t, Init=%d", err, ref.IsZero(), inits)
 			}
-			expectInitEnded(t, ref.Borrow())
 			if group.children.count != 0 {
 				t.Fatal("group under a stopped parent retains a late candidate")
 			}

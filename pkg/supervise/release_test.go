@@ -73,18 +73,15 @@ func TestNestedSelfStop(t *testing.T) {
 	})
 }
 
-// TestStartAfterStopDoesNotRetainChildren checks late service starts and an unrecorded nested entry.
+// TestStartAfterStopDoesNotRetainChildren checks rejected starts and a stopped nested group.
 func TestStartAfterStopDoesNotRetainChildren(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		parent := NewRoot(nil)
 		<-parent.Stop()
 		for range 1000 {
 			ref, err := Start[first](parent, NoArgs{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if ref.Borrow() == nil {
-				t.Fatal("Start returned an empty Ref")
+			if err != context.Canceled || !ref.IsZero() {
+				t.Fatalf("stopped Start = %v, %v", ref, err)
 			}
 		}
 		nested := StartGroup(parent)

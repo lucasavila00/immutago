@@ -97,7 +97,7 @@ func TestChildrenStopBeforeRun(t *testing.T) {
 	})
 }
 
-// TestChildrenDuringHalt gives a late child a cancelled context for cleanup.
+// TestChildrenDuringHalt rejects a child after its owner closes admission.
 func TestChildrenDuringHalt(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		parent := NewRoot(nil)
@@ -114,27 +114,16 @@ func TestChildrenDuringHalt(t *testing.T) {
 		go func() { p.halt(); close(halted) }()
 		<-entered
 		s := p.UnsafeChildren()
-		ran := make(chan struct{})
-		_, err := Start[initializing](s, &initHooks{
-			init: func(*initializing) error { return nil },
-			run: func(_ *initializing, ctx context.Context) {
-				defer close(ran)
-				if ctx.Err() == nil {
-					t.Error("late child started with an active context")
-				}
-			},
+		var inits, runs int
+		ref, err := Start[initializing](s, &initHooks{
+			init: func(*initializing) error { inits++; return nil },
+			run:  func(*initializing, context.Context) { runs++ },
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		synctest.Wait()
 		close(resume)
 		<-halted
 		p.end()
-		select {
-		case <-ran:
-		default:
-			t.Fatal("late child did not run cleanup")
+		if err != context.Canceled || !ref.IsZero() || inits != 0 || runs != 0 {
+			t.Fatalf("closed child start: err = %v, zero = %v, Init = %d, Run = %d", err, ref.IsZero(), inits, runs)
 		}
 	})
 }
@@ -265,9 +254,12 @@ type router struct {
 func (*router) Run(ctx context.Context) { <-ctx.Done() }
 
 // Add starts a variant under its own nested group in the group of the run.
-func (r *router) Add(name string) {
+func (r *router) Add(name string) bool {
 	sub := StartGroup(r.UnsafeChildren())
 	if _, err := Start[variant](sub, variantArgs{Name: name}); err != nil {
+		if err == context.Canceled {
+			return false
+		}
 		panic(err)
 	}
 	r.mu.Lock()
@@ -276,6 +268,7 @@ func (r *router) Add(name string) {
 		r.variants = make(map[string]*Group)
 	}
 	r.variants[name] = sub
+	return true
 }
 
 // Remove stops one variant and waits for it.
@@ -321,21 +314,25 @@ func TestChildrenChangeDuringRun(t *testing.T) {
 		expectEvents(t, "stop b")
 		<-root.Stop()
 		expectEvents(t, "stop c", "stop a")
-		ref.Borrow().Add("late")
+		if ref.Borrow().Add("late") {
+			t.Error("child Start succeeded after parent Stop")
+		}
 		synctest.Wait()
-		expectEvents(t, "start late", "stop late")
+		expectEvents(t)
 	})
 }
 
-// TestChildrenAfterParentStop checks cleanup of children created after their parent stopped.
+// TestChildrenAfterParentStop rejects children after their parent stopped.
 func TestChildrenAfterParentStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		root := NewRoot(nil)
-		<-root.Stop()
 		ref, _ := Start[router](root, NoArgs{})
-		ref.Borrow().Add("a")
+		<-root.Stop()
+		if ref.Borrow().Add("a") {
+			t.Error("child Start succeeded after parent Stop")
+		}
 		synctest.Wait()
-		expectEvents(t, "start a", "stop a")
+		expectEvents(t)
 	})
 }
 
@@ -460,13 +457,14 @@ func (p *lateParent) Run(ctx context.Context) {
 		panic(err)
 	}
 	<-ctx.Done()
-	if _, err := Start[first](p.UnsafeChildren(), NoArgs{}); err != nil {
-		panic(err)
+	ref, err := Start[first](p.UnsafeChildren(), NoArgs{})
+	if err != context.Canceled || !ref.IsZero() {
+		panic("late Start was accepted")
 	}
-	record("late start")
+	record("late start rejected")
 }
 
-// TestStartAfterEscalation waits for a late child's cancelled Run to finish.
+// TestStartAfterEscalation rejects a child before Init.
 func TestStartAfterEscalation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		failures.Store(0)
@@ -475,8 +473,7 @@ func TestStartAfterEscalation(t *testing.T) {
 			t.Fatal(err)
 		}
 		synctest.Wait()
-		expectEvents(t, "00:00:00",
-			"start first", "stop first", "late start")
+		expectEvents(t, "00:00:00", "late start rejected")
 		<-root.Stop()
 		takeEvents()
 	})
@@ -488,10 +485,16 @@ func TestMethodsRaceStop(t *testing.T) {
 		root := NewRoot(nil)
 		ref, _ := Start[router](root, NoArgs{})
 		synctest.Wait()
+		accepted := 0
+		if ref.Borrow().Add("x") {
+			accepted++
+		}
 		var callers sync.WaitGroup
 		callers.Go(func() {
 			for range 200 {
-				ref.Borrow().Add("x")
+				if ref.Borrow().Add("x") {
+					accepted++
+				}
 			}
 		})
 		<-root.Stop()
@@ -506,8 +509,8 @@ func TestMethodsRaceStop(t *testing.T) {
 				stops++
 			}
 		}
-		if starts != 200 || stops != 200 {
-			t.Fatalf("%d starts and %d stops, want 200 of each", starts, stops)
+		if starts != accepted || stops != accepted {
+			t.Fatalf("%d starts and %d stops, want %d of each", starts, stops, accepted)
 		}
 	})
 }
