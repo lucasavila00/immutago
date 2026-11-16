@@ -29,7 +29,6 @@ var errGoexit = errors.New("supervise: service called runtime.Goexit")
 type Service[A any] struct {
 	args     A
 	owner    *Group
-	mu       sync.Mutex
 	cancel   context.CancelFunc
 	unwatch  func() bool
 	children *Group
@@ -45,20 +44,20 @@ func (p *Service[A]) Args() A { return p.args }
 func (*Service[A]) Init() error { return nil }
 
 // Children returns the group owned by this service attempt. Its services wait
-// until the parent Run starts, or run with cancelled contexts during cleanup.
+// until the parent is admitted to Run, or run with cancelled contexts during cleanup.
 // The runtime stops and waits for these children
 // before it replaces the parent. A later attempt owns a new group.
 // After this attempt ends, Children returns a stopped group.
 // Children panics if Start did not create the service.
 func (p *Service[A]) Children() *Group {
 	checkGroup(p.owner)
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.owner.mu.Lock()
+	defer p.owner.mu.Unlock()
 	if p.children == nil {
 		p.children = newGroup(p.owner, false)
 		switch {
 		case p.ended:
-			p.children.Stop()
+			p.children.stop(nil)
 		case p.cancel != nil:
 			p.children.activate()
 		}
@@ -71,31 +70,27 @@ func (p *Service[A]) bind(args A, owner *Group) {
 	p.args, p.owner = args, owner
 }
 
-// begin activates children and connects ordered shutdown to this Run context.
-func (p *Service[A]) begin(ctx context.Context) context.Context {
-	p.mu.Lock()
+// begin admits Run and activates children under the tree lock held by Start.
+func (p *Service[A]) begin(ctx context.Context) (context.Context, bool) {
 	run, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	p.cancel = cancel
-	if ctx.Err() != nil {
+	if p.owner.policy.Err() != nil || ctx.Err() != nil {
 		p.ended = true
-		p.mu.Unlock()
-		p.halt()
-		return run
+		return run, false
 	}
 	p.unwatch = context.AfterFunc(ctx, p.halt)
 	if p.children != nil {
 		p.children.activate()
 	}
-	p.mu.Unlock()
-	return run
+	return run, true
 }
 
 // halt stops children before it cancels the parent's Run context.
 func (p *Service[A]) halt() {
-	p.mu.Lock()
+	p.owner.mu.Lock()
 	p.ended = true
 	children := p.children
-	p.mu.Unlock()
+	p.owner.mu.Unlock()
 	if children != nil {
 		<-children.Stop()
 	}
@@ -107,13 +102,13 @@ func (p *Service[A]) end() {
 	if p.unwatch != nil {
 		p.unwatch()
 	}
-	p.mu.Lock()
+	p.owner.mu.Lock()
 	p.ended = true
 	if p.cancel != nil {
 		p.cancel()
 	}
 	children := p.children
-	p.mu.Unlock()
+	p.owner.mu.Unlock()
 	if children != nil {
 		<-children.Stop()
 	}
@@ -125,7 +120,7 @@ type NoArgs struct{}
 // Group owns an ordered set of service lifetimes and nested groups.
 // It activates at most once and stops at most once. The zero value is not usable.
 type Group struct {
-	mu       sync.Mutex
+	mu       *sync.Mutex
 	children childList
 	active   bool
 	stopping bool
@@ -192,12 +187,15 @@ func root(exit func(any), report func(any, []byte)) *Group {
 // newGroup creates a pending or active group with its owner's retry policy.
 func newGroup(owner *Group, active bool) *Group {
 	parent := context.Background()
+	var mu *sync.Mutex
 	var top *Group
 	if owner != nil {
-		parent, top = owner.policy, owner.root
+		parent, top, mu = owner.policy, owner.root, owner.mu
+	} else {
+		mu = new(sync.Mutex)
 	}
 	policy, cancel := context.WithCancel(parent)
-	return &Group{active: active, stopped: make(chan struct{}), policy: policy, cancel: cancel, root: top}
+	return &Group{mu: mu, active: active, stopped: make(chan struct{}), policy: policy, cancel: cancel, root: top}
 }
 
 // StartGroup creates a lifetime group for selective shutdown. It does not add a
@@ -222,7 +220,8 @@ func Start[T, A any, P interface {
 	Init() error
 	Run(context.Context)
 	bind(A, *Group)
-	begin(context.Context) context.Context
+	begin(context.Context) (context.Context, bool)
+	halt()
 	end()
 }](parent *Group, args A) (Ref[T], error) {
 	checkGroup(parent)
@@ -248,7 +247,10 @@ func Start[T, A any, P interface {
 	run := func(ctx context.Context) {
 		value := current
 		if value == nil {
-			if parent.policy.Err() != nil || ctx.Err() != nil {
+			parent.mu.Lock()
+			stopped := parent.policy.Err() != nil || ctx.Err() != nil
+			parent.mu.Unlock()
+			if stopped {
 				return
 			}
 			value = create()
@@ -258,14 +260,17 @@ func Start[T, A any, P interface {
 			}
 		}
 		service := P(value)
-		if parent.policy.Err() != nil {
-			// Policy stops retries; the entry context keeps shutdown order.
-			<-ctx.Done()
-		}
-		if parent.policy.Err() == nil && ctx.Err() == nil {
+		parent.mu.Lock()
+		run, admitted := service.begin(ctx)
+		if admitted {
 			ref.value.Store(value)
 		}
-		service.Run(service.begin(ctx))
+		parent.mu.Unlock()
+		if !admitted {
+			<-ctx.Done()
+			service.halt()
+		}
+		service.Run(run)
 	}
 	cleanup := func() {
 		if current != nil {
@@ -351,12 +356,13 @@ func (s *Group) add(run func(context.Context), group *Group) {
 		group.entry = c
 	}
 	s.mu.Lock()
-	if s.stopping || s.policy.Err() != nil {
+	if s.policy.Err() != nil {
 		if group != nil {
 			s.mu.Unlock()
 			<-group.Stop()
 		} else {
 			s.launch(c)
+			c.stop()
 			done := c.done
 			s.mu.Unlock()
 			<-done
@@ -377,11 +383,10 @@ func (s *Group) add(run func(context.Context), group *Group) {
 	}
 }
 
-// activate launches pending entries once. Parent shutdown keeps them pending for cleanup.
+// activate launches pending entries once. The caller holds the tree lock.
+// Parent shutdown keeps them pending for cleanup.
 func (s *Group) activate() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.active || s.stopping || s.policy.Err() != nil {
+	if s.active || s.policy.Err() != nil {
 		return
 	}
 	s.active = true
@@ -432,9 +437,6 @@ func (s *Group) launch(c *child) {
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	if s.stopping || s.policy.Err() != nil {
-		cancel()
-	}
 	done := make(chan struct{})
 	c.stop, c.done = cancel, done
 	run := c.run

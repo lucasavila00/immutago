@@ -37,9 +37,9 @@ func (p *initializing) Run(ctx context.Context) {
 // expectInitEnded checks cleanup of an initialized candidate and its staged group.
 func expectInitEnded(t *testing.T, p *initializing) {
 	t.Helper()
-	p.mu.Lock()
+	p.owner.mu.Lock()
 	ended, children := p.ended, p.children
-	p.mu.Unlock()
+	p.owner.mu.Unlock()
 	if !ended {
 		t.Error("candidate did not end")
 	}
@@ -414,8 +414,12 @@ func TestInitPendingActivation(t *testing.T) {
 			t.Fatal(err)
 		}
 		before := ref.Borrow()
+		parent.mu.Lock()
 		parent.activate()
+		parent.mu.Unlock()
+		parent.mu.Lock()
 		parent.activate()
+		parent.mu.Unlock()
 		synctest.Wait()
 		if ref.Borrow() != before || attempts.Load() != 1 {
 			t.Fatal("activation replaced pending setup")
