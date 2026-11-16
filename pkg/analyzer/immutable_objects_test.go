@@ -71,7 +71,7 @@ func TestImmutableObjectBoundaries(t *testing.T) {
 		{"Local capture", `func f(){p:=&Local{};_=func()int{return p.X}}`, "closures require"},
 		{"shared capture", `func f(){p:=&Frozen{};_=func()int{return p.X}}`, ""},
 		{"shared asynchronous", `func f(){p:=&Frozen{};go readSnapshot(p)}`, ""},
-		{"mixed markers", `type Mixed struct{im.Frozen;im.Local}`, "cannot embed both"},
+		{"mixed markers", `type Mixed struct{im.Frozen;im.Local}`, "Frozen storage cannot contain Local values"},
 		{"generic marked", `type Box[T any]struct{im.Frozen;X int}`, "user generic declarations"},
 		{"generic body write", `func f[T any](){v:=Frozen{};v.X++}`, "writes to immutable objects"},
 		{

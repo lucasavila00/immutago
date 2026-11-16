@@ -16,16 +16,11 @@ convergence_rejected.go:32:6: unsupported immutable operation: multiple assignme
 convergence_rejected.go:39:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: for value.X, value.Y = range []int{1} { }
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-convergence_rejected.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
 convergence_rejected.go:68:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: for _, value.X = range []int{1} { }
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-marker_count.go:10:24: struct must embed exactly one immutable marker; each embedded alias counts as a marker
+marker_count.go:10:21: struct must embed exactly one immutable marker; each embedded alias counts as a marker
 marker_count.go:10:6: struct must embed exactly one immutable marker; each embedded alias counts as a marker
-marker_count.go:15:21: struct must embed exactly one immutable marker; each embedded alias counts as a marker
-marker_count.go:15:6: struct must embed exactly one immutable marker; each embedded alias counts as a marker
-marker_count.go:20:19: struct cannot embed both im.Frozen and im.Local
-marker_count.go:20:6: struct cannot embed both im.Frozen and im.Local
 pointer_contracts.go:10:35: unsupported immutable operation: immutable references require a concrete marked struct target
   source: *[1]PointerValue
   type: *[1]review_convergence.PointerValue

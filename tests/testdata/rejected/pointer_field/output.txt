@@ -1,4 +1,1 @@
-pointer_field.go:13:2: immutable field Value requires a Frozen type: stored pointers require a concrete Frozen record target
-  owner: rejected.Bad; field type: *int
-  fix: replace the pointer field or argument with an owned immutable value
-pointer_field.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen
+pointer_field.go:5:6: cannot generate typed projections: Bad: Value: stored pointers require a concrete Frozen record target

@@ -62,8 +62,7 @@ func TestGenerationRemoval(t *testing.T) {
 			runCommand(t, dir, true, "go", "build", "./...")
 			for _, name := range []string{"schema", "consumer"} {
 				output := runBoundary(t, dir, binary, mode, false, "./"+name)
-				checkSnapshot(t, filepath.Join(root, "tests/testdata/generation_removal", name, "output.txt"),
-					normalizeOutput(output))
+				checkFixtureSnapshots(t, root, "generation_removal/"+name, output)
 			}
 			runCommand(t, filepath.Dir(path), true, "go", "run",
 				"github.com/lucasavila00/immutago/cmd/immutago-gen")
@@ -73,5 +72,31 @@ func TestGenerationRemoval(t *testing.T) {
 			}
 			runBoundary(t, dir, binary, mode, true, "./...")
 		})
+	}
+}
+
+// TestGenerationSchemas keeps each invalid schema independent of operation fixtures.
+func TestGenerationSchemas(t *testing.T) {
+	root, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	binary := filepath.Join(t.TempDir(), "immutago")
+	if runtime.GOOS == "windows" {
+		binary += ".exe"
+	}
+	runCommand(t, root, true, "go", "build", "-o", binary, "./cmd/immutago")
+	entries, err := os.ReadDir(filepath.Join(root, "tests/testdata/generation_rejected"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, mode := range []string{"cli", "vet"} {
+		dir := consumerModule(t, root, "generation_rejected")
+		for _, entry := range entries {
+			t.Run(mode+"/"+entry.Name(), func(t *testing.T) {
+				output := runBoundary(t, dir, binary, mode, false, "./"+entry.Name())
+				checkFixtureSnapshots(t, root, "generation_rejected/"+entry.Name(), output)
+			})
+		}
 	}
 }

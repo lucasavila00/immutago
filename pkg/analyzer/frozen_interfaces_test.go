@@ -64,7 +64,7 @@ type Saver interface{im.FrozenInterface;Save()};func f(){var s Saver=&Tree{};s.S
 func TestFrozenInterfaceBoundaries(t *testing.T) {
 	cases := []struct{ name, source, want string }{
 		{"mutable implementation", `type Bad struct{im.Frozen;Values []int};
-func(b *Bad)Score([]float32)float64{return 0};func f(){var s Scorer=&Bad{};_=s}`, "Frozen interface implementation"},
+func(b *Bad)Score([]float32)float64{return 0};func f(){var s Scorer=&Bad{};_=s}`, "Bad: Values: []int is not provably immutable"},
 		{"implicit dereference", `func f(){var s Scorer=&Count{};_=s}`, "receivers must match"},
 		{"promoted interface call", `type Outer struct{im.Frozen;Scorer};
 func f(o Outer){_=o.Score(nil)}`, "Frozen data fields must be named"},

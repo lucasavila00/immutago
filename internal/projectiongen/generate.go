@@ -106,6 +106,10 @@ func generateTypes(pkg *types.Package, fset *token.FileSet, bootstrap bool) ([]b
 		if !checker.Frozen(typ) && !checker.FrozenInterface(typ) {
 			continue
 		}
+		if typ.(*types.Named).TypeParams().Len() != 0 {
+			return nil, fmt.Errorf("%s: user generic declarations cannot define Frozen or Local types; "+
+				"type parameters are unsupported in immutable storage", name)
+		}
 		if reason := g.proofs.FrozenReason(typ); reason != "" && !bootstrap {
 			return nil, fmt.Errorf("%s: %s", name, reason)
 		}
@@ -238,7 +242,7 @@ func generatedLocalName(name string) bool {
 		return true
 	}
 	for _, prefix := range []string{"arg", "index"} {
-		if suffix, match := strings.CutPrefix(name, prefix); match && suffix != "" &&
+		if suffix, match := strings.CutPrefix(name, prefix); match &&
 			strings.Trim(suffix, "0123456789") == "" {
 			return true
 		}

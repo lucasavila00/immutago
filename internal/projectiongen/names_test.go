@@ -126,14 +126,15 @@ type Record struct { im.Frozen; Number foreign.Number; Grid [2][3]int }
 
 // TestImportLocalNames prevents generated locals and imports from hiding each other.
 func TestImportLocalNames(t *testing.T) {
-	for _, name := range []string{"v", "c", "value", "arg0", "index0", "index1", "int", "bool", "nil", "panic"} {
+	for _, name := range []string{"v", "c", "value", "arg", "arg0", "index", "index0", "index1", "int", "bool", "nil", "panic"} {
 		t.Run(name, func(t *testing.T) {
 			dir := module(t, `package consumer
 import (
  foreign "example.test/projections/foreign"
  "github.com/lucasavila00/immutago/pkg/im"
 )
-type Record struct { im.Frozen; Field foreign.Point; Grid [2][3]foreign.Point }
+const index, arg = 0, 0
+type Record struct { im.Frozen; Field foreign.Point; Grid [2][3][4]foreign.Point }
 `)
 			foreign := filepath.Join(dir, "foreign")
 			if err := os.Mkdir(foreign, 0700); err != nil {

@@ -13,3 +13,5 @@ type Bad struct {
 	Children im.FrozenSlice[Bad]
 	Mutable  []int
 }
+
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

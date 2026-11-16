@@ -11,11 +11,6 @@ type Local struct {
 	im.Local
 	Value int
 }
-type Box[T ~int | ~string] struct {
-	im.Frozen
-	Value T
-	Next  *Box[T]
-}
 type GenericAlias[T ~int] = im.FrozenSlice[T]
 
 func genericBuild[T ~int](value T) im.FrozenSlice[T] {
@@ -47,3 +42,5 @@ func implicitPointerLiterals() {
 	builder := []*Node{{Value: 1}}
 	_ = im.FreezeSlice(builder)
 }
+
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

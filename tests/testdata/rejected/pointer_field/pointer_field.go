@@ -12,3 +12,5 @@ type Bad struct {
 	im.Frozen
 	Value *int
 }
+
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

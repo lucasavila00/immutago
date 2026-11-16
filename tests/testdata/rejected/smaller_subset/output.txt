@@ -1,62 +1,47 @@
-smaller_subset.go:14:6: unsupported immutable operation: user generic declarations cannot define Frozen or Local types
-  source: Box
-  type: smaller_subset.Box[T ~int | ~string]
-  fix: declare a concrete Frozen or Local type without type parameters
-smaller_subset.go:16:2: immutable field Value requires a Frozen type: type parameters are unsupported in immutable storage
-  owner: smaller_subset.Box[T ~int | ~string]; field type: T
-  fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:17:2: immutable field Next requires a Frozen type: Value: type parameters are unsupported in immutable storage
-  owner: smaller_subset.Box[T ~int | ~string]; field type: *smaller_subset.Box[T]
-  fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:17:8: unsupported immutable operation: Value: type parameters are unsupported in immutable storage
-  source: *Box[T]
-  type: *smaller_subset.Box[T]
-  fix: use the documented immutable value and reference forms
-smaller_subset.go:19:29: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:14:29: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:19:32: immutable type argument: type parameters are unsupported in immutable storage
+smaller_subset.go:14:32: immutable type argument: type parameters are unsupported in immutable storage
   type: T
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:19:6: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:14:6: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: smaller_subset.GenericAlias[T ~int]
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:21:36: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:16:36: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:21:39: immutable type argument: type parameters are unsupported in immutable storage
+smaller_subset.go:16:39: immutable type argument: type parameters are unsupported in immutable storage
   type: T
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:22:12: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:17:12: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:22:15: immutable type argument: type parameters are unsupported in immutable storage
+smaller_subset.go:17:15: immutable type argument: type parameters are unsupported in immutable storage
   type: T
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:22:2: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:17:2: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:23:9: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
+smaller_subset.go:18:9: Frozen collection: type argument 1: type parameters are unsupported in immutable storage
   type: im.FrozenSlice[T]
   fix: use a concrete proved type for this immutable field or element
-smaller_subset.go:25:35: unsupported immutable operation: immutable references require a concrete marked struct target
+smaller_subset.go:20:35: unsupported immutable operation: immutable references require a concrete marked struct target
   source: &[2]Node{}
   type: *[2]smaller_subset.Node
   fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs
-smaller_subset.go:25:53: unsupported immutable operation: immutable references require a concrete marked struct target
+smaller_subset.go:20:53: unsupported immutable operation: immutable references require a concrete marked struct target
   source: p
   type: *[2]smaller_subset.Node
   fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs
-smaller_subset.go:26:35: unsupported immutable operation: immutable references require a concrete marked struct target
+smaller_subset.go:21:35: unsupported immutable operation: immutable references require a concrete marked struct target
   source: new(im.SliceProjection[int])
   type: *im.SliceProjection[int]
   fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs
-smaller_subset.go:26:69: unsupported immutable operation: immutable references require a concrete marked struct target
+smaller_subset.go:21:69: unsupported immutable operation: immutable references require a concrete marked struct target
   source: p
   type: *im.SliceProjection[int]
   fix: allocate a concrete struct that embeds im.Frozen or im.Local; keep Local projections by value and put protected arrays in marked structs
-smaller_subset.go:37:29: unsupported immutable operation: closures require ordinary or persistent Frozen captures
+smaller_subset.go:32:29: unsupported immutable operation: closures require ordinary or persistent Frozen captures
   source: value
   type: smaller_subset.Local
   fix: copy scalar data before the closure, or use a named function with a concrete immutable parameter
-smaller_subset.go:5:6: Frozen records require exactly one package directive: //go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

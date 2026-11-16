@@ -1,0 +1,1 @@
+schema.go:9:6: cannot generate typed projections: Private: Frozen interface methods must be exported

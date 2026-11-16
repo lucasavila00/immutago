@@ -19,10 +19,3 @@ func (s *Settings) Capture()          { _ = func() int { return s.Limit } }
 type Ordinary struct{}
 
 func (o Ordinary) Read(p *Product) int { return p.Price }
-
-type Generic[T any] struct {
-	im.Frozen
-	Value T
-}
-
-func (g Generic[T]) Read() T { return g.Value }

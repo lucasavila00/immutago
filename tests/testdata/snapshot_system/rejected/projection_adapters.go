@@ -16,3 +16,5 @@ func projectionAdapters(text im.Projection[string], frozen im.Projection[im.Froz
 	_ = method
 	_ = im.StringProjection.Is(projection, "text")
 }
+
+//go:generate go run github.com/lucasavila00/immutago/cmd/immutago-gen

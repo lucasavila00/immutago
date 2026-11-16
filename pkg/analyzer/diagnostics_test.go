@@ -1,9 +1,13 @@
 package analyzer
 
 import (
+	"go/ast"
+	"go/token"
 	"go/types"
 	"strings"
 	"testing"
+
+	"golang.org/x/tools/go/analysis"
 )
 
 // TestCopiedDiagnosticPaths keeps the same repair for nested category failures.
@@ -38,7 +42,7 @@ func TestStructuralDiagnosticContext(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.source, func(t *testing.T) {
-			got := checkSource(t, tc.source)
+			got := checkTypeSource(t, tc.source)
 			for _, want := range tc.want {
 				if !strings.Contains(got, want) {
 					t.Fatalf("missing %q in %s", want, got)
@@ -134,7 +138,7 @@ func TestDependencyWitnessSelection(t *testing.T) {
 
 // TestFieldDiagnosticsUseOneDeclarationSite reports each failed field once across repeated type visits.
 func TestFieldDiagnosticsUseOneDeclarationSite(t *testing.T) {
-	got := checkSource(t, `type Value struct{im.Frozen; Items []string; Pointer *int}; var _ Value`)
+	got := checkTypeSource(t, `type Value struct{im.Frozen; Items []string; Pointer *int}; var _ Value`)
 	for _, field := range []string{"Items", "Pointer"} {
 		if count := strings.Count(got, "immutable field "+field+" requires a Frozen type:"); count != 1 {
 			t.Fatalf("field %s reported %d times: %s", field, count, got)
@@ -148,4 +152,17 @@ func TestPointerConstructorAcceptsCompilerBuiltinSignature(t *testing.T) {
 	if got != "" {
 		t.Fatalf("incorrect constructor diagnostic: %s", got)
 	}
+}
+
+// checkTypeSource tests type diagnostics directly, without the generation prerequisite.
+func checkTypeSource(t *testing.T, source string) string {
+	t.Helper()
+	pass := sourcePass(t, source)
+	var reports []string
+	pass.Report = func(d analysis.Diagnostic) { reports = append(reports, d.Message) }
+	c := &checks{pass: pass, reported: make(map[token.Pos]bool)}
+	for _, file := range pass.Files {
+		ast.Inspect(file, c.visit)
+	}
+	return strings.Join(reports, "\n")
 }

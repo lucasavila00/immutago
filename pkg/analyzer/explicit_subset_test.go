@@ -8,8 +8,9 @@ import (
 // TestExplicitSubsetRejects checks every excluded statement and reference form.
 func TestExplicitSubsetRejects(t *testing.T) {
 	cases := []struct{ name, source string }{
+		// Local embedding reaches method matching; Frozen data embedding fails generation first.
 		{"promoted method", `type Count int;func(c Count)Read()int{return int(c)}
-   type W struct{im.Frozen;Count};func f(){var w W;_=w.Read()}`},
+   type W struct{im.Local;Count};func f(){var w W;_=w.Read()}`},
 		{"range protected value", `func empty(yield func(L)bool){};func f(){for v:=range empty{_=v.X}}`},
 		{"native multiple", `func f(){s:=[]int{1};var x int;s[0],x=2,3;_=x;_=im.FreezeSlice(s)}`},
 		{"Local send", `func f(ch chan int){var v L;ch<-v.X}`},

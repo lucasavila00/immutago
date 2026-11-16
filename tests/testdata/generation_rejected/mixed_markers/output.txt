@@ -1,0 +1,1 @@
+schema.go:9:6: cannot generate typed projections: Both: Frozen storage cannot contain Local values
