@@ -1,78 +1,90 @@
 capture.go:6:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved = api.Get().Borrow()
   fix: keep Local values in local bindings; store Frozen data or a service Ref
-holders.go:11:11: Local service pointers cannot be stored in fields
+holders.go:11:19: Local service pointers cannot be stored in fields
+  owner: sealedapi.Carrier; field type: *atomic.Pointer[sealedapi.Worker]
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:11:29: Local service pointers cannot be stored in fields
+  owner: sealedapi.Carrier; field type: *atomic.Pointer[sealedapi.Worker]
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:11:5: Local service pointers cannot be stored in fields
+  owner: sealedapi.Carrier; field type: *atomic.Pointer[sealedapi.Worker]
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:11:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
+  source: atomicCarrier sealedapi.Carrier
+  fix: keep Local values in local bindings; store Frozen data or a service Ref
+holders.go:13:15: Local service pointers cannot be stored in fields
   owner: api.Holder; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:11:15: Local service pointers cannot be stored in fields
+holders.go:13:19: Local service pointers cannot be stored in fields
   owner: api.Holder; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:11:6: Local service pointers cannot be stored in fields
+holders.go:13:35: Local service pointers cannot be stored in fields
   owner: api.Holder; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:12:6: Local service pointers cannot be stored in fields
+holders.go:16:11: Local service pointers cannot be stored in fields
   owner: api.Holder; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:13:11: Local service pointers cannot be stored in fields
-  owner: api.Holder; field type: *api.Worker
-  fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:13:2: Local service pointers cannot be stored in fields
-  owner: api.Holder; field type: *api.Worker
-  fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:14:12: Local service pointers cannot be stored in fields
-  owner: api.Holder; field type: *api.Worker
-  fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:16:10: Local service pointers cannot be stored in fields
+holders.go:16:15: Local service pointers cannot be stored in fields
   owner: api.Holder; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
 holders.go:16:6: Local service pointers cannot be stored in fields
   owner: api.Holder; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:16:6: unsupported immutable operation: Local pointers cannot enter aggregate storage
+holders.go:17:6: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:18:11: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:18:2: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:19:12: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:21:10: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:21:6: Local service pointers cannot be stored in fields
+  owner: api.Holder; field type: *api.Worker
+  fix: store a supervise.Ref and borrow the service pointer in a local variable
+holders.go:21:6: unsupported immutable operation: Local pointers cannot enter aggregate storage
   source: api.Holder{Value: nil}
   type: api.Holder
   fix: keep the pointer local; store Frozen data or a service Ref
-holders.go:17:10: Local service pointers cannot be stored in fields
+holders.go:22:10: Local service pointers cannot be stored in fields
   owner: struct{Value *api.Worker}; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:17:2: Local service pointers cannot be stored in fields
+holders.go:22:2: Local service pointers cannot be stored in fields
   owner: struct{Value *api.Worker}; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:18:6: Local service pointers cannot be stored in fields
+holders.go:23:6: Local service pointers cannot be stored in fields
   owner: struct{Value *api.Worker}; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:19:2: Local service pointers cannot be stored in fields
+holders.go:24:2: Local service pointers cannot be stored in fields
   owner: struct{Value *api.Worker}; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:5:20: Local service pointers cannot be stored in fields
+holders.go:8:20: Local service pointers cannot be stored in fields
   owner: api.HolderAlias; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:5:24: Local service pointers cannot be stored in fields
+holders.go:8:24: Local service pointers cannot be stored in fields
   owner: api.HolderAlias; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:5:6: Local service pointers cannot be stored in fields
+holders.go:8:6: Local service pointers cannot be stored in fields
   owner: capture.HolderAlias; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:6:27: Local service pointers cannot be stored in fields
+holders.go:9:27: Local service pointers cannot be stored in fields
   owner: capture.NestedHolder; field type: [1]api.Holder
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:6:34: unsupported immutable operation: struct does not embed im.Frozen
+holders.go:9:34: unsupported immutable operation: struct does not embed im.Frozen
   source: [1]api.Holder
   type: [1]api.Holder
   fix: use the documented immutable value and reference forms
-holders.go:6:37: Local service pointers cannot be stored in fields
+holders.go:9:37: Local service pointers cannot be stored in fields
   owner: api.Holder; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:6:41: Local service pointers cannot be stored in fields
-  owner: api.Holder; field type: *api.Worker
-  fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:8:15: Local service pointers cannot be stored in fields
-  owner: api.Holder; field type: *api.Worker
-  fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:8:19: Local service pointers cannot be stored in fields
-  owner: api.Holder; field type: *api.Worker
-  fix: store a supervise.Ref and borrow the service pointer in a local variable
-holders.go:8:35: Local service pointers cannot be stored in fields
+holders.go:9:41: Local service pointers cannot be stored in fields
   owner: api.Holder; field type: *api.Worker
   fix: store a supervise.Ref and borrow the service pointer in a local variable
 pointers.go:11:6: defined pointer types are unsupported in protected storage; use a pointer alias

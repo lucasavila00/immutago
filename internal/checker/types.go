@@ -29,34 +29,28 @@ func IsRuntimeType(t types.Type, name string) bool {
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == RuntimePath && n.Obj().Name() == name
 }
 
-// IsReference identifies Ref and defined types that retain its sealed fields.
+// IsReference identifies Ref and defined types that retain its sealed representation.
+// Export data can omit the Ref declaration but keeps the private field's package identity.
 func IsReference(t types.Type) bool {
 	if IsRuntimeType(t, "Ref") {
 		return true
 	}
 	structure, ok := t.Underlying().(*types.Struct)
-	if !ok || structure.NumFields() == 0 {
+	if !ok || structure.NumFields() != 1 {
 		return false
 	}
-	pkg := structure.Field(0).Pkg()
-	if pkg == nil || pkg.Path() != RuntimePath {
+	field := structure.Field(0)
+	if field.Pkg() == nil || field.Pkg().Path() != RuntimePath || field.Exported() ||
+		field.Embedded() || structure.Tag(0) != "" {
 		return false
 	}
-	declaration := pkg.Scope().Lookup("Ref")
-	if declaration == nil {
+	pointer, ok := types.Unalias(field.Type()).(*types.Pointer)
+	if !ok {
 		return false
 	}
-	reference := declaration.Type().Underlying().(*types.Struct)
-	if structure.NumFields() != reference.NumFields() {
-		return false
-	}
-	for index := range structure.NumFields() {
-		if structure.Field(index).Id() != reference.Field(index).Id() ||
-			structure.Tag(index) != reference.Tag(index) {
-			return false
-		}
-	}
-	return true
+	slot, ok := types.Unalias(pointer.Elem()).(*types.Named)
+	return ok && slot.Obj().Pkg() != nil && slot.Obj().Pkg().Path() == "sync/atomic" &&
+		slot.Obj().Name() == "Pointer" && slot.TypeArgs().Len() == 1
 }
 
 // IsUncheckedValue reports whether t is the library's unchecked immutable value wrapper.

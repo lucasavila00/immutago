@@ -153,6 +153,19 @@ var saved Copy`); got == "" {
 	}
 }
 
+// TestDefinedReferenceBodylessContract keeps im state behind a defined Ref opaque.
+func TestDefinedReferenceBodylessContract(t *testing.T) {
+	source := strings.Replace(servicePointerAPI, "Value int}", "Value int; Data *FrozenData}", 1)
+	api := sourcePass(t, source).Pkg
+	api.SetImports(nil)
+	if got := checkServicePointerConsumer(t, api, `
+type Copy api.Handle
+func retain(Copy)
+func use(value Copy){retain(value)}`); got != "" {
+		t.Fatal(got)
+	}
+}
+
 // TestServiceReferenceOwnerFields keeps valid owner-package fields hidden by an opaque Ref.
 func TestServiceReferenceOwnerFields(t *testing.T) {
 	source := strings.Replace(servicePointerAPI, "Value int}", "Value int; Next *Worker}", 1)

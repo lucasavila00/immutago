@@ -106,7 +106,7 @@ IsProjection identifies the fixed local read types.
 func IsReference(t types.Type) bool
 ```
 
-IsReference identifies Ref and defined types that retain its sealed fields.
+IsReference identifies Ref and defined types that retain its sealed representation. Export data can omit the Ref declaration but keeps the private field's package identity.
 
 ## func IsRuntimeType
 
