@@ -1,4 +1,4 @@
-package rollout
+package trading
 
 import (
 	"errors"
@@ -12,35 +12,30 @@ import (
 	"testing"
 	"testing/synctest"
 	"time"
-
-	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
 const candidateConfig = `{
- "primary":{"version":"checkout-v1","logs":["v1-a.ndjson","v1-b.ndjson"]},
- "candidate":{"version":"checkout-v2","logs":["v2-a.ndjson","v2-b.ndjson"]}
+ "active":{"id":"wide","account":"desk-a","max_reserved_cash":1000,
+ "parameters":{"edge":3,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]},
+ "candidate":{"id":"tight","account":"desk-b","max_reserved_cash":1000,
+ "parameters":{"edge":1,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]}
 }`
 
-const promotedConfig = `{"primary":{"version":"checkout-v2","logs":["v2-a.ndjson","v2-b.ndjson"]}}`
+const promotedConfig = `{"active":{"id":"tight","account":"desk-b","max_reserved_cash":1000,
+ "parameters":{"edge":1,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]}}`
 
-// testFiles supplies appendable streams and controlled failures in ordinary file APIs.
+// testFiles supplies operator configuration and controlled read failures.
 type testFiles struct {
-	mu      sync.Mutex
-	data    map[string][]byte
-	errors  map[string]int
-	panics  map[string]int
-	active  map[string]int
-	peak    map[string]int
-	blocked string
-	entered chan struct{}
-	release chan struct{}
+	mu     sync.Mutex
+	data   map[string][]byte
+	errors map[string]int
+	panics map[string]int
 }
 
 // sampleFiles reads the same data used by the command before a test starts.
 func sampleFiles(t *testing.T) *testFiles {
 	t.Helper()
-	f := &testFiles{data: map[string][]byte{}, errors: map[string]int{}, panics: map[string]int{},
-		active: map[string]int{}, peak: map[string]int{}}
+	f := &testFiles{data: map[string][]byte{}, errors: map[string]int{}, panics: map[string]int{}}
 	entries, err := os.ReadDir("data")
 	if err != nil {
 		t.Fatal(err)
@@ -55,15 +50,13 @@ func sampleFiles(t *testing.T) *testFiles {
 	return f
 }
 
-// Open creates an independent offset into an appendable file.
+// Open creates an independent offset into a configuration file.
 func (f *testFiles) Open(name string) (fs.File, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if _, ok := f.data[name]; !ok {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist}
 	}
-	f.active[name]++
-	f.peak[name] = max(f.peak[name], f.active[name])
 	return &testFile{files: f, name: name}, nil
 }
 
@@ -72,13 +65,6 @@ func (f *testFiles) set(name, data string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.data[name] = []byte(data)
-}
-
-// append adds bytes to a stream without changing existing reader offsets.
-func (f *testFiles) append(name, data string) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.data[name] = append(f.data[name], data...)
 }
 
 // fail makes the next count reads fail; a negative count keeps failing.
@@ -92,21 +78,7 @@ func (f *testFiles) fail(name string, count int, panicRead bool) {
 	}
 }
 
-// blockClose holds one actual resource close so replacement order can be checked.
-func (f *testFiles) blockClose(name string) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.blocked, f.entered, f.release = name, make(chan struct{}), make(chan struct{})
-}
-
-// counts reads current and maximum open counts for one log.
-func (f *testFiles) counts(name string) (int, int) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return f.active[name], f.peak[name]
-}
-
-// testFile reads the current bytes, including later appends.
+// testFile reads one configuration file with its own offset.
 type testFile struct {
 	files  *testFiles
 	name   string
@@ -134,24 +106,8 @@ func (f *testFile) Read(dst []byte) (int, error) {
 	return n, nil
 }
 
-// Close releases this descriptor after any requested cleanup pause.
-func (f *testFile) Close() error {
-	f.files.mu.Lock()
-	var release chan struct{}
-	if f.files.blocked == f.name {
-		f.files.blocked = ""
-		release = f.files.release
-		close(f.files.entered)
-	}
-	f.files.mu.Unlock()
-	if release != nil {
-		<-release
-	}
-	f.files.mu.Lock()
-	f.files.active[f.name]--
-	f.files.mu.Unlock()
-	return nil
-}
+// Close finishes the in-memory configuration read.
+func (f *testFile) Close() error { return nil }
 
 // Stat supplies the current stream size to fs.ReadFile.
 func (f *testFile) Stat() (fs.FileInfo, error) {
@@ -239,27 +195,18 @@ func (e *eventLog) snapshot() []string {
 	return append([]string(nil), e.lines...)
 }
 
-// startTree creates the same two root branches as the command.
-func startTree(t *testing.T, files fs.FS, events *eventLog) (*supervise.Group, supervise.Ref[Rollout]) {
+// startBot starts the complete application against the deterministic venue fake.
+func startBot(t *testing.T, files fs.FS, venue *fakeVenue, events *eventLog) *Bot {
 	t.Helper()
-	logger := log.New(events, "", 0)
-	root := supervise.NewRoot(func(value any, _ []byte) { logger.Printf("attempt failed: %v", value) })
-	policy, err := supervise.Start[Policy](root, PolicyArgs{Files: files, Every: 10 * time.Millisecond, Log: logger})
+	bot, err := Start(Options{API: venue, Files: files, Every: 10 * time.Millisecond, Log: log.New(events, "", 0)})
 	if err != nil {
-		t.Fatal(err)
-	}
-	ref, err := supervise.Start[Rollout](root, Args{
-		Files: files, Every: 10 * time.Millisecond, Log: logger, Policy: policy,
-	})
-	if err != nil {
-		<-root.Stop()
 		t.Fatal(err)
 	}
 	synctest.Wait()
-	return root, ref
+	return bot
 }
 
-// advance permits file reads and the resulting event-driven aggregations to finish.
+// advance permits policy reads and periodic reports to finish.
 func advance() {
 	time.Sleep(30 * time.Millisecond)
 	synctest.Wait()

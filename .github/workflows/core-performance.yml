@@ -2,12 +2,19 @@ name: Core performance
 
 on:
   workflow_dispatch:
+    inputs:
+      scope:
+        description: Benchmark group
+        type: choice
+        default: core
+        options: [core, trading]
 
 permissions:
   contents: read
 
 jobs:
   profile:
+    if: inputs.scope != 'trading'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -64,4 +71,27 @@ jobs:
         with:
           name: core-profile-${{ matrix.name }}
           path: bin/profiles/
+          retention-days: 14
+  trading:
+    if: inputs.scope == 'trading'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Measure the complete market maker event path
+        shell: bash
+        run: |
+          mkdir -p bin/trading-costs
+          go version > bin/trading-costs/environment.txt
+          lscpu >> bin/trading-costs/environment.txt
+          git rev-parse HEAD > bin/trading-costs/revision.txt
+          go test ./examples/trading -run '^TestHotPathAllocations$' -count=1
+          go test ./examples/trading -run '^$' -bench '^BenchmarkMarketMaker$' \
+            -benchmem -benchtime=1s -count=10 | tee bin/trading-costs/benchmarks.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trading-costs
+          path: bin/trading-costs/
           retention-days: 14
