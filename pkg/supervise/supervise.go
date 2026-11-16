@@ -326,22 +326,15 @@ func (s *Group) stop() {
 
 // fail records the first failure before reporting or cleanup can run.
 // done includes the failing service's children, even for a start after Stop.
-// It returns true when the root has stopped and the watcher must call exit.
-func (s *Group) fail(failure *Failure, done <-chan struct{}) bool {
+func (s *Group) fail(failure *Failure, done <-chan struct{}) {
 	top := s.root
 	top.mu.Lock()
 	defer top.mu.Unlock()
 	if top.failure != nil {
-		return false
+		return
 	}
 	top.failure, top.failureDone = failure, done
-	select {
-	case <-top.stopped:
-		return true
-	default:
-		top.stop()
-		return false
-	}
+	top.stop()
 }
 
 // add registers pending setup or starts one lifetime. Init is already complete.
@@ -390,12 +383,24 @@ func (s *Group) activate() {
 	}
 }
 
-// finish publishes completion and removal in one parent-list operation.
+// finish handles a late terminal failure before it publishes completion and removal.
+// If exit panics, Start must remain blocked.
 func (s *Group) finish(c *child, done chan struct{}) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	top := s.root
+	if top.failureDone == done {
+		select {
+		case <-top.stopped:
+			failure := top.failure
+			s.mu.Unlock()
+			top.exit(failure)
+			s.mu.Lock()
+		default:
+		}
+	}
 	s.unlink(c)
 	close(done)
+	s.mu.Unlock()
 }
 
 // unlink removes an entry in constant time. The caller holds s.mu.
@@ -461,13 +466,7 @@ func (s *Group) halt() {
 // watch reports a Run failure before cleanup can wait for children.
 func watch(parent *Group, ctx context.Context, done <-chan struct{}, name string,
 	run func(context.Context), cleanup func()) {
-	var terminal *Failure
-	defer func() {
-		cleanup()
-		if terminal != nil {
-			parent.root.exit(terminal)
-		}
-	}()
+	defer cleanup()
 	completed := false
 	defer func() {
 		if completed {
@@ -479,9 +478,7 @@ func watch(parent *Group, ctx context.Context, done <-chan struct{}, name string
 		}
 		stack := debug.Stack()
 		failure := &Failure{Service: name, Value: value, Stack: stack}
-		if parent.fail(failure, done) {
-			terminal = failure
-		}
+		parent.fail(failure, done)
 		parent.root.reportFailure(failure)
 	}()
 	run(ctx)

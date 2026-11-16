@@ -49,13 +49,7 @@ func checkLateRunFailure(t *testing.T, mode, state string) {
 				return err
 			},
 			run: func(_ *initializing, ctx context.Context) {
-				if ctx.Err() == nil {
-					t.Error("late Run started with a live context")
-				}
-				if mode == "Goexit" {
-					runtime.Goexit()
-				}
-				panic("late failure")
+				failLateRun(t, ctx, mode)
 			},
 		})
 		started <- err
@@ -103,6 +97,18 @@ func checkLateRunFailure(t *testing.T, mode, state string) {
 	if mode == "Goexit" && failure.Value != errGoexit || mode == "panic" && failure.Value != "late failure" {
 		t.Fatalf("terminal failure = %v", failure)
 	}
+}
+
+// failLateRun checks cancellation and fails with the selected cause.
+func failLateRun(t *testing.T, ctx context.Context, mode string) {
+	t.Helper()
+	if ctx.Err() == nil {
+		t.Error("late Run started with a live context")
+	}
+	if mode == "Goexit" {
+		runtime.Goexit()
+	}
+	panic("late failure")
 }
 
 // holdRootStop keeps one registered service in cleanup until the returned channel closes.
