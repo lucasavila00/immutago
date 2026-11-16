@@ -42,8 +42,8 @@ git diff -- tests/testdata
 A passing snapshot is not proof of the rule. Check the accepted forms and nearby
 rejections. Consumer-only dependency cases must also pass through CLI and vet.
 
-The checker requires the exact generation directive and current output in every
-package that declares Frozen records other than opaque handles, or Frozen interfaces.
+Follow the [generation requirements](reference/rules.md#required-generation)
+for Frozen record and interface declarations.
 Check changed documentation links
 and run complete examples through the CLI.
 Keep language rules in the reference and implementation facts in architecture.

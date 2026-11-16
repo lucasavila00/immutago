@@ -1,31 +1,20 @@
-# Service runtime
+# Service runtime contract
 
 A service embeds `supervise.Service[A]`. The runtime calls Init and Run.
 Other method calls run in the caller's goroutine and can overlap with Run and
-other calls. Use the [service guide](../guides/services.md) for a walkthrough.
+other calls. See the [service guide](../../docs/guides/services.md) for an example
+and the [API](readme.md) for signatures.
 
-## Service contract
-
-| Item | Requirement and example |
+| Item | Requirement |
 | --- | --- |
-| Service type | A concrete struct embeds `supervise.Service[A]` through value fields; see the embedding forms below. |
+| Service declaration | Use the [value embedding forms](../../docs/reference/service-results.md#service-embedding--exhaustive). |
 | Setup | `*Worker` supplies `Init() error`, or uses the default Init from Service[A]. |
 | Background work | `*Worker` supplies `Run(context.Context)`. |
-| Runtime ownership | Do not copy an initialized service or Group. Declare service methods with pointer receivers and pass service and group pointers; see the copy contract below. |
-| Start arguments | `s.Args()` reads A. Start saves these arguments on the service. Ordinary Go types are allowed; protected arguments require [Frozen types](types.md). |
-| No arguments | Embed `supervise.Service[supervise.NoArgs]` and pass `supervise.NoArgs{}` to Start. |
-| Exported methods | Use the [service result signatures](service-results.md), including promoted methods. Init, Run, and runtime methods are exempt. |
-| Fields, inputs, closures, goroutines, and construction | Ordinary Go rules; uses of protected data keep the [im source rules](common-forms.md). |
-| Reference calls | Use the complete [service-reference forms](service-references.md). |
+| Start arguments | `s.Args()` reads A. Start saves these arguments on the service. Use `supervise.NoArgs{}` when no arguments are needed. |
+| Exported methods | Use the [result rules](../../docs/reference/service-results.md). |
+| Mutable state and inputs | Review field access, locks, saved inputs, and dependency calls in the service implementation. |
 
-Start requires the Init and Run signatures through Go's type
-checker. The analyzer checks exported results, handle fields, and protected im
-operations. Their linked references give the complete allowed forms; unlisted
-protected operations are rejected.
-Other service code follows ordinary Go rules. Runtime obligations below, including
-returning when a context ends, require implementation review.
-
-### Copy contract
+## Copy contract
 
 Keep initialized services and Groups behind pointers, including after Stop.
 Use pointer receivers. Do not copy their values or containing structs and arrays.
@@ -35,27 +24,17 @@ UncheckedChildren requires the original service pointer created by Start. The ca
 must obey this Go contract. Standard `go vet ./...` reports common owner copies;
 immutago does not enforce this contract.
 
-| Rejected examples — non-exhaustive | Allowed replacement |
+## References
+
+Ref is a Frozen struct with one UncheckedValue field. Copies select the same
+service; its fields stay fixed while the service itself can change.
+
+| Operation | Result |
 | --- | --- |
-| `type Worker struct { *supervise.Service[Args] }` | Embed `supervise.Service[Args]` as a value. |
-| `type Pointer = *supervise.Service[Args]`; `type Worker struct { Pointer }` | Alias `supervise.Service[Args]` without `*`. |
-| `type Worker struct { *Base }` where Base embeds Service | Embed `Base` as a value. |
-| `func (s *Worker) Name() string` | Return `im.StringProjection`; see [service results](service-results.md). |
-| Save a Local projection in start arguments | Supply Frozen data and create a projection when reading. |
-
-## Service embedding — exhaustive
-
-| Form | Example |
-| --- | --- |
-| Direct value embedding | `type Worker struct { supervise.Service[Args] }` |
-| Alias to a value type | `type Base = supervise.Service[Args]`; `type Worker struct { Base }` |
-| Alias to a service struct | `type Alias = Worker` |
-| Defined struct with the same value fields | `type Another Worker`; declare its own Run method. |
-| Anonymous struct with value embedding | `type Anonymous = struct { Worker }` |
-| Value embedding through another struct | `type Base struct { supervise.Service[Args] }`; `type Worker struct { Base }` |
-
-Every field on the selected path to the runtime methods must be a value field.
-Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
+| `ref.Borrow()` | The `*T` created by Start, including after Stop. Save it, return it, or call its methods using ordinary Go rules. No allocation. |
+| `ref.IsZero()` | Whether the reference is unset. Borrow panics on a zero Ref. No allocation. |
+| Copy a Ref | Another value that selects the same service. |
+| Stop the service | End its supervised work. The pointer stays valid; Stop does not prevent or wait for method calls. |
 
 ## Startup
 
@@ -90,20 +69,6 @@ if setup fails.
 
 Init must return if a dependency stops answering. Bound each blocking operation
 with an application timeout or a context cancelled independently of tree shutdown.
-For example, create a timeout before a request/reply exchange:
-
-```go
-ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-defer cancel()
-reply := make(chan string, 1)
-```
-
-| Init operation | Bound the wait with that context |
-| --- | --- |
-| Send a request | `select { case requests <- reply: case <-ctx.Done(): return ctx.Err() }` |
-| Receive a reply | `select { case s.value = <-reply: return nil; case <-ctx.Done(): return ctx.Err() }` |
-
-The buffered reply lets the peer send one response after Init times out.
 A called API must also return when its context ends.
 
 Every successful Init gets exactly one Run call. Run can use defer to release those
@@ -167,10 +132,7 @@ Stop does not wait for requests already using the old reference.
 | Stop is requested | Close admission immediately. Each group waits for its accepted Init calls, then cancels children in reverse registration order. |
 | A registered service has not been admitted to Run when Stop is requested | Wait for its turn, stop its children, then call Run with an already-cancelled context. |
 
-Shutdown gives pending initialized services a cancelled Run through the same
-watcher used for active services. It waits for children in reverse registration order
-before it enters a parent's cancelled Run. It does not activate staged children
-with live contexts. Cleanup panics and Goexit are terminal failures.
+Cleanup panics and Goexit are terminal failures.
 Services register after Init; concurrent Start calls can register in a different
 order from their invocation order. Nested groups register when StartGroup is called.
 

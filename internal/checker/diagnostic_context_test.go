@@ -35,10 +35,9 @@ func checkMarkerPayload(t *testing.T, name string, payload types.Type) {
 	if name == "FrozenInterface" {
 		want = [3]string{
 			"embed im.FrozenInterface in a named interface; use that interface as the payload",
-			"use bool, numbers, unnamed arrays, or Copied records; " +
-				"for Local fields or results, use matching projections; " +
-				"if a Copied record needs text, opaque handles, or Local fields, " +
-				"replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection",
+			"use bool, numbers, Copied records, or unnamed arrays of these types; " +
+				"for other read-result fields, replace im.Copied with im.Local; " +
+				"use matching projections for text or Frozen data",
 			"embed im.FrozenInterface in a named interface; use its generated projection as the read result",
 		}
 	}
@@ -87,7 +86,7 @@ func checkLocalFailureQuery(t *testing.T, first, score, outer, settings types.Ty
 		failure := prover.CopiedFailure(owner)
 		if !strings.Contains(failure.Reason, "Label: ") ||
 			!strings.Contains(failure.Reason, "is not a Copied value") ||
-			!strings.Contains(failure.Repair, "replace its im.Copied marker with im.Local") {
+			!strings.Contains(failure.Repair, "replace im.Copied with im.Local") {
 			t.Errorf("%s after %s: %v", owner, first, failure)
 		}
 		if again := prover.CopiedFailure(owner); again != failure {
@@ -117,14 +116,14 @@ func TestReadResultFailurePaths(t *testing.T) {
 		reason string
 		repair string
 	}{
-		{pointer, "*Worker is not a read result", "an opaque handle"},
-		{alias, "*Worker is not a read result", "an opaque handle"},
+		{pointer, "*Worker is not a read result", "im.UncheckedValue"},
+		{alias, "*Worker is not a read result", "im.UncheckedValue"},
 		{types.NewArray(types.NewArray(alias, 2), 0),
-			"array element: array element: *Worker is not a read result", "an opaque handle"},
+			"array element: array element: *Worker is not a read result", "im.UncheckedValue"},
 		{markedType("Reply", local, types.NewField(token.NoPos, nil, "Worker", pointer, false)),
-			"Worker: *Worker is not a read result", "an opaque handle"},
+			"Worker: *Worker is not a read result", "im.UncheckedValue"},
 		{markedType("Score", copied, text),
-			"Text: string is not a Copied value", "replace its im.Copied marker with im.Local"},
+			"Text: string is not a Copied value", "replace im.Copied with im.Local"},
 		{types.NewNamed(types.NewTypeName(token.NoPos, nil, "Counts", nil), types.NewArray(types.Typ[types.Int], 2), nil),
 			"named array must be wrapped", "use an unnamed array type"},
 	}

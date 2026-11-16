@@ -1,10 +1,10 @@
 invalid.go:14:25: unmarked struct field Value contains protected storage
   owner: invalid.LocalOwner; field type: *invalid.Local
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 invalid.go:15:30: unmarked struct field Value contains protected storage
   owner: invalid.ProjectionOwner; field type: im.Projection[*api.Settings]
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 invalid.go:21:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*int]
@@ -70,8 +70,8 @@ invalid.go:69:32: unsupported immutable operation: writes to immutable objects a
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
 invalid.go:75:18: service method Read must return a read result or error: *example.com/consumer/api.Settings is not a read result
   result type: *api.Settings
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 invalid.go:9:25: unmarked struct field Value contains protected storage
   owner: invalid.ValueOwner; field type: api.Settings
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store *api.Settings; or make the containing struct a Frozen record with Frozen fields

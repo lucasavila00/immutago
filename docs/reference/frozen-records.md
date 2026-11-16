@@ -1,7 +1,7 @@
 # Frozen records
 
-Embed `im.Frozen` in immutable stored data. Except for [opaque handles](unchecked-values.md),
-its package must use the [required generation step](rules.md#required-generation):
+Embed `im.Frozen` in immutable stored data and follow the
+[generation requirements](rules.md#required-generation):
 
 ```go
 type Settings struct {
@@ -23,12 +23,8 @@ The [type rules](types.md) define allowed fields. Use a
 | Embed exactly one Frozen marker by value; aliases work | `im.Frozen` or `type Marker = im.Frozen; type Settings struct { Marker; Limit int }` |
 | Give each data field a name and a Frozen type | `Count Count`, `Child Child`, `Next *Settings` |
 
-Other field declarations are rejected. Data fields cannot be embedded. A named
-field prevents Go from promoting its methods to the Frozen record. Such a
-promoted method can take an implicit field address, including through an interface.
-
-A Frozen record other than an opaque handle used as a field in another package needs an exported original
-declaration. This also applies to pointers and array elements. An exported alias
+A Frozen record that requires generation and is used as a field in another
+package needs an exported original declaration. This also applies to pointers and array elements. An exported alias
 of a private record does not expose its generated projection or constructor.
 
 | Allowed forms — exhaustive | Example |
@@ -47,26 +43,14 @@ SettingsProjection and SettingsCell from this declaration.
 ## Stored pointers — exhaustive
 
 A `*Settings` points to an immutable object. The pointer slot can change without
-changing that object. An ordinary request struct can keep one selected version:
-
-```go
-type requestState struct {
-    settings *Settings
-    calls int
-}
-
-func (s *requestState) begin(cell *SettingsCell) {
-    s.settings = cell.Load().Unchecked()
-    s.calls++
-}
-```
+changing that object.
 
 | Storage or use | Complete rule |
 | --- | --- |
-| Frozen pointer handle or ordinary carrier | All Go storage and transport forms are allowed. The examples below include pointer slots, methods, interfaces, generics, and channels. |
+| Frozen pointer or ordinary holder | All Go storage and transport forms are allowed. The examples below include pointer slots, methods, interfaces, generics, and channels. |
 | Selected or dereferenced Frozen object | Use the [common forms](common-forms.md). Reads and value copies are allowed; target writes and interior addresses are rejected. |
 | Native slice or map passed to Freeze | Use an exclusive [builder](frozen.md#build-before-freezing). Freeze consumes it. |
-| Exported service method result | Use the [service result signatures](service-results.md). A Frozen pointer is a read result only when it points to a Frozen handle wrapper. |
+| Exported service method result | Use the [service result signatures](service-results.md). |
 
 | Ordinary Go examples | Source |
 | --- | --- |
@@ -81,11 +65,10 @@ func (s *requestState) begin(cell *SettingsCell) {
 | Use go, defer, channels, or select | `go use(p)`, `defer use(p)`, `ready <- p` |
 | Use aliases or defined pointer types | `type Pointer = *Settings`, `type Selected *Settings` |
 
-The checker rejects statically typed writes to the Frozen target, including
+Typed writes to the Frozen target are rejected, including
 after a type assertion, a generic call, or a promoted field selection. Ordinary Go
 API contracts still apply: do not pass the pointer to an API that changes its
-target, such as `json.Unmarshal(data, p)`. The checker does not prove mutation
-effects through ordinary interfaces, reflection, unsafe code, or dependencies.
+target, such as `json.Unmarshal(data, p)`.
 A defined pointer such as `type Selected *Settings` can use the forms above,
 but cannot be a Frozen field, Cell payload, or frozen collection argument.
 Use `type Selected = *Settings` for those [Frozen type requirements](types.md).

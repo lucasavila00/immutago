@@ -8,27 +8,27 @@ counter.go:9:57: unsupported immutable operation: immutable method receivers mus
   fix: use an exact pointer or new(value) for a pointer receiver; copy a Copied field or element into a local first; use (*pointer).Method() for a value receiver
 invalid.go:25:5: Copied record: Model: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Table] is not a Copied value
   type: invalid.Copied
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 invalid.go:38:16: service method Named must return a read result or error: named array must be wrapped in a struct with an immutable marker
   result type: invalid.Named
   fix: use an unnamed array type; to keep a named type, put the unnamed array in a Frozen, Local, or Copied record
 invalid.go:41:16: service method Pointer must return a read result or error: *example.com/consumer/valid.Handle is not a read result
   result type: *valid.Handle
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 invalid.go:44:16: service method Native must return a read result or error: []example.com/consumer/valid.Handle is not a read result
   result type: []valid.Handle
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 invalid.go:47:5: unsupported immutable operation: Local values and pointers cannot be stored in package variables
   source: saved valid.Serving
   fix: keep Local values in local bindings; copy the required data into Frozen values before saving it
 invalid.go:51:38: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: valid.Serving
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 invalid.go:56:38: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: valid.ModelProjection
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 invalid.go:60:76: unsupported immutable operation: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Table] is not a Copied value
   source: value.Clone()
   type: []valid.Handle

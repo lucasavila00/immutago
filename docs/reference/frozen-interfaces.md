@@ -1,8 +1,7 @@
 # Frozen interfaces
 
 Embed `im.FrozenInterface` in a named interface to store polymorphic Frozen data.
-The compiler seal is necessary, but it does not prove the implementation's
-fields. Immutago checks the concrete type at each conversion.
+Each conversion requires a Frozen implementation with the method receivers listed below.
 
 ```go
 type Scorer interface {
@@ -27,8 +26,7 @@ type Model struct {
 
 The package uses the [required generation step](rules.md#required-generation).
 It generates `ScorerProjection` as well as the record projections. A Model
-projection returns a ScorerProjection from its Scorer getter. The generated projection forwards declared interface methods. It has no raw
-payload getter. A declared method can return a Frozen value, pointer, or interface
+projection returns a ScorerProjection from its Scorer getter. The generated projection supplies the declared interface methods. A declared method can return a Frozen value, pointer, or interface
 under the ordinary method rules.
 
 ## Interface declarations — exhaustive
@@ -59,13 +57,13 @@ under the ordinary method rules.
 
 Named types, aliases, and named or unnamed parameters use the same rules.
 A variadic parameter follows the native-slice rules for its element type. Native
-slices of Frozen record values and Local values remain rejected. Frozen handles
-use ordinary slices. Generated methods keep the variadic
-signature and pass the final slice with `...`.
+slices of Frozen record values and Local values are rejected. Frozen pointers,
+collections, interfaces, and the [UncheckedValue forms](unchecked-values.md) can
+use ordinary slices.
 Implementation methods can retain ordinary inputs. Callback contracts and
 closures can carry Frozen values. Local values and projections cannot
 be boxed or captured. These rules also apply to generated projection calls and concrete
-implementation methods. The checker does not infer callback effects.
+implementation methods.
 
 | Result form — exhaustive | Example |
 | --- | --- |
@@ -84,15 +82,15 @@ returned. Local values and projections cannot be boxed or captured. See the comp
 | Allowed form | Example |
 | --- | --- |
 | Declare zero or nil | `var scorer Scorer`, `var scorer Scorer = nil`, `Scorer(nil)` |
-| Convert a proved Frozen record value or pointer | `scorer := Scorer(&Tree{Weight: 2})` |
-| Assign, pass, or return a proved implementation | `var scorer Scorer = &Tree{Weight: 2}`; `use(scorer)`; `return scorer` |
-| Copy or convert between proved Frozen interfaces | `other := scorer`, `other = scorer`, `base := Base(scorer)` |
+| Convert a Frozen record value or pointer with the required method receivers | `scorer := Scorer(&Tree{Weight: 2})` |
+| Assign, pass, or return that implementation | `var scorer Scorer = &Tree{Weight: 2}`; `use(scorer)`; `return scorer` |
+| Copy or convert between Frozen interfaces | `other := scorer`, `other = scorer`, `base := Base(scorer)` |
 | Pass and capture Frozen values | `var boxed any = scorer`, `identity(scorer)`, `read := func() float64 { return scorer.Score(features) }`; see the [complete value forms](common-forms.md#use-frozen-values). |
 | Recover a concrete Frozen value or pointer | `scorer.(*Tree)`, `switch scorer.(type) { case *Tree: }` |
 | Select a method with ordinary or Frozen inputs and results | `read := scorer.Score`, `read := Scorer.Score` |
 | Replace the whole interface binding | `scorer = &Tree{Weight: 3}`, `scorer = nil` |
 | Store in Frozen fields, arrays, Cells, or frozen collections | `Model{Scorer: scorer}`, `im.FrozenSlice[Scorer]` |
-| Store in ordinary fields and containers | `struct{ Value Scorer }{scorer}`, `[]Scorer{scorer}`, `make(chan Scorer)`; use the [ordinary handle forms](common-forms.md#ordinary-frozen-handle-slots--exhaustive). |
+| Store in ordinary fields and containers | `struct{ Value Scorer }{scorer}`, `[]Scorer{scorer}`, `make(chan Scorer)`; use the [ordinary storage forms](common-forms.md#ordinary-collection-and-interface-slots--exhaustive). |
 | Call a method directly | `score := scorer.Score(features)` |
 | Compare with `==` or `!=` | `scorer == nil`, `scorer == other` |
 | Wrap a local projection | `local := NewScorerProjection(im.ProjectionOf(scorer))` |
@@ -121,12 +119,9 @@ normal body checks and ordinary Go input contracts. For
 example, an implementation can save its own Frozen receiver in a package
 variable. A declared method can return that receiver as a Frozen pointer or interface.
 The returned value keeps its Frozen storage rules.
-The checker does not infer method effects.
-
 A slice result can return a caller buffer such as `buf[:n]`, a fresh slice, or an
-independent `Clone()` result. No argument-origin analysis is required. Normal
-body checks still reject native slices in Frozen fields and use of a builder
-after Freeze. Ordinary inputs, results, and dependency calls use Go contracts.
+independent `Clone()` result. Native slices cannot be Frozen fields, and a
+builder cannot be used after Freeze. Ordinary inputs, results, and dependency calls use Go contracts.
 ```go
 type Tables interface {
     im.FrozenInterface
@@ -161,5 +156,4 @@ func (t *Tree) Lookup(key, buf []byte) (float64, bool, []byte, error) {
 | Save ScorerProjection in a package variable or Frozen field | Save a Scorer value from an allowed construction. |
 
 A generic `im.Projection[Scorer]` can return its Frozen interface with
-`projection.Unchecked()`. The result keeps the Frozen interface rules above. It
-does not remove the implementation proof required for a Frozen interface conversion.
+`projection.Unchecked()`. The result keeps the Frozen interface rules above. A later conversion still requires an allowed implementation.

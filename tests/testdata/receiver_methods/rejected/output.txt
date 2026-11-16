@@ -30,7 +30,7 @@ copied_methods.go:34:2: unsupported immutable operation: protected storage requi
 copied_methods.go:35:26: unsupported immutable operation: closures require ordinary or Frozen captures
   source: reply
   type: rejected.ScalarReply
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 copied_methods.go:37:7: unsupported immutable operation: protected storage is unsupported in select communication clauses
   source: output <- reply.Counter.Read()
   fix: use ordinary values or Frozen pointers or handles in select communication; do Local reads, builder edits, and Cell calls before select or in the selected case body
@@ -136,7 +136,7 @@ receiver_bodies.go:16:41: unsupported immutable operation: returning Local point
 receiver_bodies.go:17:65: unsupported immutable operation: closures require ordinary or Frozen captures
   source: s
   type: *rejected.Settings
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 receiver_calls.go:30:6: unsupported immutable operation: immutable method receivers must match their declared type exactly
   source: value.ReadCost()
   type: int

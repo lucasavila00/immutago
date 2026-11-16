@@ -1,9 +1,9 @@
 package im
 
-// UncheckedValue holds an opaque pointer whose access rules belong to its declaring package.
+// UncheckedValue stores a pointer whose access rules belong to the package that declares T.
 // The target can be mutable. The checker does not prove its state or synchronization.
 // UncheckedValue is Frozen and a read result, but not Copied.
-// Any package can store, copy, pass, and return the handle.
+// Any package can store, copy, pass, and return the value.
 // Only the package that declares T can use Trust and Unwrap.
 // See https://github.com/lucasavila00/immutago/blob/main/docs/reference/unchecked-values.md for the complete forms.
 type UncheckedValue[T any] struct {

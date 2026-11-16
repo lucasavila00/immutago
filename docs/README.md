@@ -18,8 +18,18 @@ forms and package selection rules. Use the [glossary](reference/glossary.md) for
 | im types and source forms | [Type rules](reference/types.md), [common forms](reference/common-forms.md), [Frozen](reference/frozen-records.md), [Copied](reference/copied.md), [Local](reference/local.md) |
 | im storage and reads | [Frozen collections](reference/frozen.md), [Cells](reference/cell.md), [generated projections](reference/projections.md), [projection primitives](reference/projection-primitives.md) |
 | im interfaces and trust | [Frozen interfaces](reference/frozen-interfaces.md), [UncheckedValue](reference/unchecked-values.md) |
-| supervise | [Runtime and child groups](reference/services.md), [references](reference/service-references.md), [results](reference/service-results.md) |
-| API signatures and costs | [im API](../pkg/im/readme.md), [supervise API](../pkg/supervise/readme.md), [operation costs](reference/performance.md) |
+| Service declarations | [Embedding, arguments, and results](reference/service-results.md) |
+
+## Library APIs
+
+| Package | Pages |
+| --- | --- |
+| im | [API](../pkg/im/readme.md), [operation costs](../pkg/im/costs.md) |
+| supervise | [API](../pkg/supervise/readme.md), [runtime contract](../pkg/supervise/contract.md) |
+
+## Tools
+
+- [Checker commands and diagnostics](../cmd/immutago/usage.md).
 
 ## Examples
 

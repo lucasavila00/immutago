@@ -5,64 +5,64 @@ copied_fields.go:101:5: Copied record: struct must embed exactly one immutable m
   fix: embed exactly one of im.Frozen, im.Local, or im.Copied by value
 copied_fields.go:105:16: service method Bad must return a read result or error: *example.com/consumer/api.Point is not a read result
   result type: *api.Point
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 copied_fields.go:106:16: service method Unmarked must return a read result or error: struct{N int} is not a read result
   result type: struct{N int}
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 copied_fields.go:107:16: service method Marker must return a read result or error: immutable markers are annotations, not data
   result type: im.Copied
   fix: embed the marker in a named struct; use data fields for values
 copied_fields.go:13:5: Copied record: Value: string is not a Copied value
   type: fields.BadString
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:17:5: Copied record: Value: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   type: fields.BadFrozenString
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:21:5: Copied record: Value: *example.com/consumer/api.Point is not a Copied value
   type: fields.BadPointer
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:25:5: Copied record: Value: []int is not a Copied value
   type: fields.BadSlice
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:29:5: Copied record: Value: map[int]int is not a Copied value
   type: fields.BadMap
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:33:5: Copied record: Value: chan int is not a Copied value
   type: fields.BadChannel
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:37:5: Copied record: Value: func() is not a Copied value
   type: fields.BadFunction
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:41:5: Copied record: Value: interface{} is not a Copied value
   type: fields.BadInterface
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:45:5: Copied record: Value: array element: string is not a Copied value
   type: fields.BadZeroArray
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:49:5: Copied record: Value: array element: array element: *example.com/consumer/api.Point is not a Copied value
   type: fields.BadNestedArray
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:53:5: Copied record: Value: struct{N int} is not a Copied value
   type: fields.BadRecord
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:57:5: Copied record: Value: github.com/lucasavila00/immutago/pkg/supervise.Ref[example.com/consumer/fields.Worker] is not a Copied value
   type: fields.BadReference
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:61:5: Copied record: Value: array element: github.com/lucasavila00/immutago/pkg/supervise.Ref[example.com/consumer/fields.Worker] is not a Copied value
   type: fields.BadReferenceArray
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:65:5: Copied record: Value: github.com/lucasavila00/immutago/pkg/im.FrozenSlice[int] is not a Copied value
   type: fields.BadCollection
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:69:5: Copied record: Value: github.com/lucasavila00/immutago/pkg/im.Projection[int] is not a Copied value
   type: fields.BadProjection
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:73:5: Copied record: Value: github.com/lucasavila00/immutago/pkg/im.Cell[int] is not a Copied value
   type: fields.BadCell
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:77:5: Copied record: Value: github.com/lucasavila00/immutago/pkg/im.UncheckedValue[example.com/consumer/api.Point] is not a Copied value
   type: fields.BadTrust
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:81:5: Copied record: Value: array element: immutable markers are annotations, not data
   type: fields.BadMarker
   fix: embed the marker in a named struct; use data fields for values
@@ -71,7 +71,7 @@ copied_fields.go:86:5: Copied record: Value: named array must be wrapped in a st
   fix: use an unnamed array type; to keep a named type, put the unnamed array in a Frozen, Local, or Copied record
 copied_fields.go:90:5: Copied record: Value: T is not a Copied value
   type: fields.BadGeneric[T any]
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 copied_fields.go:93:29: immutable markers must be embedded by value
   field: fields.BadNamedMarker.Marker
   fix: embed im.Frozen, im.Local, or im.Copied; remove the marker field name or pointer

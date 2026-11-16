@@ -8,7 +8,7 @@ Service and Group keep mutable ownership state in their values. UncheckedChildre
 requires the original service pointer created by Start. The runtime keeps that
 pointer through setup, Run, and cleanup. Its tree mutex protects child state.
 The zero-size `noCopy` fields enable standard vet diagnostics; they add no runtime
-state or check. See the [copy contract](../reference/services.md#copy-contract).
+state or check. See the [copy contract](../../pkg/supervise/contract.md#copy-contract).
 
 ## Initialization, publication, and calls
 
@@ -111,4 +111,4 @@ func (c *Counter) Visit(f func(*Counter)) { f(c) }
 
 This method passes result checks; its callback can retain `c`. Review locks,
 state changes, and input use in service code. The
-[service reference](../reference/service-references.md) defines the complete public forms.
+[package contract](../../pkg/supervise/contract.md) defines runtime behavior.

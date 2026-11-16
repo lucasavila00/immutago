@@ -38,7 +38,7 @@ clone_records.go:39:10: use of consumed builder values: Freeze transferred its s
 clone_records.go:43:30: unsupported immutable operation: closures require ordinary or Frozen captures
   source: records
   type: im.SliceProjection[diagnosticcontext.Score]
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 clone_records.go:52:6: unsupported immutable operation: promoted immutable methods are unsupported
   source: values.Clone()
   type: []int
@@ -61,20 +61,20 @@ clone_records.go:9:6: unsupported immutable operation: array element: example.co
   fix: iterate the projection with All; read or clone each element into a new native collection
 fields.go:11:5: Copied record: Label: github.com/lucasavila00/immutago/pkg/im.StringProjection is not a Copied value
   type: diagnosticcontext.ProjectionScore
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 fields.go:16:5: Copied record: Label: github.com/lucasavila00/immutago/pkg/im.FrozenString is not a Copied value
   type: diagnosticcontext.FrozenScore
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 fields.go:26:5: Copied record: Reply: example.com/consumer/diagnostic_context.Reply is not a Copied value
   type: diagnosticcontext.Summary
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 fields.go:32:5: Copied record: Scores: array element: Label: github.com/lucasavila00/immutago/pkg/im.StringProjection is not a Copied value
   type: diagnosticcontext.Nested
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 fields.go:33:9: unsupported immutable operation: array element: Label: github.com/lucasavila00/immutago/pkg/im.StringProjection is not a Copied value
   source: [2]ProjectionScore
   type: [2]diagnosticcontext.ProjectionScore
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 fields.go:39:5: Copied record: Values: named array must be wrapped in a struct with an immutable marker
   type: diagnosticcontext.NamedArray
   fix: use an unnamed array type; to keep a named type, put the unnamed array in a Frozen, Local, or Copied record
@@ -89,10 +89,10 @@ fields.go:59:2: immutable field Model requires a read result: immutable markers 
   fix: embed im.FrozenInterface in a named interface; use its generated projection as the read result
 fields.go:63:5: Copied record: Models: array element: immutable markers are annotations, not data
   type: diagnosticcontext.InterfaceSummary
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 fields.go:6:5: Copied record: Label: string is not a Copied value
   type: diagnosticcontext.TextScore
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 fields.go:70:10: unsupported immutable operation: array element: Model: immutable markers are annotations, not data
   source: [2]InterfaceReply
   type: [2]diagnosticcontext.InterfaceReply
@@ -102,7 +102,7 @@ fields.go:70:2: immutable field Replies requires a read result: array element: M
   fix: embed im.FrozenInterface in a named interface; use its generated projection as the read result
 fields.go:74:5: Copied record: Summaries: array element: Models: array element: immutable markers are annotations, not data
   type: diagnosticcontext.NestedInterfaceSummary
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 handle_addresses.go:16:18: unsupported immutable operation: immutable references require fresh allocation
   source: &ref
   type: *supervise.Ref[diagnosticcontext.Worker]
@@ -224,10 +224,10 @@ operations.go:56:6: unsupported immutable operation: github.com/lucasavila00/imm
   fix: iterate the projection with All; read or clone each element into a new native collection
 results.go:12:2: immutable field Value requires a read result: example.com/consumer/diagnostic_context.Settings is not a read result
   owner: diagnosticcontext.SettingsReply; field type: diagnosticcontext.Settings
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 results.go:21:18: service method Read must return a read result or error: example.com/consumer/diagnostic_context.Settings is not a read result
   result type: diagnosticcontext.Settings
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results
 wording.go:17:30: unsupported immutable operation: protected value conversions are unsupported
   source: B(a)
   type: diagnosticcontext.B
@@ -236,4 +236,4 @@ wording.go:19:40: start argument: Frozen storage cannot contain Local values
   fix: store Frozen data; keep its Projection or Local result in local bindings
 wording.go:23:18: service method Self must return a read result or error: *example.com/consumer/diagnostic_context.Worker is not a read result
   result type: *diagnosticcontext.Worker
-  fix: use a read result: a Copied value, a Local record or matching projection, an opaque handle, a pointer to a Frozen handle wrapper, or an unnamed array of read results
+  fix: use a read result: a Copied value, a Local record or matching projection, im.UncheckedValue, a named Frozen record with one named im.UncheckedValue field and no other data fields, a pointer to that record, or an unnamed array of read results

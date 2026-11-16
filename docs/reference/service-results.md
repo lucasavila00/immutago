@@ -1,4 +1,34 @@
-# Service results
+# Service declarations and results
+
+A service is a struct that embeds `supervise.Service[A]`, directly or through
+another struct. Its fields and method inputs use ordinary Go rules. Protected
+im data keep their normal type and source rules.
+
+## Service embedding — exhaustive
+
+| Form | Example |
+| --- | --- |
+| Direct value embedding | `type Worker struct { supervise.Service[Args] }` |
+| Alias to a value type | `type Base = supervise.Service[Args]`; `type Worker struct { Base }` |
+| Alias to a service struct | `type Alias = Worker` |
+| Defined struct with the same value fields | `type Another Worker`; declare its own Run method. |
+| Anonymous struct with value embedding | `type Anonymous = struct { Worker }` |
+| Value embedding through another struct | `type Base struct { supervise.Service[Args] }`; `type Worker struct { Base }` |
+
+Every field on the selected path to the runtime methods must be a value field.
+Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
+
+Start saves its arguments. Ordinary Go types are allowed. Protected arguments
+must be Frozen; Local values are rejected.
+
+| Rejected examples — non-exhaustive | Replacement |
+| --- | --- |
+| `type Worker struct { *supervise.Service[Args] }` | Embed `supervise.Service[Args]` by value. |
+| `type Pointer = *supervise.Service[Args]`; `type Worker struct { Pointer }` | Alias `supervise.Service[Args]` without `*`. |
+| `type Worker struct { *Base }` where Base embeds Service | Embed `Base` by value. |
+| Local projection in Start arguments | Supply Frozen data and create a projection when reading. |
+
+## Exported method results
 
 Each result of an exported service method must be a read result or Go's
 predeclared `error` type. There is no limit on the number or order of results.
@@ -11,49 +41,18 @@ Init, Run, and runtime methods are exempt. The rule also covers promoted methods
 | Named results with the same type rule | `func (p *Pool) Lookup() (value Reply, found bool, err error)` |
 
 Each result is checked separately. A tuple has no record type and needs no
-marker. A record used as one result still needs its normal marker and field proofs.
+marker. A record used as one result still needs its normal marker and field types.
 Unlisted result types are rejected.
 
 An error result uses Go's predeclared `error` type; aliases work. Error values
 follow ordinary Go rules. Callers can save errors, and custom errors can hold
 ordinary mutable state. The checker does not inspect error origins or payloads.
-General im checks still reject boxing protected storage in an error.
+Local values cannot be boxed in an error.
 
-`error` is not a read result or an allowed field in a Frozen, Local, or Copied record. A
-[read result](types.md) uses this complete list:
-
-| Read-result types — exhaustive | Example |
-| --- | --- |
-| Copied scalar or unnamed array | `bool`, `int`, `[2]int` |
-| Copied record or unnamed array of Copied records | `Score` with `im.Copied`, `[2]Score` |
-| Opaque handle or unnamed array of handles | `im.UncheckedValue[Model]`, `[2]im.UncheckedValue[Model]` |
-| Frozen handle wrapper, pointer to a wrapper, or unnamed array of these | A Frozen record with one UncheckedValue field; `supervise.Ref[Worker]` uses this shape. |
-| Local projection | Generated `SettingsProjection`, `im.StringProjection`, `im.MapProjection[string, int]` |
-| Local record or unnamed array of read results | `Usage` with `im.Local` and numeric fields, `[2]im.StringProjection` |
-
-There is no separate field rule for services. Cell[T] and Projection[T] require the
-same Frozen T. The shared read-result rule checks Copied values, Local values, opaque handles,
-pointers to Frozen handle wrappers, and unnamed arrays recursively. Other Frozen records are not read results, even when all fields are
-numbers. Use [im.Copied](copied.md) for an independent value record, or im.Local
-for a record that includes projections. Neither marker requires generation.
-
-For example, a service with a generated SettingsCell returns its projection:
-
-```go
-func (c *Cache) Settings() SettingsProjection { return c.current.Load() }
-```
-
-For computed values combined with projections, use [im.Local](local.md).
-The search indexer's [Status](../../examples/search/indexer.go) has a version
-number, document count, and local error-text projection.
+The complete [read-result list](types.md#read-results--exhaustive) also applies
+to Local fields. `error` is not a read result or a Frozen, Local, or Copied field type.
 
 ## Bind results
-
-```go
-reply, err := pool.Borrow().Read()
-if err != nil { return err }
-use(reply)
-```
 
 Each result keeps its normal type, write, and storage rules. Direct typed helpers
 use the same [binding forms](common-forms.md#statements-and-calls).
@@ -62,7 +61,7 @@ result can be assigned to an ordinary field:
 
 ```go
 var reply Reply
-reply, state.Found = pool.Borrow().Lookup()
+reply, state.Found = pool.Lookup()
 ```
 
 Named results, explicit returns, and forwarded returns use the same checks:
@@ -84,7 +83,7 @@ func (p *Pool) Forward() (Reply, bool) { return p.Lookup() }
 | `*Usage` with `im.Local`, `[]int`, `any`, or `im.Cell[int]` in any result position | A read-result value with the required data. |
 | `(Reply, string, bool)` | Return `(Reply, im.StringProjection, bool)`. |
 | A distinct `type Failure error` in any result position | Declare the result as `error` or an alias such as `type Failure = error`. |
-| `savedReply, found = pool.Borrow().Lookup()` with a package-level Local `savedReply` | Bind the Local result to a local name; save only ordinary results. |
+| `savedReply, found = pool.Lookup()` with a package-level Local `savedReply` | Bind the Local result to a local name; save only ordinary results. |
 
 Ordinary function results still use their general type rules. Service inputs,
 locks, and implementation code keep ordinary Go rules except for protected im

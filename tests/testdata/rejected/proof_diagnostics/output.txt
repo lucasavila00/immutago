@@ -1,6 +1,6 @@
 diagnostics.go:24:5: Copied record: Text: string is not a Copied value
   type: proofdiagnostics.Label
-  fix: use bool, numbers, unnamed arrays, or Copied records; for Local fields or results, use matching projections; if a Copied record needs text, opaque handles, or Local fields, replace its im.Copied marker with im.Local and use read-result fields such as im.StringProjection
+  fix: use bool, numbers, Copied records, or unnamed arrays of these types; for other read-result fields, replace im.Copied with im.Local; use matching projections for text or Frozen data
 diagnostics.go:31:2: immutable field Text requires a read result: string is not a read result
   owner: proofdiagnostics.Reply; field type: string
   fix: for Local text, use im.ProjectString(text)
@@ -161,19 +161,19 @@ storage.go:13:18: service method RetryCode must return a read result or error: e
   fix: declare the result as Go's predeclared error or an alias such as type Failure = error; rename any declaration that shadows error
 storage.go:16:2: unmarked struct field Point contains protected storage
   owner: proofdiagnostics.Saved; field type: proofdiagnostics.Point
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store *proofdiagnostics.Point; or make the containing struct a Frozen record with Frozen fields
 storage.go:17:2: unmarked struct field Text contains protected storage
   owner: proofdiagnostics.Saved; field type: im.StringProjection
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store the matching im.FrozenString value; create its projection at the read site
 storage.go:18:2: unmarked struct field Values contains protected storage
   owner: proofdiagnostics.Saved; field type: im.SliceProjection[int]
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store the matching im.FrozenSlice value; create its projection at the read site
 storage.go:19:2: unmarked struct field Index contains protected storage
   owner: proofdiagnostics.Saved; field type: im.MapProjection[int, int]
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store the matching im.FrozenMap value; create its projection at the read site
 storage.go:25:18: immutable type argument: defined pointer types are unsupported in Frozen data; use a pointer alias
   type: proofdiagnostics.Selected

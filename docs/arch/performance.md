@@ -1,6 +1,6 @@
 # Performance
 
-The [operation-cost reference](../reference/performance.md) covers public im calls.
+The [operation costs](../../pkg/im/costs.md) covers public im calls.
 The structures below determine analysis memory and repeated work.
 
 ## State retained for one package pass
@@ -49,3 +49,22 @@ check serialization and fact sizes on deep, wide, and dense imports.
 
 Profiles can include setup excluded from benchmark timing. Routine CI checks
 correctness; it does not set benchmark thresholds.
+
+## Runtime cost checks
+
+The [interface cost fixture](../../internal/projectiongen/testdata/interfacecost/README.md)
+checks representation size and allocations and compares direct and projected
+method calls.
+
+## Market maker event path
+
+The [market maker cost tests](../../examples/trading/cost_test.go) measure the
+complete single-instrument event loop with a fixed-storage test adapter. They
+check zero steady-state allocations and verify fresh price updates, order
+cancellation and placement, and cumulative fills. The direct Go comparison uses
+the same calculation, account locks, order counter, stream, and adapter work,
+with a fixed service pointer and an atomic snapshot read in place of Ref and Cell reads.
+
+Setup, periodic reports, network latency, and contention are outside that
+comparison. Run the manual [Core performance workflow](../../.github/workflows/core-performance.yml)
+with `scope: trading`; keep measured results in the relevant pull request.

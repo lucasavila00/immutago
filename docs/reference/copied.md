@@ -15,8 +15,7 @@ other.Value++
 ```
 
 A value copy includes every data field. It shares no field storage with the
-source. The checker proves the fields at the type declaration. Ordinary copies
-can change independently. Copied records need no generated code.
+source. Ordinary copies can change independently. Copied records need no generated code.
 
 ## Fields — exhaustive
 
@@ -27,15 +26,10 @@ of these types, including blank and embedded data fields:
 | --- | --- |
 | Boolean or number, including a defined scalar type or alias | `OK bool`, `Value float64`, `Flags uint8` |
 | Unnamed array of allowed fields, recursively | `Values [4]int`, `Grid [2][3]Score` |
-| Another proved Copied record by value | `Score Score` |
+| Another Copied record by value | `Score Score` |
 
-Unlisted field types are rejected. Native strings,
-FrozenString, pointers, slices, maps, channels, functions, interfaces, service
-references, and other im handles are not Copied record fields. A Go string copy
-shares its bytes. There is no owned-string field form.
-
-[Opaque handles](unchecked-values.md), including service references, are read
-results but are not Copied. Copies share their target.
+Strings, pointers, and UncheckedValue are not Copied. A string copy shares its
+bytes; an UncheckedValue copy shares its target.
 
 ## Operations — exhaustive
 
@@ -48,8 +42,7 @@ results but are not Copied. Copies share their target.
 | Exported service method result | Each result follows the [service result rules](service-results.md). There is no result count or order limit. |
 
 An ordinary pointer can share its target under normal Go rules. The pointer is
-not a Copied field type or a service result. The Copied proof applies to value
-copies, not to pointer copies.
+not a Copied field type or a service result. The Copied rule applies to value copies.
 
 | Ordinary Go examples | Source |
 | --- | --- |
@@ -63,26 +56,9 @@ copies, not to pointer copies.
 | Use method values or expressions | `set := score.Set`, `(*Score).Set(&score, 2)` |
 | Use go, defer, or a function without a Go body | `go use(score)`, `defer state.release()`, `func decode(*Score)` |
 
-A decoder needs no special permission. For example, a Copied record can implement
-`json.Unmarshaler` with a pointer receiver. A decoder can call that method on an
-ordinary holder's field. The implicit address in `payload.Ratio.UnmarshalJSON(data)`
-is allowed.
-
-Copy a protected field before changing it:
-
-```go
-score := frozen.Score
-score.Value++
-score.Set(2)
-
-read := im.Value(cell.Load())
-read.Value++
-```
-
-The original owner does not change. The same rule applies to generated getters,
-`im.Value`, frozen collection value reads, and local collection Clone results.
-Native Copied containers use ordinary alias rules unless Freeze requires an
-exclusive builder. The checker adds no runtime ownership state.
+Generated getters, `im.Value`, frozen collection value reads, and local
+collection Clone results return independent Copied values. Native Copied
+containers use ordinary alias rules unless Freeze requires an exclusive builder.
 
 ## Rejected examples — non-exhaustive
 
@@ -93,12 +69,11 @@ exclusive builder. The checker adds no runtime ownership state.
 | `frozen.Score.Set(2)` with a pointer receiver | `score := frozen.Score; score.Set(2)` |
 | `frozen.Score = score` for a Frozen record | Construct a new complete Frozen record. |
 | `struct { im.Copied; Text string }` | Use a Local result with StringProjection when text is needed. |
-| `struct { im.Copied; Worker supervise.Ref[Worker] }` | Use a Local result with the reference and copied fields. |
+| `struct { im.Copied; State im.UncheckedValue[state] }` | Use a Local result with the UncheckedValue and Copied fields. |
 | `struct { im.Copied; Score *Score }` | Use `Score Score`. |
 | A named array field: `type Flags [2]bool` | Use `Flags [2]bool` directly in the record. |
 | `im.CopyRecord(projection)` for `Projection[Score]` | `im.Value(projection)` |
 | `alias := scores; frozen := im.FreezeSlice(scores)` | Construct a fresh exclusive builder, then Freeze it. |
 | Use `scores` after `im.FreezeSlice(scores)` | Read the frozen result or Clone it into independent native storage. |
 
-Copies have the normal Go struct and array copy cost. The marker adds no runtime
-copy operation or allocation. See [operation costs](performance.md).
+See [operation costs](../../pkg/im/costs.md) for value-copy costs.

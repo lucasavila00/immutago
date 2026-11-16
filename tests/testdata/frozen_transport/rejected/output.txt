@@ -12,11 +12,11 @@ forms.go:21:6: unsupported immutable operation: user generic instantiations requ
 forms.go:22:26: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: rejected.Alias
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 forms.go:23:26: unsupported immutable operation: closures require ordinary or Frozen captures
   source: nested
   type: rejected.Nested
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 forms.go:24:6: unsupported immutable operation: ordinary interfaces require ordinary or Frozen values
   source: []any{value}
   type: []any
@@ -49,7 +49,7 @@ forms.go:35:33: unsupported immutable operation: Local pointers cannot enter agg
 forms.go:35:42: unsupported immutable operation: closures require ordinary or Frozen captures
   source: value
   type: *rejected.View
-  fix: copy the required Copied values or opaque handles before the closure, or use a named function with a concrete immutable parameter
+  fix: copy the required Copied or Frozen values before the closure, or use a named function with a concrete immutable parameter
 forms.go:38:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: value.Counts[0].N = 3
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
@@ -75,7 +75,7 @@ forms.go:55:6: unsupported immutable operation: ordinary interfaces require ordi
   fix: keep the concrete immutable type in parameters, results, and variables instead of using an interface
 forms.go:59:25: unmarked struct field Value contains protected storage
   owner: rejected.Box[api.Count]; field type: api.Count
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store *api.Count; or make the containing struct a Frozen record with Frozen fields
 freeze_slots.go:11:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: root.List = im.FreezeSlice([]int{1})
@@ -95,11 +95,11 @@ freeze_slots.go:29:57: unsupported immutable operation: Freeze requires a standa
   fix: assign frozen := im.FreezeSlice(builder) or frozen := im.FreezeMap(builder) in a separate statement before using the frozen value
 handles.go:14:27: unmarked struct field Value contains protected storage
   owner: rejected.RecordHolder; field type: api.Count
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store *api.Count; or make the containing struct a Frozen record with Frozen fields
 handles.go:15:26: unmarked struct field Values contains protected storage
   owner: rejected.LocalHolder; field type: [0]im.StringProjection
-  rule: unmarked structs cannot own Frozen records other than opaque handles by value, or Local data
+  rule: unmarked structs can store a Frozen record by value only when it has one named im.UncheckedValue field and no other data fields; they cannot store Local data
   fix: store Frozen pointers or handles; keep Local data in local bindings
 handles.go:18:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: unprovedReader(&BadAlias{})

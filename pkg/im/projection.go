@@ -25,9 +25,8 @@ func CopyRecord[T any](value Projection[T]) Projection[*T] { return ProjectionOf
 // The result keeps its normal type and write rules.
 func (p Projection[T]) Unchecked() T { return p.value }
 
-// Value returns the value from a projection. The checker requires a Frozen read result:
-// a Copied value, an opaque handle, a pointer to a Frozen handle wrapper,
-// or an unnamed array of these values.
+// Value returns the value from a projection. T must be Frozen and a read result.
+// See https://github.com/lucasavila00/immutago/blob/main/docs/reference/types.md for the complete type list.
 // Value does not allocate.
 func Value[T any](value Projection[T]) T { return value.value }
 
