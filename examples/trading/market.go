@@ -156,7 +156,8 @@ func (a *account) reserve(index int, side Side, price int64, limits Limits) (Ord
 	if price == 0 || slot.order.ID.Sequence != 0 {
 		return Order{}, false
 	}
-	if side == Buy && (market.totals.Inventory >= limits.MaxInventory || price > min(a.cash, a.maxReservedCash)-a.reserved) {
+	if side == Buy && (market.totals.Inventory >= limits.MaxInventory ||
+		price > min(a.cash, a.maxReservedCash)-a.reserved) {
 		return Order{}, false
 	}
 	if side == Sell && market.totals.Inventory <= 0 {

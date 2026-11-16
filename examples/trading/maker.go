@@ -79,6 +79,9 @@ func (m *Maker) Run(ctx context.Context) {
 	}()
 	stream, err := args.API.Subscribe(ctx, args.AccountName, args.Symbol)
 	if err != nil {
+		if ctx.Err() != nil {
+			return
+		}
 		panic(err)
 	}
 	defer func() {

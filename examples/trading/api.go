@@ -48,6 +48,7 @@ type OrderID struct {
 // Side identifies a buy or sell order.
 type Side uint8
 
+// Buy and Sell identify the two order sides.
 const (
 	Buy Side = iota + 1
 	Sell
@@ -83,6 +84,7 @@ type Tick struct {
 // EventKind distinguishes prices from order acknowledgments and fills.
 type EventKind uint8
 
+// PriceEvent and OrderEvent identify the two normalized event forms.
 const (
 	PriceEvent EventKind = iota + 1
 	OrderEvent

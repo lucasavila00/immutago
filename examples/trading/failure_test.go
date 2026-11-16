@@ -18,20 +18,23 @@ func TestUnknownPlacementKeepsCashUntilFinalCancel(t *testing.T) {
 		bot := startBot(t, files, venue, new(eventLog))
 		defer func() { _ = bot.Stop() }()
 		price(venue, "desk-a", "AAA", 1)
-		held := bot.state.selected[0].account
-		if got := held.read(); got.Cash != 1000 || got.Reserved != 97 || !held.readQuote(0).BidPending {
-			t.Fatal("unknown placement released cash", got, held.readQuote(0))
+		advance()
+		held := bot.Read()
+		quote := NewMarketReportProjection(held.Active().Markets().AtPointer(0)).Totals().Quote
+		if got := held.Active().Totals(); got.Cash != 1000 || got.Reserved != 97 || !quote.BidPending {
+			t.Fatal("unknown placement released cash", got, quote)
 		}
 		time.Sleep(2 * time.Second)
 		synctest.Wait()
-		if got := held.read(); got.Cash != 903 || got.Reserved != 0 || got.Inventory != 1 || got.Buys != 1 {
+		if got := bot.Read().Active().Totals(); got.Cash != 903 || got.Reserved != 0 || got.Inventory != 1 || got.Buys != 1 {
 			t.Fatal("final cancellation fill was not applied once", got)
 		}
 		for _, order := range venue.accounts["desk-a"].orders {
 			venue.emit("desk-a", "AAA", Event{Kind: OrderEvent, Order: order.state})
 		}
 		price(venue, "desk-a", "AAA", 1)
-		if got := held.read(); got.Cash != 903 || got.Buys != 1 {
+		advance()
+		if got := bot.Read().Active().Totals(); got.Cash != 903 || got.Buys != 1 {
 			t.Fatal("old price or fill changed the reconciled account", got)
 		}
 	})
@@ -40,7 +43,8 @@ func TestUnknownPlacementKeepsCashUntilFinalCancel(t *testing.T) {
 // TestCancelFillRepricesFromCurrentInventory includes final fills before the new quote pair.
 func TestCancelFillRepricesFromCurrentInventory(t *testing.T) {
 	files := sampleFiles(t)
-	files.set("trading.json", `{"active":{"id":"skew","account":"desk-a","max_reserved_cash":1000,"parameters":{"edge":1,"skew":10},"markets":[{"symbol":"AAA"}]}}`)
+	files.set("trading.json", `{"active":{"id":"skew","account":"desk-a","max_reserved_cash":1000,
+ "parameters":{"edge":1,"skew":10},"markets":[{"symbol":"AAA"}]}}`)
 	synctest.Test(t, func(t *testing.T) {
 		venue := newFakeVenue()
 		bot := startBot(t, files, venue, new(eventLog))
@@ -65,11 +69,11 @@ func TestStopReportsUnconfirmedOrders(t *testing.T) {
 		venue := newFakeVenue()
 		bot := startBot(t, files, venue, new(eventLog))
 		price(venue, "desk-a", "AAA", 1)
-		held := bot.state.selected[0].account
 		venue.cancelFailures = -1
 		if err := bot.Stop(); err == nil || !strings.Contains(err.Error(), "unresolved orders (bid") {
 			t.Fatal(err)
 		}
+		held := bot.state.selected[0].account
 		if got := held.read(); got.Reserved != 97 || !held.hasOrders() {
 			t.Fatal("failed cancellation erased the pending order", got)
 		}
@@ -105,9 +109,10 @@ func TestFailedStagedSelectionRetainsUnresolvedAccount(t *testing.T) {
 		venue.fund("desk-c")
 		bot := startBot(t, files, venue, new(eventLog))
 		venue.failAdmission("desk-d")
-		files.set("trading.json", strings.ReplaceAll(strings.ReplaceAll(candidateConfig, "desk-a", "desk-c"), "desk-b", "desk-d"))
+		replacement := strings.ReplaceAll(candidateConfig, "desk-a", "desk-c")
+		replacement = strings.ReplaceAll(replacement, "desk-b", "desk-d")
 		// A new strategy ID is required when its account changes.
-		files.set("trading.json", strings.ReplaceAll(string(files.data["trading.json"]), "wide", "replacement"))
+		files.set("trading.json", strings.ReplaceAll(replacement, "wide", "replacement"))
 		<-venue.accountEntered
 		synctest.Wait()
 		price(venue, "desk-c", "AAA", 1)
@@ -120,7 +125,8 @@ func TestFailedStagedSelectionRetainsUnresolvedAccount(t *testing.T) {
 		}
 		found := false
 		for _, saved := range bot.state.unresolved {
-			if saved.account != nil && saved.spec.Account == "desk-c" && saved.account.hasOrders() && saved.account.read().Reserved == 97 {
+			if saved.account != nil && saved.spec.Account == "desk-c" &&
+				saved.account.hasOrders() && saved.account.read().Reserved == 97 {
 				found = true
 			}
 		}
@@ -134,7 +140,9 @@ func TestFailedStagedSelectionRetainsUnresolvedAccount(t *testing.T) {
 func TestAdmissionRejectsPreexistingOrders(t *testing.T) {
 	files := sampleFiles(t)
 	venue := newFakeVenue()
-	_, err := venue.Place(context.Background(), "desk-a", "AAA", Order{ID: OrderID{Session: 1, Sequence: 1}, Side: Buy, Price: 90, Quantity: 1})
+	_, err := venue.Place(context.Background(), "desk-a", "AAA", Order{
+		ID: OrderID{Session: 1, Sequence: 1}, Side: Buy, Price: 90, Quantity: 1,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -129,8 +129,10 @@ type costFixture struct {
 func newCostFixture(tb testing.TB, fills, native bool) costFixture {
 	tb.Helper()
 	venue := &costVenue{}
-	venue.feed = &costStream{venue: venue, fills: fills, work: make(chan int), done: make(chan struct{}), ready: make(chan struct{})}
-	spec := strategySpec{ID: "cost", Account: "cost", MaxReservedCash: 1000, Parameters: Parameters{Edge: 1, Skew: 1}, Markets: []marketSpec{{Symbol: "AAA"}}}
+	venue.feed = &costStream{venue: venue, fills: fills,
+		work: make(chan int), done: make(chan struct{}), ready: make(chan struct{})}
+	spec := strategySpec{ID: "cost", Account: "cost", MaxReservedCash: 1000,
+		Parameters: Parameters{Edge: 1, Skew: 1}, Markets: []marketSpec{{Symbol: "AAA"}}}
 	balance := Balance{Cash: 10000, Positions: map[string]int64{"AAA": 1}}
 	account := newAccount(spec, balance, 42, new(atomic.Uint64))
 	args := MakerArgs{API: venue, AccountName: "cost", Symbol: "AAA", Log: log.New(io.Discard, "", 0),

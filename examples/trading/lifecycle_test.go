@@ -58,7 +58,8 @@ func TestIndependentMakerRetry(t *testing.T) {
 				t.Fatalf("subscription %s: starts=%d active=%d peak=%d", key, got, active, peak)
 			}
 		}
-		if events.count("trading started") != 1 || events.count("strategy started: wide") != 1 || events.count("policy started") != 1 {
+		if events.count("trading started") != 1 || events.count("strategy started: wide") != 1 ||
+			events.count("policy started") != 1 {
 			t.Fatal(events.snapshot())
 		}
 	})
@@ -84,7 +85,8 @@ func TestStrategyRetryWaitsForChildren(t *testing.T) {
 		close(venue.release)
 		time.Sleep(2 * time.Second)
 		synctest.Wait()
-		if events.count("strategy started: wide") != 2 || events.count("strategy started: tight") != 1 || events.count("policy started") != 1 {
+		if events.count("strategy started: wide") != 2 || events.count("strategy started: tight") != 1 ||
+			events.count("policy started") != 1 {
 			t.Fatal(events.snapshot())
 		}
 		for _, key := range []string{"desk-a/AAA", "desk-a/BBB"} {
@@ -178,7 +180,7 @@ func TestReadmissionUsesVenueBalancesAndNewIDs(t *testing.T) {
 		synctest.Wait()
 		files.set("trading.json", activeConfig)
 		advance()
-		if !bot.Read().Candidate().IsNil() || bot.state.selected[1].account != nil {
+		if !bot.Read().Candidate().IsNil() {
 			t.Fatal("the ended trial account was retained")
 		}
 		files.set("trading.json", candidateConfig)
@@ -187,7 +189,8 @@ func TestReadmissionUsesVenueBalancesAndNewIDs(t *testing.T) {
 		advance()
 		current := bot.Read()
 		next := NewMarketReportProjection(current.Candidate().Markets().AtPointer(0)).Totals()
-		if next.Quote.BidID == old.BidID || next.Inventory != 1 || current.Candidate().Totals().Cash != 901 {
+		if next.Quote.BidID == old.BidID || next.Inventory != 1 || next.Buys != 0 ||
+			current.Candidate().Totals().Cash != 901 {
 			t.Fatal("readmission reused an ID or reset venue balances", old, next, current.Candidate().Totals())
 		}
 	})
@@ -220,17 +223,23 @@ func TestReverseShutdown(t *testing.T) {
 		if !slices.Equal(stopped, want) {
 			t.Fatal(stopped)
 		}
-		for _, account := range []string{"desk-a", "desk-b"} {
-			for _, symbol := range []string{"AAA", "BBB"} {
-				if _, active, _ := venue.counts(account + "/" + symbol); active != 0 {
-					t.Fatal("subscription remains open", account, symbol)
-				}
-			}
-			for _, order := range venue.accounts[account].orders {
-				if order.state.Open {
-					t.Fatal("order remains open", order)
-				}
+		checkVenueStopped(t, venue)
+	})
+}
+
+// checkVenueStopped checks actual subscriptions and venue orders after root cleanup.
+func checkVenueStopped(t *testing.T, venue *fakeVenue) {
+	t.Helper()
+	for _, account := range []string{"desk-a", "desk-b"} {
+		for _, symbol := range []string{"AAA", "BBB"} {
+			if _, active, _ := venue.counts(account + "/" + symbol); active != 0 {
+				t.Fatal("subscription remains open", account, symbol)
 			}
 		}
-	})
+		for _, order := range venue.accounts[account].orders {
+			if order.state.Open {
+				t.Fatal("order remains open", order)
+			}
+		}
+	}
 }

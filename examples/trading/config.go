@@ -44,8 +44,9 @@ func readConfiguration(files fs.FS) (configuration, error) {
 		if err := checkStrategy(*config.Candidate); err != nil {
 			return configuration{}, err
 		}
-		if config.Candidate.ID == config.Active.ID || config.Candidate.Account == config.Active.Account || !slices.Equal(config.Active.Markets, config.Candidate.Markets) {
-			return configuration{}, fmt.Errorf("strategies need different IDs, different funded accounts, and the same ordered markets")
+		if config.Candidate.ID == config.Active.ID || config.Candidate.Account == config.Active.Account ||
+			!slices.Equal(config.Active.Markets, config.Candidate.Markets) {
+			return configuration{}, fmt.Errorf("strategies need distinct IDs and accounts, with the same ordered markets")
 		}
 	}
 	return config, nil
@@ -53,9 +54,12 @@ func readConfiguration(files fs.FS) (configuration, error) {
 
 // checkStrategy requires bounded parameters and distinct named instruments.
 func checkStrategy(spec strategySpec) error {
-	if spec.ID == "" || spec.Account == "" || spec.MaxReservedCash <= 0 || spec.MaxReservedCash > 1_000_000_000_000 || len(spec.Markets) == 0 ||
-		spec.Parameters.Edge <= 0 || spec.Parameters.Edge > 1_000_000 || spec.Parameters.Skew < 0 || spec.Parameters.Skew > 1_000_000 {
-		return fmt.Errorf("strategy needs an ID, account, markets, max_reserved_cash 1..1000000000000, edge 1..1000000, and skew 0..1000000")
+	if spec.ID == "" || spec.Account == "" || len(spec.Markets) == 0 ||
+		spec.MaxReservedCash <= 0 || spec.MaxReservedCash > 1_000_000_000_000 ||
+		spec.Parameters.Edge <= 0 || spec.Parameters.Edge > 1_000_000 ||
+		spec.Parameters.Skew < 0 || spec.Parameters.Skew > 1_000_000 {
+		return fmt.Errorf("strategy needs ID, account, markets, max_reserved_cash 1..1000000000000, " +
+			"edge 1..1000000, and skew 0..1000000")
 	}
 	for i, market := range spec.Markets {
 		if market.Symbol == "" {
@@ -72,5 +76,6 @@ func checkStrategy(spec strategySpec) error {
 
 // sameStrategy permits promotion without resetting the trial account or its workers.
 func sameStrategy(a, b strategySpec) bool {
-	return a.ID == b.ID && a.Account == b.Account && a.MaxReservedCash == b.MaxReservedCash && a.Parameters == b.Parameters && slices.Equal(a.Markets, b.Markets)
+	return a.ID == b.ID && a.Account == b.Account && a.MaxReservedCash == b.MaxReservedCash &&
+		a.Parameters == b.Parameters && slices.Equal(a.Markets, b.Markets)
 }

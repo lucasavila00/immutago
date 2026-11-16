@@ -15,11 +15,14 @@ import (
 )
 
 const candidateConfig = `{
- "active":{"id":"wide","account":"desk-a","max_reserved_cash":1000,"parameters":{"edge":3,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]},
- "candidate":{"id":"tight","account":"desk-b","max_reserved_cash":1000,"parameters":{"edge":1,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]}
+ "active":{"id":"wide","account":"desk-a","max_reserved_cash":1000,
+ "parameters":{"edge":3,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]},
+ "candidate":{"id":"tight","account":"desk-b","max_reserved_cash":1000,
+ "parameters":{"edge":1,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]}
 }`
 
-const promotedConfig = `{"active":{"id":"tight","account":"desk-b","max_reserved_cash":1000,"parameters":{"edge":1,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]}}`
+const promotedConfig = `{"active":{"id":"tight","account":"desk-b","max_reserved_cash":1000,
+ "parameters":{"edge":1,"skew":1},"markets":[{"symbol":"AAA"},{"symbol":"BBB"}]}}`
 
 // testFiles supplies operator configuration and controlled read failures.
 type testFiles struct {

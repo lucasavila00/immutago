@@ -39,7 +39,9 @@ func Start(options Options) (*Bot, error) {
 	}
 	bot := &Bot{state: state{session: binary.LittleEndian.Uint64(nonce[:])}, done: make(chan struct{})}
 	bot.root = supervise.NewRoot(func(value any, _ []byte) { options.Log.Printf("attempt failed: %v", value) })
-	policy, err := supervise.Start[Policy](bot.root, PolicyArgs{Files: options.Files, Every: options.Every, Log: options.Log})
+	policy, err := supervise.Start[Policy](bot.root, PolicyArgs{
+		Files: options.Files, Every: options.Every, Log: options.Log,
+	})
 	if err == nil {
 		bot.ref, err = supervise.Start[Trading](bot.root, tradingArgs{
 			Files: options.Files, API: options.API, Every: options.Every, Log: options.Log,

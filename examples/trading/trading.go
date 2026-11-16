@@ -107,12 +107,7 @@ func (t *Trading) selectStrategies(config configuration) error {
 		if spec == nil {
 			continue
 		}
-		for _, current := range t.running {
-			if current.group != nil && sameStrategy(current.saved.spec, *spec) {
-				next[index] = current
-				break
-			}
-		}
+		next[index] = t.findRunning(*spec)
 		if next[index].group != nil {
 			continue
 		}
@@ -151,7 +146,8 @@ func (t *Trading) selectAccount(spec strategySpec) (savedAccount, error) {
 			return selected, nil
 		}
 		if selected.spec.ID == spec.ID || selected.spec.Account == spec.Account {
-			return savedAccount{}, fmt.Errorf("selected strategy IDs and accounts keep their settings; use a new ID and account for a trial")
+			return savedAccount{}, fmt.Errorf("selected IDs and accounts keep their settings; " +
+				"use a new ID and account for a trial")
 		}
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -209,4 +205,14 @@ func (t *Trading) retire(previous runningStrategy) {
 			return
 		}
 	}
+}
+
+// findRunning selects an unchanged strategy without restarting its workers.
+func (t *Trading) findRunning(spec strategySpec) runningStrategy {
+	for _, current := range t.running {
+		if current.group != nil && sameStrategy(current.saved.spec, spec) {
+			return current
+		}
+	}
+	return runningStrategy{}
 }

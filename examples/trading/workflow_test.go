@@ -31,7 +31,8 @@ func TestBotQuotesFillsAndPolicy(t *testing.T) {
 		advance()
 		second := bot.Read()
 		market := NewMarketReportProjection(second.Active().Markets().AtPointer(0)).Totals()
-		if market.Inventory != 1 || market.Buys != 1 || market.Quote.Bid != 96 || market.Quote.Ask != 102 || second.Active().Totals().Cash != 903 {
+		if market.Inventory != 1 || market.Buys != 1 || market.Quote.Bid != 96 || market.Quote.Ask != 102 ||
+			second.Active().Totals().Cash != 903 {
 			t.Fatal(market, second.Active().Totals())
 		}
 		files.set("policy.json", `{"version":2,"max_inventory":1,"max_spread":10}`)
@@ -100,7 +101,8 @@ func TestInvalidEditsKeepTheCurrentBot(t *testing.T) {
 		if restored.Problem().Len() != 0 || restored.PolicyProblem().Len() != 0 || restored.PolicyVersion() != 2 {
 			t.Fatal("valid edits did not clear errors")
 		}
-		for _, line := range []string{"policy started", "trading started", "strategy started: wide", "maker started: wide/AAA"} {
+		for _, line := range []string{"policy started", "trading started", "strategy started: wide",
+			"maker started: wide/AAA"} {
 			if events.count(line) != 1 {
 				t.Fatal("configuration restarted a service", line)
 			}
