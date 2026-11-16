@@ -11,7 +11,7 @@ import (
 	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
-// savedAccount keeps actual balances and pending order IDs across service retries.
+// savedAccount keeps account balances and pending order IDs through cleanup.
 type savedAccount struct {
 	spec    strategySpec
 	account *account
@@ -54,7 +54,7 @@ type Trading struct {
 	current  ReportCell
 }
 
-// Init rebuilds owned services with the same account state after a retry.
+// Init creates the initial selection and its owned services.
 func (t *Trading) Init() error {
 	t.updates = make(chan struct{}, 1)
 	config, err := readConfiguration(t.Args().Files)
@@ -135,15 +135,12 @@ func (t *Trading) selectStrategies(config configuration) error {
 	return nil
 }
 
-// selectAccount admits an idle dedicated account or reuses the current retry state.
+// selectAccount admits an idle dedicated account with its current venue balances.
 func (t *Trading) selectAccount(spec strategySpec) (savedAccount, error) {
 	args := t.Args()
 	for _, selected := range args.State.selected {
 		if selected.account == nil {
 			continue
-		}
-		if sameStrategy(selected.spec, spec) {
-			return selected, nil
 		}
 		if selected.spec.ID == spec.ID || selected.spec.Account == spec.Account {
 			return savedAccount{}, fmt.Errorf("selected IDs and accounts keep their settings; " +

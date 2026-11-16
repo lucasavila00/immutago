@@ -80,7 +80,7 @@ type instrument struct {
 	problem error
 }
 
-// account survives service retries. One lock owns cash and all instrument orders.
+// account keeps cash and all instrument orders under one shared lock.
 // Calls to the venue run outside this lock while their reservations remain held.
 type account struct {
 	mu              sync.Mutex
@@ -174,7 +174,7 @@ func (a *account) reserve(index int, side Side, price int64, limits Limits) (Ord
 	return order, true
 }
 
-// apply uses cumulative fill deltas so acknowledgments, reconnects, and duplicates agree.
+// apply uses cumulative fill deltas so acknowledgments and duplicate reports agree.
 func (a *account) apply(index int, state OrderState) {
 	a.mu.Lock()
 	defer a.mu.Unlock()

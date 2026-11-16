@@ -141,10 +141,11 @@ func (testInfo) Sys() any { return nil }
 
 // eventLog records application events and can fail one normal logging dependency call.
 type eventLog struct {
-	mu     sync.Mutex
-	lines  []string
-	failAt string
-	output io.Writer
+	mu      sync.Mutex
+	lines   []string
+	failAt  string
+	output  io.Writer
+	onWrite func(string)
 }
 
 // Write records a log line before an optional one-time dependency panic.
@@ -161,6 +162,9 @@ func (e *eventLog) Write(data []byte) (int, error) {
 		if _, err := e.output.Write(data); err != nil {
 			return 0, err
 		}
+	}
+	if e.onWrite != nil {
+		e.onWrite(line)
 	}
 	if fail {
 		panic("log dependency panic: " + line)

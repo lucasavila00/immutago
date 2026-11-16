@@ -42,7 +42,7 @@ report := bot.Read()
 active := report.Active()
 fmt.Println(active.ID().Clone(), active.Totals().Cash)
 
-// Wait for host cancellation or a bot failure, then handle cleanup errors.
+// Wait for host cancellation or a cleanup failure, then handle cleanup errors.
 select {
 case <-ctx.Done():
 case <-bot.Done():
@@ -146,36 +146,37 @@ root
             └── Maker BBB
 ```
 
-The bot owns account state outside the restartable service values. One account
-lock protects cash, inventory, and reservations across its workers. Venue calls
+The bot retains account state through cleanup. One account lock protects cash,
+inventory, and reservations across its workers. Venue calls
 run outside that lock. Each instrument retains at most one pending or resting
 order per side. The background loop owns all event processing; callers receive
 reports, not direct access to the worker's mutable state.
 
 | Event | Result |
 | --- | --- |
-| One market connection fails | That Maker closes its subscription, cancels its orders, and retries. Other workers continue. |
-| A Strategy fails | Its children finish cleanup before replacement workers start. Its account state remains. |
-| Trading fails | Both strategy trees stop before reconstruction. Account state and the independent Policy remain. |
+| One market connection fails | That Maker closes its subscription and cancels its orders. The root stops the whole bot, then the process panics. |
+| A Strategy, Trading, or Policy Run panics | The root stops the whole bot, then the process panics with the original failure. |
 | Candidate is selected | Existing candidate workers continue. Old active workers and subscriptions stop. |
 | A trial ends normally | Its orders are canceled and its account state is released. Venue holdings remain. |
 | The bot stops | Children stop in reverse start order. Policy stops after its consumers. |
 
 Cash is reserved before placement. A lost placement response keeps the
-reservation and client ID. Retry first cancels and reconciles that ID before
-opening another subscription. Cumulative fill deltas apply once. Confirmed
+reservation and client ID until cleanup cancels and reconciles that ID. The
+placement error ends the bot. Cumulative fill deltas apply once. Confirmed
 cancellation includes all fills before unused cash is released; late duplicate
 reports for a closed ID have no effect.
 
 Cleanup uses bounded API contexts. If cancellation is not confirmed, the bot
-retains the unresolved IDs and reservations and stops. `Stop` returns the
-failure, including the account, instrument, and IDs. It does not report that
-those remote orders are gone. Failed staged selection uses the same cleanup
-rule. The bot retains at most two unresolved retired accounts while it stops.
+retains the unresolved IDs and reservations. A requested or selective stop
+returns the cleanup failure through `Stop`, including the account, instrument,
+and IDs. A Run panic still ends the process; cleanup errors are logged without
+replacing that panic. Failed staged selection uses the same cleanup rule. The
+bot retains at most two unresolved retired accounts while it stops.
 
-The [runtime](../../docs/reference/services.md) supplies retry delays and the
-retry limit. Six failures within its window stop the root and terminate the
-process. Restart after a complete process crash is a separate operator task.
+The [runtime](../../docs/reference/services.md) stops the root on its first Run
+panic or `runtime.Goexit`. It records the original failure and stack, waits for
+cleanup, then ends the process. Services do not restart automatically. The
+operator must reconcile venue orders and balances before starting a new bot.
 
 ## Venue contract
 
@@ -191,9 +192,9 @@ The [API](api.go) is deliberately small:
 
 All API calls must return on context cancellation or deadline. Prices use
 integer cents below 1,000,000,000; quantities are nonnegative whole units below
-1,000,000. Prices have `0 < bid < ask`. Price sequences increase per instrument
-across reconnects; replayed prices can be ignored. Fill events are processed
-independently of price sequences.
+1,000,000. Prices have `0 < bid < ask`. Price sequences increase per instrument;
+replayed prices can be ignored. Fill events are processed independently of price
+sequences.
 
 This example's adapter contract uses fee-free limit executions, no short
 positions, and no external account changes while selected. Buy fills cost no
@@ -216,8 +217,8 @@ update. There is no per-event report allocation or notification.
 The [cost tests](cost_test.go) check zero steady-state allocations and actual
 order/fill work. The [direct Go comparison](native_cost_test.go) uses the same
 calculation, locks, order counter, stream, and fixed-storage test adapter, with
-native atomic pointers for policy publication and selection. Reprice iterations
-use fresh sequences and changed prices. A second case processes buy and sell
+one fixed service pointer and a native atomic pointer for policy publication.
+Reprice iterations use fresh sequences and changed prices. A second case processes buy and sell
 fills between price updates. Both check exact work counts after timing.
 
 These benchmarks measure single-instrument event-loop CPU cost. They include
@@ -229,9 +230,9 @@ network latency, and contention are outside the comparison. Use the manual
 | Tests | Evidence |
 | --- | --- |
 | [Workflow](workflow_test.go) | Prices, fills, risk changes, invalid edits, shared cash, and old report reads. |
-| [Lifetimes](lifecycle_test.go) | Independent retries, cleanup before replacement, promotion, account re-admission, and reverse shutdown. |
-| [Failures](failure_test.go) | Lost placement responses, final fills on cancel, bounded failed cleanup, staged rollback, and admission with old orders. |
-| [Retry exhaustion](exhaustion_test.go) | The real runtime terminates once, after owned resources stop. |
+| [Lifetimes](lifecycle_test.go) | Promotion, account re-admission, and reverse shutdown. |
+| [Failures](failure_test.go) | Final fills on cancel, bounded failed cleanup, staged rollback, and admission with old orders. |
+| [Terminal failures](terminal_failure_test.go) | The first service failure ends the process after cleanup, retains the original failure and stack, reconciles lost placement responses, and starts no replacement service. |
 
 GitHub Actions runs the full repository tests, race checks, source checks, and
 analyzer. The example changes no library or checker rules.

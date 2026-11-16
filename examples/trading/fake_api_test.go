@@ -37,6 +37,7 @@ type fakeVenue struct {
 	unknownPlace      bool
 	cancelFailures    int
 	fillOnCancel      int64
+	closeFailure      string
 	blockAccount      string
 	entered           chan struct{}
 	release           chan struct{}
@@ -240,12 +241,15 @@ func (s *fakeStream) Next(ctx context.Context) (Event, error) {
 	}
 }
 
-// Close releases this stream before its worker can restart.
+// Close releases the worker's stream.
 func (s *fakeStream) Close(_ context.Context) error {
 	s.venue.mu.Lock()
 	defer s.venue.mu.Unlock()
 	s.venue.active[s.key]--
 	s.venue.events = append(s.venue.events, "unsubscribe "+s.key)
+	if s.venue.closeFailure == s.key {
+		return errors.New("subscription close failed")
+	}
 	return nil
 }
 
