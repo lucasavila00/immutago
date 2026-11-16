@@ -102,6 +102,7 @@ func (c *Cache) Rename(title im.FrozenString) {
 | Storage or use | Complete rule |
 | --- | --- |
 | Frozen handle or ordinary holder | All ordinary Go forms are allowed, including aliases, defined wrappers, conversions, arrays, native containers, pointers, methods, interfaces, generics, callbacks, go, defer, and channels. |
+| Method or callback with Local parameters or results | Keep the [Local call and binding rules](#statements-and-calls), including for ordinary holders. Call `text.Projection()` directly; do not save `text.Projection` as a method value. |
 | Field or element inside a Frozen or Local owner | The owner's write and address rules still apply. |
 | Conversion to a Frozen interface | Prove the concrete Frozen implementation, including conversions in field assignments, literals, calls, returns, and sends. |
 | Native slice or map passed to Freeze | Keep one exclusive builder; Freeze consumes it. |
