@@ -9,9 +9,9 @@ import (
 // TestCopiedDiagnosticPaths keeps the same repair for nested category failures.
 func TestCopiedDiagnosticPaths(t *testing.T) {
 	for _, prefix := range []string{"", "array element: ", "Result: array element: "} {
-		reason := prefix + "copied values require bool, numbers, arrays, or service references"
+		reason := prefix + "string is not a Copied value"
 		for _, fix := range []string{subsetFix(reason), structuralFix(types.Typ[types.Int], reason)} {
-			if fix != "copy scalar fields, or use a generated local projection" {
+			if fix != "copy scalar fields, or use a local projection" {
 				t.Fatal(fix)
 			}
 		}
@@ -48,6 +48,69 @@ func TestStructuralDiagnosticContext(t *testing.T) {
 	}
 }
 
+// TestProofDiagnosticCategories names the rule at the field or type boundary.
+func TestProofDiagnosticCategories(t *testing.T) {
+	cases := []struct {
+		source string
+		want   string
+	}{
+		{`type Label struct{im.Copied;Text string}`, "Copied record: Text: string is not a Copied value"},
+		{`type Reply struct{im.Local;Text string}`,
+			"immutable field Text requires a read result: string is not a Copied value"},
+		{`func f(value im.StringProjection){frozen:=im.FreezeSlice([]im.StringProjection{value});_=frozen}`,
+			"Frozen collection: Frozen storage cannot contain Local values"},
+		{`type Point struct{im.Frozen};var points []Point`, "native builder points requires a fresh local"},
+		{`func f(value im.Projection[*int]){_=value}`,
+			"local projection: projection payload 1: stored pointers require a concrete Frozen record target"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.source, func(t *testing.T) {
+			got := checkSource(t, tc.source)
+			if !strings.Contains(got, tc.want) {
+				t.Fatalf("missing %q in %s", tc.want, got)
+			}
+		})
+	}
+}
+
+// TestProjectionDiagnosticRepairs names value reads for each rejected pointer API.
+func TestProjectionDiagnosticRepairs(t *testing.T) {
+	cases := []struct {
+		source string
+		want   string
+	}{
+		{`func f(value im.Projection[int]){_=im.CopyRecord(value)}`, "im.Value(projection)"},
+		{`var cell im.Cell[int];func f(){_=cell.LoadPointer()}`, "im.Value(cell.Load())"},
+		{`func f(value im.SliceProjection[int]){_=value.AtPointer(0)}`, "im.Value(slice.At(index))"},
+		{`type Reply struct{im.Local;Text string}`, "im.ProjectString(text)"},
+		{`type Reply struct{im.Local;Text im.FrozenString}`, "text.Projection()"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.source, func(t *testing.T) {
+			got := checkSource(t, tc.source)
+			if !strings.Contains(got, "fix: ") || !strings.Contains(got, tc.want) {
+				t.Fatalf("missing repair %q in %s", tc.want, got)
+			}
+		})
+	}
+}
+
+// TestServiceDiagnosticRepair uses the same read-result repair as a Local field.
+func TestServiceDiagnosticRepair(t *testing.T) {
+	got := checkSource(t, `import "github.com/lucasavila00/immutago/pkg/supervise"
+type Worker struct{supervise.Service[supervise.NoArgs]}
+func(w *Worker)Name()string{return ""}
+func(w *Worker)Text()im.StringProjection{return im.ProjectString("")}`)
+	for _, want := range []string{
+		"service method Name must return a read result: string is not a Copied value",
+		"fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("missing %q in %s", want, got)
+		}
+	}
+}
+
 // TestDependencyWitnessSelection keeps the first cause without changing local errors or imported facts.
 func TestDependencyWitnessSelection(t *testing.T) {
 	failures := [...]proofFailure{
@@ -73,7 +136,7 @@ func TestDependencyWitnessSelection(t *testing.T) {
 func TestFieldDiagnosticsUseOneDeclarationSite(t *testing.T) {
 	got := checkSource(t, `type Value struct{im.Frozen; Items []string; Pointer *int}; var _ Value`)
 	for _, field := range []string{"Items", "Pointer"} {
-		if count := strings.Count(got, "immutable field "+field+":"); count != 1 {
+		if count := strings.Count(got, "immutable field "+field+" requires a Frozen type:"); count != 1 {
 			t.Fatalf("field %s reported %d times: %s", field, count, got)
 		}
 	}

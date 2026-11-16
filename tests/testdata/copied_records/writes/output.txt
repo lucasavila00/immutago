@@ -100,12 +100,12 @@ copied_writes.go:73:2: unsupported immutable operation: immutable method receive
   fix: use an existing pointer for a pointer receiver, or write (*pointer).Method() for a value receiver; do not take addresses of existing storage
 copied_writes.go:73:2: unsupported owned container values: copying, rebinding, slicing, addressing, or escaping its native handle; keep one local handle, edit its elements, then Freeze it; use Clone for an independent builder
 copied_writes.go:80:2: use of consumed owned container values: Freeze transferred its storage; use the frozen value, or call Clone to create a new builder
-copied_writes.go:84:6: immutable collection: projection payload 1: stored pointers require a concrete marked struct target
+copied_writes.go:84:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*api.Point]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
-copied_writes.go:85:6: immutable collection: projection payload 1: stored pointers require a concrete marked struct target
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+copied_writes.go:85:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
   type: im.Projection[*api.Point]
-  fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
 copied_writes.go:95:12: unsupported immutable operation: interior addresses of protected storage are unsupported
   source: &stored.Point.X
   type: *int

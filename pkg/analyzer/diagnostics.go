@@ -8,6 +8,7 @@ import (
 	"go/types"
 	"strings"
 
+	"github.com/lucasavila00/immutago/internal/checker"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -38,7 +39,7 @@ func diagnosticType(t types.Type) string {
 // subsetFixes maps each excluded operation to its supported rewrite.
 var subsetFixes = map[string]string{
 	"protected operation is outside the supported expression forms": "use a documented concrete value, pointer, " +
-		"reader, or builder operation",
+		"projection, or builder operation",
 	"protected value conversions are unsupported": "construct the destination marked value from copied fields",
 	"native builders require fresh local bindings or append to the same handle": "declare one fresh local builder; " +
 		"use values = append(values, element) to extend it",
@@ -67,7 +68,7 @@ var subsetFixes = map[string]string{
 		"assignment, direct synchronous call, value return, or documented conditional/loop form",
 	"protected iteration requires a direct frozen All call": "use range frozen.All() " +
 		"for protected values; do not create protected references through a custom iterator",
-	"protected storage requires synchronous calls": "call the reader directly before " +
+	"protected storage requires synchronous calls": "call the function or method directly before " +
 		"continuing; do not pass protected values, references, or builders to go or defer",
 	"protected storage is unsupported in type switches": "keep concrete protected " +
 		"types in named function parameters instead of recovering values or references from interfaces",
@@ -126,8 +127,8 @@ var subsetFixes = map[string]string{
 
 // subsetFix gives a supported replacement for each rejected operation.
 func subsetFix(rule string) string {
-	if strings.Contains(rule, "copied values require") {
-		return "copy scalar fields, or use a generated local projection"
+	if strings.Contains(rule, "is not a Copied value") {
+		return "copy scalar fields, or use a local projection"
 	}
 	if strings.Contains(rule, "markers are annotations") {
 		return "embed the marker in a named struct; use data fields for values"
@@ -136,7 +137,7 @@ func subsetFix(rule string) string {
 		return fix
 	}
 	if strings.Contains(rule, "service reference") || strings.Contains(rule, "Ref requires") {
-		return "keep a concrete supervise.Ref[Service] and call ref.Borrow().Message(args); " +
+		return "keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); " +
 			"see docs/reference/service-references.md"
 	}
 	return "use the documented immutable value and reference forms"
@@ -145,10 +146,19 @@ func subsetFix(rule string) string {
 // structuralFix explains how to replace a field or type argument that failed its recursive proof.
 func structuralFix(t types.Type, reason string) string {
 	switch {
+	case checker.IsProjection(t) && strings.Contains(reason, "concrete Frozen record target"):
+		return "for Copied T, use im.Projection[T] with im.Value(projection); " +
+			"use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads"
 	case strings.Contains(reason, "cannot contain Local"):
 		return "store Frozen data; keep its Projection or Local result in local bindings"
-	case strings.Contains(reason, "copied values require"):
-		return "copy scalar fields, or use a generated local projection"
+	case strings.Contains(reason, "is not a Copied value"):
+		if basic, ok := t.Underlying().(*types.Basic); ok && basic.Info()&types.IsString != 0 {
+			return "use im.StringProjection for a local string result; construct it with im.ProjectString(text)"
+		}
+		if checker.IsLibraryType(t, "FrozenString") {
+			return "use im.StringProjection for a local string result; construct it with text.Projection()"
+		}
+		return "copy scalar fields, or use a local projection"
 	case strings.Contains(reason, "markers are annotations"):
 		return "embed the marker in a named struct; use data fields for values"
 	case strings.Contains(reason, "named array"):

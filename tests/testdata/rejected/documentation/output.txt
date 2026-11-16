@@ -44,19 +44,19 @@ reference_forms.go:32:34: unsupported immutable operation: closures require ordi
 reference_forms.go:48:2: unsupported immutable operation: writes to immutable objects are unsupported
   source: points[0], found = makePair()
   fix: construct a new value and replace the whole variable or mutable holder slot; do not write inside immutable records
-typed_nil_boundaries.go:11:2: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:11:2: native builder values requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 typed_nil_boundaries.go:11:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: values := []int(nil)
   fix: declare one fresh local builder; use values = append(values, element) to extend it
-typed_nil_boundaries.go:13:6: cannot freeze scores: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:13:6: native builder scores requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 typed_nil_boundaries.go:13:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: scores = map[string]int(nil)
   fix: declare one fresh local builder; use values = append(values, element) to extend it
-typed_nil_boundaries.go:15:6: cannot freeze named: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:15:6: native builder named requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 typed_nil_boundaries.go:15:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: named nilInts = nilInts(nil)
   fix: declare one fresh local builder; use values = append(values, element) to extend it
-typed_nil_boundaries.go:17:2: cannot freeze alias: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:17:2: native builder alias requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 typed_nil_boundaries.go:17:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: alias := (nilIntsAlias)((nil))
   fix: declare one fresh local builder; use values = append(values, element) to extend it
@@ -64,7 +64,7 @@ typed_nil_boundaries.go:19:13: unsupported immutable operation: protected value 
   source: []nilSnapshot(nil)
   type: []docrejected.nilSnapshot
   fix: construct the destination marked value from copied fields
-typed_nil_boundaries.go:19:2: cannot freeze objects: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:19:2: native builder objects requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 typed_nil_boundaries.go:19:2: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: objects := []nilSnapshot(nil)
   fix: declare one fresh local builder; use values = append(values, element) to extend it
@@ -77,7 +77,7 @@ typed_nil_boundaries.go:29:21: unsupported immutable operation: protected value 
   source: []nilSnapshot(nil)
   type: []docrejected.nilSnapshot
   fix: construct the destination marked value from copied fields
-typed_nil_boundaries.go:35:6: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+typed_nil_boundaries.go:35:6: native builder values requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 typed_nil_boundaries.go:35:6: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: values []int = nil
   fix: declare one fresh local builder; use values = append(values, element) to extend it

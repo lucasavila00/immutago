@@ -88,7 +88,7 @@ func f(s Scorer){var other Scorer=Outer{Scorer:s};_=other}`, "does not embed im.
 		{"generic", `func identity[T any](v T)T{return v};func f(s Scorer){_=identity(s)}`, ""},
 
 		{"variadic boxing", `func take(...any){};func f(s Scorer){take(s)}`, ""},
-		{"Copied interface field", `type Bad struct{im.Copied;Scorer Scorer}`, "copied values require"},
+		{"Copied interface field", `type Bad struct{im.Copied;Scorer Scorer}`, "is not a Copied value"},
 
 		{"unexported method", `type Bad interface{im.FrozenInterface;read()int}`, "must be exported"},
 		{"marker payload", `func f(){var s im.FrozenInterface=&Tree{};_=s}`, "markers are annotations"},

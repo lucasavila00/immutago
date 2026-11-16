@@ -1,0 +1,62 @@
+diagnostics.go:24:5: Copied record: Text: string is not a Copied value
+  type: proofdiagnostics.Label
+  fix: use bool, numbers, unnamed arrays, or other Copied records for every field
+diagnostics.go:31:2: immutable field Text requires a read result: string is not a Copied value
+  owner: proofdiagnostics.Reply; field type: string
+  fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
+diagnostics.go:41:18: service method Name must return a read result: string is not a Copied value
+  result type: string
+  fix: use im.StringProjection for a local string result; construct it with im.ProjectString(text)
+diagnostics.go:46:12: Frozen collection: Frozen storage cannot contain Local values
+  type: im.FrozenSlice[im.StringProjection]
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+diagnostics.go:46:15: immutable type argument: Frozen storage cannot contain Local values
+  type: im.StringProjection
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+diagnostics.go:46:2: Frozen collection: Frozen storage cannot contain Local values
+  type: im.FrozenSlice[im.StringProjection]
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+diagnostics.go:47:6: Frozen collection: Frozen storage cannot contain Local values
+  type: im.FrozenSlice[im.StringProjection]
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+diagnostics.go:51:5: native builder points requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+diagnostics.go:54:12: unsupported immutable operation: use a service reference only as ref.Borrow().Method(args); do not extract the accessor or service pointer
+  source: ref.Borrow
+  type: func() *proofdiagnostics.Worker
+  fix: keep a concrete supervise.Ref[Service] and call ref.Borrow().Method(args); see docs/reference/service-references.md
+diagnostics.go:63:25: unsupported immutable operation: protected storage requires synchronous calls
+  source: go use(view)
+  fix: call the function or method directly before continuing; do not pass protected values, references, or builders to go or defer
+diagnostics.go:70:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+  type: im.Projection[*proofdiagnostics.Score]
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+diagnostics.go:71:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+  type: im.Projection[*int]
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+diagnostics.go:72:6: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+  type: im.Projection[*int]
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+diagnostics.go:76:14: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+  type: im.Projection[*proofdiagnostics.Score]
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+diagnostics.go:76:20: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+  type: im.Projection[*proofdiagnostics.Score]
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+diagnostics.go:76:23: immutable type argument: stored pointers require a concrete Frozen record target
+  type: *proofdiagnostics.Score
+  fix: replace the pointer field or argument with an owned immutable value
+diagnostics.go:76:49: local projection: projection payload 1: stored pointers require a concrete Frozen record target
+  type: im.Projection[*proofdiagnostics.Score]
+  fix: for Copied T, use im.Projection[T] with im.Value(projection); use im.Value(cell.Load()) or im.Value(slice.At(index)) instead of pointer reads
+diagnostics.go:83:12: Frozen collection: Frozen storage cannot contain Local values
+  type: im.FrozenMap[string, [1]proofdiagnostics.Name]
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+diagnostics.go:83:15: immutable type argument: Frozen storage cannot contain Local values
+  type: [1]proofdiagnostics.Name
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+diagnostics.go:83:2: Frozen collection: Frozen storage cannot contain Local values
+  type: im.FrozenMap[string, [1]proofdiagnostics.Name]
+  fix: store Frozen data; keep its Projection or Local result in local bindings
+diagnostics.go:84:6: Frozen collection: Frozen storage cannot contain Local values
+  type: im.FrozenMap[string, [1]proofdiagnostics.Name]
+  fix: store Frozen data; keep its Projection or Local result in local bindings

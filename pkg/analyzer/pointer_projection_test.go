@@ -51,7 +51,7 @@ func TestPointerAPIRecordTypes(t *testing.T) {
 		`func f(){_=im.CopyRecord(im.ProjectionOf(1))}`,
 		`func f(projection im.SliceProjection[string]){_=projection.AtPointer(0)}`,
 	} {
-		if got := checkSource(t, source); !strings.Contains(got, "concrete marked struct target") {
+		if got := checkSource(t, source); !strings.Contains(got, "concrete Frozen record target") {
 			t.Fatal(got)
 		}
 	}

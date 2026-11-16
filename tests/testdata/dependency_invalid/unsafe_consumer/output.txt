@@ -2,6 +2,6 @@ unsafe_consumer.go:3:8: unsupported dependency example.com/consumer/invalid_unsa
   representative failure: example.com/consumer/invalid_unsafe/invalid_unsafe.go:15:32: unsupported immutable operation: protected operation is outside the supported expression forms
     source: unsafe.Sizeof(im.StringProjection{})
     type: uintptr
-    fix: use a documented concrete value, pointer, reader, or builder operation
+    fix: use a documented concrete value, pointer, projection, or builder operation
   note: other dependency errors may exist
   fix: run immutago example.com/consumer/invalid_unsafe, correct its errors, then rerun immutago on this package

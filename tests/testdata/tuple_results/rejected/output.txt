@@ -36,22 +36,22 @@ forms.go:22:30: unsupported immutable operation: writes to immutable objects are
 forms.go:23:30: unsupported immutable operation: multiple assignments involving protected storage are unsupported
   source: value, found := api.View{}, true
   fix: use one protected destination, or local names for all results of one direct typed call
-forms.go:27:39: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+forms.go:27:39: native builder values requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 forms.go:27:39: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: values, _ := slices()
   fix: declare one fresh local builder; use values = append(values, element) to extend it
 forms.go:28:39: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: _, values := reversedSlices()
   fix: declare one fresh local builder; use values = append(values, element) to extend it
-forms.go:28:42: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
-forms.go:29:43: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+forms.go:28:42: native builder values requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+forms.go:29:43: native builder values requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 forms.go:29:43: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: values, _ = slices()
   fix: declare one fresh local builder; use values = append(values, element) to extend it
 forms.go:30:43: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: _, values = reversedSlices()
   fix: declare one fresh local builder; use values = append(values, element) to extend it
-forms.go:30:46: cannot freeze values: ownership requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
+forms.go:30:46: native builder values requires a fresh local make, literal, bare nil, or Clone result; create a local builder first
 forms.go:31:58: unsupported immutable operation: native builders require fresh local bindings or append to the same handle
   source: values, _ = slices()
   fix: declare one fresh local builder; use values = append(values, element) to extend it

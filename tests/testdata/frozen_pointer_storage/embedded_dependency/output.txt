@@ -8,7 +8,7 @@ use.go:10:14: Frozen data fields must be named
 use.go:10:23: Frozen data fields must be named
   field: embedded.Numeric.Count
   fix: give the field a name, such as Count example.com/consumer/embedded.Count
-use.go:10:40: immutable collection: projection payload 1: Count: Frozen data fields must be named
+use.go:10:40: local projection: projection payload 1: Count: Frozen data fields must be named
   type: im.Projection[*embedded.Numeric]
   fix: use scalar values, unnamed arrays, marked structs, or im.FrozenSlice/im.FrozenMap with immutable type arguments
 use.go:10:40: unsupported immutable operation: Count: Frozen data fields must be named

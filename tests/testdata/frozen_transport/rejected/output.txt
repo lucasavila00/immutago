@@ -85,35 +85,35 @@ handles.go:15:26: unmarked struct contains immutable field Values; embed an immu
   owner: rejected.LocalHolder; field type: [0]im.StringProjection
   rule: a struct that owns immutable storage must itself have an immutable field proof
   fix: embed im.Frozen or im.Local and make all fields immutable, or remove the immutable field
-handles.go:18:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete marked struct target
+handles.go:18:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: unprovedReader(&BadAlias{})
   type: ()
   fix: use the documented immutable value and reference forms
-handles.go:19:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete marked struct target
+handles.go:19:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: return &BadAlias{}
   fix: use the documented immutable value and reference forms
-handles.go:21:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete marked struct target
+handles.go:21:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: return unprovedPair()
   fix: use the documented immutable value and reference forms
-handles.go:22:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete marked struct target
+handles.go:22:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: h.Reader = &BadAlias{}
   fix: use the documented immutable value and reference forms
-handles.go:23:50: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete marked struct target
+handles.go:23:50: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: StateAlias{Reader: &BadAlias{}}
   type: rejected.StateAlias
   fix: use the documented immutable value and reference forms
-handles.go:24:50: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete marked struct target
+handles.go:24:50: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: map[string]api.Reader{"bad": &BadAlias{}}
   type: map[string]api.Reader
   fix: use the documented immutable value and reference forms
-handles.go:25:55: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete marked struct target
+handles.go:25:55: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: append(values, &BadAlias{})
   type: []api.Reader
   fix: use the documented immutable value and reference forms
-handles.go:26:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete marked struct target
+handles.go:26:46: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: ready <- &BadAlias{}
   fix: use the documented immutable value and reference forms
-handles.go:27:50: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete marked struct target
+handles.go:27:50: unsupported immutable operation: Frozen interface implementation: stored pointers require a concrete Frozen record target
   source: Box[api.Reader]{Value: &BadAlias{}}
   type: rejected.Box[api.Reader]
   fix: use the documented immutable value and reference forms

@@ -1,6 +1,6 @@
-copied_badapi.go:11:5: Copied record: Value: array element: Names: array element: copied values require bool, numbers, Copied records, arrays, or service references
+copied_badapi.go:11:5: Copied record: Value: array element: Names: array element: string is not a Copied value
   type: badapi.Nested
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field
-copied_badapi.go:6:5: Copied record: Names: array element: copied values require bool, numbers, Copied records, arrays, or service references
+copied_badapi.go:6:5: Copied record: Names: array element: string is not a Copied value
   type: badapi.Bad
   fix: use bool, numbers, unnamed arrays, or other Copied records for every field

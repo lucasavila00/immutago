@@ -243,7 +243,7 @@ func TestValidTypes(t *testing.T) {
 func TestRejectedTypes(t *testing.T) {
 	cases := []struct{ name, source, want string }{
 		{"named array", `type Count [2]int; type V struct { im.Frozen; X Count }`, "named array"},
-		{"pointer", `type V struct { im.Frozen; X *int }`, "concrete marked struct target"},
+		{"pointer", `type V struct { im.Frozen; X *int }`, "concrete Frozen record target"},
 		{"slice", `type V struct { im.Frozen; X []int }`, "not provably immutable"},
 		{"interface", `type V struct { im.Frozen; X any }`, "not provably immutable"},
 		{"function", `type V struct { im.Frozen; X func() }`, "not provably immutable"},
@@ -259,9 +259,9 @@ func TestRejectedTypes(t *testing.T) {
          type V[T interface{ Bad; Bad }] struct { im.Frozen; X T }`, "type parameters are unsupported"},
 		{"failed recursive alternatives", `type Bad struct { im.Frozen; Next im.FrozenSlice[Bad]; X []int }
          type V[T interface{ Bad; Bad }] struct { im.Frozen; X T }`, "type parameters are unsupported"},
-		{"bad argument", `var _ im.FrozenSlice[*int]`, "concrete marked struct target"},
-		{"bad inference", `var _ = im.FreezeSlice([]*int{new(int)})`, "concrete marked struct target"},
-		{"bad key", `var _ im.FrozenMap[*int,int]`, "concrete marked struct target"},
+		{"bad argument", `var _ im.FrozenSlice[*int]`, "concrete Frozen record target"},
+		{"bad inference", `var _ = im.FreezeSlice([]*int{new(int)})`, "concrete Frozen record target"},
+		{"bad key", `var _ im.FrozenMap[*int,int]`, "concrete Frozen record target"},
 		{"unmarked owner", `type V struct { im.Frozen }; type W struct { V V }`, "unmarked struct"},
 		{"unmarked slice", `type V struct { im.Frozen }; type W struct { V []V }`, "unmarked struct"},
 		{"unmarked map", `type V struct { im.Frozen }; type W struct { V map[int]V }`, "unmarked struct"},
