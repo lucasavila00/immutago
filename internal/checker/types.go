@@ -29,6 +29,36 @@ func IsRuntimeType(t types.Type, name string) bool {
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == RuntimePath && n.Obj().Name() == name
 }
 
+// IsReference identifies Ref and defined types that retain its sealed fields.
+func IsReference(t types.Type) bool {
+	if IsRuntimeType(t, "Ref") {
+		return true
+	}
+	structure, ok := t.Underlying().(*types.Struct)
+	if !ok || structure.NumFields() == 0 {
+		return false
+	}
+	pkg := structure.Field(0).Origin().Pkg()
+	if pkg == nil || pkg.Path() != RuntimePath {
+		return false
+	}
+	declaration := pkg.Scope().Lookup("Ref")
+	if declaration == nil {
+		return false
+	}
+	reference := declaration.Type().Underlying().(*types.Struct)
+	if structure.NumFields() != reference.NumFields() {
+		return false
+	}
+	for index := range structure.NumFields() {
+		if structure.Field(index).Origin() != reference.Field(index).Origin() ||
+			structure.Tag(index) != reference.Tag(index) {
+			return false
+		}
+	}
+	return true
+}
+
 // IsUncheckedValue reports whether t is the library's unchecked immutable value wrapper.
 func IsUncheckedValue(t types.Type) bool { return IsLibraryType(t, "UncheckedValue") }
 

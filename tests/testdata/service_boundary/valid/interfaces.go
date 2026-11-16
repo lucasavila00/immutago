@@ -30,7 +30,7 @@ func Interfaces(ref api.Handle) any {
 	selected = borrower(embedded{ref})
 	selected = nested{embedded{ref}}
 	pointer := selected.Borrow()
-	_ = pointer.Args()
+	_ = pointer.Count()
 	_ = borrower.Borrow(selected)
 	accessor := selected.Borrow
 	_ = accessor()

@@ -31,7 +31,7 @@ func TestTupleValues(t *testing.T) {
 }
 
 func TestLookupAllocations(t *testing.T) {
-	prices := &plain.Prices{}
+	prices := plain.Prices{}
 	allocations := testing.AllocsPerRun(100, func() {
 		price, found := prices.Price("missing")
 		if price != 0 || found {

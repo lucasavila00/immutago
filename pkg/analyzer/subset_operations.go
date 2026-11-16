@@ -57,10 +57,6 @@ func (c *subsetChecks) matchOperation(expression ast.Expr) (ast.Node, string) {
 
 // matchSource lists the complete producers of protected values and pointers.
 func (c *subsetChecks) matchSource(expression ast.Expr) string {
-	if pointer, ok := c.pass.TypesInfo.TypeOf(expression).Underlying().(*types.Pointer); ok &&
-		c.protectedReference(pointer) && !checker.Marked(pointer.Elem()) && !c.queries.ServicePointer(pointer) {
-		return "immutable references require a concrete marked struct target"
-	}
 	switch source := expression.(type) {
 	case *ast.Ident:
 		return c.matchIdentifier(source)

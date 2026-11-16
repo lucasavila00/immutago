@@ -210,7 +210,7 @@ func (c *checks) checkType(pos token.Pos, t types.Type) {
 func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	if t == nil || checker.IsCollection(t) || checker.IsProjection(t) ||
 		checker.IsLibraryType(t, "Cell") || checker.IsUncheckedValue(t) ||
-		checker.IsRuntimeType(t, checker.ServiceMarker) || checker.IsRuntimeType(t, "Ref") {
+		checker.IsRuntimeType(t, checker.ServiceMarker) || checker.IsReference(t) {
 		return
 	}
 	s, ok := t.Underlying().(*types.Struct)
@@ -238,7 +238,7 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 			continue
 		}
 		owned := c.fields.Owns(ft)
-		if !owned && c.localField(t, field) && c.queries.Owns(ft) {
+		if c.servicePointerField(t, field) {
 			c.report(fieldPos, "Local service pointers cannot be stored in fields"+
 				"\n  owner: "+diagnosticType(t)+"; field type: "+diagnosticType(ft)+
 				"\n  fix: store a supervise.Ref and borrow the service pointer in a local variable")
@@ -261,8 +261,11 @@ func (c *checks) checkStruct(pos token.Pos, t types.Type) {
 	}
 }
 
-// localField identifies the declaration owner, including defined and anonymous structs.
-func (c *checks) localField(owner types.Type, field *types.Var) bool {
+// servicePointerField identifies consumer-declared storage of Local service pointers.
+func (c *checks) servicePointerField(owner types.Type, field *types.Var) bool {
+	if c.fields.Owns(field.Type()) || !c.queries.Owns(field.Type()) {
+		return false
+	}
 	if named, ok := types.Unalias(owner).(*types.Named); ok {
 		return named.Obj().Pkg() == c.pass.Pkg
 	}

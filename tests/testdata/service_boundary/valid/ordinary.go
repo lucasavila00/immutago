@@ -28,10 +28,11 @@ func OrdinaryConversions(ref api.Handle, server *Server) api.Handle {
 	return identity(holder).Value
 }
 
-// indirect can expose a service pointer through a generic method contract.
-func indirect[T interface{ Borrow() *api.Counter }](value T) *api.Counter {
-	return value.Borrow()
+// indirect uses a service pointer from a generic method contract locally.
+func indirect[T interface{ Borrow() *api.Counter }](value T) int {
+	worker := value.Borrow()
+	return worker.Count()
 }
 
 // GenericCall uses ordinary Go dispatch through a type parameter.
-func GenericCall(ref api.Handle) *api.Counter { return indirect(ref) }
+func GenericCall(ref api.Handle) int { return indirect(ref) }

@@ -102,12 +102,10 @@ func use(p *Server){_=Pointer(p);_=(*Server)(Pointer(p))}`},
 	}
 }
 
-// TestServiceHandleBoundary rejects unsupported direct Ref calls and invalid protected types.
-func TestServiceHandleBoundary(t *testing.T) {
+// TestServiceOwnerPointers keeps pointers ordinary inside the service's declaring package.
+func TestServiceOwnerPointers(t *testing.T) {
 	cases := []struct{ name, source string }{
 		{"recovered pointer", `func use(v any)*Counter{return v.(Handle).Borrow()}`},
-		{"marked interface boxing", `func use(r Route)any{return r}`},
-		{"marked interface conversion", `func use(r Route)any{return any(r)}`},
 		{"pointer binding", `func use(r Handle){p:=r.Borrow();_=p}`},
 		{"pointer return", `func use(r Handle)*Counter{return r.Borrow()}`},
 		{"field read", `func use(r Handle)int{return r.Borrow().count}`},
@@ -120,6 +118,22 @@ func TestServiceHandleBoundary(t *testing.T) {
 		{"init", `func use(r Handle){_=r.Borrow().Init()}`},
 		{"run", `func use(r Handle){r.Borrow().Run(context.Background())}`},
 		{"private method", `func(*Counter) private(){};func use(r Handle){r.Borrow().private()}`},
+		{"promoted accessor", `type Wrapper struct{Handle};func use(r Wrapper){r.Borrow().Count()}`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := checkSource(t, handleDefinitions+tc.source); got != "" {
+				t.Fatal(got)
+			}
+		})
+	}
+}
+
+// TestServiceHandleBoundary rejects invalid Ref targets and protected storage uses.
+func TestServiceHandleBoundary(t *testing.T) {
+	cases := []struct{ name, source string }{
+		{"marked interface boxing", `func use(r Route)any{return r}`},
+		{"marked interface conversion", `func use(r Route)any{return any(r)}`},
 		{"nonservice", `func use(){var ref supervise.Ref[int];_=ref}`},
 		{"unused nonservice", `var ref supervise.Ref[int]`},
 		{"nonservice alias", `type Wrong = supervise.Ref[int]`},
@@ -129,7 +143,6 @@ func TestServiceHandleBoundary(t *testing.T) {
 func use(r supervise.Ref[struct{supervise.Service[supervise.NoArgs];Bad}])[]int{return r.Borrow().Read()}`},
 		{"unused anonymous result", `type Bad struct{};func(Bad) Read()[]int{return nil}
 var ref supervise.Ref[struct{supervise.Service[supervise.NoArgs];Bad}]`},
-		{"promoted accessor", `type Wrapper struct{Handle};func use(r Wrapper){r.Borrow().Count()}`},
 		{"protected field write", `func use(r *Route,h Handle){r.Worker=h}`},
 		{"pointer field", `type Bad struct{im.Local;Worker *Handle}`},
 	}

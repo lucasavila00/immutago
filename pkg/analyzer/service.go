@@ -25,7 +25,7 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 	methods := types.NewMethodSet(types.NewPointer(t))
 	for i := 0; i < methods.Len(); i++ {
 		method := methods.At(i).Obj()
-		if !method.Exported() || method.Name() == "Init" || method.Name() == "Run" || runtimeObject(method) {
+		if !serviceMethod(method) {
 			continue
 		}
 		at := pos
@@ -43,6 +43,11 @@ func (c *checks) checkServiceResults(pos token.Pos, t types.Type) {
 			}
 		}
 	}
+}
+
+// serviceMethod identifies exported application methods by their compiler-resolved object.
+func serviceMethod(method types.Object) bool {
+	return method.Exported() && method.Name() != "Init" && method.Name() != "Run" && !runtimeObject(method)
 }
 
 // runtimeObject identifies the trusted runtime API that can transport immutable values.

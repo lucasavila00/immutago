@@ -39,6 +39,7 @@ func TestLocalServicePointers(t *testing.T) {
 		{"parameter", `func read(q *api.Worker)int{return q.Count()}
 func use(r api.Handle)int{q:=r.Borrow();return read(q)+read(r.Borrow())}`},
 		{"alias", `type Pointer = *api.Alias;func read(q Pointer)int{return q.Count()}`},
+		{"construction", `func use(){value:=api.Worker{};q:=&value;q=new(api.Worker);q=&api.Worker{};_=q}`},
 		{"promoted method", `func use(r api.Handle)int{q:=r.Borrow();return q.Promoted()}`},
 		{"factory", `func use()int{q:=api.Pointer();return q.Count()}`},
 		{"tuple", `func use()int{q,n:=api.Pair();return q.Count()+n}`},
@@ -82,6 +83,10 @@ func TestLocalServicePointerBoundary(t *testing.T) {
 		{"Children", `func use(q *api.Worker){_=q.Children()}`},
 		{"indirect return", `func use(b interface{Borrow()*api.Worker})*api.Worker{return b.Borrow()}`},
 		{"anonymous return", `func use(q *api.Anonymous)*api.Anonymous{return q}`},
+		{"defined pointer", `type Pointer *api.Worker;func use(){var p Pointer;_=p}`},
+		{"pointer address", `func use(q *api.Worker){_= &q}`},
+		{"indirect pointer", `func use(q **api.Worker){_=q}`},
+		{"assertion", `func use(value any){q:=value.(*api.Worker);_=q}`},
 		{"imported generic im field", `var value api.Box[api.FrozenData]`},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -89,6 +94,33 @@ func TestLocalServicePointerBoundary(t *testing.T) {
 				t.Fatal("unsupported service pointer use accepted")
 			}
 		})
+	}
+}
+
+// TestServiceReferenceConversions keeps the sealed Ref fields opaque after a defined conversion.
+func TestServiceReferenceConversions(t *testing.T) {
+	api := sourcePass(t, servicePointerAPI).Pkg
+	api.SetImports(nil)
+	if got := checkServicePointerConsumer(t, api, `
+type Copy api.Handle
+type Alias = Copy
+type Holder struct{Value [1]Alias}
+func identity[T any](value T)T{return value}
+func use(ref api.Handle)api.Handle{
+ copies:=[]Holder{{[1]Alias{Copy(ref)}}}
+ makeCopy:=func()Alias{return identity(copies[0].Value[0])}
+ var boxed any=identity(makeCopy)()
+ restored:=api.Handle(boxed.(Alias))
+ restored.Borrow().Count()
+ return restored
+}`); got != "" {
+		t.Fatal(got)
+	}
+	if got := checkServicePointerConsumer(t, api, `
+type Ordinary struct{Value *api.Worker}
+type Copy Ordinary
+var saved Copy`); got == "" {
+		t.Fatal("ordinary pointer holder treated as a service reference")
 	}
 }
 
@@ -100,6 +132,64 @@ func TestServiceReferenceOwnerFields(t *testing.T) {
 	if got := checkServicePointerConsumer(t, api, `var saved api.Handle
 func use(r api.Handle)any{saved=r;return r}`); got != "" {
 		t.Fatal(got)
+	}
+}
+
+// TestServiceValuesStayOrdinary keeps a service value distinct from its Local pointer.
+func TestServiceValuesStayOrdinary(t *testing.T) {
+	source := strings.Replace(servicePointerAPI, "Value int}", "Value int; Next *Worker}", 1)
+	api := sourcePass(t, source).Pkg
+	api.SetImports(nil)
+	if got := checkServicePointerConsumer(t, api, `
+type Holder struct{Value api.Worker}
+func identity[T any](value T)T{return value}
+func use(value api.Worker)any{
+ other:=value
+ change:=func(){other.Value++}
+ change();go change();defer change()
+ values:=[]api.Worker{identity(other)}
+ return Holder{values[0]}
+}`); got != "" {
+		t.Fatal(got)
+	}
+}
+
+// TestLocalPointerProducerContracts keeps im.Local pointer results outside producer contracts.
+func TestLocalPointerProducerContracts(t *testing.T) {
+	for _, source := range []string{
+		`type Getter func() *LocalRecord`,
+		`type Getter = func() *LocalRecord`,
+		`type Reader interface{ Read() *LocalRecord }`,
+		`type Reader = interface{ Read() *LocalRecord }`,
+		`type Getter func() (int, *LocalRecord)`,
+		`func use(f func() *LocalRecord){p:=f();_=p}`,
+	} {
+		t.Run(source, func(t *testing.T) {
+			if got := checkSource(t, `type LocalRecord struct{im.Local; N int};`+source); got == "" {
+				t.Fatal("im.Local pointer producer contract accepted")
+			}
+		})
+	}
+}
+
+// TestServiceValueFieldRules keeps field proofs and selected im targets checked.
+func TestServiceValueFieldRules(t *testing.T) {
+	for _, test := range []struct {
+		name, source string
+		reject       bool
+	}{
+		{"Frozen field", `type Bad struct{supervise.Service[int]; Data FrozenData}`, true},
+		{"Local field", `type Data struct{im.Local; N int};type Bad struct{supervise.Service[int]; Data Data}`, true},
+		{"protected target", `type Holder struct{supervise.Service[int]; Data *FrozenData}
+func change(p Holder){p.Data.Value++}`, true},
+		{"ordinary slot", `type Holder struct{supervise.Service[int]; Data *FrozenData}
+func change(p Holder){p.Data=&FrozenData{Value:1}}`, false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if got := checkSource(t, servicePointerAPI+test.source); (got != "") != test.reject {
+				t.Fatalf("rejected=%t, diagnostics=%s", test.reject, got)
+			}
+		})
 	}
 }
 

@@ -80,6 +80,12 @@ func (c *Classifier) ServicePointer(t types.Type) bool {
 		return false
 	}
 	target := types.Unalias(pointer.Elem())
+	if IsRuntimeType(target, ServiceMarker) {
+		return false
+	}
+	if _, record := target.Underlying().(*types.Struct); !record {
+		return false
+	}
 	if named, ok := target.(*types.Named); ok && named.Obj().Pkg() == c.Package {
 		return false
 	}
@@ -146,7 +152,7 @@ func (c *Classifier) mark(node *classificationNode) {
 
 // expand matches the outgoing edges for one classification mode.
 func (c *Classifier) expand(node *classificationNode) {
-	if IsRuntimeType(node.key.typ, "Ref") {
+	if IsReference(node.key.typ) {
 		if node.key.mode == handleMode {
 			c.mark(node)
 		}
@@ -156,6 +162,9 @@ func (c *Classifier) expand(node *classificationNode) {
 		if node.key.mode != callableMode && node.key.mode != handleMode {
 			c.mark(node)
 		}
+		return
+	}
+	if _, record := node.key.typ.Underlying().(*types.Struct); record && c.Package != nil && Service(node.key.typ) {
 		return
 	}
 	if node.key.mode == localMode {

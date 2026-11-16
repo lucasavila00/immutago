@@ -25,19 +25,15 @@ func (c *subsetChecks) markedMethodReceiver(signature *types.Signature) bool {
 // Persistent receivers also permit method values and expressions with the same shape.
 func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 	selection := c.pass.TypesInfo.Selections[selector]
+	if c.queries.ServicePointer(selection.Recv()) {
+		return c.matchServiceMethod(selector)
+	}
 	restricted := c.queries.Transport(selection.Recv()) || c.queries.Callable(c.pass.TypesInfo.TypeOf(selector))
 	if selection.Kind() != types.MethodVal && restricted {
 		return "method expressions require ordinary or persistent Frozen receivers and contracts"
 	}
 	if c.directCall(selector) == nil && restricted {
 		return "method values require ordinary or persistent Frozen receivers and contracts"
-	}
-	if c.queries.ServicePointer(selection.Recv()) {
-		method := selection.Obj()
-		if !method.Exported() || runtimeObject(method) || method.Name() == "Init" || method.Name() == "Run" {
-			return "Local service pointers permit only direct exported service method calls"
-		}
-		return ""
 	}
 	if _, parameter := types.Unalias(selection.Recv()).(*types.TypeParam); parameter && !restricted {
 		return ""
@@ -67,4 +63,13 @@ func (c *subsetChecks) matchMethod(selector *ast.SelectorExpr) string {
 		return "immutable method receivers must match their declared type exactly"
 	}
 	return ""
+}
+
+// matchServiceMethod permits only direct exported calls on a Local service pointer.
+func (c *subsetChecks) matchServiceMethod(selector *ast.SelectorExpr) string {
+	selection := c.pass.TypesInfo.Selections[selector]
+	if selection.Kind() == types.MethodVal && c.directCall(selector) != nil && serviceMethod(selection.Obj()) {
+		return ""
+	}
+	return "Local service pointers permit only direct exported service method calls"
 }
