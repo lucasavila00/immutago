@@ -34,8 +34,8 @@ copy rules above.
 
 | Copy form | Standard vet check |
 | --- | --- |
-| `copy := *ref.Borrow()` | No copy diagnostic, even when the service contains a mutex or Supervisor. |
-| `p := ref.Borrow(); copy := *p` | Reports a copy when the service contains a mutex or Supervisor. |
+| `copy := *ref.Borrow()` | No copy diagnostic, even when the service contains a mutex or Supervisor by value. |
+| `p := ref.Borrow(); copy := *p` | Reports a copy when the service contains a mutex or Supervisor by value. |
 | `copy := *supervise.NewRoot(nil)` or `copy := *supervise.StartSupervisor(parent)` | No copy diagnostic. Keep the returned pointer. |
 
 ## References
