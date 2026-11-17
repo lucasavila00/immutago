@@ -18,11 +18,15 @@ type initHooks struct {
 // initializing records the state that Init sets before the runtime publishes it.
 type initializing struct {
 	Service[*initHooks]
-	state int
+	state      int
+	supervisor *Supervisor
 }
 
 // Init calls the setup selected by the test.
-func (p *initializing) Init() error { return p.Args().init(p) }
+func (p *initializing) Init(supervisor *Supervisor) error {
+	p.supervisor = supervisor
+	return p.Args().init(p)
+}
 
 // Run calls the test's run function, or waits until the service stops.
 func (p *initializing) Run(ctx context.Context) {
@@ -36,18 +40,14 @@ func (p *initializing) Run(ctx context.Context) {
 // expectInitEnded checks cleanup of an initialized candidate and its staged group.
 func expectInitEnded(t *testing.T, p *initializing) {
 	t.Helper()
-	p.owner.mu.Lock()
-	ended, children := p.ended, p.children
-	p.owner.mu.Unlock()
-	if !ended {
+	children := p.supervisor
+	if children.admission.Err() == nil {
 		t.Error("candidate did not end")
 	}
-	if children != nil {
-		select {
-		case <-children.stopped:
-		default:
-			t.Error("candidate keeps a staged group")
-		}
+	select {
+	case <-children.stopped:
+	default:
+		t.Error("candidate keeps a staged supervisor")
 	}
 }
 
@@ -121,12 +121,11 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	root := NewRoot(nil)
 	failure := errors.New("initial setup")
 	var candidates []*initializing
-	var nested *Group
+	var nested *Supervisor
 	var runs atomic.Int32
 	child := &initHooks{
 		init: func(p *initializing) error {
 			candidates = append(candidates, p)
-			p.UncheckedChildren()
 			return nil
 		},
 		run: func(_ *initializing, ctx context.Context) {
@@ -138,10 +137,10 @@ func checkInitFailureChildren(t *testing.T, mode string) {
 	}
 	hooks := &initHooks{init: func(p *initializing) error {
 		candidates = append(candidates, p)
-		if _, err := Start[initializing](p.UncheckedChildren(), child); err != nil {
+		if _, err := Start[initializing](p.supervisor, child); err != nil {
 			return err
 		}
-		nested = StartGroup(p.UncheckedChildren())
+		nested = StartSupervisor(p.supervisor)
 		if _, err := Start[initializing](nested, child); err != nil {
 			return err
 		}
@@ -195,7 +194,6 @@ func TestInitStopBeforePublication(t *testing.T) {
 		var runs atomic.Int32
 		hooks := &initHooks{
 			init: func(p *initializing) error {
-				p.UncheckedChildren()
 				entered <- p
 				<-release
 				return nil
@@ -240,7 +238,7 @@ func TestInitStopBeforePublication(t *testing.T) {
 func TestInitPendingActivation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		top := NewRoot(nil)
-		parent := newGroup(top, false)
+		parent := newSupervisor(top, false)
 		var inits atomic.Int32
 		hooks := &initHooks{init: func(p *initializing) error { p.state = int(inits.Add(1)); return nil }}
 		ref, err := Start[initializing](parent, hooks)
@@ -269,10 +267,9 @@ func TestInitStopsStagedGroup(t *testing.T) {
 		root := NewRoot(nil)
 		var child *initializing
 		hooks := &initHooks{init: func(p *initializing) error {
-			nested := StartGroup(p.UncheckedChildren())
+			nested := StartSupervisor(p.supervisor)
 			_, err := Start[initializing](nested, &initHooks{init: func(p *initializing) error {
 				child = p
-				p.UncheckedChildren()
 				return nil
 			}})
 			<-nested.Stop()
@@ -291,13 +288,13 @@ func TestInitUnderStoppedGroups(t *testing.T) {
 	for _, after := range []bool{false, true} {
 		synctest.Test(t, func(t *testing.T) {
 			parent := NewRoot(nil)
-			var group *Group
+			var group *Supervisor
 			if !after {
-				group = StartGroup(parent)
+				group = StartSupervisor(parent)
 			}
 			<-parent.Stop()
 			if after {
-				group = StartGroup(parent)
+				group = StartSupervisor(parent)
 			}
 			inits := 0
 			hooks := &initHooks{init: func(*initializing) error { inits++; return nil }}

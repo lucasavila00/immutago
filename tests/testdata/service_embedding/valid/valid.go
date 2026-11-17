@@ -44,7 +44,7 @@ var anonymous supervise.Ref[Anonymous]
 var direct supervise.Ref[Direct]
 var nested supervise.Ref[NestedAlias]
 
-func start(root *supervise.Group) error {
+func start(root *supervise.Supervisor) error {
 	var err error
 	direct, err = supervise.Start[Direct](root, supervise.NoArgs{})
 	if err != nil {

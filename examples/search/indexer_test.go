@@ -213,7 +213,7 @@ func TestGracefulStop(t *testing.T) {
 }
 
 // startIndexer starts the real service with a short test interval.
-func startIndexer(t *testing.T, root *supervise.Group, files fs.FS) supervise.Ref[Indexer] {
+func startIndexer(t *testing.T, root *supervise.Supervisor, files fs.FS) supervise.Ref[Indexer] {
 	t.Helper()
 	indexer, err := supervise.Start[Indexer](root, IndexerArgs{Files: files, Every: 10 * time.Millisecond})
 	if err != nil {

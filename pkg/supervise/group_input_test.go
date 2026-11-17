@@ -7,39 +7,15 @@ import (
 
 // TestInvalidGroup rejects invalid public parents before Init can acquire resources.
 func TestInvalidGroup(t *testing.T) {
-	for _, parent := range []*Group{nil, {}} {
+	for _, parent := range []*Supervisor{nil, {}} {
 		inits := 0
 		hooks := &initHooks{init: func(*initializing) error { inits++; return nil }}
-		expectPanic(t, "supervise: nil or zero Group", func() { _, _ = Start[initializing](parent, hooks) })
-		expectPanic(t, "supervise: nil or zero Group", func() { StartGroup(parent) })
-		expectPanic(t, "supervise: nil or zero Group", func() { parent.Stop() })
+		expectPanic(t, "supervise: nil or zero Supervisor", func() { _, _ = Start[initializing](parent, hooks) })
+		expectPanic(t, "supervise: nil or zero Supervisor", func() { StartSupervisor(parent) })
+		expectPanic(t, "supervise: nil or zero Supervisor", func() { parent.Stop() })
 		if inits != 0 {
 			t.Fatal("Init ran with an invalid parent")
 		}
-	}
-}
-
-// TestChildrenRequiresStart rejects unbound services before child Init can acquire resources.
-func TestChildrenRequiresStart(t *testing.T) {
-	for _, test := range []struct {
-		name     string
-		children func() *Group
-	}{
-		{"Service", new(Service[NoArgs]).UncheckedChildren},
-		{"embedded", new(serviceBase).UncheckedChildren},
-		{"nested", new(struct{ serviceBase }).UncheckedChildren},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			expectPanic(t, "supervise: nil or zero Group", func() { test.children() })
-			inits := 0
-			hooks := &initHooks{init: func(*initializing) error { inits++; return nil }}
-			expectPanic(t, "supervise: nil or zero Group", func() {
-				_, _ = Start[initializing](test.children(), hooks)
-			})
-			if inits != 0 {
-				t.Fatal("Init ran under an unstarted service")
-			}
-		})
 	}
 }
 

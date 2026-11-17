@@ -90,7 +90,7 @@ edits must appear together.
 4. [indexer.go](indexer.go): load the first index in `Init`, poll in `Run`, and
    publish a complete replacement through `IndexCell`.
 5. [main.go](cmd/search/main.go): supply `os.DirFS`, start the service, and stop
-   the HTTP server and service group on an interrupt.
+   the HTTP server and supervisor on an interrupt.
 
 `Index` and `Document` are Frozen records. Their generated
 [projections](zz_immutago.gen.go) read fields directly. Numeric `Posting` records

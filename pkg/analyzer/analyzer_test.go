@@ -88,19 +88,18 @@ const testRuntime = `package supervise
  import "context"
  import "github.com/lucasavila00/immutago/pkg/im"
  type Service[A any] struct { args A }
- func (p *Service[A]) Init() error { return nil }
+ func (p *Service[A]) Init(*Supervisor) error { return nil }
  func (p *Service[A]) Args() A { return p.args }
  func (p *Service[A]) bind(args A) { p.args = args }
- func (p *Service[A]) UncheckedChildren() *Group { return nil }
  type NoArgs struct{}
- type Group struct{}
- func NewRoot(func(any, []byte)) *Group { return nil }
- func StartGroup(parent *Group) *Group { return nil }
- func (s *Group) Stop() <-chan struct{} { return nil }
+ type Supervisor struct{}
+ func NewRoot(func(any, []byte)) *Supervisor { return nil }
+ func StartSupervisor(parent *Supervisor) *Supervisor { return nil }
+ func (s *Supervisor) Stop() <-chan struct{} { return nil }
  type Ref[T any] struct { im.Frozen; value im.UncheckedValue[T] }
  func (p Ref[T]) Borrow() *T { return im.Unwrap(p.value) }
- func Start[T, A any, P interface{ *T; Run(context.Context); Init() error; bind(A) }](
-  parent *Group, args A) (Ref[T], error) {
+ func Start[T, A any, P interface{ *T; Run(context.Context); Init(*Supervisor) error; bind(A) }](
+  parent *Supervisor, args A) (Ref[T], error) {
   return Ref[T]{}, nil
  }
 `

@@ -43,7 +43,7 @@ func checkInitRequestTimeout(t *testing.T, wait string) {
 	go func() {
 		ref, err := Start[initializing](top, &initHooks{
 			init: func(p *initializing) error {
-				_, err := Start[initializing](p.UncheckedChildren(), &initHooks{
+				_, err := Start[initializing](p.supervisor, &initHooks{
 					init: func(*initializing) error { return nil },
 					run: func(_ *initializing, ctx context.Context) {
 						if ctx.Err() == nil {

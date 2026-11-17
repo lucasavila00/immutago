@@ -27,14 +27,14 @@ type failureTreeArgs struct {
 type failureParent struct{ Service[failureTreeArgs] }
 
 // Init creates the child before its parent starts running.
-func (s *failureParent) Init() error {
+func (s *failureParent) Init(*Supervisor) error {
 	args := s.Args()
 	if args.depth > 0 {
 		args.depth--
-		_, err := Start[failureParent](s.UncheckedChildren(), args)
+		_, err := Start[failureParent](s.children, args)
 		return err
 	}
-	_, err := Start[failureLeaf](s.UncheckedChildren(), args.cause)
+	_, err := Start[failureLeaf](s.children, args.cause)
 	return err
 }
 
@@ -78,7 +78,7 @@ func checkFailureOrigin(t *testing.T, shape string, reporting bool) {
 	parent := top
 	if shape == "groups" {
 		for range 4 {
-			parent = StartGroup(parent)
+			parent = StartSupervisor(parent)
 		}
 	}
 	var err error

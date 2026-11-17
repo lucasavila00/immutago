@@ -16,12 +16,12 @@ func (*reportingParent) Run(ctx context.Context) { <-ctx.Done() }
 // StartChild starts one child that panics.
 func (p *reportingParent) StartChild(nested bool) {
 	if nested {
-		if _, err := Start[reportingChild](StartGroup(p.UncheckedChildren()), NoArgs{}); err != nil {
+		if _, err := Start[reportingChild](StartSupervisor(p.children), NoArgs{}); err != nil {
 			panic(err)
 		}
 		return
 	}
-	if _, err := Start[reportingChild](p.UncheckedChildren(), NoArgs{}); err != nil {
+	if _, err := Start[reportingChild](p.children, NoArgs{}); err != nil {
 		panic(err)
 	}
 }
@@ -47,7 +47,7 @@ func TestServiceChildrenInheritReporter(t *testing.T) {
 func checkServiceChildrenReporter(t *testing.T, before, nested bool) {
 	t.Helper()
 	reports := make(chan bool, 1)
-	parent := newGroup(nil, false)
+	parent := newSupervisor(nil, false)
 	parent.root = parent
 	parent.exit = func(any) {}
 	parent.report = func(value any, stack []byte) {

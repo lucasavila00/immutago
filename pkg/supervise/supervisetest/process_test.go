@@ -18,8 +18,8 @@ import (
 type processService struct{ supervise.Service[string] }
 
 // Init starts a child in its child group.
-func (s *processService) Init() error {
-	_, err := supervise.Start[processChild](s.UncheckedChildren(), supervise.NoArgs{})
+func (s *processService) Init(supervisor *supervise.Supervisor) error {
+	_, err := supervise.Start[processChild](supervisor, supervise.NoArgs{})
 	return err
 }
 

@@ -28,7 +28,7 @@ type FileCache struct {
 }
 
 // Init loads the first contents before calls begin.
-func (c *FileCache) Init() error {
+func (c *FileCache) Init(*supervise.Supervisor) error {
 	if c.Args().Every <= 0 {
 		return fmt.Errorf("refresh interval must be positive")
 	}

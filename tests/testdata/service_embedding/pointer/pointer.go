@@ -19,7 +19,7 @@ func (*Worker) Run(ctx context.Context) { <-ctx.Done() }
 
 var ref supervise.Ref[Worker]
 
-func start(root *supervise.Group) error {
+func start(root *supervise.Supervisor) error {
 	_, err := supervise.Start[Worker](root, supervise.NoArgs{})
 	return err
 }

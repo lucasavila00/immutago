@@ -14,7 +14,7 @@ type Table struct {
 }
 
 // Init prepares the slots before callers can read them.
-func (t *Table) Init() error {
+func (t *Table) Init(*supervise.Supervisor) error {
 	if t.Args() < 1 {
 		return fmt.Errorf("slot count must be positive")
 	}
@@ -54,6 +54,6 @@ func main() {
 }
 
 // startFailure forwards the startup results without a result binding.
-func startFailure(root *supervise.Group) (supervise.Ref[Table], error) {
+func startFailure(root *supervise.Supervisor) (supervise.Ref[Table], error) {
 	return supervise.Start[Table](root, 0)
 }

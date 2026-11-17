@@ -8,7 +8,7 @@ and the [API](readme.md) for signatures.
 | Item | Requirement |
 | --- | --- |
 | Service declaration | Use the [value embedding forms](../../docs/reference/service-results.md#service-embedding--exhaustive). |
-| Setup | `*Worker` supplies `Init() error`, or uses the default Init from Service[A]. |
+| Setup | `*Worker` supplies `Init(*Supervisor) error`, or uses the default Init from Service[A]. |
 | Background work | `*Worker` supplies `Run(context.Context)`. |
 | Start arguments | `s.Args()` reads A. Start saves these arguments on the service. Use `supervise.NoArgs{}` when no arguments are needed. |
 | Exported methods | Use the [result rules](../../docs/reference/service-results.md). |
@@ -16,13 +16,12 @@ and the [API](readme.md) for signatures.
 
 ## Copy contract
 
-Keep initialized services and Groups behind pointers, including after Stop.
+Keep initialized services and Supervisors behind pointers, including after Stop.
 Use pointer receivers. Do not copy their values or containing structs and arrays.
 Ref values can be copied.
 
-UncheckedChildren requires the original service pointer created by Start. The caller
-must obey this Go contract. Standard `go vet ./...` reports common owner copies;
-immutago does not enforce this contract.
+Standard `go vet ./...` reports common service and supervisor copies.
+The supervisor pointer passed to Init can be saved and passed to other code.
 
 ## References
 
@@ -40,12 +39,12 @@ service; its fields stay fixed while the service itself can change.
 
 | Operation or event | Behavior |
 | --- | --- |
-| `ref, err := supervise.Start[Worker](parent, args)` | Check admission, create a fresh Worker, call Init, then register it and return Ref. Run is asynchronous. |
+| `ref, err := supervise.Start[Worker](parent, args)` | Check admission, create a fresh Worker, call Init with its own supervisor, then register it and return Ref. Run is asynchronous. |
 | Init returns an error | Start returns a zero Ref and the error. |
 | Init panics | The panic reaches the caller. |
-| Start after the group or an ancestor closes admission | Return a zero Ref and `context.Canceled`. Do not call Init or Run. |
+| Start after the supervisor or an ancestor closes admission | Return a zero Ref and `context.Canceled`. Do not call Init or Run. |
 | Stop after Start is accepted | Wait for Init before stopping registered services. Successful Init still registers and returns Ref; Run can receive a cancelled context. |
-| Nil or zero Group passed to Start or StartGroup | Panic with `supervise: nil or zero Group` before Init. |
+| Nil or zero Supervisor passed to Start or StartSupervisor | Panic with `supervise: nil or zero Supervisor` before Init. |
 | Pointer on the selected Service embedding path | An accepted Start panics before Init with `supervise: embed Service by value through each embedded field`. |
 
 Go infers A from the argument's type. An untyped constant supplies its default
@@ -56,15 +55,15 @@ type. If that type differs from the service's A, specify A or convert the argume
 | `type Indexer struct { supervise.Service[fs.FS] }` | `supervise.Start[Indexer, fs.FS](root, fstest.MapFS{})` | `supervise.Start[Indexer](root, fs.FS(fstest.MapFS{}))` |
 | `type Counter struct { supervise.Service[int64] }` | `supervise.Start[Counter, int64](root, 5)` | `supervise.Start[Counter](root, int64(5))` |
 
-After setup, the runtime admits Run and activates its staged child groups in one
+After setup, the runtime admits Run and activates its staged child supervisors in one
 decision ordered against Stop. An admitted Run can enter its function after Stop
 is requested; its context still ends at its turn in shutdown.
 
 Init must not wait for an unstarted peer or child Run. For readiness that depends
 on Run, expose a method such as `Ready() bool`. Init has no cancellation context.
-It must return without waiting for its owning group or an ancestor to stop, or
-for cancellation that needs that shutdown. Init can stop and wait for its own
-child group to undo setup. It must release application resources that it opened
+It must return without waiting for its owning supervisor or an ancestor to stop, or
+for cancellation that needs that shutdown. Init can stop and wait for the
+supervisor passed to it to undo setup. It must release application resources that it opened
 if setup fails.
 
 Init must return if a dependency stops answering. Bound each blocking operation
@@ -79,11 +78,11 @@ Successful Start means that Init completed; it does not mean that Run is still a
 
 | Event | Behavior |
 | --- | --- |
-| Run returns normally | Stop its children, then remove the service from its group. Other services continue. |
+| Run returns normally | Stop its children, then remove the service from its supervisor. Other services continue. |
 | Run receives cancellation | Return normally to end without a failure. |
 | Run panics | Report the original panic and stack. Stop the entire root tree, wait for accepted Init calls and cleanup, then panic with `*supervise.Failure`. |
 | Run calls `runtime.Goexit()` | Stop the root through the same failure path. Failure.Value is an error with the text `supervise: service called runtime.Goexit`. |
-| A child fails under nested groups or services | Its failure goes directly to the root. |
+| A child fails under nested supervisors or services | Its failure goes directly to the root. |
 | A direct service method panics | The panic stays in its caller's goroutine. If called from Run, it fails that Run. |
 | Run panics or calls Goexit during shutdown or cleanup | Use the same terminal failure path. Stop and a parent's normal return cannot suppress a failure. |
 | Several Run failures occur | Keep the first failure recorded by the runtime. Report each failure once. |
@@ -92,18 +91,17 @@ Successful Start means that Init completed; it does not mean that Run is still a
 Each accepted Start creates one service value and calls Run once after successful Init.
 Borrow returns that same value, including after it stops.
 
-## Child groups
+## Supervisors
 
 | Parent | Lifetime |
 | --- | --- |
-| `root := supervise.NewRoot(report)` | Application group, until root.Stop. Pass nil to write failure reports and their original stacks to standard error. |
-| `group := supervise.StartGroup(parent)` | Lifetime group; stop these services and their children together. |
-| `s.UncheckedChildren()` | Child group owned by this service. Use the original pointer created by Start. |
-| `new(Worker).UncheckedChildren()` | Panic with `supervise: nil or zero Group` in the caller. Use Start to create a service that needs child groups. |
+| `root := supervise.NewRoot(report)` | Application supervisor, until root.Stop. Pass nil to write failure reports and their original stacks to standard error. |
+| `supervisor := supervise.StartSupervisor(parent)` | Lifetime supervisor; stop these services and their children together. |
+| `Init(supervisor *supervise.Supervisor)` | Runtime supplies a supervisor owned by this service. Save the pointer to start services later. It stops when this service ends. |
 
-Create groups with these APIs and keep their pointers. A nil or zero Group cannot
-run or stop. Groups follow the copy contract above and ordinary Go rules.
-A stopped parent supplies a stopped nested group.
+Use the supervisor passed to Init or create one with the functions above. Keep its pointer. A nil or zero Supervisor cannot
+run or stop. Supervisors follow the copy contract above and ordinary Go rules.
+A stopped parent supplies a stopped nested supervisor.
 
 ### Child lifetimes
 
@@ -116,9 +114,9 @@ A stopped parent supplies a stopped nested group.
 | Parent Run returns or panics | Stop and wait for children before the service ends. |
 | A child Run panics or calls Goexit | Stop the whole root tree. |
 
-Services and groups can be started after application startup. Put a dynamic
-service under `StartGroup(parent)` to stop that subtree separately later.
-For a model swap, publish the new model reference before stopping the old group.
+Services and supervisors can be started after application startup. Put a dynamic
+service under `StartSupervisor(parent)` to stop that subtree separately later.
+For a model swap, publish the new model reference before stopping the old supervisor.
 Stop does not wait for requests already using the old reference.
 
 ## Shutdown
@@ -126,24 +124,26 @@ Stop does not wait for requests already using the old reference.
 | Operation | Behavior |
 | --- | --- |
 | `done := root.Stop()` | Request shutdown without waiting. Repeated calls return the same channel. |
-| Stop on a nil or zero Group | Panic with `supervise: nil or zero Group`. |
+| Stop on a nil or zero Supervisor | Panic with `supervise: nil or zero Supervisor`. |
 | `<-root.Stop()` | Wait for accepted Init calls and all children to stop. A terminal failure prevents normal completion. |
-| `<-group.Stop()` on a nested group | Wait for this group's children and removal from its parent. This means the subtree has ended; a child failure still stops the root. |
-| Stop is requested | Close admission immediately. Each group waits for its accepted Init calls, then cancels children in reverse registration order. |
+| `<-supervisor.Stop()` on a nested supervisor | Wait for this supervisor's children and removal from its parent. This means the subtree has ended; a child failure still stops the root. |
+| Stop is requested | Close admission immediately. Each supervisor waits for its accepted Init calls, then cancels children in reverse registration order. |
 | A registered service has not been admitted to Run when Stop is requested | Wait for its turn, stop its children, then call Run with an already-cancelled context. |
 
 Cleanup panics and Goexit are terminal failures.
 Services register after Init; concurrent Start calls can register in a different
-order from their invocation order. Nested groups register when StartGroup is called.
+order from their invocation order. Nested supervisors register when StartSupervisor is called.
 
 Stop does not interrupt work already admitted. Registered work must finish
 before the completion channel closes. Run must return when its context ends.
 Stop cannot force Run or Init to return
 and does not wait for direct method calls. Release locks that children need
-before waiting for Stop. A child or report function must not wait for its own
-group to stop: the group is waiting for that code to finish. A child can call a
+before waiting for Stop. A service must not wait from Run for the supervisor
+that contains it: that supervisor is waiting for Run to finish. The supervisor
+passed to Init contains only the services it starts; it can stop and wait for
+that supervisor. A report function must not wait for tree shutdown. A child can call a
 parent during shutdown, but must not wait for a parent method that waits for
-that child's group to stop.
+that child's supervisor to stop.
 
 ## Failure reports
 
@@ -154,7 +154,7 @@ The report argument to NewRoot has type `func(value any, stack []byte)`:
 | Report payload | Each recovered Run panic or Goexit supplies one `*Failure` and its original stack. |
 | Failure selection | Record the first terminal failure before calling the reporter. |
 | An accepted Init or child cleanup blocks | Reporting does not wait for it. The terminal panic does. |
-| Several failures | Reports can overlap. Nested groups use the same callback. |
+| Several failures | Reports can overlap. Nested supervisors use the same callback. |
 | Callback calls Stop | It can request Stop, but must not wait for completion. It cannot suppress the failure. |
 | Callback returns | Required before its service completes. Callback panics are not recovered. |
 | Nil callback | Write each Failure and its original stack to standard error. |

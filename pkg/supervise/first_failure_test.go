@@ -51,7 +51,7 @@ func checkFirstRunFailure(t *testing.T, mode string, reporting bool) {
 	}
 	terminal := make(chan any, 1)
 	top := root(func(value any) { terminal <- value }, report)
-	parent := StartGroup(StartGroup(top))
+	parent := StartSupervisor(StartSupervisor(top))
 	trigger := make(chan struct{})
 	inits, runs := 0, 0
 	ref, err := Start[initializing](parent, &initHooks{

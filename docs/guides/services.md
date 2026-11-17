@@ -24,7 +24,7 @@ the process. The [failure report](../../pkg/supervise/contract.md#failure-report
 the panic value and stack.
 
 The [command](../../examples/shipping/cmd/shipping/main.go) starts the loader
-under a root group and waits for shutdown when it returns:
+under a root supervisor and waits for shutdown when it returns:
 
 ```go
 root := supervise.NewRoot(nil)
@@ -39,7 +39,7 @@ Start calls Init before it returns the reference. Init must return if a dependen
 stops answering; use application timeouts or independent cancellation for blocking
 work. See the [Init contract](../../pkg/supervise/contract.md#startup).
 The command creates the HTTP server only after Start succeeds. On shutdown, it
-closes the HTTP server before it stops the root group. `<-root.Stop()` waits for
+closes the HTTP server before it stops the root supervisor. `<-root.Stop()` waits for
 background work; it does not
 wait for HTTP handlers or other direct method calls.
 
@@ -65,7 +65,7 @@ results do not make mutable service fields safe. Review field access, locks,
 saved inputs, and dependency calls in the service implementation.
 
 Declare service methods with pointer receivers. Do not copy an initialized service
-or Group; pass pointers or copy Ref values. Run standard `go vet ./...` as well as
+or Supervisor; pass pointers or copy Ref values. Run standard `go vet ./...` as well as
 immutago to check common copy mistakes. See the
 [copy contract](../../pkg/supervise/contract.md#copy-contract).
 
@@ -78,12 +78,30 @@ Exported service methods can return any number of read results and errors, in an
 The result rule does not restrict ordinary method inputs, callbacks, or dependency
 calls. See [service results](../reference/service-results.md) for the full list.
 
-## Choose a group lifetime
+## Start services from a service
 
-The example has one service under the root. Use `supervise.StartGroup(parent)`
-when several services must stop together. Inside a service, use `s.UncheckedChildren()`
-on the original service pointer for work that must end with that service.
-Stopping a nested group leaves other groups running. A Run failure stops the entire root.
+Init receives a Supervisor owned by the service. Save it for later starts:
+
+```go
+type Pool struct {
+    supervise.Service[PoolArgs]
+    supervisor *supervise.Supervisor
+}
+
+func (p *Pool) Init(supervisor *supervise.Supervisor) error {
+    p.supervisor = supervisor
+    return nil
+}
+
+func (p *Pool) Add(args WorkerArgs) (supervise.Ref[Worker], error) {
+    return supervise.Start[Worker](p.supervisor, args)
+}
+```
+
+The runtime stops these workers when Pool ends. To stop a selection of workers
+separately, start them under `supervise.StartSupervisor(p.supervisor)` and keep
+that supervisor's pointer. Wait for its shutdown with `<-supervisor.Stop()`.
+Other supervisors continue to run. A Run failure stops the entire root.
 
 The [runtime contract](../../pkg/supervise/contract.md) defines child shutdown order,
 completion and failure reports. In tests,

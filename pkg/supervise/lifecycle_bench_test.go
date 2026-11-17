@@ -33,7 +33,7 @@ type runWorker struct {
 }
 
 // Init prepares one value before publication.
-func (s *runWorker) Init() error { s.state = 1; return nil }
+func (s *runWorker) Init(*Supervisor) error { s.state = 1; return nil }
 
 // Run completes this benchmark Run.
 func (*runWorker) Run(context.Context) {}
@@ -49,8 +49,8 @@ func BenchmarkServiceRun(b *testing.B) {
 	var value *runWorker
 	run := func(ctx context.Context) {
 		value = new(runWorker)
-		value.bind(NoArgs{}, parent)
-		if err := value.Init(); err != nil {
+		supervisor := value.bind(NoArgs{}, parent)
+		if err := value.Init(supervisor); err != nil {
 			panic(err)
 		}
 		parent.mu.Lock()

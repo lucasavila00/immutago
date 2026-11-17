@@ -14,14 +14,14 @@ func TestCompletedRunDuringFailureCleanup(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		terminal := make(chan any, 1)
 		parent := root(func(value any) { terminal <- value }, nil)
-		group := StartGroup(parent)
+		group := StartSupervisor(parent)
 		started, cleanup, release := make(chan struct{}), make(chan struct{}), make(chan struct{})
 		var runs atomic.Int32
 		_, err := Start[initializing](group, &initHooks{
 			init: func(*initializing) error { return nil },
 			run: func(p *initializing, _ context.Context) {
 				runs.Add(1)
-				_, childErr := Start[initializing](p.UncheckedChildren(), &initHooks{
+				_, childErr := Start[initializing](p.supervisor, &initHooks{
 					init: func(*initializing) error { return nil },
 					run: func(_ *initializing, ctx context.Context) {
 						close(started)
@@ -123,11 +123,11 @@ func TestTerminalExitPrecedesStopCompletion(t *testing.T) {
 func TestPendingSubtreeCleanup(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		top := NewRoot(nil)
-		pending := newGroup(top, false)
-		nested := StartGroup(pending)
+		pending := newSupervisor(top, false)
+		nested := StartSupervisor(pending)
 		var inits, runs atomic.Int32
 		ref, err := Start[initializing](nested, &initHooks{
-			init: func(p *initializing) error { inits.Add(1); p.UncheckedChildren(); return nil },
+			init: func(p *initializing) error { inits.Add(1); return nil },
 			run: func(_ *initializing, ctx context.Context) {
 				if ctx.Err() == nil {
 					t.Error("pending subtree activated during shutdown")
@@ -176,7 +176,7 @@ func checkAncestorStop(t *testing.T, where string) {
 	}
 	ended := make(chan struct{})
 	if where == "group" {
-		nested := StartGroup(parent)
+		nested := StartSupervisor(parent)
 		_, _ = Start[initializing](nested, child)
 		_, _ = Start[initializing](nested, &initHooks{
 			init: func(*initializing) error { return nil },
@@ -186,13 +186,13 @@ func checkAncestorStop(t *testing.T, where string) {
 		_, _ = Start[initializing](parent, &initHooks{
 			init: func(p *initializing) error {
 				if where == "Init" {
-					_, _ = Start[initializing](p.UncheckedChildren(), child)
+					_, _ = Start[initializing](p.supervisor, child)
 				}
 				return nil
 			},
 			run: func(p *initializing, ctx context.Context) {
 				if where == "Run" {
-					_, _ = Start[initializing](p.UncheckedChildren(), child)
+					_, _ = Start[initializing](p.supervisor, child)
 				}
 				<-ctx.Done()
 				close(ended)

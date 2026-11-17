@@ -8,7 +8,7 @@ import "github.com/lucasavila00/immutago/pkg/supervise"
 
 Package supervise runs services with owned child lifetimes and terminal failures.
 
-Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\) error. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. A Run failure stops the root. Groups control lifetime and stop order. See https://github.com/lucasavila00/immutago/blob/main/pkg/supervise/contract.md for the runtime contract.
+Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\*Supervisor\) error. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. A Run failure stops the root. Supervisors control lifetime and stop order. See https://github.com/lucasavila00/immutago/blob/main/pkg/supervise/contract.md for the runtime contract.
 
 ## type Failure
 
@@ -38,40 +38,6 @@ func (f *Failure) Unwrap() error
 
 Unwrap returns the original failure when it is an error.
 
-## type Group
-
-Group owns an ordered set of service lifetimes and nested groups. It activates at most once and stops at most once. The zero value is not usable. Do not copy an initialized Group. Pass its pointer. Run go vet to check for copies.
-
-```go
-type Group struct {
-    // contains filtered or unexported fields
-}
-```
-
-### func NewRoot
-
-```go
-func NewRoot(report func(any, []byte)) *Group
-```
-
-NewRoot creates an active lifetime group. A Run panic or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered Run panic or Goexit once as \*Failure, with its original stack, before that service waits for child cleanup. A nil report writes failures to standard error. Stop does not suppress failures. Reports can overlap, must return, and must not wait for their group to stop.
-
-### func StartGroup
-
-```go
-func StartGroup(parent *Group) *Group
-```
-
-StartGroup creates a lifetime group for selective shutdown. A Run failure in any child stops the root. A stopped parent returns a stopped group.
-
-### func \(\*Group\) Stop
-
-```go
-func (s *Group) Stop() <-chan struct{}
-```
-
-Stop closes admission in the subtree and requests ordered shutdown. It returns the same completion channel on every call. Shutdown waits for accepted Init calls, then stops children in reverse registration order and removes a nested group from its parent. Init must return without waiting for shutdown of its owning group or an ancestor, or cancellation that needs it. Stop does not wait for ordinary direct method calls. A service can request its group's stop, but must not wait for that group from its own Run.
-
 ## type NoArgs
 
 NoArgs supplies empty start arguments.
@@ -96,13 +62,13 @@ type Ref[T any] struct {
 ```go
 func Start[T, A any, P interface {
     *T
-    Init() error
+    Init(*Supervisor) error
     Run(context.Context)
-    bind(A, *Group)
+    bind(A, *Supervisor) *Supervisor
     begin(context.Context) (context.Context, bool)
     halt()
     end()
-}](parent *Group, args A) (Ref[T], error)
+}](parent *Supervisor, args A) (Ref[T], error)
 ```
 
 Start creates T, calls Init once in the caller, and publishes the initialized value. An Init error returns a zero Ref and the error; an Init panic reaches the caller. The runtime stops staged children in both cases. A stopped parent returns a zero Ref and context.Canceled before Init. Each accepted, successful Init gets one Run call. Start returns after Init and registration; Run can receive a cancelled context if Stop closes admission. Stop waits for accepted Init calls before stopping registered services.
@@ -144,17 +110,43 @@ Args returns the arguments supplied to Start.
 ### func \(\*Service\[A\]\) Init
 
 ```go
-func (*Service[A]) Init() error
+func (*Service[A]) Init(*Supervisor) error
 ```
 
-Init supplies empty setup when the service does not declare Init. A declared Init must return if a dependency stops answering. Bound blocking operations with an application timeout or an independently cancelled context. Init must release application resources if it fails. The runtime stops children created by that setup.
+Init supplies empty setup when the service does not declare Init. The runtime supplies a supervisor for services started by this service. Keep its pointer for later starts. It stops when this service ends. A declared Init must return if a dependency stops answering. Bound blocking operations with an application timeout or an independently cancelled context. Init must release application resources if it fails. The runtime stops children created by that setup.
 
-### func \(\*Service\[A\]\) UncheckedChildren
+## type Supervisor
+
+Supervisor owns an ordered set of service lifetimes and nested supervisors. It activates at most once and stops at most once. The zero value is not usable. Do not copy an initialized Supervisor. Pass its pointer. Run go vet to check for copies.
 
 ```go
-func (p *Service[A]) UncheckedChildren() *Group
+type Supervisor struct {
+    // contains filtered or unexported fields
+}
 ```
 
-UncheckedChildren returns the child group owned by this service. Call it on the original service pointer created by Start, never a value copy. Parent shutdown stops and waits for the children. After the parent ends, UncheckedChildren returns a stopped group.
+### func NewRoot
+
+```go
+func NewRoot(report func(any, []byte)) *Supervisor
+```
+
+NewRoot creates an active lifetime supervisor. A Run panic or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered Run panic or Goexit once as \*Failure, with its original stack, before that service waits for child cleanup. A nil report writes failures to standard error. Stop does not suppress failures. Reports can overlap, must return, and must not wait for their supervisor to stop.
+
+### func StartSupervisor
+
+```go
+func StartSupervisor(parent *Supervisor) *Supervisor
+```
+
+StartSupervisor creates a lifetime supervisor for selective shutdown. A Run failure in any child stops the root. A stopped parent returns a stopped supervisor.
+
+### func \(\*Supervisor\) Stop
+
+```go
+func (s *Supervisor) Stop() <-chan struct{}
+```
+
+Stop closes admission in the subtree and requests ordered shutdown. It returns the same completion channel on every call. Shutdown waits for accepted Init calls, then stops children in reverse registration order and removes a nested supervisor from its parent. Init must return without waiting for shutdown of its owning supervisor or an ancestor, or cancellation that needs it. Stop does not wait for ordinary direct method calls. From Run, a service must not wait for a supervisor that contains that service. It can stop and wait for the supervisor passed to Init, which contains only the services it started.
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

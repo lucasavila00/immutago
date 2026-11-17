@@ -56,7 +56,7 @@ _=identity([]Text{h.Text})}`,
 		"service": `type Worker struct{supervise.Service[Holder];Name Text};
 func(w *Worker)Run(ctx context.Context){w.Name=w.Args().Text;<-ctx.Done()}
 func(w *Worker)Size()int{return w.Name.Len()}
-func f(root *supervise.Group,h Holder){ref,err:=supervise.Start[Worker](root,h);_=ref;
+func f(root *supervise.Supervisor,h Holder){ref,err:=supervise.Start[Worker](root,h);_=ref;
 _=err}`,
 	}
 	for name, source := range cases {

@@ -14,7 +14,7 @@ func TestNestedFailureCompletesSubtree(t *testing.T) {
 		top := root(func(value any) { exited <- value }, func(value any, _ []byte) {
 			reported <- value.(*Failure)
 		})
-		nested := StartGroup(top)
+		nested := StartSupervisor(top)
 		_, err := Start[initializing](nested, &initHooks{
 			init: func(*initializing) error { return nil },
 			run: func(_ *initializing, ctx context.Context) {
@@ -65,18 +65,18 @@ func TestReporterStopKeepsFailure(t *testing.T) {
 				reported := make(chan *Failure, 1)
 				exited := make(chan any, 1)
 				release := make(chan struct{})
-				var stop *Group
+				var stop *Supervisor
 				top := root(func(value any) { exited <- value }, func(value any, _ []byte) {
 					stop.Stop()
 					reported <- value.(*Failure)
 					<-release
 				})
-				parent := StartGroup(top)
+				parent := StartSupervisor(top)
 				stop = top
 				if where == "subtree" {
 					stop = parent
 				} else if where == "unrelated" {
-					stop = StartGroup(top)
+					stop = StartSupervisor(top)
 				}
 				_, err := Start[initializing](parent, &initHooks{
 					init: func(*initializing) error { return nil },

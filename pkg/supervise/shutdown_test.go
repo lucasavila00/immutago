@@ -18,7 +18,7 @@ type alwaysFails struct {
 }
 
 // Init counts its setup call.
-func (s *alwaysFails) Init() error { s.Args().inits.Add(1); return nil }
+func (s *alwaysFails) Init(*Supervisor) error { s.Args().inits.Add(1); return nil }
 
 // Run fails after the test releases it.
 func (s *alwaysFails) Run(context.Context) { <-s.Args().fail; panic("fail") }

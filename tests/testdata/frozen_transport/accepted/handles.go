@@ -100,7 +100,7 @@ func (w *HandleWorker) Run(ctx context.Context) { w.State = w.Args(); <-ctx.Done
 func (w *HandleWorker) NameLen() int            { return w.State.Title.Len() }
 func (w *HandleWorker) Rename(text Text)        { w.State.Rename(text) }
 
-func startHandleWorker(root *supervise.Group, args Handles) (supervise.Ref[HandleWorker], error) {
+func startHandleWorker(root *supervise.Supervisor, args Handles) (supervise.Ref[HandleWorker], error) {
 	return supervise.Start[HandleWorker](root, args)
 }
 

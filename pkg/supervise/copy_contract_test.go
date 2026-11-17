@@ -11,7 +11,7 @@ type copyLifecycle struct {
 	parentStarted chan struct{}
 	childStarted  chan struct{}
 	childStopped  chan struct{}
-	groups        chan *Group
+	groups        chan *Supervisor
 }
 
 // copyParent creates children through a pointer receiver after Run starts.
@@ -22,7 +22,7 @@ func (p *copyParent) Run(ctx context.Context) { close(p.Args().parentStarted); <
 
 // AddChild keeps the first child group on the service value owned by the runtime.
 func (p *copyParent) AddChild() bool {
-	group := p.UncheckedChildren()
+	group := p.children
 	p.Args().groups <- group
 	_, err := Start[copyChild](group, p.Args())
 	return err == nil
@@ -47,7 +47,7 @@ func TestPointerReceiverOwnsChildren(t *testing.T) {
 			parentStarted: make(chan struct{}),
 			childStarted:  make(chan struct{}),
 			childStopped:  make(chan struct{}),
-			groups:        make(chan *Group, 1),
+			groups:        make(chan *Supervisor, 1),
 		}
 		ref, err := Start[copyParent](root, args)
 		if err != nil {

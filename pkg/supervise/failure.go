@@ -30,7 +30,7 @@ func (f *Failure) Unwrap() error {
 }
 
 // reportFailure reports one recovered failure before its service waits for children.
-func (s *Group) reportFailure(failure *Failure) {
+func (s *Supervisor) reportFailure(failure *Failure) {
 	if s.report != nil {
 		s.report(failure, failure.Stack)
 		return

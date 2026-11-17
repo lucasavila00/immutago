@@ -37,7 +37,7 @@ type Indexer struct {
 }
 
 // Init requires a complete first scan before the service starts.
-func (s *Indexer) Init() error {
+func (s *Indexer) Init(*supervise.Supervisor) error {
 	if s.Args().Every <= 0 {
 		return fmt.Errorf("scan interval must be positive")
 	}
