@@ -27,14 +27,14 @@ type failureTreeArgs struct {
 type failureParent struct{ Service[failureTreeArgs] }
 
 // Init creates the child before its parent starts running.
-func (s *failureParent) Init(*Supervisor) error {
+func (s *failureParent) Init(supervisor *Supervisor) error {
 	args := s.Args()
 	if args.depth > 0 {
 		args.depth--
-		_, err := Start[failureParent](s.children, args)
+		_, err := Start[failureParent](supervisor, args)
 		return err
 	}
-	_, err := Start[failureLeaf](s.children, args.cause)
+	_, err := Start[failureLeaf](supervisor, args.cause)
 	return err
 }
 

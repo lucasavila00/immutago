@@ -16,12 +16,18 @@ and the [API](readme.md) for signatures.
 
 ## Copy contract
 
-Keep initialized services and Supervisors behind pointers, including after Stop.
-Use pointer receivers. Do not copy their values or containing structs and arrays.
-Ref values can be copied.
+| Value | Copy rule |
+| --- | --- |
+| `Service[A]` | Contains only the saved arguments. Copies follow the Go copy and synchronization rules for A. |
+| Service struct | Copy only when its arguments and application fields permit it. For example, keep an initialized mutex or Cell behind a pointer. |
+| Saved `*Supervisor` from Init | Copies share the same supervisor and owner lifetime. Save it or pass it to other code. |
+| Supervisor | Do not copy an initialized Supervisor or a struct or array that contains it, including after Stop. Pass its pointer. |
+| Ref | Copies select the same original service. |
 
-Standard `go vet ./...` reports common service and supervisor copies.
-The supervisor pointer passed to Init can be saved and passed to other code.
+Start calls Init and Run on the service it creates. A service copy does not start
+another Run or extend the original service's lifetime. Value receivers follow the
+same field rules as explicit copies. Standard `go vet ./...` reports common
+mutex and Supervisor copies; im rules still apply to protected fields.
 
 ## References
 

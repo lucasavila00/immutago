@@ -64,10 +64,7 @@ func Start[T, A any, P interface {
     *T
     Init(*Supervisor) error
     Run(context.Context)
-    bind(A, *Supervisor) *Supervisor
-    begin(context.Context) (context.Context, bool)
-    halt()
-    end()
+    bind(A)
 }](parent *Supervisor, args A) (Ref[T], error)
 ```
 
@@ -91,7 +88,7 @@ IsZero reports whether this reference is unset.
 
 ## type Service
 
-Service supplies start arguments and the children owned by this service. Embed it by value. Start creates and initializes the service value. Do not copy an initialized Service or a struct that contains it. Declare service methods with pointer receivers. Run go vet to check for copies.
+Service supplies the arguments saved by Start. Embed it by value. Start creates and initializes the service value. Service copies follow the Go copy and synchronization rules for A.
 
 ```go
 type Service[A any] struct {

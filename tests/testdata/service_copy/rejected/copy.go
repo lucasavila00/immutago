@@ -2,44 +2,15 @@ package rejected
 
 import (
 	"context"
+	"sync"
 
 	"github.com/lucasavila00/immutago/pkg/supervise"
 )
 
-type Worker struct {
-	supervise.Service[supervise.NoArgs]
-	supervisor *supervise.Supervisor
-}
-
-func (w *Worker) Init(supervisor *supervise.Supervisor) error { w.supervisor = supervisor; return nil }
-
-func (*Worker) Run(ctx context.Context) { <-ctx.Done() }
-
-func (w Worker) AddChild() bool {
-	_, err := supervise.Start[Worker](w.supervisor, supervise.NoArgs{})
-	return err == nil
-}
-
-type Alias = Worker
-type Nested struct{ Alias }
 type Owner struct{ Supervisor supervise.Supervisor }
 
-func (w Nested) Ready() bool { return true }
-
-func TakeWorker(Worker)              {}
 func TakeGroup(supervise.Supervisor) {}
 func TakeOwner(Owner)                {}
-
-func CopyService(worker *Worker) {
-	copy := *worker
-	TakeWorker(copy)
-	var other Worker = *worker
-	TakeWorker(other)
-	values := []Worker{*worker}
-	for _, value := range values {
-		TakeWorker(value)
-	}
-}
 
 func CopyGroup(group *supervise.Supervisor) {
 	copy := *group
@@ -48,5 +19,20 @@ func CopyGroup(group *supervise.Supervisor) {
 	TakeOwner(owner)
 }
 
-func ReturnWorker(worker *Worker) Worker                           { return *worker }
 func ReturnGroup(group *supervise.Supervisor) supervise.Supervisor { return *group }
+
+type LockedWorker struct {
+	supervise.Service[supervise.NoArgs]
+	mu sync.Mutex
+}
+
+func (*LockedWorker) Run(ctx context.Context) { <-ctx.Done() }
+
+func CopyLockedWorker(worker *LockedWorker) { copy := *worker; _ = &copy }
+
+type Args struct{ mu sync.Mutex }
+type ArgsWorker struct{ supervise.Service[Args] }
+
+func (*ArgsWorker) Run(ctx context.Context) { <-ctx.Done() }
+
+func CopyArgsWorker(worker *ArgsWorker) { copy := *worker; _ = &copy }

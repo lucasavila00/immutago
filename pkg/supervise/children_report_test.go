@@ -8,7 +8,13 @@ import (
 )
 
 // reportingParent starts a child directly or in a nested group.
-type reportingParent struct{ Service[NoArgs] }
+type reportingParent struct {
+	Service[NoArgs]
+	supervisor *Supervisor
+}
+
+// Init saves the supervisor for later child starts.
+func (p *reportingParent) Init(supervisor *Supervisor) error { p.supervisor = supervisor; return nil }
 
 // Run waits until ctx ends.
 func (*reportingParent) Run(ctx context.Context) { <-ctx.Done() }
@@ -16,12 +22,12 @@ func (*reportingParent) Run(ctx context.Context) { <-ctx.Done() }
 // StartChild starts one child that panics.
 func (p *reportingParent) StartChild(nested bool) {
 	if nested {
-		if _, err := Start[reportingChild](StartSupervisor(p.children), NoArgs{}); err != nil {
+		if _, err := Start[reportingChild](StartSupervisor(p.supervisor), NoArgs{}); err != nil {
 			panic(err)
 		}
 		return
 	}
-	if _, err := Start[reportingChild](p.children, NoArgs{}); err != nil {
+	if _, err := Start[reportingChild](p.supervisor, NoArgs{}); err != nil {
 		panic(err)
 	}
 }

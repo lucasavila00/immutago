@@ -64,9 +64,9 @@ Service methods can run at the same time as Run and other callers. Immutable
 results do not make mutable service fields safe. Review field access, locks,
 saved inputs, and dependency calls in the service implementation.
 
-Declare service methods with pointer receivers. Do not copy an initialized service
-or Supervisor; pass pointers or copy Ref values. Run standard `go vet ./...` as well as
-immutago to check common copy mistakes. See the
+The loader contains a Cell, so keep it behind a pointer. Other services follow
+the copy rules for their arguments and application fields. Keep Supervisors behind
+pointers. Run standard `go vet ./...` as well as immutago to check common copy mistakes. See the
 [copy contract](../../pkg/supervise/contract.md#copy-contract).
 
 The [search indexer](../../examples/search/indexer.go) shows this distinction.
@@ -84,7 +84,7 @@ Init receives a Supervisor owned by the service. Save it for later starts:
 
 ```go
 type Pool struct {
-    supervise.Service[PoolArgs]
+    supervise.Service[supervise.NoArgs]
     supervisor *supervise.Supervisor
 }
 
@@ -93,12 +93,13 @@ func (p *Pool) Init(supervisor *supervise.Supervisor) error {
     return nil
 }
 
-func (p *Pool) Add(args WorkerArgs) (supervise.Ref[Worker], error) {
+func (p Pool) Add(args WorkerArgs) (supervise.Ref[Worker], error) {
     return supervise.Start[Worker](p.supervisor, args)
 }
 ```
 
-The runtime stops these workers when Pool ends. To stop a selection of workers
+The value receiver copies Pool and shares its supervisor pointer. The runtime
+stops these workers when the original Pool ends. To stop a selection of workers
 separately, start them under `supervise.StartSupervisor(p.supervisor)` and keep
 that supervisor's pointer. Wait for its shutdown with `<-supervisor.Stop()`.
 Other supervisors continue to run. A Run failure stops the entire root.

@@ -9,7 +9,9 @@ import (
 )
 
 // copiedWorker has no application writes after Init.
-type copiedWorker struct{ supervise.Service[chan struct{}] }
+type copiedWorker struct {
+	supervise.Service[chan struct{}]
+}
 
 // Run signals entry without changing the service value.
 func (s copiedWorker) Run(ctx context.Context) { close(s.Args()); <-ctx.Done() }

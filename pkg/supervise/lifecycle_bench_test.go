@@ -46,25 +46,16 @@ func BenchmarkServiceRun(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var ref Ref[runWorker]
-	var value *runWorker
-	run := func(ctx context.Context) {
-		value = new(runWorker)
-		supervisor := value.bind(NoArgs{}, parent)
-		if err := value.Init(supervisor); err != nil {
-			panic(err)
-		}
-		parent.mu.Lock()
-		run, admitted := value.begin(ctx)
-		ref = Ref[runWorker]{value: im.Trust(value)}
-		parent.mu.Unlock()
-		if !admitted {
-			b.Fatal("service was not admitted")
-		}
-		value.Run(run)
-	}
 	b.ReportAllocs()
 	for b.Loop() {
-		watch(parent, ctx, "runWorker", run, func() { value.end() })
+		value := new(runWorker)
+		value.bind(NoArgs{})
+		supervisor := newSupervisor(parent, false)
+		if err := value.Init(supervisor); err != nil {
+			b.Fatal(err)
+		}
+		ref = Ref[runWorker]{value: im.Trust(value)}
+		watch(parent, supervisor, ctx, "runWorker", value.Run)
 		if ref.IsZero() {
 			b.Fatal("service did not publish its value")
 		}
