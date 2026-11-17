@@ -57,34 +57,38 @@ func (p *copyChild) Run(ctx context.Context) {
 func TestServiceCopiesShareSupervisor(t *testing.T) {
 	for _, mode := range []string{"return", "stop"} {
 		t.Run(mode, func(t *testing.T) {
-			synctest.Test(t, func(t *testing.T) {
-				root := supervise.NewRoot(nil)
-				defer func() { <-root.Stop() }()
-				args := &copyLifecycle{make(chan struct{}), make(chan struct{}), make(chan struct{})}
-				ref, err := supervise.Start[copyParent](root, args)
-				if err != nil {
-					t.Fatal(err)
-				}
-				copy := *ref.Borrow()
-				if copy.supervisor != ref.Borrow().supervisor || !copy.AddChild() {
-					t.Fatal("copy did not start a child under the same supervisor")
-				}
-				<-args.childStarted
-				if mode == "return" {
-					close(args.parentDone)
-				} else {
-					root.Stop()
-				}
-				synctest.Wait()
-				select {
-				case <-args.childStopped:
-				default:
-					t.Fatal("child is still running after its owner ended")
-				}
-				if copy.AddChild() || ref.Borrow().AddChild() {
-					t.Fatal("a late start was accepted after the owner ended")
-				}
-			})
+			synctest.Test(t, func(t *testing.T) { checkServiceCopySupervisor(t, mode) })
 		})
+	}
+}
+
+// checkServiceCopySupervisor ends one owner after a copy starts its child.
+func checkServiceCopySupervisor(t *testing.T, mode string) {
+	t.Helper()
+	root := supervise.NewRoot(nil)
+	defer func() { <-root.Stop() }()
+	args := &copyLifecycle{make(chan struct{}), make(chan struct{}), make(chan struct{})}
+	ref, err := supervise.Start[copyParent](root, args)
+	if err != nil {
+		t.Fatal(err)
+	}
+	copy := *ref.Borrow()
+	if copy.supervisor != ref.Borrow().supervisor || !copy.AddChild() {
+		t.Fatal("copy did not start a child under the same supervisor")
+	}
+	<-args.childStarted
+	if mode == "return" {
+		close(args.parentDone)
+	} else {
+		root.Stop()
+	}
+	synctest.Wait()
+	select {
+	case <-args.childStopped:
+	default:
+		t.Fatal("child is still running after its owner ended")
+	}
+	if copy.AddChild() || ref.Borrow().AddChild() {
+		t.Fatal("a late start was accepted after the owner ended")
 	}
 }
