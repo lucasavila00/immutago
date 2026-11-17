@@ -59,12 +59,13 @@ fixture needs its empty assembly file so Go can load it before analyzer checks.
 bindings, ordinary saved errors, and rejected signatures and Local uses through
 the CLI and vet driver.
 
-`TestServiceCopyContract` uses standard `go vet` to check the runtime owner markers.
+`TestServiceCopyContract` uses standard `go vet` to check the Supervisor marker and lock copies.
 Its fixtures cover service and Supervisor copies, containing values, pointer use, and
 Ref copies. It also checks that immutago's CLI and vet driver keep the existing
 Go contract boundary. The
-[pointer receiver test](../pkg/supervise/copy_contract_test.go) checks child cleanup
-with channel boundaries and no sleeps.
+[service copy test](../pkg/supervise/copy_contract_test.go) checks that a copy starts
+children in the original owner's lifetime. It checks cleanup after normal return
+and Stop with channel boundaries and no sleeps.
 
 `TestCLI/proof_diagnostics` checks the proof category, failure cause, and repair
 text for invalid fields, collections, projections, service results, builder

@@ -18,9 +18,11 @@ Both commands use the same [package selection rules](../../docs/reference/rules.
 `go build` alone does not enforce im rules. Errors make the normal checker command
 fail. Do not use `-json` as a CI pass/fail check: it can return exit code 0 with errors.
 
-For services, also run standard `go vet ./...` to check common copies of Service
-and Supervisor values. A custom vettool does not run the standard vet checks.
-Immutago does not enforce the [copy contract](../../pkg/supervise/contract.md#copy-contract).
+For services, also run standard `go vet ./...` to check common copies of Supervisor
+values and services that hold locks. A custom vettool does not run the standard
+vet checks. Vet misses copies made by dereferencing a call result, such as
+`*ref.Borrow()`. See the [copy contract](../../pkg/supervise/contract.md#copy-contract)
+for this limit. Immutago does not enforce ordinary Go copy rules.
 
 ## Build configurations
 
