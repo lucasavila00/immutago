@@ -1,8 +1,8 @@
 # Service declarations and results
 
 A service is a struct that embeds `supervise.Service[A]`, directly or through
-another struct. Its fields, value copies, method receivers, and inputs use ordinary
-Go rules. Protected im data keep their normal type and source rules.
+another struct. Its fields, value copies, inputs, and methods other than Init and
+Run use ordinary Go rules. Protected im data keep their normal type and source rules.
 
 ## Service embedding — exhaustive
 
@@ -15,7 +15,7 @@ Go rules. Protected im data keep their normal type and source rules.
 | Anonymous struct with value embedding | `type Anonymous = struct { Worker }` |
 | Value embedding through another struct | `type Base struct { supervise.Service[Args] }`; `type Worker struct { Base }` |
 
-Every field on the selected path to the runtime methods must be a value field.
+Every field on the selected path to the runtime's bind method must be a value field.
 Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
 
 Start saves its arguments. Ordinary Go types are allowed. Protected arguments
@@ -27,6 +27,39 @@ must be Frozen; Local values are rejected.
 | `type Pointer = *supervise.Service[Args]`; `type Worker struct { Pointer }` | Alias `supervise.Service[Args]` without `*`. |
 | `type Worker struct { *Base }` where Base embeds Service | Embed `Base` by value. |
 | Local projection in Start arguments | Supply Frozen data and create a projection when reading. |
+
+## Lifecycle receivers — exhaustive
+
+The selected Init and Run methods must have declared pointer receivers. This rule
+applies to every named or anonymous service type, before any Start call. Go checks
+the required signatures and method ambiguity at Start. A base service type can
+omit Run until another type supplies it.
+
+| Allowed receiver form | Example |
+| --- | --- |
+| Declared pointer method | `func (w *Worker) Init(*supervise.Supervisor) error { return nil }`; `func (w *Worker) Run(context.Context) {}` |
+| Default Init | `type Worker struct { supervise.Service[Args] }` uses `(*Service[Args]).Init`. |
+| Pointer method promoted through value fields | `type Base struct { supervise.Service[Args] }`; `func (*Base) Run(context.Context) {}`; `type Worker struct { Base }` |
+| Pointer method promoted through pointer fields outside the bind path | `type Hooks struct{}`; `func (*Hooks) Run(context.Context) {}`; `type Worker struct { supervise.Service[Args]; *Hooks }` |
+| Aliased, defined, or generic service | `type Alias = Worker`; `type Other Worker` with its own pointer Run; `type Worker[A any] struct { supervise.Service[A] }` with `func (*Worker[A]) Run(context.Context) {}` |
+| Anonymous service with promoted pointer methods | `type Anonymous = struct { Base }`, where Base supplies pointer Init and Run methods. |
+
+This receiver list is complete. Other selected receiver forms are rejected.
+Promotion uses the receiver in the original method declaration. An interface
+method has no declared pointer receiver. A direct pointer method can replace a
+promoted value or interface method and forward its call when needed.
+
+The bind path still requires value fields. Other embedded pointers follow Go
+contracts: initialize them before their methods run, and do not change them while
+a runtime call uses them. Ordinary value methods and explicit service copies keep
+the [copy contract](../../pkg/supervise/contract.md#copy-contract).
+
+| Rejected examples — non-exhaustive | Replacement |
+| --- | --- |
+| `func (w Worker) Run(ctx context.Context) {}` | `func (w *Worker) Run(ctx context.Context) {}`; lock shared fields before reading them. |
+| `func (w Worker) Init(*supervise.Supervisor) error { w.limit = 5; return nil }` | Use `*Worker` so setup writes change the original service. |
+| A value Run promoted from `Hooks` or `*Hooks` | Declare `func (*Hooks) Run(context.Context)`, or declare a pointer Run on Worker. |
+| Run promoted from `type Runner interface { Run(context.Context) }` | Declare `func (w *Worker) Run(ctx context.Context) { w.Runner.Run(ctx) }`. |
 
 ## Exported method results
 

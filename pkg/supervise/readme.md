@@ -8,7 +8,7 @@ import "github.com/lucasavila00/immutago/pkg/supervise"
 
 Package supervise runs services with owned child lifetimes and terminal failures.
 
-Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\*Supervisor\) error. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. A Run failure stops the root. Supervisors control lifetime and stop order. See https://github.com/lucasavila00/immutago/blob/main/pkg/supervise/contract.md for the runtime contract.
+Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\*Supervisor\) error. Init and Run must have declared pointer receivers, including promoted methods. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. A Run failure stops the root. Supervisors control lifetime and stop order. See https://github.com/lucasavila00/immutago/blob/main/pkg/supervise/contract.md for the runtime contract.
 
 ## type Failure
 
@@ -68,7 +68,7 @@ func Start[T, A any, P interface {
 }](parent *Supervisor, args A) (Ref[T], error)
 ```
 
-Start creates T, calls Init once in the caller, and publishes the initialized value. An Init error returns a zero Ref and the error; an Init panic reaches the caller. The runtime stops staged children in both cases. A stopped parent returns a zero Ref and context.Canceled before Init. Each accepted, successful Init gets one Run call. Start returns after Init and registration; Run can receive a cancelled context if Stop closes admission. Stop waits for accepted Init calls before stopping registered services.
+Start creates T, calls Init once in the caller, and publishes the initialized value. The selected Init and Run methods must have declared pointer receivers. The immutago analyzer checks this rule, including promoted methods. An Init error returns a zero Ref and the error; an Init panic reaches the caller. The runtime stops staged children in both cases. A stopped parent returns a zero Ref and context.Canceled before Init. Each accepted, successful Init gets one Run call. Start returns after Init and registration; Run can receive a cancelled context if Stop closes admission. Stop waits for accepted Init calls before stopping registered services.
 
 ### func \(Ref\[T\]\) Borrow
 

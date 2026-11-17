@@ -14,7 +14,7 @@ type copiedWorker struct {
 }
 
 // Run signals entry without changing the service value.
-func (s copiedWorker) Run(ctx context.Context) { close(s.Args()); <-ctx.Done() }
+func (s *copiedWorker) Run(ctx context.Context) { close(s.Args()); <-ctx.Done() }
 
 // TestServiceCopyAfterStart checks copies without waiting for Run admission.
 func TestServiceCopyAfterStart(t *testing.T) {
