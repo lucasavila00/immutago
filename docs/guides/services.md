@@ -84,7 +84,7 @@ Init receives a Supervisor owned by the service. Save it for later starts:
 
 ```go
 type Pool struct {
-    supervise.Service[supervise.NoArgs]
+    supervise.Service[PoolArgs]
     supervisor *supervise.Supervisor
 }
 
@@ -93,13 +93,12 @@ func (p *Pool) Init(supervisor *supervise.Supervisor) error {
     return nil
 }
 
-func (p Pool) Add(args WorkerArgs) (supervise.Ref[Worker], error) {
+func (p *Pool) Add(args WorkerArgs) (supervise.Ref[Worker], error) {
     return supervise.Start[Worker](p.supervisor, args)
 }
 ```
 
-The value receiver copies Pool and shares its supervisor pointer. The runtime
-stops these workers when the original Pool ends. To stop a selection of workers
+The runtime stops these workers when Pool ends. To stop a selection of workers
 separately, start them under `supervise.StartSupervisor(p.supervisor)` and keep
 that supervisor's pointer. Wait for its shutdown with `<-supervisor.Stop()`.
 Other supervisors continue to run. A Run failure stops the entire root.
