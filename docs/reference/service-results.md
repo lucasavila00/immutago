@@ -15,7 +15,7 @@ Run use ordinary Go rules. Protected im data keep their normal type and source r
 | Anonymous struct with value embedding | `type Anonymous = struct { Worker }` |
 | Value embedding through another struct | `type Base struct { supervise.Service[Args] }`; `type Worker struct { Base }` |
 
-Every field on the selected path to the runtime's bind method must be a value field.
+The Service embedding used by Start must use value fields.
 Unlisted embedding paths are rejected. Other fields follow ordinary Go rules.
 
 Start saves its arguments. Ordinary Go types are allowed. Protected arguments
@@ -38,20 +38,21 @@ omit Run until another type supplies it.
 | Allowed receiver form | Example |
 | --- | --- |
 | Declared pointer method | `func (w *Worker) Init(*supervise.Supervisor) error { return nil }`; `func (w *Worker) Run(context.Context) {}` |
+| Alias of a pointer receiver | `type Receiver = *Worker`; `func (Receiver) Run(context.Context) {}` |
 | Default Init | `type Worker struct { supervise.Service[Args] }` uses `(*Service[Args]).Init`. |
 | Pointer method promoted through value fields | `type Base struct { supervise.Service[Args] }`; `func (*Base) Run(context.Context) {}`; `type Worker struct { Base }` |
-| Pointer method promoted through pointer fields outside the bind path | `type Hooks struct{}`; `func (*Hooks) Run(context.Context) {}`; `type Worker struct { supervise.Service[Args]; *Hooks }` |
+| Pointer method promoted through pointer fields outside the Service embedding path | `type Hooks struct{}`; `func (*Hooks) Run(context.Context) {}`; `type Worker struct { supervise.Service[Args]; *Hooks }` |
 | Aliased, defined, or generic service | `type Alias = Worker`; `type Other Worker` with its own pointer Run; `type Worker[A any] struct { supervise.Service[A] }` with `func (*Worker[A]) Run(context.Context) {}` |
 | Anonymous service with promoted pointer methods | `type Anonymous = struct { Base }`, where Base supplies pointer Init and Run methods. |
 
-This receiver list is complete. Other selected receiver forms are rejected.
+Unlisted receiver forms are rejected.
 Promotion uses the receiver in the original method declaration. An interface
 method has no declared pointer receiver. A direct pointer method can replace a
 promoted value or interface method and forward its call when needed.
 
-The bind path still requires value fields. Other embedded pointers follow Go
-contracts: initialize them before their methods run, and do not change them while
-a runtime call uses them. Ordinary value methods and explicit service copies keep
+The Service embedding path still requires value fields. Other embedded pointers
+use ordinary Go initialization and synchronization contracts.
+Ordinary value methods and explicit service copies keep
 the [copy contract](../../pkg/supervise/contract.md#copy-contract).
 
 | Rejected examples — non-exhaustive | Replacement |
