@@ -295,7 +295,26 @@ func (s *Supervisor) stop() {
 	s.cancel()
 	go func() {
 		s.starts.Wait()
-		s.halt()
+		// Stop one child at a time, in reverse registration order.
+		for {
+			s.mu.Lock()
+			c := s.children.last
+			if c == nil {
+				s.mu.Unlock()
+				break
+			}
+			if c.group == nil && c.done == nil {
+				s.launch(c)
+			}
+			stop, done := c.stop, c.done
+			s.mu.Unlock()
+			if c.group != nil {
+				<-c.group.Stop()
+				continue
+			}
+			stop()
+			<-done
+		}
 		s.mu.Lock()
 		failure := s.failure
 		if failure == nil {
@@ -363,14 +382,6 @@ func (s *Supervisor) activate() {
 	}
 }
 
-// finish publishes completion and removal in one parent-list operation.
-func (s *Supervisor) finish(c *child, done chan struct{}) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.unlink(c)
-	close(done)
-}
-
 // unlink removes an entry in constant time. The caller holds s.mu.
 func (s *Supervisor) unlink(c *child) {
 	c.run = nil
@@ -402,33 +413,15 @@ func (s *Supervisor) launch(c *child) {
 	c.stop, c.done = cancel, done
 	run := c.run
 	go func() {
-		defer s.finish(c, done)
+		defer func() {
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			s.unlink(c)
+			close(done)
+		}()
 		defer cancel()
 		run(ctx)
 	}()
-}
-
-// halt removes the last child after it stops. Admission is already closed.
-func (s *Supervisor) halt() {
-	for {
-		s.mu.Lock()
-		c := s.children.last
-		if c == nil {
-			s.mu.Unlock()
-			return
-		}
-		if c.group == nil && c.done == nil {
-			s.launch(c)
-		}
-		stop, done := c.stop, c.done
-		s.mu.Unlock()
-		if c.group != nil {
-			<-c.group.Stop()
-			continue
-		}
-		stop()
-		<-done
-	}
 }
 
 // watch reports a Run failure before cleanup can wait for children.
