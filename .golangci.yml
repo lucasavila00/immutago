@@ -48,10 +48,6 @@ linters:
     gocyclo:
       min-complexity: 20
   exclusions:
-    rules:
-      # Compare runtime structure without function size or complexity limits.
-      - path: ^pkg/supervise/supervise\.go$
-        linters: [funlen, gocognit, gocyclo]
     paths:
       - testdata
 
