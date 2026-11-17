@@ -29,12 +29,18 @@ func TestGoexitStopsWatcher(t *testing.T) {
 }
 
 // pool is a service that starts three children under its own group.
-type pool struct{ Service[NoArgs] }
+type pool struct {
+	Service[NoArgs]
+	supervisor *Supervisor
+}
+
+// Init saves the supervisor for later child starts.
+func (p *pool) Init(supervisor *Supervisor) error { p.supervisor = supervisor; return nil }
 
 // Run starts the children, one of them in a nested group, and waits until ctx ends.
 func (p *pool) Run(ctx context.Context) {
 	record("start pool")
-	sup := p.children
+	sup := p.supervisor
 	if _, err := Start[first](sup, NoArgs{}); err != nil {
 		panic(err)
 	}
@@ -54,14 +60,20 @@ var (
 )
 
 // failingPool is a service that starts two children and panics when released.
-type failingPool struct{ Service[NoArgs] }
+type failingPool struct {
+	Service[NoArgs]
+	supervisor *Supervisor
+}
+
+// Init saves the supervisor for later child starts.
+func (p *failingPool) Init(supervisor *Supervisor) error { p.supervisor = supervisor; return nil }
 
 // Run starts the children and panics when released.
 func (p *failingPool) Run(context.Context) {
-	if _, err := Start[first](p.children, NoArgs{}); err != nil {
+	if _, err := Start[first](p.supervisor, NoArgs{}); err != nil {
 		panic(err)
 	}
-	if _, err := Start[second](p.children, NoArgs{}); err != nil {
+	if _, err := Start[second](p.supervisor, NoArgs{}); err != nil {
 		panic(err)
 	}
 	poolRuns.Add(1)
@@ -70,12 +82,18 @@ func (p *failingPool) Run(context.Context) {
 }
 
 // failingParent is a service with a child that panics on each run.
-type failingParent struct{ Service[NoArgs] }
+type failingParent struct {
+	Service[NoArgs]
+	supervisor *Supervisor
+}
+
+// Init saves the supervisor for later child starts.
+func (p *failingParent) Init(supervisor *Supervisor) error { p.supervisor = supervisor; return nil }
 
 // Run starts the failing child and waits until ctx ends.
 func (p *failingParent) Run(ctx context.Context) {
 	record("start parent")
-	if _, err := Start[failing](p.children, NoArgs{}); err != nil {
+	if _, err := Start[failing](p.supervisor, NoArgs{}); err != nil {
 		panic(err)
 	}
 	<-ctx.Done()
@@ -97,31 +115,38 @@ func TestChildrenStopBeforeRun(t *testing.T) {
 	})
 }
 
-// TestChildrenDuringHalt rejects a child after its owner closes admission.
+// TestChildrenDuringHalt rejects a child while its owner's children stop.
 func TestChildrenDuringHalt(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		parent := NewRoot(nil)
 		defer func() { <-parent.Stop() }()
-		entered := make(chan struct{})
-		resume := make(chan struct{})
-		var once sync.Once
-		p := &Service[NoArgs]{
-			cancel:  func() { once.Do(func() { close(entered); <-resume }) },
-			unwatch: func() bool { return true },
+		entered, resume := make(chan struct{}), make(chan struct{})
+		owner, err := Start[initializing](parent, &initHooks{
+			init: func(p *initializing) error {
+				_, err := Start[initializing](p.supervisor, &initHooks{
+					init: func(*initializing) error { return nil },
+					run: func(_ *initializing, ctx context.Context) {
+						<-ctx.Done()
+						close(entered)
+						<-resume
+					},
+				})
+				return err
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
-		p.bind(NoArgs{}, parent)
-		halted := make(chan struct{})
-		go func() { p.halt(); close(halted) }()
+		synctest.Wait()
+		done := parent.Stop()
 		<-entered
-		s := p.children
 		var inits, runs int
-		ref, err := Start[initializing](s, &initHooks{
+		ref, err := Start[initializing](owner.Borrow().supervisor, &initHooks{
 			init: func(*initializing) error { inits++; return nil },
 			run:  func(*initializing, context.Context) { runs++ },
 		})
 		close(resume)
-		<-halted
-		p.end()
+		<-done
 		if err != context.Canceled || !ref.IsZero() || inits != 0 || runs != 0 {
 			t.Fatalf("closed child start: err = %v, zero = %v, Init = %d, Run = %d", err, ref.IsZero(), inits, runs)
 		}
@@ -131,15 +156,20 @@ func TestChildrenDuringHalt(t *testing.T) {
 // asker is a service whose Run answers the calls of its child.
 type asker struct {
 	Service[NoArgs]
-	requests chan chan int
+	requests   chan chan int
+	supervisor *Supervisor
 }
 
 // Init creates the request channel before publication.
-func (a *asker) Init(*Supervisor) error { a.requests = make(chan chan int); return nil }
+func (a *asker) Init(supervisor *Supervisor) error {
+	a.requests = make(chan chan int)
+	a.supervisor = supervisor
+	return nil
+}
 
 // StartCaller creates a child after its parent's reference is available.
 func (a *asker) StartCaller(self Ref[asker]) {
-	if _, err := Start[caller](a.children, self); err != nil {
+	if _, err := Start[caller](a.supervisor, self); err != nil {
 		panic(err)
 	}
 }
@@ -246,16 +276,20 @@ func (v *variant) Run(ctx context.Context) { track(ctx, v.Args().Name) }
 // router is a service whose methods add and remove variants during one run.
 type router struct {
 	Service[NoArgs]
-	mu       sync.Mutex
-	variants map[string]*Supervisor
+	mu         sync.Mutex
+	variants   map[string]*Supervisor
+	supervisor *Supervisor
 }
+
+// Init saves the supervisor for later child starts.
+func (r *router) Init(supervisor *Supervisor) error { r.supervisor = supervisor; return nil }
 
 // Run waits until ctx ends.
 func (*router) Run(ctx context.Context) { <-ctx.Done() }
 
 // Add starts a variant under its own nested group in the group of the run.
 func (r *router) Add(name string) bool {
-	sub := StartSupervisor(r.children)
+	sub := StartSupervisor(r.supervisor)
 	if _, err := Start[variant](sub, variantArgs{Name: name}); err != nil {
 		if err == context.Canceled {
 			return false
@@ -282,7 +316,7 @@ func (r *router) Remove(name string) {
 
 // entries returns the number of children in the group of the run.
 func (r *router) entries() int {
-	s := r.children
+	s := r.supervisor
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.children.count
@@ -368,14 +402,20 @@ func TestReturnedChildrenAreRemoved(t *testing.T) {
 }
 
 // shortParent is a service whose Run starts two children and returns after 1 s.
-type shortParent struct{ Service[NoArgs] }
+type shortParent struct {
+	Service[NoArgs]
+	supervisor *Supervisor
+}
+
+// Init saves the supervisor for later child starts.
+func (p *shortParent) Init(supervisor *Supervisor) error { p.supervisor = supervisor; return nil }
 
 // Run starts the children and returns after 1 s.
 func (p *shortParent) Run(context.Context) {
-	if _, err := Start[first](p.children, NoArgs{}); err != nil {
+	if _, err := Start[first](p.supervisor, NoArgs{}); err != nil {
 		panic(err)
 	}
-	if _, err := Start[second](p.children, NoArgs{}); err != nil {
+	if _, err := Start[second](p.supervisor, NoArgs{}); err != nil {
 		panic(err)
 	}
 	time.Sleep(time.Second)
@@ -409,17 +449,23 @@ func (*slowStop) Run(ctx context.Context) {
 }
 
 // stoppingParent is a service with a failing child and a slow child.
-type stoppingParent struct{ Service[chan struct{}] }
+type stoppingParent struct {
+	Service[chan struct{}]
+	supervisor *Supervisor
+}
+
+// Init saves the supervisor for later child starts.
+func (p *stoppingParent) Init(supervisor *Supervisor) error { p.supervisor = supervisor; return nil }
 
 // Run starts the failing child, then the slow child, and waits until ctx ends.
 func (p *stoppingParent) Run(ctx context.Context) {
-	if _, err := Start[initializing](p.children, &initHooks{
+	if _, err := Start[initializing](p.supervisor, &initHooks{
 		init: func(*initializing) error { return nil },
 		run:  func(*initializing, context.Context) { <-p.Args(); panic("during Stop") },
 	}); err != nil {
 		panic(err)
 	}
-	if _, err := Start[slowStop](p.children, NoArgs{}); err != nil {
+	if _, err := Start[slowStop](p.supervisor, NoArgs{}); err != nil {
 		panic(err)
 	}
 	<-ctx.Done()
@@ -449,15 +495,21 @@ func TestChildFailsDuringStop(t *testing.T) {
 }
 
 // lateParent is a service that tries to start a child after its child escalated.
-type lateParent struct{ Service[NoArgs] }
+type lateParent struct {
+	Service[NoArgs]
+	supervisor *Supervisor
+}
+
+// Init saves the supervisor for later child starts.
+func (p *lateParent) Init(supervisor *Supervisor) error { p.supervisor = supervisor; return nil }
 
 // Run starts a failing child, waits until ctx ends, and then starts another child.
 func (p *lateParent) Run(ctx context.Context) {
-	if _, err := Start[failing](p.children, NoArgs{}); err != nil {
+	if _, err := Start[failing](p.supervisor, NoArgs{}); err != nil {
 		panic(err)
 	}
 	<-ctx.Done()
-	ref, err := Start[first](p.children, NoArgs{})
+	ref, err := Start[first](p.supervisor, NoArgs{})
 	if err != context.Canceled || !ref.IsZero() {
 		panic("late Start was accepted")
 	}

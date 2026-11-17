@@ -64,9 +64,9 @@ Service methods can run at the same time as Run and other callers. Immutable
 results do not make mutable service fields safe. Review field access, locks,
 saved inputs, and dependency calls in the service implementation.
 
-Declare service methods with pointer receivers. Do not copy an initialized service
-or Supervisor; pass pointers or copy Ref values. Run standard `go vet ./...` as well as
-immutago to check common copy mistakes. See the
+The loader contains a Cell, so keep it behind a pointer. Other services follow
+the copy rules for their arguments and application fields. Keep Supervisors behind
+pointers. Run standard `go vet ./...` as well as immutago to check common copy mistakes. See the
 [copy contract](../../pkg/supervise/contract.md#copy-contract).
 
 The [search indexer](../../examples/search/indexer.go) shows this distinction.

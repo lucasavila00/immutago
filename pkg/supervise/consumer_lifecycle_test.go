@@ -66,10 +66,12 @@ type consumerParentArgs struct {
 type consumerParent struct {
 	Service[consumerParentArgs]
 	generation int32
+	supervisor *Supervisor
 }
 
 // Init counts each new parent instance.
-func (s *consumerParent) Init(*Supervisor) error {
+func (s *consumerParent) Init(supervisor *Supervisor) error {
+	s.supervisor = supervisor
 	s.generation = s.Args().starts.Add(1)
 	return nil
 }
@@ -79,7 +81,7 @@ func (s *consumerParent) Run(context.Context) {
 	args := s.Args()
 	worker := newConsumerLifetime()
 	worker.finish = args.finish
-	if _, err := Start[consumerModel](s.children, consumerModelArgs{life: worker}); err != nil {
+	if _, err := Start[consumerModel](s.supervisor, consumerModelArgs{life: worker}); err != nil {
 		panic(err)
 	}
 	args.workers <- worker

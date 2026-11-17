@@ -4,12 +4,15 @@
 Ref copies hold the same service pointer.
 Method calls run in the caller's goroutine.
 
-Start creates a service and its owned Supervisor before Init. It passes that
-supervisor to Init and retains the same pointer for activation and cleanup.
-Saving or passing that pointer does not change its owner. The tree mutex protects
-supervisor state.
-The zero-size `noCopy` fields enable standard vet diagnostics; they add no runtime
-state or check. See the [copy contract](../../pkg/supervise/contract.md#copy-contract).
+Service[A] stores only its start arguments. Start binds them before Init and
+creates the service's owned Supervisor. It passes that supervisor to Init and
+retains the same pointer for activation and cleanup. The watcher holds cancellation
+and cleanup state in local variables; it does not write the published Service value.
+Saving or copying the supervisor pointer does not change its owner. The tree mutex
+protects supervisor state.
+Supervisor's zero-size `noCopy` field enables standard vet diagnostics; it adds no
+runtime state or check. Service copies follow the
+[copy contract](../../pkg/supervise/contract.md#copy-contract).
 
 ## Initialization, publication, and calls
 
@@ -58,7 +61,7 @@ Init: children pending ──> Run admission: activate ──> Run ends: stop an
 
 | Supervisor state | Purpose |
 | --- | --- |
-| Shared tree mutex | Protect admission, child links, activation, service state, and Stop across all descendant supervisors. |
+| Shared tree mutex | Protect admission, child links, activation, and Stop across all descendant supervisors. |
 | Accepted Start count | Wait for Init and failed-Init child cleanup before stopping the supervisor's registered entries. |
 | Doubly linked child list | Preserve registration order after Init; unlink a completed child without searching. |
 | Admission context | Close admission throughout the subtree immediately. Failure selection does not use this context. |

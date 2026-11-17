@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// TestServiceCopyContract checks the standard vet signal without adding an immutago copy rule.
+// TestServiceCopyContract keeps service copies under the ordinary Go field rules.
 func TestServiceCopyContract(t *testing.T) {
 	root, err := filepath.Abs("..")
 	if err != nil {

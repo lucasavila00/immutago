@@ -28,17 +28,11 @@ func (*noCopy) Lock() {}
 // Unlock completes the lock method set for the copylocks check.
 func (*noCopy) Unlock() {}
 
-// Service supplies start arguments and the children owned by this service.
+// Service supplies the arguments saved by Start.
 // Embed it by value. Start creates and initializes the service value.
-// Do not copy an initialized Service or a struct that contains it.
-// Declare service methods with pointer receivers. Run go vet to check for copies.
+// Service copies follow the Go copy and synchronization rules for A.
 type Service[A any] struct {
-	_        noCopy
-	args     A
-	owner    *Supervisor
-	cancel   context.CancelFunc
-	unwatch  func() bool
-	children *Supervisor
+	args A
 }
 
 // Args returns the arguments supplied to Start.
@@ -53,41 +47,8 @@ func (p *Service[A]) Args() A { return p.args }
 // created by that setup.
 func (*Service[A]) Init(*Supervisor) error { return nil }
 
-// bind supplies arguments and creates the supervisor passed to Init.
-func (p *Service[A]) bind(args A, owner *Supervisor) *Supervisor {
-	p.args, p.owner = args, owner
-	p.children = newSupervisor(owner, false)
-	return p.children
-}
-
-// begin admits Run and activates children under the tree lock held by Start.
-func (p *Service[A]) begin(ctx context.Context) (context.Context, bool) {
-	run, cancel := context.WithCancel(context.WithoutCancel(ctx))
-	p.cancel = cancel
-	if p.owner.admission.Err() != nil || ctx.Err() != nil {
-		return run, false
-	}
-	p.unwatch = context.AfterFunc(ctx, p.halt)
-	p.children.activate()
-	return run, true
-}
-
-// halt stops children before it cancels the parent's Run context.
-func (p *Service[A]) halt() {
-	<-p.children.Stop()
-	p.cancel()
-}
-
-// end closes child admission and waits for cleanup after Init or Run ends.
-func (p *Service[A]) end() {
-	if p.unwatch != nil {
-		p.unwatch()
-	}
-	if p.cancel != nil {
-		p.cancel()
-	}
-	<-p.children.Stop()
-}
+// bind saves the arguments before Init.
+func (p *Service[A]) bind(args A) { p.args = args }
 
 // NoArgs supplies empty start arguments.
 type NoArgs struct{}
@@ -204,10 +165,7 @@ func Start[T, A any, P interface {
 	*T
 	Init(*Supervisor) error
 	Run(context.Context)
-	bind(A, *Supervisor) *Supervisor
-	begin(context.Context) (context.Context, bool)
-	halt()
-	end()
+	bind(A)
 }](parent *Supervisor, args A) (Ref[T], error) {
 	checkSupervisor(parent)
 	parent.mu.Lock()
@@ -221,11 +179,12 @@ func Start[T, A any, P interface {
 	}
 	defer parent.starts.Done()
 	value := new(T)
-	supervisor := bindService(P(value), args, parent)
+	bindService(P(value), args)
+	supervisor := newSupervisor(parent, false)
 	ready := false
 	defer func() {
 		if !ready {
-			P(value).end()
+			<-supervisor.Stop()
 		}
 	}()
 	if err := P(value).Init(supervisor); err != nil {
@@ -233,34 +192,22 @@ func Start[T, A any, P interface {
 	}
 	ready = true
 	ref := Ref[T]{value: im.Trust(value)}
-	run := func(ctx context.Context) {
-		service := P(value)
-		parent.mu.Lock()
-		run, admitted := service.begin(ctx)
-		parent.mu.Unlock()
-		if !admitted {
-			<-ctx.Done()
-			service.halt()
-		}
-		service.Run(run)
-	}
-	cleanup := func() { P(value).end() }
 	parent.add(func(ctx context.Context) {
-		watch(parent, ctx, reflect.TypeFor[T]().String(), run, cleanup)
+		watch(parent, supervisor, ctx, reflect.TypeFor[T]().String(), P(value).Run)
 	}, nil)
 	return ref, nil
 }
 
 // bindService reports an invalid embedding path without catching application Init panics.
 func bindService[A any, P interface {
-	bind(A, *Supervisor) *Supervisor
-}](value P, args A, parent *Supervisor) *Supervisor {
+	bind(A)
+}](value P, args A) {
 	defer func() {
 		if recover() != nil {
 			panic("supervise: embed Service by value through each embedded field")
 		}
 	}()
-	return value.bind(args, parent)
+	value.bind(args)
 }
 
 // Stop closes admission in the subtree and requests ordered shutdown.
@@ -431,9 +378,17 @@ func (s *Supervisor) halt() {
 	}
 }
 
-// watch reports a Run failure before cleanup can wait for children.
-func watch(parent *Supervisor, ctx context.Context, name string, run func(context.Context), cleanup func()) {
-	defer cleanup()
+// watch owns Run cancellation and reports a failure before it waits for child cleanup.
+func watch(parent, supervisor *Supervisor, ctx context.Context, name string, run func(context.Context)) {
+	runContext, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	var unwatch func() bool
+	defer func() {
+		if unwatch != nil {
+			unwatch()
+		}
+		cancel()
+		<-supervisor.Stop()
+	}()
 	completed := false
 	defer func() {
 		if completed {
@@ -448,6 +403,18 @@ func watch(parent *Supervisor, ctx context.Context, name string, run func(contex
 		parent.fail(failure)
 		parent.root.reportFailure(failure)
 	}()
-	run(ctx)
+	halt := func() { <-supervisor.Stop(); cancel() }
+	parent.mu.Lock()
+	admitted := parent.admission.Err() == nil && ctx.Err() == nil
+	if admitted {
+		unwatch = context.AfterFunc(ctx, halt)
+		supervisor.activate()
+	}
+	parent.mu.Unlock()
+	if !admitted {
+		<-ctx.Done()
+		halt()
+	}
+	run(runContext)
 	completed = true
 }
