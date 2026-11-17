@@ -1,0 +1,6 @@
+protected.go:23:6: service lifecycle method Run must have a declared pointer receiver
+  service type: protected.Rejected; declared receiver: protected.Rejected
+  fix: declare a pointer receiver method on the service; forward the call if needed
+protected.go:27:6: service lifecycle method Run must have a declared pointer receiver
+  service type: protected.Interface; declared receiver: hooks.Runner
+  fix: declare a pointer receiver method on the service; forward the call if needed

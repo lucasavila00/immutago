@@ -8,6 +8,47 @@ import (
 	"github.com/lucasavila00/immutago/internal/checker"
 )
 
+// checkServiceLifecycle checks declared receivers on named and anonymous service types.
+func (c *checks) checkServiceLifecycle(node ast.Node, stack []ast.Node) {
+	var t types.Type
+	switch declaration := node.(type) {
+	case *ast.TypeSpec:
+		t = c.pass.TypesInfo.Defs[declaration.Name].Type()
+	case *ast.StructType:
+		parent := stack[len(stack)-1]
+		for i := len(stack) - 2; i >= 0; i-- {
+			if _, ok := parent.(*ast.ParenExpr); !ok {
+				break
+			}
+			parent = stack[i]
+		}
+		if _, ok := parent.(*ast.TypeSpec); ok {
+			return // The named type's method set includes its declared overrides.
+		}
+		t = c.pass.TypesInfo.TypeOf(declaration)
+	default:
+		return
+	}
+	if !checker.Service(t) {
+		return
+	}
+	methods := types.NewMethodSet(types.NewPointer(t))
+	for _, name := range []string{"Init", "Run"} {
+		selection := methods.Lookup(nil, name)
+		if selection == nil {
+			continue // Start's Go constraint requires both method signatures.
+		}
+		method := selection.Obj()
+		receiver := method.Type().(*types.Signature).Recv().Type()
+		if _, ok := types.Unalias(receiver).(*types.Pointer); ok {
+			continue
+		}
+		c.report(node.Pos(), "service lifecycle method "+name+" must have a declared pointer receiver"+
+			"\n  service type: "+diagnosticType(t)+"; declared receiver: "+diagnosticType(receiver)+
+			"\n  fix: declare a pointer receiver method on the service; forward the call if needed")
+	}
+}
+
 // checkServiceEmbedding checks the selected runtime method path before startup.
 func (c *checks) checkServiceEmbedding(pos token.Pos, t types.Type) {
 	if checker.Service(t) {

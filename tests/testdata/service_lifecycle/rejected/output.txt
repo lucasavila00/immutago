@@ -1,0 +1,45 @@
+rejected.go:11:6: service lifecycle method Run must have a declared pointer receiver
+  service type: rejected.Counter; declared receiver: rejected.Counter
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:26:6: service lifecycle method Init must have a declared pointer receiver
+  service type: rejected.ValueInit; declared receiver: rejected.ValueInit
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:34:6: service lifecycle method Run must have a declared pointer receiver
+  service type: rejected.PromotedValue; declared receiver: hooks.ValueRun
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:39:6: service lifecycle method Run must have a declared pointer receiver
+  service type: rejected.PromotedPointer; declared receiver: hooks.ValueRun
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:45:6: service lifecycle method Init must have a declared pointer receiver
+  service type: rejected.PromotedValueInit; declared receiver: hooks.ValueInit
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:52:6: service lifecycle method Init must have a declared pointer receiver
+  service type: rejected.PromotedPointerInit; declared receiver: hooks.ValueInit
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:59:6: service lifecycle method Run must have a declared pointer receiver
+  service type: rejected.InterfaceRun; declared receiver: hooks.Runner
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:64:6: service lifecycle method Init must have a declared pointer receiver
+  service type: rejected.InterfaceInit; declared receiver: hooks.Initializer
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:71:6: service lifecycle method Run must have a declared pointer receiver
+  service type: rejected.Alias; declared receiver: rejected.Counter
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:72:6: service lifecycle method Run must have a declared pointer receiver
+  service type: rejected.Defined; declared receiver: rejected.Defined
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:76:6: service lifecycle method Run must have a declared pointer receiver
+  service type: rejected.Anonymous; declared receiver: hooks.ValueRun
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:81:6: service lifecycle method Run must have a declared pointer receiver
+  service type: rejected._; declared receiver: hooks.ValueRun
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:85:6: service lifecycle method Run must have a declared pointer receiver
+  service type: rejected._; declared receiver: rejected.Counter
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:92:25: service lifecycle method Run must have a declared pointer receiver
+  service type: struct{supervise.Service[int]; hooks.ValueRun}; declared receiver: hooks.ValueRun
+  fix: declare a pointer receiver method on the service; forward the call if needed
+rejected.go:96:7: service lifecycle method Run must have a declared pointer receiver
+  service type: rejected.Local; declared receiver: hooks.ValueRun
+  fix: declare a pointer receiver method on the service; forward the call if needed

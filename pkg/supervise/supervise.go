@@ -1,6 +1,7 @@
 // Package supervise runs services with owned child lifetimes and terminal failures.
 //
 // Embed Service[A], supply Run(context.Context), and optionally declare Init(*Supervisor) error.
+// Init and Run must have declared pointer receivers, including promoted methods.
 // Start initializes the service and returns Ref[T]. Calls through Borrow run in
 // the caller's goroutine; review shared fields, locks, and inputs in service code.
 // A Run failure stops the root. Supervisors control lifetime and stop order.
@@ -156,6 +157,8 @@ func StartSupervisor(parent *Supervisor) *Supervisor {
 }
 
 // Start creates T, calls Init once in the caller, and publishes the initialized value.
+// The selected Init and Run methods must have declared pointer receivers.
+// The immutago analyzer checks this rule, including promoted methods.
 // An Init error returns a zero Ref and the error; an Init panic reaches
 // the caller. The runtime stops staged children in both cases.
 // A stopped parent returns a zero Ref and context.Canceled before Init.

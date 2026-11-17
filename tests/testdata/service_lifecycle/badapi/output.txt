@@ -1,0 +1,9 @@
+badapi.go:13:6: service lifecycle method Run must have a declared pointer receiver
+  service type: badapi.Alias[A any]; declared receiver: badapi.Generic[A]
+  fix: declare a pointer receiver method on the service; forward the call if needed
+badapi.go:14:6: service lifecycle method Run must have a declared pointer receiver
+  service type: badapi.Defined[A any]; declared receiver: badapi.Defined[A]
+  fix: declare a pointer receiver method on the service; forward the call if needed
+badapi.go:9:6: service lifecycle method Run must have a declared pointer receiver
+  service type: badapi.Generic[A any]; declared receiver: badapi.Generic[A]
+  fix: declare a pointer receiver method on the service; forward the call if needed

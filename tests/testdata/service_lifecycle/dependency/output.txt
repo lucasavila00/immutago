@@ -1,0 +1,6 @@
+dependency.go:3:8: unsupported dependency example.com/consumer/badapi: immutability proof failed
+  representative failure: example.com/consumer/badapi/badapi.go:13:6: service lifecycle method Run must have a declared pointer receiver
+    service type: badapi.Alias[A any]; declared receiver: badapi.Generic[A]
+    fix: declare a pointer receiver method on the service; forward the call if needed
+  note: other dependency errors may exist
+  fix: run immutago example.com/consumer/badapi, correct its errors, then rerun immutago on this package

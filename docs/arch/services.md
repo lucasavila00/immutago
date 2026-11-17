@@ -101,6 +101,7 @@ accepted Init calls, but the terminal panic does.
 | Source | Compiler-resolved check |
 | --- | --- |
 | `Service[A]` embedding | The selected runtime embedding path uses value fields. |
+| Selected Init and Run | The method object's declared receiver is a pointer. Check named declarations and anonymous service types; the named method set includes direct overrides. This also covers generic Start helpers. |
 | `Ref[T]` | Apply the general Frozen wrapper and UncheckedValue field rules. Start constrains the constructed service type. |
 | `Borrow` result | Ordinary Go pointer use; retain im checks for protected fields. |
 | Exported service methods | Check each result with the shared ReadResult proof, or compiler identity with predeclared error. Apply no result count or order limit. |

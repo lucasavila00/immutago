@@ -8,8 +8,8 @@ and the [API](readme.md) for signatures.
 | Item | Requirement |
 | --- | --- |
 | Service declaration | Use the [value embedding forms](../../docs/reference/service-results.md#service-embedding--exhaustive). |
-| Setup | `*Worker` supplies `Init(*Supervisor) error`, or uses the default Init from Service[A]. |
-| Background work | `*Worker` supplies `Run(context.Context)`. |
+| Setup | Declare `func (*Worker) Init(*Supervisor) error`, promote a declared pointer method, or use the default Init from Service[A]. |
+| Background work | Declare `func (*Worker) Run(context.Context)`, or promote a declared pointer method. See the complete [receiver forms](../../docs/reference/service-results.md#lifecycle-receivers--exhaustive). |
 | Start arguments | `s.Args()` reads A. Start saves these arguments on the service. Use `supervise.NoArgs{}` when no arguments are needed. |
 | Exported methods | Use the [result rules](../../docs/reference/service-results.md). |
 | Mutable state and inputs | Review field access, locks, saved inputs, and dependency calls in the service implementation. |
@@ -24,9 +24,15 @@ and the [API](readme.md) for signatures.
 | Supervisor | Do not copy an initialized Supervisor or a struct or array that contains it, including after Stop. Pass its pointer. |
 | Ref | Copies select the same original service. |
 
-Start calls Init and Run on the service it creates. A service copy does not start
-another Run or extend the original service's lifetime. Value receivers follow the
-same field rules as explicit copies. im rules still apply to protected fields.
+Start calls Init and Run on the service it creates. Their declared pointer
+receivers prevent an implicit receiver copy: Init changes the original service,
+and Run can lock shared fields before reading them. A value Run would copy fields
+in the watcher after publication, before its body could take a lock. The immutago
+analyzer rejects value and interface receivers for these two methods.
+
+A service copy does not start another Run or extend the original service's
+lifetime. Other value methods follow the same field rules as explicit copies.
+im rules still apply to protected fields.
 
 Standard `go vet ./...` reports common mutex and Supervisor copies. It misses
 copies made by dereferencing a call result. These copies still need to obey the

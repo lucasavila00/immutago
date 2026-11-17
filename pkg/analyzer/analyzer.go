@@ -5,6 +5,7 @@
 //   - Allowed construction, reads, calls, and assignments; no protected field writes.
 //   - Frozen pointer storage and Local pointer retention.
 //   - Exclusive native builders, Freeze consumption, and use after Freeze.
+//   - Declared pointer receivers for the selected service Init and Run methods.
 //   - Each exported service method result is a read result or error, with no count or order limit.
 //     Promoted methods use the same rule. Init, Run, and runtime methods are exempt.
 //
@@ -74,11 +75,13 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 	}
 	for _, file := range pass.Files {
-		if immutable {
-			ast.Inspect(file, c.visit)
-		} else {
-			ast.Inspect(file, c.visitService)
-		}
+		ast.PreorderStack(file, nil, func(node ast.Node, stack []ast.Node) bool {
+			c.checkServiceLifecycle(node, stack)
+			if immutable {
+				return c.visit(node)
+			}
+			return c.visitService(node)
+		})
 	}
 	if immutable {
 		forms.checkImmutable(freeze.Check(pass))
