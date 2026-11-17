@@ -3,7 +3,7 @@
 // Embed Service[A], supply Run(context.Context), and optionally declare Init(*Supervisor) error.
 // Start initializes the service and returns Ref[T]. Calls through Borrow run in
 // the caller's goroutine; review shared fields, locks, and inputs in service code.
-// A Run failure stops the root. Groups control lifetime and stop order.
+// A Run failure stops the root. Supervisors control lifetime and stop order.
 // See https://github.com/lucasavila00/immutago/blob/main/pkg/supervise/contract.md for the runtime contract.
 package supervise
 
@@ -45,8 +45,8 @@ type Service[A any] struct {
 func (p *Service[A]) Args() A { return p.args }
 
 // Init supplies empty setup when the service does not declare Init.
-// The runtime supplies a supervisor owned by this service. Keep its pointer
-// to start services later. It stops when this service ends.
+// The runtime supplies a supervisor for services started by this service.
+// Keep its pointer for later starts. It stops when this service ends.
 // A declared Init must return if a dependency stops answering. Bound blocking
 // operations with an application timeout or an independently cancelled context.
 // Init must release application resources if it fails. The runtime stops children
@@ -92,7 +92,7 @@ func (p *Service[A]) end() {
 // NoArgs supplies empty start arguments.
 type NoArgs struct{}
 
-// Supervisor owns an ordered set of service lifetimes and nested groups.
+// Supervisor owns an ordered set of service lifetimes and nested supervisors.
 // It activates at most once and stops at most once. The zero value is not usable.
 // Do not copy an initialized Supervisor. Pass its pointer. Run go vet to check for copies.
 type Supervisor struct {
@@ -120,7 +120,7 @@ type childList struct {
 }
 
 // child is pending while done is nil. Activation or shutdown starts its watcher.
-// Nested groups own their own completion channel.
+// Nested supervisors own their own completion channel.
 type child struct {
 	run        func(context.Context)
 	stop       func()
@@ -149,12 +149,12 @@ func (p Ref[T]) Borrow() *T {
 	return im.Unwrap(p.value)
 }
 
-// NewRoot creates an active lifetime group. A Run panic or Goexit stops the root,
+// NewRoot creates an active lifetime supervisor. A Run panic or Goexit stops the root,
 // waits for ordered cleanup, and panics with *Failure.
 // report receives each recovered Run panic or Goexit once as *Failure, with its
 // original stack, before that service waits for child cleanup. A nil report
 // writes failures to standard error. Stop does not suppress failures.
-// Reports can overlap, must return, and must not wait for their group to stop.
+// Reports can overlap, must return, and must not wait for their supervisor to stop.
 func NewRoot(report func(any, []byte)) *Supervisor {
 	return root(func(value any) { panic(value) }, report)
 }
@@ -166,7 +166,7 @@ func root(exit func(any), report func(any, []byte)) *Supervisor {
 	return s
 }
 
-// newSupervisor creates a pending or active group with its owner's admission context.
+// newSupervisor creates a pending or active supervisor with its owner's admission context.
 func newSupervisor(owner *Supervisor, active bool) *Supervisor {
 	parent := context.Background()
 	var mu *sync.Mutex
@@ -177,12 +177,14 @@ func newSupervisor(owner *Supervisor, active bool) *Supervisor {
 		mu = new(sync.Mutex)
 	}
 	admission, cancel := context.WithCancel(parent)
-	return &Supervisor{mu: mu, active: active, stopped: make(chan struct{}), admission: admission, cancel: cancel, root: top}
+	return &Supervisor{
+		mu: mu, active: active, stopped: make(chan struct{}), admission: admission, cancel: cancel, root: top,
+	}
 }
 
-// StartSupervisor creates a lifetime group for selective shutdown.
+// StartSupervisor creates a lifetime supervisor for selective shutdown.
 // A Run failure in any child stops the root.
-// A stopped parent returns a stopped group.
+// A stopped parent returns a stopped supervisor.
 func StartSupervisor(parent *Supervisor) *Supervisor {
 	checkSupervisor(parent)
 	nested := newSupervisor(parent, false)
@@ -264,10 +266,11 @@ func bindService[A any, P interface {
 // Stop closes admission in the subtree and requests ordered shutdown.
 // It returns the same completion channel on every call. Shutdown waits for
 // accepted Init calls, then stops children in reverse registration order and
-// removes a nested group from its parent. Init must return without waiting for
-// shutdown of its owning group or an ancestor, or cancellation that needs it.
-// Stop does not wait for ordinary direct method calls. A service can request its
-// group's stop, but must not wait for that group from its own Run.
+// removes a nested supervisor from its parent. Init must return without waiting for
+// shutdown of its owning supervisor or an ancestor, or cancellation that needs it.
+// Stop does not wait for ordinary direct method calls. From Run, a service must
+// not wait for a supervisor that contains that service. It can stop and wait for
+// the supervisor passed to Init, which contains only the services it started.
 func (s *Supervisor) Stop() <-chan struct{} {
 	checkSupervisor(s)
 	s.mu.Lock()
@@ -276,7 +279,7 @@ func (s *Supervisor) Stop() <-chan struct{} {
 	return s.stopped
 }
 
-// checkSupervisor rejects an absent group before setup or shutdown can use it.
+// checkSupervisor rejects an absent supervisor before setup or shutdown can use it.
 func checkSupervisor(s *Supervisor) {
 	if s == nil || s.stopped == nil {
 		panic("supervise: nil or zero Supervisor")
@@ -322,7 +325,7 @@ func (s *Supervisor) fail(failure *Failure) {
 	top.stop()
 }
 
-// add registers an accepted service after Init, or admits a new nested group.
+// add registers an accepted service after Init, or admits a new nested supervisor.
 func (s *Supervisor) add(run func(context.Context), group *Supervisor) {
 	c := &child{run: run, group: group}
 	if group != nil {

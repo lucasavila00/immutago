@@ -62,8 +62,8 @@ is requested; its context still ends at its turn in shutdown.
 Init must not wait for an unstarted peer or child Run. For readiness that depends
 on Run, expose a method such as `Ready() bool`. Init has no cancellation context.
 It must return without waiting for its owning supervisor or an ancestor to stop, or
-for cancellation that needs that shutdown. Init can stop and wait for its own
-child supervisor to undo setup. It must release application resources that it opened
+for cancellation that needs that shutdown. Init can stop and wait for the
+supervisor passed to it to undo setup. It must release application resources that it opened
 if setup fails.
 
 Init must return if a dependency stops answering. Bound each blocking operation
@@ -138,8 +138,10 @@ Stop does not interrupt work already admitted. Registered work must finish
 before the completion channel closes. Run must return when its context ends.
 Stop cannot force Run or Init to return
 and does not wait for direct method calls. Release locks that children need
-before waiting for Stop. A child or report function must not wait for its own
-supervisor to stop: the supervisor is waiting for that code to finish. A child can call a
+before waiting for Stop. A service must not wait from Run for the supervisor
+that contains it: that supervisor is waiting for Run to finish. The supervisor
+passed to Init contains only the services it starts; it can stop and wait for
+that supervisor. A report function must not wait for tree shutdown. A child can call a
 parent during shutdown, but must not wait for a parent method that waits for
 that child's supervisor to stop.
 

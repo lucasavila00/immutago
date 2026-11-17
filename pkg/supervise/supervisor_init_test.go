@@ -66,26 +66,18 @@ func TestInitSupervisorOwnsDynamicServices(t *testing.T) {
 			t.Fatal(err)
 		}
 		pool := ref.Borrow()
-		if got := <-events.started; got != "initial" {
-			t.Fatalf("initial worker = %q", got)
-		}
+		expectPoolEvent(t, events.started, "initial")
 		if _, err := pool.Add("dynamic"); err != nil {
 			t.Fatal(err)
 		}
-		if got := <-events.started; got != "dynamic" {
-			t.Fatalf("dynamic worker = %q", got)
-		}
+		expectPoolEvent(t, events.started, "dynamic")
 		selected := supervise.StartSupervisor(pool.supervisor)
 		if _, err := supervise.Start[poolWorker](selected, poolWorkerArgs{"selected", events}); err != nil {
 			t.Fatal(err)
 		}
-		if got := <-events.started; got != "selected" {
-			t.Fatalf("selected worker = %q", got)
-		}
+		expectPoolEvent(t, events.started, "selected")
 		<-selected.Stop()
-		if got := <-events.stopped; got != "selected" {
-			t.Fatalf("selective stop = %q", got)
-		}
+		expectPoolEvent(t, events.stopped, "selected")
 		select {
 		case name := <-events.stopped:
 			t.Fatalf("selective stop also stopped %q", name)
@@ -102,4 +94,12 @@ func TestInitSupervisorOwnsDynamicServices(t *testing.T) {
 			t.Fatalf("late start = %v, zero = %v", err, late.IsZero())
 		}
 	})
+}
+
+// expectPoolEvent checks one lifecycle event in order.
+func expectPoolEvent(t *testing.T, events <-chan string, want string) {
+	t.Helper()
+	if got := <-events; got != want {
+		t.Fatalf("event = %q, want %q", got, want)
+	}
 }
