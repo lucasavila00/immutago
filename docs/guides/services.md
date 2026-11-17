@@ -66,8 +66,9 @@ saved inputs, and dependency calls in the service implementation.
 
 The loader contains a Cell, so keep it behind a pointer. Other services follow
 the copy rules for their arguments and application fields. Keep Supervisors behind
-pointers. Run standard `go vet ./...` as well as immutago to check common copy mistakes. See the
-[copy contract](../../pkg/supervise/contract.md#copy-contract).
+pointers. Run standard `go vet ./...` as well as immutago to check common mutex and
+Supervisor copies. Vet misses copies through `*ref.Borrow()`; see the
+[copy contract](../../pkg/supervise/contract.md#copy-contract) for this limit.
 
 The [search indexer](../../examples/search/indexer.go) shows this distinction.
 Its Cell publishes an immutable index. A mutex also protects the error text and

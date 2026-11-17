@@ -55,7 +55,8 @@ type NoArgs struct{}
 
 // Supervisor owns an ordered set of service lifetimes and nested supervisors.
 // It activates at most once and stops at most once. The zero value is not usable.
-// Do not copy an initialized Supervisor. Pass its pointer. Run go vet to check for copies.
+// Do not copy an initialized Supervisor. Pass its pointer.
+// Run go vet to check common copies; see the copy contract for its coverage limits.
 type Supervisor struct {
 	_         noCopy
 	mu        *sync.Mutex
