@@ -32,8 +32,17 @@ analyzer rejects value and interface receivers for these two methods.
 
 A service copy does not start another Run or extend the original service's
 lifetime. Other value methods follow the same field rules as explicit copies.
-Standard `go vet ./...` reports common
-mutex and Supervisor copies; im rules still apply to protected fields.
+im rules still apply to protected fields.
+
+Standard `go vet ./...` reports common mutex and Supervisor copies. It misses
+copies made by dereferencing a call result. These copies still need to obey the
+copy rules above.
+
+| Copy form | Standard vet check |
+| --- | --- |
+| `copy := *ref.Borrow()` | No copy diagnostic, even when the service contains a mutex or Supervisor by value. |
+| `p := ref.Borrow(); copy := *p` | Reports a copy when the service contains a mutex or Supervisor by value. |
+| `copy := *supervise.NewRoot(nil)` or `copy := *supervise.StartSupervisor(parent)` | No copy diagnostic. Keep the returned pointer. |
 
 ## References
 

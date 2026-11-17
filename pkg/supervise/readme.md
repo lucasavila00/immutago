@@ -12,7 +12,7 @@ Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(
 
 ## type Failure
 
-Failure describes one service Run panic or runtime.Goexit call. The root panics with the first recorded \*Failure after accepted Init calls, reporting, and cleanup. Value is the original panic value, or an error with the text "supervise: service called runtime.Goexit" for Goexit. Stack is captured in that service's goroutine. Groups pass the same failure to the root without wrapping it.
+Failure describes one service Run panic or runtime.Goexit call. The root panics with the first recorded \*Failure after accepted Init calls, reporting, and cleanup. Value is the original panic value, or an error with the text "supervise: service called runtime.Goexit" for Goexit. Stack is captured in that service's goroutine. Supervisors pass the same failure to the root without wrapping it.
 
 ```go
 type Failure struct {
@@ -114,7 +114,7 @@ Init supplies empty setup when the service does not declare Init. The runtime su
 
 ## type Supervisor
 
-Supervisor owns an ordered set of service lifetimes and nested supervisors. It activates at most once and stops at most once. The zero value is not usable. Do not copy an initialized Supervisor. Pass its pointer. Run go vet to check for copies.
+Supervisor owns an ordered set of service lifetimes and nested supervisors. It activates at most once and stops at most once. The zero value is not usable. Do not copy an initialized Supervisor. Pass its pointer. Run go vet to check common copies; see the copy contract for its coverage limits.
 
 ```go
 type Supervisor struct {
