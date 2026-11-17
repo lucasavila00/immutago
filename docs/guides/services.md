@@ -20,7 +20,7 @@ type Loader struct {
 uses a ticker to try later reloads and returns when its context ends. Expected
 file errors are logged; the last valid catalog stays available. A panic in Run
 stops the root and waits for accepted Init calls and cleanup before it terminates
-the process. Pass `supervise.FailureDeadline(d)` to NewRoot to limit this wait. The [failure report](../../pkg/supervise/contract.md#failure-reports) keeps
+the process. `root.Shutdown(ctx)` limits the wait, also after a failure. The [failure report](../../pkg/supervise/contract.md#failure-reports) keeps
 the panic value and stack.
 
 The [command](../../examples/shipping/cmd/shipping/main.go) starts the loader

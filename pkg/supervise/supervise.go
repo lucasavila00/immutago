@@ -4,8 +4,7 @@
 // Init and Run must have declared pointer receivers, including promoted methods.
 // Start initializes the service and returns Ref[T]. Calls through Borrow run in
 // the caller's goroutine; review shared fields, locks, and inputs in service code.
-// A Run failure stops the root. FailureDeadline limits the wait for the terminal panic.
-// Supervisors control lifetime and stop order.
+// A Run failure stops the root. Supervisors control lifetime and stop order.
 // See https://github.com/lucasavila00/immutago/blob/main/pkg/supervise/contract.md for the runtime contract.
 package supervise
 
@@ -15,7 +14,6 @@ import (
 	"reflect"
 	"runtime/debug"
 	"sync"
-	"time"
 
 	"github.com/lucasavila00/immutago/pkg/im"
 )
@@ -76,8 +74,6 @@ type Supervisor struct {
 	report    func(any, []byte)
 	exit      func(any)
 	failure   *Failure
-	deadline  time.Duration
-	timer     *time.Timer
 }
 
 // childList preserves registration order and permits constant-time removal under Supervisor.mu.
@@ -122,36 +118,14 @@ func (p Ref[T]) Borrow() *T {
 // original stack, before that service waits for child cleanup. A nil report
 // writes failures to standard error. Stop does not suppress failures.
 // Reports can overlap, must return, and must not wait for their supervisor to stop.
-// Without FailureDeadline, the terminal panic waits for every Run, accepted Init,
-// and report to return.
-func NewRoot(report func(any, []byte), options ...RootOption) *Supervisor {
-	return root(func(value any) { panic(value) }, report, options...)
-}
-
-// RootOption configures a root supervisor created by NewRoot.
-type RootOption func(*rootConfig)
-
-// rootConfig holds the values that root options set.
-type rootConfig struct {
-	failureDeadline time.Duration
-}
-
-// FailureDeadline limits the time from the first recorded failure to the terminal panic.
-// When the time ends first, the root panics with that *Failure from a runtime
-// goroutine. It does not wait for the remaining Run calls, accepted Init calls, or reports.
-// The limit does not apply to Stop without a failure. A d of zero or less sets no limit.
-func FailureDeadline(d time.Duration) RootOption {
-	return func(c *rootConfig) { c.failureDeadline = d }
+func NewRoot(report func(any, []byte)) *Supervisor {
+	return root(func(value any) { panic(value) }, report)
 }
 
 // root supplies the terminal exit hook used by runtime tests.
-func root(exit func(any), report func(any, []byte), options ...RootOption) *Supervisor {
-	var config rootConfig
-	for _, option := range options {
-		option(&config)
-	}
+func root(exit func(any), report func(any, []byte)) *Supervisor {
 	s := newSupervisor(nil, true)
-	s.root, s.exit, s.report, s.deadline = s, exit, report, config.failureDeadline
+	s.root, s.exit, s.report = s, exit, report
 	return s
 }
 
@@ -256,6 +230,25 @@ func (s *Supervisor) Stop() <-chan struct{} {
 	return s.stopped
 }
 
+// Shutdown calls Stop and waits for it.
+// It returns nil when the supervisor has stopped. It returns ctx.Err() when ctx ends first;
+// the supervisor then continues its ordered shutdown. After a root failure, Shutdown
+// does not return nil. The rules for a wait on Stop also apply to Shutdown.
+func (s *Supervisor) Shutdown(ctx context.Context) error {
+	done := s.Stop()
+	select {
+	case <-done:
+		return nil
+	default:
+	}
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 // checkSupervisor rejects an absent supervisor before setup or shutdown can use it.
 func checkSupervisor(s *Supervisor) {
 	if s == nil || s.stopped == nil {
@@ -284,17 +277,13 @@ func (s *Supervisor) stop() {
 			s.mu.Unlock()
 			return
 		}
-		timer := s.timer
 		s.mu.Unlock()
-		if timer == nil || timer.Stop() {
-			s.exit(failure)
-		}
+		s.exit(failure)
 		close(s.stopped)
 	}()
 }
 
 // fail records the first failure before reporting or cleanup can run.
-// With a deadline, a timer runs the terminal action unless shutdown stops the timer first.
 func (s *Supervisor) fail(failure *Failure) {
 	top := s.root
 	top.mu.Lock()
@@ -303,9 +292,6 @@ func (s *Supervisor) fail(failure *Failure) {
 		return
 	}
 	top.failure = failure
-	if top.deadline > 0 {
-		top.timer = time.AfterFunc(top.deadline, func() { top.exit(failure) })
-	}
 	top.stop()
 }
 
