@@ -11,7 +11,7 @@ import (
 func TestRunAfterAdmissionCloses(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		top := NewRoot(nil)
-		parent := newGroup(top, false)
+		parent := newSupervisor(top, false)
 		inits, runs := 0, 0
 		ref, err := Start[initializing](parent, &initHooks{
 			init: func(*initializing) error { inits++; return nil },
@@ -83,7 +83,7 @@ func checkTerminalBeforeOwnChildCleanup(t *testing.T, mode string) {
 	})
 	_, err := Start[initializing](top, &initHooks{
 		init: func(p *initializing) error {
-			_, err := Start[initializing](p.UncheckedChildren(), &initHooks{
+			_, err := Start[initializing](p.supervisor, &initHooks{
 				init: func(*initializing) error { return nil },
 				run: func(_ *initializing, ctx context.Context) {
 					<-ctx.Done()

@@ -28,10 +28,10 @@ type Strategy struct {
 }
 
 // Init creates instrument children and a complete initial report before publication.
-func (s *Strategy) Init() error {
+func (s *Strategy) Init(supervisor *supervise.Supervisor) error {
 	args := s.Args()
 	for index, market := range args.Spec.Markets {
-		if _, err := supervise.Start[Maker](s.UncheckedChildren(), MakerArgs{
+		if _, err := supervise.Start[Maker](supervisor, MakerArgs{
 			API: args.API, AccountName: args.Spec.Account, Symbol: market.Symbol, Log: args.Log,
 			Policy: args.Policy, Account: args.Account, Index: index,
 			Parameters: args.Spec.Parameters, StrategyID: args.Spec.ID, StopBot: args.StopBot,

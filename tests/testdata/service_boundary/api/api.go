@@ -32,7 +32,7 @@ type ReadyCounter struct {
 }
 
 // Init sets the initial count.
-func (p *ReadyCounter) Init() error { p.count = p.Args(); return nil }
+func (p *ReadyCounter) Init(*supervise.Supervisor) error { p.count = p.Args(); return nil }
 
 // Run waits for cancellation.
 func (*ReadyCounter) Run(ctx context.Context) { <-ctx.Done() }

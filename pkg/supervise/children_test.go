@@ -34,11 +34,11 @@ type pool struct{ Service[NoArgs] }
 // Run starts the children, one of them in a nested group, and waits until ctx ends.
 func (p *pool) Run(ctx context.Context) {
 	record("start pool")
-	sup := p.UncheckedChildren()
+	sup := p.children
 	if _, err := Start[first](sup, NoArgs{}); err != nil {
 		panic(err)
 	}
-	if _, err := Start[second](StartGroup(sup), NoArgs{}); err != nil {
+	if _, err := Start[second](StartSupervisor(sup), NoArgs{}); err != nil {
 		panic(err)
 	}
 	if _, err := Start[third](sup, NoArgs{}); err != nil {
@@ -58,10 +58,10 @@ type failingPool struct{ Service[NoArgs] }
 
 // Run starts the children and panics when released.
 func (p *failingPool) Run(context.Context) {
-	if _, err := Start[first](p.UncheckedChildren(), NoArgs{}); err != nil {
+	if _, err := Start[first](p.children, NoArgs{}); err != nil {
 		panic(err)
 	}
-	if _, err := Start[second](p.UncheckedChildren(), NoArgs{}); err != nil {
+	if _, err := Start[second](p.children, NoArgs{}); err != nil {
 		panic(err)
 	}
 	poolRuns.Add(1)
@@ -75,7 +75,7 @@ type failingParent struct{ Service[NoArgs] }
 // Run starts the failing child and waits until ctx ends.
 func (p *failingParent) Run(ctx context.Context) {
 	record("start parent")
-	if _, err := Start[failing](p.UncheckedChildren(), NoArgs{}); err != nil {
+	if _, err := Start[failing](p.children, NoArgs{}); err != nil {
 		panic(err)
 	}
 	<-ctx.Done()
@@ -113,7 +113,7 @@ func TestChildrenDuringHalt(t *testing.T) {
 		halted := make(chan struct{})
 		go func() { p.halt(); close(halted) }()
 		<-entered
-		s := p.UncheckedChildren()
+		s := p.children
 		var inits, runs int
 		ref, err := Start[initializing](s, &initHooks{
 			init: func(*initializing) error { inits++; return nil },
@@ -135,11 +135,11 @@ type asker struct {
 }
 
 // Init creates the request channel before publication.
-func (a *asker) Init() error { a.requests = make(chan chan int); return nil }
+func (a *asker) Init(*Supervisor) error { a.requests = make(chan chan int); return nil }
 
 // StartCaller creates a child after its parent's reference is available.
 func (a *asker) StartCaller(self Ref[asker]) {
-	if _, err := Start[caller](a.UncheckedChildren(), self); err != nil {
+	if _, err := Start[caller](a.children, self); err != nil {
 		panic(err)
 	}
 }
@@ -247,7 +247,7 @@ func (v *variant) Run(ctx context.Context) { track(ctx, v.Args().Name) }
 type router struct {
 	Service[NoArgs]
 	mu       sync.Mutex
-	variants map[string]*Group
+	variants map[string]*Supervisor
 }
 
 // Run waits until ctx ends.
@@ -255,7 +255,7 @@ func (*router) Run(ctx context.Context) { <-ctx.Done() }
 
 // Add starts a variant under its own nested group in the group of the run.
 func (r *router) Add(name string) bool {
-	sub := StartGroup(r.UncheckedChildren())
+	sub := StartSupervisor(r.children)
 	if _, err := Start[variant](sub, variantArgs{Name: name}); err != nil {
 		if err == context.Canceled {
 			return false
@@ -265,7 +265,7 @@ func (r *router) Add(name string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.variants == nil {
-		r.variants = make(map[string]*Group)
+		r.variants = make(map[string]*Supervisor)
 	}
 	r.variants[name] = sub
 	return true
@@ -282,7 +282,7 @@ func (r *router) Remove(name string) {
 
 // entries returns the number of children in the group of the run.
 func (r *router) entries() int {
-	s := r.UncheckedChildren()
+	s := r.children
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.children.count
@@ -372,10 +372,10 @@ type shortParent struct{ Service[NoArgs] }
 
 // Run starts the children and returns after 1 s.
 func (p *shortParent) Run(context.Context) {
-	if _, err := Start[first](p.UncheckedChildren(), NoArgs{}); err != nil {
+	if _, err := Start[first](p.children, NoArgs{}); err != nil {
 		panic(err)
 	}
-	if _, err := Start[second](p.UncheckedChildren(), NoArgs{}); err != nil {
+	if _, err := Start[second](p.children, NoArgs{}); err != nil {
 		panic(err)
 	}
 	time.Sleep(time.Second)
@@ -413,13 +413,13 @@ type stoppingParent struct{ Service[chan struct{}] }
 
 // Run starts the failing child, then the slow child, and waits until ctx ends.
 func (p *stoppingParent) Run(ctx context.Context) {
-	if _, err := Start[initializing](p.UncheckedChildren(), &initHooks{
+	if _, err := Start[initializing](p.children, &initHooks{
 		init: func(*initializing) error { return nil },
 		run:  func(*initializing, context.Context) { <-p.Args(); panic("during Stop") },
 	}); err != nil {
 		panic(err)
 	}
-	if _, err := Start[slowStop](p.UncheckedChildren(), NoArgs{}); err != nil {
+	if _, err := Start[slowStop](p.children, NoArgs{}); err != nil {
 		panic(err)
 	}
 	<-ctx.Done()
@@ -453,11 +453,11 @@ type lateParent struct{ Service[NoArgs] }
 
 // Run starts a failing child, waits until ctx ends, and then starts another child.
 func (p *lateParent) Run(ctx context.Context) {
-	if _, err := Start[failing](p.UncheckedChildren(), NoArgs{}); err != nil {
+	if _, err := Start[failing](p.children, NoArgs{}); err != nil {
 		panic(err)
 	}
 	<-ctx.Done()
-	ref, err := Start[first](p.UncheckedChildren(), NoArgs{})
+	ref, err := Start[first](p.children, NoArgs{})
 	if err != context.Canceled || !ref.IsZero() {
 		panic("late Start was accepted")
 	}

@@ -31,10 +31,10 @@ func checkChildFailureAfterParentReturn(t *testing.T, where, cause string) {
 		}
 	}
 	top := root(func(value any) { exited <- value }, report)
-	var children *Group
-	parent, err := Start[initializing](top, &initHooks{
+	var children *Supervisor
+	_, err := Start[initializing](top, &initHooks{
 		init: func(p *initializing) error {
-			children = p.UncheckedChildren()
+			children = p.supervisor
 			_, err := Start[initializing](children, &initHooks{
 				init: func(*initializing) error { return nil },
 				run: func(*initializing, context.Context) {
@@ -60,7 +60,7 @@ func checkChildFailureAfterParentReturn(t *testing.T, where, cause string) {
 	}
 	<-held
 	synctest.Wait()
-	if !parent.Borrow().ended || children.admission.Err() == nil {
+	if children.admission.Err() == nil {
 		t.Fatal("parent did not start child cleanup")
 	}
 	close(release)

@@ -60,7 +60,7 @@ bindings, ordinary saved errors, and rejected signatures and Local uses through
 the CLI and vet driver.
 
 `TestServiceCopyContract` uses standard `go vet` to check the runtime owner markers.
-Its fixtures cover service and Group copies, containing values, pointer use, and
+Its fixtures cover service and Supervisor copies, containing values, pointer use, and
 Ref copies. It also checks that immutago's CLI and vet driver keep the existing
 Go contract boundary. The
 [pointer receiver test](../pkg/supervise/copy_contract_test.go) checks child cleanup

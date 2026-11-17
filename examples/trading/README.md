@@ -96,7 +96,7 @@ instrument workers on the same account.
 
 To select the candidate, replace `active` with the unchanged candidate object
 and remove `candidate`. The bot publishes the new selection before it stops the
-old group. It keeps the candidate's subscriptions, balances, and order IDs.
+old supervisor. It keeps the candidate's subscriptions, balances, and order IDs.
 To end only the candidate trial, remove `candidate` and keep `active` unchanged.
 
 A selected ID and account keep their parameters and instrument list. Use a new
@@ -136,11 +136,11 @@ All services run in one Go process:
 root
 ├── Policy: refresh and publish immutable risk limits
 └── Trading: apply strategy selection and publish reports
-    ├── active lifetime group
+    ├── active supervisor
     │   └── Strategy: publish periodic account reports
     │       ├── Maker AAA: subscription, event loop, bid and ask orders
     │       └── Maker BBB: subscription, event loop, bid and ask orders
-    └── optional candidate lifetime group
+    └── optional candidate supervisor
         └── Strategy
             ├── Maker AAA
             └── Maker BBB

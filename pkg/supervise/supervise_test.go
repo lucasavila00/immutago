@@ -86,7 +86,7 @@ func (*failing) Run(context.Context) {
 	panic(failures.Add(1))
 }
 
-var selfRoot *Group
+var selfRoot *Supervisor
 
 // stopper is a service that stops its own group.
 type stopper struct{ Service[NoArgs] }
@@ -152,7 +152,7 @@ func TestStopOrder(t *testing.T) {
 		if _, err := Start[first](root, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
-		nested := StartGroup(root)
+		nested := StartSupervisor(root)
 		if _, err := Start[second](nested, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
@@ -174,7 +174,7 @@ func TestStopNested(t *testing.T) {
 		if _, err := Start[first](root, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
-		nested := StartGroup(root)
+		nested := StartSupervisor(root)
 		if _, err := Start[second](nested, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
@@ -199,7 +199,7 @@ func TestStopNestedReleases(t *testing.T) {
 			t.Fatal(err)
 		}
 		for range 3 {
-			nested := StartGroup(root)
+			nested := StartSupervisor(root)
 			if _, err := Start[second](nested, NoArgs{}); err != nil {
 				t.Fatal(err)
 			}
@@ -270,7 +270,7 @@ func TestNestedPanicReport(t *testing.T) {
 		failures.Store(0)
 		reported := make(chan any, 2)
 		root := root(func(any) {}, func(value any, _ []byte) { reported <- value })
-		nested := StartGroup(root)
+		nested := StartSupervisor(root)
 		if _, err := Start[failing](nested, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
@@ -322,7 +322,7 @@ func BenchmarkRefBorrow(b *testing.B) {
 func TestStopNestedRightAfterStart(t *testing.T) {
 	root := NewRoot(nil)
 	for range 100 {
-		<-StartGroup(root).Stop()
+		<-StartSupervisor(root).Stop()
 	}
 	<-root.Stop()
 }

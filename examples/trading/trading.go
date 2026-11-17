@@ -40,22 +40,24 @@ type tradingArgs struct {
 // runningStrategy connects one selective lifetime group to its current service.
 type runningStrategy struct {
 	saved savedAccount
-	group *supervise.Group
+	group *supervise.Supervisor
 	ref   supervise.Ref[Strategy]
 }
 
 // Trading owns strategy selection and publishes it before retiring old workers.
 type Trading struct {
 	supervise.Service[tradingArgs]
-	running  [2]runningStrategy
-	updates  chan struct{}
-	problem  string
-	stopping bool
-	current  ReportCell
+	supervisor *supervise.Supervisor
+	running    [2]runningStrategy
+	updates    chan struct{}
+	problem    string
+	stopping   bool
+	current    ReportCell
 }
 
 // Init creates the initial selection and its owned services.
-func (t *Trading) Init() error {
+func (t *Trading) Init(supervisor *supervise.Supervisor) error {
+	t.supervisor = supervisor
 	t.updates = make(chan struct{}, 1)
 	config, err := readConfiguration(t.Args().Files)
 	if err != nil {
@@ -162,7 +164,7 @@ func (t *Trading) selectAccount(spec strategySpec) (savedAccount, error) {
 // startStrategy stages one owned group; failed setup closes any staged children.
 func (t *Trading) startStrategy(saved savedAccount) (runningStrategy, error) {
 	args := t.Args()
-	group := supervise.StartGroup(t.UncheckedChildren())
+	group := supervise.StartSupervisor(t.supervisor)
 	ref, err := supervise.Start[Strategy](group, StrategyArgs{
 		API: args.API, Spec: saved.spec, Account: saved.account, Policy: args.Policy,
 		Every: args.Every, Updates: t.updates, Log: args.Log, StopBot: args.StopBot,

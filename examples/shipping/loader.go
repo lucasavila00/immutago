@@ -24,7 +24,7 @@ type Loader struct {
 }
 
 // Init loads the first valid catalog before the service becomes available.
-func (l *Loader) Init() error {
+func (l *Loader) Init(*supervise.Supervisor) error {
 	if l.Args().Every <= 0 {
 		return fmt.Errorf("reload interval must be positive")
 	}

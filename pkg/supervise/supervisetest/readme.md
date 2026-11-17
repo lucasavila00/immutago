@@ -6,12 +6,12 @@
 import "github.com/lucasavila00/immutago/pkg/supervise/supervisetest"
 ```
 
-Package supervisetest gives service tests a root group with automatic cleanup. NewRoot registers a test cleanup that requests shutdown and waits for all children. Tests can use the returned group with supervise.Start and StartGroup.
+Package supervisetest gives service tests a root group with automatic cleanup. NewRoot registers a test cleanup that requests shutdown and waits for all children. Tests can use the returned group with supervise.Start and StartSupervisor.
 
 ## func NewRoot
 
 ```go
-func NewRoot(t testing.TB) *supervise.Group
+func NewRoot(t testing.TB) *supervise.Supervisor
 ```
 
 NewRoot registers cleanup with t. Cleanup waits up to 5 seconds for the group to stop, then reports a test failure if work remains. Run methods must observe cancellation. Run panics and Goexit terminate the process after ordered cleanup. Use a subprocess to test these failures.

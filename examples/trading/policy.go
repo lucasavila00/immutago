@@ -34,7 +34,7 @@ type Policy struct {
 }
 
 // Init requires a valid first policy before any strategy can start.
-func (p *Policy) Init() error {
+func (p *Policy) Init(*supervise.Supervisor) error {
 	if p.Args().Every <= 0 {
 		return fmt.Errorf("policy read interval must be positive")
 	}

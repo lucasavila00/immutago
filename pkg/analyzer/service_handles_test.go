@@ -115,7 +115,7 @@ func TestServiceHandleOrdinaryGo(t *testing.T) {
 		{"method expression", `func use(r Handle){_=Handle.Borrow(r)}`},
 		{"bound message", `func use(r Handle){f:=r.Borrow().Count;_=f()}`},
 		{"runtime method", `func use(r Handle){_=r.Borrow().Args()}`},
-		{"init", `func use(r Handle){_=r.Borrow().Init()}`},
+		{"init", `func use(r Handle){_=r.Borrow().Init(nil)}`},
 		{"run", `func use(r Handle){r.Borrow().Run(context.Background())}`},
 		{"private method", `func(*Counter) private(){};func use(r Handle){r.Borrow().private()}`},
 		{"nonservice", `func use(){var ref supervise.Ref[int];_=ref}`},

@@ -8,7 +8,7 @@ import (
 )
 
 // forget removes one test entry under its group lock.
-func (s *Group) forget(c *child) {
+func (s *Supervisor) forget(c *child) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.unlink(c)
@@ -17,10 +17,10 @@ func (s *Group) forget(c *child) {
 // TestForgetUnlinksChild checks removal at each position and repeated removal.
 func TestForgetUnlinksChild(t *testing.T) {
 	for _, order := range [][]int{{0, 1, 2, 3}, {3, 2, 1, 0}, {1, 2, 0, 3}} {
-		parent := newGroup(nil, false)
+		parent := newSupervisor(nil, false)
 		children := make([]*child, 4)
 		for i := range children {
-			nested := &Group{}
+			nested := &Supervisor{}
 			parent.add(func(context.Context) {}, nested)
 			children[i] = nested.entry
 		}
@@ -44,7 +44,7 @@ func TestForgetUnlinksChild(t *testing.T) {
 }
 
 // checkChildList checks both directions and the number of entries.
-func checkChildList(t *testing.T, parent *Group, want []*child) {
+func checkChildList(t *testing.T, parent *Supervisor, want []*child) {
 	t.Helper()
 	if parent.children.count != len(want) {
 		t.Fatalf("child count = %d, want %d", parent.children.count, len(want))
@@ -64,12 +64,12 @@ func checkChildList(t *testing.T, parent *Group, want []*child) {
 
 // TestForgetDoesNotAllocate checks a full group removal, including the warmup run.
 func TestForgetDoesNotAllocate(t *testing.T) {
-	var parents [2]*Group
+	var parents [2]*Supervisor
 	var children [2][128]*child
 	for i := range parents {
-		parents[i] = newGroup(nil, false)
+		parents[i] = newSupervisor(nil, false)
 		for j := range children[i] {
-			nested := &Group{}
+			nested := &Supervisor{}
 			parents[i].add(func(context.Context) {}, nested)
 			children[i][j] = nested.entry
 		}
@@ -93,10 +93,10 @@ func BenchmarkGroupForget(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
 				b.StopTimer()
-				parent := newGroup(nil, false)
+				parent := newSupervisor(nil, false)
 				children := make([]*child, size)
 				for i := range children {
-					nested := &Group{}
+					nested := &Supervisor{}
 					parent.add(func(context.Context) {}, nested)
 					children[i] = nested.entry
 				}

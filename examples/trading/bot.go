@@ -22,7 +22,7 @@ type Options struct {
 
 // Bot owns the service root and retains unresolved account state after failed cleanup.
 type Bot struct {
-	root     *supervise.Group
+	root     *supervise.Supervisor
 	ref      supervise.Ref[Trading]
 	state    state
 	mu       sync.Mutex

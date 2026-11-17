@@ -4,9 +4,10 @@
 Ref copies hold the same service pointer.
 Method calls run in the caller's goroutine.
 
-Service and Group keep mutable ownership state in their values. UncheckedChildren
-requires the original service pointer created by Start. The runtime keeps that
-pointer through setup, Run, and cleanup. Its tree mutex protects child state.
+Start creates a service and its owned Supervisor before Init. It passes that
+supervisor to Init and retains the same pointer for activation and cleanup.
+Saving or passing that pointer does not change its owner. The tree mutex protects
+supervisor state.
 The zero-size `noCopy` fields enable standard vet diagnostics; they add no runtime
 state or check. See the [copy contract](../../pkg/supervise/contract.md#copy-contract).
 
@@ -20,10 +21,10 @@ it or wait for direct method calls.
 | Stage | Execution owner | Action |
 | --- | --- | --- |
 | Start admission | Start caller, under the tree mutex | Reject closed admission before Init, or count one accepted Start. |
-| Setup | Start caller | Allocate T; bind arguments and parent group; call Init once. |
+| Setup | Start caller | Allocate T and its owned Supervisor; bind arguments; call Init with the owned supervisor. |
 | Init failure | Start caller | Stop staged children before removing the accepted Start count. Return a zero Ref and error, propagate the panic, or continue Goexit. |
 | Publication | Start caller | Register the initialized value before removing the accepted Start count. Return Ref even if Stop has since closed admission. |
-| Run admission | Watcher, under the tree mutex | Check admission and activate staged child groups as one decision ordered against Stop. |
+| Run admission | Watcher, under the tree mutex | Check admission and activate staged child supervisors as one decision ordered against Stop. |
 | Background work | Watcher, outside the mutex | Call Run once after successful Init. |
 | Stopped or pending initialized service | Watcher | Wait for its entry's shutdown turn; stop children, then call Run with an already-cancelled context for cleanup. |
 | `ref.Borrow().Method(args)` | Method caller | Read the pointer; call the method directly on T. |
@@ -41,24 +42,24 @@ the watcher reports one `*Failure`, then stops and waits for its children.
 | Returns | Stop and wait for its children, then remove the service entry. |
 | Panics or calls `runtime.Goexit`, including during cleanup | Keep the root's first failure. Report this failure once. Complete ordered shutdown, then panic with the selected Failure. |
 
-Each group has a WaitGroup for accepted Start calls. Admission checks and Add
+Each supervisor has a WaitGroup for accepted Start calls. Admission checks and Add
 use the same tree mutex as Stop, so no Add can follow the start of Wait.
 The deferred Done follows registration or failed-Init child cleanup. This keeps
 staged children owned through their parent's Init, before its watcher exists.
 
-## Groups and shutdown order
+## Supervisors and shutdown order
 
-Each initialized service owns a child group:
+Each initialized service owns a child supervisor:
 
 ```text
 Init: children pending ──> Run admission: activate ──> Run ends: stop and wait
                      └──> shutdown: cancelled Run for cleanup
 ```
 
-| Group state | Purpose |
+| Supervisor state | Purpose |
 | --- | --- |
-| Shared tree mutex | Protect admission, child links, activation, service state, and Stop across all descendant groups. |
-| Accepted Start count | Wait for Init and failed-Init child cleanup before stopping the group's registered entries. |
+| Shared tree mutex | Protect admission, child links, activation, service state, and Stop across all descendant supervisors. |
+| Accepted Start count | Wait for Init and failed-Init child cleanup before stopping the supervisor's registered entries. |
 | Doubly linked child list | Preserve registration order after Init; unlink a completed child without searching. |
 | Admission context | Close admission throughout the subtree immediately. Failure selection does not use this context. |
 | Separate entry contexts | Keep reverse shutdown order for admitted and pending services. Each service stops its children before it cancels its Run context. |
@@ -72,7 +73,7 @@ Shutdown follows this order:
 3. Start a pending child's watcher if needed, cancel that entry, and wait.
    A service's children stop before its Run context is cancelled or its cleanup Run begins.
 4. The watcher removes its entry before it publishes completion. Repeat until the list is empty.
-5. Under the mutex, unlink a nested group and close its completion channel, even
+5. Under the mutex, unlink a nested supervisor and close its completion channel, even
    if the root has failed. For the root, read its first failure. With no failure,
    close the channel. With a failure, release the mutex and run the terminal action
    before closing the channel.
@@ -84,9 +85,9 @@ its function after Stop if its admission decision came first. Root Stop and
 terminal failure use the same mutex. This keeps the final shutdown decision and
 failure recording in one order, including a failure during ordinary Stop.
 
-The Init barrier applies to each group before cancellation of its registered
+The Init barrier applies to each supervisor before cancellation of its registered
 entries. Init must not wait for that shutdown or for cancellation that depends
-on it. It can stop its own child group to undo setup; the child group does not
+on it. It can stop its own child supervisor to undo setup; the child supervisor does not
 wait for its parent Init.
 Init must also return if a dependency stops answering. Blocking work needs an
 application timeout or independent cancellation. Reporting does not wait for

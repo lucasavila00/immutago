@@ -69,7 +69,7 @@ type consumerParent struct {
 }
 
 // Init counts each new parent instance.
-func (s *consumerParent) Init() error {
+func (s *consumerParent) Init(*Supervisor) error {
 	s.generation = s.Args().starts.Add(1)
 	return nil
 }
@@ -79,7 +79,7 @@ func (s *consumerParent) Run(context.Context) {
 	args := s.Args()
 	worker := newConsumerLifetime()
 	worker.finish = args.finish
-	if _, err := Start[consumerModel](s.UncheckedChildren(), consumerModelArgs{life: worker}); err != nil {
+	if _, err := Start[consumerModel](s.children, consumerModelArgs{life: worker}); err != nil {
 		panic(err)
 	}
 	args.workers <- worker
@@ -147,7 +147,7 @@ type consumerRouter struct {
 }
 
 // Init selects the initial model before publication.
-func (s *consumerRouter) Init() error {
+func (s *consumerRouter) Init(*Supervisor) error {
 	s.model = s.Args().model
 	return nil
 }
@@ -174,8 +174,8 @@ func (s *consumerRouter) Version() int {
 func TestConsumerModelSwap(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		group := NewRoot(nil)
-		models := StartGroup(group)
-		oldVersion := StartGroup(models)
+		models := StartSupervisor(group)
+		oldVersion := StartSupervisor(models)
 		oldLife, otherLife, routerLife := newConsumerLifetime(), newConsumerLifetime(), newConsumerLifetime()
 		oldModel, err := Start[consumerModel](oldVersion, consumerModelArgs{version: 1, life: oldLife})
 		if err != nil {
@@ -194,7 +194,7 @@ func TestConsumerModelSwap(t *testing.T) {
 		if router.Borrow().Version() != 1 {
 			t.Fatal("router did not select the initial model")
 		}
-		challenger := StartGroup(models)
+		challenger := StartSupervisor(models)
 		newLife := newConsumerLifetime()
 		newModel, err := Start[consumerModel](challenger, consumerModelArgs{version: 2, life: newLife})
 		if err != nil {

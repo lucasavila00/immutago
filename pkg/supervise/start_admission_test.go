@@ -23,7 +23,7 @@ func checkClosedStart(t *testing.T, owner, state string) {
 	top := NewRoot(nil)
 	parent := top
 	if owner != "root" {
-		parent = StartGroup(top)
+		parent = StartSupervisor(top)
 	}
 	cleaning, release := make(chan struct{}), make(chan struct{})
 	_, err := Start[initializing](parent, &initHooks{
@@ -43,7 +43,7 @@ func checkClosedStart(t *testing.T, owner, state string) {
 		close(release)
 		<-done
 	}
-	for _, group := range []*Group{parent, StartGroup(parent)} {
+	for _, group := range []*Supervisor{parent, StartSupervisor(parent)} {
 		inits, runs := 0, 0
 		ref, err := Start[initializing](group, &initHooks{
 			init: func(*initializing) error { inits++; return nil },

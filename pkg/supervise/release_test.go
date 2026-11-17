@@ -10,7 +10,7 @@ import (
 func TestStopWaitsForParentEntry(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		parent := NewRoot(nil)
-		nested := StartGroup(parent)
+		nested := StartSupervisor(parent)
 		entered, release := make(chan struct{}), make(chan struct{})
 		_, err := Start[initializing](nested, &initHooks{
 			init: func(*initializing) error { return nil },
@@ -46,9 +46,9 @@ func TestStopWaitsForParentEntry(t *testing.T) {
 // TestStopBeforeParentStart removes an entry that the parent has not launched yet.
 func TestStopBeforeParentStart(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		parent := newGroup(nil, false)
+		parent := newSupervisor(nil, false)
 		parent.root = parent
-		nested := StartGroup(parent)
+		nested := StartSupervisor(parent)
 		<-nested.Stop()
 		if parent.children.count != 0 || nested.parent != nil || nested.entry != nil {
 			t.Error("unstarted group was not released")
@@ -61,7 +61,7 @@ func TestStopBeforeParentStart(t *testing.T) {
 func TestNestedSelfStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		parent := NewRoot(nil)
-		selfRoot = StartGroup(parent)
+		selfRoot = StartSupervisor(parent)
 		if _, err := Start[stopper](selfRoot, NoArgs{}); err != nil {
 			t.Fatal(err)
 		}
@@ -84,7 +84,7 @@ func TestStartAfterStopDoesNotRetainChildren(t *testing.T) {
 				t.Fatalf("stopped Start = %v, %v", ref, err)
 			}
 		}
-		nested := StartGroup(parent)
+		nested := StartSupervisor(parent)
 		parent.mu.Lock()
 		remaining := parent.children.count
 		parent.mu.Unlock()

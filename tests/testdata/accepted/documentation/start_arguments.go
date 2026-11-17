@@ -18,7 +18,7 @@ func (*Indexer) Run(ctx context.Context) { <-ctx.Done() }
 func (*Counter) Run(ctx context.Context) { <-ctx.Done() }
 
 // startArguments checks explicit A and conversions when argument types differ.
-func startArguments(root *supervise.Group) {
+func startArguments(root *supervise.Supervisor) {
 	_, _ = supervise.Start[Indexer, fs.FS](root, fstest.MapFS{})
 	_, _ = supervise.Start[Indexer](root, fs.FS(fstest.MapFS{}))
 	_, _ = supervise.Start[Counter, int64](root, 5)

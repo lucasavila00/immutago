@@ -61,7 +61,11 @@ type Loader struct {
 }
 
 // Init publishes the first handle.
-func (l *Loader) Init() error { value := api.New(); l.current.Store(&value); return nil }
+func (l *Loader) Init(*supervise.Supervisor) error {
+	value := api.New()
+	l.current.Store(&value)
+	return nil
+}
 
 // Run waits for shutdown.
 func (*Loader) Run(ctx context.Context) { <-ctx.Done() }

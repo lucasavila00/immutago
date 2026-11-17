@@ -19,7 +19,7 @@ Both commands use the same [package selection rules](../../docs/reference/rules.
 fail. Do not use `-json` as a CI pass/fail check: it can return exit code 0 with errors.
 
 For services, also run standard `go vet ./...` to check common copies of Service
-and Group values. A custom vettool does not run the standard vet checks.
+and Supervisor values. A custom vettool does not run the standard vet checks.
 Immutago does not enforce the [copy contract](../../pkg/supervise/contract.md#copy-contract).
 
 ## Build configurations

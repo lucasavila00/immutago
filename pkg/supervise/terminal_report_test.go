@@ -32,7 +32,7 @@ func TestTerminalReportBeforeCleanup(t *testing.T) {
 		})
 		_, err := Start[initializing](top, &initHooks{
 			init: func(p *initializing) error {
-				_, err := Start[initializing](p.UncheckedChildren(), &initHooks{
+				_, err := Start[initializing](p.supervisor, &initHooks{
 					init: func(*initializing) error { return nil },
 					run:  func(_ *initializing, ctx context.Context) { <-ctx.Done(); <-release },
 				})
