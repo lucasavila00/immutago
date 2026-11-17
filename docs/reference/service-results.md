@@ -1,8 +1,9 @@
 # Service declarations and results
 
 A service is a struct that embeds `supervise.Service[A]`, directly or through
-another struct. Its fields, value copies, inputs, and methods other than Init and
-Run use ordinary Go rules. Protected im data keep their normal type and source rules.
+another struct. Its fields, value copies, inputs, and receivers of methods other
+than Init and Run use ordinary Go rules. Protected im data keep their normal type
+and source rules.
 
 ## Service embedding — exhaustive
 
