@@ -43,7 +43,7 @@ the watcher reports one `*Failure`, then stops and waits for its children.
 | Run outcome | Action |
 | --- | --- |
 | Returns | Stop and wait for its children, then remove the service entry. |
-| Panics or calls `runtime.Goexit`, including during cleanup | Keep the root's first failure. Report this failure once. Complete ordered shutdown, then panic with the selected Failure. |
+| Panics or calls `runtime.Goexit`, including during cleanup | Keep the root's first failure. Report this failure once. Complete ordered shutdown, then panic with the selected Failure. A root failure deadline can panic first. |
 
 Each supervisor has a WaitGroup for accepted Start calls. Admission checks and Add
 use the same tree mutex as Stop, so no Add can follow the start of Wait.
@@ -67,6 +67,7 @@ Init: children pending ──> Run admission: activate ──> Run ends: stop an
 | Admission context | Close admission throughout the subtree immediately. Failure selection does not use this context. |
 | Separate entry contexts | Keep reverse shutdown order for admitted and pending services. Each service stops its children before it cancels its Run context. |
 | Root failure | Keep the first failure. Every Run belongs to the owned tree, so ordered shutdown waits for accepted Init calls, all reports, and cleanup. |
+| Root failure deadline and timer | Set only by NewRoot. Under the tree mutex, the first failure starts one timer of the deadline. When it fires, it panics with the selected Failure and does not wait for shutdown. |
 
 Shutdown follows this order:
 
@@ -77,9 +78,11 @@ Shutdown follows this order:
    A service's children stop before its Run context is cancelled or its cleanup Run begins.
 4. The watcher removes its entry before it publishes completion. Repeat until the list is empty.
 5. Under the mutex, unlink a nested supervisor and close its completion channel, even
-   if the root has failed. For the root, read its first failure. With no failure,
-   close the channel. With a failure, release the mutex and run the terminal action
-   before closing the channel.
+   if the root has failed. For the root, read its first failure and its deadline timer.
+   With no failure, close the channel. With a failure, release the mutex. If the root
+   has no timer or the timer stops before it fires, run the terminal action. Then
+   close the channel. A timer that already fired ran the terminal action, so the
+   action runs at most once.
 
 Only ordered shutdown cancels registered entries. A rejected Start runs no user
 code. Launch does not read admission or cancel an entry.
@@ -94,7 +97,8 @@ on it. It can stop its own child supervisor to undo setup; the child supervisor 
 wait for its parent Init.
 Init must also return if a dependency stops answering. Blocking work needs an
 application timeout or independent cancellation. Reporting does not wait for
-accepted Init calls, but the terminal panic does.
+accepted Init calls, but the terminal panic does, until the root failure deadline ends.
+The deadline does not stop Init, Run, or report calls. It only ends the wait for the terminal panic.
 
 ## Analyzer boundary
 

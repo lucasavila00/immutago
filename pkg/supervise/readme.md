@@ -8,11 +8,11 @@ import "github.com/lucasavila00/immutago/pkg/supervise"
 
 Package supervise runs services with owned child lifetimes and terminal failures.
 
-Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\*Supervisor\) error. Init and Run must have declared pointer receivers, including promoted methods. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. A Run failure stops the root. Supervisors control lifetime and stop order. See https://github.com/lucasavila00/immutago/blob/main/pkg/supervise/contract.md for the runtime contract.
+Embed Service\[A\], supply Run\(context.Context\), and optionally declare Init\(\*Supervisor\) error. Init and Run must have declared pointer receivers, including promoted methods. Start initializes the service and returns Ref\[T\]. Calls through Borrow run in the caller's goroutine; review shared fields, locks, and inputs in service code. A Run failure stops the root. FailureDeadline limits the wait for the terminal panic. Supervisors control lifetime and stop order. See https://github.com/lucasavila00/immutago/blob/main/pkg/supervise/contract.md for the runtime contract.
 
 ## type Failure
 
-Failure describes one service Run panic or runtime.Goexit call. The root panics with the first recorded \*Failure after accepted Init calls, reporting, and cleanup. Value is the original panic value, or an error with the text "supervise: service called runtime.Goexit" for Goexit. Stack is captured in that service's goroutine. Supervisors pass the same failure to the root without wrapping it.
+Failure describes one service Run panic or runtime.Goexit call. The root panics with the first recorded \*Failure after accepted Init calls, reporting, and cleanup, or when its FailureDeadline ends first. Value is the original panic value, or an error with the text "supervise: service called runtime.Goexit" for Goexit. Stack is captured in that service's goroutine. Supervisors pass the same failure to the root without wrapping it.
 
 ```go
 type Failure struct {
@@ -86,6 +86,22 @@ func (p Ref[T]) IsZero() bool
 
 IsZero reports whether this reference is unset.
 
+## type RootOption
+
+RootOption configures a root supervisor created by NewRoot.
+
+```go
+type RootOption func(*rootConfig)
+```
+
+### func FailureDeadline
+
+```go
+func FailureDeadline(d time.Duration) RootOption
+```
+
+FailureDeadline limits the time from the first recorded failure to the terminal panic. When the time ends first, the root panics with that \*Failure from a runtime goroutine. It does not wait for the remaining Run calls, accepted Init calls, or reports. The limit does not apply to Stop without a failure. A d of zero or less sets no limit.
+
 ## type Service
 
 Service supplies the arguments saved by Start. Embed it by value. Start creates and initializes the service value. Service copies follow the Go copy and synchronization rules for A.
@@ -125,10 +141,10 @@ type Supervisor struct {
 ### func NewRoot
 
 ```go
-func NewRoot(report func(any, []byte)) *Supervisor
+func NewRoot(report func(any, []byte), options ...RootOption) *Supervisor
 ```
 
-NewRoot creates an active lifetime supervisor. A Run panic or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered Run panic or Goexit once as \*Failure, with its original stack, before that service waits for child cleanup. A nil report writes failures to standard error. Stop does not suppress failures. Reports can overlap, must return, and must not wait for their supervisor to stop.
+NewRoot creates an active lifetime supervisor. A Run panic or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered Run panic or Goexit once as \*Failure, with its original stack, before that service waits for child cleanup. A nil report writes failures to standard error. Stop does not suppress failures. Reports can overlap, must return, and must not wait for their supervisor to stop. Without FailureDeadline, the terminal panic waits for every Run, accepted Init, and report to return.
 
 ### func StartSupervisor
 
