@@ -43,7 +43,7 @@ func (s *Supervisor) blocked() string {
 	}
 	c := s.waiting
 	if c == nil {
-		if s.stopping && !s.halting {
+		if s.stopping && !s.halting && s.accepted > 0 {
 			return "accepted Init calls"
 		}
 		return ""

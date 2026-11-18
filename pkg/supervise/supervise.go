@@ -76,6 +76,7 @@ type Supervisor struct {
 	failure   *Failure
 	waiting   *child
 	halting   bool
+	accepted  int
 }
 
 // childList preserves registration order and permits constant-time removal under Supervisor.mu.
@@ -189,12 +190,18 @@ func Start[T, A any, P interface {
 	err := parent.admission.Err()
 	if err == nil {
 		parent.starts.Add(1)
+		parent.accepted++
 	}
 	parent.mu.Unlock()
 	if err != nil {
 		return Ref[T]{}, err
 	}
-	defer parent.starts.Done()
+	defer func() {
+		parent.mu.Lock()
+		parent.accepted--
+		parent.mu.Unlock()
+		parent.starts.Done()
+	}()
 	value := new(T)
 	bindService(P(value), args)
 	supervisor := newSupervisor(parent, false)

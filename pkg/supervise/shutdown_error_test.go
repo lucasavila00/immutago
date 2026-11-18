@@ -244,3 +244,20 @@ func TestShutdownErrorConcurrent(t *testing.T) {
 		expectShutdown(t, top)
 	})
 }
+
+// TestShutdownErrorEmptyRoot names no wait when no Start was accepted.
+func TestShutdownErrorEmptyRoot(t *testing.T) {
+	for range 100 {
+		synctest.Test(t, func(t *testing.T) {
+			top := NewRoot(nil)
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+			err := top.Shutdown(ctx)
+			var shutdown *ShutdownError
+			if errors.As(err, &shutdown) && shutdown.Waiting != "" {
+				t.Errorf("Waiting = %q; want no wait", shutdown.Waiting)
+			}
+			expectShutdown(t, top)
+		})
+	}
+}
