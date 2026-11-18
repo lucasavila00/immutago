@@ -107,7 +107,7 @@ Successful Start means that Init completed; it does not mean that Run is still a
 | A direct service method panics | The panic stays in its caller's goroutine. If called from Run, it fails that Run. |
 | Run panics or calls Goexit during shutdown or cleanup | Use the same terminal failure path. Stop and a parent's normal return cannot suppress a failure. |
 | Several Run failures occur | Keep the first failure recorded by the runtime. Report each failure once. |
-| Terminal panic | It runs in a runtime goroutine after accepted Init calls, reporting, and cleanup. A caller cannot recover it. |
+| Terminal panic | It runs in a runtime goroutine after accepted Init calls, reporting, and cleanup. A caller cannot recover it. A root from NewRootNoPanic does not panic. |
 
 Each accepted Start creates one service value and calls Run once after successful Init.
 Borrow returns that same value, including after it stops.
@@ -117,6 +117,7 @@ Borrow returns that same value, including after it stops.
 | Parent | Lifetime |
 | --- | --- |
 | `root := supervise.NewRoot(report)` | Application supervisor, until root.Stop or root.Shutdown. Pass nil to write failure reports and their original stacks to standard error. |
+| `root := supervise.NewRootNoPanic(report)` | The same supervisor without the terminal panic. See [Keep the process after a failure](#keep-the-process-after-a-failure). |
 | `supervisor := supervise.StartSupervisor(parent)` | Lifetime supervisor; stop these services and their children together. |
 | `Init(supervisor *supervise.Supervisor)` | Runtime supplies a supervisor owned by this service. Save the pointer to start services later. It stops when this service ends. |
 
@@ -146,7 +147,7 @@ Stop does not wait for requests already using the old reference.
 | --- | --- |
 | `done := root.Stop()` | Request shutdown without waiting. Repeated calls return the same channel. |
 | Stop or Shutdown on a nil or zero Supervisor | Panic with `supervise: nil or zero Supervisor`. |
-| `<-root.Stop()` | Wait for accepted Init calls and all children to stop. A terminal failure prevents normal completion. |
+| `<-root.Stop()` | Wait for accepted Init calls and all children to stop. A terminal failure prevents normal completion. A root from NewRootNoPanic closes the channel after a failure; only Shutdown returns that failure. |
 | `err := root.Shutdown(ctx)` | Call Stop, then wait as `<-root.Stop()` does until ctx ends. See [Limit the wait](#limit-the-wait). |
 | `<-supervisor.Stop()` on a nested supervisor | Wait for this supervisor's children and removal from its parent. This means the subtree has ended; a child failure still stops the root. |
 | Stop is requested | Close admission immediately. Each supervisor waits for its accepted Init calls, then cancels children in reverse registration order. |
@@ -174,13 +175,28 @@ Stop returns or for the end of ctx:
 
 | Condition | Result |
 | --- | --- |
-| The supervisor stops before ctx ends | Return nil. |
-| The supervisor has stopped and ctx has ended | Return nil. |
-| ctx ends first | Return `ctx.Err()`. Do not cancel or force work. Ordered shutdown continues. A later Stop or Shutdown waits for the same shutdown. |
-| ctx has ended before the call and the supervisor has not stopped | Call Stop, which starts shutdown. Then return `ctx.Err()`. |
+| The supervisor stops before ctx ends | Return nil, except for a root after a failure. |
+| The supervisor has stopped and ctx has ended | Return nil, except for a root after a failure. |
+| ctx ends first | Return a `*supervise.ShutdownError` that wraps `ctx.Err()`. Do not cancel or force work. Ordered shutdown continues. A later Stop or Shutdown waits for the same shutdown. |
+| ctx has ended before the call and the supervisor has not stopped | Call Stop, which starts shutdown. Then return the same error type. |
 | Concurrent Stop and Shutdown calls | All calls use one shutdown. |
 | Nested or service-owned supervisor | Use the same rules for its subtree. There is no terminal panic. |
-| Root after a failure | Do not return nil. When ordered shutdown completes, the terminal panic ends the process. Before that, return `ctx.Err()` when ctx ends. |
+| Root after a failure | Do not return nil. When ordered shutdown completes, the terminal panic ends the process. Before that, return the error for the end of ctx. |
+| Root from NewRootNoPanic after a failure | Return the first `*supervise.Failure` when ordered shutdown completes. Before that, return the error for the end of ctx. |
+
+Use `errors.As` with `*supervise.ShutdownError` to identify the end of ctx, and with
+`*supervise.Failure` to identify a failure. Do not use `errors.Is` with a context error
+for this: a Failure wraps the panic value, which can also be a context error.
+The Waiting field of ShutdownError names the wait that was in progress:
+
+| Waiting | Meaning |
+| --- | --- |
+| Go type string of a service, for example `main.Worker` | This service had not finished its Run or its failure report. Shutdown follows nested and service-owned supervisors to the service in progress. |
+| `accepted Init calls` | A supervisor waited for an Init that Start had accepted. |
+| Empty | No wait was in progress when ctx ended, for example between two children. |
+
+Shutdown stops one child at a time. A service that registered before the named service
+has not received cancellation yet.
 
 Without a limit, the wait continues while a Run ignores its context, an accepted
 Init blocks, or a report blocks. If this occurs after a root failure, the
@@ -213,6 +229,41 @@ In this example, signals is the application's signal context. The report must
 return. The send to failed does not block, because a full channel selects the
 default case. After a failure, the process ends in one of two ways: the terminal
 panic when ordered shutdown completes, or the application's exit when ctx ends first.
+
+### Keep the process after a failure
+
+After a failure, a root from NewRoot ends the process with the terminal panic when
+ordered cleanup of the tree completes. Application cleanup outside the tree, such
+as a flush of buffered data, cannot complete after that panic.
+
+A root from NewRootNoPanic reports the failure and stops the tree in the same way.
+It does not panic. The channel from Stop closes, and Shutdown returns the first
+`*supervise.Failure`. The application does its remaining cleanup and then ends the process:
+
+```go
+failed := make(chan struct{}, 1)
+root := supervise.NewRootNoPanic(func(value any, stack []byte) {
+	// log value and stack
+	select {
+	case failed <- struct{}{}:
+	default:
+	}
+})
+// start services
+select {
+case <-signals.Done():
+case <-failed:
+}
+ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+err := root.Shutdown(ctx)
+// flush data and close resources that the tree does not own
+if err != nil {
+	os.Exit(1)
+}
+```
+
+The application must end the process. A stopped root does not start services again.
 
 ## Failure reports
 

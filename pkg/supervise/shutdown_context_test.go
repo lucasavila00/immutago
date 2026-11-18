@@ -233,7 +233,7 @@ func TestShutdownRootFailureWaits(t *testing.T) {
 }
 
 // TestShutdownRootFailurePrompt calls the terminal action once when shutdown completes.
-// The test exit hook returns, so the root then closes its channel and Shutdown returns nil.
+// The test exit hook returns, so the root then closes its channel and Shutdown returns the failure.
 // The panic in NewRoot's exit ends the process before the channel closes.
 func TestShutdownRootFailurePrompt(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
@@ -245,8 +245,9 @@ func TestShutdownRootFailurePrompt(t *testing.T) {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 		defer cancel()
-		if err := top.Shutdown(ctx); err != nil {
-			t.Errorf("Shutdown = %v; want nil with the test exit hook", err)
+		var failure *Failure
+		if err := top.Shutdown(ctx); !errors.As(err, &failure) || failure.Value != "first failure" {
+			t.Errorf("Shutdown = %v; want the first Failure with the test exit hook", err)
 		}
 		if len(exited) != 0 {
 			t.Errorf("second terminal action %v", <-exited)

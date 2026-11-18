@@ -112,6 +112,33 @@ func (*Service[A]) Init(*Supervisor) error
 
 Init supplies empty setup when the service does not declare Init. The runtime supplies a supervisor for services started by this service. Keep its pointer for later starts. It stops when this service ends. A declared Init must return if a dependency stops answering. Bound blocking operations with an application timeout or an independently cancelled context. Init must release application resources if it fails. The runtime stops children created by that setup.
 
+## type ShutdownError
+
+ShutdownError reports the wait in progress when the Shutdown context ended. Use errors.As to find it: a \*Failure can also wrap a context error. Waiting is the Go type string of the service that had not stopped, or "accepted Init calls" when the supervisor waited for Init. It is empty when no wait was in progress. Err is the context error.
+
+```go
+type ShutdownError struct {
+    Waiting string
+    Err     error
+}
+```
+
+### func \(\*ShutdownError\) Error
+
+```go
+func (e *ShutdownError) Error() string
+```
+
+Error names the wait and the context error.
+
+### func \(\*ShutdownError\) Unwrap
+
+```go
+func (e *ShutdownError) Unwrap() error
+```
+
+Unwrap returns the context error.
+
 ## type Supervisor
 
 Supervisor owns an ordered set of service lifetimes and nested supervisors. It activates at most once and stops at most once. The zero value is not usable. Do not copy an initialized Supervisor. Pass its pointer. Run go vet to check common copies; see the copy contract for its coverage limits.
@@ -130,6 +157,14 @@ func NewRoot(report func(any, []byte)) *Supervisor
 
 NewRoot creates an active lifetime supervisor. A Run panic or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered Run panic or Goexit once as \*Failure, with its original stack, before that service waits for child cleanup. A nil report writes failures to standard error. Stop does not suppress failures. Reports can overlap, must return, and must not wait for their supervisor to stop.
 
+### func NewRootNoPanic
+
+```go
+func NewRootNoPanic(report func(any, []byte)) *Supervisor
+```
+
+NewRootNoPanic creates a root that does not end the process after a failure. A Run panic or Goexit stops the root and reports the failure as NewRoot does. When ordered cleanup completes, the channel from Stop closes, and Shutdown returns the first \*Failure. The application then does its own cleanup and ends the process.
+
 ### func StartSupervisor
 
 ```go
@@ -144,7 +179,7 @@ StartSupervisor creates a lifetime supervisor for selective shutdown. A Run fail
 func (s *Supervisor) Shutdown(ctx context.Context) error
 ```
 
-Shutdown calls Stop and waits for it. It returns nil when the supervisor has stopped. It returns ctx.Err\(\) when ctx ends first; the supervisor then continues its ordered shutdown. After a root failure, Shutdown does not return nil. The rules for a wait on Stop also apply to Shutdown.
+Shutdown calls Stop and waits for it. It returns nil when the supervisor has stopped. When ctx ends first, it returns a \*ShutdownError that wraps ctx.Err\(\) and names the wait in progress; the supervisor then continues its ordered shutdown. After a root failure, Shutdown does not return nil: a root from NewRootNoPanic returns the first \*Failure when it has stopped. The rules for a wait on Stop also apply to Shutdown.
 
 ### func \(\*Supervisor\) Stop
 
