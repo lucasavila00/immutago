@@ -230,6 +230,25 @@ func (s *Supervisor) Stop() <-chan struct{} {
 	return s.stopped
 }
 
+// Shutdown calls Stop and waits for it.
+// It returns nil when the supervisor has stopped. It returns ctx.Err() when ctx ends first;
+// the supervisor then continues its ordered shutdown. After a root failure, Shutdown
+// does not return nil. The rules for a wait on Stop also apply to Shutdown.
+func (s *Supervisor) Shutdown(ctx context.Context) error {
+	done := s.Stop()
+	select {
+	case <-done:
+		return nil
+	default:
+	}
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 // checkSupervisor rejects an absent supervisor before setup or shutdown can use it.
 func checkSupervisor(s *Supervisor) {
 	if s == nil || s.stopped == nil {

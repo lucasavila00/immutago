@@ -138,6 +138,14 @@ func StartSupervisor(parent *Supervisor) *Supervisor
 
 StartSupervisor creates a lifetime supervisor for selective shutdown. A Run failure in any child stops the root. A stopped parent returns a stopped supervisor.
 
+### func \(\*Supervisor\) Shutdown
+
+```go
+func (s *Supervisor) Shutdown(ctx context.Context) error
+```
+
+Shutdown calls Stop and waits for it. It returns nil when the supervisor has stopped. It returns ctx.Err\(\) when ctx ends first; the supervisor then continues its ordered shutdown. After a root failure, Shutdown does not return nil. The rules for a wait on Stop also apply to Shutdown.
+
 ### func \(\*Supervisor\) Stop
 
 ```go

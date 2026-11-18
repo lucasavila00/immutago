@@ -116,7 +116,7 @@ Borrow returns that same value, including after it stops.
 
 | Parent | Lifetime |
 | --- | --- |
-| `root := supervise.NewRoot(report)` | Application supervisor, until root.Stop. Pass nil to write failure reports and their original stacks to standard error. |
+| `root := supervise.NewRoot(report)` | Application supervisor, until root.Stop or root.Shutdown. Pass nil to write failure reports and their original stacks to standard error. |
 | `supervisor := supervise.StartSupervisor(parent)` | Lifetime supervisor; stop these services and their children together. |
 | `Init(supervisor *supervise.Supervisor)` | Runtime supplies a supervisor owned by this service. Save the pointer to start services later. It stops when this service ends. |
 
@@ -145,8 +145,9 @@ Stop does not wait for requests already using the old reference.
 | Operation | Behavior |
 | --- | --- |
 | `done := root.Stop()` | Request shutdown without waiting. Repeated calls return the same channel. |
-| Stop on a nil or zero Supervisor | Panic with `supervise: nil or zero Supervisor`. |
+| Stop or Shutdown on a nil or zero Supervisor | Panic with `supervise: nil or zero Supervisor`. |
 | `<-root.Stop()` | Wait for accepted Init calls and all children to stop. A terminal failure prevents normal completion. |
+| `err := root.Shutdown(ctx)` | Call Stop, then wait as `<-root.Stop()` does until ctx ends. See [Limit the wait](#limit-the-wait). |
 | `<-supervisor.Stop()` on a nested supervisor | Wait for this supervisor's children and removal from its parent. This means the subtree has ended; a child failure still stops the root. |
 | Stop is requested | Close admission immediately. Each supervisor waits for its accepted Init calls, then cancels children in reverse registration order. |
 | A registered service has not been admitted to Run when Stop is requested | Wait for its turn, stop its children, then call Run with an already-cancelled context. |
@@ -157,14 +158,61 @@ order from their invocation order. Nested supervisors register when StartSupervi
 
 Stop does not interrupt work already admitted. Registered work must finish
 before the completion channel closes. Run must return when its context ends.
-Stop cannot force Run or Init to return
-and does not wait for direct method calls. Release locks that children need
+Stop and Shutdown cannot force Run or Init to return
+and do not wait for direct method calls. Release locks that children need
 before waiting for Stop. A service must not wait from Run for the supervisor
 that contains it: that supervisor is waiting for Run to finish. The supervisor
 passed to Init contains only the services it starts; it can stop and wait for
 that supervisor. A report function must not wait for tree shutdown. A child can call a
 parent during shutdown, but must not wait for a parent method that waits for
-that child's supervisor to stop.
+that child's supervisor to stop. These rules for a wait on Stop also apply to Shutdown.
+
+### Limit the wait
+
+`err := s.Shutdown(ctx)` calls `s.Stop()`. Then it waits for the channel that
+Stop returns or for the end of ctx:
+
+| Condition | Result |
+| --- | --- |
+| The supervisor stops before ctx ends | Return nil. |
+| The supervisor has stopped and ctx has ended | Return nil. |
+| ctx ends first | Return `ctx.Err()`. Do not cancel or force work. Ordered shutdown continues. A later Stop or Shutdown waits for the same shutdown. |
+| ctx has ended before the call and the supervisor has not stopped | Call Stop, which starts shutdown. Then return `ctx.Err()`. |
+| Concurrent Stop and Shutdown calls | All calls use one shutdown. |
+| Nested or service-owned supervisor | Use the same rules for its subtree. There is no terminal panic. |
+| Root after a failure | Do not return nil. When ordered shutdown completes, the terminal panic ends the process. Before that, return `ctx.Err()` when ctx ends. |
+
+Without a limit, the wait continues while a Run ignores its context, an accepted
+Init blocks, or a report blocks. If this occurs after a root failure, the
+terminal panic does not occur and the process stays alive with admission closed.
+After a root failure, Shutdown does not return nil. Use the ctx to limit the
+wait, then end the process:
+
+```go
+failed := make(chan struct{}, 1)
+root := supervise.NewRoot(func(value any, stack []byte) {
+	// log value and stack
+	select {
+	case failed <- struct{}{}:
+	default:
+	}
+})
+// start services
+select {
+case <-signals.Done():
+case <-failed:
+}
+ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+if err := root.Shutdown(ctx); err != nil {
+	os.Exit(1)
+}
+```
+
+In this example, signals is the application's signal context. The report must
+return. The send to failed does not block, because a full channel selects the
+default case. After a failure, the process ends in one of two ways: the terminal
+panic when ordered shutdown completes, or the application's exit when ctx ends first.
 
 ## Failure reports
 

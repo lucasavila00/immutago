@@ -81,6 +81,11 @@ Shutdown follows this order:
    close the channel. With a failure, release the mutex and run the terminal action
    before closing the channel.
 
+`Shutdown(ctx)` calls Stop, then waits for the completion channel or the end of its context.
+It checks the channel first, so a stopped supervisor returns nil. It adds no field
+and no goroutine. The terminal action panics before the root closes its channel, so
+after a root failure `Shutdown` can only return the context error.
+
 Only ordered shutdown cancels registered entries. A rejected Start runs no user
 code. Launch does not read admission or cancel an entry.
 No user code, reporting, or cleanup waits run under the tree mutex. Run can enter
