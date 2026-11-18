@@ -74,6 +74,9 @@ type Supervisor struct {
 	report    func(any, []byte)
 	exit      func(any)
 	failure   *Failure
+	waiting   *child
+	halting   bool
+	accepted  int
 }
 
 // childList preserves registration order and permits constant-time removal under Supervisor.mu.
@@ -84,11 +87,14 @@ type childList struct {
 
 // child is pending while done is nil. Activation or shutdown starts its watcher.
 // Nested supervisors own their own completion channel.
+// A service entry keeps its type name and the supervisor passed to its Init.
 type child struct {
 	run        func(context.Context)
 	stop       func()
 	done       chan struct{}
 	group      *Supervisor
+	name       string
+	owned      *Supervisor
 	prev, next *child
 }
 
@@ -122,7 +128,15 @@ func NewRoot(report func(any, []byte)) *Supervisor {
 	return root(func(value any) { panic(value) }, report)
 }
 
-// root supplies the terminal exit hook used by runtime tests.
+// NewRootNoPanic creates a root that does not end the process after a failure.
+// A Run panic or Goexit stops the root and reports the failure as NewRoot does.
+// When ordered cleanup completes, the channel from Stop closes, and Shutdown
+// returns the first *Failure. The application then does its own cleanup and ends the process.
+func NewRootNoPanic(report func(any, []byte)) *Supervisor {
+	return root(func(any) {}, report)
+}
+
+// root supplies the terminal exit hook used by NewRootNoPanic and runtime tests.
 func root(exit func(any), report func(any, []byte)) *Supervisor {
 	s := newSupervisor(nil, true)
 	s.root, s.exit, s.report = s, exit, report
@@ -176,12 +190,18 @@ func Start[T, A any, P interface {
 	err := parent.admission.Err()
 	if err == nil {
 		parent.starts.Add(1)
+		parent.accepted++
 	}
 	parent.mu.Unlock()
 	if err != nil {
 		return Ref[T]{}, err
 	}
-	defer parent.starts.Done()
+	defer func() {
+		parent.mu.Lock()
+		parent.accepted--
+		parent.mu.Unlock()
+		parent.starts.Done()
+	}()
 	value := new(T)
 	bindService(P(value), args)
 	supervisor := newSupervisor(parent, false)
@@ -196,9 +216,10 @@ func Start[T, A any, P interface {
 	}
 	ready = true
 	ref := Ref[T]{value: im.Trust(value)}
-	parent.add(func(ctx context.Context) {
-		watch(parent, supervisor, ctx, reflect.TypeFor[T]().String(), P(value).Run)
-	}, nil)
+	name := reflect.TypeFor[T]().String()
+	parent.admit(&child{name: name, owned: supervisor, run: func(ctx context.Context) {
+		watch(parent, supervisor, ctx, name, P(value).Run)
+	}})
 	return ref, nil
 }
 
@@ -231,21 +252,25 @@ func (s *Supervisor) Stop() <-chan struct{} {
 }
 
 // Shutdown calls Stop and waits for it.
-// It returns nil when the supervisor has stopped. It returns ctx.Err() when ctx ends first;
+// It returns nil when the supervisor has stopped. When ctx ends first, it returns a
+// *ShutdownError that wraps ctx.Err() and names the wait in progress;
 // the supervisor then continues its ordered shutdown. After a root failure, Shutdown
-// does not return nil. The rules for a wait on Stop also apply to Shutdown.
+// does not return nil: a root from NewRootNoPanic returns the first *Failure when it has stopped.
+// The rules for a wait on Stop also apply to Shutdown.
 func (s *Supervisor) Shutdown(ctx context.Context) error {
 	done := s.Stop()
 	select {
 	case <-done:
-		return nil
+		return s.terminal()
 	default:
 	}
 	select {
 	case <-done:
-		return nil
+		return s.terminal()
 	case <-ctx.Done():
-		return ctx.Err()
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		return &ShutdownError{Waiting: s.blocked(), Err: ctx.Err()}
 	}
 }
 
@@ -295,9 +320,14 @@ func (s *Supervisor) fail(failure *Failure) {
 	top.stop()
 }
 
-// add registers an accepted service after Init, or admits a new nested supervisor.
+// add registers an entry that has no name.
 func (s *Supervisor) add(run func(context.Context), group *Supervisor) {
-	c := &child{run: run, group: group}
+	s.admit(&child{run: run, group: group})
+}
+
+// admit registers an accepted service after Init, or admits a new nested supervisor.
+func (s *Supervisor) admit(c *child) {
+	group := c.group
 	if group != nil {
 		group.entry = c
 	}
@@ -382,7 +412,9 @@ func (s *Supervisor) launch(c *child) {
 func (s *Supervisor) halt() {
 	for {
 		s.mu.Lock()
+		s.halting = true
 		c := s.children.last
+		s.waiting = c
 		if c == nil {
 			s.mu.Unlock()
 			return
