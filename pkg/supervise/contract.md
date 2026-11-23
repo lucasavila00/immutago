@@ -99,7 +99,7 @@ Successful Start means that Init completed; it does not mean that Run is still a
 
 | Event | Behavior |
 | --- | --- |
-| Run returns normally | Stop its children, then remove the service from its supervisor. Other services continue. |
+| Run returns normally | Stop its children, then remove the service from its supervisor. Other services continue. With `supervise.OnEarlyReturn(report)` on the root, a return while the supervisor is running and before cancellation calls report with the service's Go type string first. |
 | Run receives cancellation | Return normally to end without a failure. |
 | Run panics | Report the original panic and stack. Stop the entire root tree, wait for accepted Init calls and cleanup, then panic with `*supervise.Failure`. |
 | Run calls `runtime.Goexit()` | Stop the root through the same failure path. Failure.Value is an error with the text `supervise: service called runtime.Goexit`. |
@@ -118,6 +118,7 @@ Borrow returns that same value, including after it stops.
 | --- | --- |
 | `root := supervise.NewRoot(report)` | Application supervisor, until root.Stop or root.Shutdown. Pass nil to write failure reports and their original stacks to standard error. |
 | `root := supervise.NewRootNoPanic(report)` | The same supervisor without the terminal panic. See [Keep the process after a failure](#keep-the-process-after-a-failure). |
+| `root := supervise.NewRoot(report, supervise.OnEarlyReturn(onReturn))` | Either root, plus a call to onReturn for each Run that ends on its own. Use it for services that should run until shutdown. |
 | `supervisor := supervise.StartSupervisor(parent)` | Lifetime supervisor; stop these services and their children together. |
 | `supervisor := supervise.StartParallelSupervisor(parent)` | The same lifetime supervisor, but Stop cancels all its children at once and then waits for them. A slow or stuck child does not delay the cancel of its siblings. |
 | `Init(supervisor *supervise.Supervisor)` | Runtime supplies a supervisor owned by this service. Save the pointer to start services later. It stops when this service ends. |

@@ -46,6 +46,22 @@ NoArgs supplies empty start arguments.
 type NoArgs struct{}
 ```
 
+## type Option
+
+Option configures a root supervisor.
+
+```go
+type Option func(*Supervisor)
+```
+
+### func OnEarlyReturn
+
+```go
+func OnEarlyReturn(report func(service string)) Option
+```
+
+OnEarlyReturn calls report with the Go type string of a service whose Run returned while its supervisor was running and before its context was cancelled. The root keeps running; an early return is not a failure. report runs in that service's goroutine before its children stop. Calls can overlap, must return, and must not wait for a supervisor to stop.
+
 ## type Ref
 
 Ref holds an initialized service value. Copies select the same value. Stop does not invalidate a reference or wait for direct service method calls.
@@ -152,7 +168,7 @@ type Supervisor struct {
 ### func NewRoot
 
 ```go
-func NewRoot(report func(any, []byte)) *Supervisor
+func NewRoot(report func(any, []byte), options ...Option) *Supervisor
 ```
 
 NewRoot creates an active lifetime supervisor. A Run panic or Goexit stops the root, waits for ordered cleanup, and panics with \*Failure. report receives each recovered Run panic or Goexit once as \*Failure, with its original stack, before that service waits for child cleanup. A nil report writes failures to standard error. Stop does not suppress failures. Reports can overlap, must return, and must not wait for their supervisor to stop.
@@ -160,7 +176,7 @@ NewRoot creates an active lifetime supervisor. A Run panic or Goexit stops the r
 ### func NewRootNoPanic
 
 ```go
-func NewRootNoPanic(report func(any, []byte)) *Supervisor
+func NewRootNoPanic(report func(any, []byte), options ...Option) *Supervisor
 ```
 
 NewRootNoPanic creates a root that does not end the process after a failure. A Run panic or Goexit stops the root and reports the failure as NewRoot does. When ordered cleanup completes, the channel from Stop closes, and Shutdown returns the first \*Failure. The application then does its own cleanup and ends the process.
