@@ -119,6 +119,7 @@ Borrow returns that same value, including after it stops.
 | `root := supervise.NewRoot(report)` | Application supervisor, until root.Stop or root.Shutdown. Pass nil to write failure reports and their original stacks to standard error. |
 | `root := supervise.NewRootNoPanic(report)` | The same supervisor without the terminal panic. See [Keep the process after a failure](#keep-the-process-after-a-failure). |
 | `supervisor := supervise.StartSupervisor(parent)` | Lifetime supervisor; stop these services and their children together. |
+| `supervisor := supervise.StartParallelSupervisor(parent)` | The same lifetime supervisor, but Stop cancels all its children at once and then waits for them. A slow or stuck child does not delay the cancel of its siblings. |
 | `Init(supervisor *supervise.Supervisor)` | Runtime supplies a supervisor owned by this service. Save the pointer to start services later. It stops when this service ends. |
 
 Use the supervisor passed to Init or create one with the functions above. Keep its pointer. A nil or zero Supervisor cannot
@@ -133,6 +134,7 @@ A stopped parent supplies a stopped nested supervisor.
 | An accepted child Start before parent Run is admitted | Child Init runs immediately. Child Run waits for normal activation or receives a cancelled context during cleanup. |
 | Stop races with staged child activation | Activation completes before Stop or leaves the children pending. In both cases, children wait for their reverse-order shutdown turns. |
 | Parent is stopped | Stop children in reverse registration order and wait for them before cancelling the parent's Run context. |
+| Parent from StartParallelSupervisor is stopped | Cancel all children at once, then wait for all of them. Each nested supervisor still stops its own children in its own order. |
 | Parent Run returns or panics | Stop and wait for children before the service ends. |
 | A child Run panics or calls Goexit | Stop the whole root tree. |
 

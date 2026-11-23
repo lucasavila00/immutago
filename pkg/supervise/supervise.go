@@ -77,6 +77,7 @@ type Supervisor struct {
 	waiting   *child
 	halting   bool
 	accepted  int
+	parallel  bool
 }
 
 // childList preserves registration order and permits constant-time removal under Supervisor.mu.
@@ -163,9 +164,22 @@ func newSupervisor(owner *Supervisor, active bool) *Supervisor {
 // A Run failure in any child stops the root.
 // A stopped parent returns a stopped supervisor.
 func StartSupervisor(parent *Supervisor) *Supervisor {
+	return startSupervisor(parent, false)
+}
+
+// StartParallelSupervisor creates a lifetime supervisor whose children stop at the same time.
+// Stop cancels every child, then waits for all of them, so one slow child does not
+// delay the cancellation of its siblings. Children of each nested supervisor
+// still stop in that supervisor's own order. Otherwise it behaves as StartSupervisor.
+func StartParallelSupervisor(parent *Supervisor) *Supervisor {
+	return startSupervisor(parent, true)
+}
+
+// startSupervisor registers a nested supervisor with its stop mode set before it can stop.
+func startSupervisor(parent *Supervisor, parallel bool) *Supervisor {
 	checkSupervisor(parent)
 	nested := newSupervisor(parent, false)
-	nested.parent = parent
+	nested.parent, nested.parallel = parent, parallel
 	parent.add(nil, nested)
 	return nested
 }
@@ -237,8 +251,9 @@ func bindService[A any, P interface {
 
 // Stop closes admission in the subtree and requests ordered shutdown.
 // It returns the same completion channel on every call. Shutdown waits for
-// accepted Init calls, then stops children in reverse registration order and
-// removes a nested supervisor from its parent. Init must return without waiting for
+// accepted Init calls, then stops children in reverse registration order, or all at
+// once for a supervisor from StartParallelSupervisor, and removes a nested
+// supervisor from its parent. Init must return without waiting for
 // shutdown of its owning supervisor or an ancestor, or cancellation that needs it.
 // Stop does not wait for ordinary direct method calls. From Run, a service must
 // not wait for a supervisor that contains that service. It can stop and wait for
@@ -410,6 +425,10 @@ func (s *Supervisor) launch(c *child) {
 
 // halt removes the last child after it stops. Admission is already closed.
 func (s *Supervisor) halt() {
+	if s.parallel {
+		s.haltAll()
+		return
+	}
 	for {
 		s.mu.Lock()
 		s.halting = true
@@ -430,6 +449,41 @@ func (s *Supervisor) halt() {
 		}
 		stop()
 		<-done
+	}
+}
+
+// haltAll stops every child at once, then waits for each in reverse registration order.
+// It repeats until no child remains. Admission is already closed.
+func (s *Supervisor) haltAll() {
+	for {
+		s.mu.Lock()
+		s.halting = true
+		if s.children.last == nil {
+			s.waiting = nil
+			s.mu.Unlock()
+			return
+		}
+		var entries []*child
+		var waits []<-chan struct{}
+		for c := s.children.last; c != nil; c = c.prev {
+			if c.group != nil {
+				c.group.stop()
+				entries, waits = append(entries, c), append(waits, c.group.stopped)
+				continue
+			}
+			if c.done == nil {
+				s.launch(c)
+			}
+			c.stop()
+			entries, waits = append(entries, c), append(waits, c.done)
+		}
+		s.mu.Unlock()
+		for i, done := range waits {
+			s.mu.Lock()
+			s.waiting = entries[i]
+			s.mu.Unlock()
+			<-done
+		}
 	}
 }
 
