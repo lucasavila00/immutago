@@ -132,7 +132,7 @@ A stopped parent supplies a stopped nested supervisor.
 | --- | --- |
 | Parent Init returns an error, panics, or calls Goexit | Stop children from that setup. Application resources remain Init's responsibility. |
 | An accepted child Start before parent Run is admitted | Child Init runs immediately. Child Run waits for normal activation or receives a cancelled context during cleanup. |
-| Stop races with staged child activation | Activation completes before Stop or leaves the children pending. In both cases, children wait for their reverse-order shutdown turns. |
+| Stop races with staged child activation | Activation completes before Stop or leaves the children pending. In both cases, children wait for their shutdown turns. |
 | Parent is stopped | Stop children in reverse registration order and wait for them before cancelling the parent's Run context. |
 | Parent from StartParallelSupervisor is stopped | Cancel all children at once, then wait for all of them. Each nested supervisor still stops its own children in its own order. |
 | Parent Run returns or panics | Stop and wait for children before the service ends. |
@@ -152,7 +152,7 @@ Stop does not wait for requests already using the old reference.
 | `<-root.Stop()` | Wait for accepted Init calls and all children to stop. A terminal failure prevents normal completion. A root from NewRootNoPanic closes the channel after a failure; only Shutdown returns that failure. |
 | `err := root.Shutdown(ctx)` | Call Stop, then wait as `<-root.Stop()` does until ctx ends. See [Limit the wait](#limit-the-wait). |
 | `<-supervisor.Stop()` on a nested supervisor | Wait for this supervisor's children and removal from its parent. This means the subtree has ended; a child failure still stops the root. |
-| Stop is requested | Close admission immediately. Each supervisor waits for its accepted Init calls, then cancels children in reverse registration order. |
+| Stop is requested | Close admission immediately. Each supervisor waits for its accepted Init calls, then cancels children in reverse registration order. A supervisor from StartParallelSupervisor cancels all its children at once. |
 | A registered service has not been admitted to Run when Stop is requested | Wait for its turn, stop its children, then call Run with an already-cancelled context. |
 
 Cleanup panics and Goexit are terminal failures.
@@ -197,8 +197,10 @@ The Waiting field of ShutdownError names the wait that was in progress:
 | `accepted Init calls` | A supervisor waited for an Init that Start had accepted. |
 | Empty | No wait was in progress when ctx ended, for example between two children. |
 
-Shutdown stops one child at a time. A service that registered before the named service
-has not received cancellation yet.
+An ordered supervisor stops one child at a time: a service that registered before the
+named service has not received cancellation yet. In a supervisor from
+StartParallelSupervisor every child has received cancellation, and Waiting names one
+child that has not finished. Other children may still be running too.
 
 Without a limit, the wait continues while a Run ignores its context, an accepted
 Init blocks, or a report blocks. If this occurs after a root failure, the
