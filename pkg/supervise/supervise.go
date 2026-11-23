@@ -77,6 +77,7 @@ type Supervisor struct {
 	waiting   *child
 	halting   bool
 	accepted  int
+	returned  func(string)
 }
 
 // childList preserves registration order and permits constant-time removal under Supervisor.mu.
@@ -124,22 +125,37 @@ func (p Ref[T]) Borrow() *T {
 // original stack, before that service waits for child cleanup. A nil report
 // writes failures to standard error. Stop does not suppress failures.
 // Reports can overlap, must return, and must not wait for their supervisor to stop.
-func NewRoot(report func(any, []byte)) *Supervisor {
-	return root(func(value any) { panic(value) }, report)
+func NewRoot(report func(any, []byte), options ...Option) *Supervisor {
+	return root(func(value any) { panic(value) }, report, options...)
 }
 
 // NewRootNoPanic creates a root that does not end the process after a failure.
 // A Run panic or Goexit stops the root and reports the failure as NewRoot does.
 // When ordered cleanup completes, the channel from Stop closes, and Shutdown
 // returns the first *Failure. The application then does its own cleanup and ends the process.
-func NewRootNoPanic(report func(any, []byte)) *Supervisor {
-	return root(func(any) {}, report)
+func NewRootNoPanic(report func(any, []byte), options ...Option) *Supervisor {
+	return root(func(any) {}, report, options...)
+}
+
+// Option configures a root supervisor.
+type Option func(*Supervisor)
+
+// OnEarlyReturn calls report with the Go type string of a service whose Run returned
+// while its supervisor was running and before its context was cancelled.
+// The root keeps running; an early return is not a failure.
+// report runs in that service's goroutine before its children stop. Calls can
+// overlap, must return, and must not wait for a supervisor to stop.
+func OnEarlyReturn(report func(service string)) Option {
+	return func(s *Supervisor) { s.returned = report }
 }
 
 // root supplies the terminal exit hook used by NewRootNoPanic and runtime tests.
-func root(exit func(any), report func(any, []byte)) *Supervisor {
+func root(exit func(any), report func(any, []byte), options ...Option) *Supervisor {
 	s := newSupervisor(nil, true)
 	s.root, s.exit, s.report = s, exit, report
+	for _, option := range options {
+		option(s)
+	}
 	return s
 }
 
@@ -472,4 +488,14 @@ func watch(parent, supervisor *Supervisor, ctx context.Context, name string, run
 	}
 	run(runContext)
 	completed = true
+	if report := parent.root.returned; report != nil && returnedEarly(parent, ctx) {
+		report(name)
+	}
+}
+
+// returnedEarly reports whether a Run ended while its supervisor admitted work and its context was live.
+func returnedEarly(parent *Supervisor, ctx context.Context) bool {
+	parent.mu.Lock()
+	defer parent.mu.Unlock()
+	return parent.admission.Err() == nil && ctx.Err() == nil
 }
